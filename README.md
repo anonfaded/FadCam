@@ -3,7 +3,7 @@
 ![github_fadcam](https://github.com/anonfaded/FadCam/assets/124708903/65057b89-37b5-4b2f-9746-866cf36f2820)
 # FadCam
 
-**FadCam is an open-source Android application that enables seamless background video recording even when the screen is off.**
+**An open-source Android cam recorder that allows seamless background video recording, even when the screen is off.**
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 
