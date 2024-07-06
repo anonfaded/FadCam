@@ -45,6 +45,7 @@ Download the `apk` file directly from the [releases page](https://github.com/ano
 
 - **Background Video Recording:** Record videos on Android devices even when the screen is off.
 - **Simple Interface:** Easy-to-use buttons for starting and stopping recordings.
+- **No ads:** Completely ad-free.
 
 ## Upcoming Features:
 
