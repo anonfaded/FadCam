@@ -1,131 +1,208 @@
 package com.fadcam;
 
-
 import static android.Manifest.permission.CAMERA;
+import static android.Manifest.permission.RECORD_AUDIO;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.OutputConfiguration;
-import android.hardware.camera2.params.SessionConfiguration;
-import android.os.Build;
+import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.PowerManager;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.Toast;
 
-import java.util.Collections;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    private TextureView textureView;
-    private CameraCaptureSession myCameraCaptureSession;
-    private CameraManager cameraManager;
-    private CameraDevice myCameraDevice;
+    private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private CameraDevice cameraDevice;
+    private CameraCaptureSession cameraCaptureSession;
     private CaptureRequest.Builder captureRequestBuilder;
+    private MediaRecorder mediaRecorder;
+    private boolean isRecording = false;
+    private PowerManager.WakeLock wakeLock;
+    private TextureView textureView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ActivityCompat.requestPermissions(this,
-                new String[]{CAMERA},
-                PackageManager.PERMISSION_GRANTED);
         textureView = findViewById(R.id.textureView);
-        cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
-        startCamera();
+
+        if (checkSelfPermission(CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{CAMERA, RECORD_AUDIO, WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
+        }
+
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FadCam::BackgroundRecordingWakeLock");
     }
-    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(@NonNull CameraDevice cameraDevice) {
-            myCameraDevice = cameraDevice;
-        }
-        @Override
-        public void onDisconnected(@NonNull CameraDevice cameraDevice) {
-            myCameraDevice.close();
-        }
-        @Override
-        public void onError(@NonNull CameraDevice cameraDevice, int i) {
-            myCameraDevice.close();
-            myCameraDevice = null;
-        }
-    };
 
-    private void startCamera() {
+    public void buttonStartCamera(View view) {
+        if (!isRecording) {
+            startRecording();
+        } else {
+            Toast.makeText(this, "Recording is already in progress", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void buttonStopCamera(View view) {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            Toast.makeText(this, "No recording in progress", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startRecording() {
+        if (cameraDevice == null) {
+            openCamera();
+        } else {
+            startRecordingVideo();
+        }
+    }
+
+    private void openCamera() {
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
-            String stringCameraID = cameraManager.getCameraIdList()[0];
-
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+            String cameraId = manager.getCameraIdList()[0];
+            if (checkSelfPermission(CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
-            cameraManager.openCamera(stringCameraID, stateCallback, null);
+            manager.openCamera(cameraId, new CameraDevice.StateCallback() {
+                @Override
+                public void onOpened(@NonNull CameraDevice camera) {
+                    cameraDevice = camera;
+                    startRecordingVideo();
+                }
+
+                @Override
+                public void onDisconnected(@NonNull CameraDevice camera) {
+                    cameraDevice.close();
+                }
+
+                @Override
+                public void onError(@NonNull CameraDevice camera, int error) {
+                    cameraDevice.close();
+                    cameraDevice = null;
+                }
+            }, null);
         } catch (CameraAccessException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
-    public void buttonStartCamera(View view){
-        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
-        Surface surface = new Surface(surfaceTexture);
-        try {
-            captureRequestBuilder = myCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            captureRequestBuilder.addTarget(surface);
-            OutputConfiguration outputConfiguration = new OutputConfiguration(surface);
 
-            SessionConfiguration sessionConfiguration = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                sessionConfiguration = new SessionConfiguration(SessionConfiguration.SESSION_REGULAR,
-                        Collections.singletonList(outputConfiguration),
-                        getMainExecutor(),
-                        new CameraCaptureSession.StateCallback() {
-                            @Override
-                            public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                                myCameraCaptureSession = cameraCaptureSession;
-                                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
-                                        CameraMetadata.CONTROL_MODE_AUTO);
-                                try {
-                                    myCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                                } catch (CameraAccessException e) {
-                                    throw new RuntimeException(e);
-                                }
+    private void startRecordingVideo() {
+        if (null == cameraDevice || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            return;
+        }
+        try {
+            setupMediaRecorder();
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(1280, 720);
+            Surface previewSurface = new Surface(texture);
+            Surface recorderSurface = mediaRecorder.getSurface();
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            captureRequestBuilder.addTarget(previewSurface);
+            captureRequestBuilder.addTarget(recorderSurface);
+
+            cameraDevice.createCaptureSession(Arrays.asList(previewSurface, recorderSurface),
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                            try {
+                                cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
                             }
-                            @Override
-                            public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                                myCameraCaptureSession = null;
-                            }
+                            mediaRecorder.start();
+                            runOnUiThread(() -> {
+                                isRecording = true;
+                                Toast.makeText(MainActivity.this, "Recording started", Toast.LENGTH_SHORT).show();
+                            });
+                            wakeLock.acquire(10*60*1000L /*10 minutes*/);
                         }
-                );
-            }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                myCameraDevice.createCaptureSession(sessionConfiguration);
-            }
-
-        } catch (CameraAccessException e) {
-            throw new RuntimeException(e);
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            Toast.makeText(MainActivity.this, "Failed to start recording", Toast.LENGTH_SHORT).show();
+                        }
+                    }, null);
+        } catch (CameraAccessException | IOException e) {
+            e.printStackTrace();
         }
     }
 
-    public void buttonStopCamera(View view){
-        try {
-            myCameraCaptureSession.abortCaptures();
-        } catch (CameraAccessException e) {
-            throw new RuntimeException(e);
+    private void setupMediaRecorder() throws IOException {
+        File videoDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "FadCam");
+        if (!videoDir.exists()) {
+            videoDir.mkdirs();
+        }
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String videoFilePath = videoDir.getAbsolutePath() + "/VIDEO_" + timestamp + ".mp4";
+
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setOutputFile(videoFilePath);
+        mediaRecorder.setVideoEncodingBitRate(10000000);
+        mediaRecorder.setVideoFrameRate(30);
+        mediaRecorder.setVideoSize(1280, 720);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.prepare();
+    }
+
+    private void stopRecording() {
+        if (isRecording) {
+            isRecording = false;
+            mediaRecorder.stop();
+            mediaRecorder.reset();
+            mediaRecorder.release();
+            mediaRecorder = null;
+            if (cameraCaptureSession != null) {
+                cameraCaptureSession.close();
+                cameraCaptureSession = null;
+            }
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            if (wakeLock.isHeld()) {
+                wakeLock.release();
+            }
+            Toast.makeText(this, "Recording stopped", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (wakeLock.isHeld()) {
+            wakeLock.release();
         }
     }
 }
