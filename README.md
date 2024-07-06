@@ -14,14 +14,15 @@
 ## 📱 Screenshots
 
 <div align="center">
-    <img src="/assets/1.png" style="width: 100px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/assets/124708903/5fda3f47-fd16-41e2-8118-423504ba4982" style="width: 50px; height: auto;" >
     <br>
     <em>apk icon</em>
     <br><br>
-    <img src="/assets/2.png" style="width: 300px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/assets/124708903/225af2bc-b354-4f78-876a-02cac985db38" style="width: 200px; height: auto;" >
     <br>
     <em>UI</em>
     <br>
+</div>
 <!--     <details>
         <summary><strong>More Screenshots</strong></summary>
         <img src="/img/3.png" style="width: 700px; height: auto;" >
