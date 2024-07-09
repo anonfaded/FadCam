@@ -7,6 +7,12 @@
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 
+<a href="https://f-droid.org/packages/com.fadcam">
+    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+    alt="Get it on F-Droid"
+    height="70">
+</a>
+
 </div>
 <p align="center">
         <img src="https://raw.githubusercontent.com/bornmay/bornmay/Update/svg/Bottom.svg" alt="Github Stats" />
@@ -39,6 +45,14 @@
 ## ⬇️ Download
 
 Download the `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
+
+Or from F-Droid store:
+
+<a href="https://f-droid.org/packages/YOUR.APP.ID">
+    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+    alt="Get it on F-Droid"
+    height="80">
+</a>
 
 
 ## Features:
