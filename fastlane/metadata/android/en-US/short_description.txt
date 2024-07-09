@@ -1,1 +1,1 @@
-cam recorder that allows seamless background video recording
+Cam recorder that allows seamless background video recording

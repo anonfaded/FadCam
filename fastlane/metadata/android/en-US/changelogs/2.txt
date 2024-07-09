@@ -1,0 +1,6 @@
+Initial build
+- Records videos even when the screen is off.
+
+Upcoming Features:
+- Scheduled video recordings.
+- Auto upload to Google Drive.
