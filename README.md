@@ -51,3 +51,7 @@ Download the `apk` file directly from the [releases page](https://github.com/ano
 
 - [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
 - [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
+
+
+## Credits:
+The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator</a>.
