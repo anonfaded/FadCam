@@ -48,7 +48,7 @@ Download the `apk` file directly from the [releases page](https://github.com/ano
 
 Or from F-Droid store:
 
-<a href="https://f-droid.org/packages/YOUR.APP.ID">
+<a href="https://f-droid.org/packages/com.fadcam">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
     height="80">
