@@ -156,10 +156,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupMediaRecorder() throws IOException {
-        File videoDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "FadCam");
+        File videoDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "FadCam");
         if (!videoDir.exists()) {
             videoDir.mkdirs();
         }
+
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String videoFilePath = videoDir.getAbsolutePath() + "/VIDEO_" + timestamp + ".mp4";
 
