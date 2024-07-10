@@ -32,6 +32,13 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private CameraDevice cameraDevice;
@@ -46,6 +53,33 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            Fragment selectedFragment = null;
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.navigation_home) {
+                selectedFragment = new com.fadcam.HomeFragment();
+            } else if (itemId == R.id.navigation_dashboard) {
+                selectedFragment = new com.fadcam.DashboardFragment();
+            } else if (itemId == R.id.navigation_notifications) {
+                selectedFragment = new com.fadcam.NotificationsFragment();
+            }
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, selectedFragment)
+                        .commit();
+            }
+            return true;
+        });
+
+        // Set default fragment
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new com.fadcam.HomeFragment())
+                .commit();
 
         textureView = findViewById(R.id.textureView);
 
