@@ -4,7 +4,7 @@
 
 ---
 
-![fadcam_logo](https://github.com/anonfaded/FadCam/assets/124708903/092404a9-2c13-40e2-98fa-d44a6015c952)
+![fadcam_logo](https://github.com/anonfaded/FadCam/assets/124708903/d2b6e972-d910-41fb-9bfc-15984ac87aeb)
 # FadCam
 
 **An open-source Android cam recorder that allows seamless background video recording, even when the screen is off.**
