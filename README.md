@@ -1,4 +1,6 @@
 <div align="center">
+    
+<img src="https://github.com/anonfaded/FadCam/assets/124708903/ed1d131a-c9d4-4bd4-bdaf-b275bf10ed25" style="width: 700px; height: auto;" >
 
 ![fadcam_logo](https://github.com/anonfaded/FadCam/assets/124708903/092404a9-2c13-40e2-98fa-d44a6015c952)
 # FadCam
@@ -33,13 +35,14 @@
 ## 📱 Screenshots
 
 <div align="center">
-    <img src="https://github.com/anonfaded/FadCam/assets/124708903/4a93c111-fc67-4d75-94b1-fa4e01822998" style="width: 50px; height: auto;" >
+<!--     <img src="https://github.com/anonfaded/FadCam/assets/124708903/4a93c111-fc67-4d75-94b1-fa4e01822998" style="width: 50px; height: auto;" >
     <br>
-    <em>apk icon</em>
+    <em>apk icon</em> -->
     <br><br>
-    <img src="https://github.com/anonfaded/FadCam/assets/124708903/225af2bc-b354-4f78-876a-02cac985db38" style="width: 200px; height: auto;" >
-    <br>
-    <em>UI</em>
+    <img src="https://github.com/anonfaded/FadCam/assets/124708903/e72a6585-8045-46a4-8b3e-3e6d16cd389d" style="width: 700px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/assets/124708903/21da7a96-bc51-405d-9999-274a7ee7bd7d" style="width: 700px; height: auto;" >
+<!--     <br> -->
+<!--     <em>UI</em> -->
     <br>
 </div>
 <!--     <details>
