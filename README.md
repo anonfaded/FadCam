@@ -7,13 +7,23 @@
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 
+<a href="https://apt.izzysoft.de/packages/com.fadcam">
+    <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
+    alt="Get it on F-Droid"
+    height="70">
+</a>
+<br>
+
 <a href="https://f-droid.org/packages/com.fadcam">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
     height="70">
 </a>
-
+<br>
+<em>(coming soon on f-droid...)</em>
+<br>
 </div>
+
 <p align="center">
         <img src="https://raw.githubusercontent.com/bornmay/bornmay/Update/svg/Bottom.svg" alt="Github Stats" />
 </p>
@@ -46,14 +56,21 @@
 
 Download the `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
 
-Or from F-Droid store:
+Or:
 
+<a href="https://apt.izzysoft.de/packages/com.fadcam">
+    <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
+    alt="Get it on F-Droid"
+    height="70">
+</a>
+<br>
+<em>coming soon on f-droid...</em>
+<br>
 <a href="https://f-droid.org/packages/com.fadcam">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
-    height="80">
+    height="70">
 </a>
-
 
 ## Features:
 
