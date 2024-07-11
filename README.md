@@ -2,6 +2,8 @@
     
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/ed1d131a-c9d4-4bd4-bdaf-b275bf10ed25" style="width: 700px; height: auto;" >
 
+---
+
 ![fadcam_logo](https://github.com/anonfaded/FadCam/assets/124708903/092404a9-2c13-40e2-98fa-d44a6015c952)
 # FadCam
 
