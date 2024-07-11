@@ -1,6 +1,6 @@
 <div align="center">
     
-<img src="https://github.com/anonfaded/FadCam/assets/124708903/ed1d131a-c9d4-4bd4-bdaf-b275bf10ed25" style="width: 700px; height: auto;" >
+<img src="https://github.com/anonfaded/FadCam/assets/124708903/d6e8c96b-16e1-4841-9023-2727132a508d" style="width: 700px; height: auto;" >
 
 ---
 
