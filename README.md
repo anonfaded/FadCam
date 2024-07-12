@@ -95,6 +95,9 @@ Or:
 - [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
 - [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
 
+## Support
+
+<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#e02828', 'D1D510FNSV');kofiwidget2.draw();</script>
 
 ## Credits:
 The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator</a>.
