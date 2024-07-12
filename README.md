@@ -97,7 +97,7 @@ Or:
 
 ## Support
 
-<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#e02828', 'D1D510FNSV');kofiwidget2.draw();</script>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D510FNSV)
 
 ## Credits:
 The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator</a>.
