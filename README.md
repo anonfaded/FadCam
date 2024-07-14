@@ -63,7 +63,9 @@
 
 ## ⬇️ Download
 
-Download the `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
+Download the latest `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
+
+[<img src="https://raw.githubusercontent.com/vadret/android/master/assets/get-github.png" alt="Get it on GitHub" height="70">](https://github.com/anonfaded/FadCam/releases)
 
 Or:
 
