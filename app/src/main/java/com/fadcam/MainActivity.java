@@ -32,10 +32,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
-import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
@@ -61,11 +59,13 @@ public class MainActivity extends AppCompatActivity {
             int itemId = item.getItemId();
 
             if (itemId == R.id.navigation_home) {
-                selectedFragment = new com.fadcam.HomeFragment();
-            } else if (itemId == R.id.navigation_dashboard) {
-                selectedFragment = new com.fadcam.DashboardFragment();
-            } else if (itemId == R.id.navigation_notifications) {
-                selectedFragment = new com.fadcam.NotificationsFragment();
+                selectedFragment = new com.fadcam.ui.HomeFragment();
+            } else if (itemId == R.id.navigation_records) {
+                selectedFragment = new com.fadcam.ui.RecordsFragment();
+            } else if (itemId == R.id.navigation_settings) {
+                selectedFragment = new com.fadcam.ui.SettingsFragment();
+            } else if (itemId == R.id.navigation_about) {
+                selectedFragment = new com.fadcam.ui.AboutFragment();
             }
 
             if (selectedFragment != null) {
@@ -78,10 +78,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Set default fragment
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new com.fadcam.HomeFragment())
+                .replace(R.id.fragment_container, new com.fadcam.ui.HomeFragment())
                 .commit();
 
-        textureView = findViewById(R.id.textureView);
 
         if (checkSelfPermission(CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
