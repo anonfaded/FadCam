@@ -101,5 +101,17 @@ Or:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D510FNSV)
 
+## Contributions
+
+We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
+
+### How to Contribute
+1. **Check Issues**: Browse the [issues](https://github.com/anonfaded/FadCam/issues) to see where you can help.
+2. **Fork the Repo**: Fork the repository to make your changes.
+3. **Submit a PR**: Create a pull request with a clear description of your changes.
+
+We look forward to your contributions!
+
+
 ## Credits:
 The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator</a>.
