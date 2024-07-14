@@ -28,8 +28,8 @@ A clear and concise description of what actually happened.
 If applicable, add screenshots to help explain your problem.
 
 ### Environment
-- **Device:** [e.g. iPhone 12, Android 11]
-- **OS:** [e.g. iOS 14.4, Android 11]
+- **Device:** [e.g. Samsung s24]
+- **OS:** [e.g. Android 14]
 - **App Version:** [e.g. 1.0.0]
 
 ### Additional Context
