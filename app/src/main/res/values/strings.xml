@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FadCam</string>
+    <string name="app_description" />
 </resources>
