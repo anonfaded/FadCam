@@ -42,6 +42,12 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshRecordsList();
+    }
+
     private void setupRecyclerView() {
         setLayoutManager();
         List<File> recordsList = getRecordsList();
@@ -87,6 +93,11 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         return recordsList;
     }
 
+    private void refreshRecordsList() {
+        List<File> updatedList = getRecordsList();
+        adapter.updateRecords(updatedList);
+    }
+
     @Override
     public void onVideoClick(File video) {
         VideoPlayerFragment playerFragment = VideoPlayerFragment.newInstance(video.getAbsolutePath());
@@ -112,10 +123,10 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
 
     private void confirmDeleteSelected() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Delete Selected Videos")
-                .setMessage("Are you sure you want to delete the selected videos?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteSelectedVideos())
-                .setNegativeButton("Cancel", null)
+                .setTitle("Eradicate Video(s)? \uD83D\uDCA3")
+                .setMessage("Are you absolutely, positively sure you want to nuke these video(s) out of existence? \uD83D\uDE80\uD83D\uDCA5")
+                .setPositiveButton("Yes, Nuke 'Em! \uD83C\uDF0B", (dialog, which) -> deleteSelectedVideos())
+                .setNegativeButton("No, Keep 'Em! \uD83D\uDE05", null)
                 .show();
     }
 
@@ -125,7 +136,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         }
         selectedVideos.clear();
         updateDeleteButtonVisibility();
-        adapter.notifyDataSetChanged();
+        refreshRecordsList();
     }
 
     @Override
@@ -164,6 +175,6 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
                 }
             }
         }
-        adapter.notifyDataSetChanged();
+        refreshRecordsList();
     }
 }
