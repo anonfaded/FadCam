@@ -17,15 +17,21 @@ import android.graphics.Bitmap;
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
 
     private List<File> records;
-    private OnVideoClickListener listener;
+    private OnVideoClickListener clickListener;
+    private OnVideoLongClickListener longClickListener;
 
     public interface OnVideoClickListener {
         void onVideoClick(File video);
     }
 
-    public RecordsAdapter(List<File> records, OnVideoClickListener listener) {
+    public interface OnVideoLongClickListener {
+        void onVideoLongClick(File video, boolean isSelected);
+    }
+
+    public RecordsAdapter(List<File> records, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener) {
         this.records = records;
-        this.listener = listener;
+        this.clickListener = clickListener;
+        this.longClickListener = longClickListener;
     }
 
     @NonNull
@@ -39,7 +45,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
         File video = records.get(position);
         holder.textViewRecord.setText(video.getName());
-        holder.itemView.setOnClickListener(v -> listener.onVideoClick(video));
+        holder.itemView.setOnClickListener(v -> clickListener.onVideoClick(video));
+        holder.itemView.setOnLongClickListener(v -> {
+            boolean isSelected = !holder.itemView.isSelected();
+            holder.itemView.setSelected(isSelected);
+            longClickListener.onVideoLongClick(video, isSelected);
+            return true;
+        });
 
         // Set thumbnail
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -49,7 +61,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         try {
             retriever.release();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 

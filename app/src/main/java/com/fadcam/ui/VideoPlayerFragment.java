@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -18,6 +19,7 @@ public class VideoPlayerFragment extends Fragment {
     private static final String ARG_VIDEO_PATH = "video_path";
     private ExoPlayer player;
     private StyledPlayerView playerView;
+    private ImageButton backButton;
 
     public static VideoPlayerFragment newInstance(String videoPath) {
         VideoPlayerFragment fragment = new VideoPlayerFragment();
@@ -37,9 +39,11 @@ public class VideoPlayerFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         playerView = view.findViewById(R.id.player_view);
+        backButton = view.findViewById(R.id.back_button);
 
         String videoPath = getArguments().getString(ARG_VIDEO_PATH);
         initializePlayer(videoPath);
+        setupBackButton();
     }
 
     private void initializePlayer(String videoPath) {
@@ -50,6 +54,10 @@ public class VideoPlayerFragment extends Fragment {
         player.setMediaItem(mediaItem);
         player.prepare();
         player.play();
+    }
+
+    private void setupBackButton() {
+        backButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
     }
 
     @Override
