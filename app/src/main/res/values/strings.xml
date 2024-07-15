@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">FadCam</string>
-    <string name="app_description" />
+    <string name="app_description">
+        FadCam is an ad-free, open-source video recording app developed by Faded. It ensures user privacy by not collecting, tracking, or analyzing any data. Free to use and available only on the official GitHub repo.
+
+        For more information, visit: https://github.com/anonfaded/FadCam
+    </string>
+    <string name="footer_text">2024 fadedhood.com © | Licensed under GPL-3.0.</string>
+    <string name="privacy_info_title">Privacy Information</string>
+
+
 </resources>
+

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -7,14 +8,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="24dp">
 
         <ImageView
             android:id="@+id/app_icon"
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_gravity="center_horizontal"
-            android:contentDescription="app_icon_description" />
+            android:contentDescription="@string/app_description" />
 
         <TextView
             android:id="@+id/app_name"
@@ -36,36 +37,85 @@
             android:id="@+id/app_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center" />
-
-        <Button
-            android:id="@+id/source_code_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="view_source_code" />
+            android:gravity="center"
+            android:text="@string/app_description" />
 
-        <Button
-            android:id="@+id/donate_button"
-            android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/source_code_button"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="donate" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="32dp"
+            android:text=" view source code"
+            app:icon="@drawable/ic_github" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/donate_button"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:text=" buy me a coffee ☕"
+            app:icon="@drawable/ic_kofi" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="Contact"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/email_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="contact_email"/>
+            android:layout_marginTop="8dp"
+            android:drawablePadding="8dp"
+            android:text=" Send email"
+            app:drawableStartCompat="@drawable/ic_email" />
 
         <TextView
             android:id="@+id/discord_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="join_discord"/>
+            android:drawablePadding="8dp"
+            android:text=" Join community"
+            app:drawableStartCompat="@drawable/ic_discord" />
+
+
+        <TextView
+            android:id="@+id/privacy_info_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/privacy_info_title"
+            android:textStyle="bold" />
+
+
+        <TextView
+            android:id="@+id/privacy_info_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="?android:attr/listDivider" />
+
+        <TextView
+            android:id="@+id/footer_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/footer_text" />
+
+
 
     </LinearLayout>
 </ScrollView>
