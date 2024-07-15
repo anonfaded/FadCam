@@ -1,10 +1,11 @@
 <div align="center">
     
-<img src="https://github.com/anonfaded/FadCam/assets/124708903/ed1d131a-c9d4-4bd4-bdaf-b275bf10ed25" style="width: 700px; height: auto;" >
+<img src="https://github.com/anonfaded/FadCam/assets/124708903/d6e8c96b-16e1-4841-9023-2727132a508d" style="width: 700px; height: auto;" >
 
 ---
 
-![fadcam_logo](https://github.com/anonfaded/FadCam/assets/124708903/092404a9-2c13-40e2-98fa-d44a6015c952)
+<img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
+
 # FadCam
 
 **An open-source Android cam recorder that allows seamless background video recording, even when the screen is off.**
@@ -13,17 +14,20 @@
 
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
-    alt="Get it on F-Droid"
-    height="70">
-</a>
-<br>
+    alt="Get it on IoD"
+    height="70"></a>
+
+<a href="http://www.amazon.com/gp/product/B0CZKWZ8PG/ref=mas_pm_FadCam">
+    <img src="https://github.com/anonfaded/FadCam/assets/124708903/43550ba6-dcf2-46cb-8aa5-2a882968c529"
+    alt="Get it on Amazon appstore"
+    height="47"></a>
+
 
 <a href="https://f-droid.org/packages/com.fadcam">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
-    height="70">
-</a>
-<br>
+    height="70"></a>
+
 <em>(coming soon on f-droid...)</em>
 <br>
 </div>
@@ -59,24 +63,29 @@
 
 ## ⬇️ Download
 
-Download the `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
+Download the latest `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
+
+[<img src="https://raw.githubusercontent.com/vadret/android/master/assets/get-github.png" alt="Get it on GitHub" height="70">](https://github.com/anonfaded/FadCam/releases)
 
 Or:
 
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
     alt="Get it on F-Droid"
-    height="70">
-</a>
-<br>
-<em>coming soon on f-droid...</em>
-<br>
+    height="70"></a>
 <a href="https://f-droid.org/packages/com.fadcam">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
-    height="70">
-</a>
+    height="70"></a>
+    
+<em>coming soon on f-droid...</em>
+<br>
 
+<a href="http://www.amazon.com/gp/product/B0CZKWZ8PG/ref=mas_pm_FadCam">
+    <img src="https://github.com/anonfaded/FadCam/assets/124708903/43550ba6-dcf2-46cb-8aa5-2a882968c529"
+    alt="Get it on Amazon appstore"
+    height="47"></a>
+    
 ## Features:
 
 - **Background Video Recording:** Record videos on Android devices even when the screen is off.
@@ -87,6 +96,21 @@ Or:
 
 - [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
 - [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
+
+## Support
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D510FNSV)
+
+## Contributions
+
+We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
+
+### How to Contribute
+1. **Check Issues**: Browse the [issues](https://github.com/anonfaded/FadCam/issues) to see where you can help.
+2. **Fork the Repo**: Fork the repository to make your changes.
+3. **Submit a PR**: Create a pull request with a clear description of your changes.
+
+We look forward to your contributions!
 
 
 ## Credits:
