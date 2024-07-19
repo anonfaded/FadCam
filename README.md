@@ -2,6 +2,12 @@
     
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6e8c96b-16e1-4841-9023-2727132a508d" style="width: 700px; height: auto;" >
 
+<br>
+
+| :exclamation: | This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!  |
+|---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+
 ---
 
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
@@ -11,6 +17,10 @@
 **An open-source Android cam recorder that allows seamless background video recording, even when the screen is off.**
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
+
+<img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red">
+<br>
+<br>
 
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
@@ -37,6 +47,35 @@
 </p>
 
 ---
+
+<details>
+    <summary>Expand Table of Contents</summary>
+        
+- [Purpose](#purpose)
+- [Screenshots](#-screenshots)
+- [Download](https://github.com/anonfaded/FadCam#-download)
+- [Features](#features)
+- [Upcoming Features](#upcoming-features)
+- [Join Community](#join-community)
+- [Support](#support)
+- [Contributions](#contributions)
+- [Credits](#credits)
+
+</details>
+
+---
+
+## Purpose
+
+FadCam is developed with the goal of providing a powerful, privacy-focused tool for recording videos in the background on Android devices. This app is intended for **ethical use** only, such as personal security, monitoring, or recording important events privately and discreetly.
+
+**Ethical Use Cases Include:**
+- **Personal Security:** Record footage for personal safety or to capture important moments.
+- **Research and Documentation:** Use for documenting events, research, or activities where recording is necessary.
+- **Privacy Protection:** Safeguard your privacy by using the app in accordance with legal and ethical standards.
+
+> **Misuse Disclaimer:** <br>
+> The developers of FadCam do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
 
 ## 📱 Screenshots
 
@@ -77,15 +116,14 @@ Or:
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
     height="70"></a>
-    
-<em>coming soon on f-droid...</em>
-<br>
 
 <a href="http://www.amazon.com/gp/product/B0CZKWZ8PG/ref=mas_pm_FadCam">
     <img src="https://github.com/anonfaded/FadCam/assets/124708903/43550ba6-dcf2-46cb-8aa5-2a882968c529"
     alt="Get it on Amazon appstore"
     height="47"></a>
-    
+
+<em>(coming soon on f-droid...)</em>
+
 ## Features:
 
 - **Background Video Recording:** Record videos on Android devices even when the screen is off.
@@ -97,10 +135,15 @@ Or:
 - [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
 - [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
 
+## Join Community
+Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek help, or connect with other users. Your feedback and contributions are welcome!
+
+[![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
+
+
 ## Support
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D510FNSV)
-
+<a href='https://ko-fi.com/D1D510FNSV' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 ## Contributions
 
 We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
