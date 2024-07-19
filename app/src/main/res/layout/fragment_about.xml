@@ -15,7 +15,7 @@
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_gravity="center_horizontal"
-            android:contentDescription="@string/app_description" />
+            android:contentDescription="@string/app_icon_description" />
 
         <TextView
             android:id="@+id/app_name"
@@ -24,14 +24,46 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
             android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
 
         <TextView
             android:id="@+id/app_version"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:textColor="#CFBAFD" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/check_updates_button"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:text="@string/check_for_updates"
+            app:icon="@drawable/ic_update"
+            android:textColor="#CFBAFD"
+            app:strokeColor="#CFBAFD" />
+
+        <!-- Background color and other data for the fadsec lab info card below the check for updates button -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/fadsec_info_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            app:cardBackgroundColor="#262233"
+            app:cardCornerRadius="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="@string/fadsec_info"
+                android:textColor="#FFFFFF" />
+
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/app_description"
@@ -39,7 +71,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:gravity="center"
-            android:text="@string/app_description" />
+            android:text="@string/app_description"
+            android:textColor="#FFFFFF" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/source_code_button"
@@ -48,8 +81,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="32dp"
-            android:text=" view source code"
-            app:icon="@drawable/ic_github" />
+            android:text="@string/view_source_code"
+            app:icon="@drawable/ic_github"
+            android:textColor="#CFBAFD"
+            app:strokeColor="#CFBAFD" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/donate_button"
@@ -58,15 +93,18 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
-            android:text=" buy me a coffee ☕"
-            app:icon="@drawable/ic_kofi" />
+            android:text="@string/buy_me_a_coffee"
+            app:icon="@drawable/ic_kofi"
+            android:textColor="#CFBAFD"
+            app:strokeColor="#CFBAFD" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:text="Contact"
-            android:textStyle="bold" />
+            android:text="@string/contact"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
 
         <TextView
             android:id="@+id/email_text"
@@ -74,8 +112,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:drawablePadding="8dp"
-            android:text=" Send email"
-            app:drawableStartCompat="@drawable/ic_email" />
+            android:text="@string/send_email"
+            app:drawableStartCompat="@drawable/ic_email"
+            android:textColor="#CFBAFD" />
 
         <TextView
             android:id="@+id/discord_text"
@@ -83,39 +122,45 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:drawablePadding="8dp"
-            android:text=" Join community"
-            app:drawableStartCompat="@drawable/ic_discord" />
+            android:text="@string/join_community"
+            app:drawableStartCompat="@drawable/ic_discord"
+            android:textColor="#CFBAFD" />
 
-
-        <TextView
-            android:id="@+id/privacy_info_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/privacy_info_title"
-            android:textStyle="bold" />
-
-
-        <TextView
-            android:id="@+id/privacy_info_text"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/privacy_info_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
             android:layout_marginTop="24dp"
-            android:background="?android:attr/listDivider" />
+            app:cardBackgroundColor="#5A556A"
+            app:cardCornerRadius="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/privacy_information"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- QnA items will be added here programmatically -->
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            android:id="@+id/footer_text"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/footer_text" />
-
-
+            android:layout_marginTop="24dp"
+            android:text="@string/copyright_info"
+            android:textAlignment="center"
+            android:textColor="#CFBAFD" />
 
     </LinearLayout>
 </ScrollView>
