@@ -4,11 +4,18 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.Dialog;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,24 +26,55 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+
+import com.fadcam.R;
+
+import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AboutFragment extends Fragment {
 
+    private View view;
+    private ExecutorService executorService;
+    private AlertDialog loadingDialog;
+    private MaterialAlertDialogBuilder alertDialogBuilder;
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_about, container, false);
-
-        initializeViews(view);
-
+        view = inflater.inflate(R.layout.fragment_about, container, false);
+        initializeViews();
         return view;
     }
 
-    private void initializeViews(View view) {
+    private void initializeViews() {
         ImageView appIcon = view.findViewById(R.id.app_icon);
         TextView appName = view.findViewById(R.id.app_name);
         TextView appVersion = view.findViewById(R.id.app_version);
@@ -61,21 +99,14 @@ public class AboutFragment extends Fragment {
         discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
 
         setupPrivacyInfo(privacyInfoCard, scrollView);
+        view.findViewById(R.id.check_updates_button).setOnClickListener(v -> checkForUpdates());
+
+        executorService = Executors.newSingleThreadExecutor();
+        alertDialogBuilder = new MaterialAlertDialogBuilder(requireContext())
+                .setView(R.layout.loading_dialog)
+                .setCancelable(false);
+        alertDialogBuilder = new MaterialAlertDialogBuilder(requireContext());
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private void setupPrivacyInfo(MaterialCardView cardView, ScrollView scrollView) {
         String[] questions = {
@@ -121,10 +152,8 @@ public class AboutFragment extends Fragment {
             heightAnimator.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationStart(Animator animation) {
-                    // Start scroll animation
                     if (!isVisible) {
                         scrollView.post(() -> {
-                            // Delay to ensure the card is fully expanded
                             scrollView.postDelayed(() -> {
                                 int cardBottom = cardView.getBottom();
                                 int scrollViewBottom = scrollView.getHeight() + scrollView.getScrollY();
@@ -160,24 +189,7 @@ public class AboutFragment extends Fragment {
         });
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private String getAppVersion() {
+    private String getAppVersionForUpdates() {
         try {
             PackageManager pm = requireActivity().getPackageManager();
             PackageInfo pInfo = pm.getPackageInfo(requireActivity().getPackageName(), 0);
@@ -200,11 +212,213 @@ public class AboutFragment extends Fragment {
         startActivity(intent);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Code for checking updates
+
+
+
+
+
+
     private void checkForUpdates() {
-        Toast.makeText(requireContext(), "Checking for updates...", Toast.LENGTH_SHORT).show();
-        // Implement the update checking logic here
-        // You might want to use a background thread to check for updates
-        // and then update the UI accordingly
-        openUrl("https://github.com/anonfaded/FadCam/releases");
+        showLoadingDialog("Checking for updates...");
+
+        executorService.execute(() -> {
+            try {
+                JSONObject releaseInfo = fetchLatestReleaseInfo();
+                String latestVersion = releaseInfo.getString("tag_name").substring(1); // Remove 'v' prefix
+                String currentVersion = getAppVersionForUpdates();
+                String downloadUrl = getDownloadUrl(releaseInfo);
+
+                requireActivity().runOnUiThread(() -> {
+                    dismissLoadingDialog();
+                    if (isUpdateAvailable(currentVersion, latestVersion)) {
+                        showUpdateAvailableDialog(latestVersion, downloadUrl);
+                    } else {
+                        dismissLoadingDialog(); // Dismiss the loading dialog in case of an error
+
+                        showUpToDateDialog();
+
+
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                requireActivity().runOnUiThread(() -> {
+                    dismissLoadingDialog();
+                    showErrorDialog("Failed to check for updates. Please try again later.");
+                });
+            }
+        });
     }
+
+    private JSONObject fetchLatestReleaseInfo() throws Exception {
+        URL url = new URL("https://api.github.com/repos/anonfaded/FadCam/releases/latest");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+            StringBuilder result = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                result.append(line);
+            }
+            return new JSONObject(result.toString());
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private String getDownloadUrl(JSONObject releaseInfo) throws JSONException {
+        JSONArray assets = releaseInfo.getJSONArray("assets");
+        for (int i = 0; i < assets.length(); i++) {
+            JSONObject asset = assets.getJSONObject(i);
+            if (asset.getString("name").endsWith(".apk")) {
+                return asset.getString("browser_download_url");
+            }
+        }
+        throw new JSONException("No APK found in release assets");
+    }
+
+    private String getAppVersion() {
+        try {
+            PackageManager pm = requireActivity().getPackageManager();
+            PackageInfo pInfo = pm.getPackageInfo(requireActivity().getPackageName(), 0);
+            return pInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return "0.0.0";
+        }
+    }
+
+    private boolean isUpdateAvailable(String currentVersion, String latestVersion) {
+        String[] current = currentVersion.split("\\.");
+        String[] latest = latestVersion.split("\\.");
+
+        for (int i = 0; i < Math.min(current.length, latest.length); i++) {
+            int currentPart = Integer.parseInt(current[i]);
+            int latestPart = Integer.parseInt(latest[i]);
+
+            if (latestPart > currentPart) {
+                return true;
+            } else if (latestPart < currentPart) {
+                return false;
+            }
+        }
+
+        return latest.length > current.length;
+    }
+
+    private void showLoadingDialog(String message) {
+        requireActivity().runOnUiThread(() -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+            builder.setMessage(message);
+            builder.setCancelable(false);
+            loadingDialog = builder.create();
+            loadingDialog.show();
+        });
+    }
+
+    private void dismissLoadingDialog() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+        }
+    }
+
+    private void showUpdateAvailableDialog(String newVersion, String downloadUrl) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Update Available")
+                .setMessage("A new version (" + newVersion + ") is available. Do you want to download and install it?")
+                .setPositiveButton("Yes", (dialog, which) -> startUpdateDownload(downloadUrl))
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    private void showUpToDateDialog() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Up to Date")
+                .setMessage("You are already using the latest version.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showErrorDialog(String message) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Error")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void startUpdateDownload(String downloadUrl) {
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl))
+                .setTitle("FadCam Update")
+                .setDescription("Downloading the latest version of FadCam")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "FadCam_update.apk")
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true);
+
+        DownloadManager downloadManager = (DownloadManager) requireContext().getSystemService(Context.DOWNLOAD_SERVICE);
+        long downloadId = downloadManager.enqueue(request);
+
+        BroadcastReceiver onComplete = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
+                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                    if (id == downloadId) {
+                        installUpdate();
+                    }
+                }
+            }
+        };
+
+        requireActivity().registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    }
+
+    private void installUpdate() {
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "FadCam_update.apk");
+        Uri uri;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            uri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".provider", file);
+        } else {
+            uri = Uri.fromFile(file);
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(uri, "application/vnd.android.package-archive");
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(intent);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

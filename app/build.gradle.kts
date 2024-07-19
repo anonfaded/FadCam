@@ -49,4 +49,6 @@ dependencies {
     implementation(libs.core.ktx)
     implementation("com.google.android.exoplayer:exoplayer-core:2.18.7")
     implementation("com.google.android.exoplayer:exoplayer-ui:2.18.7")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+
 }
