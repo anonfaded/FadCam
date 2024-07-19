@@ -12,6 +12,9 @@
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 
+<img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red">
+<br>
+
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
     alt="Get it on IoD"
@@ -97,10 +100,13 @@ Or:
 - [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
 - [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
 
+## Join Community
+[![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
+
+
 ## Support
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D510FNSV)
-
+<a href='https://ko-fi.com/D1D510FNSV' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 ## Contributions
 
 We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
