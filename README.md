@@ -2,6 +2,12 @@
     
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6e8c96b-16e1-4841-9023-2727132a508d" style="width: 700px; height: auto;" >
 
+<br>
+
+| :exclamation: | This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!  |
+|---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+
 ---
 
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
@@ -13,6 +19,7 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 
 <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red">
+<br>
 <br>
 
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
@@ -40,6 +47,35 @@
 </p>
 
 ---
+
+<details>
+    <summary>Expand Table of Contents</summary>
+        
+- [Purpose](#purpose)
+- [Screenshots](#-screenshots)
+- [Download](https://github.com/anonfaded/FadCam/edit/master/README.md#%EF%B8%8F-download)
+- [Features](#features)
+- [Upcoming Features](#upcoming-features)
+- [Join Community](#join-community)
+- [Support](#support)
+- [Contributions](#contributions)
+- [Credits](#credits)
+
+</details>
+
+---
+
+## Purpose
+
+FadCam is developed with the goal of providing a powerful, privacy-focused tool for recording videos in the background on Android devices. This app is intended for **ethical use** only, such as personal security, monitoring, or recording important events privately and discreetly.
+
+**Ethical Use Cases Include:**
+- **Personal Security:** Record footage for personal safety or to capture important moments.
+- **Research and Documentation:** Use for documenting events, research, or activities where recording is necessary.
+- **Privacy Protection:** Safeguard your privacy by using the app in accordance with legal and ethical standards.
+
+> **Misuse Disclaimer:** <br>
+> The developers of FadCam do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
 
 ## 📱 Screenshots
 
@@ -80,15 +116,14 @@ Or:
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
     height="70"></a>
-    
-<em>coming soon on f-droid...</em>
-<br>
 
 <a href="http://www.amazon.com/gp/product/B0CZKWZ8PG/ref=mas_pm_FadCam">
     <img src="https://github.com/anonfaded/FadCam/assets/124708903/43550ba6-dcf2-46cb-8aa5-2a882968c529"
     alt="Get it on Amazon appstore"
     height="47"></a>
-    
+
+<em>(coming soon on f-droid...)</em>
+
 ## Features:
 
 - **Background Video Recording:** Record videos on Android devices even when the screen is off.
