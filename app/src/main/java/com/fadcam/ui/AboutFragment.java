@@ -1,14 +1,21 @@
 package com.fadcam.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +48,7 @@ public class AboutFragment extends Fragment {
         TextView emailText = view.findViewById(R.id.email_text);
         TextView discordText = view.findViewById(R.id.discord_text);
         MaterialCardView privacyInfoCard = view.findViewById(R.id.privacy_info_card);
+        ScrollView scrollView = view.findViewById(R.id.scroll_view);
 
         appIcon.setImageResource(R.mipmap.ic_launcher);
         appName.setText(getString(R.string.app_name));
@@ -52,10 +60,24 @@ public class AboutFragment extends Fragment {
         emailText.setOnClickListener(v -> sendEmail());
         discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
 
-        setupPrivacyInfo(privacyInfoCard);
+        setupPrivacyInfo(privacyInfoCard, scrollView);
     }
 
-    private void setupPrivacyInfo(MaterialCardView cardView) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void setupPrivacyInfo(MaterialCardView cardView, ScrollView scrollView) {
         String[] questions = {
                 "Does FadCam collect any user data?",
                 "Are there any ads in FadCam?"
@@ -65,24 +87,95 @@ public class AboutFragment extends Fragment {
                 "FadCam is completely ad-free, providing an uninterrupted user experience."
         };
 
+        StringBuilder qnaContent = new StringBuilder();
         for (int i = 0; i < questions.length; i++) {
-            View qnaItem = getLayoutInflater().inflate(R.layout.qna_item, cardView, false);
-            TextView questionView = qnaItem.findViewById(R.id.question);
-            TextView answerView = qnaItem.findViewById(R.id.answer);
+            qnaContent.append("<b><font color='#FFFFFF'>").append(questions[i]).append("</font></b><br>")
+                    .append("<font color='#CFBAFD'>").append(answers[i]).append("</font><br><br>");
+        }
 
-            questionView.setText(questions[i]);
-            answerView.setText(answers[i]);
+        TextView privacyInfoContent = cardView.findViewById(R.id.privacy_info_content);
+        privacyInfoContent.setText(Html.fromHtml(qnaContent.toString(), Html.FROM_HTML_MODE_LEGACY));
 
-            questionView.setTextColor(getResources().getColor(R.color.white));
-            answerView.setTextColor(getResources().getColor(R.color.black));
+        ImageView expandIcon = cardView.findViewById(R.id.expand_icon);
+        LinearLayout headerLayout = (LinearLayout) expandIcon.getParent();
 
-            qnaItem.setOnClickListener(v -> {
-                answerView.setVisibility(answerView.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+        headerLayout.setOnClickListener(v -> {
+            boolean isVisible = privacyInfoContent.getVisibility() == View.VISIBLE;
+
+            if (!isVisible) {
+                privacyInfoContent.setVisibility(View.VISIBLE);
+            }
+
+            privacyInfoContent.measure(View.MeasureSpec.makeMeasureSpec(cardView.getWidth(), View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int startHeight = isVisible ? privacyInfoContent.getHeight() : 0;
+            int endHeight = isVisible ? 0 : privacyInfoContent.getMeasuredHeight();
+
+            ValueAnimator heightAnimator = ValueAnimator.ofInt(startHeight, endHeight);
+            heightAnimator.addUpdateListener(animation -> {
+                privacyInfoContent.getLayoutParams().height = (int) animation.getAnimatedValue();
+                privacyInfoContent.requestLayout();
+            });
+            heightAnimator.setDuration(300);
+
+            heightAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+                    // Start scroll animation
+                    if (!isVisible) {
+                        scrollView.post(() -> {
+                            // Delay to ensure the card is fully expanded
+                            scrollView.postDelayed(() -> {
+                                int cardBottom = cardView.getBottom();
+                                int scrollViewBottom = scrollView.getHeight() + scrollView.getScrollY();
+                                int scrollAmount = cardBottom - scrollViewBottom;
+
+                                ValueAnimator scrollAnimator = ValueAnimator.ofInt(scrollView.getScrollY(), scrollView.getScrollY() + scrollAmount);
+                                scrollAnimator.addUpdateListener(scrollAnimation -> {
+                                    scrollView.scrollTo(0, (int) scrollAnimation.getAnimatedValue());
+                                });
+                                scrollAnimator.setDuration(300); // Match the card animation duration
+                                scrollAnimator.start();
+                            }, 300); // Delay to match the expansion duration
+                        });
+                    }
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    if (isVisible) {
+                        privacyInfoContent.setVisibility(View.GONE);
+                    }
+                }
             });
 
-            cardView.addView(qnaItem);
-        }
+            heightAnimator.start();
+
+            // Add animation for icon rotation
+            float startRotation = isVisible ? 180f : 0f;
+            float endRotation = isVisible ? 0f : 180f;
+            ObjectAnimator iconAnimator = ObjectAnimator.ofFloat(expandIcon, "rotation", startRotation, endRotation);
+            iconAnimator.setDuration(300);
+            iconAnimator.start();
+        });
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private String getAppVersion() {
         try {

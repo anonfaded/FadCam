@@ -19,7 +19,7 @@
             android:layout_weight="1"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@android:color/white"
+            android:textColor="#fff"
             android:paddingBottom="4dp" />
 
         <ImageView
