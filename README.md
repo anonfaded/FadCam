@@ -53,7 +53,7 @@
         
 - [Purpose](#purpose)
 - [Screenshots](#-screenshots)
-- [Download](https://github.com/anonfaded/FadCam/edit/master/README.md#%EF%B8%8F-download)
+- [Download](https://github.com/anonfaded/FadCam/edit/master/README.md#-download)
 - [Features](#features)
 - [Upcoming Features](#upcoming-features)
 - [Join Community](#join-community)
