@@ -139,7 +139,7 @@ public class HomeFragment extends Fragment {
         if (!videoDir.exists()) {
             videoDir.mkdirs();
         }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mma", Locale.getDefault()).format(new Date());
         String videoFilePath = videoDir.getAbsolutePath() + "/FADCAM_" + timestamp + ".mp4";
 
         mediaRecorder = new MediaRecorder();

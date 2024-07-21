@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         if (!videoDir.exists()) {
             videoDir.mkdirs();
         }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_a", Locale.getDefault()).format(new Date());
         String videoFilePath = videoDir.getAbsolutePath() + "/VIDEO_" + timestamp + ".mp4";
 
         mediaRecorder = new MediaRecorder();
