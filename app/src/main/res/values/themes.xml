@@ -3,6 +3,7 @@
     <style name="Base.Theme.FadCam" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:fontFamily">@font/ubuntu_regular</item>
     </style>
 
     <style name="Theme.FadCam" parent="Base.Theme.FadCam" />
