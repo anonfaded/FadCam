@@ -13,6 +13,7 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StatFs;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -52,14 +53,16 @@ public class HomeFragment extends Fragment {
 
 
     private void updateStorageInfo() {
-        File externalStorageDir = Environment.getExternalStorageDirectory();
-        long availableSpace = externalStorageDir.getFreeSpace();
-        long totalSpace = externalStorageDir.getTotalSpace();
+        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+        long bytesAvailable = stat.getAvailableBytes();
+        long bytesTotal = stat.getTotalBytes();
 
-        long availableGB = availableSpace / (1024 * 1024 * 1024);
-        long totalGB = totalSpace / (1024 * 1024 * 1024);
+        double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
+        double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
 
-        tvStorageInfo.setText(String.format("Storage: %d GB / %d GB", availableGB, totalGB));
+        String storageInfo = String.format(Locale.getDefault(),
+                "Available: %.2f GB\nTotal: %.2f GB", gbAvailable, gbTotal);
+        tvStorageInfo.setText(storageInfo);
     }
     private void pauseRecording() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
