@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
@@ -18,6 +19,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -41,16 +43,72 @@ public class HomeFragment extends Fragment {
     private boolean isRecording = false;
     private TextureView textureView;
 
+
+    private TextView tvStorageInfo;
+    private TextView tvPreviewPlaceholder;
+    private Button buttonStartStop;
+    private Button buttonPauseResume;
+    private boolean isPaused = false;
+
+
+    private void updateStorageInfo() {
+        File externalStorageDir = Environment.getExternalStorageDirectory();
+        long availableSpace = externalStorageDir.getFreeSpace();
+        long totalSpace = externalStorageDir.getTotalSpace();
+
+        long availableGB = availableSpace / (1024 * 1024 * 1024);
+        long totalGB = totalSpace / (1024 * 1024 * 1024);
+
+        tvStorageInfo.setText(String.format("Storage: %d GB / %d GB", availableGB, totalGB));
+    }
+    private void pauseRecording() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            mediaRecorder.pause();
+            isPaused = true;
+            buttonPauseResume.setText("Resume");
+            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        }
+    }
+    private void resumeRecording() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            mediaRecorder.resume();
+            isPaused = false;
+            buttonPauseResume.setText("Pause");
+            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        }
+    }
+
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         textureView = view.findViewById(R.id.textureView);
-        Button startButton = view.findViewById(R.id.button_start_camera);
-        Button stopButton = view.findViewById(R.id.button_stop_camera);
+        tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
+        tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
+        buttonStartStop = view.findViewById(R.id.buttonStartStop);
+        buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
 
-        startButton.setOnClickListener(v -> startRecording());
-        stopButton.setOnClickListener(v -> stopRecording());
+        updateStorageInfo();
+
+        buttonStartStop.setOnClickListener(v -> {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        buttonPauseResume.setOnClickListener(v -> {
+            if (isRecording) {
+                if (isPaused) {
+                    resumeRecording();
+                } else {
+                    pauseRecording();
+                }
+            }
+        });
 
         return view;
     }
@@ -62,8 +120,10 @@ public class HomeFragment extends Fragment {
             } else {
                 startRecordingVideo();
             }
-        } else {
-            Toast.makeText(getContext(), "Recording is already in progress", Toast.LENGTH_SHORT).show();
+            buttonStartStop.setText("Stop");
+            buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+            buttonPauseResume.setEnabled(true);
+            tvPreviewPlaceholder.setVisibility(View.GONE);
         }
     }
 
@@ -100,23 +160,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
-//    private String getFrontCameraId(CameraManager manager) throws CameraAccessException {
-//        for (String cameraId : manager.getCameraIdList()) {
-//            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
-//                return cameraId;
-//            }
-//        }
-//        return getBackCameraId(manager); // Fallback to back camera if front is not available
-//    }
 
-//    private String getBackCameraId(CameraManager manager) throws CameraAccessException {
-//        for (String cameraId : manager.getCameraIdList()) {
-//            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
-//                return cameraId;
-//            }
-//        }
-//        return manager.getCameraIdList()[0]; // Fallback to first available camera
-//    }
 
     private void startRecordingVideo() {
         if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
@@ -184,6 +228,7 @@ public class HomeFragment extends Fragment {
     private void stopRecording() {
         if (isRecording) {
             isRecording = false;
+            isPaused = false;
             mediaRecorder.stop();
             mediaRecorder.reset();
             mediaRecorder.release();
@@ -196,9 +241,13 @@ public class HomeFragment extends Fragment {
                 cameraDevice.close();
                 cameraDevice = null;
             }
+            buttonStartStop.setText("Start");
+            buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+            buttonPauseResume.setEnabled(false);
+            buttonPauseResume.setText("Pause");
+            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
             Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(getContext(), "No recording in progress", Toast.LENGTH_SHORT).show();
         }
     }
 
