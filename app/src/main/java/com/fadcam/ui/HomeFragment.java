@@ -60,10 +60,20 @@ public class HomeFragment extends Fragment {
         double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
         double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
 
+        // Estimate recording time (assuming 10 Mbps bitrate)
+        long bitrate = 10 * 1024 * 1024; // 10 Mbps in bits
+        long recordingSeconds = (bytesAvailable * 8) / bitrate;
+        long recordingHours = recordingSeconds / 3600;
+        long recordingMinutes = (recordingSeconds % 3600) / 60;
+
         String storageInfo = String.format(Locale.getDefault(),
-                "Available: %.2f GB\nTotal: %.2f GB", gbAvailable, gbTotal);
+                "Available: %.2f GB / %.2f GB\n" +
+                        "Estimated recording time: %d h %d min",
+                gbAvailable, gbTotal, recordingHours, recordingMinutes);
         tvStorageInfo.setText(storageInfo);
     }
+
+
     private void pauseRecording() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.pause();
@@ -249,7 +259,14 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setEnabled(false);
             buttonPauseResume.setText("Pause");
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+
+            // Clear the TextureView and show the placeholder
+            textureView.setVisibility(View.INVISIBLE);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+
+            // Update storage info after recording
+            updateStorageInfo();
+
             Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
         }
     }
