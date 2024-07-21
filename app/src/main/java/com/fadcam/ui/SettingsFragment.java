@@ -27,6 +27,12 @@ public class SettingsFragment extends Fragment {
     private static final String CAMERA_FRONT = "front";
     private static final String CAMERA_BACK = "back";
 
+    private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
+        button.setIconTintResource(isSelected ? R.color.colorPrimary : android.R.color.transparent);
+        button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke);
+        button.setTextColor(getResources().getColor(isSelected ? R.color.colorPrimary : R.color.material_on_surface_emphasis_medium));
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
@@ -39,18 +45,27 @@ public class SettingsFragment extends Fragment {
         readmeButton.setOnClickListener(v -> showReadmeDialog());
 
         MaterialButtonToggleGroup cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
+        MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
+        MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+
         String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
 
         if (currentCameraSelection.equals(CAMERA_FRONT)) {
             cameraSelectionToggle.check(R.id.button_front_camera);
+            updateButtonAppearance(frontCameraButton, true);
+            updateButtonAppearance(backCameraButton, false);
         } else {
             cameraSelectionToggle.check(R.id.button_back_camera);
+            updateButtonAppearance(backCameraButton, true);
+            updateButtonAppearance(frontCameraButton, false);
         }
 
         cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
                 String selectedCamera = (checkedId == R.id.button_front_camera) ? CAMERA_FRONT : CAMERA_BACK;
                 sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, selectedCamera).apply();
+                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
+                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
             }
         });
 

@@ -100,23 +100,23 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private String getFrontCameraId(CameraManager manager) throws CameraAccessException {
-        for (String cameraId : manager.getCameraIdList()) {
-            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
-                return cameraId;
-            }
-        }
-        return getBackCameraId(manager); // Fallback to back camera if front is not available
-    }
+//    private String getFrontCameraId(CameraManager manager) throws CameraAccessException {
+//        for (String cameraId : manager.getCameraIdList()) {
+//            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
+//                return cameraId;
+//            }
+//        }
+//        return getBackCameraId(manager); // Fallback to back camera if front is not available
+//    }
 
-    private String getBackCameraId(CameraManager manager) throws CameraAccessException {
-        for (String cameraId : manager.getCameraIdList()) {
-            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
-                return cameraId;
-            }
-        }
-        return manager.getCameraIdList()[0]; // Fallback to first available camera
-    }
+//    private String getBackCameraId(CameraManager manager) throws CameraAccessException {
+//        for (String cameraId : manager.getCameraIdList()) {
+//            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
+//                return cameraId;
+//            }
+//        }
+//        return manager.getCameraIdList()[0]; // Fallback to first available camera
+//    }
 
     private void startRecordingVideo() {
         if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
