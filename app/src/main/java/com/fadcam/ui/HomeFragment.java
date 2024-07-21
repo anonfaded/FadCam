@@ -1,9 +1,11 @@
 package com.fadcam.ui;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
@@ -65,10 +67,16 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private String getCameraSelection() {
+        SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        return sharedPreferences.getString("camera_selection", "back");
+    }
+
     private void openCamera() {
         CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
-            String cameraId = manager.getCameraIdList()[0];
+            String[] cameraIdList = manager.getCameraIdList();
+            String cameraId = getCameraSelection().equals("front") ? cameraIdList[1] : cameraIdList[0];
             manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
@@ -90,6 +98,24 @@ public class HomeFragment extends Fragment {
         } catch (CameraAccessException | SecurityException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getFrontCameraId(CameraManager manager) throws CameraAccessException {
+        for (String cameraId : manager.getCameraIdList()) {
+            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
+                return cameraId;
+            }
+        }
+        return getBackCameraId(manager); // Fallback to back camera if front is not available
+    }
+
+    private String getBackCameraId(CameraManager manager) throws CameraAccessException {
+        for (String cameraId : manager.getCameraIdList()) {
+            if (manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
+                return cameraId;
+            }
+        }
+        return manager.getCameraIdList()[0]; // Fallback to first available camera
     }
 
     private void startRecordingVideo() {
@@ -139,7 +165,7 @@ public class HomeFragment extends Fragment {
         if (!videoDir.exists()) {
             videoDir.mkdirs();
         }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mma", Locale.getDefault()).format(new Date());
+        String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
         String videoFilePath = videoDir.getAbsolutePath() + "/FADCAM_" + timestamp + ".mp4";
 
         mediaRecorder = new MediaRecorder();

@@ -7,7 +7,7 @@
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"/>
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
@@ -18,8 +18,6 @@
             app:title="Settings"
             app:titleCentered="true"
             app:titleTextColor="@android:color/white" />
-
-    </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -38,6 +36,42 @@
                 android:layout_height="wrap_content"
                 android:text="README"
                 android:layout_marginBottom="16dp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Camera Selection"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/camera_selection_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/button_back_camera"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Back"
+                    style="?attr/materialButtonOutlinedStyle"/>
+
+                <Button
+                    android:id="@+id/button_front_camera"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Front"
+                    style="?attr/materialButtonOutlinedStyle"/>
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/coming_soon_text"
