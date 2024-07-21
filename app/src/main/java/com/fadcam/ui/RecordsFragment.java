@@ -8,11 +8,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fadcam.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.util.ArrayList;
@@ -35,6 +38,9 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         recyclerView = view.findViewById(R.id.recycler_view_records);
         fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
+
+        Toolbar toolbar = view.findViewById(R.id.topAppBar);
+        ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
 
         setupRecyclerView();
         setupFabListeners();
@@ -122,11 +128,12 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     private void confirmDeleteSelected() {
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Eradicate Video(s)? \uD83D\uDCA3")
                 .setMessage("Are you absolutely, positively sure you want to nuke these video(s) out of existence? \uD83D\uDE80\uD83D\uDCA5")
-                .setPositiveButton("Yes, Nuke 'Em! \uD83C\uDF0B", (dialog, which) -> deleteSelectedVideos())
                 .setNegativeButton("No, Keep 'Em! \uD83D\uDE05", null)
+
+                .setPositiveButton("Yes, Nuke 'Em! \uD83C\uDF0B", (dialog, which) -> deleteSelectedVideos())
                 .show();
     }
 
@@ -155,7 +162,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     private void confirmDeleteAll() {
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Delete All Videos")
                 .setMessage("Are you sure you want to delete all videos?")
                 .setPositiveButton("Delete", (dialog, which) -> deleteAllVideos())

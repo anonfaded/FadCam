@@ -11,6 +11,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fadcam.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -126,7 +128,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     private void confirmDelete(Context context, File video) {
-        new AlertDialog.Builder(context)
+        new MaterialAlertDialogBuilder(context)
                 .setTitle("Delete Forever? \uD83D\uDDD1\uFE0F")
                 .setMessage("Are you sure you want to sweep this video away? \uD83E\uDDFC")
                 .setPositiveButton("Sweep It! \uD83E\uDDF9", (dialog, which) -> {
