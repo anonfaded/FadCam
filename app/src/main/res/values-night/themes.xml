@@ -4,6 +4,8 @@
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
         <item name="android:fontFamily">@font/ubuntu_regular</item>
+<!--        the color for statusbar at top-->
+        <item name="android:statusBarColor">@color/gray</item>
 
     </style>
 </resources>

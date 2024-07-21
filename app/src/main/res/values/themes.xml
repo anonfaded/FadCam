@@ -4,7 +4,10 @@
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/gray</item>
     </style>
+
 
     <style name="Theme.FadCam" parent="Base.Theme.FadCam" />
 </resources>

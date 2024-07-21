@@ -1,38 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="wrap_content">
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/settings_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Settings"
-            android:textAppearance="?attr/textAppearanceHeadline5"
-            android:layout_marginBottom="16dp"/>
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/gray"
+            android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+            app:title="Settings"
+            app:titleCentered="true"
+            app:titleTextColor="@android:color/white" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/readme_button"
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="README"
-            android:layout_marginBottom="16dp"/>
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/coming_soon_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="More settings coming soon..."
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/readme_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="README"
+                android:layout_marginBottom="16dp"/>
 
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/coming_soon_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="More settings coming soon..."
+                android:textAppearance="?attr/textAppearanceBody2"
+                android:textColor="?android:attr/textColorSecondary"/>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.fragment.app.Fragment;
+
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textview.MaterialTextView;
@@ -19,11 +21,12 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        MaterialTextView titleTextView = view.findViewById(R.id.settings_title);
-        titleTextView.setText("Settings");
+        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
 
         MaterialButton readmeButton = view.findViewById(R.id.readme_button);
         readmeButton.setOnClickListener(v -> showReadmeDialog());
+
+
 
         MaterialTextView comingSoonTextView = view.findViewById(R.id.coming_soon_text);
         comingSoonTextView.setText("More settings coming soon...");
