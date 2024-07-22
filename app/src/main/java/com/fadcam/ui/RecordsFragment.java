@@ -1,5 +1,6 @@
 package com.fadcam.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -106,11 +107,9 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
 
     @Override
     public void onVideoClick(File video) {
-        VideoPlayerFragment playerFragment = VideoPlayerFragment.newInstance(video.getAbsolutePath());
-        getParentFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, playerFragment)
-                .addToBackStack(null)
-                .commit();
+        Intent intent = new Intent(getActivity(), VideoPlayerActivity.class);
+        intent.putExtra("VIDEO_PATH", video.getAbsolutePath());
+        startActivity(intent);
     }
 
     @Override

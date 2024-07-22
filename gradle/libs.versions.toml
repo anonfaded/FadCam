@@ -1,6 +1,7 @@
 [versions]
-agp = "8.5.0"
+agp = "8.5.1"
 coreKtx = "1.13.1"
+exoplayerCore = "2.19.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -9,9 +10,13 @@ material = "1.12.0"
 activity = "1.9.0"
 constraintlayout = "2.1.4"
 name = "version"
+okhttp = "4.9.3"
+viewpager2 = "1.1.0"
 
 [libraries]
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+exoplayer-core = { module = "com.google.android.exoplayer:exoplayer-core", version.ref = "exoplayerCore" }
+exoplayer-ui = { module = "com.google.android.exoplayer:exoplayer-ui", version.ref = "exoplayerCore" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -20,6 +25,8 @@ material = { group = "com.google.android.material", name = "material", version.r
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 name = { module = "group:name", version.ref = "name" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
