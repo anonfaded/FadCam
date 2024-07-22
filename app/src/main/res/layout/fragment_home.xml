@@ -31,10 +31,12 @@
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardStorage"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         app:layout_constraintTop_toBottomOf="@id/tvAppTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/cardTips"
         app:cardBackgroundColor="#1A1A1A"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
@@ -65,6 +67,44 @@
     </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardTips"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tvAppTitle"
+        app:layout_constraintStart_toEndOf="@id/cardStorage"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:cardBackgroundColor="#1A1A1A"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:strokeColor="#4CAF50"
+        app:strokeWidth="2dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_lightbulb"
+                android:layout_gravity="center"/>
+
+            <TextView
+                android:id="@+id/tvTip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="Recording Tip"
+                android:textAlignment="center"/>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
         android:id="@+id/cardPreview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -77,8 +117,7 @@
         app:cardCornerRadius="8dp"
         app:cardElevation="0dp"
         app:strokeColor="#4CAF50"
-        app:strokeWidth="15dp"
-        >
+        app:strokeWidth="15dp">
 
         <FrameLayout
             android:layout_width="match_parent"

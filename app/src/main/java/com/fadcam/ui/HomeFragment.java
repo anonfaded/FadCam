@@ -51,6 +51,16 @@ public class HomeFragment extends Fragment {
     private Button buttonPauseResume;
     private boolean isPaused = false;
 
+    private TextView tvTip;
+    private String[] tips = {
+            "Ensure good lighting for better video quality",
+            "Use a tripod or stable surface for steady footage",
+            "Clean your camera lens before recording",
+            "Frame your shot before hitting record",
+            "Consider using external microphone for better audio"
+    };
+    private int currentTipIndex = 0;
+
 
     private void updateStorageInfo() {
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
@@ -102,8 +112,10 @@ public class HomeFragment extends Fragment {
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
+        tvTip = view.findViewById(R.id.tvTip);
 
         updateStorageInfo();
+        updateTip();
 
         buttonStartStop.setOnClickListener(v -> {
             if (!isRecording) {
@@ -125,6 +137,13 @@ public class HomeFragment extends Fragment {
 
         return view;
     }
+
+    private void updateTip() {
+        tvTip.setText(tips[currentTipIndex]);
+        currentTipIndex = (currentTipIndex + 1) % tips.length;
+        tvTip.postDelayed(this::updateTip, 10000); // Change tip every 10 seconds
+    }
+
 
     private void startRecording() {
         if (!isRecording) {
