@@ -5,24 +5,35 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
-    <ImageView
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/gray"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        app:titleCentered="true"
+        app:titleTextColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent">
+        <ImageView
         android:id="@+id/ivAppTitle"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="190dp"
+        android:layout_height="40dp"
         android:src="@drawable/menu_icon_unknown"
-    android:layout_marginTop="16dp"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"/>
+        android:layout_marginTop="0dp"
+        android:layout_gravity="center"
+        app:layout_constraintTop_toTopOf="@id/topAppBar"
+        app:layout_constraintBottom_toBottomOf="@id/topAppBar"
+        app:layout_constraintStart_toStartOf="@id/topAppBar"
+        app:layout_constraintEnd_toEndOf="@id/topAppBar"/>
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <LinearLayout
         android:id="@+id/layoutCards"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_margin="16dp"
-        app:layout_constraintTop_toBottomOf="@id/ivAppTitle"
+        android:layout_marginHorizontal="16dp"
+        app:layout_constraintTop_toBottomOf="@id/topAppBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -32,6 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
+            android:layout_marginTop="10dp"
             app:cardBackgroundColor="#032B4A"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
@@ -45,8 +57,8 @@
                 android:padding="16dp">
 
                 <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
                     android:src="@drawable/ic_storage"
                     android:layout_gravity="center"/>
 
@@ -67,6 +79,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
+            android:layout_marginTop="10dp"
             app:cardBackgroundColor="#4A3801"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
@@ -80,8 +93,8 @@
                 android:padding="16dp">
 
                 <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
                     android:src="@drawable/ic_lightbulb"
                     android:layout_gravity="center"/>
 
@@ -90,7 +103,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="18dp"
                     android:text="Recording Tip"
                     android:textAlignment="center"
                     android:ellipsize="end"/>

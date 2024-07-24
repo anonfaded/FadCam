@@ -75,8 +75,8 @@ public class HomeFragment extends Fragment {
         long recordingMinutes = (recordingSeconds % 3600) / 60;
 
         String storageInfo = String.format(Locale.getDefault(),
-                "Available: %.2f GB / %.2f GB\n" +
-                        "Estimated recording time: %d h %d min",
+                "Available: \n  %.2f GB / %.2f GB\n\n" +
+                        "Record time (est.): \n  %d h %d min",
                 gbAvailable, gbTotal, recordingHours, recordingMinutes);
         tvStorageInfo.setText(storageInfo);
     }
@@ -137,7 +137,7 @@ public class HomeFragment extends Fragment {
     private void updateTip() {
         tvTip.setText(tips[currentTipIndex]);
         currentTipIndex = (currentTipIndex + 1) % tips.length;
-        tvTip.postDelayed(this::updateTip, 10000); // Change tip every 10 seconds
+        tvTip.postDelayed(this::updateTip, 6000); // Change tip every 6 seconds
     }
 
     private void startRecording() {
