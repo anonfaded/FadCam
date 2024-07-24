@@ -93,7 +93,6 @@
                     android:layout_marginTop="8dp"
                     android:text="Recording Tip"
                     android:textAlignment="center"
-                    android:maxLines="1"
                     android:ellipsize="end"/>
 
             </LinearLayout>
