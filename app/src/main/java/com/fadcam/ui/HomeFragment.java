@@ -44,7 +44,6 @@ public class HomeFragment extends Fragment {
     private boolean isRecording = false;
     private TextureView textureView;
 
-
     private TextView tvStorageInfo;
     private TextView tvPreviewPlaceholder;
     private Button buttonStartStop;
@@ -60,7 +59,6 @@ public class HomeFragment extends Fragment {
             "Consider using external microphone for better audio"
     };
     private int currentTipIndex = 0;
-
 
     private void updateStorageInfo() {
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
@@ -83,7 +81,6 @@ public class HomeFragment extends Fragment {
         tvStorageInfo.setText(storageInfo);
     }
 
-
     private void pauseRecording() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.pause();
@@ -92,6 +89,7 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
         }
     }
+
     private void resumeRecording() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.resume();
@@ -100,8 +98,6 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
         }
     }
-
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -143,7 +139,6 @@ public class HomeFragment extends Fragment {
         currentTipIndex = (currentTipIndex + 1) % tips.length;
         tvTip.postDelayed(this::updateTip, 10000); // Change tip every 10 seconds
     }
-
 
     private void startRecording() {
         if (!isRecording) {
@@ -191,8 +186,6 @@ public class HomeFragment extends Fragment {
             e.printStackTrace();
         }
     }
-
-
 
     private void startRecordingVideo() {
         if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
@@ -259,40 +252,25 @@ public class HomeFragment extends Fragment {
 
     private void stopRecording() {
         if (isRecording) {
+            try {
+                cameraCaptureSession.stopRepeating();
+                cameraCaptureSession.abortCaptures();
+                mediaRecorder.stop();
+                mediaRecorder.reset();
+                Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
+            } catch (CameraAccessException | IllegalStateException e) {
+                e.printStackTrace();
+            }
+            releaseCamera();
             isRecording = false;
-            isPaused = false;
-            mediaRecorder.stop();
-            mediaRecorder.reset();
-            mediaRecorder.release();
-            mediaRecorder = null;
-            if (cameraCaptureSession != null) {
-                cameraCaptureSession.close();
-                cameraCaptureSession = null;
-            }
-            if (cameraDevice != null) {
-                cameraDevice.close();
-                cameraDevice = null;
-            }
             buttonStartStop.setText("Start");
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
             buttonPauseResume.setEnabled(false);
-            buttonPauseResume.setText("Pause");
-            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
-
-            // Clear the TextureView and show the placeholder
-            textureView.setVisibility(View.INVISIBLE);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-
-            // Update storage info after recording
-            updateStorageInfo();
-
-            Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
         }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    private void releaseCamera() {
         if (cameraDevice != null) {
             cameraDevice.close();
             cameraDevice = null;
@@ -301,5 +279,13 @@ public class HomeFragment extends Fragment {
             mediaRecorder.release();
             mediaRecorder = null;
         }
+        cameraCaptureSession = null;
+        captureRequestBuilder = null;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        releaseCamera();
     }
 }
