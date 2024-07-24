@@ -151,6 +151,7 @@ public class HomeFragment extends Fragment {
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
             buttonPauseResume.setEnabled(true);
             tvPreviewPlaceholder.setVisibility(View.GONE);
+            textureView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -267,6 +268,9 @@ public class HomeFragment extends Fragment {
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
             buttonPauseResume.setEnabled(false);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+            // Clear the TextureView and show the placeholder
+            textureView.setVisibility(View.INVISIBLE);
+
         }
     }
 
