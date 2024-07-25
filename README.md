@@ -162,3 +162,5 @@ The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator
 <a target="_blank" href="https://icons8.com/icon/13057/stack">Storage</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
 
 <a target="_blank" href="https://icons8.com/icon/47773/idea">Idea</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
+<a target="_blank" href="https://icons8.com/icon/c2AXPLZ3iVEU/file-folder">File Folder</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
