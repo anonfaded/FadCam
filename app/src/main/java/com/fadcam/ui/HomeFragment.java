@@ -118,11 +118,13 @@ public class HomeFragment extends Fragment {
         tvStats = view.findViewById(R.id.tvStats); // Initialize tvStats
         updateStats(); // Call the new method to display stats
 
+
         buttonStartStop.setOnClickListener(v -> {
             if (!isRecording) {
                 startRecording();
             } else {
                 stopRecording();
+                updateStats(); // Call the new method to display stats
             }
         });
 
@@ -157,7 +159,7 @@ public class HomeFragment extends Fragment {
         }
 
         String statsText = String.format(Locale.getDefault(),
-                "Videos: %d%nTotal Size: %s",
+                "Videos: %d%nUsed Space: %n%s",
                 numVideos, Formatter.formatFileSize(getContext(), totalSize));
         tvStats.setText(statsText);
     }

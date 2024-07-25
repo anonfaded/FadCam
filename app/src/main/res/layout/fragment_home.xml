@@ -94,13 +94,13 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="89dp"
                     android:orientation="vertical"
                     android:padding="16dp">
 
                     <ImageView
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_lightbulb" />
 
@@ -109,7 +109,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="0dp"
                         android:ellipsize="end"
                         android:text="Recording Tip"
                         android:textAlignment="center" />
@@ -122,7 +122,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#4A3801"
+                app:cardBackgroundColor="#1C9A55"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 app:strokeColor="#4CAF50"
@@ -130,24 +130,24 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:layout_height="50dp"
+                    android:orientation="horizontal"
+                    android:padding="5dp">
 
                     <ImageView
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_discord" />
+                        android:src="@drawable/folder_icon" />
 
                     <TextView
                         android:id="@+id/tvStats"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:layout_marginTop="18dp"
-                        android:text="Stats"
-                        android:textAlignment="center" />
+                        android:layout_marginStart="5dp"
+                        android:layout_marginTop="0dp"
+                        android:text="Stats" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
