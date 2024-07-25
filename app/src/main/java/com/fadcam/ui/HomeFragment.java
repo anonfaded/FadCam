@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
+import android.text.format.Formatter;
+
 public class HomeFragment extends Fragment {
 
     private CameraDevice cameraDevice;
@@ -98,7 +100,7 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
         }
     }
-
+    private TextView tvStats;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
@@ -112,6 +114,9 @@ public class HomeFragment extends Fragment {
 
         updateStorageInfo();
         updateTip();
+
+        tvStats = view.findViewById(R.id.tvStats); // Initialize tvStats
+        updateStats(); // Call the new method to display stats
 
         buttonStartStop.setOnClickListener(v -> {
             if (!isRecording) {
@@ -134,6 +139,28 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
+    private void updateStats() {
+        File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
+        int numVideos = 0;
+        long totalSize = 0;
+
+        if (recordsDir.exists()) {
+            File[] files = recordsDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile() && file.getName().endsWith(".mp4")) {
+                        numVideos++;
+                        totalSize += file.length();
+                    }
+                }
+            }
+        }
+
+        String statsText = String.format(Locale.getDefault(),
+                "Videos: %d%nTotal Size: %s",
+                numVideos, Formatter.formatFileSize(getContext(), totalSize));
+        tvStats.setText(statsText);
+    }
     private void updateTip() {
         tvTip.setText(tips[currentTipIndex]);
         currentTipIndex = (currentTipIndex + 1) % tips.length;

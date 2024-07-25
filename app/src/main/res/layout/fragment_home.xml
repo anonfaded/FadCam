@@ -14,36 +14,37 @@
         app:titleCentered="true"
         app:titleTextColor="@android:color/white"
         app:layout_constraintTop_toTopOf="parent">
+
         <ImageView
-        android:id="@+id/ivAppTitle"
-        android:layout_width="190dp"
-        android:layout_height="40dp"
-        android:src="@drawable/menu_icon_unknown"
-        android:layout_marginTop="0dp"
-        android:layout_gravity="center"
-        app:layout_constraintTop_toTopOf="@id/topAppBar"
-        app:layout_constraintBottom_toBottomOf="@id/topAppBar"
-        app:layout_constraintStart_toStartOf="@id/topAppBar"
-        app:layout_constraintEnd_toEndOf="@id/topAppBar"/>
+            android:id="@+id/ivAppTitle"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="0dp"
+            android:src="@drawable/menu_icon_unknown"
+            app:layout_constraintBottom_toBottomOf="@id/topAppBar"
+            app:layout_constraintEnd_toEndOf="@id/topAppBar"
+            app:layout_constraintStart_toStartOf="@id/topAppBar"
+            app:layout_constraintTop_toTopOf="@id/topAppBar" />
     </com.google.android.material.appbar.MaterialToolbar>
 
     <LinearLayout
         android:id="@+id/layoutCards"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginHorizontal="16dp"
-        app:layout_constraintTop_toBottomOf="@id/topAppBar"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/topAppBar">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardStorage"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
             android:layout_marginTop="10dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
             app:cardBackgroundColor="#032B4A"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
@@ -59,8 +60,8 @@
                 <ImageView
                     android:layout_width="38dp"
                     android:layout_height="38dp"
-                    android:src="@drawable/ic_storage"
-                    android:layout_gravity="center"/>
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_storage" />
 
                 <TextView
                     android:id="@+id/tvStorageInfo"
@@ -68,48 +69,89 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="8dp"
-                    android:text="Storage: 0 GB / 0 GB"/>
+                    android:text="Storage: 0 GB / 0 GB" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cardTips"
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="10dp"
-            app:cardBackgroundColor="#4A3801"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
-            app:strokeColor="#4CAF50"
-            app:strokeWidth="2dp">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <LinearLayout
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardTips"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="10dp"
+                app:cardBackgroundColor="#B39C02"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:strokeColor="#4CAF50"
+                app:strokeWidth="2dp">
 
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:src="@drawable/ic_lightbulb"
-                    android:layout_gravity="center"/>
-
-                <TextView
-                    android:id="@+id/tvTip"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="18dp"
-                    android:text="Recording Tip"
-                    android:textAlignment="center"
-                    android:ellipsize="end"/>
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    <ImageView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_lightbulb" />
+
+                    <TextView
+                        android:id="@+id/tvTip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="18dp"
+                        android:ellipsize="end"
+                        android:text="Recording Tip"
+                        android:textAlignment="center" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="#4A3801"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:strokeColor="#4CAF50"
+                app:strokeWidth="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_discord" />
+
+                    <TextView
+                        android:id="@+id/tvStats"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="18dp"
+                        android:text="Stats"
+                        android:textAlignment="center" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
     </LinearLayout>
 
     <androidx.cardview.widget.CardView
@@ -117,13 +159,13 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_margin="16dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutCards"
-        app:layout_constraintBottom_toTopOf="@id/layoutControls"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:cardBackgroundColor="#302745"
         app:cardCornerRadius="8dp"
         app:cardElevation="0dp"
+        app:layout_constraintBottom_toTopOf="@id/layoutControls"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutCards"
         app:strokeColor="#4CAF50"
         app:strokeWidth="15dp">
 
@@ -134,16 +176,16 @@
             <TextureView
                 android:id="@+id/textureView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent" />
 
             <TextView
                 android:id="@+id/tvPreviewPlaceholder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center"
                 android:text="Preview Area"
-                android:textSize="24sp"
                 android:textColor="@color/material_on_surface_stroke"
-                android:layout_gravity="center"/>
+                android:textSize="24sp" />
 
         </FrameLayout>
     </androidx.cardview.widget.CardView>
@@ -152,12 +194,12 @@
         android:id="@+id/layoutControls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
         android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <Button
             android:id="@+id/buttonStartStop"
