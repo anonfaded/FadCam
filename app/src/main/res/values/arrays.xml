@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="video_quality_options">
+        <item>@item/quality_fhd</item>
+        <item>@item/quality_hd</item>
+        <item>@item/quality_sd</item>
+    </string-array>
+</resources>

@@ -12,8 +12,8 @@
     <string name="privacy_information">Privacy Information</string>
     <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
     <string-array name="video_quality_array">
-        <item>SD</item>
-        <item>HD</item>
-        <item>FHD</item>
+        <item name="quality_fhd">FHD (1920x1080)</item>
+        <item name="quality_hd">HD (1280x720)</item>
+        <item name="quality_sd">SD (640x480)</item>
     </string-array>
 </resources>
