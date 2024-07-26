@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
@@ -13,6 +12,7 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.StatFs;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
@@ -36,8 +36,16 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
-
+import android.os.SystemClock;
 public class HomeFragment extends Fragment {
+
+    // Add these member variables
+
+    private long recordingStartTime;
+    private long videoBitrate;
+
+    private Handler handler = new Handler();
+    private Runnable updateStorageInfoRunnable;
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSession;
@@ -114,6 +122,7 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    // Update the storage info with dynamic calculations
     private void updateStorageInfo() {
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
         long bytesAvailable = stat.getAvailableBytes();
@@ -121,18 +130,60 @@ public class HomeFragment extends Fragment {
 
         double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
         double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
-
-        long bitrate = 10 * 1024 * 1024;
-        long recordingSeconds = (bytesAvailable * 8) / bitrate;
-        long recordingHours = recordingSeconds / 3600;
-        long recordingMinutes = (recordingSeconds % 3600) / 60;
+        // Calculate elapsed time
+        long elapsedTime = SystemClock.elapsedRealtime() - recordingStartTime;
+        // Ensure bitrate is not zero
+        if (videoBitrate <= 0) {
+            videoBitrate = 5000000; // Default to HD bitrate if not set
+        }
+        // Estimate recording time based on elapsed time and bitrate
+        long estimatedRecordingTime = (bytesAvailable * 8) / videoBitrate;
+        long remainingTime = estimatedRecordingTime - (elapsedTime / 1000);
+        // Ensure remaining time is not negative
+        remainingTime = Math.max(remainingTime, 0);
 
         String storageInfo = String.format(Locale.getDefault(),
-                "Available: \n  %.2f GB / %.2f GB\n\n" +
-                        "Record time (est.): \n  %d h %d min",
-                gbAvailable, gbTotal, recordingHours, recordingMinutes);
+                "Available: %.2f GB / %.2f GB\n\n" +
+                        "Record time (est.):\n" +
+                        "  FHD: %s\n" +
+                        "  HD: %s\n" +
+                        "  SD: %s\n\n" +
+                        "Remaining time: %d min %d sec",
+                gbAvailable, gbTotal,
+                getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
+                getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
+                getRecordingTimeEstimate(bytesAvailable, 1024 * 1024),
+                remainingTime / 60, remainingTime % 60
+        );
         tvStorageInfo.setText(storageInfo);
     }
+    private String getRecordingTimeEstimate(long availableBytes, long bitrate) {
+        long recordingSeconds = (availableBytes * 8) / bitrate;
+        long recordingHours = recordingSeconds / 3600;
+        long recordingMinutes = (recordingSeconds % 3600) / 60;
+        return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
+    }
+
+    private void startUpdatingStorageInfo() {
+        updateStorageInfoRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isRecording) {
+                    updateStorageInfo();
+                    handler.postDelayed(this, 3000); // Update every 3 seconds
+                }
+            }
+        };
+        handler.post(updateStorageInfoRunnable);
+    }
+
+    private void stopUpdatingStorageInfo() {
+        if (updateStorageInfoRunnable != null) {
+            handler.removeCallbacks(updateStorageInfoRunnable);
+            updateStorageInfoRunnable = null;
+        }
+    }
+
 
     private void updateTip() {
         tvTip.setText(tips[currentTipIndex]);
@@ -188,11 +239,36 @@ public class HomeFragment extends Fragment {
             } else {
                 startRecordingVideo();
             }
+            // Record the start time and bitrate
+            recordingStartTime = SystemClock.elapsedRealtime();
+            setVideoBitrate();
+
             buttonStartStop.setText("Stop");
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
             buttonPauseResume.setEnabled(true);
             tvPreviewPlaceholder.setVisibility(View.GONE);
             textureView.setVisibility(View.VISIBLE);
+
+            startUpdatingStorageInfo(); // Start updating storage info
+        }
+    }
+
+    // Helper method to set the video bitrate based on quality preference
+    private void setVideoBitrate() {
+        String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+        switch (selectedQuality) {
+            case QUALITY_SD:
+                videoBitrate = 1000000; // 1 Mbps
+                break;
+            case QUALITY_HD:
+                videoBitrate = 5000000; // 5 Mbps
+                break;
+            case QUALITY_FHD:
+                videoBitrate = 10000000; // 10 Mbps
+                break;
+            default:
+                videoBitrate = 5000000; // Default to HD
+                break;
         }
     }
 
@@ -335,6 +411,8 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setEnabled(false);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
             textureView.setVisibility(View.INVISIBLE);
+            stopUpdatingStorageInfo(); // Stop updating storage info
+            updateStorageInfo(); // Update storage info one last time
         }
     }
 
