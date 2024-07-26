@@ -33,9 +33,10 @@ public class SettingsFragment extends Fragment {
     private static final String QUALITY_FHD = "FHD";
 
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
-        button.setIconTintResource(isSelected ? R.color.colorPrimary : android.R.color.transparent);
-        button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke);
-        button.setTextColor(getResources().getColor(isSelected ? R.color.colorPrimary : R.color.material_on_surface_emphasis_medium));
+        button.setIconTintResource(isSelected ? R.color.black : android.R.color.transparent); // color for check icon
+        button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke); // the last color is for the button that's not selected
+        button.setTextColor(getResources().getColor(isSelected ? R.color.black : R.color.material_on_surface_emphasis_medium));
+        button.setBackgroundColor(getResources().getColor(isSelected ? R.color.colorPrimary : android.R.color.transparent));
     }
 
     @Override
