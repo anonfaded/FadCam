@@ -80,6 +80,11 @@ public class HomeFragment extends Fragment {
 
     private TextView tvStats;
 
+    private void resetTimers() {
+        recordingStartTime = SystemClock.elapsedRealtime();
+        updateStorageInfo();
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -102,6 +107,7 @@ public class HomeFragment extends Fragment {
 
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
+        resetTimers();
         updateStorageInfo();
         updateTip();
         updateStats();
@@ -182,7 +188,7 @@ public class HomeFragment extends Fragment {
             public void run() {
                 if (isRecording) {
                     updateStorageInfo();
-                    handler.postDelayed(this, 1000); // Update every second
+                    handler.postDelayed(this, 3000); // Update every 3 seconds
                 }
             }
         };
@@ -250,6 +256,7 @@ public class HomeFragment extends Fragment {
     private void startRecording() {
         Log.d(TAG, "startRecording: Initiating video recording");
         if (!isRecording) {
+            resetTimers();
             if (cameraDevice == null) {
                 openCamera();
             } else {
