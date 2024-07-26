@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.StatFs;
 import android.text.format.Formatter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -37,15 +38,16 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import android.os.SystemClock;
+
 public class HomeFragment extends Fragment {
 
-    // Add these member variables
+    private static final String TAG = "HomeFragment";
 
     private long recordingStartTime;
     private long videoBitrate;
 
     private Handler handler = new Handler();
-    private Runnable updateStorageInfoRunnable;
+    private Runnable updateInfoRunnable;
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSession;
@@ -81,12 +83,14 @@ public class HomeFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView: Inflating fragment_home layout");
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated: Setting up UI components");
 
         textureView = view.findViewById(R.id.textureView);
         tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
@@ -122,25 +126,23 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // Update the storage info with dynamic calculations
     private void updateStorageInfo() {
+        Log.d(TAG, "updateStorageInfo: Updating storage information");
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
         long bytesAvailable = stat.getAvailableBytes();
         long bytesTotal = stat.getTotalBytes();
 
         double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
         double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
-        // Calculate elapsed time
+
         long elapsedTime = SystemClock.elapsedRealtime() - recordingStartTime;
-        // Ensure bitrate is not zero
-        if (videoBitrate <= 0) {
-            videoBitrate = 5000000; // Default to HD bitrate if not set
-        }
-        // Estimate recording time based on elapsed time and bitrate
-        long estimatedRecordingTime = (bytesAvailable * 8) / videoBitrate;
-        long remainingTime = estimatedRecordingTime - (elapsedTime / 1000);
-        // Ensure remaining time is not negative
-        remainingTime = Math.max(remainingTime, 0);
+        long estimatedBytesUsed = (elapsedTime * videoBitrate) / 8000; // Convert ms and bits to bytes
+
+        // Update available space based on estimated bytes used
+        bytesAvailable -= estimatedBytesUsed;
+        gbAvailable = Math.max(0, bytesAvailable / (1024.0 * 1024.0 * 1024.0));
+
+        long remainingTime = (videoBitrate > 0) ? (bytesAvailable * 8) / videoBitrate : 0;
 
         String storageInfo = String.format(Locale.getDefault(),
                 "Available: %.2f GB / %.2f GB\n\n" +
@@ -148,15 +150,24 @@ public class HomeFragment extends Fragment {
                         "  FHD: %s\n" +
                         "  HD: %s\n" +
                         "  SD: %s\n\n" +
-                        "Remaining time: %d min %d sec",
+                        "Elapsed time: %02d:%02d\n" +
+                        "Remaining time: %02d:%02d",
                 gbAvailable, gbTotal,
                 getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 1024 * 1024),
+                elapsedTime / 60000, (elapsedTime / 1000) % 60,
                 remainingTime / 60, remainingTime % 60
         );
-        tvStorageInfo.setText(storageInfo);
+
+        // Update UI on the main thread
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                tvStorageInfo.setText(storageInfo);
+            });
+        }
     }
+
     private String getRecordingTimeEstimate(long availableBytes, long bitrate) {
         long recordingSeconds = (availableBytes * 8) / bitrate;
         long recordingHours = recordingSeconds / 3600;
@@ -164,26 +175,27 @@ public class HomeFragment extends Fragment {
         return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
     }
 
-    private void startUpdatingStorageInfo() {
-        updateStorageInfoRunnable = new Runnable() {
+    private void startUpdatingInfo() {
+        Log.d(TAG, "startUpdatingInfo: Beginning real-time updates");
+        updateInfoRunnable = new Runnable() {
             @Override
             public void run() {
                 if (isRecording) {
                     updateStorageInfo();
-                    handler.postDelayed(this, 3000); // Update every 3 seconds
+                    handler.postDelayed(this, 1000); // Update every second
                 }
             }
         };
-        handler.post(updateStorageInfoRunnable);
+        handler.post(updateInfoRunnable);
     }
 
-    private void stopUpdatingStorageInfo() {
-        if (updateStorageInfoRunnable != null) {
-            handler.removeCallbacks(updateStorageInfoRunnable);
-            updateStorageInfoRunnable = null;
+    private void stopUpdatingInfo() {
+        Log.d(TAG, "stopUpdatingInfo: Stopping real-time updates");
+        if (updateInfoRunnable != null) {
+            handler.removeCallbacks(updateInfoRunnable);
+            updateInfoRunnable = null;
         }
     }
-
 
     private void updateTip() {
         tvTip.setText(tips[currentTipIndex]);
@@ -192,6 +204,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void updateStats() {
+        Log.d(TAG, "updateStats: Updating video statistics");
         File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
         int numVideos = 0;
         long totalSize = 0;
@@ -209,12 +222,13 @@ public class HomeFragment extends Fragment {
         }
 
         String statsText = String.format(Locale.getDefault(),
-                "Videos: %d%nUsed Space: %n%s",
+                "Videos: %d%nUsed Space: %s",
                 numVideos, Formatter.formatFileSize(getContext(), totalSize));
         tvStats.setText(statsText);
     }
 
     private void pauseRecording() {
+        Log.d(TAG, "pauseRecording: Pausing video recording");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.pause();
             isPaused = true;
@@ -224,6 +238,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void resumeRecording() {
+        Log.d(TAG, "resumeRecording: Resuming video recording");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.resume();
             isPaused = false;
@@ -233,13 +248,13 @@ public class HomeFragment extends Fragment {
     }
 
     private void startRecording() {
+        Log.d(TAG, "startRecording: Initiating video recording");
         if (!isRecording) {
             if (cameraDevice == null) {
                 openCamera();
             } else {
                 startRecordingVideo();
             }
-            // Record the start time and bitrate
             recordingStartTime = SystemClock.elapsedRealtime();
             setVideoBitrate();
 
@@ -249,11 +264,11 @@ public class HomeFragment extends Fragment {
             tvPreviewPlaceholder.setVisibility(View.GONE);
             textureView.setVisibility(View.VISIBLE);
 
-            startUpdatingStorageInfo(); // Start updating storage info
+            startUpdatingInfo();
+            isRecording = true;
         }
     }
 
-    // Helper method to set the video bitrate based on quality preference
     private void setVideoBitrate() {
         String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
         switch (selectedQuality) {
@@ -270,6 +285,7 @@ public class HomeFragment extends Fragment {
                 videoBitrate = 5000000; // Default to HD
                 break;
         }
+        Log.d(TAG, "setVideoBitrate: Set to " + videoBitrate + " bps");
     }
 
     private String getCameraSelection() {
@@ -277,6 +293,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void openCamera() {
+        Log.d(TAG, "openCamera: Opening camera");
         CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
@@ -284,28 +301,34 @@ public class HomeFragment extends Fragment {
             manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
+                    Log.d(TAG, "onOpened: Camera opened successfully");
                     cameraDevice = camera;
                     startRecordingVideo();
                 }
 
                 @Override
                 public void onDisconnected(@NonNull CameraDevice camera) {
+                    Log.w(TAG, "onDisconnected: Camera disconnected");
                     cameraDevice.close();
                 }
 
                 @Override
                 public void onError(@NonNull CameraDevice camera, int error) {
+                    Log.e(TAG, "onError: Camera error: " + error);
                     cameraDevice.close();
                     cameraDevice = null;
                 }
             }, null);
         } catch (CameraAccessException | SecurityException e) {
+            Log.e(TAG, "openCamera: Error opening camera", e);
             e.printStackTrace();
         }
     }
 
     private void startRecordingVideo() {
+        Log.d(TAG, "startRecordingVideo: Setting up video recording");
         if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            Log.e(TAG, "startRecordingVideo: Unable to start recording due to missing prerequisites");
             return;
         }
         try {
@@ -323,10 +346,12 @@ public class HomeFragment extends Fragment {
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                            Log.d(TAG, "onConfigured: Camera capture session configured");
                             HomeFragment.this.cameraCaptureSession = cameraCaptureSession;
                             try {
                                 cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
                             } catch (CameraAccessException e) {
+                                Log.e(TAG, "onConfigured: Error setting repeating request", e);
                                 e.printStackTrace();
                             }
                             mediaRecorder.start();
@@ -338,10 +363,12 @@ public class HomeFragment extends Fragment {
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            Log.e(TAG, "onConfigureFailed: Failed to configure camera capture session");
                             Toast.makeText(getContext(), "Failed to start recording", Toast.LENGTH_SHORT).show();
                         }
                     }, null);
         } catch (CameraAccessException e) {
+            Log.e(TAG, "startRecordingVideo: Camera access exception", e);
             e.printStackTrace();
         }
     }
@@ -389,11 +416,13 @@ public class HomeFragment extends Fragment {
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.prepare();
         } catch (IOException e) {
+            Log.e(TAG, "setupMediaRecorder: Error setting up media recorder", e);
             e.printStackTrace();
         }
     }
 
     private void stopRecording() {
+        Log.d(TAG, "stopRecording: Stopping video recording");
         if (isRecording) {
             try {
                 cameraCaptureSession.stopRepeating();
@@ -402,6 +431,7 @@ public class HomeFragment extends Fragment {
                 mediaRecorder.reset();
                 Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
             } catch (CameraAccessException | IllegalStateException e) {
+                Log.e(TAG, "stopRecording: Error stopping recording", e);
                 e.printStackTrace();
             }
             releaseCamera();
@@ -411,12 +441,13 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setEnabled(false);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
             textureView.setVisibility(View.INVISIBLE);
-            stopUpdatingStorageInfo(); // Stop updating storage info
-            updateStorageInfo(); // Update storage info one last time
+            stopUpdatingInfo();
+            updateStorageInfo(); // Final update with actual values
         }
     }
 
     private void releaseCamera() {
+        Log.d(TAG, "releaseCamera: Releasing camera resources");
         if (cameraDevice != null) {
             cameraDevice.close();
             cameraDevice = null;
@@ -432,6 +463,8 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        Log.d(TAG, "onDestroyView: Cleaning up resources");
+        stopUpdatingInfo();
         releaseCamera();
     }
 }
