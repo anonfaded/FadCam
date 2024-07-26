@@ -9,15 +9,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topAppBar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/gray"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:title="Settings"
-        app:titleCentered="true"
-        app:titleTextColor="@android:color/white" />
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/gray"
+            android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+            app:title="Settings"
+            app:titleCentered="true"
+            app:titleTextColor="@android:color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -108,6 +108,19 @@
                 android:background="?android:attr/listDivider"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Video Quality"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:layout_marginBottom="4dp"/>
+
+            <Spinner
+                android:id="@+id/quality_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"/>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/coming_soon_text"

@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -24,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
@@ -35,8 +37,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
-import android.text.format.Formatter;
-
 public class HomeFragment extends Fragment {
 
     private CameraDevice cameraDevice;
@@ -45,6 +45,12 @@ public class HomeFragment extends Fragment {
     private MediaRecorder mediaRecorder;
     private boolean isRecording = false;
     private TextureView textureView;
+    private SharedPreferences sharedPreferences;
+
+    private static final String PREF_VIDEO_QUALITY = "video_quality";
+    private static final String QUALITY_SD = "SD";
+    private static final String QUALITY_HD = "HD";
+    private static final String QUALITY_FHD = "FHD";
 
     private TextView tvStorageInfo;
     private TextView tvPreviewPlaceholder;
@@ -58,52 +64,21 @@ public class HomeFragment extends Fragment {
             "Use a tripod or stable surface for steady footage",
             "Clean your camera lens before recording",
             "Frame your shot before hitting record",
-            "Consider using external microphone for better audio"
+            "Consider using an external microphone for better audio"
     };
     private int currentTipIndex = 0;
 
-    private void updateStorageInfo() {
-        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
-        long bytesAvailable = stat.getAvailableBytes();
-        long bytesTotal = stat.getTotalBytes();
-
-        double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
-        double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
-
-        // Estimate recording time (assuming 10 Mbps bitrate)
-        long bitrate = 10 * 1024 * 1024; // 10 Mbps in bits
-        long recordingSeconds = (bytesAvailable * 8) / bitrate;
-        long recordingHours = recordingSeconds / 3600;
-        long recordingMinutes = (recordingSeconds % 3600) / 60;
-
-        String storageInfo = String.format(Locale.getDefault(),
-                "Available: \n  %.2f GB / %.2f GB\n\n" +
-                        "Record time (est.): \n  %d h %d min",
-                gbAvailable, gbTotal, recordingHours, recordingMinutes);
-        tvStorageInfo.setText(storageInfo);
-    }
-
-    private void pauseRecording() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            mediaRecorder.pause();
-            isPaused = true;
-            buttonPauseResume.setText("Resume");
-            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
-        }
-    }
-
-    private void resumeRecording() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            mediaRecorder.resume();
-            isPaused = false;
-            buttonPauseResume.setText("Pause");
-            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
-        }
-    }
     private TextView tvStats;
+
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_home, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         textureView = view.findViewById(R.id.textureView);
         tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
@@ -111,20 +86,20 @@ public class HomeFragment extends Fragment {
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
         tvTip = view.findViewById(R.id.tvTip);
+        tvStats = view.findViewById(R.id.tvStats);
+
+        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
         updateStorageInfo();
         updateTip();
-
-        tvStats = view.findViewById(R.id.tvStats); // Initialize tvStats
-        updateStats(); // Call the new method to display stats
-
+        updateStats();
 
         buttonStartStop.setOnClickListener(v -> {
             if (!isRecording) {
                 startRecording();
             } else {
                 stopRecording();
-                updateStats(); // Call the new method to display stats
+                updateStats();
             }
         });
 
@@ -137,8 +112,32 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+    }
 
-        return view;
+    private void updateStorageInfo() {
+        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+        long bytesAvailable = stat.getAvailableBytes();
+        long bytesTotal = stat.getTotalBytes();
+
+        double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
+        double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
+
+        long bitrate = 10 * 1024 * 1024;
+        long recordingSeconds = (bytesAvailable * 8) / bitrate;
+        long recordingHours = recordingSeconds / 3600;
+        long recordingMinutes = (recordingSeconds % 3600) / 60;
+
+        String storageInfo = String.format(Locale.getDefault(),
+                "Available: \n  %.2f GB / %.2f GB\n\n" +
+                        "Record time (est.): \n  %d h %d min",
+                gbAvailable, gbTotal, recordingHours, recordingMinutes);
+        tvStorageInfo.setText(storageInfo);
+    }
+
+    private void updateTip() {
+        tvTip.setText(tips[currentTipIndex]);
+        currentTipIndex = (currentTipIndex + 1) % tips.length;
+        tvTip.postDelayed(this::updateTip, 6000); // Change tip every 6 seconds
     }
 
     private void updateStats() {
@@ -163,10 +162,23 @@ public class HomeFragment extends Fragment {
                 numVideos, Formatter.formatFileSize(getContext(), totalSize));
         tvStats.setText(statsText);
     }
-    private void updateTip() {
-        tvTip.setText(tips[currentTipIndex]);
-        currentTipIndex = (currentTipIndex + 1) % tips.length;
-        tvTip.postDelayed(this::updateTip, 6000); // Change tip every 6 seconds
+
+    private void pauseRecording() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            mediaRecorder.pause();
+            isPaused = true;
+            buttonPauseResume.setText("Resume");
+            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        }
+    }
+
+    private void resumeRecording() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            mediaRecorder.resume();
+            isPaused = false;
+            buttonPauseResume.setText("Pause");
+            buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        }
     }
 
     private void startRecording() {
@@ -185,7 +197,6 @@ public class HomeFragment extends Fragment {
     }
 
     private String getCameraSelection() {
-        SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
         return sharedPreferences.getString("camera_selection", "back");
     }
 
@@ -254,30 +265,56 @@ public class HomeFragment extends Fragment {
                             Toast.makeText(getContext(), "Failed to start recording", Toast.LENGTH_SHORT).show();
                         }
                     }, null);
-        } catch (CameraAccessException | IOException e) {
+        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
-    private void setupMediaRecorder() throws IOException {
-        File videoDir = new File(getActivity().getExternalFilesDir(null), "FadCam");
-        if (!videoDir.exists()) {
-            videoDir.mkdirs();
-        }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
-        String videoFilePath = videoDir.getAbsolutePath() + "/FADCAM_" + timestamp + ".mp4";
+    private void setupMediaRecorder() {
+        try {
+            File videoDir = new File(requireActivity().getExternalFilesDir(null), "FadCam");
+            if (!videoDir.exists()) {
+                videoDir.mkdirs();
+            }
+            String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
+            File videoFile = new File(videoDir, "FADCAM_" + timestamp + ".mp4");
 
-        mediaRecorder = new MediaRecorder();
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        mediaRecorder.setOutputFile(videoFilePath);
-        mediaRecorder.setVideoEncodingBitRate(10000000);
-        mediaRecorder.setVideoFrameRate(30);
-        mediaRecorder.setVideoSize(1280, 720);
-        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        mediaRecorder.prepare();
+            mediaRecorder = new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
+
+            String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+            switch (selectedQuality) {
+                case QUALITY_SD:
+                    mediaRecorder.setVideoSize(640, 480);
+                    mediaRecorder.setVideoEncodingBitRate(1000000); // 1 Mbps
+                    mediaRecorder.setVideoFrameRate(30);
+                    break;
+                case QUALITY_HD:
+                    mediaRecorder.setVideoSize(1280, 720);
+                    mediaRecorder.setVideoEncodingBitRate(5000000); // 5 Mbps
+                    mediaRecorder.setVideoFrameRate(30);
+                    break;
+                case QUALITY_FHD:
+                    mediaRecorder.setVideoSize(1920, 1080);
+                    mediaRecorder.setVideoEncodingBitRate(10000000); // 10 Mbps
+                    mediaRecorder.setVideoFrameRate(30);
+                    break;
+                default:
+                    mediaRecorder.setVideoSize(1280, 720);
+                    mediaRecorder.setVideoEncodingBitRate(5000000); // 5 Mbps
+                    mediaRecorder.setVideoFrameRate(30);
+                    break;
+            }
+
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+            mediaRecorder.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void stopRecording() {
@@ -297,9 +334,7 @@ public class HomeFragment extends Fragment {
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
             buttonPauseResume.setEnabled(false);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-            // Clear the TextureView and show the placeholder
             textureView.setVisibility(View.INVISIBLE);
-
         }
     }
 
