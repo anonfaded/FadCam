@@ -15,10 +15,13 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.StatFs;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -83,6 +86,9 @@ public class HomeFragment extends Fragment {
     private boolean isPaused = false;
     private boolean isPreviewEnabled = true;
 
+    private View cardPreview;
+    private Vibrator vibrator;
+
     private TextView tvTip;
     private String[] tips = {
             "Ensure good lighting for better video quality",
@@ -99,52 +105,62 @@ public class HomeFragment extends Fragment {
     private TextView tvDateArabic;
 
     private void setupLongPressListener() {
-        textureView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                if (isRecording) {
-                    isPreviewEnabled = !isPreviewEnabled;
-                    updatePreviewVisibility();
-                    String message = isPreviewEnabled ? "Preview enabled" : "Preview disabled";
-                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    return true;
-                }
-                return false;
+        View.OnLongClickListener longClickListener = v -> {
+            if (isRecording) {
+                isPreviewEnabled = !isPreviewEnabled;
+                updatePreviewVisibility();
+                performHapticFeedback();
+                savePreviewState();
+                String message = isPreviewEnabled ? "Preview enabled" : "Preview disabled";
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                return true;
             }
-        });
+            return false;
+        };
+
+        cardPreview.setOnLongClickListener(longClickListener);
     }
 
     private void updatePreviewVisibility() {
+        if (isRecording) {
+            if (isPreviewEnabled) {
+                textureView.setVisibility(View.VISIBLE);
+                tvPreviewPlaceholder.setVisibility(View.GONE);
+            } else {
+                textureView.setVisibility(View.INVISIBLE);
+                tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+                tvPreviewPlaceholder.setText("Long press to enable preview");
+            }
+        } else {
+            textureView.setVisibility(View.INVISIBLE);
+            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+            tvPreviewPlaceholder.setText("Preview Area");
+        }
+
+        updateCameraPreview();
+    }
+    private void updateCameraPreview() {
         if (cameraCaptureSession != null && captureRequestBuilder != null && textureView.isAvailable()) {
             try {
                 SurfaceTexture texture = textureView.getSurfaceTexture();
                 if (texture == null) {
-                    Log.e(TAG, "updatePreviewVisibility: SurfaceTexture is null");
+                    Log.e(TAG, "updateCameraPreview: SurfaceTexture is null");
                     return;
                 }
 
                 Surface previewSurface = new Surface(texture);
 
-                if (isPreviewEnabled) {
+                captureRequestBuilder.removeTarget(previewSurface);
+                if (isPreviewEnabled && isRecording) {
                     captureRequestBuilder.addTarget(previewSurface);
-                    textureView.setVisibility(View.VISIBLE);
-                } else {
-                    captureRequestBuilder.removeTarget(previewSurface);
-                    textureView.setVisibility(View.INVISIBLE);
                 }
 
                 cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-
-                // Don't forget to close the Surface when we're done with it
-                previewSurface.release();
             } catch (CameraAccessException e) {
-                Log.e(TAG, "Error updating preview visibility", e);
+                Log.e(TAG, "Error updating camera preview", e);
             }
-        } else {
-            Log.e(TAG, "updatePreviewVisibility: Camera session or builder is null, or TextureView is not available");
         }
     }
-
     private void resetTimers() {
         recordingStartTime = SystemClock.elapsedRealtime();
         updateStorageInfo();
@@ -155,6 +171,20 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView: Inflating fragment_home layout");
         return inflater.inflate(R.layout.fragment_home, container, false);
+    }
+    private void performHapticFeedback() {
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(50);
+            }
+        }
+    }
+    private void savePreviewState() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("isPreviewEnabled", isPreviewEnabled);
+        editor.apply();
     }
 
     @Override
@@ -174,14 +204,26 @@ public class HomeFragment extends Fragment {
         tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
         tvDateArabic = view.findViewById(R.id.tvDateArabic);
 
-        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
+        cardPreview = view.findViewById(R.id.cardPreview);
+        vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+
+        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        isPreviewEnabled = sharedPreferences.getBoolean("isPreviewEnabled", true);
         resetTimers();
         updateStorageInfo();
         updateTip();
         updateStats();
         startUpdatingClock();
 
+        updateTip(); // Start the tip animation
+        startTipsAnimation();
+        setupButtonListeners();
+        setupLongPressListener();
+        updatePreviewVisibility();
+    }
+
+    private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
             if (!isRecording) {
                 startRecording();
@@ -200,11 +242,7 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
-        updateTip(); // Start the tip animation
-        startTipsAnimation();
-        setupLongPressListener();
     }
-
     private void startUpdatingClock() {
         updateClockRunnable = new Runnable() {
             @Override
@@ -422,6 +460,7 @@ public class HomeFragment extends Fragment {
 
             startUpdatingInfo();
             isRecording = true;
+            updatePreviewVisibility();
         }
     }
 
@@ -605,7 +644,8 @@ public class HomeFragment extends Fragment {
             stopUpdatingInfo();
             updateStorageInfo(); // Final update with actual values
         }
-        isPreviewEnabled = true;
+        isRecording = false;
+        updatePreviewVisibility();
     }
 
     private void releaseCamera() {
@@ -627,6 +667,7 @@ public class HomeFragment extends Fragment {
         super.onDestroyView();
         Log.d(TAG, "onDestroyView: Cleaning up resources");
         stopUpdatingInfo();
+        stopUpdatingClock();
         releaseCamera();
     }
 }
