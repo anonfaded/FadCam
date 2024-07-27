@@ -13,7 +13,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.StatFs;
+import android.text.Html;
+import android.text.Spanned;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -39,6 +42,11 @@ import java.util.Date;
 import java.util.Locale;
 import android.os.SystemClock;
 
+import java.time.format.DateTimeFormatter;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahDate;
+
+
 public class HomeFragment extends Fragment {
 
     private static final String TAG = "HomeFragment";
@@ -48,6 +56,7 @@ public class HomeFragment extends Fragment {
 
     private Handler handler = new Handler();
     private Runnable updateInfoRunnable;
+    private Runnable updateClockRunnable; // Declare here
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSession;
@@ -56,6 +65,11 @@ public class HomeFragment extends Fragment {
     private boolean isRecording = false;
     private TextureView textureView;
     private SharedPreferences sharedPreferences;
+
+    private Handler tipHandler = new Handler();
+    private int typingIndex = 0;
+    private boolean isTypingIn = true;
+    private String currentTip = "";
 
     private static final String PREF_VIDEO_QUALITY = "video_quality";
     private static final String QUALITY_SD = "SD";
@@ -79,6 +93,9 @@ public class HomeFragment extends Fragment {
     private int currentTipIndex = 0;
 
     private TextView tvStats;
+    private TextView tvClock;
+    private TextView tvDateEnglish;
+    private TextView tvDateArabic;
 
     private void resetTimers() {
         recordingStartTime = SystemClock.elapsedRealtime();
@@ -105,12 +122,17 @@ public class HomeFragment extends Fragment {
         tvTip = view.findViewById(R.id.tvTip);
         tvStats = view.findViewById(R.id.tvStats);
 
+        tvClock = view.findViewById(R.id.tvClock);
+        tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
+        tvDateArabic = view.findViewById(R.id.tvDateArabic);
+
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
         resetTimers();
         updateStorageInfo();
         updateTip();
         updateStats();
+        startUpdatingClock();
 
         buttonStartStop.setOnClickListener(v -> {
             if (!isRecording) {
@@ -130,7 +152,51 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+        updateTip(); // Start the tip animation
+        startTipsAnimation();
     }
+
+    private void startUpdatingClock() {
+        updateClockRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateClock();
+                handler.postDelayed(this, 1000); // Update every second
+            }
+        };
+        handler.post(updateClockRunnable);
+    }
+    // Method to stop updating the clock
+    private void stopUpdatingClock() {
+        if (updateClockRunnable != null) {
+            handler.removeCallbacks(updateClockRunnable);
+            updateClockRunnable = null;
+        }
+    }
+
+    // Method to update the clock and dates
+    private void updateClock() {
+        // Update the time in HH:mm AM/PM format
+        SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        String currentTime = timeFormat.format(new Date());
+        tvClock.setText(currentTime);
+
+        // Update the date in English
+        SimpleDateFormat dateFormatEnglish = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
+        String currentDateEnglish = dateFormatEnglish.format(new Date());
+        tvDateEnglish.setText(currentDateEnglish);
+
+        // Update the date in Arabic (Islamic calendar)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            HijrahDate hijrahDate = HijrahChronology.INSTANCE.dateNow();
+            DateTimeFormatter dateFormatterArabic = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("ar"));
+            String currentDateArabic = dateFormatterArabic.format(hijrahDate);
+            tvDateArabic.setText(currentDateArabic);
+        } else {
+            tvDateArabic.setText("N/A"); // Placeholder for devices below API 26
+        }
+    }
+
 
     private void updateStorageInfo() {
         Log.d(TAG, "updateStorageInfo: Updating storage information");
@@ -151,13 +217,14 @@ public class HomeFragment extends Fragment {
         long remainingTime = (videoBitrate > 0) ? (bytesAvailable * 8) / videoBitrate : 0;
 
         String storageInfo = String.format(Locale.getDefault(),
-                "Available: %.2f GB / %.2f GB\n\n" +
-                        "Record time (est.):\n" +
-                        "  FHD: %s\n" +
-                        "  HD: %s\n" +
-                        "  SD: %s\n\n" +
-                        "Elapsed time: %02d:%02d\n" +
-                        "Remaining time: %02d:%02d",
+                "<font color='#FFFFFF' style='font-size:16sp;'><b>Available:</b></font><br>" +
+                        "<font color='#CCCCCC' style='font-size:14sp;'>%.2f GB / %.2f GB</font><br><br>" +
+                        "<font color='#FFFFFF' style='font-size:16sp;'><b>Record time (est.):</b></font><br>" +
+                        "<font color='#CCCCCC' style='font-size:14sp;'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>" +
+                        "<font color='#FFFFFF' style='font-size:16sp;'><b>Elapsed time:</b></font><br>" +
+                        "<font color='#CCCCCC' style='font-size:14sp;'>%02d:%02d</font><br>" +
+                        "<font color='#FFFFFF' style='font-size:16sp;'><b>Remaining time:</b></font><br>" +
+                        "<font color='#CCCCCC' style='font-size:14sp;'>%02d:%02d</font>",
                 gbAvailable, gbTotal,
                 getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
@@ -166,10 +233,12 @@ public class HomeFragment extends Fragment {
                 remainingTime / 60, remainingTime % 60
         );
 
+        Spanned formattedText = Html.fromHtml(storageInfo, Html.FROM_HTML_MODE_LEGACY);
+
         // Update UI on the main thread
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
-                tvStorageInfo.setText(storageInfo);
+                tvStorageInfo.setText(formattedText);
             });
         }
     }
@@ -203,11 +272,38 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void updateTip() {
-        tvTip.setText(tips[currentTipIndex]);
-        currentTipIndex = (currentTipIndex + 1) % tips.length;
-        tvTip.postDelayed(this::updateTip, 6000); // Change tip every 6 seconds
+    private void startTipsAnimation() {
+        if (tips.length > 0) {
+            animateTip(tips[currentTipIndex], tvTip, 100); // Adjust delay as needed
+        }
     }
+    private void updateTip() {
+        currentTip = tips[currentTipIndex];
+        typingIndex = 0;
+        isTypingIn = true;
+//        animateTip(); this line is giving errors so i commented it
+    }
+    private void animateTip(String fullText, TextView textView, int delay) {
+        final Handler handler = new Handler(Looper.getMainLooper());
+        final int[] index = {0};
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (index[0] <= fullText.length()) {
+                    textView.setText(fullText.substring(0, index[0]));
+                    index[0]++;
+                    handler.postDelayed(this, 35); // add delay in typing the tips
+                } else {
+                    currentTipIndex = (currentTipIndex + 1) % tips.length;
+                    handler.postDelayed(() -> animateTip(tips[currentTipIndex], textView, delay), 5000); // Wait 2 seconds before next tip
+                }
+            }
+        };
+
+        handler.post(runnable);
+    }
+
 
     private void updateStats() {
         Log.d(TAG, "updateStats: Updating video statistics");
@@ -228,9 +324,13 @@ public class HomeFragment extends Fragment {
         }
 
         String statsText = String.format(Locale.getDefault(),
-                "Videos: %d%nUsed Space: %s",
+                "<font color='#FFFFFF' style='font-size:12sp;'><b>Videos: </b></font>" +
+                        "<font color='#CCCCCC' style='font-size:11sp;'>%d</font><br>" +
+                        "<font color='#FFFFFF' style='font-size:12sp;'><b>Used Space:</b></font><br>" +
+                        "<font color='#CCCCCC' style='font-size:11sp;'>%s</font>",
                 numVideos, Formatter.formatFileSize(getContext(), totalSize));
-        tvStats.setText(statsText);
+
+        tvStats.setText(Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY));
     }
 
     private void pauseRecording() {

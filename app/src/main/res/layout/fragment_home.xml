@@ -55,11 +55,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="6dp">
 
                 <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_storage" />
 
@@ -67,6 +67,7 @@
                     android:id="@+id/tvStorageInfo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="-70dp"
                     android:layout_gravity="center"
                     android:layout_marginTop="8dp"
                     android:text="Storage: 0 GB / 0 GB" />
@@ -96,11 +97,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="89dp"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="6dp">
 
                     <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_lightbulb" />
 
@@ -111,6 +112,7 @@
                         android:layout_gravity="center"
                         android:layout_marginTop="0dp"
                         android:ellipsize="end"
+                        android:textColor="@color/white"
                         android:text="Recording Tip"
                         android:textAlignment="center" />
 
@@ -130,7 +132,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="60dp"
                     android:orientation="horizontal"
                     android:padding="5dp">
 
@@ -151,6 +153,66 @@
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardClock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="#009688"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:strokeColor="#4CAF50"
+                app:strokeWidth="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:orientation="horizontal"
+                    android:padding="5dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/ic_clock" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="8dp">
+
+                        <TextView
+                            android:id="@+id/tvClock"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:layout_gravity="top"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tvDateEnglish"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="13sp"
+                            android:layout_gravity="left"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tvDateArabic"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="right"
+                            android:layout_height="wrap_content"
+                            android:textSize="13sp"
+                            android:textColor="#FFFFFF" />
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+
         </LinearLayout>
     </LinearLayout>
 
