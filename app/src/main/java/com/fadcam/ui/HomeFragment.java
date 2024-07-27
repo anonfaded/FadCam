@@ -540,11 +540,21 @@ public class HomeFragment extends Fragment {
 
     private void startRecordingVideo() {
         Log.d(TAG, "startRecordingVideo: Setting up video recording preview area");
+
+        // Check if TextureView is available before starting recording
+        if (!textureView.isAvailable())  {
+            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+            textureView.setVisibility(View.VISIBLE);
+            openCamera();
+            Log.e(TAG, "startRecordingVideo: TextureView is now available             550");
+        }
+
         if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             Log.e(TAG, "startRecordingVideo: Unable to start recording due to missing prerequisites");
             return;
         }
         try {
+            Log.e(TAG, "startRecordingVideo: TextureView found, success             556+");
             setupMediaRecorder();
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
