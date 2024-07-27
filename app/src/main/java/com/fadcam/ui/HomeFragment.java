@@ -187,6 +187,7 @@ public class HomeFragment extends Fragment {
         editor.apply();
     }
 
+//    function to use haptic feedbacks
     private void vibrateTouch() {
         // Haptic Feedback
         Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);

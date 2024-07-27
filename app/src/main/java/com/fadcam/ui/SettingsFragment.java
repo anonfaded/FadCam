@@ -4,7 +4,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +35,19 @@ public class SettingsFragment extends Fragment {
     private static final String QUALITY_HD = "HD";
     private static final String QUALITY_FHD = "FHD";
 
+    private void vibrateTouch() {
+        // Haptic Feedback
+        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            VibrationEffect effect = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(effect);
+            }
+        }
+    }
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
         button.setIconTintResource(isSelected ? R.color.black : android.R.color.transparent); // color for check icon
         button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke); // the last color is for the button that's not selected
@@ -136,6 +152,7 @@ public class SettingsFragment extends Fragment {
     }
 
     private void showReadmeDialog() {
+        vibrateTouch();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
         builder.setTitle("README");
 
