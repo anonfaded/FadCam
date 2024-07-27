@@ -81,6 +81,7 @@ public class HomeFragment extends Fragment {
     private Button buttonStartStop;
     private Button buttonPauseResume;
     private boolean isPaused = false;
+    private boolean isPreviewEnabled = true;
 
     private TextView tvTip;
     private String[] tips = {
@@ -96,6 +97,53 @@ public class HomeFragment extends Fragment {
     private TextView tvClock;
     private TextView tvDateEnglish;
     private TextView tvDateArabic;
+
+    private void setupLongPressListener() {
+        textureView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (isRecording) {
+                    isPreviewEnabled = !isPreviewEnabled;
+                    updatePreviewVisibility();
+                    String message = isPreviewEnabled ? "Preview enabled" : "Preview disabled";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void updatePreviewVisibility() {
+        if (cameraCaptureSession != null && captureRequestBuilder != null && textureView.isAvailable()) {
+            try {
+                SurfaceTexture texture = textureView.getSurfaceTexture();
+                if (texture == null) {
+                    Log.e(TAG, "updatePreviewVisibility: SurfaceTexture is null");
+                    return;
+                }
+
+                Surface previewSurface = new Surface(texture);
+
+                if (isPreviewEnabled) {
+                    captureRequestBuilder.addTarget(previewSurface);
+                    textureView.setVisibility(View.VISIBLE);
+                } else {
+                    captureRequestBuilder.removeTarget(previewSurface);
+                    textureView.setVisibility(View.INVISIBLE);
+                }
+
+                cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+
+                // Don't forget to close the Surface when we're done with it
+                previewSurface.release();
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "Error updating preview visibility", e);
+            }
+        } else {
+            Log.e(TAG, "updatePreviewVisibility: Camera session or builder is null, or TextureView is not available");
+        }
+    }
 
     private void resetTimers() {
         recordingStartTime = SystemClock.elapsedRealtime();
@@ -154,6 +202,7 @@ public class HomeFragment extends Fragment {
         });
         updateTip(); // Start the tip animation
         startTipsAnimation();
+        setupLongPressListener();
     }
 
     private void startUpdatingClock() {
@@ -447,7 +496,10 @@ public class HomeFragment extends Fragment {
             Surface recorderSurface = mediaRecorder.getSurface();
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
 // below line of code is to show the preview screen.
-            captureRequestBuilder.addTarget(previewSurface);
+//            captureRequestBuilder.addTarget(previewSurface);
+            if (isPreviewEnabled) {
+                captureRequestBuilder.addTarget(previewSurface);
+            }
             captureRequestBuilder.addTarget(recorderSurface);
 
             cameraDevice.createCaptureSession(Arrays.asList(previewSurface, recorderSurface),
@@ -553,6 +605,7 @@ public class HomeFragment extends Fragment {
             stopUpdatingInfo();
             updateStorageInfo(); // Final update with actual values
         }
+        isPreviewEnabled = true;
     }
 
     private void releaseCamera() {
