@@ -293,7 +293,7 @@ public class HomeFragment extends Fragment {
                 if (index[0] <= fullText.length()) {
                     textView.setText(fullText.substring(0, index[0]));
                     index[0]++;
-                    handler.postDelayed(this, 35); // add delay in typing the tips
+                    handler.postDelayed(this, 40); // add delay in typing the tips
                 } else {
                     currentTipIndex = (currentTipIndex + 1) % tips.length;
                     handler.postDelayed(() -> animateTip(tips[currentTipIndex], textView, delay), 5000); // Wait 2 seconds before next tip
