@@ -222,9 +222,9 @@ public class HomeFragment extends Fragment {
                         "<font color='#FFFFFF' style='font-size:16sp;'><b>Record time (est.):</b></font><br>" +
                         "<font color='#CCCCCC' style='font-size:14sp;'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>" +
                         "<font color='#FFFFFF' style='font-size:16sp;'><b>Elapsed time:</b></font><br>" +
-                        "<font color='#CCCCCC' style='font-size:14sp;'>%02d:%02d</font><br>" +
+                        "<font color='#77DD77' style='font-size:14sp;'>%02d:%02d</font><br>" +
                         "<font color='#FFFFFF' style='font-size:16sp;'><b>Remaining time:</b></font><br>" +
-                        "<font color='#CCCCCC' style='font-size:14sp;'>%02d:%02d</font>",
+                        "<font color='#E43C3C' style='font-size:14sp;'>%02d:%02d</font>",
                 gbAvailable, gbTotal,
                 getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
@@ -325,9 +325,9 @@ public class HomeFragment extends Fragment {
 
         String statsText = String.format(Locale.getDefault(),
                 "<font color='#FFFFFF' style='font-size:12sp;'><b>Videos: </b></font>" +
-                        "<font color='#CCCCCC' style='font-size:11sp;'>%d</font><br>" +
+                        "<font color='#D3D3D3' style='font-size:11sp;'>%d</font><br>" +
                         "<font color='#FFFFFF' style='font-size:12sp;'><b>Used Space:</b></font><br>" +
-                        "<font color='#CCCCCC' style='font-size:11sp;'>%s</font>",
+                        "<font color='#D3D3D3' style='font-size:11sp;'>%s</font>",
                 numVideos, Formatter.formatFileSize(getContext(), totalSize));
 
         tvStats.setText(Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY));
