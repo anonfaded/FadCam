@@ -613,7 +613,14 @@ public class HomeFragment extends Fragment {
 
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mediaRecorder.setOrientationHint(90);
+
+            if (getCameraSelection().equals("front")) {
+                mediaRecorder.setOrientationHint(270);
+            } else {
+                mediaRecorder.setOrientationHint(90);
+            }
+
+
             mediaRecorder.prepare();
         } catch (IOException e) {
             Log.e(TAG, "setupMediaRecorder: Error setting up media recorder", e);
