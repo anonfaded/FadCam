@@ -187,6 +187,19 @@ public class HomeFragment extends Fragment {
         editor.apply();
     }
 
+    private void vibrateTouch() {
+        // Haptic Feedback
+        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            VibrationEffect effect = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(effect);
+            }
+        }
+    }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -236,8 +249,12 @@ public class HomeFragment extends Fragment {
         buttonPauseResume.setOnClickListener(v -> {
             if (isRecording) {
                 if (isPaused) {
+                    vibrateTouch();
+                    Toast.makeText(getContext(), "Recording resumed", Toast.LENGTH_SHORT).show();
                     resumeRecording();
                 } else {
+                    vibrateTouch();
+                    Toast.makeText(getContext(), "Recording paused", Toast.LENGTH_SHORT).show();
                     pauseRecording();
                 }
             }
@@ -555,6 +572,8 @@ public class HomeFragment extends Fragment {
                             }
                             mediaRecorder.start();
                             getActivity().runOnUiThread(() -> {
+                                // Haptic Feedback
+                                vibrateTouch();
                                 isRecording = true;
                                 Toast.makeText(getContext(), "Recording started", Toast.LENGTH_SHORT).show();
                             });
@@ -636,6 +655,8 @@ public class HomeFragment extends Fragment {
                 cameraCaptureSession.abortCaptures();
                 mediaRecorder.stop();
                 mediaRecorder.reset();
+                // Haptic Feedback
+                vibrateTouch();
                 Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
             } catch (CameraAccessException | IllegalStateException e) {
                 Log.e(TAG, "stopRecording: Error stopping recording", e);
