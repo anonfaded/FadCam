@@ -442,7 +442,7 @@ public class HomeFragment extends Fragment {
             setupMediaRecorder();
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
-            texture.setDefaultBufferSize(1280, 720);
+            texture.setDefaultBufferSize(720, 1080);
             Surface previewSurface = new Surface(texture);
             Surface recorderSurface = mediaRecorder.getSurface();
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
@@ -521,6 +521,7 @@ public class HomeFragment extends Fragment {
 
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+            mediaRecorder.setOrientationHint(90);
             mediaRecorder.prepare();
         } catch (IOException e) {
             Log.e(TAG, "setupMediaRecorder: Error setting up media recorder", e);
