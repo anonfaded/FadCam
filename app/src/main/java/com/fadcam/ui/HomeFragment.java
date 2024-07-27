@@ -433,7 +433,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void startRecordingVideo() {
-        Log.d(TAG, "startRecordingVideo: Setting up video recording");
+        Log.d(TAG, "startRecordingVideo: Setting up video recording preview area");
         if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             Log.e(TAG, "startRecordingVideo: Unable to start recording due to missing prerequisites");
             return;
@@ -446,6 +446,7 @@ public class HomeFragment extends Fragment {
             Surface previewSurface = new Surface(texture);
             Surface recorderSurface = mediaRecorder.getSurface();
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+// below line of code is to show the preview screen.
             captureRequestBuilder.addTarget(previewSurface);
             captureRequestBuilder.addTarget(recorderSurface);
 
