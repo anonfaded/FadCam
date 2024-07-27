@@ -1,6 +1,7 @@
 package com.fadcam.ui;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,7 +22,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.content.Context;
 public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoClickListener, RecordsAdapter.OnVideoLongClickListener {
 
     private RecyclerView recyclerView;
@@ -75,6 +78,17 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     private void toggleViewMode() {
+        // Haptic Feedback
+        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            VibrationEffect effect = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(effect);
+            }
+        }
         isGridView = !isGridView;
         setLayoutManager();
         updateFabIcons();
@@ -120,13 +134,34 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             selectedVideos.remove(video);
         }
         updateDeleteButtonVisibility();
+        // Haptic Feedback
+        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            VibrationEffect effect = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(effect);
+            }
+        }
     }
-
     private void updateDeleteButtonVisibility() {
         fabDeleteSelected.setVisibility(selectedVideos.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private void confirmDeleteSelected() {
+        // Haptic Feedback
+        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            VibrationEffect effect = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(effect);
+            }
+        }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Eradicate Video(s)? \uD83D\uDCA3")
                 .setMessage("Are you absolutely, positively sure you want to nuke these video(s) out of existence? \uD83D\uDE80\uD83D\uDCA5")
@@ -161,6 +196,17 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     private void confirmDeleteAll() {
+        // Haptic Feedback
+        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            VibrationEffect effect = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(effect);
+            }
+        }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Delete All Videos")
                 .setMessage("Are you sure you want to delete all videos?")
