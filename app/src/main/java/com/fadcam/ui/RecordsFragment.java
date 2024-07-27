@@ -25,6 +25,9 @@ import java.util.List;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.content.Context;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoClickListener, RecordsAdapter.OnVideoLongClickListener {
 
     private RecyclerView recyclerView;
@@ -33,6 +36,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     private FloatingActionButton fabToggleView;
     private FloatingActionButton fabDeleteSelected;
     private List<File> selectedVideos = new ArrayList<>();
+    private ExecutorService executorService = Executors.newSingleThreadExecutor(); // Executor for background tasks
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -55,13 +59,12 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     @Override
     public void onResume() {
         super.onResume();
-        refreshRecordsList();
+        loadRecordsList(); // Load the list in the background
     }
 
     private void setupRecyclerView() {
         setLayoutManager();
-        List<File> recordsList = getRecordsList();
-        adapter = new RecordsAdapter(recordsList, this, this);
+        adapter = new RecordsAdapter(new ArrayList<>(), this, this);
         recyclerView.setAdapter(adapter);
     }
 
@@ -98,6 +101,13 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         fabToggleView.setImageResource(isGridView ? R.drawable.ic_list : R.drawable.ic_grid);
     }
 
+    private void loadRecordsList() {
+        executorService.submit(() -> {
+            List<File> recordsList = getRecordsList();
+            requireActivity().runOnUiThread(() -> adapter.updateRecords(recordsList));
+        });
+    }
+
     private List<File> getRecordsList() {
         List<File> recordsList = new ArrayList<>();
         File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
@@ -112,11 +122,6 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             }
         }
         return recordsList;
-    }
-
-    private void refreshRecordsList() {
-        List<File> updatedList = getRecordsList();
-        adapter.updateRecords(updatedList);
     }
 
     @Override
@@ -146,6 +151,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             }
         }
     }
+
     private void updateDeleteButtonVisibility() {
         fabDeleteSelected.setVisibility(selectedVideos.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -177,7 +183,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         }
         selectedVideos.clear();
         updateDeleteButtonVisibility();
-        refreshRecordsList();
+        loadRecordsList();
     }
 
     @Override
@@ -227,6 +233,6 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
                 }
             }
         }
-        refreshRecordsList();
+        loadRecordsList();
     }
 }

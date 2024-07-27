@@ -1,17 +1,27 @@
 package com.fadcam.ui;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.fadcam.R;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -25,16 +35,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import android.media.MediaMetadataRetriever;
-import android.graphics.Bitmap;
-import android.widget.Toast;
-
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.net.Uri;
-import android.os.Environment;
-import android.provider.MediaStore;
-
 
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
 
@@ -57,82 +57,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         this.longClickListener = longClickListener;
     }
 
-    @NonNull
-    @Override
-    public RecordViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_record, parent, false);
-        return new RecordViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
-        File video = records.get(position);
-        holder.textViewRecord.setText(video.getName());
-
-        holder.itemView.setOnClickListener(v -> clickListener.onVideoClick(video));
-
-        holder.itemView.setOnLongClickListener(v -> {
-            boolean isSelected = !selectedVideos.contains(video);
-            toggleSelection(holder, video, isSelected);
-            longClickListener.onVideoLongClick(video, isSelected);
-            return true;
-        });
-
-        holder.menuButton.setOnClickListener(v -> showPopupMenu(v, video));
-
-        // Set thumbnail
-        setThumbnail(holder, video);
-
-        // Update selection state
-        updateSelectionState(holder, selectedVideos.contains(video));
-    }
-
-    @Override
-    public int getItemCount() {
-        return records.size();
-    }
-
-    private void setThumbnail(RecordViewHolder holder, File video) {
-        if (video.exists()) {
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            try {
-                retriever.setDataSource(video.getAbsolutePath());
-                Bitmap thumbnail = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
-                holder.imageViewThumbnail.setImageBitmap(thumbnail);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-                // Set a placeholder image if thumbnail extraction fails
-                holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
-            } finally {
-                try {
-                    retriever.release();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            // Set a placeholder image if the file doesn't exist
-            holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
-        }
-    }
-
-    private void toggleSelection(RecordViewHolder holder, File video, boolean isSelected) {
-        if (isSelected) {
-            selectedVideos.add(video);
-        } else {
-            selectedVideos.remove(video);
-        }
-        updateSelectionState(holder, isSelected);
-    }
-
-    private void updateSelectionState(RecordViewHolder holder, boolean isSelected) {
-        holder.itemView.setActivated(isSelected);
-        holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-    }
-
-
-
-    // Method to save the video to the gallery
     private void saveToGallery(Context context, File video) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             saveToGalleryAndroid10Plus(context, video);
@@ -148,11 +72,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + File.separator + "FadCam");
 
         ContentResolver resolver = context.getContentResolver();
-        Uri collection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        Uri collection = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        } else {
-            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
         }
         Uri itemUri = resolver.insert(collection, values);
 
@@ -201,14 +123,67 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             e.printStackTrace();
         }
     }
+    @NonNull
+    @Override
+    public RecordViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_record, parent, false);
+        return new RecordViewHolder(view);
+    }
 
+    @Override
+    public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
+        File video = records.get(position);
+        holder.textViewRecord.setText(video.getName());
 
+        holder.itemView.setOnClickListener(v -> clickListener.onVideoClick(video));
+
+        holder.itemView.setOnLongClickListener(v -> {
+            boolean isSelected = !selectedVideos.contains(video);
+            toggleSelection(holder, video, isSelected);
+            longClickListener.onVideoLongClick(video, isSelected);
+            return true;
+        });
+
+        holder.menuButton.setOnClickListener(v -> showPopupMenu(v, video));
+
+        // Set thumbnail
+        setThumbnail(holder, video);
+
+        // Update selection state
+        updateSelectionState(holder, selectedVideos.contains(video));
+    }
+
+    @Override
+    public int getItemCount() {
+        return records.size();
+    }
+
+    private void setThumbnail(RecordViewHolder holder, File video) {
+        Glide.with(holder.itemView.getContext())
+                .load(video.getAbsolutePath())
+                .placeholder(R.drawable.ic_video_placeholder)
+                .into(holder.imageViewThumbnail);
+    }
+
+    private void toggleSelection(RecordViewHolder holder, File video, boolean isSelected) {
+        if (isSelected) {
+            selectedVideos.add(video);
+        } else {
+            selectedVideos.remove(video);
+        }
+        int position = records.indexOf(video);
+        notifyItemChanged(position);
+    }
+
+    private void updateSelectionState(RecordViewHolder holder, boolean isSelected) {
+        holder.itemView.setActivated(isSelected);
+        holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+    }
 
     private void showPopupMenu(View v, File video) {
         PopupMenu popup = new PopupMenu(v.getContext(), v);
         popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
 
-        // Set icons for menu items
         popup.getMenu().findItem(R.id.action_delete).setIcon(R.drawable.ic_delete);
         popup.getMenu().findItem(R.id.action_save_to_gallery).setIcon(R.drawable.ic_save);
 
@@ -224,7 +199,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return false;
         });
 
-        // Force icons to show
         try {
             Field field = popup.getClass().getDeclaredField("mPopup");
             field.setAccessible(true);
@@ -238,7 +212,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         popup.show();
     }
-
 
     private void confirmDelete(Context context, File video) {
         new MaterialAlertDialogBuilder(context)
@@ -256,8 +229,31 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     public void updateRecords(List<File> newRecords) {
+        DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return records.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newRecords.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return records.get(oldItemPosition).equals(newRecords.get(newItemPosition));
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                return records.get(oldItemPosition).equals(newRecords.get(newItemPosition));
+            }
+        };
+
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
         this.records = newRecords;
-        notifyDataSetChanged();
+        diffResult.dispatchUpdatesTo(this);
     }
 
     static class RecordViewHolder extends RecyclerView.ViewHolder {

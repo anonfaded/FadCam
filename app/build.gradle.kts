@@ -51,5 +51,7 @@ dependencies {
     implementation(libs.exoplayer.ui)
     implementation(libs.okhttp)
     implementation(libs.viewpager2)
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
 
 }
