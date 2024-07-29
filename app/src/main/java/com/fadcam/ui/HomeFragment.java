@@ -2,6 +2,7 @@ package com.fadcam.ui;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -35,10 +36,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.ExecuteCallback;
+import com.arthenica.ffmpegkit.ReturnCode;
+import com.arthenica.ffmpegkit.Session;
 import com.fadcam.R;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -49,6 +57,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahDate;
 
+
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class HomeFragment extends Fragment {
 
@@ -187,7 +199,7 @@ public class HomeFragment extends Fragment {
         editor.apply();
     }
 
-//    function to use haptic feedbacks
+    //    function to use haptic feedbacks
     private void vibrateTouch() {
         // Haptic Feedback
         Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
@@ -225,6 +237,7 @@ public class HomeFragment extends Fragment {
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         isPreviewEnabled = sharedPreferences.getBoolean("isPreviewEnabled", true);
         resetTimers();
+        copyFontToInternalStorage();
         updateStorageInfo();
         updateTip();
         updateStats();
@@ -673,6 +686,22 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "stopRecording: Error stopping recording", e);
                 e.printStackTrace();
             }
+// below lines are new
+            // Add watermarking here
+            // Get the latest video file
+            File latestVideoFile = getLatestVideoFile();
+            if (latestVideoFile != null) {
+                // Prepare file paths
+                String inputFilePath = latestVideoFile.getAbsolutePath();
+                String outputFilePath = latestVideoFile.getParent() + "/watermarked_" + latestVideoFile.getName();
+
+                // Add text watermark to the recorded video
+                addTextWatermarkToVideo(inputFilePath, outputFilePath);
+            } else {
+                Log.e(TAG, "No video file found.");
+            }
+
+
             releaseCamera();
             isRecording = false;
             buttonStartStop.setText("Start");
@@ -700,6 +729,140 @@ public class HomeFragment extends Fragment {
         cameraCaptureSession = null;
         captureRequestBuilder = null;
     }
+
+// below methods are new
+
+    private File getLatestVideoFile() {
+        File videoDir = new File(requireActivity().getExternalFilesDir(null), "FadCam");
+        File[] files = videoDir.listFiles();
+        if (files == null || files.length == 0) {
+            return null;
+        }
+
+        // Sort files by last modified date
+        Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+        return files[0]; // Return the most recently modified file
+    }
+
+
+
+
+
+
+    private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath) {
+        String fontPath = getContext().getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
+        String watermarkText;
+        String watermarkOption = getWatermarkOption();
+
+        switch (watermarkOption) {
+            case "timestamp_fadcam":
+                watermarkText = "Captured by FadCam  - " + getCurrentTimestamp();
+                break;
+            case "timestamp":
+                watermarkText = getCurrentTimestamp();
+                break;
+            case "no_watermark":
+                // No watermark, so just copy the video as is
+                String ffmpegCommand = String.format("-i %s -codec copy %s", inputFilePath, outputFilePath);
+                executeFFmpegCommand(ffmpegCommand);
+                return;
+            default:
+                watermarkText = getCurrentTimestamp();
+                break;
+        }
+        // Log the watermark text and font path
+        Log.d(TAG, "Watermark Text: " + watermarkText);
+        Log.d(TAG, "Font Path: " + fontPath);
+
+        String ffmpegCommand = String.format(
+                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=24:fontcolor=white:fontfile=%s\" -b:v 2M -codec:a copy %s",
+                inputFilePath, watermarkText, fontPath, outputFilePath
+        );
+
+        executeFFmpegCommand(ffmpegCommand);
+    }
+
+    private void executeFFmpegCommand(String ffmpegCommand) {
+        Log.d(TAG, "FFmpeg Command: " + ffmpegCommand);
+        FFmpegKit.executeAsync(ffmpegCommand, new ExecuteCallback() {
+            @Override
+            public void apply(Session session) {
+                if (session.getReturnCode().isSuccess()) {
+                    Log.d(TAG, "Watermark added successfully.");
+                } else {
+                    Log.e(TAG, "Failed to add watermark: " + session.getFailStackTrace());
+                }
+            }
+        });
+    }
+
+    private String getCurrentTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.getDefault());
+        return sdf.format(new Date());
+    }
+
+
+
+
+
+
+
+
+
+
+
+    private String getWatermarkOption() {
+        SharedPreferences sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        return sharedPreferences.getString("watermark_option", "timestamp_fadcam");
+    }
+
+
+
+
+    private void copyFontToInternalStorage() {
+        AssetManager assetManager = getContext().getAssets();
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+            in = assetManager.open("ubuntu_regular.ttf");
+            File outFile = new File(getContext().getFilesDir(), "ubuntu_regular.ttf");
+            out = new FileOutputStream(outFile);
+            copyFile(in, out);
+            Log.d(TAG, "Font copied to internal storage.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    // NO-OP
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    // NO-OP
+                }
+            }
+        }
+    }
+
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+        }
+    }
+
+
+
+
+
+
+
 
     @Override
     public void onDestroyView() {
