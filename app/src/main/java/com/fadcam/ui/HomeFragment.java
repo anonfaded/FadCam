@@ -3,6 +3,8 @@ package com.fadcam.ui;
 import static com.fadcam.ui.SettingsFragment.PREF_LOCATION_DATA;
 
 import android.Manifest;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -28,6 +30,7 @@ import android.text.format.Formatter;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -141,21 +144,41 @@ public class HomeFragment extends Fragment {
     private TextView tvDateArabic;
 
     private void setupLongPressListener() {
-        View.OnLongClickListener longClickListener = v -> {
+        cardPreview.setOnLongClickListener(v -> {
             if (isRecording) {
+                // Start scaling down animation
+                cardPreview.animate()
+                        .scaleX(0.9f)
+                        .scaleY(0.9f)
+                        .setDuration(100) // Reduced duration for quicker scale-down
+                        .start();
+
+                // Perform haptic feedback
+                performHapticFeedback();
+
+                // Execute the task immediately
                 isPreviewEnabled = !isPreviewEnabled;
                 updatePreviewVisibility();
-                performHapticFeedback();
                 savePreviewState();
                 String message = isPreviewEnabled ? "Preview enabled" : "Preview disabled";
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+
+                // Scale back up quickly with a wobble effect
+                cardPreview.postDelayed(() -> {
+                    cardPreview.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(50) // Shorter duration for quicker scale-up
+                            .start();
+                }, 60); // No Delay to ensure it happens after the initial scaling down
+
                 return true;
             }
             return false;
-        };
-
-        cardPreview.setOnLongClickListener(longClickListener);
+        });
     }
+
+
 
     private void updatePreviewVisibility() {
         if (isRecording) {
