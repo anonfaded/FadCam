@@ -5,4 +5,16 @@
         <item>@item/quality_hd</item>
         <item>@item/quality_sd</item>
     </string-array>
+
+    <string-array name="watermark_options">
+        <item>Time with Fadcam</item>
+        <item>Timestamp</item>
+        <item>No Watermark</item>
+    </string-array>
+
+    <string-array name="watermark_values">
+        <item>timestamp_fadcam</item>
+        <item>timestamp</item>
+        <item>no_watermark</item>
+    </string-array>
 </resources>

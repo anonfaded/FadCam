@@ -1,8 +1,12 @@
 package com.fadcam.ui;
 
+import com.fadcam.ui.LocationHelper;
+
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +19,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -23,17 +30,23 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import com.fadcam.R;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
+
+    private LocationHelper locationHelper;
+
     private static final String PREF_CAMERA_SELECTION = "camera_selection";
     private static final String PREF_VIDEO_QUALITY = "video_quality";
+    private static final String PREF_WATERMARK_OPTION = "watermark_option";
     private static final String CAMERA_FRONT = "front";
     private static final String CAMERA_BACK = "back";
     private static final String QUALITY_SD = "SD";
     private static final String QUALITY_HD = "HD";
     private static final String QUALITY_FHD = "FHD";
+    static final String PREF_LOCATION_DATA = "location_data";
 
     private void vibrateTouch() {
         // Haptic Feedback
@@ -53,6 +66,13 @@ public class SettingsFragment extends Fragment {
         button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke); // the last color is for the button that's not selected
         button.setTextColor(getResources().getColor(isSelected ? R.color.black : R.color.material_on_surface_emphasis_medium));
         button.setBackgroundColor(getResources().getColor(isSelected ? R.color.colorPrimary : android.R.color.transparent));
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        locationHelper = new LocationHelper(requireContext());
     }
 
     @Override
@@ -80,8 +100,106 @@ public class SettingsFragment extends Fragment {
         // Set up video quality spinner
         setupQualitySpinner(view, qualitySpinner);
 
+        // Setup watermark option spinner
+        Spinner watermarkSpinner = view.findViewById(R.id.watermark_spinner);
+        setupWatermarkSpinner(view, watermarkSpinner);
+
+//        // Set up location toggle group
+//        MaterialButtonToggleGroup locationToggleGroup = view.findViewById(R.id.location_toggle_group);
+//        setupLocationToggle(view, locationToggleGroup);
+
+        MaterialSwitch locationSwitch = view.findViewById(R.id.location_toggle_group);
+        setupLocationSwitch(locationSwitch);
+
+
         return view;
     }
+
+    private void setupLocationSwitch(MaterialSwitch locationSwitch) {
+        boolean isLocationEnabled = sharedPreferences.getBoolean(PREF_LOCATION_DATA, false);
+        locationSwitch.setChecked(isLocationEnabled);
+
+        locationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    requestLocationPermission();
+                } else {
+                    sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, true).apply();
+                }
+            } else {
+                sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
+            }
+            vibrateTouch();
+        });
+    }
+
+    private void requestLocationPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)) {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Location Permission Required")
+                    .setMessage("This app needs location access to add location data to the video watermark. Please grant location access.")
+                    .setPositiveButton("OK", (dialog, which) -> ActivityCompat.requestPermissions(requireActivity(),
+                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION))
+                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                    .show();
+        } else {
+            ActivityCompat.requestPermissions(requireActivity(),
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+        }
+    }
+
+
+    private void setupLocationToggle(View view, MaterialSwitch locationSwitch) {
+        boolean isLocationEnabled = sharedPreferences.getBoolean(PREF_LOCATION_DATA, false);
+        locationSwitch.setChecked(isLocationEnabled);
+
+        if (isLocationEnabled) {
+            locationHelper.startLocationUpdates();
+        } else {
+            locationHelper.stopLocationUpdates();
+        }
+
+        locationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, isChecked).apply();
+            if (isChecked) {
+                requestLocationPermission();
+            } else {
+                locationHelper.stopLocationUpdates();
+            }
+            vibrateTouch();
+        });
+    }
+
+
+    private static final int REQUEST_LOCATION_PERMISSION = 1;
+//    private void requestLocationPermission() {
+//        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+//        } else {
+//            locationHelper.startLocationUpdates();
+//        }
+//    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                locationHelper.startLocationUpdates();
+            } else {
+                sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
+                MaterialSwitch locationSwitch = getView().findViewById(R.id.location_toggle_group);
+                locationSwitch.setChecked(false); // Reset switch state
+            }
+        }
+    }
+
+
+
+
+
+
 
     private void setupCameraSelectionToggle(View view, MaterialButtonToggleGroup cameraSelectionToggle) {
         MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
@@ -149,6 +267,47 @@ public class SettingsFragment extends Fragment {
                 // Do nothing
             }
         });
+    }
+
+    private void setupWatermarkSpinner(View view, Spinner watermarkSpinner) {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(),
+                R.array.watermark_options, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        watermarkSpinner.setAdapter(adapter);
+
+        SharedPreferences sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        String savedWatermark = sharedPreferences.getString(PREF_WATERMARK_OPTION, "timestamp_fadcam");
+        int watermarkIndex = getWatermarkIndex(savedWatermark);
+        watermarkSpinner.setSelection(watermarkIndex);
+
+        watermarkSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedWatermark = getWatermarkValue(position);
+                sharedPreferences.edit().putString(PREF_WATERMARK_OPTION, selectedWatermark).apply();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+    }
+
+
+    private int getWatermarkIndex(String value) {
+        String[] values = getResources().getStringArray(R.array.watermark_values);
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(value)) {
+                return i;
+            }
+        }
+        return 0; // Default to first option
+    }
+
+    private String getWatermarkValue(int index) {
+        String[] values = getResources().getStringArray(R.array.watermark_values);
+        return values[index];
     }
 
     private void showReadmeDialog() {

@@ -1,8 +1,11 @@
 package com.fadcam.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -101,6 +104,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         fabToggleView.setImageResource(isGridView ? R.drawable.ic_list : R.drawable.ic_grid);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
         executorService.submit(() -> {
             List<File> recordsList = getRecordsList();
@@ -112,6 +116,8 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         List<File> recordsList = new ArrayList<>();
         File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
         if (recordsDir.exists()) {
+            // Introduce a delay before refreshing the list
+            new Handler(Looper.getMainLooper()).postDelayed(this::loadRecordsList, 500);
             File[] files = recordsDir.listFiles();
             if (files != null) {
                 for (File file : files) {
@@ -121,7 +127,15 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
                 }
             }
         }
+        new Handler(Looper.getMainLooper()).postDelayed(this::loadRecordsList, 500);
         return recordsList;
+    }
+
+    @Override
+    public void onViewCreated( View view,  Bundle savedInstanceState) {
+
+        loadRecordsList(); // Load the records when the view is created
+
     }
 
     @Override

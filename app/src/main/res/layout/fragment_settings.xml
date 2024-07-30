@@ -31,12 +31,27 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+
+
+
+
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/readme_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="README"
-                android:layout_marginBottom="16dp"/>
+                android:text="Read Me"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="#545554"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+
+
+
+
+
+
 
             <View
                 android:layout_width="match_parent"
@@ -151,9 +166,233 @@
                 <Spinner
                     android:id="@+id/quality_spinner"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="48dp"/>
 
             </LinearLayout>
+
+            <!-- Add divider for new section -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- New Watermark Options Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_watermark"
+                    android:layout_marginEnd="8dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Watermark"
+                        android:textColor="@color/colorPrimary"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Select watermark option \n(Default: Timestamp with Fadcam)"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"/>
+                </LinearLayout>
+
+                <Spinner
+                    android:id="@+id/watermark_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"/>
+            </LinearLayout>
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/gray"
+                android:layout_marginTop="18dp">
+                <!-- Tooltip ImageView positioned above the text and aligned to the start -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="1dp"
+                        android:src="@drawable/ic_info" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="For a speedy save, pick 'No Watermark'. Adding a watermark? It’s worth the wait, just a little longer to process!"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="0dp"
+                android:layout_marginBottom="10dp">
+
+                <!-- ImageView positioned on the left -->
+                <ImageView
+                    android:id="@+id/ic_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_location"
+                    android:layout_marginEnd="8dp"/>
+
+                <!-- Title and Description in a vertical LinearLayout -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/location_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location Data"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="16sp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/location_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"/>
+                </LinearLayout>
+
+                <!-- Switch positioned on the right -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/location_toggle_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"/>
+            </LinearLayout>
+
+
+
+
+
+
+
+
+
+
+            <!-- Description TextView positioned below the ImageView -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/gray"
+            android:layout_marginTop="8dp">
+            <!-- Tooltip ImageView positioned above the text and aligned to the start -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/tooltip_image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="1dp"
+                    android:src="@drawable/ic_info" />
+
+                <com.google.android.material.textview.MaterialTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="Enable phone's GPS for adding latitude and longitude data to the watermark."
+                android:textAppearance="?attr/textAppearanceCaption"
+                android:textColor="?android:attr/textColorSecondary"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+
+
+
+
+
+
+
+
 
         </LinearLayout>
 

@@ -1,7 +1,11 @@
 package com.fadcam.ui;
 
+import static com.fadcam.ui.SettingsFragment.PREF_LOCATION_DATA;
+
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -34,6 +38,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
@@ -57,17 +63,35 @@ import java.time.format.DateTimeFormatter;
 import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahDate;
 
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class HomeFragment extends Fragment {
 
     private static final String TAG = "HomeFragment";
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    private LocationHelper locationHelper;
 
     private long recordingStartTime;
     private long videoBitrate;
+
+
+    static final String PREF_LOCATION_DATA = "location_data";
+
+    private double latitude;
+    private double longitude;
+
+    private File tempFileBeingProcessed;
 
     private Handler handler = new Handler();
     private Runnable updateInfoRunnable;
@@ -177,6 +201,58 @@ public class HomeFragment extends Fragment {
         recordingStartTime = SystemClock.elapsedRealtime();
         updateStorageInfo();
     }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        locationHelper = new LocationHelper(requireContext());
+        requestLocationPermission();
+        Log.d(TAG, "HomeFragment created.");
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationHelper.startLocationUpdates();
+        } else {
+            requestLocationPermission();
+        }
+        Log.d(TAG, "HomeFragment resumed.");
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        locationHelper.stopLocationUpdates();
+        Log.d(TAG, "HomeFragment paused.");
+    }
+    private String getLocationData() {
+        return locationHelper.getLocationData();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                locationHelper.startLocationUpdates();
+            } else {
+                Log.d(TAG, "Location permission denied.");
+            }
+        }
+    }
+
+    private void requestLocationPermission() {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+        } else {
+            locationHelper.startLocationUpdates();
+        }
+        Log.d(TAG, "Requesting location permission.");
+    }
+
 
     @Nullable
     @Override
@@ -622,7 +698,7 @@ public class HomeFragment extends Fragment {
                 videoDir.mkdirs();
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
-            File videoFile = new File(videoDir, "FADCAM_" + timestamp + ".mp4");
+            File videoFile = new File(videoDir, "temp_" + timestamp + ".mp4");
 
             mediaRecorder = new MediaRecorder();
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -671,6 +747,60 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private String extractTimestamp(String filename) {
+        // Assuming filename format is "prefix_TIMESTAMP.mp4"
+        // Example: "temp_20240730_01_39_26PM.mp4"
+        // Extracting timestamp part: "20240730_01_39_26PM"
+        int startIndex = filename.indexOf('_') + 1;
+        int endIndex = filename.lastIndexOf('.');
+        return filename.substring(startIndex, endIndex);
+    }
+
+
+
+
+    private void checkAndDeleteSpecificTempFile() {
+        if (tempFileBeingProcessed != null) {
+            String tempTimestamp = extractTimestamp(tempFileBeingProcessed.getName());
+
+            // Construct FADCAM_ filename with the same timestamp
+            String outputFilePath = tempFileBeingProcessed.getParent() + "/FADCAM_" + tempFileBeingProcessed.getName().replace("temp_", "");
+            File outputFile = new File(outputFilePath);
+
+            // Check if the FADCAM_ file exists
+            if (outputFile.exists()) {
+                // Delete temp file
+                if (tempFileBeingProcessed.delete()) {
+                    Log.d(TAG, "Temp file deleted successfully.");
+                } else {
+                    Log.e(TAG, "Failed to delete temp file.");
+                }
+                // Reset tempFileBeingProcessed to null after deletion
+                tempFileBeingProcessed = null;
+            } else {
+                // FADCAM_ file does not exist yet
+                Log.d(TAG, "Matching FADCAM_ file not found. Temp file remains.");
+            }
+        }
+    }
+
+
+
+    private void startMonitoring() {
+        final long CHECK_INTERVAL_MS = 1000; // 1 second
+
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+            checkAndDeleteSpecificTempFile();
+        }, 0, CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    }
+
+
+
+
+
+
+
+
     private void stopRecording() {
         Log.d(TAG, "stopRecording: Stopping video recording");
         if (isRecording) {
@@ -693,7 +823,17 @@ public class HomeFragment extends Fragment {
             if (latestVideoFile != null) {
                 // Prepare file paths
                 String inputFilePath = latestVideoFile.getAbsolutePath();
-                String outputFilePath = latestVideoFile.getParent() + "/watermarked_" + latestVideoFile.getName();
+
+                // Remove 'temp_' prefix from the file name to get the original name
+                String originalFileName = latestVideoFile.getName().replace("temp_", "");
+
+                // Create output file path with 'FADCAM_' prefix
+                String outputFilePath = latestVideoFile.getParent() + "/FADCAM_" + originalFileName;
+                Log.d(TAG, "Watermarking: Input file path: " + inputFilePath);
+                Log.d(TAG, "Watermarking: Output file path: " + outputFilePath);
+
+                // Track the temp file being processed
+                tempFileBeingProcessed = latestVideoFile;
 
                 // Add text watermark to the recorded video
                 addTextWatermarkToVideo(inputFilePath, outputFilePath);
@@ -711,6 +851,9 @@ public class HomeFragment extends Fragment {
             textureView.setVisibility(View.INVISIBLE);
             stopUpdatingInfo();
             updateStorageInfo(); // Final update with actual values
+
+            // Start monitoring temp files
+//            startMonitoring();
         }
         isRecording = false;
         updatePreviewVisibility();
@@ -754,32 +897,76 @@ public class HomeFragment extends Fragment {
         String watermarkText;
         String watermarkOption = getWatermarkOption();
 
+        boolean isLocationEnabled = sharedPreferences.getBoolean(PREF_LOCATION_DATA, false);
+        String locationText = isLocationEnabled ? locationHelper.getLocationData() : "";
+
         switch (watermarkOption) {
             case "timestamp_fadcam":
-                watermarkText = "Captured by FadCam  - " + getCurrentTimestamp();
+                watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + (isLocationEnabled ? "" + locationText : "");
                 break;
             case "timestamp":
-                watermarkText = getCurrentTimestamp();
+                watermarkText = getCurrentTimestamp() + (isLocationEnabled ? "" + locationText : "");
                 break;
             case "no_watermark":
                 // No watermark, so just copy the video as is
-                String ffmpegCommand = String.format("-i %s -codec copy %s", inputFilePath, outputFilePath);
-                executeFFmpegCommand(ffmpegCommand);
+                String ffmpegCommandNoWatermark = String.format("-i %s -codec copy %s", inputFilePath, outputFilePath);
+                executeFFmpegCommand(ffmpegCommandNoWatermark);
                 return;
             default:
-                watermarkText = getCurrentTimestamp();
+                watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + (isLocationEnabled ? "" + locationText : "");
                 break;
         }
-        // Log the watermark text and font path
+
         Log.d(TAG, "Watermark Text: " + watermarkText);
         Log.d(TAG, "Font Path: " + fontPath);
 
+        // Determine the font size based on the video bitrate
+        int fontSize = getFontSizeBasedOnBitrate();
+
+        // Use -q:v 0 to keep the same quality as input
         String ffmpegCommand = String.format(
-                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=24:fontcolor=white:fontfile=%s\" -b:v 2M -codec:a copy %s",
-                inputFilePath, watermarkText, fontPath, outputFilePath
+                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%d:fontcolor=white:fontfile=%s\" -q:v 0 -codec:a copy %s",
+                inputFilePath, watermarkText, fontSize, fontPath, outputFilePath
         );
 
         executeFFmpegCommand(ffmpegCommand);
+    }
+
+    private int getFontSizeBasedOnBitrate() {
+        int fontSize;
+        int videoBitrate = getVideoBitrate(); // Ensure this method retrieves the correct bitrate based on the selected quality
+
+        if (videoBitrate <= 1000000) {
+            fontSize = 12; //SD quality
+        } else if (videoBitrate == 10000000) {
+            fontSize = 24; // FHD quality
+        } else {
+            fontSize = 16; // HD or higher quality
+        }
+
+        Log.d(TAG, "Determined Font Size: " + fontSize);
+        return fontSize;
+    }
+
+    private int getVideoBitrate() {
+        String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+        int bitrate;
+        switch (selectedQuality) {
+            case QUALITY_SD:
+                bitrate = 1000000; // 1 Mbps
+                break;
+            case QUALITY_HD:
+                bitrate = 5000000; // 5 Mbps
+                break;
+            case QUALITY_FHD:
+                bitrate = 10000000; // 10 Mbps
+                break;
+            default:
+                bitrate = 5000000; // Default to HD
+                break;
+        }
+        Log.d(TAG, "Selected Video Bitrate: " + bitrate + " bps");
+        return bitrate;
     }
 
     private void executeFFmpegCommand(String ffmpegCommand) {
@@ -789,12 +976,16 @@ public class HomeFragment extends Fragment {
             public void apply(Session session) {
                 if (session.getReturnCode().isSuccess()) {
                     Log.d(TAG, "Watermark added successfully.");
+                    // Start monitoring temp files
+                    startMonitoring();
                 } else {
                     Log.e(TAG, "Failed to add watermark: " + session.getFailStackTrace());
                 }
             }
         });
     }
+
+
 
     private String getCurrentTimestamp() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.getDefault());
@@ -848,6 +1039,39 @@ public class HomeFragment extends Fragment {
             }
         }
     }
+
+
+
+
+//    private class LocationHelper implements LocationListener {
+//
+//        private LocationManager locationManager;
+//        private double latitude;
+//        private double longitude;
+//
+//        public LocationHelper(LocationManager locationManager) {
+//            this.locationManager = locationManager;
+//        }
+//
+//        public void startListening() {
+//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+//        }
+//
+//        @Override
+//        public void onLocationChanged(Location location) {
+//            latitude = location.getLatitude();
+//            longitude = location.getLongitude();
+//        }
+//
+//        public String getLocationText() {
+//            return String.format(Locale.getDefault(), "%.2f, %.2f", latitude, longitude);
+//        }
+//    }
+
+
+
+
+
 
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
