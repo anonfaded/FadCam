@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -57,7 +58,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 import android.os.SystemClock;
@@ -75,6 +78,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -143,6 +147,60 @@ public class HomeFragment extends Fragment {
     private TextView tvDateEnglish;
     private TextView tvDateArabic;
 
+
+
+    private List<String> messageQueue;
+    private List<String> recentlyShownMessages;
+    private Random random = new Random();
+    private static final int RECENT_MESSAGE_LIMIT = 3; // Adjust as needed
+
+    private void initializeMessages() {
+        messageQueue = new ArrayList<>(Arrays.asList(
+                "Alert! This is a restricted area. Start recording to gain access.",
+                "You’ve found the secret button! It does nothing lol",
+                "Hurry! The system is about to explode... or maybe it just needs a recording to calm down.",
+                "Well, this is awkward now...",
+                "What color is your Bugatti?",
+                "I was not programmed to do what you are doing. Wait, are you trying to hack me?"
+        ));
+        recentlyShownMessages = new ArrayList<>();
+        Collections.shuffle(messageQueue); // Shuffle the list initially
+    }
+
+    private void showRandomMessage() {
+        if (messageQueue == null || messageQueue.isEmpty()) {
+            initializeMessages(); // Reinitialize and shuffle if queue is empty or null
+        }
+
+        // Remove recently shown messages from the queue
+        messageQueue.removeAll(recentlyShownMessages);
+
+        // Ensure there are still messages to choose from
+        if (!messageQueue.isEmpty()) {
+            String randomMessage = messageQueue.remove(random.nextInt(messageQueue.size()));
+            tvPreviewPlaceholder.setText(randomMessage);
+
+            // Track recently shown messages
+            recentlyShownMessages.add(randomMessage);
+            if (recentlyShownMessages.size() > RECENT_MESSAGE_LIMIT) {
+                recentlyShownMessages.remove(0); // Remove the oldest message
+            }
+
+            // Shuffle the list again
+            Collections.shuffle(messageQueue);
+        } else {
+            // Fallback message if no messages are available
+            tvPreviewPlaceholder.setText("Oops! No messages available right now.");
+        }
+    }
+
+
+
+
+
+
+
+
     private void setupLongPressListener() {
         cardPreview.setOnLongClickListener(v -> {
             if (isRecording) {
@@ -172,11 +230,43 @@ public class HomeFragment extends Fragment {
                             .start();
                 }, 60); // No Delay to ensure it happens after the initial scaling down
 
-                return true;
+            } else {
+                // Handling when recording is not active
+
+                // Show random funny message
+                showRandomMessage();
+
+
+                // Ensure the placeholder is visible
+                tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+                tvPreviewPlaceholder.setPadding(16, tvPreviewPlaceholder.getPaddingTop(), 16, tvPreviewPlaceholder.getPaddingBottom());
+                performHapticFeedback();
+
+                // Trigger the red blinking animation
+                tvPreviewPlaceholder.setBackgroundColor(Color.RED);
+                tvPreviewPlaceholder.postDelayed(() -> {
+                    tvPreviewPlaceholder.setBackgroundColor(Color.TRANSPARENT);
+                }, 100); // Blinking duration
+
+                // Wobble animation
+                ObjectAnimator scaleXUp = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.1f);
+                ObjectAnimator scaleYUp = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.1f);
+                ObjectAnimator scaleXDown = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.0f);
+                ObjectAnimator scaleYDown = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.0f);
+
+                scaleXUp.setDuration(50);
+                scaleYUp.setDuration(50);
+                scaleXDown.setDuration(50);
+                scaleYDown.setDuration(50);
+
+                AnimatorSet wobbleSet = new AnimatorSet();
+                wobbleSet.play(scaleXUp).with(scaleYUp).before(scaleXDown).before(scaleYDown);
+                wobbleSet.start();
             }
-            return false;
+            return true;
         });
     }
+
 
 
 
