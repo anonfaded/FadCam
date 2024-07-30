@@ -3,6 +3,8 @@ package com.fadcam.ui;
 import static com.fadcam.ui.SettingsFragment.PREF_LOCATION_DATA;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
@@ -42,6 +44,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -51,6 +54,7 @@ import com.arthenica.ffmpegkit.ExecuteCallback;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.arthenica.ffmpegkit.Session;
 import com.fadcam.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -132,6 +136,10 @@ public class HomeFragment extends Fragment {
     private View cardPreview;
     private Vibrator vibrator;
 
+    private CardView cardClock;
+    private TextView tvClock, tvDateEnglish, tvDateArabic;
+
+
     private TextView tvTip;
     private String[] tips = {
             "Ensure good lighting for better video quality",
@@ -143,9 +151,7 @@ public class HomeFragment extends Fragment {
     private int currentTipIndex = 0;
 
     private TextView tvStats;
-    private TextView tvClock;
-    private TextView tvDateEnglish;
-    private TextView tvDateArabic;
+
 
 
 
@@ -415,6 +421,15 @@ public class HomeFragment extends Fragment {
         tvTip = view.findViewById(R.id.tvTip);
         tvStats = view.findViewById(R.id.tvStats);
 
+        // Initialize views
+        cardClock = view.findViewById(R.id.cardClock);
+        tvClock = view.findViewById(R.id.tvClock);
+        tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
+        tvDateArabic = view.findViewById(R.id.tvDateArabic);
+
+        // Set up long press listener for clock widget
+        setupClockLongPressListener();
+
         tvClock = view.findViewById(R.id.tvClock);
         tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
         tvDateArabic = view.findViewById(R.id.tvDateArabic);
@@ -431,6 +446,9 @@ public class HomeFragment extends Fragment {
         updateTip();
         updateStats();
         startUpdatingClock();
+
+        // Update clock and date initially
+        updateClock();
 
         updateTip(); // Start the tip animation
         startTipsAnimation();
@@ -481,9 +499,107 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private void setupClockLongPressListener() {
+        cardClock.setOnLongClickListener(v -> {
+            addWobbleAnimation(); // This will perform the wobble animation
+            showDisplayOptionsDialog(); // This will show the dialog to choose display options
+            return true; // Indicate the long press was handled
+        });
+    }
+
+
+    private void addWobbleAnimation() {
+        // Define the scale down and scale up values
+        float scaleDown = 0.9f;
+        float scaleUp = 1.0f;
+
+        // Create animations for scaling down and scaling up
+        AnimatorSet scaleDownSet = new AnimatorSet();
+        scaleDownSet.playTogether(
+                ObjectAnimator.ofFloat(cardClock, "scaleX", scaleDown),
+                ObjectAnimator.ofFloat(cardClock, "scaleY", scaleDown)
+        );
+        scaleDownSet.setDuration(50); // Duration for scale down
+
+        AnimatorSet scaleUpSet = new AnimatorSet();
+        scaleUpSet.playTogether(
+                ObjectAnimator.ofFloat(cardClock, "scaleX", scaleUp),
+                ObjectAnimator.ofFloat(cardClock, "scaleY", scaleUp)
+        );
+        scaleUpSet.setDuration(70); // Duration for scale up
+
+        AnimatorSet scaleBackSet = new AnimatorSet();
+        scaleBackSet.playTogether(
+                ObjectAnimator.ofFloat(cardClock, "scaleX", 1.0f),
+                ObjectAnimator.ofFloat(cardClock, "scaleY", 1.0f)
+        );
+        scaleBackSet.setDuration(70); // Duration to snap back to original size
+
+        // Start the animation sequence
+        scaleDownSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                // Start scaling up animation after scaling down
+                scaleUpSet.start();
+                performHapticFeedback();
+            }
+        });
+
+        scaleUpSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                // Start scaling back to original size after scaling up
+                scaleBackSet.start();
+            }
+        });
+
+        // Start the sequence with scaling down
+        scaleDownSet.start();
+    }
+
+
+
+    private void showDisplayOptionsDialog() {
+        new MaterialAlertDialogBuilder(getContext())
+                .setTitle("Choose Clock Display")
+                .setSingleChoiceItems(new String[]{
+                        "Time Only",
+                        "English Date with Time",
+                        "تاريخ التقويم الإسلامي"
+                }, getCurrentDisplayOption(), (dialog, which) -> {
+                    saveDisplayOption(which);
+                    updateClock(); // Update the widget based on the selected option
+                    dialog.dismiss();
+                })
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private int getCurrentDisplayOption() {
+        SharedPreferences prefs = getActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
+        return prefs.getInt("display_option", 2); // Default to "Everything"
+    }
+
+    private void saveDisplayOption(int option) {
+        SharedPreferences prefs = getActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt("display_option", option);
+        editor.apply();
+    }
+
+
+    private void showOptionsAndAnimate() {
+        addWobbleAnimation();
+        showDisplayOptionsDialog();
+    }
+
+
     // Method to update the clock and dates
     private void updateClock() {
-        // Update the time in HH:mm AM/PM format
+        SharedPreferences prefs = getActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
+        int displayOption = prefs.getInt("display_option", 2); // Default to "Everything"
+
+        // Update the time
         SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
         tvClock.setText(currentTime);
@@ -491,18 +607,23 @@ public class HomeFragment extends Fragment {
         // Update the date in English
         SimpleDateFormat dateFormatEnglish = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
         String currentDateEnglish = dateFormatEnglish.format(new Date());
-        tvDateEnglish.setText(currentDateEnglish);
 
         // Update the date in Arabic (Islamic calendar)
+        String currentDateArabic = "N/A";
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             HijrahDate hijrahDate = HijrahChronology.INSTANCE.dateNow();
             DateTimeFormatter dateFormatterArabic = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("ar"));
-            String currentDateArabic = dateFormatterArabic.format(hijrahDate);
-            tvDateArabic.setText(currentDateArabic);
-        } else {
-            tvDateArabic.setText("N/A"); // Placeholder for devices below API 26
+            currentDateArabic = dateFormatterArabic.format(hijrahDate);
         }
+
+        // Set text visibility based on user choice
+        tvDateEnglish.setText(displayOption == 1 || displayOption == 2 ? currentDateEnglish : "");
+        tvDateEnglish.setPadding(5, tvPreviewPlaceholder.getPaddingTop(), 5, tvPreviewPlaceholder.getPaddingBottom());
+
+        tvDateArabic.setText(displayOption == 2 ? currentDateArabic : "");
     }
+
+
 
 
     private void updateStorageInfo() {
