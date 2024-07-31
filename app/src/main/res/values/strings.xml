@@ -2,8 +2,8 @@
     <string name="app_name">FadCam</string>
     <string name="app_icon_description">FadCam app icon</string>
     <string name="check_for_updates">Check for Updates</string>
-    <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, visit: https://github.com/fadsec-lab</string>
-    <string name="app_description">FadCam is an ad-free, open-source video recording app developed by Faded. It ensures user privacy by not collecting, tracking, or analyzing any data. Free to use and available only on the official GitHub repo.</string>
+    <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
+    <string name="app_description">FadCam is an ad-free, open-source video recording app. It ensures user privacy by not collecting, tracking, or analyzing any data. It is free to use and available only on the official GitHub repository and the links mentioned in the README file.</string>
     <string name="view_source_code">View Source Code</string>
     <string name="buy_me_a_coffee">Buy me a coffee ☕</string>
     <string name="contact">Contact</string>

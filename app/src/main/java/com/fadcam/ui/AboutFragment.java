@@ -92,7 +92,7 @@ public class AboutFragment extends Fragment {
         appName.setText(getString(R.string.app_name));
         appVersion.setText(String.format("Version %s", getAppVersion()));
 
-        sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/FadCam"));
+        sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/"));
         donateButton.setOnClickListener(v -> openUrl("https://ko-fi.com/fadedx"));
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());
@@ -110,12 +110,27 @@ public class AboutFragment extends Fragment {
 
     private void setupPrivacyInfo(MaterialCardView cardView, ScrollView scrollView) {
         String[] questions = {
+                "DISCLAIMER",
                 "Does FadCam collect any user data?",
-                "Are there any ads in FadCam?"
+                "Are there any ads in FadCam?",
+                "Why does FadCam request location access?",
+                "Does FadCam connect to the internet?",
+                "Is any data stored on external servers?",
+                "What happens to my videos after recording?",
+                "Does FadCam share my data with third parties?",
+                "How can I report a bug or request a feature?"
         };
+
         String[] answers = {
-                "No, FadCam does not collect, track, or analyze any user data. Your privacy is our priority.",
-                "FadCam is completely ad-free, providing an uninterrupted user experience."
+                "FadCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.\n",
+                "No, FadCam does not collect any user data.",
+                "No, FadCam is completely ad-free.",
+                "For adding location info to your watermarks.",
+                "No, FadCam does not connect to the internet.",
+                "No, all data is stored on your device.",
+                "Your videos are saved locally on your device.",
+                "No, FadCam does not share or collect any data.",
+                "You can open an issue on our GitHub page."
         };
 
         StringBuilder qnaContent = new StringBuilder();
