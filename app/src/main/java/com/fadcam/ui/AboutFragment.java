@@ -118,7 +118,17 @@ public class AboutFragment extends Fragment {
                 "Is any data stored on external servers?",
                 "What happens to my videos after recording?",
                 "Does FadCam share my data with third parties?",
-                "How can I report a bug or request a feature?"
+                "How can I report a bug or request a feature?",
+                "",
+                "General",
+                "Why does watermarking take so long?",
+                "Why is there a 'temp' video?",
+                "How can I change the video quality?",
+                "Can I disable the preview?",
+                "How do I embed my location in the watermark?",
+                "Are my preferences saved?",
+                "Can I schedule recordings?",
+                "How do I update the app?"
         };
 
         String[] answers = {
@@ -130,7 +140,17 @@ public class AboutFragment extends Fragment {
                 "No, all data is stored on your device.",
                 "Your videos are saved locally on your device.",
                 "No, FadCam does not share or collect any data.",
-                "You can open an issue on our GitHub page."
+                "You can open an issue on our GitHub page.",
+                "",
+                "",
+                "The watermark is embedded in each frame of the video. The longer the video, the more time it will take.",
+                "The 'temp' video is your original recording. It's auto-deleted after watermarking. If watermarking fails, the 'temp' file stays as a backup.",
+                "Change video quality in settings: HD, SD, or FHD.",
+                "Long-press the preview area to disable it.",
+                "Enable location in settings for location data in the watermark. It will embed the precise longitude and latitude.",
+                "Yes, preferences and all settings are saved and applied seamlessly.",
+                "This feature is coming soon.",
+                "Check the official GitHub repo for updates."
         };
 
         StringBuilder qnaContent = new StringBuilder();
@@ -169,18 +189,18 @@ public class AboutFragment extends Fragment {
                 public void onAnimationStart(Animator animation) {
                     if (!isVisible) {
                         scrollView.post(() -> {
-                            scrollView.postDelayed(() -> {
-                                int cardBottom = cardView.getBottom();
-                                int scrollViewBottom = scrollView.getHeight() + scrollView.getScrollY();
-                                int scrollAmount = cardBottom - scrollViewBottom;
+                            scrollView.post(() -> {
+                                scrollView.postDelayed(() -> {
+                                    int cardTop = cardView.getTop();
+                                    ValueAnimator scrollAnimator = ValueAnimator.ofInt(scrollView.getScrollY(), cardTop);
+                                    scrollAnimator.addUpdateListener(scrollAnimation -> {
+                                        scrollView.scrollTo(0, (int) scrollAnimation.getAnimatedValue());
+                                    });
+                                    scrollAnimator.setDuration(400); // Match the card animation duration
+                                    scrollAnimator.start();
+                                }, 400); // Delay to match the expansion duration
+                            });
 
-                                ValueAnimator scrollAnimator = ValueAnimator.ofInt(scrollView.getScrollY(), scrollView.getScrollY() + scrollAmount);
-                                scrollAnimator.addUpdateListener(scrollAnimation -> {
-                                    scrollView.scrollTo(0, (int) scrollAnimation.getAnimatedValue());
-                                });
-                                scrollAnimator.setDuration(300); // Match the card animation duration
-                                scrollAnimator.start();
-                            }, 300); // Delay to match the expansion duration
                         });
                     }
                 }
