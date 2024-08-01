@@ -169,6 +169,47 @@ public class HomeFragment extends Fragment {
     private Random random = new Random();
     private static final int RECENT_MESSAGE_LIMIT = 3; // Adjust as needed
 
+    private static final int REQUEST_PERMISSIONS = 1;
+//    private static final String PREF_FIRST_LAUNCH = "first_launch";
+
+
+    private void requestEssentialPermissions() {
+        Log.d(TAG, "requestEssentialPermissions: Requesting essential permissions");
+        String[] permissions = {
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        };
+
+        List<String> permissionsToRequest = new ArrayList<>();
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "requestEssentialPermissions: Requesting permission: " + permission);
+                permissionsToRequest.add(permission);
+            }
+        }
+
+        if (!permissionsToRequest.isEmpty()) {
+
+            ActivityCompat.requestPermissions(requireActivity(), permissionsToRequest.toArray(new String[0]), REQUEST_PERMISSIONS);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private void initializeMessages() {
         messageQueue = new ArrayList<>(Arrays.asList(
                 "Alert! This is a restricted area. Start recording to gain access.",
@@ -335,19 +376,33 @@ public class HomeFragment extends Fragment {
         super.onCreate(savedInstanceState);
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         locationHelper = new LocationHelper(requireContext());
-        requestLocationPermission();
+//        requestLocationPermission();
         Log.d(TAG, "HomeFragment created.");
+
+        // Request essential permissions on every launch
+        requestEssentialPermissions();
+
+        // Check if it's the first launch
+//        boolean isFirstLaunch = sharedPreferences.getBoolean(PREF_FIRST_LAUNCH, true);
+//        if (isFirstLaunch) {
+//            // Request essential permissions
+//            requestEssentialPermissions();
+//
+//            // Set first launch to false
+//            sharedPreferences.edit().putBoolean(PREF_FIRST_LAUNCH, false).apply();
+//        }
+
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationHelper.startLocationUpdates();
-        } else {
-            requestLocationPermission();
-        }
-        Log.d(TAG, "HomeFragment resumed.");
+//        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+//            locationHelper.startLocationUpdates();
+//        } else {
+//            requestLocationPermission();
+//        }
+//        Log.d(TAG, "HomeFragment resumed.");
     }
 
     @Override
@@ -372,14 +427,14 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void requestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
-        } else {
-            locationHelper.startLocationUpdates();
-        }
-        Log.d(TAG, "Requesting location permission.");
-    }
+//    private void requestLocationPermission() {
+//        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+//        } else {
+//            locationHelper.startLocationUpdates();
+//        }
+//        Log.d(TAG, "Requesting location permission.");
+//    }
 
 
     @Nullable

@@ -48,6 +48,9 @@ public class SettingsFragment extends Fragment {
     private static final String QUALITY_FHD = "FHD";
     static final String PREF_LOCATION_DATA = "location_data";
 
+    private static final int REQUEST_PERMISSIONS = 1;
+    private static final String PREF_FIRST_LAUNCH = "first_launch";
+
     private void vibrateTouch() {
         // Haptic Feedback
         Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
@@ -123,7 +126,7 @@ public class SettingsFragment extends Fragment {
             if (isChecked) {
                 if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
-                    requestLocationPermission();
+                    showLocationPermissionDialog(locationSwitch);
                 } else {
                     sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, true).apply();
                 }
@@ -134,19 +137,21 @@ public class SettingsFragment extends Fragment {
         });
     }
 
+
+    private void showLocationPermissionDialog(MaterialSwitch locationSwitch) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Location Permission")
+                .setMessage("This app needs location permission to add location data to videos. Please grant the permission.")
+                .setPositiveButton("Grant", (dialog, which) -> requestLocationPermission())
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    locationSwitch.setChecked(false); // Disable the switch if the user cancels
+                    sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
+                    dialog.dismiss();
+                })
+                .show();
+    }
     private void requestLocationPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)) {
-            new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Location Permission Required")
-                    .setMessage("This app needs location access to add location data to the video watermark. Please grant location access.")
-                    .setPositiveButton("OK", (dialog, which) -> ActivityCompat.requestPermissions(requireActivity(),
-                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION))
-                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                    .show();
-        } else {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
-        }
+        ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
     }
 
 
@@ -186,14 +191,17 @@ public class SettingsFragment extends Fragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                locationHelper.startLocationUpdates();
+                sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, true).apply();
             } else {
-                sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
                 MaterialSwitch locationSwitch = getView().findViewById(R.id.location_toggle_group);
-                locationSwitch.setChecked(false); // Reset switch state
+                if (locationSwitch != null) {
+                    locationSwitch.setChecked(false);
+                }
+                sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
             }
         }
     }
+
 
 
 
@@ -332,4 +340,6 @@ public class SettingsFragment extends Fragment {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         startActivity(intent);
     }
+
+
 }
