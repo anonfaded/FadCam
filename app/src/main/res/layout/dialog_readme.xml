@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceHeadline6"
-            android:text="Welcome to FadCam!"
+            android:text=""
             android:layout_marginBottom="8dp"/>
 
         <com.google.android.material.textview.MaterialTextView
@@ -35,7 +35,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceBody2"
-            android:text="• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Anonymous recordings with no notification icons"
+            android:text="• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Customizable watermarking\n• ExoPlayer integration for better playback\n• Location data in watermarks\n• Dynamic watermark options\n• Long press feedback with animations\n• Date and Time widget customization\n"
+
             android:layout_marginBottom="16dp"/>
 
         <com.google.android.material.textview.MaterialTextView
@@ -50,6 +51,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceBody2"
             android:text="• Auto-scheduled recordings\n• Auto-uploading to Google Drive\n• Custom app icons\n• App lock for enhanced privacy\n• In-app video editor for simple tasks like trimming\n• And many more exciting features!"
+
             android:layout_marginBottom="16dp"/>
 
         <com.google.android.material.textview.MaterialTextView
@@ -86,7 +88,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceBody1"
-            android:text="Thank you for using FadCam! We're working hard to bring you the best video recording experience."
+            android:text="Thank you for using FadCam!"
             android:layout_marginBottom="8dp"/>
 
     </LinearLayout>

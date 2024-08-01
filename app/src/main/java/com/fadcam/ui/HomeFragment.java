@@ -142,12 +142,21 @@ public class HomeFragment extends Fragment {
 
     private TextView tvTip;
     private String[] tips = {
-            "Ensure good lighting for better video quality",
-            "Use a tripod or stable surface for steady footage",
-            "Clean your camera lens before recording",
-            "Frame your shot before hitting record",
-            "Consider using an external microphone for better audio"
+            "1/11 | Long press preview to disable it.",
+            "2/11 | Long press date widget to select clock display.",
+            "3/11 | Storage widget updates recording space in real-time.",
+            "4/11 | Stats widget shows total videos and space used.",
+            "5/11 | Change video quality in settings (HD, SD, FHD).",
+            "6/11 | Low on space? Adjust video quality for more recording time.",
+            "7/11 | Add watermark to videos in settings.",
+            "8/11 | Embed precise location in watermark via settings.",
+            "9/11 | Record with front camera? Choose in settings.",
+            "10/11 | Your preferences are saved and applied seamlessly.",
+            "11/11 | Need help? Join our Discord via the About section."
     };
+
+
+
     private int currentTipIndex = 0;
 
     private TextView tvStats;

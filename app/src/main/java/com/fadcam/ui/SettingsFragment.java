@@ -313,7 +313,7 @@ public class SettingsFragment extends Fragment {
     private void showReadmeDialog() {
         vibrateTouch();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle("README");
+        builder.setTitle("Welcome to FadCam!");
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_readme, null);
 
