@@ -172,14 +172,25 @@ public class HomeFragment extends Fragment {
     private static final int REQUEST_PERMISSIONS = 1;
 //    private static final String PREF_FIRST_LAUNCH = "first_launch";
 
-
+// important
     private void requestEssentialPermissions() {
         Log.d(TAG, "requestEssentialPermissions: Requesting essential permissions");
-        String[] permissions = {
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        };
+        String[] permissions;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11 and above
+            permissions = new String[]{
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.READ_MEDIA_VIDEO,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+            };
+        } else { // Below Android 11
+            permissions = new String[]{
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+            };
+        }
 
         List<String> permissionsToRequest = new ArrayList<>();
         for (String permission : permissions) {
@@ -190,7 +201,6 @@ public class HomeFragment extends Fragment {
         }
 
         if (!permissionsToRequest.isEmpty()) {
-
             ActivityCompat.requestPermissions(requireActivity(), permissionsToRequest.toArray(new String[0]), REQUEST_PERMISSIONS);
         }
     }
@@ -415,17 +425,26 @@ public class HomeFragment extends Fragment {
         return locationHelper.getLocationData();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                locationHelper.startLocationUpdates();
-            } else {
-                Log.d(TAG, "Location permission denied.");
-            }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == REQUEST_PERMISSIONS) {
+//            boolean allGranted = true;
+//            for (int result : grantResults) {
+//                if (result != PackageManager.PERMISSION_GRANTED) {
+//                    allGranted = false;
+//                    break;
+//                }
+//            }
+//            if (allGranted) {
+//                startRecording();
+//            } else {
+//                Toast.makeText(requireContext(), "Essential permissions are required to start recording", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
+
+
 
 //    private void requestLocationPermission() {
 //        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -521,13 +540,52 @@ public class HomeFragment extends Fragment {
         updatePreviewVisibility();
     }
 
+    private boolean areEssentialPermissionsGranted() {
+        boolean cameraGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        boolean recordAudioGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+
+        boolean storageGranted;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11 and above
+            storageGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        } else { // Below Android 11
+            storageGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        return cameraGranted && recordAudioGranted && storageGranted;
+    }
+
+    private void showPermissionsInfoDialog() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Permissions Required")
+                .setMessage("This app needs camera, microphone, and storage permissions to function properly. Please enable these permissions from the app settings.")
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void debugPermissionsStatus() {
+        Log.d(TAG, "Camera permission: " +
+                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
+        Log.d(TAG, "Record Audio permission: " +
+                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
+        Log.d(TAG, "Write External Storage permission: " +
+                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
+    }
+
+
     private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
-            if (!isRecording) {
-                startRecording();
+            debugPermissionsStatus();
+            if (!areEssentialPermissionsGranted()) {
+                debugPermissionsStatus();
+                showPermissionsInfoDialog();
             } else {
-                stopRecording();
-                updateStats();
+                if (!isRecording) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                    updateStats();
+                }
             }
         });
 
