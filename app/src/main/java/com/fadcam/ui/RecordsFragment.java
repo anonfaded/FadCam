@@ -67,7 +67,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
 
     private void setupRecyclerView() {
         setLayoutManager();
-        adapter = new RecordsAdapter(new ArrayList<>(), this, this);
+        adapter = new RecordsAdapter(getContext(), new ArrayList<>(), this, this);
         recyclerView.setAdapter(adapter);
     }
 
@@ -132,10 +132,8 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     @Override
-    public void onViewCreated( View view,  Bundle savedInstanceState) {
-
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         loadRecordsList(); // Load the records when the view is created
-
     }
 
     @Override
@@ -186,7 +184,6 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
                 .setTitle("Eradicate Video(s)? \uD83D\uDCA3")
                 .setMessage("Are you absolutely, positively sure you want to nuke these video(s) out of existence? \uD83D\uDE80\uD83D\uDCA5")
                 .setNegativeButton("No, Keep 'Em! \uD83D\uDE05", null)
-
                 .setPositiveButton("Yes, Nuke 'Em! \uD83C\uDF0B", (dialog, which) -> deleteSelectedVideos())
                 .show();
     }

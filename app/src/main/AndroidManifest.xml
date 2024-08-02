@@ -4,7 +4,7 @@
 
 
     <!-- For Android 13+ -->
-<!--    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
+
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
@@ -25,6 +25,17 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+
 
     <application
         android:allowBackup="true"
@@ -58,6 +69,14 @@
         <activity
             android:name=".ui.VideoPlayerActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <service
+            android:name=".RecordingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection|camera|microphone" />
+
+
+
     </application>
 
 </manifest>

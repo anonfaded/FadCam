@@ -25,6 +25,9 @@ public class MainActivity extends AppCompatActivity {
         com.fadcam.ViewPagerAdapter adapter = new com.fadcam.ViewPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
+        // Assuming viewPager is the instance of your ViewPager
+        viewPager.setOffscreenPageLimit(4); // Adjust the number based on your requirement
+
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.navigation_home) {
