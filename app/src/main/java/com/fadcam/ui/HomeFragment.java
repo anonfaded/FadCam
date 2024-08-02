@@ -7,7 +7,10 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -54,6 +57,7 @@ import com.arthenica.ffmpegkit.ExecuteCallback;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.arthenica.ffmpegkit.Session;
 import com.fadcam.R;
+import com.fadcam.RecordingService;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
@@ -96,6 +100,7 @@ public class HomeFragment extends Fragment {
     private long recordingStartTime;
     private long videoBitrate;
 
+    private RecordsAdapter adapter;
 
     static final String PREF_LOCATION_DATA = "location_data";
 
@@ -407,6 +412,21 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        locationHelper.startLocationUpdates();
+
+//        if (isRecording) {
+//            // Reinitialize preview
+//            updateCameraPreview();
+////            startRecording();
+//        }
+        Log.d(TAG, "HomeFragment resumed.");
+
+
+
+        IntentFilter filter = new IntentFilter("RECORDING_STATE_CHANGED");
+        getActivity().registerReceiver(recordingStateReceiver, filter);
+
+
 //        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 //            locationHelper.startLocationUpdates();
 //        } else {
@@ -420,6 +440,8 @@ public class HomeFragment extends Fragment {
         super.onPause();
         locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
+
+        getActivity().unregisterReceiver(recordingStateReceiver);
     }
     private String getLocationData() {
         return locationHelper.getLocationData();
@@ -903,8 +925,36 @@ public class HomeFragment extends Fragment {
         }
     }
 
+
+
+    private BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("RECORDING_STATE_CHANGED".equals(intent.getAction())) {
+                boolean isRecording = intent.getBooleanExtra("isRecording", false);
+                if (isRecording) {
+                    buttonStartStop.setText("Stop");
+                    buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+                    buttonPauseResume.setEnabled(true);
+                    tvPreviewPlaceholder.setVisibility(View.GONE);
+                    textureView.setVisibility(View.VISIBLE);
+                } else {
+                    buttonStartStop.setText("Start");
+                    buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+                    buttonPauseResume.setEnabled(false);
+                    tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+                    textureView.setVisibility(View.GONE);
+                }
+            }
+        }
+    };
+
+
+
     private void startRecording() {
-        Log.d(TAG, "startRecording: Initiating video recording");
+        Log.d(TAG, "startRecording: Initiating video recording from home fragment");
+
+        // Set up the camera and MediaRecorder here
         if (!isRecording) {
             resetTimers();
             if (cameraDevice == null) {
@@ -924,8 +974,45 @@ public class HomeFragment extends Fragment {
             startUpdatingInfo();
             isRecording = true;
             updatePreviewVisibility();
+
+            // Start the recording service
+            Intent startIntent = new Intent(getActivity(), RecordingService.class);
+            startIntent.setAction("ACTION_START_RECORDING");
+            getActivity().startService(startIntent);
         }
     }
+
+
+
+//recording service section
+//    private void startRecording() {
+//        Log.d(TAG, "startRecording: Initiating video recording from home fragment");
+//
+//        Intent startIntent = new Intent(getActivity(), RecordingService.class);
+//        startIntent.setAction("ACTION_START_RECORDING");
+//        getActivity().startService(startIntent);
+//
+//        if (!isRecording) {
+//            resetTimers();
+//            if (cameraDevice == null) {
+//                openCamera();
+//            } else {
+//                startRecordingVideo();
+//            }
+//            recordingStartTime = SystemClock.elapsedRealtime();
+//            setVideoBitrate();
+//
+//            buttonStartStop.setText("Stop");
+//            buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+//            buttonPauseResume.setEnabled(true);
+//            tvPreviewPlaceholder.setVisibility(View.GONE);
+//            textureView.setVisibility(View.VISIBLE);
+//
+//            startUpdatingInfo();
+//            isRecording = true;
+//            updatePreviewVisibility();
+//        }
+//    }
 
     private void setVideoBitrate() {
         String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
@@ -1153,67 +1240,119 @@ public class HomeFragment extends Fragment {
 
 
 
-
-
-
-
     private void stopRecording() {
         Log.d(TAG, "stopRecording: Stopping video recording");
+
+        // Stop the recording service
+        Intent stopIntent = new Intent(getActivity(), RecordingService.class);
+        stopIntent.setAction("ACTION_STOP_RECORDING");
+        getActivity().startService(stopIntent);
+
         if (isRecording) {
             try {
                 cameraCaptureSession.stopRepeating();
                 cameraCaptureSession.abortCaptures();
-                mediaRecorder.stop();
-                mediaRecorder.reset();
-                // Haptic Feedback
+                releaseCamera();
                 vibrateTouch();
                 Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
+
+                // Add watermarking here if necessary
+                // Get the latest video file
+                File latestVideoFile = getLatestVideoFile();
+                if (latestVideoFile != null) {
+                    String inputFilePath = latestVideoFile.getAbsolutePath();
+                    String originalFileName = latestVideoFile.getName().replace("temp_", "");
+                    String outputFilePath = latestVideoFile.getParent() + "/FADCAM_" + originalFileName;
+                    Log.d(TAG, "Watermarking: Input file path: " + inputFilePath);
+                    Log.d(TAG, "Watermarking: Output file path: " + outputFilePath);
+
+                    tempFileBeingProcessed = latestVideoFile;
+                    addTextWatermarkToVideo(inputFilePath, outputFilePath);
+                } else {
+                    Log.e(TAG, "No video file found.");
+                }
+
+                isRecording = false;
+                buttonStartStop.setText("Start");
+                buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+                buttonPauseResume.setEnabled(false);
+                tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+                textureView.setVisibility(View.INVISIBLE);
+                stopUpdatingInfo();
+                updateStorageInfo();
             } catch (CameraAccessException | IllegalStateException e) {
                 Log.e(TAG, "stopRecording: Error stopping recording", e);
                 e.printStackTrace();
             }
-// below lines are new
-            // Add watermarking here
-            // Get the latest video file
-            File latestVideoFile = getLatestVideoFile();
-            if (latestVideoFile != null) {
-                // Prepare file paths
-                String inputFilePath = latestVideoFile.getAbsolutePath();
-
-                // Remove 'temp_' prefix from the file name to get the original name
-                String originalFileName = latestVideoFile.getName().replace("temp_", "");
-
-                // Create output file path with 'FADCAM_' prefix
-                String outputFilePath = latestVideoFile.getParent() + "/FADCAM_" + originalFileName;
-                Log.d(TAG, "Watermarking: Input file path: " + inputFilePath);
-                Log.d(TAG, "Watermarking: Output file path: " + outputFilePath);
-
-                // Track the temp file being processed
-                tempFileBeingProcessed = latestVideoFile;
-
-                // Add text watermark to the recorded video
-                addTextWatermarkToVideo(inputFilePath, outputFilePath);
-            } else {
-                Log.e(TAG, "No video file found.");
-            }
-
-
-            releaseCamera();
             isRecording = false;
-            buttonStartStop.setText("Start");
-            buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
-            buttonPauseResume.setEnabled(false);
-            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-            textureView.setVisibility(View.INVISIBLE);
-            stopUpdatingInfo();
-            updateStorageInfo(); // Final update with actual values
-
-            // Start monitoring temp files
-//            startMonitoring();
+            updatePreviewVisibility();
         }
-        isRecording = false;
-        updatePreviewVisibility();
     }
+
+
+//recording service section
+//    private void stopRecording() {
+//        Log.d(TAG, "stopRecording: Stopping video recording");
+//
+//        Intent stopIntent = new Intent(getActivity(), RecordingService.class);
+//        stopIntent.setAction("ACTION_STOP_RECORDING");
+//        getActivity().startService(stopIntent);
+//
+//        if (isRecording) {
+//            try {
+//                cameraCaptureSession.stopRepeating();
+//                cameraCaptureSession.abortCaptures();
+//                mediaRecorder.stop();
+//                mediaRecorder.reset();
+//                // Haptic Feedback
+//                vibrateTouch();
+//                Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
+//            } catch (CameraAccessException | IllegalStateException e) {
+//                Log.e(TAG, "stopRecording: Error stopping recording", e);
+//                e.printStackTrace();
+//            }
+//// below lines are new
+//            // Add watermarking here
+//            // Get the latest video file
+//            File latestVideoFile = getLatestVideoFile();
+//            if (latestVideoFile != null) {
+//                // Prepare file paths
+//                String inputFilePath = latestVideoFile.getAbsolutePath();
+//
+//                // Remove 'temp_' prefix from the file name to get the original name
+//                String originalFileName = latestVideoFile.getName().replace("temp_", "");
+//
+//                // Create output file path with 'FADCAM_' prefix
+//                String outputFilePath = latestVideoFile.getParent() + "/FADCAM_" + originalFileName;
+//                Log.d(TAG, "Watermarking: Input file path: " + inputFilePath);
+//                Log.d(TAG, "Watermarking: Output file path: " + outputFilePath);
+//
+//                // Track the temp file being processed
+//                tempFileBeingProcessed = latestVideoFile;
+//
+//                // Add text watermark to the recorded video
+//                addTextWatermarkToVideo(inputFilePath, outputFilePath);
+//            } else {
+//                Log.e(TAG, "No video file found.");
+//            }
+//
+//
+//            releaseCamera();
+//            isRecording = false;
+//            buttonStartStop.setText("Start");
+//            buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+//            buttonPauseResume.setEnabled(false);
+//            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+//            textureView.setVisibility(View.INVISIBLE);
+//            stopUpdatingInfo();
+//            updateStorageInfo(); // Final update with actual values
+//
+//            // Start monitoring temp files
+////            startMonitoring();
+//        }
+//        isRecording = false;
+//        updatePreviewVisibility();
+//    }
 
     private void releaseCamera() {
         Log.d(TAG, "releaseCamera: Releasing camera resources");
@@ -1334,12 +1473,27 @@ public class HomeFragment extends Fragment {
                     Log.d(TAG, "Watermark added successfully.");
                     // Start monitoring temp files
                     startMonitoring();
+
+                    // Notify the adapter to update the thumbnail
+                    File latestVideo = getLatestVideoFile();
+                    if (latestVideo != null) {
+                        String videoFilePath = latestVideo.getAbsolutePath();
+                        updateThumbnailInAdapter(videoFilePath);
+                    }
+
                 } else {
                     Log.e(TAG, "Failed to add watermark: " + session.getFailStackTrace());
                 }
             }
         });
     }
+
+    private void updateThumbnailInAdapter(String videoFilePath) {
+        if (adapter != null) {
+            adapter.notifyDataSetChanged(); // Notify adapter that data has changed
+        }
+    }
+
 
 
 
