@@ -788,6 +788,12 @@ public class HomeFragment extends Fragment {
 
         long remainingTime = (videoBitrate > 0) ? (bytesAvailable * 8) / videoBitrate : 0;
 
+        // Calculate days, hours, minutes, and seconds for remaining time
+        long days = remainingTime / (24 * 3600);
+        long hours = (remainingTime % (24 * 3600)) / 3600;
+        long minutes = (remainingTime % 3600) / 60;
+        long seconds = remainingTime % 60;
+
         String storageInfo = String.format(Locale.getDefault(),
                 "<font color='#FFFFFF' style='font-size:16sp;'><b>Available:</b></font><br>" +
                         "<font color='#CCCCCC' style='font-size:14sp;'>%.2f GB / %.2f GB</font><br><br>" +
@@ -796,13 +802,13 @@ public class HomeFragment extends Fragment {
                         "<font color='#FFFFFF' style='font-size:16sp;'><b>Elapsed time:</b></font><br>" +
                         "<font color='#77DD77' style='font-size:14sp;'>%02d:%02d</font><br>" +
                         "<font color='#FFFFFF' style='font-size:16sp;'><b>Remaining time:</b></font><br>" +
-                        "<font color='#E43C3C' style='font-size:14sp;'>%02d:%02d</font>",
+                        "<font color='#E43C3C' style='font-size:14sp;'>%s</font>",
                 gbAvailable, gbTotal,
                 getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 1024 * 1024),
                 elapsedTime / 60000, (elapsedTime / 1000) % 60,
-                remainingTime / 60, remainingTime % 60
+                formatRemainingTime(days, hours, minutes, seconds)
         );
 
         Spanned formattedText = Html.fromHtml(storageInfo, Html.FROM_HTML_MODE_LEGACY);
@@ -813,6 +819,23 @@ public class HomeFragment extends Fragment {
                 tvStorageInfo.setText(formattedText);
             });
         }
+    }
+
+    private String formatRemainingTime(long days, long hours, long minutes, long seconds) {
+        StringBuilder remainingTime = new StringBuilder();
+        if (days > 0) {
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>days</font> ", days));
+        }
+        if (hours > 0) {
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>h</font> ", hours));
+        }
+        if (minutes > 0) {
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>m</font> ", minutes));
+        }
+        if (seconds > 0 || remainingTime.length() == 0) {
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>s</font>", seconds));
+        }
+        return remainingTime.toString();
     }
 
     private String getRecordingTimeEstimate(long availableBytes, long bitrate) {
