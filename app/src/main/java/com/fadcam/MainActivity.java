@@ -7,7 +7,9 @@ import androidx.viewpager2.widget.ViewPager2;
 import android.os.Bundle;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-
+import android.app.Application;
+import org.osmdroid.config.Configuration;
+import java.io.File;
 public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
@@ -61,5 +63,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // This is the path for the osmdroid tile cache
+        File osmdroidBasePath = new File(getCacheDir().getAbsolutePath(), "osmdroid");
+        File osmdroidTileCache = new File(osmdroidBasePath, "tiles");
+        Configuration.getInstance().setOsmdroidBasePath(osmdroidBasePath);
+        Configuration.getInstance().setOsmdroidTileCache(osmdroidTileCache);
+
     }
 }

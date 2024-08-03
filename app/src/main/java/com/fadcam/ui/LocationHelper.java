@@ -1,70 +1,66 @@
 package com.fadcam.ui;
 
-import android.annotation.SuppressLint;
+import static android.content.ContentValues.TAG;
+
 import android.content.Context;
 import android.location.Location;
 import android.util.Log;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.overlay.mylocation.IMyLocationConsumer;
+import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 
 public class LocationHelper {
 
-    private static final String TAG = "LocationHelper";
-    private final Context context;
-    private final FusedLocationProviderClient fusedLocationClient;
-    private Location currentLocation;
+    private GpsMyLocationProvider provider;
+    private Context context;
+    private GeoPoint currentLocation;
 
     public LocationHelper(Context context) {
         this.context = context;
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
-        Log.d(TAG, "LocationHelper initialized.");
+        provider = new GpsMyLocationProvider(context);
+
+        // Set a location update handler
+        provider.setLocationUpdateMinTime(1000); // 1 second
+        provider.setLocationUpdateMinDistance(10); // 10 meters
+
+        provider.startLocationProvider(new IMyLocationConsumer() {
+            @Override
+            public void onLocationChanged(Location location, IMyLocationProvider source) {
+                if (location != null) {
+                    currentLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
+                }
+            }
+        });
     }
 
-    @SuppressLint("MissingPermission")
     public void startLocationUpdates() {
-        Log.d(TAG, "Starting location updates.");
-
-        LocationRequest locationRequest = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(10000) // 10 seconds
-                .setFastestInterval(5000); // 5 seconds
-
-        Log.d(TAG, "Requesting location updates with interval: " + locationRequest.getInterval() +
-                " and fastest interval: " + locationRequest.getFastestInterval());
-
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+        if (provider != null) {
+            provider.startLocationProvider(new IMyLocationConsumer() {
+                @Override
+                public void onLocationChanged(Location location, IMyLocationProvider source) {
+                    if (location != null) {
+                        currentLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
+                    }
+                }
+            });
+        }
     }
 
     public void stopLocationUpdates() {
-        Log.d(TAG, "Stopping location updates.");
-        fusedLocationClient.removeLocationUpdates(locationCallback);
+        if (provider != null) {
+            provider.stopLocationProvider();
+        }
     }
 
-    private final LocationCallback locationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            if (locationResult == null) {
-                Log.d(TAG, "Location result is null.");
-                return;
-            }
-            for (Location location : locationResult.getLocations()) {
-                currentLocation = location;
-                Log.d(TAG, "Location received: " + location.toString());
-            }
-        }
-    };
-
     public String getLocationData() {
+        Log.d(TAG, "getLocationData: getting location data");
         if (currentLocation != null) {
-            Log.d(TAG, "Returning location data: Lat: " + currentLocation.getLatitude() + ", Lon: " + currentLocation.getLongitude());
+            Log.d(TAG, "getLocationData: location data found");
             return "\nLat= " + currentLocation.getLatitude() + ", Lon= " + currentLocation.getLongitude();
-        } else {
-            Log.d(TAG, "Location not available.");
-            return "\nLocation not available";
         }
+        Log.d(TAG, "getLocationData: location data not found");
+        return "Location not available";
     }
 }
