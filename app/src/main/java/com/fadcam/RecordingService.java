@@ -81,7 +81,7 @@ public class RecordingService extends Service {
             Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                     .setContentTitle("Recording in progress")
                     .setContentText("Recording video")
-                    .setSmallIcon(R.drawable.ic_discord)
+                    .setSmallIcon(R.drawable.unknown_icon3)
                     .setPriority(NotificationCompat.PRIORITY_LOW)
                     .build();
             startForeground(NOTIFICATION_ID, notification);
