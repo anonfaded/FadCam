@@ -824,16 +824,16 @@ public class HomeFragment extends Fragment {
     private String formatRemainingTime(long days, long hours, long minutes, long seconds) {
         StringBuilder remainingTime = new StringBuilder();
         if (days > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>days</font> ", days));
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>days</font> ", days));
         }
         if (hours > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>h</font> ", hours));
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>h</font> ", hours));
         }
         if (minutes > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>m</font> ", minutes));
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>m</font> ", minutes));
         }
         if (seconds > 0 || remainingTime.length() == 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font> <font color='#CCCCCC'>s</font>", seconds));
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>s</font>", seconds));
         }
         return remainingTime.toString();
     }
