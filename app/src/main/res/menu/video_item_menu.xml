@@ -8,4 +8,8 @@
         android:id="@+id/action_save_to_gallery"
         android:icon="@drawable/ic_save"
         android:title="Save to Gallery"/>
+    <item
+        android:id="@+id/action_rename"
+        android:icon="@drawable/ic_rename"
+        android:title="Rename" />
 </menu>

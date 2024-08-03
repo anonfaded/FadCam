@@ -18,7 +18,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -43,7 +43,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-//    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -54,7 +53,6 @@ dependencies {
     implementation(libs.viewpager2)
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
-//    implementation(libs.ffmpeg.kit.full)
     implementation(libs.ffmpeg.kit.full.v44lts)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)

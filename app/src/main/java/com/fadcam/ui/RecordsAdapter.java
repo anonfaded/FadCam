@@ -3,26 +3,33 @@ package com.fadcam.ui;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.fadcam.R;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,12 +49,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final OnVideoClickListener clickListener;
     private final OnVideoLongClickListener longClickListener;
     private final List<File> selectedVideos = new ArrayList<>();
+    private List<File> videoFiles;
+
 
     public RecordsAdapter(Context context, List<File> records, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener) {
         this.context = context;
         this.records = records;
         this.clickListener = clickListener;
         this.longClickListener = longClickListener;
+        this.videoFiles = new ArrayList<>(records); // Initialize videoFiles with a copy of records
     }
 
     public interface OnVideoClickListener {
@@ -111,19 +121,30 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     private void showPopupMenu(View v, File video) {
+        int position = records.indexOf(video); // Find position from video
+        if (position == -1) {
+            Toast.makeText(context, "Error: Video not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         PopupMenu popup = new PopupMenu(v.getContext(), v);
         popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
 
         popup.getMenu().findItem(R.id.action_delete).setIcon(R.drawable.ic_delete);
         popup.getMenu().findItem(R.id.action_save_to_gallery).setIcon(R.drawable.ic_save);
+        popup.getMenu().findItem(R.id.action_rename).setIcon(R.drawable.ic_rename);
 
         popup.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_delete) {
-                confirmDelete(v.getContext(), video);
+                confirmDelete(v.getContext(), records.get(position));
                 return true;
             }
             if (item.getItemId() == R.id.action_save_to_gallery) {
-                saveToGallery(v.getContext(), video);
+                saveToGallery(v.getContext(), records.get(position));
+                return true;
+            }
+            if (item.getItemId() == R.id.action_rename) {
+                showRenameDialog(position);
                 return true;
             }
             return false;
@@ -142,6 +163,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         popup.show();
     }
+
 
     private void confirmDelete(Context context, File video) {
         new MaterialAlertDialogBuilder(context)
@@ -219,6 +241,63 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+
+
+
+    private void showRenameDialog(final int position) {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+        builder.setTitle("Rename Video");
+
+        // Inflate and set up the input view
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_rename, null);
+        final TextInputEditText input = dialogView.findViewById(R.id.edit_text_name);
+        builder.setView(dialogView);
+
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            String newName = input.getText().toString();
+            if (!newName.isEmpty()) {
+                renameVideo(position, newName);
+            } else {
+                Toast.makeText(context, "Name cannot be empty", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        builder.show();
+    }
+
+
+
+    private void renameVideo(int position, String newName) {
+        if (videoFiles == null || position < 0 || position >= videoFiles.size()) {
+            Toast.makeText(context, "Invalid position or video list is null", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Replace spaces with underscores
+        String formattedName = newName.trim().replace(" ", "_");
+
+        File oldFile = videoFiles.get(position);
+        File newFile = new File(oldFile.getParent(), formattedName + ".mp4");
+
+        if (oldFile.renameTo(newFile)) {
+            // Update the list and notify the adapter
+            videoFiles.set(position, newFile);
+            records.set(position, newFile); // Also update the records list if necessary
+            notifyDataSetChanged();
+            Toast.makeText(context, "Video renamed successfully", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(context, "Failed to rename video", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
+
+
+
+
+
     static class RecordViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewThumbnail;
         TextView textViewRecord;
@@ -259,6 +338,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
         this.records = newRecords;
+        this.videoFiles = new ArrayList<>(newRecords); // Update videoFiles to match new records
         diffResult.dispatchUpdatesTo(this);
     }
 
