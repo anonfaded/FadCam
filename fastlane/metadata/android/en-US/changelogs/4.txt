@@ -1,0 +1,12 @@
+## Latest Updates
+- New UI Design
+- Internal Video Storage
+- Save Videos to Gallery
+- ExoPlayer Integration
+- Dynamic Watermarks
+- Precise Location Data
+- Quality Selection (SD, HD, FHD)
+- Customizable Clock Widget
+- Real-Time Storage Updates
+- Video Renaming
+- Haptic Feedback & Animations
