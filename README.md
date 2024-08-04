@@ -1,6 +1,7 @@
 <div align="center">
     
-<img src="https://github.com/anonfaded/FadCam/assets/124708903/d6e8c96b-16e1-4841-9023-2727132a508d" style="width: 700px; height: auto;" >
+<img src="https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365" style="width: 700px; height: auto;" >
+
 
 <br>
 
@@ -84,11 +85,15 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
     <br>
     <em>apk icon</em> -->
     <br><br>
-    <img src="https://github.com/anonfaded/FadCam/assets/124708903/e72a6585-8045-46a4-8b3e-3e6d16cd389d" style="width: 700px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/assets/124708903/21da7a96-bc51-405d-9999-274a7ee7bd7d" style="width: 700px; height: auto;" >
+    <img src="https://github.com/user-attachments/assets/f356225a-8b86-4a17-8414-fb24b6588a87" style="width: 200px; height: auto;" >
+    <img src="https://github.com/user-attachments/assets/5062be4c-ccb6-471e-bbaf-f0ab0b5ea26b" style="width: 200px; height: auto;" >
+    <img src="https://github.com/user-attachments/assets/168fab68-f4fc-45a2-8bba-b8126d572d00" style="width: 200px; height: auto;" >
+    <img src="https://github.com/user-attachments/assets/05826459-c1bc-4add-96b2-24afb3c0b7cb" style="width: 200px; height: auto;" >
+ <br>
+
 <!--     <br> -->
 <!--     <em>UI</em> -->
-    <br>
+   
 </div>
 <!--     <details>
         <summary><strong>More Screenshots</strong></summary>
@@ -98,6 +103,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
         <br>
         <img src="/img/5.png" style="width: 700px; height: auto;" >
     </details> -->
+
 
 
 ## ⬇️ Download
