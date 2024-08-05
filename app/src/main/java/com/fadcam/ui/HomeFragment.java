@@ -418,6 +418,9 @@ public class HomeFragment extends Fragment {
 
         IntentFilter filter = new IntentFilter("RECORDING_STATE_CHANGED");
         getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+
+        updateStats();
+        updateStorageInfo();
     }
 
 
