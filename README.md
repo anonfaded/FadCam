@@ -51,6 +51,8 @@
 
 <details>
     <summary>Expand Table of Contents</summary>
+    
+<br>
         
 - [Purpose](#purpose)
 - [Screenshots](#-screenshots)
