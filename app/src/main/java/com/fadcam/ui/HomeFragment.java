@@ -414,26 +414,12 @@ public class HomeFragment extends Fragment {
         super.onResume();
         locationHelper.startLocationUpdates();
 
-//        if (isRecording) {
-//            // Reinitialize preview
-//            updateCameraPreview();
-////            startRecording();
-//        }
         Log.d(TAG, "HomeFragment resumed.");
 
-
-
         IntentFilter filter = new IntentFilter("RECORDING_STATE_CHANGED");
-        getActivity().registerReceiver(recordingStateReceiver, filter);
-
-
-//        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-//            locationHelper.startLocationUpdates();
-//        } else {
-//            requestLocationPermission();
-//        }
-//        Log.d(TAG, "HomeFragment resumed.");
+        getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
     }
+
 
     @Override
     public void onPause() {

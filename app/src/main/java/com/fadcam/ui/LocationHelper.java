@@ -61,6 +61,6 @@ public class LocationHelper {
             return "\nLat= " + currentLocation.getLatitude() + ", Lon= " + currentLocation.getLongitude();
         }
         Log.d(TAG, "getLocationData: location data not found");
-        return "Location not available";
+        return "\nLocation not available";
     }
 }
