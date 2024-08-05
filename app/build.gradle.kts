@@ -53,8 +53,9 @@ dependencies {
     implementation(libs.viewpager2)
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
-    implementation(libs.ffmpeg.kit.full.v44lts)
+//    implementation(libs.ffmpeg.kit.full.v44lts)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
 
+    implementation(libs.ffmpeg.kit.video)
 }
