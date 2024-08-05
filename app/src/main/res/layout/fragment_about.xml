@@ -101,11 +101,11 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
             android:text="@string/buy_me_a_coffee"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/black"
             app:backgroundTint="#FFC107"
             app:backgroundTintMode="screen"
             app:icon="@drawable/ic_kofi"
-            app:iconTint="@color/white"/>
+            app:iconTint="@color/black"/>
 
         <TextView
             android:layout_width="wrap_content"

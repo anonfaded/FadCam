@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.Html;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.text.HtmlCompat;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
@@ -91,6 +93,12 @@ public class AboutFragment extends Fragment {
         appIcon.setImageResource(R.mipmap.ic_launcher);
         appName.setText(getString(R.string.app_name));
         appVersion.setText(String.format("Version %s", getAppVersion()));
+
+        String descriptionString = getString(R.string.app_description);
+        Spanned formattedDescription = HtmlCompat.fromHtml(descriptionString, HtmlCompat.FROM_HTML_MODE_LEGACY);
+
+        // Set the formatted text to the TextView
+        appDescription.setText(formattedDescription);
 
         sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/"));
         donateButton.setOnClickListener(v -> openUrl("https://ko-fi.com/fadedx"));
