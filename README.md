@@ -54,6 +54,7 @@
         
 - [Purpose](#purpose)
 - [Screenshots](#-screenshots)
+- [Featured on](#-featured-on)
 - [Download](https://github.com/anonfaded/FadCam#-download)
 - [Features](#features)
 - [Upcoming Features](#upcoming-features)
@@ -103,6 +104,23 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
         <br>
         <img src="/img/5.png" style="width: 700px; height: auto;" >
     </details> -->
+
+## Featured On
+
+### Featured Videos
+- [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
+- [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
+
+### Articles and Listings
+- [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
+- [appteka.com](https://appteka.store/app/bcdr185175)
+- [discuss.grapheneos.org](https://discuss.grapheneos.org/d/11667-what-featureapp-do-you-use-that-the-majority-never-talk-about/69)
+- [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
+- [offa repo](https://github.com/offa/android-foss#-camera)
+- [geeky-gadgets.com](https://www.geeky-gadgets.com/awesome-android-apps-to-try-out-in-august/)
+- [GrowingGit repo](https://github.com/GrowingGit/GitHub-English-Top-Charts/blob/main/content/charts/new_repo/software/Java.md)
+- [openapk.net](https://www.openapk.net/fadcam/com.fadcam/)
+- [popMODS on Telegram](https://t.me/popmodschat/447936)
 
 
 
