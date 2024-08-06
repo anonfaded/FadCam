@@ -154,14 +154,28 @@ Or:
 
 ## Features:
 
-- **Background Video Recording:** Record videos on Android devices even when the screen is off.
-- **Simple Interface:** Easy-to-use buttons for starting and stopping recordings.
+- **Background Video Recording:** Record with screen off.
+- **Material Design UI:** Modern and easy-to-use.
 - **No ads:** Completely ad-free.
+- **Internal Storage Options:** Save videos internally or to the gallery.
+- **Inbuilt Videoplayer** ExoPlayer integration; play videos in-app.
+- **Dynamic Watermarks:** Timestamp, logo, location options.
+- **Real-time Storage Updates:** Inspect remaining storage with estimated recording times.
+- **Video Quality Selection:** SD, HD, FHD options.
+- **Video Renaming:** Rename videos in-app.
+- **Location Data in Watermarks:** Precise location in watermarks.
+- **Long Press Haptic Feedback:** Haptic feedback with animations.
+- **Date and Time Widget:** Customizable widget.
+
 
 ## Upcoming Features:
 
-- [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
-- [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
+- **Scheduled Recording:** Automatic start and stop at set times.
+- **Google Drive Auto-Upload:** Auto-upload videos to Google Drive.
+- **Custom Icon:** Personalize with custom app icons.
+- **Custom Notifications:** Custom messages for discreet notifications.
+- **App Lock:** Secure the app with an applock.
+
 
 ## Join Community
 Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek help, or connect with other users. Your feedback and contributions are welcome!
