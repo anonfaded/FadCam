@@ -6,12 +6,22 @@ android {
     namespace = "com.fadcam"
     compileSdk = 34
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("x86", "x86_64", "armeabi-v7a", "arm64-v8a") // Adjust as needed
+            isUniversalApk = true // This is key for your universal APK
+        }
+    }
+
+
     defaultConfig {
         applicationId = "com.fadcam"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.1.1"
+        versionCode = 5
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
