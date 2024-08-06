@@ -51,10 +51,12 @@
 
 <details>
     <summary>Expand Table of Contents</summary>
+    
+<br>
         
 - [Purpose](#purpose)
 - [Screenshots](#-screenshots)
-- [Featured on](#-featured-on)
+- [Featured on](#featured-on)
 - [Download](https://github.com/anonfaded/FadCam#-download)
 - [Features](#features)
 - [Upcoming Features](#upcoming-features)
