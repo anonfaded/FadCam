@@ -125,6 +125,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [GrowingGit repo](https://github.com/GrowingGit/GitHub-English-Top-Charts/blob/main/content/charts/new_repo/software/Java.md)
 - [openapk.net](https://www.openapk.net/fadcam/com.fadcam/)
 - [popMODS on Telegram](https://t.me/popmodschat/447936)
+- [phonenovo.com](https://phonenovo.com/new-android-apps-for-august-enhance-your-mobile-experience/)
 
 
 
