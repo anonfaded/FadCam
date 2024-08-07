@@ -420,7 +420,6 @@ public class HomeFragment extends Fragment {
         getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
 
         updateStats();
-        updateStorageInfo();
     }
 
 
