@@ -834,6 +834,7 @@ public class HomeFragment extends Fragment {
         return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
     }
 
+//    update storage and stats in real time while recording is started
     private void startUpdatingInfo() {
         Log.d(TAG, "startUpdatingInfo: Beginning real-time updates");
         updateInfoRunnable = new Runnable() {
@@ -841,6 +842,7 @@ public class HomeFragment extends Fragment {
             public void run() {
                 if (isRecording) {
                     updateStorageInfo();
+                    updateStats();
                     handler.postDelayed(this, 3000); // Update every 3 seconds
                 }
             }
