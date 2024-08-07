@@ -284,12 +284,13 @@ public class AboutFragment extends Fragment {
                 JSONObject releaseInfo = fetchLatestReleaseInfo();
                 String latestVersion = releaseInfo.getString("tag_name").substring(1); // Remove 'v' prefix
                 String currentVersion = getAppVersionForUpdates();
-                String downloadUrl = getDownloadUrl(releaseInfo);
+//                String downloadUrl = getDownloadUrl(releaseInfo);
 
                 requireActivity().runOnUiThread(() -> {
                     dismissLoadingDialog();
                     if (isUpdateAvailable(currentVersion, latestVersion)) {
-                        showUpdateAvailableDialog(latestVersion, downloadUrl);
+//                        showUpdateAvailableDialog(latestVersion, downloadUrl);
+                        showUpdateAvailableDialog(latestVersion); // Pass only the latestVersion
                     } else {
                         dismissLoadingDialog(); // Dismiss the loading dialog in case of an error
 
@@ -381,12 +382,19 @@ public class AboutFragment extends Fragment {
         }
     }
 
-    private void showUpdateAvailableDialog(String newVersion, String downloadUrl) {
+
+
+
+    private void showUpdateAvailableDialog(String newVersion) {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Update Available")
-                .setMessage("A new version (" + newVersion + ") is available. Do you want to download and install it?")
-                .setPositiveButton("Yes", (dialog, which) -> startUpdateDownload(downloadUrl))
-                .setNegativeButton("No", null)
+                .setMessage("A new version (" + newVersion + ") is available. To update, please visit the F-Droid store or our GitHub repository for more details.")
+                .setPositiveButton("Visit F-Droid", (dialog, which) -> {
+                    openUpdateUrl("https://f-droid.org/packages/com.fadcam"); // Replace with your app's F-Droid URL
+                })
+                .setNegativeButton("Visit GitHub", (dialog, which) -> {
+                    openUpdateUrl("https://github.com/anonfaded/FadCam"); // Replace with your GitHub repository URL
+                })
                 .show();
     }
 
@@ -406,52 +414,87 @@ public class AboutFragment extends Fragment {
                 .show();
     }
 
-    private void startUpdateDownload(String downloadUrl) {
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl))
-                .setTitle("FadCam Update")
-                .setDescription("Downloading the latest version of FadCam")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "FadCam_update.apk")
-                .setAllowedOverMetered(true)
-                .setAllowedOverRoaming(true);
-
-        DownloadManager downloadManager = (DownloadManager) requireContext().getSystemService(Context.DOWNLOAD_SERVICE);
-        long downloadId = downloadManager.enqueue(request);
-
-        BroadcastReceiver onComplete = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
-                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-                    if (id == downloadId) {
-                        installUpdate();
-                    }
-                }
-            }
-        };
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requireActivity().registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED);
-            }
-        }
-    }
-
-    private void installUpdate() {
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "FadCam_update.apk");
-        Uri uri;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            uri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".provider", file);
-        } else {
-            uri = Uri.fromFile(file);
-        }
-
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(uri, "application/vnd.android.package-archive");
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    private void openUpdateUrl(String url) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         startActivity(intent);
     }
+
+
+
+
+// Below is the old version of update-checking logic where it downloads the apk too
+
+//    private void showUpdateAvailableDialog(String newVersion, String downloadUrl) {
+//        new MaterialAlertDialogBuilder(requireContext())
+//                .setTitle("Update Available")
+//                .setMessage("A new version (" + newVersion + ") is available. Do you want to download and install it?")
+//                .setPositiveButton("Yes", (dialog, which) -> startUpdateDownload(downloadUrl))
+//                .setNegativeButton("No", null)
+//                .show();
+//    }
+//
+//    private void showUpToDateDialog() {
+//        new MaterialAlertDialogBuilder(requireContext())
+//                .setTitle("Up to Date")
+//                .setMessage("You are already using the latest version.")
+//                .setPositiveButton("OK", null)
+//                .show();
+//    }
+//
+//    private void showErrorDialog(String message) {
+//        new MaterialAlertDialogBuilder(requireContext())
+//                .setTitle("Error")
+//                .setMessage(message)
+//                .setPositiveButton("OK", null)
+//                .show();
+//    }
+//
+//    private void startUpdateDownload(String downloadUrl) {
+//        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl))
+//                .setTitle("FadCam Update")
+//                .setDescription("Downloading the latest version of FadCam")
+//                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+//                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "FadCam_update.apk")
+//                .setAllowedOverMetered(true)
+//                .setAllowedOverRoaming(true);
+//
+//        DownloadManager downloadManager = (DownloadManager) requireContext().getSystemService(Context.DOWNLOAD_SERVICE);
+//        long downloadId = downloadManager.enqueue(request);
+//
+//        BroadcastReceiver onComplete = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
+//                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+//                    if (id == downloadId) {
+//                        installUpdate();
+//                    }
+//                }
+//            }
+//        };
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                requireActivity().registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED);
+//            }
+//        }
+//    }
+//
+//    private void installUpdate() {
+//        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "FadCam_update.apk");
+//        Uri uri;
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//            uri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".provider", file);
+//        } else {
+//            uri = Uri.fromFile(file);
+//        }
+//
+//        Intent intent = new Intent(Intent.ACTION_VIEW);
+//        intent.setDataAndType(uri, "application/vnd.android.package-archive");
+//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//        startActivity(intent);
+//    }
 
 
 
