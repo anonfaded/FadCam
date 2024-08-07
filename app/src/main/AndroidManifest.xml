@@ -85,6 +85,8 @@
         <activity
             android:name=".ui.VideoPlayerActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".ui.WebViewActivity" />
+
         <service
             android:name=".RecordingService"
             android:enabled="true"

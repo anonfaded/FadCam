@@ -123,8 +123,8 @@ public class SettingsFragment extends Fragment {
     }
 
     private void openInAppBrowser(String url) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Intent intent = new Intent(getContext(), WebViewActivity.class);
+        intent.putExtra("url", url);
         startActivity(intent);
     }
 

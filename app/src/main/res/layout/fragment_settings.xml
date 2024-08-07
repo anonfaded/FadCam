@@ -400,9 +400,11 @@
                     android:id="@+id/review_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Review App"
-                    android:backgroundTint="?attr/colorPrimary"
-                    android:textColor="?android:attr/textColorPrimaryInverse"
+                    android:text="Write a Review 🌟"
+                    app:strokeColor="#B7D6AB2A"
+                    app:strokeWidth="1dp"
+                    android:backgroundTint="@color/gray"
+                    android:textColor="@color/white"
                     android:gravity="center"
                     android:layout_gravity="bottom" />
             </RelativeLayout>
