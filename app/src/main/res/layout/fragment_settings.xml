@@ -388,6 +388,27 @@
 
 
 
+            <!-- Review Button at the bottom -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:layout_alignParentBottom="true"
+                android:padding="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/review_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Review App"
+                    android:backgroundTint="?attr/colorPrimary"
+                    android:textColor="?android:attr/textColorPrimaryInverse"
+                    android:gravity="center"
+                    android:layout_gravity="bottom" />
+            </RelativeLayout>
+
+
+
 
 
 

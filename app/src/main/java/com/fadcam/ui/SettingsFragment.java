@@ -115,7 +115,17 @@ public class SettingsFragment extends Fragment {
         setupLocationSwitch(locationSwitch);
 
 
+        // Initialize the Review Button
+        MaterialButton reviewButton = view.findViewById(R.id.review_button);
+        reviewButton.setOnClickListener(v -> openInAppBrowser("https://forms.gle/DvUoc1v9kB2bkFiS6"));
+
         return view;
+    }
+
+    private void openInAppBrowser(String url) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
 
     private void setupLocationSwitch(MaterialSwitch locationSwitch) {
