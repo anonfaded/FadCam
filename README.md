@@ -112,9 +112,11 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 ### Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
+- [Tech Quirk](https://www.youtube.com/shorts/4cQ2RpWHess)
 
 ### Articles and Listings
 - [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
+- [computer-wd](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
 - [appteka.com](https://appteka.store/app/bcdr185175)
 - [discuss.grapheneos.org](https://discuss.grapheneos.org/d/11667-what-featureapp-do-you-use-that-the-majority-never-talk-about/69)
 - [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
@@ -123,6 +125,9 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [GrowingGit repo](https://github.com/GrowingGit/GitHub-English-Top-Charts/blob/main/content/charts/new_repo/software/Java.md)
 - [openapk.net](https://www.openapk.net/fadcam/com.fadcam/)
 - [popMODS on Telegram](https://t.me/popmodschat/447936)
+- [VPN Club on Telegram](https://t.me/wbnet/99735)
+- [Mobile Applications on Telegram](https://t.me/appCentre/18006)
+- [phonenovo.com](https://phonenovo.com/new-android-apps-for-august-enhance-your-mobile-experience/)
 
 
 
@@ -152,14 +157,28 @@ Or:
 
 ## Features:
 
-- **Background Video Recording:** Record videos on Android devices even when the screen is off.
-- **Simple Interface:** Easy-to-use buttons for starting and stopping recordings.
+- **Background Video Recording:** Record with screen off.
+- **Material Design UI:** Modern and easy-to-use.
 - **No ads:** Completely ad-free.
+- **Internal Storage Options:** Save videos internally or to the gallery.
+- **Inbuilt Videoplayer** ExoPlayer integration; play videos in-app.
+- **Dynamic Watermarks:** Timestamp, logo, location options.
+- **Real-time Storage Updates:** Inspect remaining storage with estimated recording times.
+- **Video Quality Selection:** SD, HD, FHD options.
+- **Video Renaming:** Rename videos in-app.
+- **Location Data in Watermarks:** Precise location in watermarks.
+- **Long Press Haptic Feedback:** Haptic feedback with animations.
+- **Date and Time Widget:** Customizable widget.
+
 
 ## Upcoming Features:
 
-- [ ] Scheduled Recording: Set specific times for FadCam to automatically start and stop recording.
-- [ ] Google Drive Auto-Upload: Seamlessly upload recorded videos to Google Drive for easy access and sharing.
+- **Scheduled Recording:** Automatic start and stop at set times.
+- **Google Drive Auto-Upload:** Auto-upload videos to Google Drive.
+- **Custom Icon:** Personalize with custom app icons.
+- **Custom Notifications:** Custom messages for discreet notifications.
+- **App Lock:** Secure the app with an applock.
+
 
 ## Join Community
 Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek help, or connect with other users. Your feedback and contributions are welcome!
