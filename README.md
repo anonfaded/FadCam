@@ -20,7 +20,12 @@
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 
+[![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
+
 <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red">
+
+
+
 <br>
 <br>
 
