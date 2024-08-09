@@ -184,6 +184,8 @@ Or:
 - **Custom Icon:** Personalize with custom app icons.
 - **Custom Notifications:** Custom messages for discreet notifications.
 - **App Lock:** Secure the app with an applock.
+- **Custom FPS:** Selection of 30/60fps.
+- **Custom Saving:** Provide custom location saving option.
 
 
 ## Join Community
