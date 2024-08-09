@@ -134,6 +134,8 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [VPN Club on Telegram](https://t.me/wbnet/99735)
 - [Mobile Applications on Telegram](https://t.me/appCentre/18006)
 - [phonenovo.com](https://phonenovo.com/new-android-apps-for-august-enhance-your-mobile-experience/)
+- [dailymobile.ir](https://www.dailymobile.ir/89140/fadcam-android/)
+- [roonby.com](https://roonby.com/2024/08/01/10-best-android-apps-to-use-these-months-august-2024/)
 
 
 
