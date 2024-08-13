@@ -279,6 +279,15 @@
             android:drawableLeft="@drawable/ic_pause"
             android:layout_marginStart="8dp"
             android:enabled="false"/>
+
+        <Button
+            android:id="@+id/buttonCamSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Switch"
+            android:drawableLeft="@drawable/cam_switch"
+            android:layout_marginStart="8dp"/>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
