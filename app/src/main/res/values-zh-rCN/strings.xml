@@ -134,4 +134,7 @@
     <string name="discord_title">Discord服务器</string>
     <string name="thankyou_msg">感谢你使用FadCam!</string>
     <string name="settings_title">设置</string>
+    <string name="array_watermark_time_fadcam">时间与\"Fadcam\"字样</string>
+    <string name="array_watermark_timeonly">仅时间</string>
+    <string name="array_watermark_nomark">无水印</string>
 </resources>

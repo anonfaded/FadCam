@@ -150,4 +150,7 @@
     <string name="discord_title">Discord Server</string>
     <string name="thankyou_msg">Thank you for using FadCam!</string>
     <string name="settings_title">Settings</string>
+    <string name="array_watermark_time_fadcam">Time with Fadcam</string>
+    <string name="array_watermark_timeonly">Timestamp</string>
+    <string name="array_watermark_nomark">No Watermark</string>
 </resources>
