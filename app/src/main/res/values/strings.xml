@@ -155,4 +155,16 @@
     <string name="array_watermark_nomark">No Watermark</string>
     <string name="recent_features">• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Customizable watermarking\n• ExoPlayer integration for better playback\n• Location data in watermarks\n• Dynamic watermark options\n• Long press feedback with animations\n• Date and Time widget customization</string>
     <string name="upcoming_features">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
+    <string name="toast_video_not_found">Error: Video not found</string>
+    <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
+    <string name="toast_video_save_fail">Failed to save video</string>
+    <string name="rename_video_title">Rename Video</string>
+    <string name="universal_cancel">Cancel</string>
+    <string name="toast_rename_name_empty">Name cannot be empty</string>
+    <string name="toast_rename_failed">Failed to rename video</string>
+    <string name="toast_rename_success">Video renamed successfully</string>
+    <string name="toast_rename_bad_video">Invalid position or video list is null</string>
+    <string name="dialog_del_title">Delete Forever?</string>
+    <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
+    <string name="dialog_del_confirm">Delete</string>
 </resources>
