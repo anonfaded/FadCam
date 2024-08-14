@@ -892,7 +892,7 @@ public class HomeFragment extends Fragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.resume();
             isPaused = false;
-            buttonPauseResume.setText("Pause");
+            buttonPauseResume.setText(getString(R.string.button_pause));
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
         }
     }
@@ -937,7 +937,7 @@ public class HomeFragment extends Fragment {
             recordingStartTime = SystemClock.elapsedRealtime();
             setVideoBitrate();
 
-            buttonStartStop.setText("Stop");
+            buttonStartStop.setText(getString(R.string.button_stop));
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
             buttonPauseResume.setEnabled(true);
             tvPreviewPlaceholder.setVisibility(View.GONE);
@@ -1245,7 +1245,7 @@ public class HomeFragment extends Fragment {
                 }
 
                 isRecording = false;
-                buttonStartStop.setText("Start");
+                buttonStartStop.setText(getString(R.string.button_start));
                 buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
                 buttonPauseResume.setEnabled(false);
                 tvPreviewPlaceholder.setVisibility(View.VISIBLE);
