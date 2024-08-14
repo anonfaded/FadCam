@@ -124,4 +124,14 @@
         <item>这个功能以后会有的.</item>
         <item>去看看我们的官方GitHub仓库获取更新.</item>
     </string-array>
+    <string name="dialog_welcome_title">欢迎使用FadCam！</string>
+    <string name="note_under_dev">重要提示: 本软件仍处于开发阶段. 新功能会逐步加入</string>
+    <string name="rencent_updates_title">最近更新:</string>
+    <string name="upcoming_features_title">即将添加:</string>
+    <string name="stay_updated_title">保持更新</string>
+    <string name="button_readme_github">GitHub仓库</string>
+    <string name="community_title">加入官方社区:</string>
+    <string name="discord_title">Discord服务器</string>
+    <string name="thankyou_msg">感谢你使用FadCam!</string>
+    <string name="settings_title">设置</string>
 </resources>

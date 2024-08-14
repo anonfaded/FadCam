@@ -140,4 +140,14 @@
         <item>This feature is coming soon.</item>
         <item>Check the official GitHub repo for updates.</item>
     </string-array>
+    <string name="dialog_welcome_title">Welcome to FadCam!</string>
+    <string name="note_under_dev">Important: This app is currently under development. New features are being added regularly.</string>
+    <string name="rencent_updates_title">Recent Updates:</string>
+    <string name="upcoming_features_title">Upcoming Features:</string>
+    <string name="stay_updated_title">Stay Updated:</string>
+    <string name="button_readme_github">GitHub Repository</string>
+    <string name="community_title">Join our Community:</string>
+    <string name="discord_title">Discord Server</string>
+    <string name="thankyou_msg">Thank you for using FadCam!</string>
+    <string name="settings_title">Settings</string>
 </resources>
