@@ -137,4 +137,16 @@
     <string name="array_watermark_time_fadcam">时间与\"Fadcam\"字样</string>
     <string name="array_watermark_timeonly">仅时间</string>
     <string name="array_watermark_nomark">无水印</string>
+    <string name="toast_video_not_found">出错：视频未找到</string>
+    <string name="toast_video_saved">视频已保存至Download目录的FadCam文件夹中</string>
+    <string name="toast_video_save_fail">视频保存失败</string>
+    <string name="rename_video_title">重命名视频</string>
+    <string name="universal_cancel">取消</string>
+    <string name="toast_rename_name_empty">名称不可为空</string>
+    <string name="toast_rename_failed">重命名失败</string>
+    <string name="toast_rename_success">重命名成功</string>
+    <string name="toast_rename_bad_video">无效路径或者视频列表为null</string>
+    <string name="dialog_del_title">确认删除？</string>
+    <string name="dialog_del_notice">你的确要删除这个视频吗</string>
+    <string name="dialog_del_confirm">删除</string>
 </resources>
