@@ -32,17 +32,13 @@
             android:padding="16dp">
 
 
-
-
-
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/readme_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Read Me"
                 android:layout_marginBottom="16dp"
                 android:backgroundTint="#545554"
+                android:text="@string/button_settings_readme"
                 android:textColor="@android:color/white"
                 android:textStyle="bold" />
 
@@ -80,17 +76,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Camera Selection"
-                        android:textColor="@color/colorPrimary"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/setting_cam_title"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:layout_marginBottom="4dp"/>
+                        android:textColor="@color/colorPrimary" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Select camera \n(Default: Back)"
+                        android:text="@string/note_cam_sele"
                         android:textAppearance="?attr/textAppearanceCaption"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:textColor="?android:attr/textColorSecondary" />
                 </LinearLayout>
 
                 <com.google.android.material.button.MaterialButtonToggleGroup
@@ -101,21 +97,21 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_back_camera"
+                        style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Back"
-                        style="?attr/materialButtonOutlinedStyle"
+                        android:text="@string/button_settings_cam_back"
                         app:iconGravity="textStart"
-                        app:iconPadding="8dp"/>
+                        app:iconPadding="8dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_front_camera"
+                        style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Front"
-                        style="?attr/materialButtonOutlinedStyle"
+                        android:text="@string/button_settings_cam_front"
                         app:iconGravity="textStart"
-                        app:iconPadding="8dp"/>
+                        app:iconPadding="8dp" />
 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -149,17 +145,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Video Quality"
-                        android:textColor="@color/colorPrimary"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/setting_quailty_title"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:layout_marginBottom="4dp"/>
+                        android:textColor="@color/colorPrimary" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Choose quality \n(Default: HD)"
+                        android:text="@string/note_quailty"
                         android:textAppearance="?attr/textAppearanceCaption"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:textColor="?android:attr/textColorSecondary" />
 
                 </LinearLayout>
 
@@ -208,9 +204,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Select watermark option \n(Default: Timestamp with Fadcam)"
+                        android:text="@string/note_watermark"
                         android:textAppearance="?attr/textAppearanceCaption"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:textColor="?android:attr/textColorSecondary" />
                 </LinearLayout>
 
                 <Spinner
@@ -245,9 +241,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="16dp"
-                        android:text="For a speedy save, pick 'No Watermark'. Adding a watermark? It’s worth the wait, just a little longer to process!"
+                        android:text="@string/note_watermark_extra"
                         android:textAppearance="?attr/textAppearanceCaption"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:textColor="?android:attr/textColorSecondary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -320,19 +316,19 @@
                         android:id="@+id/location_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Location Data"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/setting_location_title"
                         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                         android:textColor="?attr/colorPrimary"
-                        android:textSize="16sp"
-                        android:layout_marginBottom="4dp"/>
+                        android:textSize="16sp" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/location_description"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)"
+                        android:text="@string/note_location"
                         android:textAppearance="?attr/textAppearanceCaption"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:textColor="?android:attr/textColorSecondary" />
                 </LinearLayout>
 
                 <!-- Switch positioned on the right -->
@@ -375,12 +371,12 @@
                     android:src="@drawable/ic_info" />
 
                 <com.google.android.material.textview.MaterialTextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:text="Enable phone's GPS for adding latitude and longitude data to the watermark."
-                android:textAppearance="?attr/textAppearanceCaption"
-                android:textColor="?android:attr/textColorSecondary"/>
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="@string/note_location_extra"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="?android:attr/textColorSecondary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -400,13 +396,13 @@
                     android:id="@+id/review_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Write a Review 🌟"
-                    app:strokeColor="#B7D6AB2A"
-                    app:strokeWidth="1dp"
+                    android:layout_gravity="bottom"
                     android:backgroundTint="@color/gray"
-                    android:textColor="@color/white"
                     android:gravity="center"
-                    android:layout_gravity="bottom" />
+                    android:text="@string/button_setting_review"
+                    android:textColor="@color/white"
+                    app:strokeColor="#B7D6AB2A"
+                    app:strokeWidth="1dp" />
             </RelativeLayout>
 
 

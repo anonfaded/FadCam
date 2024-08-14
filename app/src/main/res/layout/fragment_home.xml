@@ -245,7 +245,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Preview Area"
+                android:text="@string/ui_preview_area"
                 android:textColor="@color/material_on_surface_stroke"
                 android:textSize="24sp" />
 
@@ -267,18 +267,18 @@
             android:id="@+id/buttonStartStop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start"
+            android:layout_marginEnd="8dp"
             android:drawableLeft="@drawable/ic_play"
-            android:layout_marginEnd="8dp"/>
+            android:text="@string/button_start" />
 
         <Button
             android:id="@+id/buttonPauseResume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pause"
-            android:drawableLeft="@drawable/ic_pause"
             android:layout_marginStart="8dp"
-            android:enabled="false"/>
+            android:drawableLeft="@drawable/ic_pause"
+            android:enabled="false"
+            android:text="@string/button_pause" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

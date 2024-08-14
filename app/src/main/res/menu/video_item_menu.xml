@@ -3,13 +3,13 @@
     <item
         android:id="@+id/action_delete"
         android:icon="@drawable/ic_delete"
-        android:title="Delete" />
+        android:title="@string/video_menu_del" />
     <item
         android:id="@+id/action_save_to_gallery"
         android:icon="@drawable/ic_save"
-        android:title="Save to Gallery"/>
+        android:title="@string/video_menu_save" />
     <item
         android:id="@+id/action_rename"
         android:icon="@drawable/ic_rename"
-        android:title="Rename" />
+        android:title="@string/video_menu_rename" />
 </menu>
