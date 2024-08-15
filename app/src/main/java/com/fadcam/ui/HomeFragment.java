@@ -364,7 +364,6 @@ public class HomeFragment extends Fragment {
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         locationHelper = new LocationHelper(requireContext());
         cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-//        requestLocationPermission();
         Log.d(TAG, "HomeFragment created.");
 
         // Request essential permissions on every launch
@@ -380,6 +379,14 @@ public class HomeFragment extends Fragment {
 //            sharedPreferences.edit().putBoolean(PREF_FIRST_LAUNCH, false).apply();
 //        }
 
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //fetch Camera status
+        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
+        Toast.makeText(getContext(), "Current camera: "+currentCameraSelection, Toast.LENGTH_SHORT).show();
     }
 
     @Override
