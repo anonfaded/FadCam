@@ -18,11 +18,9 @@ import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,12 +34,8 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
 import android.util.Log;
-import android.util.Size;
-import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -534,7 +528,6 @@ public class HomeFragment extends Fragment {
         setupButtonListeners();
         setupLongPressListener();
         updatePreviewVisibility();
-        givePreview();
     }
 
     private boolean areEssentialPermissionsGranted() {
@@ -1043,67 +1036,6 @@ public class HomeFragment extends Fragment {
         if (cameraDevice != null) {
             cameraDevice.close();
             cameraDevice = null;
-        }
-    }
-
-    private void givePreview() {
-        Log.d(TAG, "openCamera: Opening camera");
-        CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String[] cameraIdList = manager.getCameraIdList();
-            cameraId = getCameraSelection().equals("front") ? cameraIdList[1] : cameraIdList[0];
-            manager.openCamera(cameraId, new CameraDevice.StateCallback() {
-                @Override
-                public void onOpened(@NonNull CameraDevice camera) {
-                    Log.d(TAG, "onOpened: Camera opened successfully");
-                    cameraDevice = camera;
-                    Log.d(TAG, "startRecordingVideo: Setting up video recording preview area");
-
-                    // Check if TextureView is available before starting recording
-                    if (!textureView.isAvailable()) {
-                        tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-                        textureView.setVisibility(View.VISIBLE);
-                        Log.e(TAG, "startRecordingVideo: TextureView is now available             550");
-                    }
-
-                    if (null == cameraDevice || !textureView.isAvailable() || !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                        Log.e(TAG, "startRecordingVideo: Unable to start recording due to missing prerequisites");
-                        return;
-                    }
-                    try {
-                        SurfaceTexture texture = textureView.getSurfaceTexture();
-                        assert texture != null;
-                        Surface previewSurface = new Surface(texture);
-                        Surface recorderSurface = mediaRecorder.getSurface();
-                        captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-// below line of code is to show the preview screen.
-//            captureRequestBuilder.addTarget(previewSurface);
-                        if (isPreviewEnabled) {
-                            captureRequestBuilder.addTarget(previewSurface);
-                        }
-                        captureRequestBuilder.addTarget(recorderSurface);
-
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                public void onDisconnected(@NonNull CameraDevice camera) {
-                    Log.w(TAG, "onDisconnected: Camera disconnected");
-                    cameraDevice.close();
-                }
-
-                @Override
-                public void onError(@NonNull CameraDevice camera, int error) {
-                    Log.e(TAG, "onError: Camera error: " + error);
-                    cameraDevice.close();
-                    cameraDevice = null;
-                }
-            }, null);
-        } catch (CameraAccessException | SecurityException e) {
-            Log.e(TAG, "openCamera: Error opening camera", e);
-            e.printStackTrace();
         }
     }
 
