@@ -136,6 +136,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [phonenovo.com](https://phonenovo.com/new-android-apps-for-august-enhance-your-mobile-experience/)
 - [dailymobile.ir](https://www.dailymobile.ir/89140/fadcam-android/)
 - [roonby.com](https://roonby.com/2024/08/01/10-best-android-apps-to-use-these-months-august-2024/)
+- [en.xiaomitoday.it](https://en.xiaomitoday.it/fadcam-con-questa-app-diventi-un-agente-segreto.html)
 
 
 
