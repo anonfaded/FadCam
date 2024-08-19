@@ -181,10 +181,10 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             }
         }
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Eradicate Video(s)? \uD83D\uDCA3")
-                .setMessage("Are you absolutely, positively sure you want to nuke these video(s) out of existence? \uD83D\uDE80\uD83D\uDCA5")
-                .setNegativeButton("No, Keep 'Em! \uD83D\uDE05", null)
-                .setPositiveButton("Yes, Nuke 'Em! \uD83C\uDF0B", (dialog, which) -> deleteSelectedVideos())
+                .setTitle(getResources().getString(R.string.dialog_multi_video_del_title))
+                .setMessage(getResources().getString(R.string.dialog_multi_video_del_note))
+                .setNegativeButton(getResources().getString(R.string.dialog_multi_video_del_no), null)
+                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos())
                 .show();
     }
 
