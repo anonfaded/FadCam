@@ -149,8 +149,8 @@
     <string name="dialog_del_title">确认删除？</string>
     <string name="dialog_del_notice">你的确要删除这个视频吗</string>
     <string name="dialog_del_confirm">删除</string>
-    <string name="dialog_multi_video_del_title">删这么多？\\uD83D\\uDCA3</string>
-    <string name="dialog_multi_video_del_note">你确认要将这么多视频移出手机外？\\uD83D\\uDE80\\uD83D\\uDCA5</string>
-    <string name="dialog_multi_video_del_yes">是的，发动魔法卡！\\uD83C\\uDF0B</string>
-    <string name="dialog_multi_video_del_no">不了，留着 \\uD83D\\uDE05</string>
+    <string name="dialog_multi_video_del_title">删这么多？💣💣</string>
+    <string name="dialog_multi_video_del_note">你确认要将这么多视频移出手机外？🚀💥</string>
+    <string name="dialog_multi_video_del_yes">是的，发动魔法卡！🌋</string>
+    <string name="dialog_multi_video_del_no">不了，留着 😅</string>
 </resources>
