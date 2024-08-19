@@ -167,4 +167,8 @@
     <string name="dialog_del_title">Delete Forever?</string>
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
     <string name="dialog_del_confirm">Delete</string>
+    <string name="dialog_multi_video_del_title">Eradicate Video(s)? \\uD83D\\uDCA3</string>
+    <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? \\uD83D\\uDE80\\uD83D\\uDCA5</string>
+    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! \\uD83C\\uDF0B</string>
+    <string name="dialog_multi_video_del_no">No, Keep \'Em! \\uD83D\\uDE05</string>
 </resources>
