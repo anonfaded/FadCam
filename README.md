@@ -131,6 +131,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Tech Quirk on YouTube](https://www.youtube.com/shorts/4cQ2RpWHess)
 - [TechyNoob on YouTube](https://youtu.be/ahUmOhOc_cI?si=P5_MK5B7KiJV_2Ip)
 - [Luca Crocco on TikTok](https://www.tiktok.com/@lucacrocco96/video/7400823097613503777)
+- [TipTopTech on YouTube](https://youtu.be/SXHT25dNCrM?si=csEav5ZBYniJWT3J&t=177)
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
 ### Articles and Listings
