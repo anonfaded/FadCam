@@ -185,6 +185,10 @@ Or:
 
 <em>(coming soon on f-droid...)</em>
 
+**Downloads logs:**
+- 5k -> 10th Jul 2024 (1st month)
+- 10k -> 21 Aug 2024 (6th week)
+
 ## Features:
 
 - **Background Video Recording:** Record with screen off.
