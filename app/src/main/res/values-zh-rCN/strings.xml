@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="check_for_updates">检查更新</string>
+    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方“查看源码”按钮</string>
+    <string name="app_description">\n    <![CDATA[
+    FadCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
+    <br/><br/>
+    FadCam曾在人气油管频道<font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>中亮相, 也在 <font color="#cfbafd">GrapheneOS</font> 和其它第三方知名系统中提及.
+    ]]>\n</string>
+    <string name="view_source_code">查看源码</string>
+    <string name="buy_me_a_coffee">请我一杯咖啡 ☕</string>
+    <string name="contact">联系方式</string>
+    <string name="send_email">发送邮件</string>
+    <string name="join_community">加入社区获得帮助，分享点子以及获得软件更新</string>
+    <string name="privacy_information">隐私须知</string>
+    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string name="mainpage_storage_indocator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>可用空间:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>可录制时长 (粗略值.):</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>已录制时长:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>剩余时间:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | 长按画面预览区可以关掉它</item>
+        <item>2/11 | 长按时间小组件选择其显示方式</item>
+        <item>3/11 | 存储信息小组件上的信息是实时更新的.</item>
+        <item>4/11 | 下面显示显示视频数量以及占用空间</item>
+        <item>5/11 | 你可以在设置里更改录像质量 (HD, SD, FHD).</item>
+        <item>6/11 | 没内存了？试试看降低录像画质</item>
+        <item>7/11 | 可以在设置里添加视频水印</item>
+        <item>8/11 | 在设置可以将视频水印设置为位置信息</item>
+        <item>9/11 | 想用前摄来录像？在设置里改改吧</item>
+        <item>10/11 | 你在软件里的设置不会留下任何痕迹</item>
+        <item>11/11 | 遇到困难了？去“关于”界面加入Discord服务器</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>视频数量: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>占用空间:</b></font><br>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+    <string name="button_start">开始录制</string>
+    <string name="button_pause">暂停</string>
+    <string name="button_stop">停止</string>
+    <string name="video_menu_del">删除</string>
+    <string name="video_menu_save">保存至图库</string>
+    <string name="video_menu_rename">重命名</string>
+    <string name="records_title">录像带</string>
+    <string name="nav_home">录制</string>
+    <string name="nav_records">录像带</string>
+    <string name="nav_settings">设置</string>
+    <string name="nav_about">关于</string>
+    <string name="button_settings_readme">使用须知</string>
+    <string name="setting_quailty_title">视频质量</string>
+    <string name="setting_location_title">位置信息</string>
+    <string name="setting_cam_title">摄像头</string>
+    <string name="note_cam_sele">选择摄像头\n(默认: 后摄)</string>
+    <string name="button_settings_cam_back">后摄</string>
+    <string name="button_settings_cam_front">前摄</string>
+    <string name="note_quailty">选择视频质量\n(默认: HD)</string>
+    <string name="setting_watermark">水印</string>
+    <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
+    <string name="note_watermark_extra">想让视频保存速度更快？选择“无水印”. 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
+    <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
+    <string name="note_location_extra">添加经纬度信息至视频水印需要打开手机的位置信息功能</string>
+    <string name="button_setting_review">写个评论 🌟</string>
+    <string name="dialog_clock_title">选择时间格式</string>
+    <string name="dialog_clock_timeonly">仅显示时间</string>
+    <string name="dialog_clock_englishtime">英制日期与时间</string>
+    <string name="dialog_clock_Islamic_calendar">伊斯兰历法</string>
+    <string name="ui_preview_area">预览区</string>
+    <string-array name="easter_eggs_array">
+        <item>警告! 这里是限制出入区域. 启动录像以访问.</item>
+        <item>你找到了秘密按钮! 但它啥也不会做哈哈哈</item>
+        <item>快跑! 手机要爆炸了… 或者它只是需要启动录像来冷静一下.</item>
+        <item>Oh尴尬了…</item>
+        <item>让我看看你的布加迪？(❁´◡`❁)</item>
+        <item>我的代码不是这么写的. 桥豆麻袋, 你想黑了我?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>免责声明</item>
+        <item>FadCam会收集用户数据吗?</item>
+        <item>FadCam是否有广告?</item>
+        <item>为什么FadCam会请求访问位置信息?</item>
+        <item>FadCam会联网吗?</item>
+        <item>是否会有数据存储在外部服务器?</item>
+        <item>视频录制完后会发生什么?</item>
+        <item>FadCam有没有将我的数据分享给第三方?</item>
+        <item> </item>
+        <item> </item>
+        <item>使用问题</item>
+        <item>为什么打水印要这么久?</item>
+        <item>为什么会有一个\'临时\' 视频?</item>
+        <item>我如何更改录像质量?</item>
+        <item>如何关闭录制时的预览图?</item>
+        <item>怎样才能将位置信息作为水印嵌入视频?</item>
+        <item>我的使用偏好会被记录吗?</item>
+        <item>怎么样才能自动（计划）录像?</item>
+        <item>怎样更新软件?</item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam不支持任何不道德或非法使用本软件的行为。未经允许的监视或侵犯隐私等滥用行为均严重违反我们的原则. FadCam作者对任何滥用本应用程序的行为以及导致的结果概不负责.
+        </item>
+        <item>不, FadCam不收集任何用户数据.</item>
+        <item>不, FadCam无广告.</item>
+        <item>用于添加位置信息水印的功能.</item>
+        <item>不, FadCam不会连接网络.</item>
+        <item>不, 所有数据都会存储在你的设备上.</item>
+        <item>你录制的视频都只会存储在手机里.</item>
+        <item>不, FadCam不存储和共享任何信息.</item>
+        <item>你可以在我们的GitHub页上提issue.</item>
+        <item> </item>
+        <item> </item>
+        <item>录制视频的每一帧都会加入水印. 录制的视频越长, 所需的时间就越长.</item>
+        <item>这个\'临时\' 视频其实是你原本录制的视频. 在加入水印后就会自动删除. 如果加入水印这一步出现了差错, 此时这个\'临时\'文件就会作为备份继续保留下去.</item>
+        <item>在设置里更改就行: HD, SD, or FHD.</item>
+        <item>长按预览区即可关闭.</item>
+        <item>开启位置信息功能即可使用位置信息水印. 它会将准确的经纬度信息嵌入其中.</item>
+        <item>是的, 所有的偏好设置都会没有痕迹地保存下来</item>
+        <item>这个功能以后会有的.</item>
+        <item>去看看我们的官方GitHub仓库获取更新.</item>
+    </string-array>
+    <string name="dialog_welcome_title">欢迎使用FadCam！</string>
+    <string name="note_under_dev">重要提示: 本软件仍处于开发阶段. 新功能会逐步加入</string>
+    <string name="rencent_updates_title">最近更新:</string>
+    <string name="upcoming_features_title">即将添加:</string>
+    <string name="stay_updated_title">保持更新</string>
+    <string name="button_readme_github">GitHub仓库</string>
+    <string name="community_title">加入官方社区:</string>
+    <string name="discord_title">Discord服务器</string>
+    <string name="thankyou_msg">感谢你使用FadCam!</string>
+    <string name="settings_title">设置</string>
+    <string name="array_watermark_time_fadcam">时间与\"Fadcam\"字样</string>
+    <string name="array_watermark_timeonly">仅时间</string>
+    <string name="array_watermark_nomark">无水印</string>
+    <string name="toast_video_not_found">出错：视频未找到</string>
+    <string name="toast_video_saved">视频已保存至Download目录的FadCam文件夹中</string>
+    <string name="toast_video_save_fail">视频保存失败</string>
+    <string name="rename_video_title">重命名视频</string>
+    <string name="universal_cancel">取消</string>
+    <string name="toast_rename_name_empty">名称不可为空</string>
+    <string name="toast_rename_failed">重命名失败</string>
+    <string name="toast_rename_success">重命名成功</string>
+    <string name="toast_rename_bad_video">无效路径或者视频列表为null</string>
+    <string name="dialog_del_title">确认删除？</string>
+    <string name="dialog_del_notice">你的确要删除这个视频吗</string>
+    <string name="dialog_del_confirm">删除</string>
+    <string name="dialog_multi_video_del_title">删这么多？💣💣</string>
+    <string name="dialog_multi_video_del_note">你确认要将这么多视频移出手机外？🚀💥</string>
+    <string name="dialog_multi_video_del_yes">是的，发动魔法卡！🌋</string>
+    <string name="dialog_multi_video_del_no">不了，留着 😅</string>
+</resources>

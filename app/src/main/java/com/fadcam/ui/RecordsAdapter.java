@@ -3,26 +3,20 @@ package com.fadcam.ui;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -123,7 +117,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private void showPopupMenu(View v, File video) {
         int position = records.indexOf(video); // Find position from video
         if (position == -1) {
-            Toast.makeText(context, "Error: Video not found", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_video_not_found, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -167,16 +161,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     private void confirmDelete(Context context, File video) {
         new MaterialAlertDialogBuilder(context)
-                .setTitle("Delete Forever?")
-                .setMessage("Are you sure you want to delete this video?")
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setTitle(context.getString(R.string.dialog_del_title))
+                .setMessage(context.getString(R.string.dialog_del_notice))
+                .setPositiveButton(context.getString(R.string.dialog_del_confirm), (dialog, which) -> {
                     if (video.delete()) {
                         int position = records.indexOf(video);
                         records.remove(video);
                         notifyItemRemoved(position);
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(context.getString(R.string.universal_cancel), null)
                 .show();
     }
 
@@ -209,13 +203,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 while ((len = in.read(buf)) > 0) {
                     out.write(buf, 0, len);
                 }
-                Toast.makeText(context, "Video saved to FadCam folder in Downloads", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.toast_video_saved, Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
-                Toast.makeText(context, "Failed to save video", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.toast_video_save_fail, Toast.LENGTH_SHORT).show();
                 e.printStackTrace();
             }
         } else {
-            Toast.makeText(context, "Failed to save video", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_video_save_fail, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -233,10 +227,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
             }
-            Toast.makeText(context, "Video saved to FadCam folder in Downloads", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_video_saved, Toast.LENGTH_SHORT).show();
             MediaScannerConnection.scanFile(context, new String[]{destFile.getAbsolutePath()}, null, null);
         } catch (IOException e) {
-            Toast.makeText(context, "Failed to save video", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_video_save_fail, Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
@@ -246,7 +240,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     private void showRenameDialog(final int position) {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
-        builder.setTitle("Rename Video");
+        builder.setTitle(R.string.rename_video_title);
 
         // Inflate and set up the input view
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_rename, null);
@@ -258,10 +252,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (!newName.isEmpty()) {
                 renameVideo(position, newName);
             } else {
-                Toast.makeText(context, "Name cannot be empty", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.toast_rename_name_empty, Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton(R.string.universal_cancel, (dialog, which) -> dialog.cancel());
 
         builder.show();
     }
@@ -270,7 +264,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     private void renameVideo(int position, String newName) {
         if (videoFiles == null || position < 0 || position >= videoFiles.size()) {
-            Toast.makeText(context, "Invalid position or video list is null", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_rename_bad_video, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -285,9 +279,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             videoFiles.set(position, newFile);
             records.set(position, newFile); // Also update the records list if necessary
             notifyDataSetChanged();
-            Toast.makeText(context, "Video renamed successfully", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(context, "Failed to rename video", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -1,6 +1,8 @@
 package com.fadcam.ui;
 
+
 import static androidx.core.content.ContextCompat.getSystemService;
+
 
 import android.Manifest;
 import android.animation.Animator;
@@ -76,6 +78,7 @@ import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahDate;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -139,21 +142,9 @@ public class HomeFragment extends Fragment {
     private CameraManager cameraManager;
     private String cameraId;
 
-
+    //FragmentActivity tipres = requireActivity();
     private TextView tvTip;
-    private String[] tips = {
-            "1/11 | Long press preview to disable it.",
-            "2/11 | Long press date widget to select clock display.",
-            "3/11 | Storage widget updates recording space in real-time.",
-            "4/11 | Stats widget shows total videos and space used.",
-            "5/11 | Change video quality in settings (HD, SD, FHD).",
-            "6/11 | Low on space? Adjust video quality for more recording time.",
-            "7/11 | Add watermark to videos in settings.",
-            "8/11 | Embed precise location in watermark via settings.",
-            "9/11 | Record with front camera? Choose in settings.",
-            "10/11 | Your preferences are saved and applied seamlessly.",
-            "11/11 | Need help? Join our Discord via the About section."
-    };
+    private String[] tips;
 
 
     private int currentTipIndex = 0;
@@ -204,14 +195,7 @@ public class HomeFragment extends Fragment {
 
 
     private void initializeMessages() {
-        messageQueue = new ArrayList<>(Arrays.asList(
-                "Alert! This is a restricted area. Start recording to gain access.",
-                "You’ve found the secret button! It does nothing lol",
-                "Hurry! The system is about to explode... or maybe it just needs a recording to calm down.",
-                "Well, this is awkward now...",
-                "What color is your Bugatti?",
-                "I was not programmed to do what you are doing. Wait, are you trying to hack me?"
-        ));
+        messageQueue = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.easter_eggs_array)));
         recentlyShownMessages = new ArrayList<>();
         Collections.shuffle(messageQueue); // Shuffle the list initially
     }
@@ -324,7 +308,7 @@ public class HomeFragment extends Fragment {
         } else {
             textureView.setVisibility(View.INVISIBLE);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-            tvPreviewPlaceholder.setText("Preview Area");
+            tvPreviewPlaceholder.setText(getString(R.string.ui_preview_area));
         }
 
         updateCameraPreview();
@@ -488,6 +472,7 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        tips = Objects.requireNonNull(getActivity()).getResources().getStringArray(R.array.tips_widget);
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: Setting up UI components");
 
@@ -685,11 +670,11 @@ public class HomeFragment extends Fragment {
 
     private void showDisplayOptionsDialog() {
         new MaterialAlertDialogBuilder(getContext())
-                .setTitle("Choose Clock Display")
+                .setTitle(getString(R.string.dialog_clock_title))
                 .setSingleChoiceItems(new String[]{
-                        "Time Only",
-                        "English Date with Time",
-                        "تاريخ التقويم الإسلامي"
+                        getString(R.string.dialog_clock_timeonly),
+                        getString(R.string.dialog_clock_englishtime),
+                        getString(R.string.dialog_clock_Islamic_calendar)
                 }, getCurrentDisplayOption(), (dialog, which) -> {
                     saveDisplayOption(which);
                     updateClock(); // Update the widget based on the selected option
@@ -773,14 +758,7 @@ public class HomeFragment extends Fragment {
         long seconds = remainingTime % 60;
 
         String storageInfo = String.format(Locale.getDefault(),
-                "<font color='#FFFFFF' style='font-size:16sp;'><b>Available:</b></font><br>" +
-                        "<font color='#CCCCCC' style='font-size:14sp;'>%.2f GB / %.2f GB</font><br><br>" +
-                        "<font color='#FFFFFF' style='font-size:16sp;'><b>Record time (est.):</b></font><br>" +
-                        "<font color='#CCCCCC' style='font-size:14sp;'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>" +
-                        "<font color='#FFFFFF' style='font-size:16sp;'><b>Elapsed time:</b></font><br>" +
-                        "<font color='#77DD77' style='font-size:14sp;'>%02d:%02d</font><br>" +
-                        "<font color='#FFFFFF' style='font-size:16sp;'><b>Remaining time:</b></font><br>" +
-                        "<font color='#E43C3C' style='font-size:14sp;'>%s</font>",
+                getString(R.string.mainpage_storage_indocator),
                 gbAvailable, gbTotal,
                 getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
@@ -901,10 +879,7 @@ public class HomeFragment extends Fragment {
         }
 
         String statsText = String.format(Locale.getDefault(),
-                "<font color='#FFFFFF' style='font-size:12sp;'><b>Videos: </b></font>" +
-                        "<font color='#D3D3D3' style='font-size:11sp;'>%d</font><br>" +
-                        "<font color='#FFFFFF' style='font-size:12sp;'><b>Used Space:</b></font><br>" +
-                        "<font color='#D3D3D3' style='font-size:11sp;'>%s</font>",
+                getString(R.string.mainpage_video_info),
                 numVideos, Formatter.formatFileSize(getContext(), totalSize));
 
         tvStats.setText(Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY));
@@ -925,7 +900,7 @@ public class HomeFragment extends Fragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.resume();
             isPaused = false;
-            buttonPauseResume.setText("Pause");
+            buttonPauseResume.setText(getString(R.string.button_pause));
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
         }
     }
@@ -937,13 +912,13 @@ public class HomeFragment extends Fragment {
             if ("RECORDING_STATE_CHANGED".equals(intent.getAction())) {
                 boolean isRecording = intent.getBooleanExtra("isRecording", false);
                 if (isRecording) {
-                    buttonStartStop.setText("Stop");
+                    buttonStartStop.setText(getString(R.string.button_stop));
                     buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
                     buttonPauseResume.setEnabled(true);
                     tvPreviewPlaceholder.setVisibility(View.GONE);
                     textureView.setVisibility(View.VISIBLE);
                 } else {
-                    buttonStartStop.setText("Start");
+                    buttonStartStop.setText(getString(R.string.button_start));
                     buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
                     buttonPauseResume.setEnabled(false);
                     tvPreviewPlaceholder.setVisibility(View.VISIBLE);
@@ -968,7 +943,7 @@ public class HomeFragment extends Fragment {
             recordingStartTime = SystemClock.elapsedRealtime();
             setVideoBitrate();
 
-            buttonStartStop.setText("Stop");
+            buttonStartStop.setText(getString(R.string.button_stop));
             buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
             buttonPauseResume.setEnabled(true);
             tvPreviewPlaceholder.setVisibility(View.GONE);
@@ -1278,7 +1253,7 @@ public class HomeFragment extends Fragment {
                 }
 
                 isRecording = false;
-                buttonStartStop.setText("Start");
+                buttonStartStop.setText(getString(R.string.button_start));
                 buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
                 buttonPauseResume.setEnabled(false);
                 tvPreviewPlaceholder.setVisibility(View.VISIBLE);

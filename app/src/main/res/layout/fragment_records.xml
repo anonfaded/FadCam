@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:background="@color/gray"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:title="Recordings"
+        app:title="@string/records_title"
         app:titleCentered="true"
         app:titleTextColor="@android:color/white" />
 

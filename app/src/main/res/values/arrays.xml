@@ -7,9 +7,9 @@
     </string-array>
 
     <string-array name="watermark_options">
-        <item>Time with Fadcam</item>
-        <item>Timestamp</item>
-        <item>No Watermark</item>
+        <item>@string/array_watermark_time_fadcam</item>
+        <item>@string/array_watermark_timeonly</item>
+        <item>@string/array_watermark_nomark</item>
     </string-array>
 
     <string-array name="watermark_values">
