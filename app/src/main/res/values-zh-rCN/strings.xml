@@ -40,7 +40,7 @@
     <string name="mainpage_video_info">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>视频数量: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
-    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>占用空间:</b></font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>占用空间:</b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
     <string name="button_start">开始录制</string>
