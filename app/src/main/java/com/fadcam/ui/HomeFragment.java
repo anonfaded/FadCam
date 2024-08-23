@@ -758,7 +758,7 @@ public class HomeFragment extends Fragment {
         long seconds = remainingTime % 60;
 
         String storageInfo = String.format(Locale.getDefault(),
-                getString(R.string.mainpage_storage_indocator),
+                getString(R.string.mainpage_storage_indicator),
                 gbAvailable, gbTotal,
                 getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
                 getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
