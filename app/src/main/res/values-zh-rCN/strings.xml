@@ -101,6 +101,7 @@
         <item>我的使用偏好会被记录吗?</item>
         <item>怎么样才能自动（计划）录像?</item>
         <item>怎样更新软件?</item>
+        <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
         <item>FadCam不支持任何不道德或非法使用本软件的行为。未经允许的监视或侵犯隐私等滥用行为均严重违反我们的原则. FadCam作者对任何滥用本应用程序的行为以及导致的结果概不负责.
@@ -112,7 +113,7 @@
         <item>不, 所有数据都会存储在你的设备上.</item>
         <item>你录制的视频都只会存储在手机里.</item>
         <item>不, FadCam不存储和共享任何信息.</item>
-        <item>你可以在我们的GitHub页上提issue.</item>
+        <item> </item>
         <item> </item>
         <item> </item>
         <item>录制视频的每一帧都会加入水印. 录制的视频越长, 所需的时间就越长.</item>
@@ -123,6 +124,7 @@
         <item>是的, 所有的偏好设置都会没有痕迹地保存下来</item>
         <item>这个功能以后会有的.</item>
         <item>去看看我们的官方GitHub仓库获取更新.</item>
+        <item> </item>
     </string-array>
     <string name="dialog_welcome_title">欢迎使用FadCam！</string>
     <string name="note_under_dev">重要提示: 本软件仍处于开发阶段. 新功能会逐步加入</string>

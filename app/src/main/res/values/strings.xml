@@ -117,6 +117,7 @@
         <item>Are my preferences saved?</item>
         <item>Can I schedule recordings?</item>
         <item>How do I update the app?</item>
+        <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
         <item>FadCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
@@ -128,7 +129,7 @@
         <item>No, all data is stored on your device.</item>
         <item>Your videos are saved locally on your device.</item>
         <item>No, FadCam does not share or collect any data.</item>
-        <item>You can open an issue on our GitHub page.</item>
+        <item> </item>
         <item> </item>
         <item> </item>
         <item>The watermark is embedded in each frame of the video. The longer the video, the more time it will take.</item>
@@ -139,6 +140,7 @@
         <item>Yes, preferences and all settings are saved and applied seamlessly.",</item>
         <item>This feature is coming soon.</item>
         <item>Check the official GitHub repo for updates.</item>
+        <item> </item>
     </string-array>
     <string name="dialog_welcome_title">Welcome to FadCam!</string>
     <string name="note_under_dev">Important: This app is currently under development. New features are being added regularly.</string>
