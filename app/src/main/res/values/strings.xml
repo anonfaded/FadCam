@@ -30,7 +30,7 @@
         <item name="quality_hd">HD (1280x720)</item>
         <item name="quality_sd">SD (640x480)</item>
     </string-array>
-    <string name="mainpage_storage_indocator">\n    <![CDATA[
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Record time (est.):</b></font><br>
