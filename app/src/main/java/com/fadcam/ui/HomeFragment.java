@@ -1,5 +1,9 @@
 package com.fadcam.ui;
 
+
+import static androidx.core.content.ContextCompat.getSystemService;
+
+
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -66,6 +70,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
+
 import android.os.SystemClock;
 
 import java.time.format.DateTimeFormatter;
@@ -90,6 +95,9 @@ public class HomeFragment extends Fragment {
     private RecordsAdapter adapter;
 
     static final String PREF_LOCATION_DATA = "location_data";
+    private static final String PREF_CAMERA_SELECTION = "camera_selection";
+    private static final String CAMERA_FRONT = "front";
+    private static final String CAMERA_BACK = "back";
 
     private double latitude;
     private double longitude;
@@ -122,6 +130,7 @@ public class HomeFragment extends Fragment {
     private TextView tvPreviewPlaceholder;
     private Button buttonStartStop;
     private Button buttonPauseResume;
+    private Button buttonCamSwitch;
     private boolean isPaused = false;
     private boolean isPreviewEnabled = true;
 
@@ -130,18 +139,17 @@ public class HomeFragment extends Fragment {
 
     private CardView cardClock;
     private TextView tvClock, tvDateEnglish, tvDateArabic;
+    private CameraManager cameraManager;
+    private String cameraId;
 
     //FragmentActivity tipres = requireActivity();
     private TextView tvTip;
     private String[] tips;
 
 
-
     private int currentTipIndex = 0;
 
     private TextView tvStats;
-
-
 
 
     private List<String> messageQueue;
@@ -152,7 +160,7 @@ public class HomeFragment extends Fragment {
     private static final int REQUEST_PERMISSIONS = 1;
 //    private static final String PREF_FIRST_LAUNCH = "first_launch";
 
-// important
+    // important
     private void requestEssentialPermissions() {
         Log.d(TAG, "requestEssentialPermissions: Requesting essential permissions");
         String[] permissions;
@@ -184,20 +192,6 @@ public class HomeFragment extends Fragment {
             ActivityCompat.requestPermissions(requireActivity(), permissionsToRequest.toArray(new String[0]), REQUEST_PERMISSIONS);
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     private void initializeMessages() {
@@ -232,12 +226,6 @@ public class HomeFragment extends Fragment {
             tvPreviewPlaceholder.setText("Oops! No messages available right now.");
         }
     }
-
-
-
-
-
-
 
 
     private void setupLongPressListener() {
@@ -307,8 +295,6 @@ public class HomeFragment extends Fragment {
     }
 
 
-
-
     private void updatePreviewVisibility() {
         if (isRecording) {
             if (isPreviewEnabled) {
@@ -327,6 +313,7 @@ public class HomeFragment extends Fragment {
 
         updateCameraPreview();
     }
+
     private void updateCameraPreview() {
         if (cameraCaptureSession != null && captureRequestBuilder != null && textureView.isAvailable()) {
             try {
@@ -349,6 +336,7 @@ public class HomeFragment extends Fragment {
             }
         }
     }
+
     private void resetTimers() {
         recordingStartTime = SystemClock.elapsedRealtime();
         updateStorageInfo();
@@ -359,7 +347,7 @@ public class HomeFragment extends Fragment {
         super.onCreate(savedInstanceState);
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         locationHelper = new LocationHelper(requireContext());
-//        requestLocationPermission();
+        cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         Log.d(TAG, "HomeFragment created.");
 
         // Request essential permissions on every launch
@@ -378,6 +366,14 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        //fetch Camera status
+        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
+        Toast.makeText(getContext(), "Current camera: "+currentCameraSelection, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         locationHelper.startLocationUpdates();
@@ -385,7 +381,9 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "HomeFragment resumed.");
 
         IntentFilter filter = new IntentFilter("RECORDING_STATE_CHANGED");
-        getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        }
 
         updateStats();
     }
@@ -399,6 +397,7 @@ public class HomeFragment extends Fragment {
 
         getActivity().unregisterReceiver(recordingStateReceiver);
     }
+
     private String getLocationData() {
         return locationHelper.getLocationData();
     }
@@ -423,7 +422,6 @@ public class HomeFragment extends Fragment {
 //    }
 
 
-
 //    private void requestLocationPermission() {
 //        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 //            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
@@ -440,6 +438,7 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "onCreateView: Inflating fragment_home layout");
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
+
     private void performHapticFeedback() {
         if (vibrator != null && vibrator.hasVibrator()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -449,6 +448,7 @@ public class HomeFragment extends Fragment {
             }
         }
     }
+
     private void savePreviewState() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("isPreviewEnabled", isPreviewEnabled);
@@ -469,6 +469,7 @@ public class HomeFragment extends Fragment {
             }
         }
     }
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         tips = Objects.requireNonNull(getActivity()).getResources().getStringArray(R.array.tips_widget);
@@ -480,6 +481,7 @@ public class HomeFragment extends Fragment {
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
+        buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         tvTip = view.findViewById(R.id.tvTip);
         tvStats = view.findViewById(R.id.tvStats);
 
@@ -502,6 +504,7 @@ public class HomeFragment extends Fragment {
 
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         isPreviewEnabled = sharedPreferences.getBoolean("isPreviewEnabled", true);
+
         resetTimers();
         copyFontToInternalStorage();
         updateStorageInfo();
@@ -581,7 +584,12 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+
+        buttonCamSwitch.setOnClickListener(v -> {
+            switchCamera();
+        });
     }
+
     private void startUpdatingClock() {
         updateClockRunnable = new Runnable() {
             @Override
@@ -592,6 +600,7 @@ public class HomeFragment extends Fragment {
         };
         handler.post(updateClockRunnable);
     }
+
     // Method to stop updating the clock
     private void stopUpdatingClock() {
         if (updateClockRunnable != null) {
@@ -659,7 +668,6 @@ public class HomeFragment extends Fragment {
     }
 
 
-
     private void showDisplayOptionsDialog() {
         new MaterialAlertDialogBuilder(getContext())
                 .setTitle(getString(R.string.dialog_clock_title))
@@ -723,8 +731,6 @@ public class HomeFragment extends Fragment {
 
         tvDateArabic.setText(displayOption == 2 ? currentDateArabic : "");
     }
-
-
 
 
     private void updateStorageInfo() {
@@ -795,7 +801,7 @@ public class HomeFragment extends Fragment {
         return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
     }
 
-//    update storage and stats in real time while recording is started
+    //    update storage and stats in real time while recording is started
     private void startUpdatingInfo() {
         Log.d(TAG, "startUpdatingInfo: Beginning real-time updates");
         updateInfoRunnable = new Runnable() {
@@ -824,12 +830,14 @@ public class HomeFragment extends Fragment {
             animateTip(tips[currentTipIndex], tvTip, 100); // Adjust delay as needed
         }
     }
+
     private void updateTip() {
         currentTip = tips[currentTipIndex];
         typingIndex = 0;
         isTypingIn = true;
 //        animateTip(); this line is giving errors so i commented it
     }
+
     private void animateTip(String fullText, TextView textView, int delay) {
         final Handler handler = new Handler(Looper.getMainLooper());
         final int[] index = {0};
@@ -898,7 +906,6 @@ public class HomeFragment extends Fragment {
     }
 
 
-
     private BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -920,7 +927,6 @@ public class HomeFragment extends Fragment {
             }
         }
     };
-
 
 
     private void startRecording() {
@@ -953,7 +959,6 @@ public class HomeFragment extends Fragment {
             getActivity().startService(startIntent);
         }
     }
-
 
 
 //recording service section
@@ -1009,12 +1014,19 @@ public class HomeFragment extends Fragment {
         return sharedPreferences.getString("camera_selection", "back");
     }
 
+    private void closeCamera() {
+        if (cameraDevice != null) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+    }
+
     private void openCamera() {
         Log.d(TAG, "openCamera: Opening camera");
         CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
-            String cameraId = getCameraSelection().equals("front") ? cameraIdList[1] : cameraIdList[0];
+            cameraId = getCameraSelection().equals("front") ? cameraIdList[1] : cameraIdList[0];
             manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
@@ -1044,9 +1056,10 @@ public class HomeFragment extends Fragment {
 
     private void startRecordingVideo() {
         Log.d(TAG, "startRecordingVideo: Setting up video recording preview area");
+        buttonCamSwitch.setEnabled(false);
 
         // Check if TextureView is available before starting recording
-        if (!textureView.isAvailable())  {
+        if (!textureView.isAvailable()) {
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
             textureView.setVisibility(View.VISIBLE);
             openCamera();
@@ -1172,8 +1185,6 @@ public class HomeFragment extends Fragment {
     }
 
 
-
-
     private void checkAndDeleteSpecificTempFile() {
         if (tempFileBeingProcessed != null) {
             String tempTimestamp = extractTimestamp(tempFileBeingProcessed.getName());
@@ -1200,7 +1211,6 @@ public class HomeFragment extends Fragment {
     }
 
 
-
     private void startMonitoring() {
         final long CHECK_INTERVAL_MS = 1000; // 1 second
 
@@ -1208,8 +1218,6 @@ public class HomeFragment extends Fragment {
             checkAndDeleteSpecificTempFile();
         }, 0, CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
-
-
 
 
     private void stopRecording() {
@@ -1259,6 +1267,7 @@ public class HomeFragment extends Fragment {
             isRecording = false;
             updatePreviewVisibility();
         }
+        buttonCamSwitch.setEnabled(true);
     }
 
 
@@ -1353,10 +1362,6 @@ public class HomeFragment extends Fragment {
         Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
         return files[0]; // Return the most recently modified file
     }
-
-
-
-
 
 
     private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath) {
@@ -1467,29 +1472,16 @@ public class HomeFragment extends Fragment {
     }
 
 
-
-
     private String getCurrentTimestamp() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.getDefault());
         return sdf.format(new Date());
     }
 
 
-
-
-
-
-
-
-
-
-
     private String getWatermarkOption() {
         SharedPreferences sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         return sharedPreferences.getString("watermark_option", "timestamp_fadcam");
     }
-
-
 
 
     private void copyFontToInternalStorage() {
@@ -1523,7 +1515,18 @@ public class HomeFragment extends Fragment {
     }
 
 
-
+    public void switchCamera() {
+        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
+        if (currentCameraSelection.equals(CAMERA_BACK)) {
+            sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, CAMERA_FRONT).apply();
+            Log.d(TAG, "Camera set to front");
+            Toast.makeText(getContext(), "Switched to front camera", Toast.LENGTH_SHORT).show();
+        } else {
+            sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, CAMERA_BACK).apply();
+            Log.d(TAG, "Camera set to rear");
+            Toast.makeText(getContext(), "Switched to rear camera", Toast.LENGTH_SHORT).show();
+        }
+    }
 
 //    private class LocationHelper implements LocationListener {
 //
@@ -1551,10 +1554,6 @@ public class HomeFragment extends Fragment {
 //    }
 
 
-
-
-
-
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int read;
@@ -1562,12 +1561,6 @@ public class HomeFragment extends Fragment {
             out.write(buffer, 0, read);
         }
     }
-
-
-
-
-
-
 
 
     @Override

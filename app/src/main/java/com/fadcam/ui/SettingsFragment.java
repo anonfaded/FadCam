@@ -1,7 +1,5 @@
 package com.fadcam.ui;
 
-import com.fadcam.ui.LocationHelper;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -51,12 +49,15 @@ public class SettingsFragment extends Fragment {
     private static final int REQUEST_PERMISSIONS = 1;
     private static final String PREF_FIRST_LAUNCH = "first_launch";
 
+    MaterialButtonToggleGroup cameraSelectionToggle;
+    View view;
+
     private void vibrateTouch() {
         // Haptic Feedback
         Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
             VibrationEffect effect = null;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -79,8 +80,14 @@ public class SettingsFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        syncCameraSwitch(view, cameraSelectionToggle);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_settings, container, false);
+        view = inflater.inflate(R.layout.fragment_settings, container, false);
 
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
@@ -89,7 +96,7 @@ public class SettingsFragment extends Fragment {
         MaterialButton readmeButton = view.findViewById(R.id.readme_button);
         readmeButton.setOnClickListener(v -> showReadmeDialog());
 
-        MaterialButtonToggleGroup cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
+        cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
         // Setup spinner items with array resource
         Spinner qualitySpinner = view.findViewById(R.id.quality_spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -211,11 +218,30 @@ public class SettingsFragment extends Fragment {
             }
         }
     }
+    //To sync with the camera switch button on main page...
+    private void syncCameraSwitch(View view, MaterialButtonToggleGroup cameraSelectionToggle){
 
-
-
-
-
+        MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
+        MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
+        if (currentCameraSelection.equals(CAMERA_FRONT)) {
+            cameraSelectionToggle.check(R.id.button_front_camera);
+            updateButtonAppearance(frontCameraButton, true);
+            updateButtonAppearance(backCameraButton, false);
+        } else {
+            cameraSelectionToggle.check(R.id.button_back_camera);
+            updateButtonAppearance(backCameraButton, true);
+            updateButtonAppearance(frontCameraButton, false);
+        }
+        cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                String selectedCamera = (checkedId == R.id.button_front_camera) ? CAMERA_FRONT : CAMERA_BACK;
+                sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, selectedCamera).apply();
+                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
+                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
+            }
+        });
+    }
 
 
 

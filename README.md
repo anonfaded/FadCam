@@ -10,6 +10,10 @@
 |---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 
+
+
+
+
 ---
 
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
@@ -22,7 +26,9 @@
 
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
 
-<img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red">
+[![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
+
+<!-- <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red"> -->
 
 
 
@@ -46,6 +52,13 @@
     height="70"></a>
 
 <em>(coming soon on f-droid...)</em>
+
+<br>
+
+| ⭐ |<img src="https://github.com/user-attachments/assets/c730eda3-5887-458d-8df1-971a74807b73" style="width: 100px; height: auto;" > | *New app from FadSec-Lab suite:🎉* <br> Also, check out our new Windows app! Visit here: [FadCrypt](https://github.com/anonfaded/FadCrypt)  |
+|--|-------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+
 <br>
 </div>
 
@@ -118,7 +131,11 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 ### Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
-- [Tech Quirk](https://www.youtube.com/shorts/4cQ2RpWHess)
+- [Tech Quirk on YouTube](https://www.youtube.com/shorts/4cQ2RpWHess)
+- [TechyNoob on YouTube](https://youtu.be/ahUmOhOc_cI?si=P5_MK5B7KiJV_2Ip)
+- [Luca Crocco on TikTok](https://www.tiktok.com/@lucacrocco96/video/7400823097613503777)
+- [TipTopTech on YouTube](https://youtu.be/SXHT25dNCrM?si=csEav5ZBYniJWT3J&t=177)
+<!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
 ### Articles and Listings
 - [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
@@ -137,6 +154,12 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [dailymobile.ir](https://www.dailymobile.ir/89140/fadcam-android/)
 - [roonby.com](https://roonby.com/2024/08/01/10-best-android-apps-to-use-these-months-august-2024/)
 - [en.xiaomitoday.it](https://en.xiaomitoday.it/fadcam-con-questa-app-diventi-un-agente-segreto.html)
+- [alternativeto.net](https://alternativeto.net/software/fadcam/about/)
+- [misa7atech.com](https://www.misa7atech.com/2024/08/BestPhoneApps13Aug24.html)
+- [mounirtech.com](https://www.mounirtech.com/2024/08/Best-new-apps-august-2024.html)
+- [androidtr.es](https://androidtr.es/las-8-mejores-aplicaciones-ocultas-de-codigo-abierto-para-android-y-hacks-secretos-que-te-dejaran-boquiabierto-2/)
+- [gadgetstouse.com](https://gadgetstouse.com/blog/2024/08/22/record-video-with-screen-off-on-android/)
+<!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
 
@@ -163,6 +186,10 @@ Or:
     height="47"></a>
 
 <em>(coming soon on f-droid...)</em>
+
+**Downloads logs:**
+- 5k -> 10th Jul 2024 (1st month)
+- 10k -> 21 Aug 2024 (6th week)
 
 ## Features:
 
