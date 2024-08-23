@@ -95,7 +95,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="89dp"
+                    android:layout_height="99dp"
                     android:orientation="vertical"
                     android:padding="6dp">
 
@@ -166,7 +166,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="54dp"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:padding="5dp">
 
