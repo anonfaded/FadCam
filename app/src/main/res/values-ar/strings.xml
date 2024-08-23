@@ -54,7 +54,7 @@
     <string name="nav_records">الأشرطة</string>
     <string name="nav_settings">الإعدادات</string>
     <string name="nav_about">حول</string>
-    <string name="button_settings_readme">إرشادات الاستخدام</string>
+    <string name="button_settings_readme">اقرأني</string>
     <string name="setting_quailty_title">جودة الفيديو</string>
     <string name="setting_location_title">بيانات الموقع</string>
     <string name="setting_cam_title">الكاميرا</string>
@@ -78,7 +78,7 @@
         <item>لقد وجدت الزر السري! لكنه لا يفعل شيئًا ههههه</item>
         <item>اهرب! الهاتف على وشك الانفجار... أو ربما يحتاج فقط إلى بدء التسجيل ليهدأ.</item>
         <item>أوه، محرج...</item>
-        <item>دعني أرى بوغاتي الخاصة بك؟ (❁´◡`❁)</item>
+        <item>ما هو لون بوغاتي الخاصة بك؟ (❁´◡`❁) </item>
         <item>لم أكتب الكود بهذه الطريقة. يا له من حظ، هل تحاول اختراقي؟</item>
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
