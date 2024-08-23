@@ -280,12 +280,16 @@
             android:layout_marginStart="8dp"
             android:enabled="false"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCamSwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/cam_switch"
-            android:layout_marginStart="8dp"/>
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            app:icon="@drawable/cam_switch"
+            app:iconSize="24dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="0dp"
+            app:cornerRadius="15dp" />
 
     </LinearLayout>
 
