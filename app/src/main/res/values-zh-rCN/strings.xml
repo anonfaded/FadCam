@@ -5,7 +5,7 @@
     <string name="app_description">\n    <![CDATA[
     FadCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
     <br/><br/>
-    FadCam曾在人气油管频道<font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>中亮相, 也在 <font color="#cfbafd">GrapheneOS</font> 和其它第三方知名系统中提及.
+    FadCam 已在热门的 YouTube 频道中亮相，如 <font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>，还在 <font color="#cfbafd">GrapheneOS</font> 及其他十八个著名平台上被讨论。
     ]]>\n</string>
     <string name="view_source_code">查看源码</string>
     <string name="buy_me_a_coffee">请我一杯咖啡 ☕</string>
