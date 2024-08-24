@@ -259,7 +259,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Watermark"
+                        android:text="@string/setting_watermark"
                         android:textColor="@color/colorPrimary"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
                         android:layout_marginBottom="4dp"/>

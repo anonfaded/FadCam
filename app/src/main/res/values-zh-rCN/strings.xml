@@ -157,4 +157,14 @@
     <string name="dialog_multi_video_del_no">不了，留着 😅</string>
     <string name="setting_language_title">应用程序语言</string>
     <string name="note_language">从下拉列表中选择。\n（默认：英语）</string>
+    <string name="location_permission_title">位置权限</string>
+    <string name="location_permission_description">此应用程序需要位置权限才能将位置数据添加到视频中。请授予权限。</string>
+    <string name="up_to_date">最新的</string>
+    <string name="up_to_date_description">您已经在使用最新版本。</string>
+    <string name="up_to_date_loading">正在检查更新...</string>
+    <string name="update_available_title">可用更新</string>
+    <string name="update_available_message">有一个新版本（%1$s）可用。要更新，请访问 F-Droid 商店或我们的 GitHub 仓库以获取更多详细信息。</string>
+    <string name="visit_fdroid">访问 F-Droid</string>
+    <string name="visit_github">访问 GitHub</string>
+
 </resources>

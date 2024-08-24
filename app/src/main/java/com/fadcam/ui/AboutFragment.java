@@ -237,7 +237,7 @@ public class AboutFragment extends Fragment {
 
 
     private void checkForUpdates() {
-        showLoadingDialog("Checking for updates...");
+        showLoadingDialog(getString(R.string.up_to_date_loading));
 
         executorService.execute(() -> {
             try {
@@ -347,21 +347,22 @@ public class AboutFragment extends Fragment {
 
     private void showUpdateAvailableDialog(String newVersion) {
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Update Available")
-                .setMessage("A new version (" + newVersion + ") is available. To update, please visit the F-Droid store or our GitHub repository for more details.")
-                .setPositiveButton("Visit F-Droid", (dialog, which) -> {
+                .setTitle(getString(R.string.update_available_title)) // Use string resource for title
+                .setMessage(getString(R.string.update_available_message, newVersion)) // Use string resource for message with format
+                .setPositiveButton(getString(R.string.visit_fdroid), (dialog, which) -> {
                     openUpdateUrl("https://f-droid.org/packages/com.fadcam"); // Replace with your app's F-Droid URL
                 })
-                .setNegativeButton("Visit GitHub", (dialog, which) -> {
+                .setNegativeButton(getString(R.string.visit_github), (dialog, which) -> {
                     openUpdateUrl("https://github.com/anonfaded/FadCam"); // Replace with your GitHub repository URL
                 })
                 .show();
     }
 
+
     private void showUpToDateDialog() {
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Up to Date")
-                .setMessage("You are already using the latest version.")
+                .setTitle(getString(R.string.up_to_date))
+                .setMessage(getString(R.string.up_to_date_description))
                 .setPositiveButton("OK", null)
                 .show();
     }

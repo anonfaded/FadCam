@@ -175,4 +175,14 @@
     <string name="dialog_multi_video_del_no">No, Keep \'Em! 😅</string>
     <string name="setting_language_title">App\'s Language</string>
     <string name="note_language">Select from dropdown.\n(Default: English)</string>
+    <string name="location_permission_title">Location Permission</string>
+    <string name="location_permission_description">This app needs location permission to add location data to videos. Please grant the permission.</string>
+    <string name="up_to_date">Up To Date</string>
+    <string name="up_to_date_description">You are already using the latest version.</string>
+    <string name="up_to_date_loading">Checking for updates...</string>
+    <string name="update_available_title">Update Available</string>
+    <string name="update_available_message">A new version (%1$s) is available. To update, please visit the F-Droid store or our GitHub repository for more details.</string>
+    <string name="visit_fdroid">Visit F-Droid</string>
+    <string name="visit_github">Visit GitHub</string>
+
 </resources>

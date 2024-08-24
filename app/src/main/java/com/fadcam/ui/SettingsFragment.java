@@ -184,8 +184,8 @@ public class SettingsFragment extends Fragment {
 
     private void showLocationPermissionDialog(MaterialSwitch locationSwitch) {
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Location Permission")
-                .setMessage("This app needs location permission to add location data to videos. Please grant the permission.")
+                .setTitle(getString(R.string.location_permission_title)) // Use string resource for title
+                .setMessage(getString(R.string.location_permission_description))
                 .setPositiveButton("Grant", (dialog, which) -> requestLocationPermission())
                 .setNegativeButton("Cancel", (dialog, which) -> {
                     locationSwitch.setChecked(false); // Disable the switch if the user cancels

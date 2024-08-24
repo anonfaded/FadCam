@@ -156,4 +156,14 @@
     <string name="dialog_multi_video_del_no">لا، اتركها 😅</string>
     <string name="setting_language_title">لغة التطبيق</string>
     <string name="note_language">اختر من القائمة المنسدلة.\n (الافتراضي: الإنجليزية)</string>
+    <string name="location_permission_title">تصريح موقع الهاتف</string>
+    <string name="location_permission_description">يحتاج هذا التطبيق إلى إذن الموقع لإضافة بيانات الموقع إلى مقاطع الفيديو. يرجى منح الإذن.</string>
+    <string name="up_to_date">حتى الآن</string>
+    <string name="up_to_date_description">أنت تستخدم بالفعل أحدث إصدار.</string>
+    <string name="up_to_date_loading">التحقق من وجود تحديثات...</string>
+    <string name="update_available_title">تحديث متاح</string>
+    <string name="update_available_message">إصدار جديد (%1$s) متاح. للتحديث، يرجى زيارة متجر F-Droid أو مستودع GitHub الخاص بنا لمزيد من التفاصيل.</string>
+    <string name="visit_fdroid">زيارة F-Droid</string>
+    <string name="visit_github">زيارة GitHub</string>
+
 </resources>
