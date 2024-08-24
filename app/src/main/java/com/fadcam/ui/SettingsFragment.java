@@ -25,6 +25,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.fadcam.MainActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -409,6 +410,7 @@ public class SettingsFragment extends Fragment {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(LANGUAGE_KEY, languageCode);
         editor.apply();
+        Log.d("SettingsFragment", "Language preference saved: " + languageCode);
     }
 
     private void setupLanguageSpinner(Spinner languageSpinner) {
@@ -421,8 +423,8 @@ public class SettingsFragment extends Fragment {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String languageCode = getLanguageCode(position);
                 if (!languageCode.equals(savedLanguageCode)) {
-                    applyLanguage(languageCode);
                     saveLanguagePreference(languageCode);
+                    ((MainActivity) requireActivity()).applyLanguage(languageCode);  // This will recreate the activity if the language is different
                 }
             }
 
@@ -432,6 +434,11 @@ public class SettingsFragment extends Fragment {
             }
         });
     }
+
+
+
+
+
 
     private int getLanguageIndex(String languageCode) {
         switch (languageCode) {
