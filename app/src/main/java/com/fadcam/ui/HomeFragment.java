@@ -1380,7 +1380,6 @@ public class HomeFragment extends Fragment {
                 watermarkText = getCurrentTimestamp() + (isLocationEnabled ? "" + locationText : "");
                 break;
             case "no_watermark":
-                // No watermark, so just copy the video as is
                 String ffmpegCommandNoWatermark = String.format("-i %s -codec copy %s", inputFilePath, outputFilePath);
                 executeFFmpegCommand(ffmpegCommandNoWatermark);
                 return;
@@ -1389,20 +1388,27 @@ public class HomeFragment extends Fragment {
                 break;
         }
 
+        // Convert the watermark text to English numerals
+        watermarkText = convertArabicNumeralsToEnglish(watermarkText);
+
+        // Get and convert the font size to English numerals
+        int fontSize = getFontSizeBasedOnBitrate();
+        String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
+
         Log.d(TAG, "Watermark Text: " + watermarkText);
         Log.d(TAG, "Font Path: " + fontPath);
+        Log.d(TAG, "Font Size: " + fontSizeStr);
 
-        // Determine the font size based on the video bitrate
-        int fontSize = getFontSizeBasedOnBitrate();
-
-        // Use -q:v 0 to keep the same quality as input
+        // Construct the FFmpeg command
         String ffmpegCommand = String.format(
-                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%d:fontcolor=white:fontfile=%s\" -q:v 0 -codec:a copy %s",
-                inputFilePath, watermarkText, fontSize, fontPath, outputFilePath
+                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:a copy %s",
+                inputFilePath, watermarkText, fontSizeStr, fontPath, outputFilePath
         );
 
         executeFFmpegCommand(ffmpegCommand);
     }
+
+
 
     private int getFontSizeBasedOnBitrate() {
         int fontSize;
@@ -1473,9 +1479,25 @@ public class HomeFragment extends Fragment {
 
 
     private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.getDefault());
-        return sdf.format(new Date());
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.ENGLISH);
+        return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
+
+
+    private String convertArabicNumeralsToEnglish(String text) {
+        if (text == null) return null;
+        return text.replaceAll("٠", "0")
+                .replaceAll("١", "1")
+                .replaceAll("٢", "2")
+                .replaceAll("٣", "3")
+                .replaceAll("٤", "4")
+                .replaceAll("٥", "5")
+                .replaceAll("٦", "6")
+                .replaceAll("٧", "7")
+                .replaceAll("٨", "8")
+                .replaceAll("٩", "9");
+    }
+
 
 
     private String getWatermarkOption() {
