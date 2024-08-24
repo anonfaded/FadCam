@@ -5,11 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +33,8 @@ import com.fadcam.R;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
+import java.util.Locale;
+
 public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
@@ -45,6 +50,9 @@ public class SettingsFragment extends Fragment {
     private static final String QUALITY_HD = "HD";
     private static final String QUALITY_FHD = "FHD";
     static final String PREF_LOCATION_DATA = "location_data";
+
+    private static final String PREFS_NAME = "app_prefs";
+    private static final String LANGUAGE_KEY = "language";
 
     private static final int REQUEST_PERMISSIONS = 1;
     private static final String PREF_FIRST_LAUNCH = "first_launch";
@@ -89,6 +97,21 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_settings, container, false);
 
+
+        // Initialize shared preferences
+        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+
+        // Setup  language selection spinner items with array resource
+        Spinner languageSpinner = view.findViewById(R.id.language_spinner);
+        ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
+                getContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
+        languageAdapter .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        languageSpinner.setAdapter(languageAdapter );
+
+
+
+
+
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
         MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
@@ -113,6 +136,9 @@ public class SettingsFragment extends Fragment {
         // Setup watermark option spinner
         Spinner watermarkSpinner = view.findViewById(R.id.watermark_spinner);
         setupWatermarkSpinner(view, watermarkSpinner);
+
+        // Set up spinner based on saved language preference
+        setupLanguageSpinner(languageSpinner);
 
 //        // Set up location toggle group
 //        MaterialButtonToggleGroup locationToggleGroup = view.findViewById(R.id.location_toggle_group);
@@ -377,5 +403,68 @@ public class SettingsFragment extends Fragment {
         startActivity(intent);
     }
 
+
+    private void saveLanguagePreference(String languageCode) {
+        SharedPreferences prefs = requireActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(LANGUAGE_KEY, languageCode);
+        editor.apply();
+    }
+
+    private void setupLanguageSpinner(Spinner languageSpinner) {
+        String savedLanguageCode = sharedPreferences.getString(LANGUAGE_KEY, Locale.getDefault().getLanguage());
+        int selectedIndex = getLanguageIndex(savedLanguageCode);
+        languageSpinner.setSelection(selectedIndex);
+
+        languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String languageCode = getLanguageCode(position);
+                if (!languageCode.equals(savedLanguageCode)) {
+                    applyLanguage(languageCode);
+                    saveLanguagePreference(languageCode);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+    }
+
+    private int getLanguageIndex(String languageCode) {
+        switch (languageCode) {
+            case "zh":
+                return 1;
+            case "ar":
+                return 2;
+            default:
+                return 0; // Default to English
+        }
+    }
+
+    private String getLanguageCode(int position) {
+        switch (position) {
+            case 1:
+                return "zh";
+            case 2:
+                return "ar";
+            default:
+                return "en";
+        }
+    }
+
+    private void applyLanguage(String languageCode) {
+        Log.d("SettingsFragment", "Applying new language: " + languageCode);
+        Locale locale = new Locale(languageCode);
+        Locale.setDefault(locale);
+        Configuration config = new Configuration();
+        config.setLocale(locale);
+        getActivity().getResources().updateConfiguration(config, getActivity().getResources().getDisplayMetrics());
+
+        // Restart the activity or fragment to apply changes
+        requireActivity().recreate();
+    }
 
 }

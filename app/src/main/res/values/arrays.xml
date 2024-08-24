@@ -6,6 +6,13 @@
         <item>@item/quality_sd</item>
     </string-array>
 
+    <string-array name="languages_array">
+        <item>English</item>
+        <item>中文</item>
+        <item>ar</item>
+    </string-array>
+
+
     <string-array name="watermark_options">
         <item>@string/array_watermark_time_fadcam</item>
         <item>@string/array_watermark_timeonly</item>
