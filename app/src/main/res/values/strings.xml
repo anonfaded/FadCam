@@ -173,6 +173,6 @@
     <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? 🚀💥</string>
     <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! 🌋</string>
     <string name="dialog_multi_video_del_no">No, Keep \'Em! 😅</string>
-    <string name="setting_language_title">Select Apps\'s Language</string>
-    <string name="note_language">Select from dropdown. (Default: English)</string>
+    <string name="setting_language_title">App\'s Language</string>
+    <string name="note_language">Select from dropdown.\n(Default: English)</string>
 </resources>

@@ -154,4 +154,6 @@
     <string name="dialog_multi_video_del_note">هل أنت متأكد أنك تريد إزالة كل هذه الفيديوهات من الهاتف؟ 🚀💥</string>
     <string name="dialog_multi_video_del_yes">نعم، استخدم سحر البطاقة! 🌋</string>
     <string name="dialog_multi_video_del_no">لا، اتركها 😅</string>
+    <string name="setting_language_title">لغة التطبيق</string>
+    <string name="note_language">اختر من القائمة المنسدلة.\n (الافتراضي: الإنجليزية)</string>
 </resources>

@@ -155,4 +155,6 @@
     <string name="dialog_multi_video_del_note">你确认要将这么多视频移出手机外？🚀💥</string>
     <string name="dialog_multi_video_del_yes">是的，发动魔法卡！🌋</string>
     <string name="dialog_multi_video_del_no">不了，留着 😅</string>
+    <string name="setting_language_title">应用程序语言</string>
+    <string name="note_language">从下拉列表中选择。\n（默认：英语）</string>
 </resources>
