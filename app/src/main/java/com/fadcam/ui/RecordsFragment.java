@@ -225,8 +225,8 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             }
         }
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Delete All Videos")
-                .setMessage("Are you sure you want to delete all videos?")
+                .setTitle(getString(R.string.delete_all_videos_title))
+                .setMessage(getString(R.string.delete_all_videos_description))
                 .setPositiveButton("Delete", (dialog, which) -> deleteAllVideos())
                 .setNegativeButton("Cancel", null)
                 .show();

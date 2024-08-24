@@ -166,5 +166,7 @@
     <string name="update_available_message">有一个新版本（%1$s）可用。要更新，请访问 F-Droid 商店或我们的 GitHub 仓库以获取更多详细信息。</string>
     <string name="visit_fdroid">访问 F-Droid</string>
     <string name="visit_github">访问 GitHub</string>
+    <string name="delete_all_videos_title">删除所有视频</string>
+    <string name="delete_all_videos_description">您确定要删除所有视频吗？</string>
 
 </resources>

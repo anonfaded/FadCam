@@ -17,25 +17,25 @@
     <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>المساحة المتاحة:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
-    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>مدة التسجيل المتاحة (قيمة تقريبية):</b></font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>وقت تسجيل الفيديو (تقريبًا):</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
-    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>مدة التسجيل:</b></font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>الوقت المنقضي:</b></font><br>
     <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>الوقت المتبقي:</b></font><br>
     <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
     ]]>\n</string>
     <string-array name="tips_widget">
         <item>1/11 | اضغط طويلاً على منطقة العرض لإيقاف تشغيلها</item>
-        <item>2/11 | اضغط طويلاً على الودجيت الزمنية لاختيار طريقة عرضها</item>
-        <item>3/11 | المعلومات على الودجيت التخزينية محدثة بشكل مباشر.</item>
-        <item>4/11 | يعرض أدناه عدد الفيديوهات والمساحة المشغولة</item>
-        <item>5/11 | يمكنك تغيير جودة التسجيل في الإعدادات (HD، SD، FHD).</item>
+        <item>2/11 | اضغط مطولاً على أداة التاريخ لتحديد عرض الساعة</item>
+        <item>3/11 | يتم تحديث البيانات في بطاقة التخزين في الوقت الفعلي.</item>
+        <item>4/11 | تُظهر بطاقة الإحصائيات إجمالي مقاطع الفيديو والمساحة المستخدمة</item>
+        <item>5/11 | تغيير جودة الفيديو في الإعدادات (HD، SD، FHD).)</item>
         <item>6/11 | نفد الذاكرة؟ حاول تقليل جودة التسجيل</item>
         <item>7/11 | يمكنك إضافة علامة مائية للفيديو في الإعدادات</item>
-        <item>8/11 | في الإعدادات، يمكنك تعيين علامة مائية للفيديو كبيانات الموقع</item>
+        <item>8/11 | من الإعدادات، يمكنك تحديد معلومات الموقع في العلامة المائية.</item>
         <item>9/11 | تريد استخدام الكاميرا الأمامية للتسجيل؟ عدل ذلك في الإعدادات</item>
-        <item>10/11 | إعداداتك في البرنامج لن تترك أي أثر</item>
-        <item>11/11 | تواجه صعوبة؟ انتقل إلى واجهة "حول" للانضمام إلى خادم Discord</item>
+        <item>10/11 | يتم حفظ تفضيلاتك وتطبيقها بسلاسة</item>
+        <item>11/11 | هل تحتاج إلى مساعدة؟ من صفحة ”حول“، يمكنك الانضمام إلى خادمنا  Discord</item>
     </string-array>
     <string name="mainpage_video_info">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>عدد الفيديوهات: </b></font>
@@ -43,20 +43,20 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>المساحة المشغولة:</b></font><br>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="button_start">بدء التسجيل</string>
+    <string name="button_start">ابدأ</string>
     <string name="button_pause">توقف مؤقت</string>
     <string name="button_stop">إيقاف</string>
     <string name="video_menu_del">حذف</string>
     <string name="video_menu_save">حفظ إلى المعرض</string>
     <string name="video_menu_rename">إعادة تسمية</string>
     <string name="records_title">الأشرطة</string>
-    <string name="nav_home">تسجيل</string>
+    <string name="nav_home">المنزل</string>
     <string name="nav_records">الأشرطة</string>
     <string name="nav_settings">الإعدادات</string>
     <string name="nav_about">حول</string>
     <string name="button_settings_readme">اقرأني</string>
     <string name="setting_quailty_title">جودة الفيديو</string>
-    <string name="setting_location_title">بيانات الموقع</string>
+    <string name="setting_location_title">معلومات موقع الهاتف</string>
     <string name="setting_cam_title">الكاميرا</string>
     <string name="note_cam_sele">اختر الكاميرا\n(الافتراضي: الكاميرا الخلفية)</string>
     <string name="button_settings_cam_back">الكاميرا الخلفية</string>
@@ -67,19 +67,19 @@
     <string name="note_watermark_extra">هل تريد تسريع عملية حفظ الفيديو؟ اختر "بدون علامة مائية". هل تريد إضافة علامة مائية؟ إذًا، الانتظار لحظة يستحق العناء، فقط انتظر قليلاً!</string>
     <string name="note_location">إضافة بيانات الموقع إلى العلامة المائية.\n يتطلب تفعيل ميزة الموقع على الهاتف \n(الافتراضي: إيقاف)</string>
     <string name="note_location_extra">إضافة معلومات الموقع الجغرافية إلى العلامة المائية يتطلب تفعيل ميزة الموقع على الهاتف</string>
-    <string name="button_setting_review">اكتب تعليقًا 🌟</string>
+    <string name="button_setting_review">اكتب مراجعة 🌟</string>
     <string name="dialog_clock_title">اختر تنسيق الوقت</string>
     <string name="dialog_clock_timeonly">عرض الوقت فقط</string>
     <string name="dialog_clock_englishtime">تاريخ ووقت بالنظام الإنجليزي</string>
     <string name="dialog_clock_Islamic_calendar">التقويم الإسلامي</string>
     <string name="ui_preview_area">منطقة المعاينة</string>
     <string-array name="easter_eggs_array">
-        <item>تحذير! هذه منطقة ذات وصول محدود. ابدأ التسجيل للوصول.</item>
+        <item>تحذير! هذه منطقة وصول محدود. بدء تسجيل الفيديو للوصول.</item>
         <item>لقد وجدت الزر السري! لكنه لا يفعل شيئًا ههههه</item>
         <item>اهرب! الهاتف على وشك الانفجار... أو ربما يحتاج فقط إلى بدء التسجيل ليهدأ.</item>
         <item>أوه، محرج...</item>
         <item>ما هو لون بوغاتي الخاصة بك؟ (❁´◡`❁) </item>
-        <item>لم أكتب الكود بهذه الطريقة. يا له من حظ، هل تحاول اختراقي؟</item>
+        <item>لم أكتب الكود بهذه الطريقة. هل تحاول أن تخترقني؟</item>
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>إخلاء المسؤولية</item>
@@ -165,5 +165,7 @@
     <string name="update_available_message">إصدار جديد (%1$s) متاح. للتحديث، يرجى زيارة متجر F-Droid أو مستودع GitHub الخاص بنا لمزيد من التفاصيل.</string>
     <string name="visit_fdroid">زيارة F-Droid</string>
     <string name="visit_github">زيارة GitHub</string>
+    <string name="delete_all_videos_title">حذف جميع مقاطع الفيديو</string>
+    <string name="delete_all_videos_description">هل أنت متأكد من رغبتك في حذف جميع مقاطع الفيديو؟</string>
 
 </resources>
