@@ -24,4 +24,11 @@
         <item>timestamp</item>
         <item>no_watermark</item>
     </string-array>
+
+    <string-array name="time_options">
+        <item>None</item>
+        <item>3 Sec Timer</item>
+        <item>5 Sec Timer</item>
+        <item>10 Sec Timer</item>
+    </string-array>
 </resources>

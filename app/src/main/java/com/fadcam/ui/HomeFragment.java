@@ -26,6 +26,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -41,7 +42,10 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -133,6 +137,8 @@ public class HomeFragment extends Fragment {
     private Button buttonCamSwitch;
     private boolean isPaused = false;
     private boolean isPreviewEnabled = true;
+    private Spinner timerSpinner;
+    private TextView countdownText;
 
     private View cardPreview;
     private Vibrator vibrator;
@@ -141,6 +147,8 @@ public class HomeFragment extends Fragment {
     private TextView tvClock, tvDateEnglish, tvDateArabic;
     private CameraManager cameraManager;
     private String cameraId;
+    private String selectedTime;
+    private int delayInSeconds;
 
     //FragmentActivity tipres = requireActivity();
     private TextView tvTip;
@@ -505,6 +513,9 @@ public class HomeFragment extends Fragment {
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         isPreviewEnabled = sharedPreferences.getBoolean("isPreviewEnabled", true);
 
+        timerSpinner = view.findViewById(R.id.timerSpinner);
+        countdownText = view.findViewById(R.id.countdownText);
+
         resetTimers();
         copyFontToInternalStorage();
         updateStorageInfo();
@@ -514,12 +525,75 @@ public class HomeFragment extends Fragment {
 
         // Update clock and date initially
         updateClock();
+        setTimerSpinner();
 
         updateTip(); // Start the tip animation
         startTipsAnimation();
         setupButtonListeners();
         setupLongPressListener();
         updatePreviewVisibility();
+    }
+
+    private void setTimerSpinner() {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                getContext(),
+                R.array.time_options,
+                android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        timerSpinner.setAdapter(adapter);
+
+        timerSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedTime = parent.getItemAtPosition(position).toString();
+
+                if (!selectedTime.equals("None")) {
+                    delayInSeconds = getDelayFromSelection(selectedTime);
+                } else {
+                    delayInSeconds = 0;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Optional: Handle no selection case
+                delayInSeconds = 0;
+            }
+        });
+
+    }
+
+    private void startRecordingWithDelay(int delayInSeconds) {
+        countdownText.setVisibility(View.VISIBLE);
+        new CountDownTimer(delayInSeconds * 1000L, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+                tvPreviewPlaceholder.setVisibility(View.GONE);
+                countdownText.setText(String.valueOf(millisUntilFinished / 1000));
+                buttonStartStop.setEnabled(false);
+            }
+
+            @Override
+            public void onFinish() {
+                countdownText.setVisibility(View.GONE);
+                buttonStartStop.setEnabled(true);
+                startRecording();
+            }
+        }.start();
+    }
+
+    private int getDelayFromSelection(String selectedTime) {
+        switch (selectedTime) {
+            case "3 Sec Timer":
+                return 3;
+            case "5 Sec Timer":
+                return 5;
+            case "10 Sec Timer":
+                return 10;
+            default:
+                return 0;
+        }
     }
 
     private boolean areEssentialPermissionsGranted() {
@@ -563,7 +637,7 @@ public class HomeFragment extends Fragment {
                 showPermissionsInfoDialog();
             } else {
                 if (!isRecording) {
-                    startRecording();
+                    startRecordingWithDelay(delayInSeconds);
                 } else {
                     stopRecording();
                     updateStats();
