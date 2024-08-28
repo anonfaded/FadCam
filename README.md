@@ -51,8 +51,6 @@
     alt="Get it on F-Droid"
     height="70"></a>
 
-<em>(coming soon on f-droid...)</em>
-
 <br>
 
 | ⭐ |<img src="https://github.com/user-attachments/assets/c730eda3-5887-458d-8df1-971a74807b73" style="width: 100px; height: auto;" > | *New app from FadSec-Lab suite:🎉* <br> Also, check out our new Windows app! Visit here: [FadCrypt](https://github.com/anonfaded/FadCrypt)  |
@@ -185,7 +183,7 @@ Or:
     alt="Get it on Amazon appstore"
     height="47"></a>
 
-<em>(coming soon on f-droid...)</em>
+
 
 **Downloads logs:**
 - 5k -> 10th Jul 2024 (1st month)
