@@ -1,0 +1,183 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_icon_description" translatable="false">FadCam uygulama simgesi</string>
+    <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
+    <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıdaki \'kaynak kodunu görüntüle\' bağlantısına tıklayın.</string>
+
+    <string name="app_description">
+    <![CDATA[
+    FadCam, hiçbir veri toplamayan veya izlemeyen, gizliliğe öncelik veren, reklamsız, açık kaynaklı bir video kayıt uygulamasıdır. Yalnızca GitHub\'da ve README\'de belirtilen resmi bağlantılar üzerinden erişilebilir.
+    <br/><br/>
+    FadCam, <font color="#cfbafd">HowToMen</font> ve <font color="#cfbafd">Xtream Droid</font> gibi popüler YouTube kanallarında yer almış, ayrıca <font color="#cfbafd">GrapheneOS</font> ve diğer on sekiz önemli platformda tartışılmıştır.
+    ]]>
+    </string>
+
+    <string name="view_source_code">Kaynak Kodunu Görüntüle</string>
+    <string name="buy_me_a_coffee">Bana bir kahve ısmarla ☕</string>
+    <string name="contact">İletişim</string>
+    <string name="send_email">E-posta gönder</string>
+    <string name="join_community">Yardım almak, fikir paylaşmak ve gelecekteki uygulama güncellemeleri için topluluğa katılın</string>
+    <string name="privacy_information">Gizlilik Bilgileri</string>
+    <string name="copyright_info">© 2024 fadedhood.com\nGPL-3.0 lisansı altında lisanslanmıştır</string>
+    <string-array name="video_quality_array">
+        <item name="quality_fhd">FHD (1920x1080)</item>
+        <item name="quality_hd">HD (1280x720)</item>
+        <item name="quality_sd">SD (640x480)</item>
+    </string-array>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Kullanılabilir:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Kayıt süresi (tahmini):</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Geçen süre:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Kalan süre:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Önizlemeyi devre dışı bırakmak için uzun basın.</item>
+        <item>2/11 | Saat görüntüsünü seçmek için tarih widget\'ına uzun basın.</item>
+        <item>3/11 | Depolama widget\'ı kayıt alanını gerçek zamanlı günceller.</item>
+        <item>4/11 | İstatistik widget\'ı toplam video sayısını ve kullanılan alanı gösterir.</item>
+        <item>5/11 | Ayarlarda video kalitesini değiştirin (HD, SD, FHD).</item>
+        <item>6/11 | Alan az mı? Daha uzun kayıt süresi için video kalitesini ayarlayın.</item>
+        <item>7/11 | Ayarlarda videolara filigran ekleyin.</item>
+        <item>8/11 | Ayarlar aracılığıyla filigrana tam konumu ekleyin.</item>
+        <item>9/11 | Ön kamerayla kayıt yapmak mı istiyorsunuz? Ayarlarda seçin.</item>
+        <item>10/11 | Tercihleriniz kaydedilir ve sorunsuz uygulanır.</item>
+        <item>11/11 | Yardıma mı ihtiyacınız var? Hakkında bölümünden Discord\'umuza katılın.</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videolar: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Kullanılan Alan:</font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+    <string name="button_start">Başlat</string>
+    <string name="button_pause">Duraklat</string>
+    <string name="button_stop">Durdur</string>
+    <string name="video_menu_del">Sil</string>
+    <string name="video_menu_save">Galeriye Kaydet</string>
+    <string name="video_menu_rename">Yeniden Adlandır</string>
+    <string name="records_title">Kayıtlar</string>
+    <string name="nav_home">Ana Sayfa</string>
+    <string name="nav_records">Kayıtlar</string>
+    <string name="nav_settings">Ayarlar</string>
+    <string name="nav_about">Hakkında</string>
+    <string name="button_settings_readme">Beni Oku</string>
+    <string name="setting_cam_title">Kamera Seçimi</string>
+    <string name="note_cam_sele">Kamera seç \n(Varsayılan: Arka)</string>
+    <string name="button_settings_cam_back">Arka</string>
+    <string name="button_settings_cam_front">Ön</string>
+    <string name="setting_quailty_title">Video Kalitesi</string>
+    <string name="note_quailty">Kalite seç\n(Varsayılan: HD)</string>
+    <string name="setting_watermark">Filigran</string>
+    <string name="note_watermark">Filigran seçeneğini seçin\n(Varsayılan: Fadcam ile zaman damgası)</string>
+    <string name="note_watermark_extra">Hızlı kaydetmek için \'Filigran Yok\'u seçin. Filigran eklemek mi istiyorsunuz? Biraz daha uzun sürer ama beklemeye değer!</string>
+    <string name="setting_location_title">Konum Verisi</string>
+    <string name="note_location">Filigrana konum bilgisi ekle. \nGPS açık olmalıdır \n(Varsayılan: Devre dışı)</string>
+    <string name="note_location_extra">Filigrana enlem ve boylam bilgisi eklemek için telefonun GPS\'ini etkinleştirin.</string>
+    <string name="button_setting_review">Değerlendirme Yaz 🌟</string>
+    <string name="dialog_clock_title">Saat Görüntüsünü Seçin</string>
+    <string name="dialog_clock_timeonly">Sadece Saat</string>
+    <string name="dialog_clock_englishtime">İngilizce Tarih ve Saat</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Önizleme Alanı</string>
+    <string-array name="easter_eggs_array">
+        <item>Uyarı! Bu kısıtlı bir alan. Erişim kazanmak için kayda başlayın.</item>
+        <item>Gizli düğmeyi buldunuz! Hiçbir şey yapmıyor lol</item>
+        <item>Acele edin! Sistem patlamak üzere... ya da belki de sadece sakinleşmek için bir kayda ihtiyacı var.</item>
+        <item>Şey, şimdi bu biraz garip oldu...</item>
+        <item>Senin Bugatti\'nin rengi ne?</item>
+        <item>Yaptığınız şeyi yapmak için programlanmadım. Bekleyin, beni hacklemye mi çalışıyorsunuz?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>YASAL UYARI</item>
+        <item>FadCam herhangi bir kullanıcı verisi topluyor mu?</item>
+        <item>FadCam\'de reklam var mı?</item>
+        <item>FadCam neden konum erişimi istiyor?</item>
+        <item>FadCam internete bağlanıyor mu?</item>
+        <item>Herhangi bir veri harici sunucularda saklanıyor mu?</item>
+        <item>Kayıttan sonra videolarıma ne oluyor?</item>
+        <item>FadCam verilerimi üçüncü taraflarla paylaşıyor mu?</item>
+        <item> </item>
+        <item> </item>
+        <item>Genel</item>
+        <item>Filigran ekleme neden bu kadar uzun sürüyor?</item>
+        <item>\'temp\' video nedir?</item>
+        <item>Video kalitesini nasıl değiştirebilirim?</item>
+        <item>Önizlemeyi devre dışı bırakabilir miyim?</item>
+        <item>Konumumu filigrana nasıl eklerim?</item>
+        <item>Tercihlerim kaydediliyor mu?</item>
+        <item>Kayıtları planlayabilir miyim?</item>
+        <item>Uygulamayı nasıl güncellerim?</item>
+        <item> </item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam, bu yazılımın etik olmayan veya yasa dışı kullanımını onaylamaz veya desteklemez. Yetkisiz gözetleme veya gizlilik ihlali gibi kötüye kullanımlar kesinlikle yönergelerimize aykırıdır. Yazarlar, uygulamanın herhangi bir kötüye kullanımından sorumlu değildir.
+        </item>
+        <item>Hayır, FadCam hiçbir kullanıcı verisi toplamaz.</item>
+        <item>Hayır, FadCam tamamen reklamsızdır.</item>
+        <item>Filigranlarınıza konum bilgisi eklemek için.</item>
+        <item>Hayır, FadCam internete bağlanmaz.</item>
+        <item>Hayır, tüm veriler cihazınızda saklanır.</item>
+        <item>Videolarınız cihazınızda yerel olarak kaydedilir.</item>
+        <item>Hayır, FadCam hiçbir veri paylaşmaz veya toplamaz.</item>
+        <item> </item>
+        <item> </item>
+        <item> </item>
+        <item>Filigran, videonun her karesine gömülür. Video ne kadar uzunsa, o kadar çok zaman alır.</item>
+        <item>'temp' video orijinal kaydınızdır. Filigran eklendikten sonra otomatik olarak silinir. Filigran ekleme başarısız olursa, \'temp\' dosyası yedek olarak kalır.</item>
+        <item>Ayarlarda video kalitesini değiştirin: HD, SD veya FHD.</item>
+        <item>Önizleme alanına uzun basarak devre dışı bırakabilirsiniz.</item>
+        <item>Filigrana konum verisi eklemek için ayarlarda konumu etkinleştirin. Tam enlem ve boylamı ekleyecektir.</item>
+        <item>Evet, tercihler ve tüm ayarlar kaydedilir ve sorunsuz uygulanır.</item>
+        <item>Bu özellik yakında geliyor.</item>
+        <item>Güncellemeler için resmi GitHub deposunu kontrol edin.</item>
+        <item> </item>
+    </string-array>
+    <string name="dialog_welcome_title">FadCam\'e Hoş Geldiniz!</string>
+    <string name="note_under_dev">Önemli: Bu uygulama şu anda geliştirme aşamasındadır. Yeni özellikler düzenli olarak eklenmektedir.</string>
+    <string name="rencent_updates_title">Son Güncellemeler:</string>
+    <string name="upcoming_features_title">Yaklaşan Özellikler:</string>
+    <string name="stay_updated_title">Güncel Kalın:</string>
+    <string name="button_readme_github">GitHub Deposu</string>
+    <string name="community_title">Topluluğumuza Katılın:</string>
+    <string name="discord_title">Discord Sunucusu</string>
+    <string name="thankyou_msg">FadCam\'i kullandığınız için teşekkürler!</string>
+    <string name="settings_title">Ayarlar</string>
+    <string name="array_watermark_time_fadcam">Fadcam ile Zaman</string>
+    <string name="array_watermark_timeonly">Zaman Damgası</string>
+    <string name="array_watermark_nomark">Filigran Yok</string>
+    <string name="recent_features">• Yeni UI tasarımı\n• Videolar artık uygulama içinde dahili olarak kaydediliyor\n• Videoları galeriye kaydetme seçeneği\n• Özelleştirilebilir filigran\n• Daha iyi oynatma için ExoPlayer entegrasyonu\n• Filigranlar için konum verisi\n• Dinamik filigran seçenekleri\n• Animasyonlu uzun basma geri bildirimi\n• Tarih ve Saat widget özelleştirmesi</string>
+    <string name="upcoming_features">• Otomatik planlanan kayıtlar \n• Google Drive\'a otomatik yükleme \n• Özel uygulama simgeleri \n• Gelişmiş gizlilik için uygulama kilidi \n• Kırpma gibi basit görevler için uygulama içi video düzenleyici \n• Ve daha birçok heyecan verici özellik!</string>
+    <string name="toast_video_not_found">Hata: Video bulunamadı</string>
+    <string name="toast_video_saved">Video, İndirilenler klasöründeki FadCam klasörüne kaydedildi</string>
+    <string name="toast_video_save_fail">Video kaydedilemedi</string>
+    <string name="rename_video_title">Videoyu Yeniden Adlandır</string>
+    <string name="universal_cancel">İptal</string>
+    <string name="toast_rename_name_empty">İsim boş olamaz</string>
+    <string name="toast_rename_failed">Video yeniden adlandırılamadı</string>
+    <string name="toast_rename_success">Video başarıyla yeniden adlandırıldı</string>
+    <string name="toast_rename_bad_video">Geçersiz konum veya video listesi boş</string>
+    <string name="dialog_del_title">Kalıcı Olarak Silinsin mi?</string>
+    <string name="dialog_del_notice">Bu videoyu silmek istediğinizden emin misiniz?</string>
+    <string name="dialog_del_confirm">Sil</string>
+    <string name="dialog_multi_video_del_title">Video(lar) Yok Edilsin mi? 💣💣</string>
+    <string name="dialog_multi_video_del_note">Bu video(lar)ı tamamen ortadan kaldırmak istediğinizden kesinlikle emin misiniz? 🚀💥</string>
+    <string name="dialog_multi_video_del_yes">Evet, Yok Et! 🌋</string>
+    <string name="dialog_multi_video_del_no">Hayır, Kalsın! 😅</string>
+    <string name="setting_language_title">Uygulama Dili</string>
+    <string name="note_language">Açılır listeden seçin.\n(Varsayılan: İngilizce)</string>
+    <string name="location_permission_title">Konum İzni</string>
+    <string name="location_permission_description">Bu uygulama, videolara konum verisi eklemek için konum iznine ihtiyaç duyar. Lütfen izni verin.</string>
+    <string name="up_to_date">Güncel</string>
+    <string name="up_to_date_description">Zaten en son sürümü kullanıyorsunuz.</string>
+    <string name="up_to_date_loading">Güncellemeler kontrol ediliyor...</string>
+    <string name="update_available_title">Güncelleme Mevcut</string>
+    <string name="update_available_message">Yeni bir sürüm (%1$s) mevcut. Güncellemek için lütfen F-Droid mağazasını ziyaret edin veya daha fazla bilgi için GitHub depomuza göz atın.</string>
+    <string name="visit_fdroid">F-Droid\'i Ziyaret Et</string>
+    <string name="visit_github">GitHub\'ı Ziyaret Et</string>
+    <string name="delete_all_videos_title">Tüm Videoları Sil</string>
+    <string name="delete_all_videos_description">Tüm videoları silmek istediğinizden emin misiniz?</string>
+</resources>
