@@ -5,9 +5,12 @@
 <!-- https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365 -->
 
 <br>
+</div>
 
-| :exclamation: | This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!  |
-|---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+> [!Tip]
+> This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
+
+
 
 
 
@@ -16,6 +19,8 @@
 
 ---
 
+<div align="center">
+    
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
 
 # FadCam
@@ -95,6 +100,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - **Research and Documentation:** Use for documenting events, research, or activities where recording is necessary.
 - **Privacy Protection:** Safeguard your privacy by using the app in accordance with legal and ethical standards.
 
+> [!Caution]
 > **Misuse Disclaimer:** <br>
 > The developers of FadCam do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
 
