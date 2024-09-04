@@ -1,29 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="check_for_updates">检查更新</string>
-    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方“查看源码”按钮</string>
-    <string name="app_description">\n    <![CDATA[
-    FadCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
-    <br/><br/>
-    FadCam 已在热门的 YouTube 频道中亮相，如 <font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>，还在 <font color="#cfbafd">GrapheneOS</font> 及其他十八个著名平台上被讨论。
-    ]]>\n</string>
+    <string name="fadsec_info">FadCam 是 FadSec Lab 套件的一部分。点击下方“查看源码”按钮以了解更多详情。</string>
+    <string name="app_description">FadCam 是一个隐私优先的开源无广告的视频录制软件。此软件可通过 Github 和 README 中的官方链接获取。 &lt;br/&gt;&lt;br/&gt; FadCam 已在热门的 YouTube 频道中亮相，如 &lt;font color=#cfbafd&gt;HowToMen&lt;/font&gt; 和 &lt;font color=#cfbafd&gt;Xtream Droid&lt;/font&gt;，还在 &lt;font color=#cfbafd&gt;GrapheneOS&lt;/font&gt; 及其他十八个值得注意的地方被讨论。</string>
     <string name="view_source_code">查看源码</string>
     <string name="buy_me_a_coffee">请我一杯咖啡 ☕</string>
     <string name="contact">联系方式</string>
     <string name="send_email">发送邮件</string>
     <string name="join_community">加入社区获得帮助，分享点子以及获得软件更新</string>
     <string name="privacy_information">隐私须知</string>
-    <string name="copyright_info">© 2024 fadedhood.com\n特许 根据 GPL-3.0</string>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[
-    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>可用空间:</b></font><br>
-    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
-    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>可录制时长 (粗略值.):</b></font><br>
-    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
-    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>已录制时长:</b></font><br>
-    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
-    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>剩余时间:</b></font><br>
-    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
-    ]]>\n</string>
+    <string name="copyright_info">© 2024 fadedhood.com
+\n以 GPL-3.0 许可</string>
+    <string name="mainpage_storage_indicator">"
+\n &lt;font color=\'#FFFFFF\' style=\'font-size:16sp;\'&gt;&lt;b&gt;可用空间:&lt;/b&gt;&lt;/font&gt;&lt;br&gt; &lt;font color=\'#CCCCCC\' style=\'font-size:14sp;\'&gt;%.2f GB / %.2f GB&lt;/font&gt;&lt;br&gt;&lt;br&gt; &lt;font color=\'#FFFFFF\' style=\'font-size:16sp;\'&gt;&lt;b&gt;可录制时长 (粗略值):&lt;/b&gt;&lt;/font&gt;&lt;br&gt; &lt;font color=\'#CCCCCC\' style=\'font-size:14sp;\'&gt;FHD: %s&lt;br&gt;HD: %s&lt;br&gt;SD: %s&lt;/font&gt;&lt;br&gt;&lt;br&gt; &lt;font color=\'#FFFFFF\' style=\'font-size:16sp;\'&gt;&lt;b&gt;已录制时长:&lt;/b&gt;&lt;/font&gt;&lt;br&gt; &lt;font color=\'#77DD77\' style=\'font-size:14sp;\'&gt;%02d:%02d&lt;/font&gt;&lt;br&gt; &lt;font color=\'#FFFFFF\' style=\'font-size:16sp;\'&gt;&lt;b&gt;剩余时间:&lt;/b&gt;&lt;/font&gt;&lt;br&gt; &lt;font color=\'#E43C3C\' style=\'font-size:14sp;\'&gt;%s&lt;/font&gt;
+\n"</string>
     <string-array name="tips_widget">
         <item>1/11 | 长按画面预览区可以关掉它</item>
         <item>2/11 | 长按时间小组件选择其显示方式</item>
@@ -64,9 +54,9 @@
     <string name="note_quailty">选择视频质量\n(默认: HD)</string>
     <string name="setting_watermark">水印</string>
     <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
-    <string name="note_watermark_extra">想让视频保存速度更快？选择“无水印”. 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
+    <string name="note_watermark_extra">想让视频保存速度更快？选择“无水印”。想加水印？那么片刻的等待是值得的，就只需要多等一小会！</string>
     <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
-    <string name="note_location_extra">添加经纬度信息至视频水印需要打开手机的位置信息功能</string>
+    <string name="note_location_extra">启用手机的GPS，将经纬度信息添加到水印中。</string>
     <string name="button_setting_review">写个评论 🌟</string>
     <string name="dialog_clock_title">选择时间格式</string>
     <string name="dialog_clock_timeonly">仅显示时间</string>
@@ -127,10 +117,10 @@
         <item> </item>
     </string-array>
     <string name="dialog_welcome_title">欢迎使用FadCam！</string>
-    <string name="note_under_dev">重要提示: 本软件仍处于开发阶段. 新功能会逐步加入</string>
+    <string name="note_under_dev">重要提示：本软件仍处于开发阶段，新功能会逐步加入。</string>
     <string name="rencent_updates_title">最近更新:</string>
     <string name="upcoming_features_title">即将添加:</string>
-    <string name="stay_updated_title">保持更新</string>
+    <string name="stay_updated_title">保持更新：</string>
     <string name="button_readme_github">GitHub仓库</string>
     <string name="community_title">加入官方社区:</string>
     <string name="discord_title">Discord服务器</string>
@@ -140,33 +130,33 @@
     <string name="array_watermark_timeonly">仅时间</string>
     <string name="array_watermark_nomark">无水印</string>
     <string name="toast_video_not_found">出错：视频未找到</string>
-    <string name="toast_video_saved">视频已保存至Download目录的FadCam文件夹中</string>
+    <string name="toast_video_saved">视频已保存至 /Downloads/FadCam 文件夹中</string>
     <string name="toast_video_save_fail">视频保存失败</string>
     <string name="rename_video_title">重命名视频</string>
     <string name="universal_cancel">取消</string>
     <string name="toast_rename_name_empty">名称不可为空</string>
     <string name="toast_rename_failed">重命名失败</string>
     <string name="toast_rename_success">重命名成功</string>
-    <string name="toast_rename_bad_video">无效路径或者视频列表为null</string>
-    <string name="dialog_del_title">确认删除？</string>
-    <string name="dialog_del_notice">你的确要删除这个视频吗</string>
+    <string name="toast_rename_bad_video">无效路径或者视频列表为空</string>
+    <string name="dialog_del_title">永久删除？</string>
+    <string name="dialog_del_notice">确定删除这个视频吗？</string>
     <string name="dialog_del_confirm">删除</string>
     <string name="dialog_multi_video_del_title">删这么多？💣💣</string>
-    <string name="dialog_multi_video_del_note">你确认要将这么多视频移出手机外？🚀💥</string>
-    <string name="dialog_multi_video_del_yes">是的，发动魔法卡！🌋</string>
+    <string name="dialog_multi_video_del_note">你一定要把这些视频摧毁吗？🚀💥</string>
+    <string name="dialog_multi_video_del_yes">是的，彻底摧毁！🌋</string>
     <string name="dialog_multi_video_del_no">不了，留着 😅</string>
     <string name="setting_language_title">应用程序语言</string>
-    <string name="note_language">从下拉列表中选择。\n（默认：英语）</string>
+    <string name="note_language">从下拉列表中选择。
+\n（默认：English）</string>
     <string name="location_permission_title">位置权限</string>
     <string name="location_permission_description">此应用程序需要位置权限才能将位置数据添加到视频中。请授予权限。</string>
-    <string name="up_to_date">最新的</string>
-    <string name="up_to_date_description">您已经在使用最新版本。</string>
+    <string name="up_to_date">已是最新</string>
+    <string name="up_to_date_description">已是最新版本。</string>
     <string name="up_to_date_loading">正在检查更新...</string>
-    <string name="update_available_title">可用更新</string>
+    <string name="update_available_title">有可用更新</string>
     <string name="update_available_message">有一个新版本（%1$s）可用。要更新，请访问 F-Droid 商店或我们的 GitHub 仓库以获取更多详细信息。</string>
     <string name="visit_fdroid">访问 F-Droid</string>
     <string name="visit_github">访问 GitHub</string>
     <string name="delete_all_videos_title">删除所有视频</string>
     <string name="delete_all_videos_description">您确定要删除所有视频吗？</string>
-
 </resources>
