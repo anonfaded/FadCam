@@ -141,6 +141,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Luca Crocco on TikTok](https://www.tiktok.com/@lucacrocco96/video/7400823097613503777)
 - [TipTopTech on YouTube](https://youtu.be/SXHT25dNCrM?si=csEav5ZBYniJWT3J&t=177)
 - [Adhip Pandey on YouTube](https://www.youtube.com/watch?v=ud0bu8U08Ic)
+- [Daniel Bueno - Tecnología on YouTube](https://www.youtube.com/watch?v=TuZBXJVPfOU)
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
@@ -168,6 +169,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [gadgetstouse.com](https://gadgetstouse.com/blog/2024/08/22/record-video-with-screen-off-on-android/)
 - [summarize.tech](https://www.summarize.tech/www.youtube.com/watch?v=gU9ddvtqL3E)
 - [phcorner.net](https://phcorner.net/threads/fadcam-open-source-seamless-background-video-recorder-for-android.2069335/)
+- [danielbuenotecnologia.com](https://danielbuenotecnologia.com/2024/09/13/protege-tu-vida-con-la-app-fad-cam/)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
