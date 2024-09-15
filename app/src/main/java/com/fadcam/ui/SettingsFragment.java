@@ -446,6 +446,8 @@ public class SettingsFragment extends Fragment {
                 return 1;
             case "ar":
                 return 2;
+            case "fr":
+                return 3;
             default:
                 return 0; // Default to English
         }
@@ -457,6 +459,8 @@ public class SettingsFragment extends Fragment {
                 return "zh";
             case 2:
                 return "ar";
+            case 3:
+                return "fr";
             default:
                 return "en";
         }

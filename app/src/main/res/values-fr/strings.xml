@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="check_for_updates">Vérifier les mises à jour</string>
+    <string name="fadsec_info">FadCam fait partie de la suite FadSec Lab. Pour plus d\'informations, cliquez sur \'Voir code source\' ci-dessous.</string>
+
+
+    <string name="app_description">"
+    <![CDATA[
+    FadCam est une application d\'enregistrement vidéo open-source sans publicité qui priorise la confidentialité en ne suivant ni ne collectant aucune donnée. Il est disponible exclusivement sur GitHub et via les liens officiels mentionnés dans le README.    <br/><br/>
+    FadCam a été présenté dans les chaînes YouTube populaires comme <font color="#cfbafd">HowToMen</font> et <font color="#cfbafd">Xtream Droid</font>, ainsi que discuté dans <font color="#cfbafd">GrapheneOS</font> et dix-huit autres endroits notables.
+    ]]>
+</string>
+
+
+
+
+
+
+    <string name="view_source_code">Voir Code Source</string>
+    <string name="buy_me_a_coffee">Achète moi un café ☕</string>
+    <string name="contact">Contact</string>
+    <string name="send_email">Envoyer email</string>
+    <string name="join_community">Rejoignez la communauté pour obtenir de l\'aide, partager des idées et les mises à jour futur de l\'application</string>
+    <string name="privacy_information">Information Confidentialité</string>
+    <string name="copyright_info">© 2024 fadedhood.com\nSous licence GPL-3.0</string>
+    <string-array name="video_quality_array">
+        <item name="quality_fhd">FHD (1920x1080)</item>
+        <item name="quality_hd">HD (1280x720)</item>
+        <item name="quality_sd">SD (640x480)</item>
+    </string-array>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Disponible :</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Durée d\'enregistrement (est.) :</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Durée écoulée :</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Durée restante :</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Pressez la zone de prévisualisation pour la désactiver.</item>
+        <item>2/11 | Pressez le widget date pour sélectionner l\'affichage de l\'horloge.</item>
+        <item>3/11 | Le widget de stockage met à jour l\'espace d\'enregistrement en temps réel.</item>
+        <item>4/11 | Le widget statistiques montre le total des vidéos et de l\'espace utilisé.</item>
+        <item>5/11 | Changez la qualité de la vidéo dans les paramètres (HD, SD, FHD).</item>
+        <item>6/11 | Faible en espace ? Ajustez la qualité vidéo pour plus de temps d\'enregistrement.</item>
+        <item>7/11 | Ajoutez un filigrane aux vidéos dans les paramètres.</item>
+        <item>8/11 | Embarquez avec précision dans le filigrane via les paramètres.</item>
+        <item>9/11 | Enregistrement avec caméra frontale ? Choisissez dans les paramètres.</item>
+        <item>10/11 | Vos préférences sont sauvegardées et appliquées de manière transparente.</item>
+        <item>11/11 | Besoin d\'aide ? Rejoignez notre Discorde via la section À propos.</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Vidéos : </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Espace Utilisé :</font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+    <string name="button_start">Démarrer</string>
+    <string name="button_pause">Pause</string>
+    <string name="button_stop">Arrêter</string>
+    <string name="video_menu_del">Supprimer</string>
+    <string name="video_menu_save">Sauvegarder vers la gallerie</string>
+    <string name="video_menu_rename">Renommer</string>
+    <string name="records_title">Enregistrements</string>
+    <string name="nav_home">Accueil</string>
+    <string name="nav_records">Enregistrements</string>
+    <string name="nav_settings">Options</string>
+    <string name="nav_about">À propos</string>
+    <string name="button_settings_readme">Lisez moi</string>
+    <string name="setting_cam_title">Sélection caméra</string>
+    <string name="note_cam_sele">Sélectionner caméra \n(Défaut: Arrière)</string>
+    <string name="button_settings_cam_back">Arrière</string>
+    <string name="button_settings_cam_front">Frontale</string>
+    <string name="setting_quailty_title">Qualité vidéo</string>
+    <string name="note_quailty">Choix de la qualité\n(Défaut: HD)</string>
+    <string name="setting_watermark">Filigrane</string>
+    <string name="note_watermark">Sélectionner l\'option filigrane\n(Défaut: Horodatage avec Fadcam)</string>
+    <string name="note_watermark_extra">Pour une sauvegarde rapide, choisissez \'Aucun\'. Ajouter un filigrane ? Ça vaut la peine d\'attendre, juste un peu plus pour traiter !</string>
+    <string name="setting_location_title">Données localisation</string>
+    <string name="note_location">Inclure les données de localisation dans le filigrane. \nNécessite le GPS activé \n(Défaut: Désactivé)</string>
+    <string name="note_location_extra">Activez le GPS du téléphone pour ajouter des données de latitude et de longitude au filigrane.</string>
+    <string name="button_setting_review">Écrire un Avis 🌟</string>
+    <string name="dialog_clock_title">Choisir l\'affichage de l\'horloge</string>
+    <string name="dialog_clock_timeonly">Heure seulement</string>
+    <string name="dialog_clock_englishtime">Date Anglaise avec l\'heure</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Zone Prévisualisation</string>
+    <string-array name="easter_eggs_array">
+        <item>Alerte ! C\'est une zone restreinte. Commencez à enregistrer pour accéder.</item>
+        <item>Vous avez trouvé le bouton secret ! Ça ne fait rien mdr</item>
+        <item>Vite ! Le système va exploser…ou peut-être qu\'il a juste besoin d\'un enregistrement pour se calmer.</item>
+        <item>Alors, c\'est gênant maintenant…</item>
+        <item>De quelle couleur est ta Bugatti ?</item>
+        <item>Je n\'étais pas programmé pour faire ce que vous faites. Attends, tu essaies de me pirater ?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>AVERTISSEMENT</item>
+        <item>FadCam collecte-t-elle des données utilisateur ?</item>
+        <item>Y a-t-il de la publicité dans FadCam ?</item>
+        <item>Pourquoi FadCam demande-t-elle l\'accès à l\'emplacement ?</item>
+        <item>FadCam se connecte-t-elle à Internet ?</item>
+        <item>Des données sont-elles stockées sur des serveurs externes ?</item>
+        <item>Qu\'arrive t-il à mes vidéos après l\'enregistrement ?</item>
+        <item>FadCam partage-t-elle mes données avec des tiers ?</item>
+        <item> </item>
+        <item> </item>
+        <item>Générale</item>
+        <item>Pourquoi le filigrane prend-il si longtemps?</item>
+        <item>Pourquoi il y a une vidéo \'temp\'?</item>
+        <item>Comment changer la qualité de la vidéo ?</item>
+        <item>Puis-je désactiver la prévisulisation ?</item>
+        <item>Comment puis-je intégrer mon emplacement au filigrane ?</item>
+        <item>Mes préférences sont-elles sauvegardées ?</item>
+        <item>Puis-je programmer des enregistrements ?</item>
+        <item>Comment mettre à jour l\'application ?</item>
+        <item> </item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam ne tolère ni ne supporte aucune utilisation contraire à l\'éthique ou illégale de ce logiciel. La mauvaise utilisation, comme la surveillance non autorisée ou l\'atteinte à la vie privée, est strictement contraire à nos directives. Les auteurs ne sont pas responsables de tout abus de l\'application.
+        </item>
+        <item>Non, FadCam ne recueille aucune donnée utilisateur.</item>
+        <item>Non, FadCam est complètement sans publicité.</item>
+        <item>Pour ajouter des informations de localisation à vos filigranes.</item>
+        <item>Non, FadCam ne se connecte pas à Internet.</item>
+        <item>Non, toutes les données sont stockées sur votre appareil.</item>
+        <item>Vos vidéos sont enregistrées localement sur votre appareil.</item>
+        <item>Non, FadCam ne partage ni ne recueille aucune donnée.</item>
+        <item> </item>
+        <item> </item>
+        <item> </item>
+        <item>Le filigrane est intégré dans chaque frame de la vidéo. Plus la vidéo est longue, plus il faudra de temps.</item>
+        <item>La vidéo \'temp\' est votre enregistrement original. Il est effacé automatiquement après le filigrane. Si le filigrane échoue, le fichier \'temp\' reste comme sauvegarde.</item>
+        <item>Changer la qualité de la vidéo dans les paramètres : HD, SD, ou FHD.</item>
+        <item>Pressez la zone de prévisualisation pour la désactiver.</item>
+        <item>Activer la localisation dans les paramètres pour les données de localisation dans le filigrane. Il intégrera la longitude et la latitude précises.</item>
+        <item>Oui, les préférences et tous les paramètres sont sauvegardés et appliqués de manière transparente.</item>
+        <item>Cette fonctionnalité arrive bientôt.</item>
+        <item>Vérifiez le dépôt officiel GitHub pour les mises à jour.</item>
+        <item> </item>
+    </string-array>
+    <string name="dialog_welcome_title">Bienvenue sur FadCam !</string>
+    <string name="note_under_dev">Important: Cette application est en cours de développement. De nouvelles fonctionnalités sont ajoutées régulièrement.</string>
+    <string name="rencent_updates_title">Mises à jour Récentes :</string>
+    <string name="upcoming_features_title">Fonctionnalitées à venir :</string>
+    <string name="stay_updated_title">Restez à jour :</string>
+    <string name="button_readme_github">Dépôt GitHub</string>
+    <string name="community_title">Rejoignez notre communauté :</string>
+    <string name="discord_title">Serveur Discord</string>
+    <string name="thankyou_msg">Merci d\'utiliser FadCam !</string>
+    <string name="settings_title">Options</string>
+    <string name="array_watermark_time_fadcam">Horodatage avec FadCam</string>
+    <string name="array_watermark_timeonly">Horodatage</string>
+    <string name="array_watermark_nomark">Aucun</string>
+    <string name="recent_features">• Nouveau design de l\'interface\n• Les vidéos sont maintenant enregistrées en interne dans l\'application\n• Option pour sauvegarder les vidéos dans la gallerie\n• Filigrane personnalisable\n• Intégration d\'ExoPlayer pour une meilleure lecture\n• Données de localisation dans le filigrane\n• Options dynamiques de filigrane\n• Retour de l\'appuie long avec animations\n• Personnalisation du widget date et heure</string>
+    <string name="upcoming_features">• Enregistrements programmés automatiquement \n• Téléversement automatique sur Google Drive \n• Icônes d\'application personnalisées \n• Verrouillage de l\'application pour améliorer la confidentialité \n• Éditeur vidéo dans l\'application pour des tâches simples comme le découpage \n• Et beaucoup d\'autres fonctionnalités excitantes !</string>
+    <string name="toast_video_not_found">Erreur : Vidéo introuvable</string>
+    <string name="toast_video_saved">Vidéo enregistrée dans le dossier FadCam dans Téléchargements</string>
+    <string name="toast_video_save_fail">Échec de sauvegarde de la vidéo</string>
+    <string name="rename_video_title">Renommer la vidéo</string>
+    <string name="universal_cancel">Annuler</string>
+    <string name="toast_rename_name_empty">Nom ne peut pas être vide</string>
+    <string name="toast_rename_failed">Échec du renommage de la vidéo</string>
+    <string name="toast_rename_success">Vidéo renommée avec succès</string>
+    <string name="toast_rename_bad_video">Position non valide ou liste vidéo nulle</string>
+    <string name="dialog_del_title">Toujours supprimer ?</string>
+    <string name="dialog_del_notice">Êtes-vous sûr de vouloir supprimer cette vidéo ?</string>
+    <string name="dialog_del_confirm">Supprimer</string>
+    <string name="dialog_multi_video_del_title">Éradiquer vidéo(s)? 💣💣</string>
+    <string name="dialog_multi_video_del_note">Êtes-vous absolument, positivement sûr que vous voulez tuer ces vidéos hors de l\'existence ? 🚀💥</string>
+    <string name="dialog_multi_video_del_yes">Oui, Tuez-les ! 🌋</string>
+    <string name="dialog_multi_video_del_no">Non, Gardez-les ! 😅</string>
+    <string name="setting_language_title">Langage de l\'application</string>
+    <string name="note_language">Sélectionner depuis la liste déroulante.\n(Défaut: English)</string>
+    <string name="location_permission_title">Permission localisation</string>
+    <string name="location_permission_description">Cette application a besoin d\'une autorisation de localisation pour ajouter des données de localisation aux vidéos. S\'il vous plait, accordez la permission.</string>
+    <string name="up_to_date">À Jour</string>
+    <string name="up_to_date_description">Vous utilisez déjà la dernière version.</string>
+    <string name="up_to_date_loading">Vérification des mises à jour…</string>
+    <string name="update_available_title">Mise à jour disponible</string>
+    <string name="update_available_message">Une nouvelle version (%1$s) est disponible. Pour mettre à jour, s\'il vous plait allez sur F-Droid store ou notre dépôt GitHub pour plus de détails.</string>
+    <string name="visit_fdroid">Visiter F-Droid</string>
+    <string name="visit_github">Visiter GitHub</string>
+    <string name="delete_all_videos_title">Supprimer toutes les vidéos</string>
+    <string name="delete_all_videos_description">Êtes-vous sûr de vouloir supprimer toutes les vidéos ?</string>
+</resources>
