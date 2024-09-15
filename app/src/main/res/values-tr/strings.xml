@@ -127,7 +127,7 @@
         <item> </item>
         <item> </item>
         <item>Filigran, videonun her karesine gömülür. Video ne kadar uzunsa, o kadar çok zaman alır.</item>
-        <item>'temp' video orijinal kaydınızdır. Filigran eklendikten sonra otomatik olarak silinir. Filigran ekleme başarısız olursa, \'temp\' dosyası yedek olarak kalır.</item>
+        <item>\'temp\' video orijinal kaydınızdır. Filigran eklendikten sonra otomatik olarak silinir. Filigran ekleme başarısız olursa, \'temp\' dosyası yedek olarak kalır.</item>
         <item>Ayarlarda video kalitesini değiştirin: HD, SD veya FHD.</item>
         <item>Önizleme alanına uzun basarak devre dışı bırakabilirsiniz.</item>
         <item>Filigrana konum verisi eklemek için ayarlarda konumu etkinleştirin. Tam enlem ve boylamı ekleyecektir.</item>
