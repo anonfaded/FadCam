@@ -60,6 +60,12 @@
     <string name="button_start">Démarrer</string>
     <string name="button_pause">Pause</string>
     <string name="button_stop">Arrêter</string>
+    <string name="button_resume">Reprendre</string>
+    <string name="video_recording_started">Enregistrement vidéo commencé</string>
+    <string name="video_recording_stopped">Enregistrement vidéo arrêté</string>
+    <string name="video_recording_paused">Enregistrement vidéo en pause</string>
+    <string name="video_recording_resumed">Enregistrement de la vidéo repris</string>
+    <string name="current_camera">Caméra actuelle </string>
     <string name="video_menu_del">Supprimer</string>
     <string name="video_menu_save">Sauvegarder vers la gallerie</string>
     <string name="video_menu_rename">Renommer</string>
@@ -159,6 +165,7 @@
     <string name="toast_video_saved">Vidéo enregistrée dans le dossier FadCam dans Téléchargements</string>
     <string name="toast_video_save_fail">Échec de sauvegarde de la vidéo</string>
     <string name="rename_video_title">Renommer la vidéo</string>
+    <string name="rename_video_hint">Entrez un nouveau nom</string>
     <string name="universal_cancel">Annuler</string>
     <string name="toast_rename_name_empty">Nom ne peut pas être vide</string>
     <string name="toast_rename_failed">Échec du renommage de la vidéo</string>
@@ -184,4 +191,6 @@
     <string name="visit_github">Visiter GitHub</string>
     <string name="delete_all_videos_title">Supprimer toutes les vidéos</string>
     <string name="delete_all_videos_description">Êtes-vous sûr de vouloir supprimer toutes les vidéos ?</string>
+    <string name="switched_front_camera">Interverti en caméra frontale</string>
+    <string name="switched_rear_camera">Interverti en caméra arrière</string>
 </resources>
