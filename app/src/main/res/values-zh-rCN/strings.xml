@@ -159,4 +159,19 @@
     <string name="visit_github">访问 GitHub</string>
     <string name="delete_all_videos_title">删除所有视频</string>
     <string name="delete_all_videos_description">您确定要删除所有视频吗？</string>
+    <string name="recent_features">• 全新用户界面设计
+\n• 视频现在可在应用内部保存
+\n• 可选择将视频保存到图库
+\n• 可自定义水印
+\n• ExoPlayer 集成，播放效果更佳
+\n• 水印中的位置数据
+\n• 动态水印选项
+\n• 长按动画反馈
+\n• 日期和时间小部件自定义</string>
+    <string name="upcoming_features">• 自动安排录制
+\n• 自动上传到 Google Drive
+\n• 自定义应用图标
+\n• 应用锁，增强隐私保护
+\n• 应用内视频编辑器，可执行剪切等简单任务
+\n• 还有更多令人兴奋的功能！</string>
 </resources>
