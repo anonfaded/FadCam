@@ -63,7 +63,8 @@
     <string name="button_settings_cam_front">الكاميرا الأمامية</string>
     <string name="note_quailty">اختر جودة الفيديو\n(الافتراضي: HD)</string>
     <string name="setting_watermark">العلامة المائية</string>
-    <string name="note_watermark">تعديل العلامة المائية للفيديو\n(الافتراضي: الوقت و"Fadcam")</string>
+    <string name="note_watermark">تعديل العلامة المائية للفيديو
+\n(الافتراضي: الوقت وFadcam)</string>
     <string name="note_watermark_extra">هل تريد تسريع عملية حفظ الفيديو؟ اختر "بدون علامة مائية". هل تريد إضافة علامة مائية؟ إذًا، الانتظار لحظة يستحق العناء، فقط انتظر قليلاً!</string>
     <string name="note_location">إضافة بيانات الموقع إلى العلامة المائية.\n يتطلب تفعيل ميزة الموقع على الهاتف \n(الافتراضي: إيقاف)</string>
     <string name="note_location_extra">إضافة معلومات الموقع الجغرافية إلى العلامة المائية يتطلب تفعيل ميزة الموقع على الهاتف</string>
@@ -167,5 +168,4 @@
     <string name="visit_github">زيارة GitHub</string>
     <string name="delete_all_videos_title">حذف جميع مقاطع الفيديو</string>
     <string name="delete_all_videos_description">هل أنت متأكد من رغبتك في حذف جميع مقاطع الفيديو؟</string>
-
 </resources>
