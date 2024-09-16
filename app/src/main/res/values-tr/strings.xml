@@ -1,9 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description" translatable="false">FadCam uygulama simgesi</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
     <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıdaki \'kaynak kodunu görüntüle\' bağlantısına tıklayın.</string>
-
     <string name="app_description">
     <![CDATA[
     FadCam, hiçbir veri toplamayan veya izlemeyen, gizliliğe öncelik veren, reklamsız, açık kaynaklı bir video kayıt uygulamasıdır. Yalnızca GitHub\'da ve README\'de belirtilen resmi bağlantılar üzerinden erişilebilir.
@@ -11,7 +11,6 @@
     FadCam, <font color="#cfbafd">HowToMen</font> ve <font color="#cfbafd">Xtream Droid</font> gibi popüler YouTube kanallarında yer almış, ayrıca <font color="#cfbafd">GrapheneOS</font> ve diğer on sekiz önemli platformda tartışılmıştır.
     ]]>
     </string>
-
     <string name="view_source_code">Kaynak Kodunu Görüntüle</string>
     <string name="buy_me_a_coffee">Bana bir kahve ısmarla ☕</string>
     <string name="contact">İletişim</string>
@@ -72,7 +71,8 @@
     <string name="setting_quailty_title">Video Kalitesi</string>
     <string name="note_quailty">Kalite seç\n(Varsayılan: HD)</string>
     <string name="setting_watermark">Filigran</string>
-    <string name="note_watermark">Filigran seçeneğini seçin\n(Varsayılan: Fadcam ile zaman damgası)</string>
+    <string name="note_watermark">Filigran seçeneğini seçin
+\n(Varsayılan: Fadcam ile zaman damgası)</string>
     <string name="note_watermark_extra">Hızlı kaydetmek için \'Filigran Yok\'u seçin. Filigran eklemek mi istiyorsunuz? Biraz daha uzun sürer ama beklemeye değer!</string>
     <string name="setting_location_title">Konum Verisi</string>
     <string name="note_location">Filigrana konum bilgisi ekle. \nGPS açık olmalıdır \n(Varsayılan: Devre dışı)</string>
