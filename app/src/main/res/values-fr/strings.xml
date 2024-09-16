@@ -80,7 +80,9 @@
     <string name="button_settings_cam_back">Arrière</string>
     <string name="button_settings_cam_front">Frontale</string>
     <string name="setting_quailty_title">Qualité vidéo</string>
+    <string name="setting_framerate_title">Fréquence vidéo</string>
     <string name="note_quailty">Choix de la qualité\n(Défaut: HD)</string>
+    <string name="note_framerate">Choix de la fréquence\n(Défaut: %1$d)</string>
     <string name="setting_watermark">Filigrane</string>
     <string name="note_watermark">Sélectionner l\'option filigrane\n(Défaut: Horodatage avec Fadcam)</string>
     <string name="note_watermark_extra">Pour une sauvegarde rapide, choisissez \'Aucun\'. Ajouter un filigrane ? Ça vaut la peine d\'attendre, juste un peu plus pour traiter !</string>

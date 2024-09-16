@@ -9,7 +9,6 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
@@ -19,18 +18,19 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.fadcam.Constantes;
 import com.fadcam.MainActivity;
+import com.fadcam.R;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
-
-import com.fadcam.R;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
@@ -43,7 +43,6 @@ public class SettingsFragment extends Fragment {
     private LocationHelper locationHelper;
 
     private static final String PREF_CAMERA_SELECTION = "camera_selection";
-    private static final String PREF_VIDEO_QUALITY = "video_quality";
     private static final String PREF_WATERMARK_OPTION = "watermark_option";
     private static final String CAMERA_FRONT = "front";
     private static final String CAMERA_BACK = "back";
@@ -57,6 +56,8 @@ public class SettingsFragment extends Fragment {
 
     private static final int REQUEST_PERMISSIONS = 1;
     private static final String PREF_FIRST_LAUNCH = "first_launch";
+
+    private TextView frameworkNoteTextView;
 
     MaterialButtonToggleGroup cameraSelectionToggle;
     View view;
@@ -128,11 +129,22 @@ public class SettingsFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         qualitySpinner.setAdapter(adapter);
 
+        // Setup spinner items with array resource
+        Spinner framerateSpinner = view.findViewById(R.id.framerate_spinner);
+        adapter = ArrayAdapter.createFromResource(
+                getContext(), R.array.video_framerate_options, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        framerateSpinner.setAdapter(adapter);
+        framerateSpinner.setSelection(1); // Select default framerate (30)
+
         // Set up camera selection toggle
         setupCameraSelectionToggle(view, cameraSelectionToggle);
 
         // Set up video quality spinner
         setupQualitySpinner(view, qualitySpinner);
+
+        // Set up video framerate spinner
+        setupFramerateSpinner(view, framerateSpinner);
 
         // Setup watermark option spinner
         Spinner watermarkSpinner = view.findViewById(R.id.watermark_spinner);
@@ -153,6 +165,9 @@ public class SettingsFragment extends Fragment {
         MaterialButton reviewButton = view.findViewById(R.id.review_button);
         reviewButton.setOnClickListener(v -> openInAppBrowser("https://forms.gle/DvUoc1v9kB2bkFiS6"));
 
+        // Set up framerate note text
+        setupFramerateNoteText();
+
         return view;
     }
 
@@ -160,6 +175,12 @@ public class SettingsFragment extends Fragment {
         Intent intent = new Intent(getContext(), WebViewActivity.class);
         intent.putExtra("url", url);
         startActivity(intent);
+    }
+
+    private void setupFramerateNoteText()
+    {
+        frameworkNoteTextView = view.findViewById(R.id.framerate_note_textview);
+        frameworkNoteTextView.setText(getString(R.string.note_framerate, Constantes.DEFAULT_VIDEO_FRAMERATE));
     }
 
     private void setupLocationSwitch(MaterialSwitch locationSwitch) {
@@ -305,7 +326,7 @@ public class SettingsFragment extends Fragment {
         qualitySpinner.setAdapter(adapter);
 
         // Set the selected item based on the saved preference
-        String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+        String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
         int selectedIndex = 1; // Default to HD
         switch (selectedQuality) {
             case QUALITY_FHD:
@@ -330,7 +351,45 @@ public class SettingsFragment extends Fragment {
                         selectedQuality = QUALITY_SD;
                         break;
                 }
-                sharedPreferences.edit().putString(PREF_VIDEO_QUALITY, selectedQuality).apply();
+                sharedPreferences.edit().putString(Constantes.PREF_VIDEO_QUALITY, selectedQuality).apply();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+    }
+
+    private void setupFramerateSpinner(View view, Spinner framerateSpinner) {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(),
+                R.array.video_framerate_array, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        framerateSpinner.setAdapter(adapter);
+
+        // Set the selected item based on the saved preference
+        int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
+        int selectedIndex = this.getVideoFramerateIndex(selectedFramerate);
+
+        framerateSpinner.setSelection(selectedIndex);
+
+        // Save the selected quality when user changes it
+        framerateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                int selectedFramerate = Constantes.DEFAULT_VIDEO_FRAMERATE;
+                switch (position) {
+                    case 0:
+                        selectedFramerate = 24;
+                        break;
+                    case 2:
+                        selectedFramerate = 60;
+                        break;
+                    case 3:
+                        selectedFramerate = 90;
+                        break;
+                }
+                sharedPreferences.edit().putInt(Constantes.PREF_VIDEO_FRAMERATE, selectedFramerate).apply();
             }
 
             @Override
@@ -478,4 +537,16 @@ public class SettingsFragment extends Fragment {
         requireActivity().recreate();
     }
 
+    private int getVideoFramerateIndex(int framerate)
+    {
+        int[] framerateOptions = getResources().getIntArray(R.array.video_framerate_options);
+        for(int i = 0;i < framerateOptions.length;i++)
+        {
+            if(framerateOptions[i] == framerate)
+            {
+                return i;
+            }
+        }
+        return 0;
+    }
 }
