@@ -1,9 +1,6 @@
 package com.fadcam.ui;
 
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
-
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -30,12 +27,14 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.StatFs;
+import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
 import android.util.Log;
+import android.util.Range;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -52,9 +51,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.ExecuteCallback;
+import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.Session;
+import com.fadcam.Constantes;
 import com.fadcam.R;
 import com.fadcam.RecordingService;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -65,20 +65,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Locale;
-
-import android.os.SystemClock;
-
-import java.time.format.DateTimeFormatter;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.HijrahDate;
-
 import java.util.List;
-import java.util.Objects;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -121,7 +116,6 @@ public class HomeFragment extends Fragment {
     private boolean isTypingIn = true;
     private String currentTip = "";
 
-    private static final String PREF_VIDEO_QUALITY = "video_quality";
     private static final String QUALITY_SD = "SD";
     private static final String QUALITY_HD = "HD";
     private static final String QUALITY_FHD = "FHD";
@@ -472,7 +466,7 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        tips = Objects.requireNonNull(getActivity()).getResources().getStringArray(R.array.tips_widget);
+        tips = requireActivity().getResources().getStringArray(R.array.tips_widget);
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: Setting up UI components");
 
@@ -992,7 +986,7 @@ public class HomeFragment extends Fragment {
 //    }
 
     private void setVideoBitrate() {
-        String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+        String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
         switch (selectedQuality) {
             case QUALITY_SD:
                 videoBitrate = 1000000; // 1 Mbps
@@ -1086,6 +1080,12 @@ public class HomeFragment extends Fragment {
             }
             captureRequestBuilder.addTarget(recorderSurface);
 
+            int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
+
+            // Define framerate
+            Range<Integer> fpsRange = Range.create(selectedFramerate, selectedFramerate);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+
             cameraDevice.createCaptureSession(Arrays.asList(previewSurface, recorderSurface),
                     new CameraCaptureSession.StateCallback() {
                         @Override
@@ -1134,29 +1134,29 @@ public class HomeFragment extends Fragment {
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
 
-            String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+            String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
             switch (selectedQuality) {
                 case QUALITY_SD:
                     mediaRecorder.setVideoSize(640, 480);
                     mediaRecorder.setVideoEncodingBitRate(1000000); // 1 Mbps
-                    mediaRecorder.setVideoFrameRate(30);
                     break;
                 case QUALITY_HD:
                     mediaRecorder.setVideoSize(1280, 720);
                     mediaRecorder.setVideoEncodingBitRate(5000000); // 5 Mbps
-                    mediaRecorder.setVideoFrameRate(30);
                     break;
                 case QUALITY_FHD:
                     mediaRecorder.setVideoSize(1920, 1080);
                     mediaRecorder.setVideoEncodingBitRate(10000000); // 10 Mbps
-                    mediaRecorder.setVideoFrameRate(30);
                     break;
                 default:
                     mediaRecorder.setVideoSize(1280, 720);
                     mediaRecorder.setVideoEncodingBitRate(5000000); // 5 Mbps
-                    mediaRecorder.setVideoFrameRate(30);
                     break;
             }
+
+            int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
+            mediaRecorder.setVideoFrameRate(selectedFramerate);
+            mediaRecorder.setCaptureRate(selectedFramerate);
 
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
@@ -1427,7 +1427,7 @@ public class HomeFragment extends Fragment {
     }
 
     private int getVideoBitrate() {
-        String selectedQuality = sharedPreferences.getString(PREF_VIDEO_QUALITY, QUALITY_HD);
+        String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
         int bitrate;
         switch (selectedQuality) {
             case QUALITY_SD:

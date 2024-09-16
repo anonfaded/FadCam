@@ -6,6 +6,13 @@
         <item>@item/quality_sd</item>
     </string-array>
 
+    <integer-array name="video_framerate_options">
+        <item>24</item>
+        <item>30</item>
+        <item>60</item>
+        <item>90</item>
+    </integer-array>
+
     <string-array name="languages_array">
         <item>English (English) 🇬🇧</item> <!-- British flag -->
         <item>Chinese (中文) 🇨🇳</item> <!-- Chinese flag -->

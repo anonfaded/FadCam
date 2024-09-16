@@ -30,6 +30,12 @@
         <item name="quality_hd">HD (1280x720)</item>
         <item name="quality_sd">SD (640x480)</item>
     </string-array>
+    <string-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </string-array>
     <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
@@ -82,7 +88,9 @@
     <string name="button_settings_cam_back">Back</string>
     <string name="button_settings_cam_front">Front</string>
     <string name="setting_quailty_title">Video Quality</string>
+    <string name="setting_framerate_title">Video Framerate</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
+    <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
     <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It’s worth the wait, just a little longer to process!</string>
