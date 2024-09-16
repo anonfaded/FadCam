@@ -53,7 +53,8 @@
     <string name="button_settings_cam_front">前摄</string>
     <string name="note_quailty">选择视频质量\n(默认: HD)</string>
     <string name="setting_watermark">水印</string>
-    <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
+    <string name="note_watermark">调整视频水印
+\n(默认: 时间与\"Fadcam\"字样)</string>
     <string name="note_watermark_extra">想让视频保存速度更快？选择“无水印”。想加水印？那么片刻的等待是值得的，就只需要多等一小会！</string>
     <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
     <string name="note_location_extra">启用手机的GPS，将经纬度信息添加到水印中。</string>
