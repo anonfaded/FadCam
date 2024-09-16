@@ -370,7 +370,7 @@ public class HomeFragment extends Fragment {
         super.onStart();
         //fetch Camera status
         String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
-        Toast.makeText(getContext(), "Current camera: "+currentCameraSelection, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraSelection, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -575,11 +575,11 @@ public class HomeFragment extends Fragment {
             if (isRecording) {
                 if (isPaused) {
                     vibrateTouch();
-                    Toast.makeText(getContext(), "Recording resumed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), R.string.video_recording_resumed, Toast.LENGTH_SHORT).show();
                     resumeRecording();
                 } else {
                     vibrateTouch();
-                    Toast.makeText(getContext(), "Recording paused", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
                     pauseRecording();
                 }
             }
@@ -890,7 +890,7 @@ public class HomeFragment extends Fragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             mediaRecorder.pause();
             isPaused = true;
-            buttonPauseResume.setText("Resume");
+            buttonPauseResume.setText(R.string.button_resume);
             buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
         }
     }
@@ -1103,7 +1103,7 @@ public class HomeFragment extends Fragment {
                                 // Haptic Feedback
                                 vibrateTouch();
                                 isRecording = true;
-                                Toast.makeText(getContext(), "Recording started", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
                             });
                         }
 
@@ -1234,7 +1234,7 @@ public class HomeFragment extends Fragment {
                 cameraCaptureSession.abortCaptures();
                 releaseCamera();
                 vibrateTouch();
-                Toast.makeText(getContext(), "Recording stopped", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
 
                 // Add watermarking here if necessary
                 // Get the latest video file
@@ -1542,11 +1542,11 @@ public class HomeFragment extends Fragment {
         if (currentCameraSelection.equals(CAMERA_BACK)) {
             sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, CAMERA_FRONT).apply();
             Log.d(TAG, "Camera set to front");
-            Toast.makeText(getContext(), "Switched to front camera", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), R.string.switched_front_camera, Toast.LENGTH_SHORT).show();
         } else {
             sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, CAMERA_BACK).apply();
             Log.d(TAG, "Camera set to rear");
-            Toast.makeText(getContext(), "Switched to rear camera", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), R.string.switched_rear_camera, Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -384,7 +384,7 @@ public class SettingsFragment extends Fragment {
     private void showReadmeDialog() {
         vibrateTouch();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle("Welcome to FadCam!");
+        builder.setTitle(R.string.dialog_welcome_title);
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_readme, null);
 
@@ -446,6 +446,8 @@ public class SettingsFragment extends Fragment {
                 return 1;
             case "ar":
                 return 2;
+            case "fr":
+                return 3;
             default:
                 return 0; // Default to English
         }
@@ -457,6 +459,8 @@ public class SettingsFragment extends Fragment {
                 return "zh";
             case 2:
                 return "ar";
+            case 3:
+                return "fr";
             default:
                 return "en";
         }

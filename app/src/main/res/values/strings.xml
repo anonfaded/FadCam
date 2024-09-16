@@ -62,6 +62,12 @@
     <string name="button_start">Start</string>
     <string name="button_pause">Pause</string>
     <string name="button_stop">Stop</string>
+    <string name="button_resume">Resume</string>
+    <string name="video_recording_started">Recording started</string>
+    <string name="video_recording_stopped">Recording stopped</string>
+    <string name="video_recording_paused">Recording paused</string>
+    <string name="video_recording_resumed">Recording resumed</string>
+    <string name="current_camera">Current camera</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
     <string name="video_menu_rename">Rename</string>
@@ -78,7 +84,7 @@
     <string name="setting_quailty_title">Video Quality</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="setting_watermark">Watermark</string>
-    <string name="note_watermark">Select watermark option\n(Default: Timestamp with Fadcam)</string>
+    <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
     <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It’s worth the wait, just a little longer to process!</string>
     <string name="setting_location_title">Location Data</string>
     <string name="note_location">Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)</string>
@@ -161,6 +167,7 @@
     <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
     <string name="toast_video_save_fail">Failed to save video</string>
     <string name="rename_video_title">Rename Video</string>
+    <string name="rename_video_hint">Enter new name</string>
     <string name="universal_cancel">Cancel</string>
     <string name="toast_rename_name_empty">Name cannot be empty</string>
     <string name="toast_rename_failed">Failed to rename video</string>
@@ -179,12 +186,13 @@
     <string name="location_permission_description">This app needs location permission to add location data to videos. Please grant the permission.</string>
     <string name="up_to_date">Up To Date</string>
     <string name="up_to_date_description">You are already using the latest version.</string>
-    <string name="up_to_date_loading">Checking for updates...</string>
+    <string name="up_to_date_loading">Checking for updates…</string>
     <string name="update_available_title">Update Available</string>
     <string name="update_available_message">A new version (%1$s) is available. To update, please visit the F-Droid store or our GitHub repository for more details.</string>
     <string name="visit_fdroid">Visit F-Droid</string>
     <string name="visit_github">Visit GitHub</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
-
+    <string name="switched_front_camera">Switched to front camera</string>
+    <string name="switched_rear_camera">Switched to rear camera</string>
 </resources>
