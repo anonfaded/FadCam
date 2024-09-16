@@ -245,7 +245,7 @@
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_vid_cam"
+                    android:src="@drawable/ic_fps"
                     android:layout_marginEnd="8dp"/>
 
                 <LinearLayout
