@@ -213,6 +213,24 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardTimer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="#302745"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:strokeColor="#4CAF50"
+                app:strokeWidth="2dp">
+
+            <Spinner
+                android:id="@+id/timerSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:entries="@array/time_options" />
+            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
     </LinearLayout>
@@ -240,6 +258,14 @@
                 android:id="@+id/textureView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
+            <TextView
+                android:id="@+id/countdownText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="48sp"
+                android:textColor="@color/material_on_surface_stroke"
+                android:visibility="gone"/>
 
             <TextView
                 android:id="@+id/tvPreviewPlaceholder"
@@ -280,7 +306,6 @@
             android:drawableLeft="@drawable/ic_pause"
             android:enabled="false"
             android:text="@string/button_pause" />
-            android:enabled="false"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCamSwitch"
