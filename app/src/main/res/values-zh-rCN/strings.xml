@@ -53,8 +53,8 @@
     <string name="button_settings_cam_front">前摄</string>
     <string name="note_quailty">选择视频质量\n(默认: HD)</string>
     <string name="setting_watermark">水印</string>
-    <string name="note_watermark">调整视频水印
-\n(默认: 时间与\"Fadcam\"字样)</string>
+    <string name="note_watermark">选择水印选项
+\n（默认：带有 FadCam 时间戳）</string>
     <string name="note_watermark_extra">想让视频保存速度更快？选择“无水印”。想加水印？那么片刻的等待是值得的，就只需要多等一小会！</string>
     <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
     <string name="note_location_extra">启用手机的GPS，将经纬度信息添加到水印中。</string>
@@ -153,7 +153,7 @@
     <string name="location_permission_description">此应用程序需要位置权限才能将位置数据添加到视频中。请授予权限。</string>
     <string name="up_to_date">已是最新</string>
     <string name="up_to_date_description">已是最新版本。</string>
-    <string name="up_to_date_loading">正在检查更新...</string>
+    <string name="up_to_date_loading">正在检查更新…</string>
     <string name="update_available_title">有可用更新</string>
     <string name="update_available_message">有一个新版本（%1$s）可用。要更新，请访问 F-Droid 商店或我们的 GitHub 仓库以获取更多详细信息。</string>
     <string name="visit_fdroid">访问 F-Droid</string>
@@ -175,4 +175,16 @@
 \n• 应用锁，增强隐私保护
 \n• 应用内视频编辑器，可执行剪切等简单任务
 \n• 还有更多令人兴奋的功能！</string>
+    <string name="button_resume">继续</string>
+    <string name="video_recording_started">录制已开始</string>
+    <string name="video_recording_stopped">录制已停止</string>
+    <string name="video_recording_paused">录制已暂停</string>
+    <string name="video_recording_resumed">录制已继续</string>
+    <string name="current_camera">当前摄像头</string>
+    <string name="setting_framerate_title">视频帧率</string>
+    <string name="note_framerate">选择帧率
+\n（默认：%1$d）</string>
+    <string name="switched_front_camera">切换到前置摄像头</string>
+    <string name="switched_rear_camera">切换到后置摄像头</string>
+    <string name="rename_video_hint">输入新名称</string>
 </resources>
