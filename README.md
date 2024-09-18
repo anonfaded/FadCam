@@ -171,6 +171,8 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [summarize.tech](https://www.summarize.tech/www.youtube.com/watch?v=gU9ddvtqL3E)
 - [phcorner.net](https://phcorner.net/threads/fadcam-open-source-seamless-background-video-recorder-for-android.2069335/)
 - [danielbuenotecnologia.com](https://danielbuenotecnologia.com/2024/09/13/protege-tu-vida-con-la-app-fad-cam/)
+- [nothingforum.com](https://nothingforum.com/konu/fadcam-video-kaydi-icin-guvenli-bir-cozum.1982/)
+- [manualdousuario.net](https://manualdousuario.net/fadcam-videos-android-tela-desligada/)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
