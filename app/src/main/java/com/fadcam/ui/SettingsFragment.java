@@ -6,12 +6,19 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
+import android.util.Range;
+import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +41,8 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class SettingsFragment extends Fragment {
@@ -42,10 +51,7 @@ public class SettingsFragment extends Fragment {
 
     private LocationHelper locationHelper;
 
-    private static final String PREF_CAMERA_SELECTION = "camera_selection";
     private static final String PREF_WATERMARK_OPTION = "watermark_option";
-    private static final String CAMERA_FRONT = "front";
-    private static final String CAMERA_BACK = "back";
     private static final String QUALITY_SD = "SD";
     private static final String QUALITY_HD = "HD";
     private static final String QUALITY_FHD = "FHD";
@@ -57,7 +63,7 @@ public class SettingsFragment extends Fragment {
     private static final int REQUEST_PERMISSIONS = 1;
     private static final String PREF_FIRST_LAUNCH = "first_launch";
 
-    private TextView frameworkNoteTextView;
+    private Spinner frameRateSpinner;
 
     MaterialButtonToggleGroup cameraSelectionToggle;
     View view;
@@ -103,16 +109,15 @@ public class SettingsFragment extends Fragment {
         // Initialize shared preferences
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
+        // Initialize maximum framerates for each resolution
+        initializeMaxResolutionFramerates();
+
         // Setup  language selection spinner items with array resource
         Spinner languageSpinner = view.findViewById(R.id.language_spinner);
         ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
                 getContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
         languageAdapter .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         languageSpinner.setAdapter(languageAdapter );
-
-
-
-
 
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
 
@@ -129,13 +134,7 @@ public class SettingsFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         qualitySpinner.setAdapter(adapter);
 
-        // Setup spinner items with array resource
-        Spinner framerateSpinner = view.findViewById(R.id.framerate_spinner);
-        adapter = ArrayAdapter.createFromResource(
-                getContext(), R.array.video_framerate_options, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        framerateSpinner.setAdapter(adapter);
-        framerateSpinner.setSelection(1); // Select default framerate (30)
+        frameRateSpinner = view.findViewById(R.id.framerate_spinner);
 
         // Set up camera selection toggle
         setupCameraSelectionToggle(view, cameraSelectionToggle);
@@ -144,7 +143,7 @@ public class SettingsFragment extends Fragment {
         setupQualitySpinner(view, qualitySpinner);
 
         // Set up video framerate spinner
-        setupFramerateSpinner(view, framerateSpinner);
+        setupFrameRateSpinner();
 
         // Setup watermark option spinner
         Spinner watermarkSpinner = view.findViewById(R.id.watermark_spinner);
@@ -179,7 +178,7 @@ public class SettingsFragment extends Fragment {
 
     private void setupFramerateNoteText()
     {
-        frameworkNoteTextView = view.findViewById(R.id.framerate_note_textview);
+        TextView frameworkNoteTextView = view.findViewById(R.id.framerate_note_textview);
         frameworkNoteTextView.setText(getString(R.string.note_framerate, Constantes.DEFAULT_VIDEO_FRAMERATE));
     }
 
@@ -271,8 +270,8 @@ public class SettingsFragment extends Fragment {
 
         MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
         MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
-        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
-        if (currentCameraSelection.equals(CAMERA_FRONT)) {
+        String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
+        if (currentCameraSelection.equals(Constantes.CAMERA_FRONT)) {
             cameraSelectionToggle.check(R.id.button_front_camera);
             updateButtonAppearance(frontCameraButton, true);
             updateButtonAppearance(backCameraButton, false);
@@ -283,8 +282,8 @@ public class SettingsFragment extends Fragment {
         }
         cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                String selectedCamera = (checkedId == R.id.button_front_camera) ? CAMERA_FRONT : CAMERA_BACK;
-                sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, selectedCamera).apply();
+                String selectedCamera = (checkedId == R.id.button_front_camera) ? Constantes.CAMERA_FRONT : Constantes.CAMERA_BACK;
+                sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, selectedCamera).apply();
                 updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
                 updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
             }
@@ -297,9 +296,9 @@ public class SettingsFragment extends Fragment {
         MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
         MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
 
-        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
+        String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
 
-        if (currentCameraSelection.equals(CAMERA_FRONT)) {
+        if (currentCameraSelection.equals(Constantes.CAMERA_FRONT)) {
             cameraSelectionToggle.check(R.id.button_front_camera);
             updateButtonAppearance(frontCameraButton, true);
             updateButtonAppearance(backCameraButton, false);
@@ -311,11 +310,12 @@ public class SettingsFragment extends Fragment {
 
         cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                String selectedCamera = (checkedId == R.id.button_front_camera) ? CAMERA_FRONT : CAMERA_BACK;
-                sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, selectedCamera).apply();
+                String selectedCamera = (checkedId == R.id.button_front_camera) ? Constantes.CAMERA_FRONT : Constantes.CAMERA_BACK;
+                sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, selectedCamera).apply();
                 updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
                 updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
             }
+            updateFrameRateSpinner();
         });
     }
 
@@ -325,17 +325,7 @@ public class SettingsFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         qualitySpinner.setAdapter(adapter);
 
-        // Set the selected item based on the saved preference
-        String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
-        int selectedIndex = 1; // Default to HD
-        switch (selectedQuality) {
-            case QUALITY_FHD:
-                selectedIndex = 0;
-                break;
-            case QUALITY_SD:
-                selectedIndex = 2;
-                break;
-        }
+        int selectedIndex = getVideoQualityIndex();
         qualitySpinner.setSelection(selectedIndex);
 
         // Save the selected quality when user changes it
@@ -352,6 +342,8 @@ public class SettingsFragment extends Fragment {
                         break;
                 }
                 sharedPreferences.edit().putString(Constantes.PREF_VIDEO_QUALITY, selectedQuality).apply();
+
+                updateFrameRateSpinner();
             }
 
             @Override
@@ -361,35 +353,16 @@ public class SettingsFragment extends Fragment {
         });
     }
 
-    private void setupFramerateSpinner(View view, Spinner framerateSpinner) {
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(),
-                R.array.video_framerate_array, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        framerateSpinner.setAdapter(adapter);
+    private void setupFrameRateSpinner() {
 
-        // Set the selected item based on the saved preference
-        int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
-        int selectedIndex = this.getVideoFramerateIndex(selectedFramerate);
-
-        framerateSpinner.setSelection(selectedIndex);
+        updateFrameRateSpinner();
 
         // Save the selected quality when user changes it
-        framerateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        frameRateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                int selectedFramerate = Constantes.DEFAULT_VIDEO_FRAMERATE;
-                switch (position) {
-                    case 0:
-                        selectedFramerate = 24;
-                        break;
-                    case 2:
-                        selectedFramerate = 60;
-                        break;
-                    case 3:
-                        selectedFramerate = 90;
-                        break;
-                }
-                sharedPreferences.edit().putInt(Constantes.PREF_VIDEO_FRAMERATE, selectedFramerate).apply();
+                List<Integer> videoFrameratesCompatibles = getCompatiblesVideoFrameRates(getSharedPreferencesCameraSelection());
+                sharedPreferences.edit().putInt(Constantes.PREF_VIDEO_FRAMERATE, videoFrameratesCompatibles.get(position)).apply();
             }
 
             @Override
@@ -397,6 +370,26 @@ public class SettingsFragment extends Fragment {
                 // Do nothing
             }
         });
+    }
+
+    private void updateFrameRateSpinner()
+    {
+        List<Integer> videoFrameratesCompatibles = getCompatiblesVideoFrameRates(getSharedPreferencesCameraSelection());
+
+        ArrayAdapter<Integer> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                videoFrameratesCompatibles
+        );
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        frameRateSpinner.setAdapter(adapter);
+
+        // Set the selected item based on the saved preference
+        int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
+
+        frameRateSpinner.setSelection(videoFrameratesCompatibles.size() == 1 ? 0 : getVideoFrameRateIndex(selectedFramerate));
+        frameRateSpinner.setEnabled(videoFrameratesCompatibles.size() > 1);
     }
 
     private void setupWatermarkSpinner(View view, Spinner watermarkSpinner) {
@@ -462,7 +455,6 @@ public class SettingsFragment extends Fragment {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         startActivity(intent);
     }
-
 
     private void saveLanguagePreference(String languageCode) {
         SharedPreferences prefs = requireActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -541,16 +533,167 @@ public class SettingsFragment extends Fragment {
         requireActivity().recreate();
     }
 
-    private int getVideoFramerateIndex(int framerate)
+    /**
+     * Set the selected item based on the frame rate
+     * @param frameRate
+     * @return Video frameRate index in selection list
+     */
+    private int getVideoFrameRateIndex(int frameRate)
     {
-        int[] framerateOptions = getResources().getIntArray(R.array.video_framerate_options);
-        for(int i = 0;i < framerateOptions.length;i++)
+        int[] frameRateOptions = getResources().getIntArray(R.array.video_framerate_options);
+        for(int i = 0;i < frameRateOptions.length;i++)
         {
-            if(framerateOptions[i] == framerate)
+            if(frameRateOptions[i] == frameRate)
             {
                 return i;
             }
         }
         return 0;
+    }
+
+    /**
+     * Set the selected item based on the saved preference
+     * @return Video quality index in selection list
+     */
+    private int getVideoQualityIndex()
+    {
+        String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
+
+        int selectedIndex = 1; // Default to HD
+        switch (selectedQuality) {
+            case QUALITY_FHD:
+                selectedIndex = 0;
+                break;
+            case QUALITY_SD:
+                selectedIndex = 2;
+                break;
+        }
+        return selectedIndex;
+    }
+
+    /**
+     * Initialize maximum framerates for each resolution
+     */
+    private void initializeMaxResolutionFramerates()
+    {
+        CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+
+        for(int i = 0; i < 2;i++) {
+
+            CameraCharacteristics characteristics = null;
+
+            try {
+                String cameraId = manager.getCameraIdList()[i];
+                characteristics = manager.getCameraCharacteristics(cameraId);
+            }
+            catch (CameraAccessException cameraAccessException)
+            {
+                cameraAccessException.printStackTrace();
+            }
+
+            if(characteristics != null) {
+                StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                Size[] sizes = new Size[]{};
+                if (map != null) {
+                    sizes = map.getOutputSizes(MediaRecorder.class);
+                }
+
+                for (Size size : sizes) {
+                    Range<Integer>[] fpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                    if (fpsRanges != null) {
+                        String[] resolutions = {"1920x1080", "1280x720", "640x480"};
+
+                        for (Range<Integer> range : fpsRanges) {
+                            for (int index = 0; index < resolutions.length; index++) {
+                                if (size.toString().equals(resolutions[index])) {
+                                    if (i == 0) {
+                                        // Back camera
+                                        if (index == 0) {
+                                            Constantes.CAMERA_BACK_FHD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_BACK_FHD_MAX_FRAMERATES, range.getUpper());
+                                        } else if (index == 1) {
+                                            Constantes.CAMERA_BACK_HD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_BACK_HD_MAX_FRAMERATES, range.getUpper());
+                                        } else {
+                                            Constantes.CAMERA_BACK_SD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_BACK_SD_MAX_FRAMERATES, range.getUpper());
+                                        }
+                                    } else {
+                                        // Front camera
+                                        if (index == 0) {
+                                            Constantes.CAMERA_FRONT_FHD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_FRONT_FHD_MAX_FRAMERATES, range.getUpper());
+                                        } else if (index == 1) {
+                                            Constantes.CAMERA_FRONT_HD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_FRONT_HD_MAX_FRAMERATES, range.getUpper());
+                                        } else {
+                                            Constantes.CAMERA_FRONT_SD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_FRONT_SD_MAX_FRAMERATES, range.getUpper());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get all compatibles video framerates
+     * @param camera (front or back)
+     * @return Cannot be empty
+     */
+    public List<Integer> getCompatiblesVideoFrameRates(String camera)
+    {
+        // Get the selected quality from preferences
+        String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
+
+        // Get the available frame rates
+        int[] videoFrameRates = getResources().getIntArray(R.array.video_framerate_array);
+        List<Integer> videoFrameRatesCompatibles = new ArrayList<>();
+
+        // Determine the frame rate limits based on the camera and quality
+        int maxFrameRate = Constantes.DEFAULT_VIDEO_FRAMERATE;
+        if (camera.equals(Constantes.CAMERA_FRONT)) {
+            switch (selectedQuality) {
+                case QUALITY_FHD:
+                    maxFrameRate = Constantes.CAMERA_FRONT_FHD_MAX_FRAMERATES;
+                    break;
+                case QUALITY_HD:
+                    maxFrameRate = Constantes.CAMERA_FRONT_HD_MAX_FRAMERATES;
+                    break;
+                case QUALITY_SD:
+                    maxFrameRate = Constantes.CAMERA_FRONT_SD_MAX_FRAMERATES;
+                    break;
+            }
+        } else {
+            switch (selectedQuality) {
+                case QUALITY_FHD:
+                    maxFrameRate = Constantes.CAMERA_BACK_FHD_MAX_FRAMERATES;
+                    break;
+                case QUALITY_HD:
+                    maxFrameRate = Constantes.CAMERA_BACK_HD_MAX_FRAMERATES;
+                    break;
+                case QUALITY_SD:
+                    maxFrameRate = Constantes.CAMERA_BACK_SD_MAX_FRAMERATES;
+                    break;
+            }
+        }
+
+        // Add the compatible frame rates to the list
+        for (int videoFramerate : videoFrameRates) {
+            if (videoFramerate <= maxFrameRate) {
+                videoFrameRatesCompatibles.add(videoFramerate);
+            }
+        }
+
+        // If no compatibles video framerates found, add default framerate
+        if(videoFrameRatesCompatibles.isEmpty())
+        {
+            videoFrameRatesCompatibles.add(Constantes.DEFAULT_VIDEO_FRAMERATE);
+        }
+
+        return videoFrameRatesCompatibles;
+    }
+
+    private String getSharedPreferencesCameraSelection()
+    {
+        return sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
     }
 }

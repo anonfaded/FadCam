@@ -90,9 +90,6 @@ public class HomeFragment extends Fragment {
     private RecordsAdapter adapter;
 
     static final String PREF_LOCATION_DATA = "location_data";
-    private static final String PREF_CAMERA_SELECTION = "camera_selection";
-    private static final String CAMERA_FRONT = "front";
-    private static final String CAMERA_BACK = "back";
 
     private double latitude;
     private double longitude;
@@ -363,7 +360,7 @@ public class HomeFragment extends Fragment {
     public void onStart() {
         super.onStart();
         //fetch Camera status
-        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
+        String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
         Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraSelection, Toast.LENGTH_SHORT).show();
     }
 
@@ -1005,7 +1002,7 @@ public class HomeFragment extends Fragment {
     }
 
     private String getCameraSelection() {
-        return sharedPreferences.getString("camera_selection", "back");
+        return sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
     }
 
     private void closeCamera() {
@@ -1020,7 +1017,7 @@ public class HomeFragment extends Fragment {
         CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
-            cameraId = getCameraSelection().equals("front") ? cameraIdList[1] : cameraIdList[0];
+            cameraId = getCameraSelection().equals(Constantes.CAMERA_FRONT) ? cameraIdList[1] : cameraIdList[0];
             manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
@@ -1161,7 +1158,7 @@ public class HomeFragment extends Fragment {
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
-            if (getCameraSelection().equals("front")) {
+            if (getCameraSelection().equals(Constantes.CAMERA_FRONT)) {
                 mediaRecorder.setOrientationHint(270);
             } else {
                 mediaRecorder.setOrientationHint(90);
@@ -1538,13 +1535,13 @@ public class HomeFragment extends Fragment {
 
 
     public void switchCamera() {
-        String currentCameraSelection = sharedPreferences.getString(PREF_CAMERA_SELECTION, CAMERA_BACK);
-        if (currentCameraSelection.equals(CAMERA_BACK)) {
-            sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, CAMERA_FRONT).apply();
+        String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
+        if (currentCameraSelection.equals(Constantes.CAMERA_BACK)) {
+            sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_FRONT).apply();
             Log.d(TAG, "Camera set to front");
             Toast.makeText(getContext(), R.string.switched_front_camera, Toast.LENGTH_SHORT).show();
         } else {
-            sharedPreferences.edit().putString(PREF_CAMERA_SELECTION, CAMERA_BACK).apply();
+            sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK).apply();
             Log.d(TAG, "Camera set to rear");
             Toast.makeText(getContext(), R.string.switched_rear_camera, Toast.LENGTH_SHORT).show();
         }
