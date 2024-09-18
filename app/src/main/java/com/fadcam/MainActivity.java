@@ -1,18 +1,16 @@
 package com.fadcam;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.util.Log;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.viewpager2.widget.ViewPager2;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.os.Bundle;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import android.app.Application;
-import android.util.Log;
-import android.content.res.Configuration;
-import android.os.LocaleList;
+
 import java.io.File;
 import java.util.Locale;
 
@@ -115,10 +113,4 @@ public class MainActivity extends AppCompatActivity {
             Log.d("MainActivity", "Language is already set to " + languageCode + "; no need to change.");
         }
     }
-
-
-
-
-
-
 }
