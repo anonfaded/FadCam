@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
@@ -105,12 +106,8 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-
         // Initialize shared preferences
         sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
-
-        // Initialize maximum framerates for each resolution
-        initializeMaxResolutionFramerates();
 
         // Setup  language selection spinner items with array resource
         Spinner languageSpinner = view.findViewById(R.id.language_spinner);
@@ -362,7 +359,9 @@ public class SettingsFragment extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 List<Integer> videoFrameratesCompatibles = getCompatiblesVideoFrameRates(getSharedPreferencesCameraSelection());
-                sharedPreferences.edit().putInt(Constantes.PREF_VIDEO_FRAMERATE, videoFrameratesCompatibles.get(position)).apply();
+                if(!videoFrameratesCompatibles.isEmpty()) {
+                    sharedPreferences.edit().putInt(Constantes.PREF_VIDEO_FRAMERATE, videoFrameratesCompatibles.get(position)).apply();
+                }
             }
 
             @Override
@@ -388,8 +387,12 @@ public class SettingsFragment extends Fragment {
         // Set the selected item based on the saved preference
         int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
 
-        frameRateSpinner.setSelection(videoFrameratesCompatibles.size() == 1 ? 0 : getVideoFrameRateIndex(selectedFramerate));
-        frameRateSpinner.setEnabled(videoFrameratesCompatibles.size() > 1);
+        if(!videoFrameratesCompatibles.isEmpty()) {
+            frameRateSpinner.setSelection(videoFrameratesCompatibles.size() == 1 ? 0 : getVideoFrameRateIndex(selectedFramerate));
+            frameRateSpinner.setEnabled(videoFrameratesCompatibles.size() > 1);
+        } else {
+            frameRateSpinner.setEnabled(false);
+        }
     }
 
     private void setupWatermarkSpinner(View view, Spinner watermarkSpinner) {
@@ -572,69 +575,6 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * Initialize maximum framerates for each resolution
-     */
-    private void initializeMaxResolutionFramerates()
-    {
-        CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-
-        for(int i = 0; i < 2;i++) {
-
-            CameraCharacteristics characteristics = null;
-
-            try {
-                String cameraId = manager.getCameraIdList()[i];
-                characteristics = manager.getCameraCharacteristics(cameraId);
-            }
-            catch (CameraAccessException cameraAccessException)
-            {
-                cameraAccessException.printStackTrace();
-            }
-
-            if(characteristics != null) {
-                StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-                Size[] sizes = new Size[]{};
-                if (map != null) {
-                    sizes = map.getOutputSizes(MediaRecorder.class);
-                }
-
-                for (Size size : sizes) {
-                    Range<Integer>[] fpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-                    if (fpsRanges != null) {
-                        String[] resolutions = {"1920x1080", "1280x720", "640x480"};
-
-                        for (Range<Integer> range : fpsRanges) {
-                            for (int index = 0; index < resolutions.length; index++) {
-                                if (size.toString().equals(resolutions[index])) {
-                                    if (i == 0) {
-                                        // Back camera
-                                        if (index == 0) {
-                                            Constantes.CAMERA_BACK_FHD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_BACK_FHD_MAX_FRAMERATES, range.getUpper());
-                                        } else if (index == 1) {
-                                            Constantes.CAMERA_BACK_HD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_BACK_HD_MAX_FRAMERATES, range.getUpper());
-                                        } else {
-                                            Constantes.CAMERA_BACK_SD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_BACK_SD_MAX_FRAMERATES, range.getUpper());
-                                        }
-                                    } else {
-                                        // Front camera
-                                        if (index == 0) {
-                                            Constantes.CAMERA_FRONT_FHD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_FRONT_FHD_MAX_FRAMERATES, range.getUpper());
-                                        } else if (index == 1) {
-                                            Constantes.CAMERA_FRONT_HD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_FRONT_HD_MAX_FRAMERATES, range.getUpper());
-                                        } else {
-                                            Constantes.CAMERA_FRONT_SD_MAX_FRAMERATES = Math.max(Constantes.CAMERA_FRONT_SD_MAX_FRAMERATES, range.getUpper());
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Get all compatibles video framerates
      * @param camera (front or back)
      * @return Cannot be empty
@@ -648,32 +588,36 @@ public class SettingsFragment extends Fragment {
         int[] videoFrameRates = getResources().getIntArray(R.array.video_framerate_array);
         List<Integer> videoFrameRatesCompatibles = new ArrayList<>();
 
+        CamcorderProfile profile = null;
+
         // Determine the frame rate limits based on the camera and quality
-        int maxFrameRate = Constantes.DEFAULT_VIDEO_FRAMERATE;
-        if (camera.equals(Constantes.CAMERA_FRONT)) {
-            switch (selectedQuality) {
-                case QUALITY_FHD:
-                    maxFrameRate = Constantes.CAMERA_FRONT_FHD_MAX_FRAMERATES;
-                    break;
-                case QUALITY_HD:
-                    maxFrameRate = Constantes.CAMERA_FRONT_HD_MAX_FRAMERATES;
-                    break;
-                case QUALITY_SD:
-                    maxFrameRate = Constantes.CAMERA_FRONT_SD_MAX_FRAMERATES;
-                    break;
-            }
-        } else {
-            switch (selectedQuality) {
-                case QUALITY_FHD:
-                    maxFrameRate = Constantes.CAMERA_BACK_FHD_MAX_FRAMERATES;
-                    break;
-                case QUALITY_HD:
-                    maxFrameRate = Constantes.CAMERA_BACK_HD_MAX_FRAMERATES;
-                    break;
-                case QUALITY_SD:
-                    maxFrameRate = Constantes.CAMERA_BACK_SD_MAX_FRAMERATES;
-                    break;
-            }
+        int maxFrameRate = 0;
+        int cameraId = camera.equals(Constantes.CAMERA_FRONT) ? 1 : 0;
+
+        switch (selectedQuality) {
+            case QUALITY_FHD:
+                if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_1080P)) {
+                    profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_1080P);
+                }
+                break;
+            case QUALITY_HD:
+                if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_720P)) {
+                    profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_720P);
+                }
+                break;
+            case QUALITY_SD:
+                if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_VGA)) {
+                    profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_VGA);
+                }
+                else if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_480P)) {
+                    profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_480P);
+                }
+                break;
+        }
+
+        if(profile != null)
+        {
+            maxFrameRate = profile.videoFrameRate;
         }
 
         // Add the compatible frame rates to the list
@@ -681,12 +625,6 @@ public class SettingsFragment extends Fragment {
             if (videoFramerate <= maxFrameRate) {
                 videoFrameRatesCompatibles.add(videoFramerate);
             }
-        }
-
-        // If no compatibles video framerates found, add default framerate
-        if(videoFrameRatesCompatibles.isEmpty())
-        {
-            videoFrameRatesCompatibles.add(Constantes.DEFAULT_VIDEO_FRAMERATE);
         }
 
         return videoFrameRatesCompatibles;

@@ -20,6 +20,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
@@ -161,7 +162,8 @@ public class HomeFragment extends Fragment {
                     Manifest.permission.CAMERA,
                     Manifest.permission.RECORD_AUDIO,
                     Manifest.permission.READ_MEDIA_VIDEO,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.POST_NOTIFICATIONS
             };
         } else { // Below Android 11
             permissions = new String[]{
@@ -376,9 +378,10 @@ public class HomeFragment extends Fragment {
             getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         }
 
+        setupStartStopButton();
+
         updateStats();
     }
-
 
     @Override
     public void onPause() {
@@ -1005,6 +1008,10 @@ public class HomeFragment extends Fragment {
         return sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
     }
 
+    private String getCameraQuality() {
+        return sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
+    }
+
     private void closeCamera() {
         if (cameraDevice != null) {
             cameraDevice.close();
@@ -1155,6 +1162,8 @@ public class HomeFragment extends Fragment {
             mediaRecorder.setVideoFrameRate(selectedFramerate);
             mediaRecorder.setCaptureRate(selectedFramerate);
 
+            mediaRecorder.setAudioEncodingBitRate(384000);
+            mediaRecorder.setAudioSamplingRate(48000);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
@@ -1578,6 +1587,31 @@ public class HomeFragment extends Fragment {
         int read;
         while ((read = in.read(buffer)) != -1) {
             out.write(buffer, 0, read);
+        }
+    }
+
+    private void setupStartStopButton()
+    {
+        if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_FHD)) {
+            buttonStartStop.setEnabled(false);
+        }
+        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_HD)) {
+            buttonStartStop.setEnabled(false);
+        }
+        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_SD)) {
+            buttonStartStop.setEnabled(false);
+        }
+        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_FHD)) {
+            buttonStartStop.setEnabled(false);
+        }
+        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_HD)) {
+            buttonStartStop.setEnabled(false);
+        }
+        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_SD)) {
+            buttonStartStop.setEnabled(false);
+        }
+        else {
+            buttonStartStop.setEnabled(true);
         }
     }
 
