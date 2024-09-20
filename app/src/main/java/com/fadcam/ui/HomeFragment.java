@@ -1155,6 +1155,8 @@ public class HomeFragment extends Fragment {
             mediaRecorder.setVideoFrameRate(selectedFramerate);
             mediaRecorder.setCaptureRate(selectedFramerate);
 
+            mediaRecorder.setAudioEncodingBitRate(384000);
+            mediaRecorder.setAudioSamplingRate(48000);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
