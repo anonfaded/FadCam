@@ -743,9 +743,8 @@ public class HomeFragment extends Fragment {
         bytesAvailable -= estimatedBytesUsed;
         gbAvailable = Math.max(0, bytesAvailable / (1024.0 * 1024.0 * 1024.0));
 
-        long remainingTime = (videoBitrate > 0) ? (bytesAvailable * 8) / videoBitrate : 0;
-
-        // Calculate days, hours, minutes, and seconds for remaining time
+// Calculate remaining recording time based on available space and bitrate
+        long remainingTime = (videoBitrate > 0) ? (bytesAvailable * 8) / videoBitrate * 2 : 0; // Double the remaining time        // Calculate days, hours, minutes, and seconds for remaining time
         long days = remainingTime / (24 * 3600);
         long hours = (remainingTime % (24 * 3600)) / 3600;
         long minutes = (remainingTime % 3600) / 60;
@@ -754,9 +753,9 @@ public class HomeFragment extends Fragment {
         String storageInfo = String.format(Locale.getDefault(),
                 getString(R.string.mainpage_storage_indicator),
                 gbAvailable, gbTotal,
-                getRecordingTimeEstimate(bytesAvailable, 10 * 1024 * 1024),
-                getRecordingTimeEstimate(bytesAvailable, 5 * 1024 * 1024),
-                getRecordingTimeEstimate(bytesAvailable, 1024 * 1024),
+                getRecordingTimeEstimate(bytesAvailable, (10 * 1024 * 1024) / 2), // 50% of 10 Mbps
+                getRecordingTimeEstimate(bytesAvailable, (5 * 1024 * 1024) / 2),  // 50% of 5 Mbps
+                getRecordingTimeEstimate(bytesAvailable, (1024 * 1024) / 2),      // 50% of 1 Mbps
                 elapsedTime / 60000, (elapsedTime / 1000) % 60,
                 formatRemainingTime(days, hours, minutes, seconds)
         );
@@ -804,7 +803,7 @@ public class HomeFragment extends Fragment {
                 if (isRecording) {
                     updateStorageInfo();
                     updateStats();
-                    handler.postDelayed(this, 3000); // Update every 3 seconds
+                    handler.postDelayed(this, 1000); // Update every 3 seconds
                 }
             }
         };
@@ -1124,62 +1123,95 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupMediaRecorder() {
+        /*
+         * This method sets up the MediaRecorder for video recording.
+         * It creates a directory for saving videos if it doesn't exist,
+         * generates a timestamp-based filename, and configures the
+         * MediaRecorder with the appropriate settings based on the
+         * selected video quality (SD, HD, FHD). It reduces bitrates
+         * by 50% using the HEVC (H.265) encoder for efficient compression
+         * without significantly affecting video quality.
+         *
+         * - SD: 640x480 @ 0.5 Mbps
+         * - HD: 1280x720 @ 2.5 Mbps
+         * - FHD: 1920x1080 @ 5 Mbps
+         *
+         * It also adjusts the frame rate, sets audio settings, and configures
+         * the orientation based on the camera selection (front or rear).
+         */
+
         try {
+            // Create directory for saving videos if it doesn't exist
             File videoDir = new File(requireActivity().getExternalFilesDir(null), "FadCam");
             if (!videoDir.exists()) {
                 videoDir.mkdirs();
             }
+
+            // Generate a timestamp-based filename for the video
             String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
             File videoFile = new File(videoDir, "temp_" + timestamp + ".mp4");
 
+            // Initialize MediaRecorder
             mediaRecorder = new MediaRecorder();
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
 
+            // Select video quality and adjust size and bitrate
             String selectedQuality = sharedPreferences.getString(Constantes.PREF_VIDEO_QUALITY, QUALITY_HD);
             switch (selectedQuality) {
                 case QUALITY_SD:
+                    // SD: 640x480 resolution, 0.5 Mbps (50% of original 1 Mbps)
                     mediaRecorder.setVideoSize(640, 480);
-                    mediaRecorder.setVideoEncodingBitRate(1000000); // 1 Mbps
+                    mediaRecorder.setVideoEncodingBitRate(500000);
                     break;
                 case QUALITY_HD:
+                    // HD: 1280x720 resolution, 2.5 Mbps (50% of original 5 Mbps)
                     mediaRecorder.setVideoSize(1280, 720);
-                    mediaRecorder.setVideoEncodingBitRate(5000000); // 5 Mbps
+                    mediaRecorder.setVideoEncodingBitRate(2500000);
                     break;
                 case QUALITY_FHD:
+                    // FHD: 1920x1080 resolution, 5 Mbps (50% of original 10 Mbps)
                     mediaRecorder.setVideoSize(1920, 1080);
-                    mediaRecorder.setVideoEncodingBitRate(10000000); // 10 Mbps
+                    mediaRecorder.setVideoEncodingBitRate(5000000);
                     break;
                 default:
+                    // Default to HD settings
                     mediaRecorder.setVideoSize(1280, 720);
-                    mediaRecorder.setVideoEncodingBitRate(5000000); // 5 Mbps
+                    mediaRecorder.setVideoEncodingBitRate(2500000);
                     break;
             }
 
+            // Set frame rate and capture rate
             int selectedFramerate = sharedPreferences.getInt(Constantes.PREF_VIDEO_FRAMERATE, Constantes.DEFAULT_VIDEO_FRAMERATE);
             mediaRecorder.setVideoFrameRate(selectedFramerate);
             mediaRecorder.setCaptureRate(selectedFramerate);
 
+            // Audio settings: high-quality audio
             mediaRecorder.setAudioEncodingBitRate(384000);
             mediaRecorder.setAudioSamplingRate(48000);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
+            // Set video encoder to HEVC (H.265) for better compression
+            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.HEVC);
+
+            // Set orientation based on camera selection
             if (getCameraSelection().equals(Constantes.CAMERA_FRONT)) {
                 mediaRecorder.setOrientationHint(270);
             } else {
                 mediaRecorder.setOrientationHint(90);
             }
 
-
+            // Prepare MediaRecorder
             mediaRecorder.prepare();
+
         } catch (IOException e) {
             Log.e(TAG, "setupMediaRecorder: Error setting up media recorder", e);
             e.printStackTrace();
         }
     }
+
 
     private String extractTimestamp(String filename) {
         // Assuming filename format is "prefix_TIMESTAMP.mp4"
