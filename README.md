@@ -134,7 +134,6 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 ### Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [HowToMen 2nd feature :) ](https://youtu.be/3pOoU5JjfnE?si=JMwoHfGyocXuvkC7&t=520)
-
 - [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
 - [Xtream Droid once again in Hindi](https://www.youtube.com/watch?v=smCMKih759I)
 - [Tech Quirk on YouTube](https://www.youtube.com/shorts/4cQ2RpWHess)
@@ -144,6 +143,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Adhip Pandey on YouTube](https://www.youtube.com/watch?v=ud0bu8U08Ic)
 - [Daniel Bueno - Tecnología on YouTube](https://www.youtube.com/watch?v=TuZBXJVPfOU)
 - [degeregi on TikTok](https://www.tiktok.com/@degereji/video/7403781470180920581)
+- [Anurag - The Geek](https://youtu.be/uXDQhGgjhDU?si=dgYo_wMAxiCM77R5&t=166)
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
