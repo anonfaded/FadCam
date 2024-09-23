@@ -2,6 +2,22 @@ package com.fadcam.ui;
 
 
 import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.os.PowerManager;
+import android.provider.Settings;
+import android.util.Log;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import java.util.ArrayList;
+import java.util.List;
+
+
+
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -22,15 +38,18 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.StatFs;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
@@ -150,6 +169,7 @@ public class HomeFragment extends Fragment {
     private static final int RECENT_MESSAGE_LIMIT = 3; // Adjust as needed
 
     private static final int REQUEST_PERMISSIONS = 1;
+    private android.os.PowerManager.WakeLock wakeLock;  // Full path for clarity
 //    private static final String PREF_FIRST_LAUNCH = "first_launch";
 
     // important
@@ -184,7 +204,48 @@ public class HomeFragment extends Fragment {
         if (!permissionsToRequest.isEmpty()) {
             ActivityCompat.requestPermissions(requireActivity(), permissionsToRequest.toArray(new String[0]), REQUEST_PERMISSIONS);
         }
+
+        // Request to disable battery optimization
+        requestBatteryOptimizationPermission();
+
+        // Acquire wake lock when recording starts (no need to request runtime permission)
     }
+
+    // Method to request disabling battery optimization
+    private void requestBatteryOptimizationPermission() {
+        android.os.PowerManager powerManager = (android.os.PowerManager) requireActivity().getSystemService(Context.POWER_SERVICE); // Full path and context adjusted
+        String packageName = requireActivity().getPackageName(); // Correct package retrieval
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + packageName));
+            startActivity(intent);
+        }
+    }
+
+    // Call this method when the recording starts to acquire wake lock
+//    private WakeLock wakeLock;
+
+    // Call this method when the recording starts to acquire wake lock
+    private void acquireWakeLock() {
+        android.os.PowerManager powerManager = (android.os.PowerManager) requireActivity().getSystemService(Context.POWER_SERVICE); // Full path and context adjusted
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::RecordingLock");
+
+        if (!wakeLock.isHeld()) {
+            wakeLock.acquire();
+            Log.d(TAG, "WakeLock acquired.");
+        }
+    }
+
+    // Call this when the recording ends to release wake lock
+    private void releaseWakeLock() {
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+            Log.d(TAG, "WakeLock released.");
+        }
+    }
+
+
 
 
     private void initializeMessages() {
@@ -925,6 +986,9 @@ public class HomeFragment extends Fragment {
     private void startRecording() {
         Log.d(TAG, "startRecording: Initiating video recording from home fragment");
 
+        // Acquire wake lock to prevent the device from sleeping
+        acquireWakeLock();
+
         // Set up the camera and MediaRecorder here
         if (!isRecording) {
             resetTimers();
@@ -1260,6 +1324,9 @@ public class HomeFragment extends Fragment {
 
     private void stopRecording() {
         Log.d(TAG, "stopRecording: Stopping video recording");
+
+        // Release wake lock when recording stops
+        releaseWakeLock();
 
         // Stop the recording service
         Intent stopIntent = new Intent(getActivity(), RecordingService.class);
