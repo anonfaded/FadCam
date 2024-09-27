@@ -19,16 +19,13 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager2 viewPager;
     private BottomNavigationView bottomNavigationView;
 
-    private static final String PREFS_NAME = "app_prefs";
-    private static final String LANGUAGE_KEY = "language";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // Load and apply the saved language preference before anything else
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String savedLanguageCode = prefs.getString(LANGUAGE_KEY, Locale.getDefault().getLanguage());
+        SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
+        String savedLanguageCode = prefs.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
 
         applyLanguage(savedLanguageCode);  // Apply the language preference
 
@@ -83,8 +80,6 @@ public class MainActivity extends AppCompatActivity {
         File osmdroidTileCache = new File(osmdroidBasePath, "tiles");
         org.osmdroid.config.Configuration.getInstance().setOsmdroidBasePath(osmdroidBasePath);
         org.osmdroid.config.Configuration.getInstance().setOsmdroidTileCache(osmdroidTileCache);
-
-
     }
 
     public void applyLanguage(String languageCode) {
@@ -98,12 +93,8 @@ public class MainActivity extends AppCompatActivity {
             Locale.setDefault(locale);
 
             android.content.res.Configuration config = new android.content.res.Configuration();
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                config.setLocale(locale);
-                getApplicationContext().createConfigurationContext(config);
-            } else {
-                config.locale = locale;
-            }
+            config.setLocale(locale);
+            getApplicationContext().createConfigurationContext(config);
 
             getResources().updateConfiguration(config, getResources().getDisplayMetrics());
 
@@ -112,5 +103,15 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.d("MainActivity", "Language is already set to " + languageCode + "; no need to change.");
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 }
