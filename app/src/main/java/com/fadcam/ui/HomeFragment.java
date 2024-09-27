@@ -388,13 +388,17 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent i)
             {
+                boolean alreadyRecording = i.getBooleanExtra("alreadyRecording", false);
+
+                if(!alreadyRecording)
+                {
+                    vibrateTouch();
+                    Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
+                }
+
                 recordingStartTime = i.getLongExtra("recordingStartTime", 0);
 
                 onRecordingStarted();
-
-                vibrateTouch();
-
-                Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -479,6 +483,12 @@ public class HomeFragment extends Fragment {
     public void onStop() {
         super.onStop();
 
+        if(isRecording) {
+            Intent recordingIntent = new Intent(getActivity(), RecordingService.class);
+            recordingIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
+            getActivity().startService(recordingIntent);
+        }
+
         requireActivity().unregisterReceiver(broadcastOnRecordingStarted);
         requireActivity().unregisterReceiver(broadcastOnRecordingResumed);
         requireActivity().unregisterReceiver(broadcastOnRecordingPaused);
@@ -503,8 +513,6 @@ public class HomeFragment extends Fragment {
         super.onPause();
         //locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
-
-        //getActivity().unregisterReceiver(recordingStateReceiver);
     }
 
 //    @Override
@@ -1213,11 +1221,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void broadcastOnApplicationStopped() {
-        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_APPLICATION_STOPPED);
-        getContext().sendBroadcast(broadcastIntent);
-    }
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -1226,8 +1229,6 @@ public class HomeFragment extends Fragment {
 
         stopUpdatingInfo();
         stopUpdatingClock();
-
-        broadcastOnApplicationStopped();
     }
 
     public boolean isMyServiceRunning(Class<?> serviceClass) {

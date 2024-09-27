@@ -84,8 +84,6 @@ public class RecordingService extends Service {
 
         locationHelper = new LocationHelper(getApplicationContext());
 
-        registerBroadcastOnApplicationExited();
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Android 11 and above
             registerReceiver(broadcastOnApplicationStopped, new IntentFilter(Constants.BROADCAST_ON_APPLICATION_STOPPED), Context.RECEIVER_EXPORTED);
@@ -96,17 +94,6 @@ public class RecordingService extends Service {
 
         createNotificationChannel();
         Log.d(TAG, "Service created");
-    }
-
-    private void registerBroadcastOnApplicationExited() {
-        broadcastOnApplicationStopped = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i)
-            {
-                previewSurface = null;
-                createCameraPreviewSession();
-            }
-        };
     }
 
     @Override
@@ -146,8 +133,6 @@ public class RecordingService extends Service {
     public void onDestroy() {
         super.onDestroy();
         stopRecording();
-
-        unregisterReceiver(broadcastOnApplicationStopped);
 
         Log.d(TAG, "Service destroyed");
     }
@@ -286,10 +271,11 @@ public class RecordingService extends Service {
                             if(!isRecording) {
                                 recordingStartTime = SystemClock.elapsedRealtime();
                                 mediaRecorder.start();
-                                isRecording = true;
                             }
 
                             broadcastOnRecordingStarted();
+
+                            isRecording = true;
 
                             startForeground(NOTIFICATION_ID, getNotification());
                         }
@@ -307,6 +293,7 @@ public class RecordingService extends Service {
     private void broadcastOnRecordingStarted() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
         broadcastIntent.putExtra("recordingStartTime", recordingStartTime);
+        broadcastIntent.putExtra("alreadyRecording", isRecording);
         getApplicationContext().sendBroadcast(broadcastIntent);
     }
 
@@ -418,9 +405,9 @@ public class RecordingService extends Service {
             cameraDevice = null;
         }
 
-        processLatestVideoFileWithWatermark();
-
         isRecording = false;
+
+        processLatestVideoFileWithWatermark();
 
         broadcastOnRecordingStopped();
     }
