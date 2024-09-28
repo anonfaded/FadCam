@@ -174,6 +174,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [danielbuenotecnologia.com](https://danielbuenotecnologia.com/2024/09/13/protege-tu-vida-con-la-app-fad-cam/)
 - [nothingforum.com](https://nothingforum.com/konu/fadcam-video-kaydi-icin-guvenli-bir-cozum.1982/)
 - [manualdousuario.net](https://manualdousuario.net/fadcam-videos-android-tela-desligada/)
+- [techwiser.com](https://techwiser.com/how-to-secretly-record-a-video-with-screen-off-on-android/)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
