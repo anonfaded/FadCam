@@ -379,6 +379,12 @@ public class RecordingService extends Service {
     }
 
     private void stopRecording() {
+
+        if(!isRecording)
+        {
+            return;
+        }
+
         Log.d(TAG, "stopRecording: Attempting to stop recording from recording service.");
 
         if (mediaRecorder != null) {
@@ -532,15 +538,11 @@ public class RecordingService extends Service {
     private void startMonitoring() {
         final long CHECK_INTERVAL_MS = 1000; // 1 second
 
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-            checkAndDeleteSpecificTempFile();
-        }, 0, CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::checkAndDeleteSpecificTempFile, 0, CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
 
     private void checkAndDeleteSpecificTempFile() {
         if (tempFileBeingProcessed != null) {
-            String tempTimestamp = extractTimestamp(tempFileBeingProcessed.getName());
-
             // Construct FADCAM_ filename with the same timestamp
             String outputFilePath = tempFileBeingProcessed.getParent() + "/FADCAM_" + tempFileBeingProcessed.getName().replace("temp_", "");
             File outputFile = new File(outputFilePath);

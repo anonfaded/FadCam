@@ -453,7 +453,6 @@ public class SettingsFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         watermarkSpinner.setAdapter(adapter);
 
-        SharedPreferences sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         String savedWatermark = sharedPreferences.getString(PREF_WATERMARK_OPTION, "timestamp_fadcam");
         int watermarkIndex = getWatermarkIndex(savedWatermark);
         watermarkSpinner.setSelection(watermarkIndex);
