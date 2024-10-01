@@ -69,7 +69,7 @@ public class SettingsFragment extends Fragment {
 
     private void vibrateTouch() {
         // Haptic Feedback
-        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        Vibrator vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
             VibrationEffect effect = null;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -164,7 +164,7 @@ public class SettingsFragment extends Fragment {
         // Setup  language selection spinner items with array resource
         Spinner languageSpinner = view.findViewById(R.id.language_spinner);
         ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
-                getContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
+                requireContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
         languageAdapter .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         languageSpinner.setAdapter(languageAdapter );
 
@@ -179,7 +179,7 @@ public class SettingsFragment extends Fragment {
         // Setup spinner items with array resource
         qualitySpinner = view.findViewById(R.id.quality_spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                getContext(), R.array.video_quality_options, android.R.layout.simple_spinner_item);
+                requireContext(), R.array.video_quality_options, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         qualitySpinner.setAdapter(adapter);
 
@@ -306,7 +306,7 @@ public class SettingsFragment extends Fragment {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, true).apply();
             } else {
-                MaterialSwitch locationSwitch = getView().findViewById(R.id.location_toggle_group);
+                MaterialSwitch locationSwitch = requireView().findViewById(R.id.location_toggle_group);
                 if (locationSwitch != null) {
                     locationSwitch.setChecked(false);
                 }
@@ -582,7 +582,7 @@ public class SettingsFragment extends Fragment {
         Locale.setDefault(locale);
         Configuration config = new Configuration();
         config.setLocale(locale);
-        getActivity().getResources().updateConfiguration(config, getActivity().getResources().getDisplayMetrics());
+        requireActivity().getResources().updateConfiguration(config, requireActivity().getResources().getDisplayMetrics());
 
         // Restart the activity or fragment to apply changes
         requireActivity().recreate();
@@ -590,7 +590,7 @@ public class SettingsFragment extends Fragment {
 
     /**
      * Set the selected item based on the frame rate
-     * @param frameRate
+     * @param frameRate Frame rate
      * @return Video frameRate index in selection list
      */
     private int getVideoFrameRateIndex(int frameRate)

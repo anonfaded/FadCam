@@ -610,7 +610,7 @@ public class HomeFragment extends Fragment {
     //    function to use haptic feedbacks
     private void vibrateTouch() {
         // Haptic Feedback
-        Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        Vibrator vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
             VibrationEffect effect = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -813,7 +813,7 @@ public class HomeFragment extends Fragment {
             startIntent.putExtra("SURFACE", new Surface(surfaceTexture));
         }
 
-        getActivity().startService(startIntent);
+        requireActivity().startService(startIntent);
     }
 
     private void startUpdatingClock() {
@@ -893,7 +893,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void showDisplayOptionsDialog() {
-        new MaterialAlertDialogBuilder(getContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.dialog_clock_title))
                 .setSingleChoiceItems(new String[]{
                         getString(R.string.dialog_clock_timeonly),
@@ -925,7 +925,7 @@ public class HomeFragment extends Fragment {
 
     // Method to update the clock and dates
     private void updateClock() {
-        SharedPreferences prefs = getActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
         int displayOption = prefs.getInt("display_option", 2); // Default to "Everything"
 
         // Update the time
