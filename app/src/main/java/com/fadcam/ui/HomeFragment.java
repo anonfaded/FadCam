@@ -6,7 +6,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -505,7 +504,9 @@ public class HomeFragment extends Fragment {
 
         buttonStartStop.setText(getString(R.string.button_start));
         buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
-        buttonStartStop.setEnabled(true);
+
+        setupStartStopButton();
+
         buttonPauseResume.setEnabled(false);
         buttonCamSwitch.setEnabled(true);
 
@@ -537,6 +538,11 @@ public class HomeFragment extends Fragment {
         super.onResume();
 
         Log.d(TAG, "HomeFragment resumed.");
+
+        if(!isRecording)
+        {
+            setupStartStopButton();
+        }
 
         updateStats();
     }
@@ -1021,7 +1027,7 @@ public class HomeFragment extends Fragment {
                 if (isRecording && isAdded()) {
                     updateStorageInfo();
                     updateStats();
-                    handlerClock.postDelayed(this, 1000); // Update every 3 seconds
+                    handlerClock.postDelayed(this, 1000); // Update every second
                 }
             }
         };
