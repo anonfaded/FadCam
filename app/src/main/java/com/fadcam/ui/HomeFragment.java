@@ -909,11 +909,11 @@ public class HomeFragment extends Fragment {
     }
 
     private int getCurrentDisplayOption() {
-        return sharedPreferences.getInt("display_option", 2); // Default to "Everything"
+        return requireActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE).getInt("display_option", 2); // Default to "Everything"
     }
 
     private void saveDisplayOption(int option) {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
+        SharedPreferences.Editor editor = requireActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE).edit();
         editor.putInt("display_option", option);
         editor.apply();
     }
