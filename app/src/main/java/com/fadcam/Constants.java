@@ -31,4 +31,6 @@ public abstract class Constants {
     public static final String INTENT_ACTION_RESUME_RECORDING = "ACTION_RESUME_RECORDING";
     public static final String INTENT_ACTION_PAUSE_RECORDING = "ACTION_PAUSE_RECORDING";
     public static final String INTENT_ACTION_START_RECORDING = "ACTION_START_RECORDING";
+
+    public static final String RECORDING_DIRECTORY = "FadCam";
 }

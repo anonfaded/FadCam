@@ -163,7 +163,7 @@ public class RecordingService extends Service {
 
         try {
             // Create directory for saving videos if it doesn't exist
-            File videoDir = new File(getExternalFilesDir(null), "FadCam");
+            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
             if (!videoDir.exists()) {
                 videoDir.mkdirs();
             }
@@ -620,7 +620,7 @@ public class RecordingService extends Service {
     }
 
     private File getLatestVideoFile() {
-        File videoDir = new File(getExternalFilesDir(null), "FadCam");
+        File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         File[] files = videoDir.listFiles();
         if (files == null || files.length == 0) {
             return null;

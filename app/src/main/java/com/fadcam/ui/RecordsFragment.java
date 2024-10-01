@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.fadcam.Constants;
 import com.fadcam.R;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -116,7 +117,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
 
     private List<File> getRecordsList() {
         List<File> recordsList = new ArrayList<>();
-        File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
+        File recordsDir = new File(requireContext().getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         if (recordsDir.exists()) {
             // Introduce a delay before refreshing the list
             new Handler(Looper.getMainLooper()).postDelayed(this::loadRecordsList, 500);
@@ -235,7 +236,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     private void deleteAllVideos() {
-        File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
+        File recordsDir = new File(requireContext().getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         if (recordsDir.exists()) {
             File[] files = recordsDir.listFiles();
             if (files != null) {

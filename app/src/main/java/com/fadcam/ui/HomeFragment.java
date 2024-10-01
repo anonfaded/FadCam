@@ -1078,7 +1078,7 @@ public class HomeFragment extends Fragment {
 
     private void updateStats() {
         Log.d(TAG, "updateStats: Updating video statistics");
-        File recordsDir = new File(getContext().getExternalFilesDir(null), "FadCam");
+        File recordsDir = new File(requireContext().getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         int numVideos = 0;
         long totalSize = 0;
 
