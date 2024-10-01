@@ -23,7 +23,8 @@ public abstract class Constants {
     public static final String BROADCAST_ON_RECORDING_RESUMED = "com.fadcam.ON_RECORDING_RESUMED";
     public static final String BROADCAST_ON_RECORDING_PAUSED = "com.fadcam.ON_RECORDING_PAUSED";
     public static final String BROADCAST_ON_RECORDING_STOPPED = "com.fadcam.ON_RECORDING_STOPPED";
-    public static final String BROADCAST_ON_APPLICATION_STOPPED = "com.fadcam.ON_APPLICATION_STOPPED";
+    public static final String BROADCAST_ON_RECORDING_STATE_REQUEST = "com.fadcam.ON_RECORDING_STATE_REQUEST";
+    public static final String BROADCAST_ON_RECORDING_STATE_CALLBACK = "com.fadcam.ON_RECORDING_STATE_CALLBACK";
 
     public static final String INTENT_ACTION_STOP_RECORDING = "ACTION_STOP_RECORDING";
     public static final String INTENT_ACTION_CHANGE_SURFACE = "ACTION_CHANGE_SURFACE";

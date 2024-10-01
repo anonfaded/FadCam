@@ -130,8 +130,7 @@ public class HomeFragment extends Fragment {
     private BroadcastReceiver broadcastOnRecordingResumed;
     private BroadcastReceiver broadcastOnRecordingPaused;
     private BroadcastReceiver broadcastOnRecordingStopped;
-
-    private boolean isRecordingServiceRunning = false;
+    private BroadcastReceiver broadcastOnRecordingStateCallback;
 
     // important
     private void requestEssentialPermissions() {
@@ -340,8 +339,6 @@ public class HomeFragment extends Fragment {
         // Request essential permissions on every launch
         requestEssentialPermissions();
 
-        isRecordingServiceRunning = isMyServiceRunning(RecordingService.class);
-
         // Check if it's the first launch
 //        boolean isFirstLaunch = sharedPreferences.getBoolean(PREF_FIRST_LAUNCH, true);
 //        if (isFirstLaunch) {
@@ -357,12 +354,15 @@ public class HomeFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        textureView.setVisibility(View.VISIBLE);
+        if(!textureView.isAvailable()) {
+            textureView.setVisibility(View.VISIBLE);
+        }
 
         registerBroadcastOnRecordingStarted();
         registerBroadcastOnRecordingResumed();
         registerBroadcastOnRecordingPaused();
         registerBrodcastOnRecordingStopped();
+        registerBroadcastOnRecordingStateCallback();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Android 11 and above
@@ -370,17 +370,53 @@ public class HomeFragment extends Fragment {
             requireActivity().registerReceiver(broadcastOnRecordingResumed, new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED), Context.RECEIVER_EXPORTED);
             requireActivity().registerReceiver(broadcastOnRecordingPaused, new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED), Context.RECEIVER_EXPORTED);
             requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED), Context.RECEIVER_EXPORTED);
+            requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK), Context.RECEIVER_EXPORTED);
         } else {
             // Below Android 11
             requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED));
             requireActivity().registerReceiver(broadcastOnRecordingResumed, new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED));
             requireActivity().registerReceiver(broadcastOnRecordingPaused, new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED));
             requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED));
+            requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK));
         }
+
+        fetchRecordingState();
 
         //fetch Camera status
         String currentCameraSelection = sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
         Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraSelection, Toast.LENGTH_SHORT).show();
+    }
+
+    private void fetchRecordingState()
+    {
+        Intent startIntent = new Intent(getActivity(), RecordingService.class);
+        startIntent.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
+        requireActivity().startService(startIntent);
+    }
+
+    private void registerBroadcastOnRecordingStateCallback() {
+        broadcastOnRecordingStateCallback = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent i)
+            {
+                boolean isRecordingCallback = i.getBooleanExtra("RECORDING_IN_PROGRESS", false);
+
+                if(!isRecording) {
+                    if (isRecordingCallback) {
+                        onRecordingStarted();
+                        updateRecordingSurface();
+                    } else {
+                        onRecordingStopped();
+                    }
+                } else {
+                    if (isRecordingCallback) {
+                        updateRecordingSurface();
+                    } else {
+                        onRecordingStopped();
+                    }
+                }
+            }
+        };
     }
 
     private void registerBroadcastOnRecordingStarted() {
@@ -493,6 +529,7 @@ public class HomeFragment extends Fragment {
         requireActivity().unregisterReceiver(broadcastOnRecordingResumed);
         requireActivity().unregisterReceiver(broadcastOnRecordingPaused);
         requireActivity().unregisterReceiver(broadcastOnRecordingStopped);
+        requireActivity().unregisterReceiver(broadcastOnRecordingStateCallback);
     }
 
     @Override
@@ -500,10 +537,6 @@ public class HomeFragment extends Fragment {
         super.onResume();
 
         Log.d(TAG, "HomeFragment resumed.");
-
-        if(!isRecordingServiceRunning) {
-            setupStartStopButton();
-        }
 
         updateStats();
     }
@@ -597,7 +630,7 @@ public class HomeFragment extends Fragment {
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
-        buttonCamSwitch.setEnabled(!isRecordingServiceRunning);
+
         tvTip = view.findViewById(R.id.tvTip);
         tvStats = view.findViewById(R.id.tvStats);
 
@@ -646,9 +679,9 @@ public class HomeFragment extends Fragment {
                 surfaceTexture.setDefaultBufferSize(720, 1080);
                 textureView.setVisibility(View.INVISIBLE);
 
-                if(isRecordingServiceRunning)
+                if(isRecording)
                 {
-                    startRecording();
+                    updateRecordingSurface();
                 }
             }
 
@@ -748,11 +781,27 @@ public class HomeFragment extends Fragment {
         buttonCamSwitch.setEnabled(false);
 
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
-        if(isMyServiceRunning(RecordingService.class)) {
-            startIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
-        } else {
-            startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
+        startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
+
+        if(surfaceTexture != null) {
+            startIntent.putExtra("SURFACE", new Surface(surfaceTexture));
         }
+
+        getActivity().startService(startIntent);
+    }
+
+    private void updateRecordingSurface()
+    {
+        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+
+        tvPreviewPlaceholder.setVisibility(View.GONE);
+        textureView.setVisibility(View.VISIBLE);
+
+        buttonStartStop.setEnabled(false);
+        buttonCamSwitch.setEnabled(false);
+
+        Intent startIntent = new Intent(getActivity(), RecordingService.class);
+        startIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
 
         if(surfaceTexture != null) {
             startIntent.putExtra("SURFACE", new Surface(surfaceTexture));
@@ -966,11 +1015,10 @@ public class HomeFragment extends Fragment {
 
     //    update storage and stats in real time while recording is started
     private void startUpdatingInfo() {
-        Log.d(TAG, "startUpdatingInfo: Beginning real-time updates");
         updateInfoRunnable = new Runnable() {
             @Override
             public void run() {
-                if (isRecording) {
+                if (isRecording && isAdded()) {
                     updateStorageInfo();
                     updateStats();
                     handlerClock.postDelayed(this, 1000); // Update every 3 seconds
@@ -1229,15 +1277,5 @@ public class HomeFragment extends Fragment {
 
         stopUpdatingInfo();
         stopUpdatingClock();
-    }
-
-    public boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 }

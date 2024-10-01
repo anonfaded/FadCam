@@ -1,6 +1,7 @@
 package com.fadcam;
 
-import static android.hardware.camera2.CameraDevice.*;
+import static android.hardware.camera2.CameraDevice.StateCallback;
+import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -71,10 +72,9 @@ public class RecordingService extends Service {
     private File tempFileBeingProcessed;
 
     private boolean isRecording = false;
+    private boolean isProcessingWatermark = false;
 
     private long recordingStartTime;
-
-    private BroadcastReceiver broadcastOnApplicationStopped;
 
     @Override
     public void onCreate() {
@@ -84,41 +84,43 @@ public class RecordingService extends Service {
 
         locationHelper = new LocationHelper(getApplicationContext());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 11 and above
-            registerReceiver(broadcastOnApplicationStopped, new IntentFilter(Constants.BROADCAST_ON_APPLICATION_STOPPED), Context.RECEIVER_EXPORTED);
-        } else {
-            // Below Android 11
-            registerReceiver(broadcastOnApplicationStopped, new IntentFilter(Constants.BROADCAST_ON_APPLICATION_STOPPED));
-        }
-
         createNotificationChannel();
         Log.d(TAG, "Service created");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String action = intent.getAction();
 
-        if (action != null) {
-            switch (action) {
-                case Constants.INTENT_ACTION_START_RECORDING:
-                    setupSurfaceTexture(intent);
-                    startRecording();
-                    break;
-                case Constants.INTENT_ACTION_PAUSE_RECORDING:
-                    pauseRecording();
-                    break;
-                case Constants.INTENT_ACTION_RESUME_RECORDING:
-                    resumeRecording();
-                    break;
-                case Constants.INTENT_ACTION_CHANGE_SURFACE:
-                    setupSurfaceTexture(intent);
-                    createCameraPreviewSession();
-                    break;
-                case Constants.INTENT_ACTION_STOP_RECORDING:
-                    stopRecording();
-                    break;
+        // Checks if the intent is null
+        if (intent != null) {
+            String action = intent.getAction();
+            if (action != null) {
+                switch (action) {
+                    case Constants.INTENT_ACTION_START_RECORDING:
+                        setupSurfaceTexture(intent);
+                        startRecording();
+                        break;
+                    case Constants.INTENT_ACTION_PAUSE_RECORDING:
+                        pauseRecording();
+                        break;
+                    case Constants.INTENT_ACTION_RESUME_RECORDING:
+                        resumeRecording();
+                        break;
+                    case Constants.INTENT_ACTION_CHANGE_SURFACE:
+                        setupSurfaceTexture(intent);
+                        createCameraPreviewSession();
+                        break;
+                    case Constants.INTENT_ACTION_STOP_RECORDING:
+                        stopRecording();
+                        break;
+                    case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST:
+                        broadcastOnRecordingStateCallback();
+
+                        if (!isRecording && !isProcessingWatermark) {
+                            stopSelf();
+                        }
+                        break;
+                }
             }
         }
         return START_STICKY;
@@ -245,7 +247,7 @@ public class RecordingService extends Service {
             Surface recorderSurface = mediaRecorder.getSurface();
             surfaces.add(recorderSurface);
 
-            if(previewSurface != null) {
+            if(previewSurface != null && previewSurface.isValid()) {
                 captureRequestBuilder.addTarget(previewSurface);
                 surfaces.add(previewSurface);
             }
@@ -265,6 +267,9 @@ public class RecordingService extends Service {
                                 cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
                             } catch (CameraAccessException e) {
                                 Log.e(TAG, "onConfigured: Error setting repeating request", e);
+                                e.printStackTrace();
+                            } catch (IllegalStateException e) {
+                                Log.e(TAG, "onConfigured: Error camera session", e);
                                 e.printStackTrace();
                             }
 
@@ -309,6 +314,12 @@ public class RecordingService extends Service {
 
     private void broadcastOnRecordingStopped() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
+        getApplicationContext().sendBroadcast(broadcastIntent);
+    }
+
+    private void broadcastOnRecordingStateCallback() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+        broadcastIntent.putExtra("RECORDING_IN_PROGRESS", isRecording);
         getApplicationContext().sendBroadcast(broadcastIntent);
     }
 
@@ -413,9 +424,17 @@ public class RecordingService extends Service {
 
         isRecording = false;
 
+        isProcessingWatermark = true;
+
         processLatestVideoFileWithWatermark();
 
+        isProcessingWatermark = false;
+
         broadcastOnRecordingStopped();
+
+        if(!isRecording && !isProcessingWatermark) {
+            stopSelf();
+        }
     }
 
     private void processLatestVideoFileWithWatermark() {
