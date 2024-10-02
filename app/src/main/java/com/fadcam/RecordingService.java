@@ -263,7 +263,7 @@ public class RecordingService extends Service {
 
                             try {
                                 cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                            } catch (CameraAccessException e) {
+                            } catch (CameraAccessException | IllegalArgumentException e) {
                                 Log.e(TAG, "onConfigured: Error setting repeating request", e);
                                 e.printStackTrace();
                             } catch (IllegalStateException e) {
