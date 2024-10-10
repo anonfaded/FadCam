@@ -91,8 +91,6 @@
             android:exported="false"
             android:foregroundServiceType="camera|microphone" />
 
-
-
     </application>
 
 </manifest>
