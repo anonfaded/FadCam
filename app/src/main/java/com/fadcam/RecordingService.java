@@ -3,7 +3,6 @@ package com.fadcam;
 import static android.hardware.camera2.CameraDevice.StateCallback;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -11,6 +10,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -24,10 +24,13 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Range;
 import android.view.Surface;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.fadcam.ui.LocationHelper;
@@ -69,7 +72,16 @@ public class RecordingService extends Service {
 
     private File tempFileBeingProcessed;
 
-    private boolean isRecording = false;
+    private RecordingState recordingState = RecordingState.NONE;
+
+    public boolean isRecording() {
+        return recordingState.equals(RecordingState.IN_PROGRESS);
+    }
+
+    public boolean isPaused() {
+        return recordingState.equals(RecordingState.PAUSED);
+    }
+
     private boolean isProcessingWatermark = false;
 
     private long recordingStartTime;
@@ -83,6 +95,7 @@ public class RecordingService extends Service {
         locationHelper = new LocationHelper(getApplicationContext());
 
         createNotificationChannel();
+
         Log.d(TAG, "Service created");
     }
 
@@ -102,6 +115,7 @@ public class RecordingService extends Service {
                         pauseRecording();
                         break;
                     case Constants.INTENT_ACTION_RESUME_RECORDING:
+                        setupSurfaceTexture(intent);
                         resumeRecording();
                         break;
                     case Constants.INTENT_ACTION_CHANGE_SURFACE:
@@ -114,7 +128,7 @@ public class RecordingService extends Service {
                     case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST:
                         broadcastOnRecordingStateCallback();
 
-                        if (!isRecording && !isProcessingWatermark) {
+                        if (recordingState.equals(RecordingState.NONE) && !isProcessingWatermark) {
                             stopSelf();
                         }
                         break;
@@ -132,9 +146,11 @@ public class RecordingService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopRecording();
 
         Log.d(TAG, "Service destroyed");
+
+        cancelNotification();
+        stopRecording();
     }
 
     @Nullable
@@ -271,32 +287,36 @@ public class RecordingService extends Service {
                                 e.printStackTrace();
                             }
 
-                            if(!isRecording) {
+                            if(recordingState.equals(RecordingState.NONE)) {
                                 recordingStartTime = SystemClock.elapsedRealtime();
                                 mediaRecorder.start();
                             }
 
-                            broadcastOnRecordingStarted();
+                            setupRecordingInProgressNotification();
 
-                            isRecording = true;
-
-                            startForeground(NOTIFICATION_ID, getNotification());
+                            if(recordingState.equals(RecordingState.PAUSED)) {
+                                recordingState = RecordingState.IN_PROGRESS;
+                                broadcastOnRecordingResumed();
+                            } else {
+                                recordingState = RecordingState.IN_PROGRESS;
+                                broadcastOnRecordingStarted();
+                            }
                         }
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            Log.e(TAG, "Échec de la configuration de la session de capture");
+                            Log.e(TAG, "onConfigureFailed: Failed to configure capture session");
                         }
                     }, null);
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Erreur lors de la création de la session de capture", e);
+            Log.e(TAG, "createCameraPreviewSession: Error while creating capture session", e);
         }
     }
 
     private void broadcastOnRecordingStarted() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
-        broadcastIntent.putExtra("recordingStartTime", recordingStartTime);
-        broadcastIntent.putExtra("alreadyRecording", isRecording);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE, recordingState);
         getApplicationContext().sendBroadcast(broadcastIntent);
     }
 
@@ -317,7 +337,7 @@ public class RecordingService extends Service {
 
     private void broadcastOnRecordingStateCallback() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
-        broadcastIntent.putExtra("RECORDING_IN_PROGRESS", isRecording);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE, recordingState);
         getApplicationContext().sendBroadcast(broadcastIntent);
     }
 
@@ -338,7 +358,17 @@ public class RecordingService extends Service {
                 @Override
                 public void onDisconnected(@NonNull CameraDevice camera) {
                     Log.w(TAG, "onDisconnected: Camera disconnected");
+
                     cameraDevice.close();
+                    cameraDevice = null;
+
+                    if(isRecording()) {
+                        Log.e(TAG, "onDisconnected: Camera paused");
+                        pauseRecording();
+                        showPausedNotification();
+                    } else {
+                        Log.e(TAG, "onDisconnected: Camera closing");
+                    }
                 }
 
                 @Override
@@ -347,6 +377,14 @@ public class RecordingService extends Service {
 
                     cameraDevice.close();
                     cameraDevice = null;
+
+                    if(isRecording()) {
+                        Log.e(TAG, "onError: Camera paused");
+                        pauseRecording();
+                        showPausedNotification();
+                    } else {
+                        Log.e(TAG, "onError: Camera closing");
+                    }
                 }
             }, null);
         } catch (CameraAccessException | SecurityException e) {
@@ -360,7 +398,7 @@ public class RecordingService extends Service {
         setupMediaRecorder();
 
         if (mediaRecorder == null) {
-            Log.e(TAG, "MediaRecorder is not initialized");
+            Log.e(TAG, "startRecording: MediaRecorder is not initialized");
             return;
         }
 
@@ -369,13 +407,20 @@ public class RecordingService extends Service {
         }
 
         if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            Log.e(TAG, "startRecordingVideo: External storage not available, cannot start recording.");
+            Log.e(TAG, "startRecording: External storage not available, cannot start recording.");
         }
     }
 
     private void resumeRecording()
     {
-        mediaRecorder.resume();
+        if(cameraDevice != null) {
+            mediaRecorder.resume();
+            setupRecordingInProgressNotification();
+        } else {
+            openCamera();
+        }
+
+        recordingState = RecordingState.IN_PROGRESS;
 
         broadcastOnRecordingResumed();
     }
@@ -384,12 +429,16 @@ public class RecordingService extends Service {
     {
         mediaRecorder.pause();
 
+        recordingState = RecordingState.PAUSED;
+
+        setupRecordingResumeNotification();
+
         broadcastOnRecordingPaused();
     }
 
     private void stopRecording() {
 
-        if(!isRecording)
+        if(recordingState.equals(RecordingState.NONE))
         {
             return;
         }
@@ -401,12 +450,12 @@ public class RecordingService extends Service {
                 mediaRecorder.stop();
                 mediaRecorder.reset();
             } catch (IllegalStateException e) {
-                Log.e(TAG, "Erreur lors de l'arrêt de l'enregistrement", e);
+                Log.e(TAG, "stopRecording: Error while stopping the recording", e);
             } finally {
                 mediaRecorder.release();
                 mediaRecorder = null;
-                Log.d(TAG, "Enregistrement arrêté");
-                stopForeground(true); // Supprimez la notification
+                Log.d(TAG, "stopRecording: Recording stopped");
+                stopForeground(true);
             }
         }
 
@@ -420,7 +469,9 @@ public class RecordingService extends Service {
             cameraDevice = null;
         }
 
-        isRecording = false;
+        recordingState = RecordingState.NONE;
+
+        cancelNotification();
 
         isProcessingWatermark = true;
 
@@ -430,7 +481,7 @@ public class RecordingService extends Service {
 
         broadcastOnRecordingStopped();
 
-        if(!isRecording && !isProcessingWatermark) {
+        if(recordingState.equals(RecordingState.NONE) && !isProcessingWatermark) {
             stopSelf();
         }
     }
@@ -561,7 +612,7 @@ public class RecordingService extends Service {
     private void checkAndDeleteSpecificTempFile() {
         if (tempFileBeingProcessed != null) {
             // Construct FADCAM_ filename with the same timestamp
-            String outputFilePath = tempFileBeingProcessed.getParent() + "/FADCAM_" + tempFileBeingProcessed.getName().replace("temp_", "");
+            String outputFilePath = tempFileBeingProcessed.getParent() + "/" + Constants.RECORDING_DIRECTORY + "_" + tempFileBeingProcessed.getName().replace("temp_", "");
             File outputFile = new File(outputFilePath);
 
             // Check if the FADCAM_ file exists
@@ -576,7 +627,7 @@ public class RecordingService extends Service {
                 tempFileBeingProcessed = null;
             } else {
                 // FADCAM_ file does not exist yet
-                Log.d(TAG, "Matching FADCAM_ file not found. Temp file remains.");
+                Log.d(TAG, "Matching " + Constants.RECORDING_DIRECTORY + "_ file not found. Temp file remains.");
             }
         }
     }
@@ -643,10 +694,21 @@ public class RecordingService extends Service {
         return PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    private Notification getNotification() {
+    private PendingIntent createResumeRecordingIntent() {
+        Intent stopIntent = new Intent(this, RecordingService.class);
+        stopIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+        return PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private void setupRecordingInProgressNotification() {
+
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(getString(R.string.notification_video_recording))
-                .setContentText(getString(R.string.notification_video_recording_description))
+                .setContentText(getString(R.string.notification_video_recording_progress_description))
                 .setSmallIcon(R.drawable.unknown_icon3)
                 .setContentIntent(createOpenAppIntent())
                 .setAutoCancel(false)
@@ -656,7 +718,34 @@ public class RecordingService extends Service {
                         createStopRecordingIntent()))
                 .setPriority(NotificationCompat.PRIORITY_LOW);
 
-        return builder.build();
+        if(recordingState.equals(RecordingState.NONE)) {
+            startForeground(NOTIFICATION_ID, builder.build());
+        } else {
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+            notificationManager.notify(NOTIFICATION_ID, builder.build());
+        }
+    }
+
+    private void setupRecordingResumeNotification() {
+
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.notification_video_recording))
+                .setContentText(getString(R.string.notification_video_recording_paused_description))
+                .setSmallIcon(R.drawable.unknown_icon3)
+                .setContentIntent(createOpenAppIntent())
+                .setAutoCancel(false)
+                .addAction(new NotificationCompat.Action(
+                        R.drawable.ic_play,
+                        getString(R.string.button_resume),
+                        createResumeRecordingIntent()))
+                .setPriority(NotificationCompat.PRIORITY_LOW);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
 
     private void createNotificationChannel() {
@@ -673,6 +762,15 @@ public class RecordingService extends Service {
                 Log.e(TAG, "NotificationManager is null, unable to create notification channel");
             }
         }
+    }
+
+    private void cancelNotification() {
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.cancel(NOTIFICATION_ID);
+    }
+
+    private void showPausedNotification() {
+        Toast.makeText(getApplicationContext(), getText(R.string.video_recording_paused), Toast.LENGTH_SHORT).show();
     }
 
     private String getLocationData() {

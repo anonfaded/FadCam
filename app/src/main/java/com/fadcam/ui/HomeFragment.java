@@ -51,6 +51,7 @@ import androidx.fragment.app.Fragment;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.RecordingService;
+import com.fadcam.RecordingState;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
@@ -85,7 +86,6 @@ public class HomeFragment extends Fragment {
     private Runnable updateInfoRunnable;
     private Runnable updateClockRunnable; // Declare here
 
-    private boolean isRecording = false;
     private TextureView textureView;
     private SharedPreferences sharedPreferences;
 
@@ -99,7 +99,6 @@ public class HomeFragment extends Fragment {
     private Button buttonStartStop;
     private Button buttonPauseResume;
     private Button buttonCamSwitch;
-    private boolean isPaused = false;
     private boolean isPreviewEnabled = true;
 
     private View cardPreview;
@@ -118,12 +117,14 @@ public class HomeFragment extends Fragment {
 
     private List<String> messageQueue;
     private List<String> recentlyShownMessages;
-    private Random random = new Random();
+    private final Random random = new Random();
     private static final int RECENT_MESSAGE_LIMIT = 3; // Adjust as needed
 
     private static final int REQUEST_PERMISSIONS = 1;
     private android.os.PowerManager.WakeLock wakeLock;
 //    private static final String PREF_FIRST_LAUNCH = "first_launch";
+
+    private RecordingState recordingState = RecordingState.NONE;
 
     private BroadcastReceiver broadcastOnRecordingStarted;
     private BroadcastReceiver broadcastOnRecordingResumed;
@@ -240,7 +241,7 @@ public class HomeFragment extends Fragment {
 
     private void setupLongPressListener() {
         cardPreview.setOnLongClickListener(v -> {
-            if (isRecording) {
+            if (isRecording()) {
                 // Start scaling down animation
                 cardPreview.animate()
                         .scaleX(0.9f)
@@ -305,7 +306,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void updatePreviewVisibility() {
-        if (isRecording) {
+        if (isRecording()) {
             if (isPreviewEnabled) {
                 textureView.setVisibility(View.VISIBLE);
                 tvPreviewPlaceholder.setVisibility(View.GONE);
@@ -379,10 +380,8 @@ public class HomeFragment extends Fragment {
             requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK));
         }
 
-        fetchRecordingState();
-
         //fetch Camera status
-        String currentCameraSelection = sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
+        String currentCameraSelection = getCameraSelection();
         Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraSelection, Toast.LENGTH_SHORT).show();
     }
 
@@ -398,22 +397,33 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent i)
             {
-                boolean isRecordingCallback = i.getBooleanExtra("RECORDING_IN_PROGRESS", false);
-
-                if(!isRecording) {
-                    if (isRecordingCallback) {
-                        onRecordingStarted();
-                        updateRecordingSurface();
-                    } else {
-                        onRecordingStopped();
-                    }
-                } else {
-                    if (isRecordingCallback) {
-                        updateRecordingSurface();
-                    } else {
-                        onRecordingStopped();
-                    }
+                RecordingState recordingStateIntent = (RecordingState) i.getSerializableExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE);
+                if (recordingStateIntent == null) {
+                    recordingStateIntent = RecordingState.NONE;
                 }
+
+                switch(recordingStateIntent) {
+                    case NONE:
+                        onRecordingStopped();
+                        break;
+                    case IN_PROGRESS:
+                        if(isRecording()) {
+                            updateRecordingSurface();
+                        } else {
+                            onRecordingStarted();
+                            updateRecordingSurface();
+                        }
+                        break;
+                    case PAUSED:
+                        onRecordingPaused();
+                        // BUG
+                        if(recordingState.equals(RecordingState.NONE)) {
+                            updateRecordingSurface();
+                        }
+                        break;
+                }
+
+                recordingState = recordingStateIntent;
             }
         };
     }
@@ -423,15 +433,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent i)
             {
-                boolean alreadyRecording = i.getBooleanExtra("alreadyRecording", false);
-
-                if(!alreadyRecording)
-                {
-                    vibrateTouch();
-                    Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
-                }
-
-                recordingStartTime = i.getLongExtra("recordingStartTime", 0);
+                recordingStartTime = i.getLongExtra(Constants.BROADCAST_EXTRA_RECORDING_START_TIME, 0);
 
                 onRecordingStarted();
             }
@@ -471,11 +473,10 @@ public class HomeFragment extends Fragment {
     }
 
     private void onRecordingStarted() {
-        isRecording = true;
+        recordingState = RecordingState.IN_PROGRESS;
 
         acquireWakeLock();
 
-        updateStorageInfo();
         setVideoBitrate();
 
         buttonStartStop.setText(getString(R.string.button_stop));
@@ -485,20 +486,37 @@ public class HomeFragment extends Fragment {
         buttonCamSwitch.setEnabled(false);
 
         startUpdatingInfo();
+        vibrateTouch();
+
+        Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
     }
 
     private void onRecordingResumed()
     {
+        recordingState = RecordingState.IN_PROGRESS;
+
         buttonCamSwitch.setEnabled(false);
+
+        startUpdatingInfo();
     }
 
     private void onRecordingPaused()
     {
+        recordingState = RecordingState.PAUSED;
+
+        buttonPauseResume.setText(getString(R.string.button_resume));
+        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonPauseResume.setEnabled(true);
+
         buttonCamSwitch.setEnabled(false);
+
+        buttonStartStop.setText(getString(R.string.button_stop));
+        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
     }
 
     private void onRecordingStopped() {
-        isRecording = false;
+
+        recordingState = RecordingState.NONE;
 
         releaseWakeLock();
 
@@ -520,10 +538,12 @@ public class HomeFragment extends Fragment {
     public void onStop() {
         super.onStop();
 
-        if(isRecording) {
+        Log.e(TAG, "HomeFragment stopped");
+
+        if(isRecording()) {
             Intent recordingIntent = new Intent(getActivity(), RecordingService.class);
             recordingIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
-            getActivity().startService(recordingIntent);
+            requireActivity().startService(recordingIntent);
         }
 
         requireActivity().unregisterReceiver(broadcastOnRecordingStarted);
@@ -539,7 +559,7 @@ public class HomeFragment extends Fragment {
 
         Log.d(TAG, "HomeFragment resumed.");
 
-        if(!isRecording)
+        if(!isRecording())
         {
             setupStartStopButton();
         }
@@ -684,11 +704,14 @@ public class HomeFragment extends Fragment {
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
                 surfaceTexture.setDefaultBufferSize(720, 1080);
                 textureView.setVisibility(View.INVISIBLE);
+                Log.e("TEST","onSurfaceTextureAvailable");
+                fetchRecordingState();
 
-                if(isRecording)
+                /*
+                if(isRecording())
                 {
                     updateRecordingSurface();
-                }
+                }*/
             }
 
             @Override
@@ -749,7 +772,7 @@ public class HomeFragment extends Fragment {
                 debugPermissionsStatus();
                 showPermissionsInfoDialog();
             } else {
-                if (!isRecording) {
+                if (recordingState.equals(RecordingState.NONE)) {
                     startRecording();
                 } else {
                     stopRecording();
@@ -759,16 +782,14 @@ public class HomeFragment extends Fragment {
         });
 
         buttonPauseResume.setOnClickListener(v -> {
-            if (isRecording) {
-                if (isPaused) {
-                    vibrateTouch();
-                    Toast.makeText(getContext(), R.string.video_recording_resumed, Toast.LENGTH_SHORT).show();
-                    resumeRecording();
-                } else {
-                    vibrateTouch();
-                    Toast.makeText(getContext(), R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
-                    pauseRecording();
-                }
+            if (isPaused()) {
+                vibrateTouch();
+                Toast.makeText(getContext(), R.string.video_recording_resumed, Toast.LENGTH_SHORT).show();
+                resumeRecording();
+            } else {
+                vibrateTouch();
+                Toast.makeText(getContext(), R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
+                pauseRecording();
             }
         });
 
@@ -793,7 +814,7 @@ public class HomeFragment extends Fragment {
             startIntent.putExtra("SURFACE", new Surface(surfaceTexture));
         }
 
-        getActivity().startService(startIntent);
+        requireActivity().startService(startIntent);
     }
 
     private void updateRecordingSurface()
@@ -1024,7 +1045,7 @@ public class HomeFragment extends Fragment {
         updateInfoRunnable = new Runnable() {
             @Override
             public void run() {
-                if (isRecording && isAdded()) {
+                if (isRecording() && isAdded()) {
                     updateStorageInfo();
                     updateStats();
                     handlerClock.postDelayed(this, 1000); // Update every second
@@ -1104,7 +1125,6 @@ public class HomeFragment extends Fragment {
     private void pauseRecording() {
         Log.d(TAG, "pauseRecording: Pausing video recording");
 
-        isPaused = true;
         buttonPauseResume.setText(R.string.button_resume);
         buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
 
@@ -1112,21 +1132,26 @@ public class HomeFragment extends Fragment {
 
         Intent stopIntent = new Intent(getActivity(), RecordingService.class);
         stopIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
-        getActivity().startService(stopIntent);
+        requireActivity().startService(stopIntent);
     }
 
     private void resumeRecording() {
         Log.d(TAG, "resumeRecording: Resuming video recording");
 
-        isPaused = false;
         buttonPauseResume.setText(getString(R.string.button_pause));
         buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(false);
 
-        Intent stopIntent = new Intent(getActivity(), RecordingService.class);
-        stopIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
-        getActivity().startService(stopIntent);
+        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+
+        Intent recordingServiceIntent = new Intent(getActivity(), RecordingService.class);
+        recordingServiceIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+        if(surfaceTexture != null) {
+            recordingServiceIntent.putExtra("SURFACE", new Surface(surfaceTexture));
+        }
+        requireActivity().startService(recordingServiceIntent);
     }
 
     private void setVideoBitrate() {
@@ -1283,5 +1308,13 @@ public class HomeFragment extends Fragment {
 
         stopUpdatingInfo();
         stopUpdatingClock();
+    }
+
+    public boolean isRecording() {
+        return recordingState.equals(RecordingState.IN_PROGRESS);
+    }
+
+    public boolean isPaused() {
+        return recordingState.equals(RecordingState.PAUSED);
     }
 }

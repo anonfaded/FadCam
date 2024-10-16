@@ -26,6 +26,9 @@ public abstract class Constants {
     public static final String BROADCAST_ON_RECORDING_STATE_REQUEST = "com.fadcam.ON_RECORDING_STATE_REQUEST";
     public static final String BROADCAST_ON_RECORDING_STATE_CALLBACK = "com.fadcam.ON_RECORDING_STATE_CALLBACK";
 
+    public static final String BROADCAST_EXTRA_RECORDING_STATE = "RECORDING_STATE";
+    public static final String BROADCAST_EXTRA_RECORDING_START_TIME = "RECORDING_START_TIME";
+
     public static final String INTENT_ACTION_STOP_RECORDING = "ACTION_STOP_RECORDING";
     public static final String INTENT_ACTION_CHANGE_SURFACE = "ACTION_CHANGE_SURFACE";
     public static final String INTENT_ACTION_RESUME_RECORDING = "ACTION_RESUME_RECORDING";

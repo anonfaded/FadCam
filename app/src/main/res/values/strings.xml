@@ -204,5 +204,6 @@
     <string name="switched_front_camera">Switched to front camera</string>
     <string name="switched_rear_camera">Switched to rear camera</string>
     <string name="notification_video_recording">Video recording</string>
-    <string name="notification_video_recording_description">Recording is in progress</string>
+    <string name="notification_video_recording_progress_description">Recording is in progress</string>
+    <string name="notification_video_recording_paused_description">Recording is paused</string>
 </resources>
