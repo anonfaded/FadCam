@@ -186,7 +186,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private void saveToGalleryAndroid10Plus(Context context, File video) {
         ContentValues values = new ContentValues();
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, video.getName());
-        values.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
+        values.put(MediaStore.MediaColumns.MIME_TYPE, "video/" + Constants.RECORDING_FILE_EXTENSION);
         values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + File.separator + Constants.RECORDING_DIRECTORY);
 
         ContentResolver resolver = context.getContentResolver();
@@ -273,7 +273,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         String formattedName = newName.trim().replace(" ", "_");
 
         File oldFile = videoFiles.get(position);
-        File newFile = new File(oldFile.getParent(), formattedName + ".mp4");
+        File newFile = new File(oldFile.getParent(), formattedName + "." + Constants.RECORDING_FILE_EXTENSION);
 
         if (oldFile.renameTo(newFile)) {
             // Update the list and notify the adapter

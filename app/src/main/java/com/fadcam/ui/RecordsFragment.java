@@ -124,7 +124,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             File[] files = recordsDir.listFiles();
             if (files != null) {
                 for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith(".mp4")) {
+                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
                         recordsList.add(file);
                     }
                 }
@@ -241,7 +241,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             File[] files = recordsDir.listFiles();
             if (files != null) {
                 for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith(".mp4")) {
+                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
                         file.delete();
                     }
                 }

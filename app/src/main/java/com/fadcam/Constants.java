@@ -36,4 +36,5 @@ public abstract class Constants {
     public static final String INTENT_ACTION_START_RECORDING = "ACTION_START_RECORDING";
 
     public static final String RECORDING_DIRECTORY = "FadCam";
+    public static final String RECORDING_FILE_EXTENSION = "mp4";
 }

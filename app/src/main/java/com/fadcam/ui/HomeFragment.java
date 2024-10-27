@@ -1099,7 +1099,7 @@ public class HomeFragment extends Fragment {
             File[] files = recordsDir.listFiles();
             if (files != null) {
                 for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith(".mp4")) {
+                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
                         numVideos++;
                         totalSize += file.length();
                     }
