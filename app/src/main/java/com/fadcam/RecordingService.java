@@ -82,6 +82,8 @@ public class RecordingService extends Service {
         return recordingState.equals(RecordingState.PAUSED);
     }
 
+    public boolean isWorkingInProgress() { return !recordingState.equals(RecordingState.NONE) || isProcessingWatermark; }
+
     private boolean isProcessingWatermark = false;
 
     private long recordingStartTime;
@@ -101,7 +103,6 @@ public class RecordingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
         // Checks if the intent is null
         if (intent != null) {
             String action = intent.getAction();
@@ -128,7 +129,7 @@ public class RecordingService extends Service {
                     case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST:
                         broadcastOnRecordingStateCallback();
 
-                        if (recordingState.equals(RecordingState.NONE) && !isProcessingWatermark) {
+                        if (!isWorkingInProgress()) {
                             stopSelf();
                         }
                         break;
@@ -181,12 +182,16 @@ public class RecordingService extends Service {
             // Create directory for saving videos if it doesn't exist
             File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
             if (!videoDir.exists()) {
-                videoDir.mkdirs();
+                if (videoDir.mkdirs()) {
+                    Log.d(TAG, "setupMediaRecorder: Directory created successfully");
+                } else {
+                    Log.e(TAG, "setupMediaRecorder: Failed to create directory");
+                }
             }
 
             // Generate a timestamp-based filename for the video
             String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
-            File videoFile = new File(videoDir, "temp_" + timestamp + ".mp4");
+            File videoFile = new File(videoDir, "temp_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION);
 
             // Initialize MediaRecorder
             mediaRecorder = new MediaRecorder();
@@ -254,6 +259,11 @@ public class RecordingService extends Service {
             captureSession = null;
         }
 
+        if(cameraDevice == null) {
+            openCamera();
+            return;
+        }
+
         try {
             captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
 
@@ -270,46 +280,45 @@ public class RecordingService extends Service {
 
             Range<Integer> fpsRange = Range.create(getCameraFrameRate(), getCameraFrameRate());
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
-
-            cameraDevice.createCaptureSession(surfaces,
-                    new CameraCaptureSession.StateCallback() {
-                        @Override
-                        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                            captureSession = cameraCaptureSession;
-
-                            try {
-                                cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                            } catch (CameraAccessException | IllegalArgumentException e) {
-                                Log.e(TAG, "onConfigured: Error setting repeating request", e);
-                                e.printStackTrace();
-                            } catch (IllegalStateException e) {
-                                Log.e(TAG, "onConfigured: Error camera session", e);
-                                e.printStackTrace();
-                            }
-
-                            if(recordingState.equals(RecordingState.NONE)) {
-                                recordingStartTime = SystemClock.elapsedRealtime();
-                                mediaRecorder.start();
-                            }
-
-                            setupRecordingInProgressNotification();
-
-                            if(recordingState.equals(RecordingState.PAUSED)) {
-                                recordingState = RecordingState.IN_PROGRESS;
-                                broadcastOnRecordingResumed();
-                            } else {
-                                recordingState = RecordingState.IN_PROGRESS;
-                                broadcastOnRecordingStarted();
-                            }
-                        }
-
-                        @Override
-                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            Log.e(TAG, "onConfigureFailed: Failed to configure capture session");
-                        }
-                    }, null);
+            cameraDevice.createCaptureSession(surfaces, new CaptureSessionCallback(), null);
         } catch (CameraAccessException e) {
             Log.e(TAG, "createCameraPreviewSession: Error while creating capture session", e);
+        }
+    }
+
+    public class CaptureSessionCallback extends CameraCaptureSession.StateCallback {
+        @Override
+        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+            captureSession = cameraCaptureSession;
+
+            try {
+                cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+            } catch (CameraAccessException | IllegalArgumentException e) {
+                Log.e(TAG, "onConfigured: Error setting repeating request", e);
+                e.printStackTrace();
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "onConfigured: Error camera session", e);
+                e.printStackTrace();
+            }
+
+            if (recordingState.equals(RecordingState.NONE)) {
+                recordingStartTime = SystemClock.elapsedRealtime();
+                mediaRecorder.start();
+                setupRecordingInProgressNotification();
+                recordingState = RecordingState.IN_PROGRESS;
+                broadcastOnRecordingStarted();
+            } else if (recordingState.equals(RecordingState.PAUSED)) {
+                mediaRecorder.resume();
+                setupRecordingInProgressNotification();
+                recordingState = RecordingState.IN_PROGRESS;
+                showRecordingResumedToast();
+                broadcastOnRecordingResumed();
+            }
+        }
+
+        @Override
+        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+            Log.e(TAG, "onConfigureFailed: Failed to configure capture session");
         }
     }
 
@@ -365,7 +374,6 @@ public class RecordingService extends Service {
                     if(isRecording()) {
                         Log.e(TAG, "onDisconnected: Camera paused");
                         pauseRecording();
-                        showPausedNotification();
                     } else {
                         Log.e(TAG, "onDisconnected: Camera closing");
                     }
@@ -381,7 +389,6 @@ public class RecordingService extends Service {
                     if(isRecording()) {
                         Log.e(TAG, "onError: Camera paused");
                         pauseRecording();
-                        showPausedNotification();
                     } else {
                         Log.e(TAG, "onError: Camera closing");
                     }
@@ -402,13 +409,12 @@ public class RecordingService extends Service {
             return;
         }
 
-        if(cameraDevice == null) {
-            openCamera();
-        }
-
         if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             Log.e(TAG, "startRecording: External storage not available, cannot start recording.");
+            return;
         }
+
+        openCamera();
     }
 
     private void resumeRecording()
@@ -416,13 +422,12 @@ public class RecordingService extends Service {
         if(cameraDevice != null) {
             mediaRecorder.resume();
             setupRecordingInProgressNotification();
+            recordingState = RecordingState.IN_PROGRESS;
+            showRecordingResumedToast();
+            broadcastOnRecordingResumed();
         } else {
             openCamera();
         }
-
-        recordingState = RecordingState.IN_PROGRESS;
-
-        broadcastOnRecordingResumed();
     }
 
     private void pauseRecording()
@@ -433,7 +438,11 @@ public class RecordingService extends Service {
 
         setupRecordingResumeNotification();
 
+        showRecordingInPausedToast();
+
         broadcastOnRecordingPaused();
+
+        Toast.makeText(this, R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
     }
 
     private void stopRecording() {
@@ -447,6 +456,7 @@ public class RecordingService extends Service {
 
         if (mediaRecorder != null) {
             try {
+                mediaRecorder.resume();
                 mediaRecorder.stop();
                 mediaRecorder.reset();
             } catch (IllegalStateException e) {
@@ -473,20 +483,19 @@ public class RecordingService extends Service {
 
         cancelNotification();
 
-        isProcessingWatermark = true;
-
         processLatestVideoFileWithWatermark();
-
-        isProcessingWatermark = false;
 
         broadcastOnRecordingStopped();
 
-        if(recordingState.equals(RecordingState.NONE) && !isProcessingWatermark) {
+        Toast.makeText(this, R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
+
+        if(!isWorkingInProgress()) {
             stopSelf();
         }
     }
 
     private void processLatestVideoFileWithWatermark() {
+        isProcessingWatermark = true;
         File latestVideoFile = getLatestVideoFile();
         if (latestVideoFile != null) {
             String inputFilePath = latestVideoFile.getAbsolutePath();
@@ -500,6 +509,7 @@ public class RecordingService extends Service {
         } else {
             Log.e(TAG, "No video file found.");
         }
+        isProcessingWatermark = false;
     }
 
     private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath) {
@@ -769,7 +779,11 @@ public class RecordingService extends Service {
         notificationManager.cancel(NOTIFICATION_ID);
     }
 
-    private void showPausedNotification() {
+    private void showRecordingResumedToast() {
+        Toast.makeText(getApplicationContext(), getText(R.string.video_recording_resumed), Toast.LENGTH_SHORT).show();
+    }
+
+    private void showRecordingInPausedToast() {
         Toast.makeText(getApplicationContext(), getText(R.string.video_recording_paused), Toast.LENGTH_SHORT).show();
     }
 

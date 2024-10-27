@@ -333,7 +333,6 @@ public class HomeFragment extends Fragment {
 
         sharedPreferences = requireActivity().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
 
-        //cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         Log.d(TAG, "HomeFragment created.");
 
         // Request essential permissions on every launch
@@ -410,16 +409,12 @@ public class HomeFragment extends Fragment {
                         if(isRecording()) {
                             updateRecordingSurface();
                         } else {
-                            onRecordingStarted();
+                            onRecordingStarted(false);
                             updateRecordingSurface();
                         }
                         break;
                     case PAUSED:
                         onRecordingPaused();
-                        // BUG
-                        if(recordingState.equals(RecordingState.NONE)) {
-                            updateRecordingSurface();
-                        }
                         break;
                 }
 
@@ -435,7 +430,7 @@ public class HomeFragment extends Fragment {
             {
                 recordingStartTime = i.getLongExtra(Constants.BROADCAST_EXTRA_RECORDING_START_TIME, 0);
 
-                onRecordingStarted();
+                onRecordingStarted(true);
             }
         };
     }
@@ -466,13 +461,11 @@ public class HomeFragment extends Fragment {
             public void onReceive(Context context, Intent i)
             {
                 onRecordingStopped();
-
-                Toast.makeText(getContext(), R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
             }
         };
     }
 
-    private void onRecordingStarted() {
+    private void onRecordingStarted(boolean toast) {
         recordingState = RecordingState.IN_PROGRESS;
 
         acquireWakeLock();
@@ -486,14 +479,24 @@ public class HomeFragment extends Fragment {
         buttonCamSwitch.setEnabled(false);
 
         startUpdatingInfo();
-        vibrateTouch();
 
-        Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
+        if(toast) {
+            vibrateTouch();
+            Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void onRecordingResumed()
     {
         recordingState = RecordingState.IN_PROGRESS;
+
+        buttonPauseResume.setText(getString(R.string.button_pause));
+        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setEnabled(true);
+
+        buttonStartStop.setText(getString(R.string.button_stop));
+        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setEnabled(true);
 
         buttonCamSwitch.setEnabled(false);
 
@@ -525,13 +528,15 @@ public class HomeFragment extends Fragment {
 
         setupStartStopButton();
 
+        buttonPauseResume.setText(getString(R.string.button_pause));
+        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
         buttonPauseResume.setEnabled(false);
+
         buttonCamSwitch.setEnabled(true);
 
         updatePreviewVisibility();
 
         stopUpdatingInfo();
-        updateStorageInfo();
     }
 
     @Override
@@ -559,10 +564,8 @@ public class HomeFragment extends Fragment {
 
         Log.d(TAG, "HomeFragment resumed.");
 
-        if(!isRecording())
-        {
-            setupStartStopButton();
-        }
+        setupStartStopButton();
+        fetchRecordingState();
 
         updateStats();
     }
@@ -704,14 +707,8 @@ public class HomeFragment extends Fragment {
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
                 surfaceTexture.setDefaultBufferSize(720, 1080);
                 textureView.setVisibility(View.INVISIBLE);
-                Log.e("TEST","onSurfaceTextureAvailable");
-                fetchRecordingState();
 
-                /*
-                if(isRecording())
-                {
-                    updateRecordingSurface();
-                }*/
+                fetchRecordingState();
             }
 
             @Override
@@ -784,11 +781,9 @@ public class HomeFragment extends Fragment {
         buttonPauseResume.setOnClickListener(v -> {
             if (isPaused()) {
                 vibrateTouch();
-                Toast.makeText(getContext(), R.string.video_recording_resumed, Toast.LENGTH_SHORT).show();
                 resumeRecording();
             } else {
                 vibrateTouch();
-                Toast.makeText(getContext(), R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
                 pauseRecording();
             }
         });
@@ -823,9 +818,6 @@ public class HomeFragment extends Fragment {
 
         tvPreviewPlaceholder.setVisibility(View.GONE);
         textureView.setVisibility(View.VISIBLE);
-
-        buttonStartStop.setEnabled(false);
-        buttonCamSwitch.setEnabled(false);
 
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
         startIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
@@ -1194,7 +1186,7 @@ public class HomeFragment extends Fragment {
         // Stop the recording service
         Intent stopIntent = new Intent(getActivity(), RecordingService.class);
         stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
-        getActivity().startService(stopIntent);
+        requireActivity().startService(stopIntent);
 
         vibrateTouch();
     }

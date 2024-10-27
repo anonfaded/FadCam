@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
         applyLanguage(savedLanguageCode);  // Apply the language preference
 
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); setContentView(R.layout.activity_main); //force dark theme even on light themed devices
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); //force dark theme even on light themed devices
         setContentView(R.layout.activity_main);
 
         viewPager = findViewById(R.id.view_pager);
