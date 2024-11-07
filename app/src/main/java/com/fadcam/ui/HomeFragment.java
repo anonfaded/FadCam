@@ -1,6 +1,6 @@
 package com.fadcam.ui;
 
-// Importaciones de Android
+// Android imports
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -48,7 +48,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-// Importaciones de AndroidX
+// AndroidX imports
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
@@ -56,20 +56,20 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-// Importaciones de Material Components
+// Material Components imports
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-// Importaciones de FFmpegKit
+// FFmpegKit imports
 import com.arthenica.ffmpegkit.ExecuteCallback;
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.Session;
 
-// Importaciones de tu aplicación
+// Your app imports
 import com.fadcam.Constantes;
 import com.fadcam.R;
 import com.fadcam.RecordingService;
 
-// Importaciones de Java
+// Java imports
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -91,9 +91,6 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
-
-
-
 
 public class HomeFragment extends Fragment {
 
@@ -156,11 +153,9 @@ public class HomeFragment extends Fragment {
     private TextView tvTip;
     private String[] tips;
 
-
     private int currentTipIndex = 0;
 
     private TextView tvStats;
-
 
     private List<String> messageQueue;
     private List<String> recentlyShownMessages;
@@ -170,7 +165,7 @@ public class HomeFragment extends Fragment {
     private static final int REQUEST_PERMISSIONS = 1;
     private android.os.PowerManager.WakeLock wakeLock;  // Full path for clarity
 
-    // important
+    // Important
     private void requestEssentialPermissions() {
         Log.d(TAG, "requestEssentialPermissions: Requesting essential permissions");
         String[] permissions;
@@ -308,7 +303,6 @@ public class HomeFragment extends Fragment {
                 // Show random funny message
                 showRandomMessage();
 
-
                 // Ensure the placeholder is visible
                 tvPreviewPlaceholder.setVisibility(View.VISIBLE);
                 tvPreviewPlaceholder.setPadding(16, tvPreviewPlaceholder.getPaddingTop(), 16, tvPreviewPlaceholder.getPaddingBottom());
@@ -396,7 +390,6 @@ public class HomeFragment extends Fragment {
 
         // Request essential permissions on every launch
         requestEssentialPermissions();
-
     }
 
     @Override
@@ -461,7 +454,7 @@ public class HomeFragment extends Fragment {
         editor.apply();
     }
 
-    //    function to use haptic feedbacks
+    // Function to use haptic feedbacks
     private void vibrateTouch() {
         // Haptic Feedback
         Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
@@ -508,7 +501,7 @@ public class HomeFragment extends Fragment {
 
         resetTimers();
 
-        // Mover la copia de fuentes a un hilo de fondo
+        // Move font copying to a background thread
         executorService.execute(() -> {
             copyFontToInternalStorage();
         });
@@ -545,21 +538,20 @@ public class HomeFragment extends Fragment {
 
     private void showPermissionsInfoDialog() {
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Permisos Requeridos")
-                .setMessage("Esta aplicación necesita permisos de cámara, micrófono y almacenamiento para funcionar correctamente. Por favor, habilita estos permisos desde la configuración de la aplicación.")
+                .setTitle("Required Permissions")
+                .setMessage("This app needs camera, microphone, and storage permissions to function properly. Please enable these permissions from the app settings.")
                 .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
     private void debugPermissionsStatus() {
-        Log.d(TAG, "Permiso de cámara: " +
-                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ? "Concedido" : "Denegado"));
-        Log.d(TAG, "Permiso de grabar audio: " +
-                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ? "Concedido" : "Denegado"));
-        Log.d(TAG, "Permiso de almacenamiento externo: " +
-                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ? "Concedido" : "Denegado"));
+        Log.d(TAG, "Camera permission: " +
+                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
+        Log.d(TAG, "Record audio permission: " +
+                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
+        Log.d(TAG, "External storage permission: " +
+                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
     }
-
 
     private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
@@ -623,7 +615,6 @@ public class HomeFragment extends Fragment {
         });
     }
 
-
     private void addWobbleAnimation() {
         // Define the scale down and scale up values
         float scaleDown = 0.9f;
@@ -673,7 +664,6 @@ public class HomeFragment extends Fragment {
         scaleDownSet.start();
     }
 
-
     private void showDisplayOptionsDialog() {
         new MaterialAlertDialogBuilder(getContext())
                 .setTitle(getString(R.string.dialog_clock_title))
@@ -702,12 +692,10 @@ public class HomeFragment extends Fragment {
         editor.apply();
     }
 
-
     private void showOptionsAndAnimate() {
         addWobbleAnimation();
         showDisplayOptionsDialog();
     }
-
 
     // Method to update the clock and dates
     private void updateClock() {
@@ -737,7 +725,6 @@ public class HomeFragment extends Fragment {
 
         tvDateArabic.setText(displayOption == 2 ? currentDateArabic : "");
     }
-
 
     private void updateStorageInfo() {
         Log.d(TAG, "updateStorageInfo: Updating storage information");
@@ -786,7 +773,7 @@ public class HomeFragment extends Fragment {
     private String formatRemainingTime(long days, long hours, long minutes, long seconds) {
         StringBuilder remainingTime = new StringBuilder();
         if (days > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'> días</font> ", days));
+            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'> days</font> ", days));
         }
         if (hours > 0) {
             remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>h</font> ", hours));
@@ -807,7 +794,7 @@ public class HomeFragment extends Fragment {
         return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
     }
 
-    //    update storage and stats in real time while recording is started
+    // Update storage and stats in real time while recording is started
     private void startUpdatingInfo() {
         Log.d(TAG, "startUpdatingInfo: Beginning real-time updates");
         updateInfoRunnable = new Runnable() {
@@ -892,18 +879,17 @@ public class HomeFragment extends Fragment {
 
     private void pauseRecording() {
         Log.d(TAG, "pauseRecording: Pausing video recording");
-        // La pausa se maneja en el RecordingService, no en el Fragment
-        // Por lo tanto, podrías implementar una comunicación adicional si deseas pausar ambas cámaras
-        // Por simplicidad, este método muestra solo un Toast
-        Toast.makeText(getContext(), "Funcionalidad de pausar no implementada.", Toast.LENGTH_SHORT).show();
+        // Pause is handled in the RecordingService, not in the Fragment
+        // Therefore, you could implement additional communication if you want to pause both cameras
+        // For simplicity, this method only shows a Toast
+        Toast.makeText(getContext(), "Pause functionality not implemented.", Toast.LENGTH_SHORT).show();
     }
 
     private void resumeRecording() {
         Log.d(TAG, "resumeRecording: Resuming video recording");
-        // Similar a pauseRecording, manejar en el RecordingService si es necesario
-        Toast.makeText(getContext(), "Funcionalidad de reanudar no implementada.", Toast.LENGTH_SHORT).show();
+        // Similar to pauseRecording, handle in the RecordingService if necessary
+        Toast.makeText(getContext(), "Resume functionality not implemented.", Toast.LENGTH_SHORT).show();
     }
-
 
     private BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
         @Override
@@ -928,7 +914,6 @@ public class HomeFragment extends Fragment {
             }
         }
     };
-
 
     private void startRecording() {
         Log.d(TAG, "startRecording: Initiating dual video recording");
@@ -961,7 +946,6 @@ public class HomeFragment extends Fragment {
         requireActivity().startService(startIntent);
     }
 
-
     private void stopRecording() {
         Log.d(TAG, "stopRecording: Stopping dual video recording");
 
@@ -987,26 +971,26 @@ public class HomeFragment extends Fragment {
             stopUpdatingInfo();
             updateStorageInfo();
 
-            // Mostrar un mensaje de que los videos se están procesando
+            // Show a message that the videos are being processed
             Toast.makeText(getContext(),
-                    "Procesando videos, por favor espere...",
+                    "Processing videos, please wait...",
                     Toast.LENGTH_LONG).show();
 
-            // Deshabilitar temporalmente los botones
+            // Temporarily disable buttons
             buttonStartStop.setEnabled(false);
             buttonCamSwitch.setEnabled(false);
 
-            // Procesar los videos en segundo plano
+            // Process the videos in the background
             executorService.execute(() -> {
                 try {
                     processLatestVideos();
 
-                    // Actualizar UI en el hilo principal
+                    // Update UI on the main thread
                     new Handler(Looper.getMainLooper()).post(() -> {
                         Toast.makeText(getContext(),
-                                "Videos guardados correctamente",
+                                "Videos saved successfully",
                                 Toast.LENGTH_SHORT).show();
-                        // Reactivar los botones
+                        // Reactivate buttons
                         buttonStartStop.setEnabled(true);
                         buttonCamSwitch.setEnabled(true);
                     });
@@ -1014,9 +998,9 @@ public class HomeFragment extends Fragment {
                     Log.e(TAG, "Error processing videos: " + e.getMessage());
                     new Handler(Looper.getMainLooper()).post(() -> {
                         Toast.makeText(getContext(),
-                                "Error al procesar los videos",
+                                "Error processing videos",
                                 Toast.LENGTH_SHORT).show();
-                        // Reactivar los botones incluso si hay error
+                        // Reactivate buttons even if there is an error
                         buttonStartStop.setEnabled(true);
                         buttonCamSwitch.setEnabled(true);
                     });
@@ -1030,10 +1014,10 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // Nuevo método para procesar los últimos videos grabados
+    // New method to process the latest recorded videos
     private void processLatestVideos() {
         try {
-            // Esperar un poco más antes de procesar los archivos
+            // Wait a little longer before processing the files
             Thread.sleep(3000);
 
             File videoDir = new File(requireActivity().getExternalFilesDir(null), "FadCam");
@@ -1042,15 +1026,15 @@ public class HomeFragment extends Fragment {
                 return;
             }
 
-            // Obtener todos los archivos
+            // Get all files
             File[] allFiles = videoDir.listFiles();
             if (allFiles == null) return;
 
-            // Mapas para mantener solo el archivo más reciente de cada tipo
+            // Maps to keep only the most recent file of each type
             Map<String, File> latestFiles = new HashMap<>();
             Map<String, Long> latestTimes = new HashMap<>();
 
-            // Primero, eliminar cualquier archivo temporal anterior que pudiera haber quedado
+            // First, delete any previous temporary files that might have been left
             for (File file : allFiles) {
                 String name = file.getName();
                 if (name.startsWith("temp_")) {
@@ -1058,7 +1042,7 @@ public class HomeFragment extends Fragment {
                     long modTime = file.lastModified();
 
                     if (!latestFiles.containsKey(type) || modTime > latestTimes.get(type)) {
-                        // Si ya había un archivo anterior de este tipo, eliminarlo
+                        // If there was already a previous file of this type, delete it
                         if (latestFiles.containsKey(type)) {
                             File oldFile = latestFiles.get(type);
                             if (oldFile.exists()) {
@@ -1069,14 +1053,14 @@ public class HomeFragment extends Fragment {
                         latestFiles.put(type, file);
                         latestTimes.put(type, modTime);
                     } else {
-                        // Este es un archivo más antiguo, eliminarlo
+                        // This is an older file, delete it
                         file.delete();
                         Log.d(TAG, "Deleted older temp file: " + file.getName());
                     }
                 }
             }
 
-            // Procesar los archivos más recientes
+            // Process the most recent files
             for (File file : latestFiles.values()) {
                 if (file.exists()) {
                     String inputFilePath = file.getAbsolutePath();
@@ -1087,14 +1071,14 @@ public class HomeFragment extends Fragment {
                     if (!outputFile.exists()) {
                         Log.d(TAG, "Processing video: " + inputFilePath);
                         addTextWatermarkToVideo(inputFilePath, outputFilePath, () -> {
-                            // Eliminar el archivo temporal después de procesar
+                            // Delete the temporary file after processing
                             if (file.exists()) {
                                 file.delete();
                                 Log.d(TAG, "Deleted temp file after processing: " + file.getName());
                             }
                         });
                     } else {
-                        // Si ya existe el archivo FADCAM_, eliminar el temporal
+                        // If the FADCAM_ file already exists, delete the temp
                         file.delete();
                         Log.d(TAG, "Deleted duplicate temp file: " + file.getName());
                     }
@@ -1107,7 +1091,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // Nuevo método para procesar video y esperar a que termine
+    // New method to process video and wait for it to finish
     private void processVideoAndWait(File video) {
         if (video == null || !video.exists()) {
             Log.e(TAG, "Invalid video file");
@@ -1120,12 +1104,12 @@ public class HomeFragment extends Fragment {
         File outputFile = new File(outputFilePath);
 
         if (outputFile.exists()) {
-            // Si ya existe el archivo FADCAM_, eliminar el temporal
+            // If the FADCAM_ file already exists, delete the temp
             video.delete();
             return;
         }
 
-        // Crear un semáforo para esperar a que termine el procesamiento
+        // Create a semaphore to wait for processing to finish
         final Object lock = new Object();
         final boolean[] processingComplete = {false};
 
@@ -1136,11 +1120,11 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Esperar a que termine el procesamiento
+        // Wait for processing to finish
         synchronized (lock) {
             try {
                 while (!processingComplete[0]) {
-                    lock.wait(5000); // Esperar máximo 5 segundos
+                    lock.wait(5000); // Wait a maximum of 5 seconds
                 }
             } catch (InterruptedException e) {
                 Log.e(TAG, "Processing interrupted: " + e.getMessage());
@@ -1148,7 +1132,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // Nuevo método para procesar un video individual
+    // New method to process an individual video
     private void processVideo(File video) {
         if (video == null || !video.exists()) {
             Log.e(TAG, "Invalid video file");
@@ -1185,7 +1169,7 @@ public class HomeFragment extends Fragment {
         captureRequestBuilder = null;
     }
 
-// below methods are new
+    // Below methods are new
 
     private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath, Runnable onComplete) {
         String fontPath = getContext().getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
@@ -1232,7 +1216,7 @@ public class HomeFragment extends Fragment {
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
             if (session.getReturnCode().isSuccess()) {
                 Log.d(TAG, "Watermark added successfully to: " + outputFilePath);
-                // Eliminar el archivo temporal después de procesar exitosamente
+                // Delete the temporary file after successful processing
                 File inputFile = new File(inputFilePath);
                 if (inputFile.exists()) {
                     if (inputFile.delete()) {
@@ -1243,14 +1227,14 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "Failed to add watermark: " + session.getFailStackTrace());
             }
 
-            // Llamar al callback cuando termine
+            // Call the callback when finished
             if (onComplete != null) {
                 onComplete.run();
             }
         });
     }
 
-    // Añadir esta sobrecarga del método
+    // Add this method overload
     private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath) {
         addTextWatermarkToVideo(inputFilePath, outputFilePath, null);
     }
@@ -1319,12 +1303,10 @@ public class HomeFragment extends Fragment {
         }
     }
 
-
     private String getCurrentTimestamp() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.ENGLISH);
         return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
-
 
     private String convertArabicNumeralsToEnglish(String text) {
         if (text == null) return null;
@@ -1340,13 +1322,10 @@ public class HomeFragment extends Fragment {
                 .replaceAll("٩", "9");
     }
 
-
-
     private String getWatermarkOption() {
         SharedPreferences sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
         return sharedPreferences.getString("watermark_option", "timestamp_fadcam");
     }
-
 
     private void copyFontToInternalStorage() {
         AssetManager assetManager = getContext().getAssets();
@@ -1358,7 +1337,6 @@ public class HomeFragment extends Fragment {
             Log.e(TAG, "Error copying font to internal storage: " + e.getMessage());
         }
     }
-
 
     public void switchCamera() {
         String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
@@ -1373,32 +1351,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-//    private class LocationHelper implements LocationListener {
-//
-//        private LocationManager locationManager;
-//        private double latitude;
-//        private double longitude;
-//
-//        public LocationHelper(LocationManager locationManager) {
-//            this.locationManager = locationManager;
-//        }
-//
-//        public void startListening() {
-//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-//        }
-//
-//        @Override
-//        public void onLocationChanged(Location location) {
-//            latitude = location.getLatitude();
-//            longitude = location.getLongitude();
-//        }
-//
-//        public String getLocationText() {
-//            return String.format(Locale.getDefault(), "%.2f, %.2f", latitude, longitude);
-//        }
-//    }
-
-
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int read;
@@ -1407,31 +1359,23 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void setupStartStopButton()
-    {
+    private void setupStartStopButton() {
         if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_FHD)) {
             buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_HD)) {
+        } else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_HD)) {
             buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_SD)) {
+        } else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_SD)) {
             buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_FHD)) {
+        } else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_FHD)) {
             buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_HD)) {
+        } else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_HD)) {
             buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_SD)) {
+        } else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_SD)) {
             buttonStartStop.setEnabled(false);
-        }
-        else {
+        } else {
             buttonStartStop.setEnabled(true);
         }
     }
-
 
     @Override
     public void onDestroyView() {
@@ -1440,7 +1384,7 @@ public class HomeFragment extends Fragment {
         stopUpdatingInfo();
         stopUpdatingClock();
         releaseCamera();
-        executorService.shutdown(); // Cerrar el ExecutorService
+        executorService.shutdown(); // Close the ExecutorService
     }
 
     private void setVideoBitrate() {
@@ -1463,7 +1407,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void startMonitoring() {
-        final long CHECK_INTERVAL_MS = 1000; // 1 segundo
+        final long CHECK_INTERVAL_MS = 1000; // 1 second
 
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             checkAndDeleteSpecificTempFile();
@@ -1485,7 +1429,7 @@ public class HomeFragment extends Fragment {
             File outputFile = new File(outputFilePath);
 
             if (outputFile.exists()) {
-                // Si el archivo FADCAM_ existe, eliminar el archivo temporal
+                // If the FADCAM_ file exists, delete the temp file
                 if (tempFileBeingProcessed.delete()) {
                     Log.d(TAG, "Temp file deleted successfully: " + tempFileBeingProcessed.getName());
                 } else {
@@ -1499,8 +1443,8 @@ public class HomeFragment extends Fragment {
     }
 
     private String extractTimestamp(String filename) {
-        // Asumiendo formato de nombre: "temp_TYPE_TIMESTAMP.mp4"
-        // donde TYPE puede ser "front" o "back"
+        // Assuming name format: "temp_TYPE_TIMESTAMP.mp4"
+        // where TYPE can be "front" or "back"
         int startIndex = filename.lastIndexOf('_') + 1;
         int endIndex = filename.lastIndexOf('.');
         if (startIndex < endIndex) {
@@ -1522,9 +1466,9 @@ public class HomeFragment extends Fragment {
             return null;
         }
 
-        // Ordenar por fecha de modificación (más reciente primero)
+        // Sort by modification date (most recent first)
         Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
 
-        return files[0]; // Retornar el archivo más reciente
+        return files[0]; // Return the most recent file
     }
 }
