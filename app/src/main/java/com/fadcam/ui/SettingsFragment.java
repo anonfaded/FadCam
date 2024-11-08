@@ -1,8 +1,10 @@
 package com.fadcam.ui;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -66,7 +68,8 @@ public class SettingsFragment extends Fragment {
 
     private Spinner frameRateSpinner;
 
-    MaterialButtonToggleGroup cameraSelectionToggle;
+    private MaterialButtonToggleGroup cameraSelectionToggle;
+    private MaterialButton buttonBackCamera, buttonFrontCamera, buttonDualCamera;
     View view;
 
     private void vibrateTouch() {
@@ -92,31 +95,46 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        sharedPreferences = requireActivity().getSharedPreferences("com.fadcam_preferences", Context.MODE_PRIVATE);
         locationHelper = new LocationHelper(requireContext());
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        // Registrar el receptor con try-catch
+        try {
+            IntentFilter filter = new IntentFilter("CAMERA_SELECTION_CHANGED");
+            requireActivity().registerReceiver(cameraSelectionReceiver, filter);
+        } catch (Exception e) {
+            Log.e("SettingsFragment", "Error registering receiver: " + e.getMessage());
+        }
         syncCameraSwitch(view, cameraSelectionToggle);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Desregistrar el receptor con try-catch
+        try {
+            if (cameraSelectionReceiver != null) {
+                requireActivity().unregisterReceiver(cameraSelectionReceiver);
+            }
+        } catch (Exception e) {
+            Log.e("SettingsFragment", "Error unregistering receiver: " + e.getMessage());
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        // Initialize shared preferences
-        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
-
-        // Setup  language selection spinner items with array resource
+        // Setup language selection spinner items with array resource
         Spinner languageSpinner = view.findViewById(R.id.language_spinner);
-        ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
+        ArrayAdapter<CharSequence> languageAdapter = ArrayAdapter.createFromResource(
                 getContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
-        languageAdapter .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        languageSpinner.setAdapter(languageAdapter );
-
-        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        languageSpinner.setAdapter(languageAdapter);
 
         MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
 
@@ -124,6 +142,39 @@ public class SettingsFragment extends Fragment {
         readmeButton.setOnClickListener(v -> showReadmeDialog());
 
         cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
+        buttonBackCamera = view.findViewById(R.id.button_back_camera);
+        buttonFrontCamera = view.findViewById(R.id.button_front_camera);
+        buttonDualCamera = view.findViewById(R.id.button_dual_camera);
+
+        // Configurar el estado inicial basado en las preferencias guardadas
+        String currentCamera = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
+        switch (currentCamera) {
+            case Constantes.CAMERA_FRONT:
+                buttonFrontCamera.setChecked(true);
+                break;
+            case Constantes.CAMERA_DUAL:
+                buttonDualCamera.setChecked(true);
+                break;
+            default:
+                buttonBackCamera.setChecked(true);
+                break;
+        }
+
+        // Configurar listener para los cambios de selección
+        cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                String selection;
+                if (checkedId == R.id.button_front_camera) {
+                    selection = Constantes.CAMERA_FRONT;
+                } else if (checkedId == R.id.button_dual_camera) {
+                    selection = Constantes.CAMERA_DUAL;
+                } else {
+                    selection = Constantes.CAMERA_BACK;
+                }
+                sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, selection).apply();
+            }
+        });
+
         // Setup spinner items with array resource
         Spinner qualitySpinner = view.findViewById(R.id.quality_spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -267,22 +318,57 @@ public class SettingsFragment extends Fragment {
 
         MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
         MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+        MaterialButton dualCameraButton = view.findViewById(R.id.button_dual_camera);
+
         String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
-        if (currentCameraSelection.equals(Constantes.CAMERA_FRONT)) {
-            cameraSelectionToggle.check(R.id.button_front_camera);
-            updateButtonAppearance(frontCameraButton, true);
-            updateButtonAppearance(backCameraButton, false);
-        } else {
-            cameraSelectionToggle.check(R.id.button_back_camera);
-            updateButtonAppearance(backCameraButton, true);
-            updateButtonAppearance(frontCameraButton, false);
+
+        // Actualizar el estado de los botones
+        switch (currentCameraSelection) {
+            case Constantes.CAMERA_FRONT:
+                cameraSelectionToggle.check(R.id.button_front_camera);
+                updateButtonAppearance(frontCameraButton, true);
+                updateButtonAppearance(backCameraButton, false);
+                updateButtonAppearance(dualCameraButton, false);
+                break;
+            case Constantes.CAMERA_DUAL:
+                cameraSelectionToggle.check(R.id.button_dual_camera);
+                updateButtonAppearance(dualCameraButton, true);
+                updateButtonAppearance(frontCameraButton, false);
+                updateButtonAppearance(backCameraButton, false);
+                break;
+            default: // CAMERA_BACK
+                cameraSelectionToggle.check(R.id.button_back_camera);
+                updateButtonAppearance(backCameraButton, true);
+                updateButtonAppearance(frontCameraButton, false);
+                updateButtonAppearance(dualCameraButton, false);
+                break;
         }
+
         cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                String selectedCamera = (checkedId == R.id.button_front_camera) ? Constantes.CAMERA_FRONT : Constantes.CAMERA_BACK;
-                sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, selectedCamera).apply();
-                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
-                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
+                String selectedCamera;
+                if (checkedId == R.id.button_front_camera) {
+                    selectedCamera = Constantes.CAMERA_FRONT;
+                    updateButtonAppearance(frontCameraButton, true);
+                    updateButtonAppearance(backCameraButton, false);
+                    updateButtonAppearance(dualCameraButton, false);
+                } else if (checkedId == R.id.button_dual_camera) {
+                    selectedCamera = Constantes.CAMERA_DUAL;
+                    updateButtonAppearance(dualCameraButton, true);
+                    updateButtonAppearance(frontCameraButton, false);
+                    updateButtonAppearance(backCameraButton, false);
+                } else {
+                    selectedCamera = Constantes.CAMERA_BACK;
+                    updateButtonAppearance(backCameraButton, true);
+                    updateButtonAppearance(frontCameraButton, false);
+                    updateButtonAppearance(dualCameraButton, false);
+                }
+
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(Constantes.PREF_CAMERA_SELECTION, selectedCamera);
+                editor.apply();
+
+                Log.d("SettingsFragment", "Camera selection changed to: " + selectedCamera);
             }
         });
     }
@@ -292,27 +378,59 @@ public class SettingsFragment extends Fragment {
     private void setupCameraSelectionToggle(View view, MaterialButtonToggleGroup cameraSelectionToggle) {
         MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
         MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+        MaterialButton dualCameraButton = view.findViewById(R.id.button_dual_camera);
 
         String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
+        Log.d("SettingsFragment", "Current camera selection: " + currentCameraSelection);
 
-        if (currentCameraSelection.equals(Constantes.CAMERA_FRONT)) {
-            cameraSelectionToggle.check(R.id.button_front_camera);
-            updateButtonAppearance(frontCameraButton, true);
-            updateButtonAppearance(backCameraButton, false);
-        } else {
-            cameraSelectionToggle.check(R.id.button_back_camera);
-            updateButtonAppearance(backCameraButton, true);
-            updateButtonAppearance(frontCameraButton, false);
+        // Actualizar el estado de los botones
+        switch (currentCameraSelection) {
+            case Constantes.CAMERA_FRONT:
+                cameraSelectionToggle.check(R.id.button_front_camera);
+                updateButtonAppearance(frontCameraButton, true);
+                updateButtonAppearance(backCameraButton, false);
+                updateButtonAppearance(dualCameraButton, false);
+                break;
+            case Constantes.CAMERA_DUAL:
+                cameraSelectionToggle.check(R.id.button_dual_camera);
+                updateButtonAppearance(dualCameraButton, true);
+                updateButtonAppearance(frontCameraButton, false);
+                updateButtonAppearance(backCameraButton, false);
+                break;
+            default: // CAMERA_BACK
+                cameraSelectionToggle.check(R.id.button_back_camera);
+                updateButtonAppearance(backCameraButton, true);
+                updateButtonAppearance(frontCameraButton, false);
+                updateButtonAppearance(dualCameraButton, false);
+                break;
         }
 
         cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                String selectedCamera = (checkedId == R.id.button_front_camera) ? Constantes.CAMERA_FRONT : Constantes.CAMERA_BACK;
-                sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, selectedCamera).apply();
-                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
-                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
+                String selectedCamera;
+                if (checkedId == R.id.button_front_camera) {
+                    selectedCamera = Constantes.CAMERA_FRONT;
+                    updateButtonAppearance(frontCameraButton, true);
+                    updateButtonAppearance(backCameraButton, false);
+                    updateButtonAppearance(dualCameraButton, false);
+                } else if (checkedId == R.id.button_dual_camera) {
+                    selectedCamera = Constantes.CAMERA_DUAL;
+                    updateButtonAppearance(dualCameraButton, true);
+                    updateButtonAppearance(frontCameraButton, false);
+                    updateButtonAppearance(backCameraButton, false);
+                } else {
+                    selectedCamera = Constantes.CAMERA_BACK;
+                    updateButtonAppearance(backCameraButton, true);
+                    updateButtonAppearance(frontCameraButton, false);
+                    updateButtonAppearance(dualCameraButton, false);
+                }
+
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(Constantes.PREF_CAMERA_SELECTION, selectedCamera);
+                editor.apply();
+
+                Log.d("SettingsFragment", "Camera selection changed to: " + selectedCamera);
             }
-            updateFrameRateSpinner();
         });
     }
 
@@ -633,5 +751,42 @@ public class SettingsFragment extends Fragment {
     private String getSharedPreferencesCameraSelection()
     {
         return sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
+    }
+
+    private BroadcastReceiver cameraSelectionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("CAMERA_SELECTION_CHANGED".equals(intent.getAction())) {
+                String newSelection = intent.getStringExtra("camera_selection");
+                if (newSelection != null) {
+                    updateCameraSelectionUI(newSelection);
+                }
+            }
+        }
+    };
+
+    private void updateCameraSelectionUI(String cameraSelection) {
+        if (cameraSelectionToggle == null) return;
+
+        switch (cameraSelection) {
+            case Constantes.CAMERA_FRONT:
+                cameraSelectionToggle.check(R.id.button_front_camera);
+                updateButtonAppearance(buttonFrontCamera, true);
+                updateButtonAppearance(buttonBackCamera, false);
+                updateButtonAppearance(buttonDualCamera, false);
+                break;
+            case Constantes.CAMERA_DUAL:
+                cameraSelectionToggle.check(R.id.button_dual_camera);
+                updateButtonAppearance(buttonDualCamera, true);
+                updateButtonAppearance(buttonFrontCamera, false);
+                updateButtonAppearance(buttonBackCamera, false);
+                break;
+            default: // CAMERA_BACK
+                cameraSelectionToggle.check(R.id.button_back_camera);
+                updateButtonAppearance(buttonBackCamera, true);
+                updateButtonAppearance(buttonFrontCamera, false);
+                updateButtonAppearance(buttonDualCamera, false);
+                break;
+        }
     }
 }
