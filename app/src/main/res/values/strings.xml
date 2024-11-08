@@ -87,6 +87,7 @@
     <string name="note_cam_sele">Select camera \n(Default: Back)</string>
     <string name="button_settings_cam_back">Back</string>
     <string name="button_settings_cam_front">Front</string>
+    <string name="button_settings_cam_dual">Dual</string>
     <string name="setting_quailty_title">Video Quality</string>
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
@@ -203,4 +204,5 @@
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
     <string name="switched_front_camera">Switched to front camera</string>
     <string name="switched_rear_camera">Switched to rear camera</string>
+    <string name="switched_dual_camera">Switched to dual camera mode</string>
 </resources>
