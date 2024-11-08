@@ -10,4 +10,5 @@ public abstract class Constantes {
 
     public static final String CAMERA_FRONT = "front";
     public static final String CAMERA_BACK = "back";
+    public static final String CAMERA_DUAL = "dual";
 }
