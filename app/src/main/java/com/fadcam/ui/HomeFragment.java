@@ -137,7 +137,6 @@ public class HomeFragment extends Fragment {
     private TextView tvPreviewPlaceholder;
     private Button buttonStartStop;
     private Button buttonPauseResume;
-    private Button buttonCamSwitch;
     private boolean isPaused = false;
     private boolean isPreviewEnabled = true;
 
@@ -164,6 +163,30 @@ public class HomeFragment extends Fragment {
 
     private static final int REQUEST_PERMISSIONS = 1;
     private android.os.PowerManager.WakeLock wakeLock;  // Full path for clarity
+
+    private BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("RECORDING_STATE_CHANGED".equals(intent.getAction())) {
+                boolean recordingState = intent.getBooleanExtra("isRecording", false);
+                if (recordingState) {
+                    buttonStartStop.setText(getString(R.string.button_stop));
+                    buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+                    buttonPauseResume.setEnabled(true);
+                    tvPreviewPlaceholder.setVisibility(View.GONE);
+                    textureView.setVisibility(View.VISIBLE);
+                    isRecording = true;
+                } else {
+                    buttonStartStop.setText(getString(R.string.button_start));
+                    buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+                    buttonPauseResume.setEnabled(false);
+                    tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+                    textureView.setVisibility(View.GONE);
+                    isRecording = false;
+                }
+            }
+        }
+    };
 
     // Important
     private void requestEssentialPermissions() {
@@ -383,7 +406,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE);
+        sharedPreferences = requireActivity().getSharedPreferences("com.fadcam_preferences", Context.MODE_PRIVATE);
         locationHelper = new LocationHelper(requireContext());
         cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         Log.d(TAG, "HomeFragment created.");
@@ -407,14 +430,17 @@ public class HomeFragment extends Fragment {
 
         Log.d(TAG, "HomeFragment resumed.");
 
-        IntentFilter filter = new IntentFilter("RECORDING_STATE_CHANGED");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        // Registrar los receivers con try-catch para evitar crashes
+        try {
+            IntentFilter filter = new IntentFilter("RECORDING_STATE_CHANGED");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                getActivity().registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                getActivity().registerReceiver(recordingStateReceiver, filter);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error registering receivers: " + e.getMessage());
         }
-
-        setupStartStopButton();
-
-        updateStats();
     }
 
     @Override
@@ -423,7 +449,14 @@ public class HomeFragment extends Fragment {
         locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
 
-        getActivity().unregisterReceiver(recordingStateReceiver);
+        // Desregistrar los receivers con try-catch
+        try {
+            if (recordingStateReceiver != null) {
+                getActivity().unregisterReceiver(recordingStateReceiver);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error unregistering receivers: " + e.getMessage());
+        }
     }
 
     private String getLocationData() {
@@ -480,7 +513,6 @@ public class HomeFragment extends Fragment {
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
-        buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         tvTip = view.findViewById(R.id.tvTip);
         tvStats = view.findViewById(R.id.tvStats);
 
@@ -581,10 +613,6 @@ public class HomeFragment extends Fragment {
                     pauseRecording();
                 }
             }
-        });
-
-        buttonCamSwitch.setOnClickListener(v -> {
-            switchCamera();
         });
     }
 
@@ -891,30 +919,6 @@ public class HomeFragment extends Fragment {
         Toast.makeText(getContext(), "Resume functionality not implemented.", Toast.LENGTH_SHORT).show();
     }
 
-    private BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if ("RECORDING_STATE_CHANGED".equals(intent.getAction())) {
-                boolean recordingState = intent.getBooleanExtra("isRecording", false);
-                if (recordingState) {
-                    buttonStartStop.setText(getString(R.string.button_stop));
-                    buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
-                    buttonPauseResume.setEnabled(true);
-                    tvPreviewPlaceholder.setVisibility(View.GONE);
-                    textureView.setVisibility(View.VISIBLE);
-                    isRecording = true;
-                } else {
-                    buttonStartStop.setText(getString(R.string.button_start));
-                    buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
-                    buttonPauseResume.setEnabled(false);
-                    tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-                    textureView.setVisibility(View.GONE);
-                    isRecording = false;
-                }
-            }
-        }
-    };
-
     private void startRecording() {
         Log.d(TAG, "startRecording: Initiating dual video recording");
 
@@ -978,7 +982,6 @@ public class HomeFragment extends Fragment {
 
             // Temporarily disable buttons
             buttonStartStop.setEnabled(false);
-            buttonCamSwitch.setEnabled(false);
 
             // Process the videos in the background
             executorService.execute(() -> {
@@ -992,7 +995,6 @@ public class HomeFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
                         // Reactivate buttons
                         buttonStartStop.setEnabled(true);
-                        buttonCamSwitch.setEnabled(true);
                     });
                 } catch (Exception e) {
                     Log.e(TAG, "Error processing videos: " + e.getMessage());
@@ -1002,7 +1004,6 @@ public class HomeFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
                         // Reactivate buttons even if there is an error
                         buttonStartStop.setEnabled(true);
-                        buttonCamSwitch.setEnabled(true);
                     });
                 }
             });
@@ -1010,7 +1011,6 @@ public class HomeFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "Error stopping recording: " + e.getMessage());
             buttonStartStop.setEnabled(true);
-            buttonCamSwitch.setEnabled(true);
         }
     }
 
@@ -1027,7 +1027,9 @@ public class HomeFragment extends Fragment {
             }
 
             // Get all files
-            File[] allFiles = videoDir.listFiles();
+            File[] allFiles = videoDir.listFiles((dir, name) ->
+                    name != null && name.startsWith("temp_"));
+
             if (allFiles == null) return;
 
             // Maps to keep only the most recent file of each type
@@ -1338,45 +1340,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    public void switchCamera() {
-        String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
-        if (currentCameraSelection.equals(Constantes.CAMERA_BACK)) {
-            sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_FRONT).apply();
-            Log.d(TAG, "Camera set to front");
-            Toast.makeText(getContext(), R.string.switched_front_camera, Toast.LENGTH_SHORT).show();
-        } else {
-            sharedPreferences.edit().putString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK).apply();
-            Log.d(TAG, "Camera set to rear");
-            Toast.makeText(getContext(), R.string.switched_rear_camera, Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void copyFile(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[1024];
-        int read;
-        while ((read = in.read(buffer)) != -1) {
-            out.write(buffer, 0, read);
-        }
-    }
-
-    private void setupStartStopButton() {
-        if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_FHD)) {
-            buttonStartStop.setEnabled(false);
-        } else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_HD)) {
-            buttonStartStop.setEnabled(false);
-        } else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_FRONT) && getCameraQuality().equals(QUALITY_SD)) {
-            buttonStartStop.setEnabled(false);
-        } else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_FHD)) {
-            buttonStartStop.setEnabled(false);
-        } else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_HD)) {
-            buttonStartStop.setEnabled(false);
-        } else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constantes.CAMERA_BACK) && getCameraQuality().equals(QUALITY_SD)) {
-            buttonStartStop.setEnabled(false);
-        } else {
-            buttonStartStop.setEnabled(true);
-        }
-    }
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -1470,5 +1433,13 @@ public class HomeFragment extends Fragment {
         Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
 
         return files[0]; // Return the most recent file
+    }
+
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+        }
     }
 }
