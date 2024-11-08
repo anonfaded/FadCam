@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -50,6 +51,9 @@ public class RecordingService extends Service {
         createNotificationChannel();
     }
 
+    /**
+     * Maneja las acciones de inicio y detención de la grabación.
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && intent.getAction() != null) {
@@ -80,18 +84,53 @@ public class RecordingService extends Service {
         }
         isRecording = true;
         startForegroundService();
-        setupAndStartRecorders();
-        openCameras();
+
+        SharedPreferences sharedPreferences = getSharedPreferences("com.fadcam_preferences", MODE_PRIVATE);
+        String cameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
+        Log.d(TAG, "Camera selection from preferences: " + cameraSelection);
+
+        setupAndStartRecorders(cameraSelection);
+        openCameras(cameraSelection);
 
         broadcastRecordingState(true);
     }
 
-    private void setupAndStartRecorders() {
-        frontVideoPath = generateVideoPath(true);
-        backVideoPath = generateVideoPath(false);
+    private void setupAndStartRecorders(String cameraSelection) {
+        Log.d(TAG, "Setting up recorders for camera: " + cameraSelection);
 
-        frontRecorder = setupMediaRecorder(frontVideoPath, true);
-        backRecorder = setupMediaRecorder(backVideoPath, false);
+        // Limpiar los recursos existentes primero
+        if (frontRecorder != null) {
+            frontRecorder.release();
+            frontRecorder = null;
+        }
+        if (backRecorder != null) {
+            backRecorder.release();
+            backRecorder = null;
+        }
+
+        switch (cameraSelection) {
+            case Constantes.CAMERA_FRONT:
+                frontVideoPath = generateVideoPath(true);
+                frontRecorder = setupMediaRecorder(frontVideoPath, true);
+                Log.d(TAG, "Front camera recorder setup completed");
+                break;
+            case Constantes.CAMERA_BACK:
+                backVideoPath = generateVideoPath(false);
+                backRecorder = setupMediaRecorder(backVideoPath, false);
+                Log.d(TAG, "Back camera recorder setup completed");
+                break;
+            case Constantes.CAMERA_DUAL:
+                // En modo dual, configurar ambos grabadores
+                frontVideoPath = generateVideoPath(true);
+                backVideoPath = generateVideoPath(false);
+                frontRecorder = setupMediaRecorder(frontVideoPath, true);
+                backRecorder = setupMediaRecorder(backVideoPath, false);
+                Log.d(TAG, "Dual camera recorder setup completed");
+                break;
+            default:
+                Log.e(TAG, "Unknown camera selection: " + cameraSelection);
+                break;
+        }
     }
 
     private MediaRecorder setupMediaRecorder(String outputPath, boolean isFrontCamera) {
@@ -107,6 +146,7 @@ public class RecordingService extends Service {
             recorder.setVideoSize(1920, 1080);
             recorder.setOutputFile(outputPath);
 
+            // Set orientation based on camera
             if (isFrontCamera) {
                 recorder.setOrientationHint(270);
             } else {
@@ -131,61 +171,74 @@ public class RecordingService extends Service {
         return new File(mediaDir, prefix + timestamp + ".mp4").getAbsolutePath();
     }
 
-    private void openCameras() {
+    private void openCameras(String cameraSelection) {
+        Log.d(TAG, "Opening cameras for mode: " + cameraSelection);
+
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
-            String frontCameraId = getFrontCameraId(manager);
-            if (frontCameraId != null) {
-                manager.openCamera(frontCameraId, new CameraDevice.StateCallback() {
-                    @Override
-                    public void onOpened(@NonNull CameraDevice camera) {
-                        frontCamera = camera;
-                        if (frontRecorder != null) {
-                            createCaptureSession(camera, frontRecorder.getSurface(), true);
-                        }
-                    }
-
-                    @Override
-                    public void onDisconnected(@NonNull CameraDevice camera) {
-                        camera.close();
-                        Log.e(TAG, "Front camera disconnected.");
-                    }
-
-                    @Override
-                    public void onError(@NonNull CameraDevice camera, int error) {
-                        camera.close();
-                        Log.e(TAG, "Error opening front camera: " + error);
-                    }
-                }, null);
+            if (cameraSelection.equals(Constantes.CAMERA_FRONT) ||
+                    cameraSelection.equals(Constantes.CAMERA_DUAL)) {
+                openFrontCamera(manager);
+                Log.d(TAG, "Front camera opened");
             }
 
-            // Open back camera
-            String backCameraId = getBackCameraId(manager);
-            if (backCameraId != null) {
-                manager.openCamera(backCameraId, new CameraDevice.StateCallback() {
-                    @Override
-                    public void onOpened(@NonNull CameraDevice camera) {
-                        backCamera = camera;
-                        if (backRecorder != null) {
-                            createCaptureSession(camera, backRecorder.getSurface(), false);
-                        }
-                    }
-
-                    @Override
-                    public void onDisconnected(@NonNull CameraDevice camera) {
-                        camera.close();
-                        Log.e(TAG, "Back camera disconnected.");
-                    }
-
-                    @Override
-                    public void onError(@NonNull CameraDevice camera, int error) {
-                        camera.close();
-                        Log.e(TAG, "Error opening back camera: " + error);
-                    }
-                }, null);
+            if (cameraSelection.equals(Constantes.CAMERA_BACK) ||
+                    cameraSelection.equals(Constantes.CAMERA_DUAL)) {
+                openBackCamera(manager);
+                Log.d(TAG, "Back camera opened");
             }
         } catch (CameraAccessException | SecurityException e) {
             Log.e(TAG, "Error accessing cameras: " + e.getMessage());
+        }
+    }
+
+    private void openFrontCamera(CameraManager manager) throws CameraAccessException {
+        String frontCameraId = getFrontCameraId(manager);
+        if (frontCameraId != null) {
+            manager.openCamera(frontCameraId, new CameraDevice.StateCallback() {
+                @Override
+                public void onOpened(@NonNull CameraDevice camera) {
+                    frontCamera = camera;
+                    if (frontRecorder != null) {
+                        createCaptureSession(camera, frontRecorder.getSurface(), true);
+                    }
+                }
+
+                @Override
+                public void onDisconnected(@NonNull CameraDevice camera) {
+                    camera.close();
+                }
+
+                @Override
+                public void onError(@NonNull CameraDevice camera, int error) {
+                    camera.close();
+                }
+            }, null);
+        }
+    }
+
+    private void openBackCamera(CameraManager manager) throws CameraAccessException {
+        String backCameraId = getBackCameraId(manager);
+        if (backCameraId != null) {
+            manager.openCamera(backCameraId, new CameraDevice.StateCallback() {
+                @Override
+                public void onOpened(@NonNull CameraDevice camera) {
+                    backCamera = camera;
+                    if (backRecorder != null) {
+                        createCaptureSession(camera, backRecorder.getSurface(), false);
+                    }
+                }
+
+                @Override
+                public void onDisconnected(@NonNull CameraDevice camera) {
+                    camera.close();
+                }
+
+                @Override
+                public void onError(@NonNull CameraDevice camera, int error) {
+                    camera.close();
+                }
+            }, null);
         }
     }
 
@@ -234,6 +287,7 @@ public class RecordingService extends Service {
         isRecording = false;
 
         try {
+            // Stop and release front camera resources
             if (frontRecorder != null) {
                 try {
                     frontRecorder.stop();
@@ -245,6 +299,7 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Front recorder stopped and released.");
             }
 
+            // Stop and release back camera resources
             if (backRecorder != null) {
                 try {
                     backRecorder.stop();
@@ -256,6 +311,7 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Back recorder stopped and released.");
             }
 
+            // Close camera sessions
             if (frontSession != null) {
                 frontSession.close();
                 frontSession = null;
@@ -267,6 +323,7 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Back camera session closed.");
             }
 
+            // Close camera devices
             if (frontCamera != null) {
                 frontCamera.close();
                 frontCamera = null;
@@ -280,7 +337,8 @@ public class RecordingService extends Service {
 
             stopForeground(true);
             stopSelf();
-            
+
+            // Comunicar al HomeFragment que la grabación ha finalizado
             broadcastRecordingState(false);
 
         } catch (Exception e) {
@@ -312,7 +370,7 @@ public class RecordingService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Grabación Dual")
                 .setContentText("Grabando con ambas cámaras")
-                .setSmallIcon(R.drawable.unknown_icon3)
+                .setSmallIcon(R.drawable.unknown_icon3) // Asegúrate de tener este ícono en tus recursos
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
 
@@ -338,7 +396,12 @@ public class RecordingService extends Service {
         super.onDestroy();
         stopDualRecording();
     }
-    
+
+    /**
+     * Envía una transmisión para informar al HomeFragment sobre el estado de grabación.
+     *
+     * @param recordingState true si está grabando, false si no.
+     */
     private void broadcastRecordingState(boolean recordingState) {
         Intent intent = new Intent("RECORDING_STATE_CHANGED");
         intent.putExtra("isRecording", recordingState);
