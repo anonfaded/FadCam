@@ -288,17 +288,6 @@
             android:text="@string/button_pause" />
             android:enabled="false"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonCamSwitch"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            app:icon="@drawable/cam_switch"
-            app:iconSize="24dp"
-            android:paddingLeft="12dp"
-            android:paddingRight="0dp"
-            app:cornerRadius="15dp" />
-
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
