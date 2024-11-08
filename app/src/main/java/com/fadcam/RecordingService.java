@@ -52,7 +52,7 @@ public class RecordingService extends Service {
     }
 
     /**
-     * Maneja las acciones de inicio y detención de la grabación.
+     * Handles recording start and stop actions.
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -65,7 +65,7 @@ public class RecordingService extends Service {
                     stopDualRecording();
                     break;
                 default:
-                    Log.w(TAG, "Acción desconocida: " + intent.getAction());
+                    Log.w(TAG, "Unknown action: " + intent.getAction());
             }
         }
         return START_STICKY;
@@ -98,7 +98,7 @@ public class RecordingService extends Service {
     private void setupAndStartRecorders(String cameraSelection) {
         Log.d(TAG, "Setting up recorders for camera: " + cameraSelection);
 
-        // Limpiar los recursos existentes primero
+        // Clear existing resources first
         if (frontRecorder != null) {
             frontRecorder.release();
             frontRecorder = null;
@@ -120,7 +120,7 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Back camera recorder setup completed");
                 break;
             case Constantes.CAMERA_DUAL:
-                // En modo dual, configurar ambos grabadores
+                // In dual mode, set up both recorders
                 frontVideoPath = generateVideoPath(true);
                 backVideoPath = generateVideoPath(false);
                 frontRecorder = setupMediaRecorder(frontVideoPath, true);
@@ -338,7 +338,7 @@ public class RecordingService extends Service {
             stopForeground(true);
             stopSelf();
 
-            // Comunicar al HomeFragment que la grabación ha finalizado
+            // Communicate to HomeFragment that recording has finished
             broadcastRecordingState(false);
 
         } catch (Exception e) {
@@ -368,9 +368,9 @@ public class RecordingService extends Service {
 
     private void startForegroundService() {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Grabación Dual")
-                .setContentText("Grabando con ambas cámaras")
-                .setSmallIcon(R.drawable.unknown_icon3) // Asegúrate de tener este ícono en tus recursos
+                .setContentTitle("Dual Recording")
+                .setContentText("Recording with both cameras")
+                .setSmallIcon(R.drawable.unknown_icon3) // Make sure you have this icon in your resources
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
 
@@ -398,9 +398,9 @@ public class RecordingService extends Service {
     }
 
     /**
-     * Envía una transmisión para informar al HomeFragment sobre el estado de grabación.
+     * Broadcasts to inform HomeFragment about the recording state.
      *
-     * @param recordingState true si está grabando, false si no.
+     * @param recordingState true if recording, false if not.
      */
     private void broadcastRecordingState(boolean recordingState) {
         Intent intent = new Intent("RECORDING_STATE_CHANGED");
