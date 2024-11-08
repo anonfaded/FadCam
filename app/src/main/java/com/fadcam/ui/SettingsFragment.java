@@ -102,7 +102,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Registrar el receptor con try-catch
+        // Register receiver with try-catch
         try {
             IntentFilter filter = new IntentFilter("CAMERA_SELECTION_CHANGED");
             requireActivity().registerReceiver(cameraSelectionReceiver, filter);
@@ -115,7 +115,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        // Desregistrar el receptor con try-catch
+        // Unregister receiver with try-catch
         try {
             if (cameraSelectionReceiver != null) {
                 requireActivity().unregisterReceiver(cameraSelectionReceiver);
@@ -146,7 +146,7 @@ public class SettingsFragment extends Fragment {
         buttonFrontCamera = view.findViewById(R.id.button_front_camera);
         buttonDualCamera = view.findViewById(R.id.button_dual_camera);
 
-        // Configurar el estado inicial basado en las preferencias guardadas
+        // Configure initial state based on saved preferences
         String currentCamera = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
         switch (currentCamera) {
             case Constantes.CAMERA_FRONT:
@@ -160,7 +160,7 @@ public class SettingsFragment extends Fragment {
                 break;
         }
 
-        // Configurar listener para los cambios de selección
+        // Configure listener for selection changes
         cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
                 String selection;
@@ -383,7 +383,7 @@ public class SettingsFragment extends Fragment {
         String currentCameraSelection = sharedPreferences.getString(Constantes.PREF_CAMERA_SELECTION, Constantes.CAMERA_BACK);
         Log.d("SettingsFragment", "Current camera selection: " + currentCameraSelection);
 
-        // Actualizar el estado de los botones
+        // Update button states
         switch (currentCameraSelection) {
             case Constantes.CAMERA_FRONT:
                 cameraSelectionToggle.check(R.id.button_front_camera);
