@@ -176,6 +176,15 @@
                         app:iconGravity="textStart"
                         app:iconPadding="8dp" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_dual_camera"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/button_settings_cam_dual"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp" />
+
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
             </LinearLayout>
