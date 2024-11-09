@@ -149,7 +149,6 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 
 ### Articles and Listings
 - [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
-- [computer-wd](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
 - [appteka.com](https://appteka.store/app/bcdr185175)
 - [discuss.grapheneos.org](https://discuss.grapheneos.org/d/11667-what-featureapp-do-you-use-that-the-majority-never-talk-about/69)
 - [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
@@ -178,6 +177,8 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [geeky-gadgets.com (2nd feature)](https://www.geeky-gadgets.com/15-foss-android-apps-that-are-not-on-the-google-play-store/)
 - [iiktshf.com](https://iiktshf.com/fadcam/)
 - [androidfreeware.net](https://www.androidfreeware.net/download-fadcam-apk.html)
+- [computer-wd.com](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
+- [computer-wd.com (2nd feature)](https://www.computer-wd.com/2024/11/secretly-record-video-on-android.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
