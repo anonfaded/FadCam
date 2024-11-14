@@ -1,0 +1,210 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_icon_description" translatable="false">FadCam app icon</string>
+    <string name="check_for_updates">Naway Version Lag Ogoora</string>
+    <string name="fadsec_info">Da FadCam app, da FadSec Lab Suite hissa da. Ko noor maloomat ghwaray, nu landey \'code Ogoora\' bandi click ka</string>
+
+    <string name="app_description">
+    <![CDATA[
+    FadCam yaw muft video record kawoolo app de che hech maloomat na sati. Da app yowazi pa GitHub aw rasmi zayono ke mujood de.
+    <br/><br/>
+    FadCam pa <font color="#cfbafd">HowToMen</font> aw <font color="#cfbafd">Xtream Droid</font> YouTube channels ke khpar shaway de, aw pa <font color="#cfbafd">GrapheneOS</font> aw noro athara zayono ke ye yawdana shaway da.
+    ]]>
+    </string>
+
+    <string name="view_source_code">Code Wogoora</string>
+    <string name="buy_me_a_coffee">Yaw Chai Rata Wakhla ☕</string>
+    <string name="contact">Zamung Sara Arika</string>
+    <string name="send_email">Email Wolega</string>
+    <string name="join_community">Da maraste aw nawo khabaro lapara zamung group ke shamil sha</string>
+    <string name="privacy_information">Da Privacy Maloomat</string>
+    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string-array name="video_quality_array">
+        <item name="quality_fhd">FHD (1920x1080)</item>
+        <item name="quality_hd">HD (1280x720)</item>
+        <item name="quality_sd">SD (640x480)</item>
+    </string-array>
+    <integer-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </integer-array>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Da Zay Shta:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Da Record Wakt (andaza):</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Ter Shaway Wakt:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Pati Wakt:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Da preview band kawoolo lapara oozd press ka.</item>
+        <item>2/11 | Da saat badlawoolo lapara pa neta oozd press ka.</item>
+        <item>3/11 | Da storage widget pa wakt ke zay khayee.</item>
+        <item>4/11 | Stats widget tol videos aw zay khayi.</item>
+        <item>5/11 | Pa settings ke video kaifiyat badlawalay shay (HD, SD, FHD).</item>
+        <item>6/11 | Kam zay lary? Da zyat wakt lapara video kaifiyat kam ka.</item>
+        <item>7/11 | Pa settings ke watermark shamil ka.</item>
+        <item>8/11 | Pa settings ke pa watermark ke zay shamil ka.</item>
+        <item>9/11 | Da makhey camera ghwaray? Pa settings ke ye khwakha ka.</item>
+        <item>10/11 | Staso tanzeemat sati aw kaar kawi.</item>
+        <item>11/11 | Marasta ghwaray? Pa About ke Discord ta oorsha.</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Kareedaly Zay:</b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+
+
+
+
+
+
+
+    
+    <string name="button_start">Shuru</string>
+    <string name="button_pause">Wadarawa</string>
+    <string name="button_stop">Band</string>
+    <string name="button_resume">Bya Shuru</string>
+    <string name="video_recording_started">Record shuru sho</string>
+    <string name="video_recording_stopped">Record band sho</string>
+    <string name="video_recording_paused">Record wadareda</string>
+    <string name="video_recording_resumed">Record bya shuru sho</string>
+    <string name="current_camera">Osa Camera</string>
+    <string name="video_menu_del">Pak Ka</string>
+    <string name="video_menu_save">Pa Gallery Ke Sata</string>
+    <string name="video_menu_rename">Nom Badal Ka</string>
+    <string name="records_title">Videos</string>
+    <string name="nav_home">Kor</string>
+    <string name="nav_records">Videos</string>
+    <string name="nav_settings">Tanzeemat</string>
+    <string name="nav_about">Pa Bara Ke</string>
+    <string name="button_settings_readme">Ma Wolola</string>
+    <string name="setting_cam_title">Camera Khwakha</string>
+    <string name="note_cam_sele">Camera khwakha ka \n(Awal: Shaa Camera)</string>
+    <string name="button_settings_cam_back">Shaa Camera</string>
+    <string name="button_settings_cam_front">Makhey Camera</string>
+    <string name="setting_quailty_title">Da Video Kaifiyat</string>
+    <string name="setting_framerate_title">Da Video Framerate</string>
+    <string name="note_quailty">Kaifiyat khwakha ka\n(Awal: HD)</string>
+    <string name="note_framerate">Framerate khwakha ka\n(Awal: %1$d)</string>
+    <string name="setting_watermark">Watermark</string>
+    <string name="note_watermark">Da watermark qisam khwakha ka\n(Awal: Wakt sara FadCam)</string>
+    <string name="note_watermark_extra">Ka watermark na ghwaray no \'No Watermark\' khwakha ka. Ka watermark ghwaray no laga wakt ba onisi!</string>
+    <string name="setting_location_title">Da Zay Maloomat</string>
+    <string name="note_location">Pa watermark ke da zay maloomat shamil ka. \nGPS pakaar de \n(Awal: Band)</string>
+    <string name="note_location_extra">Da zay maloomato lapara da mobile GPS chalu ka.</string>
+    <string name="button_setting_review">Khpal Nazar Wolika 🌟</string>
+    <string name="dialog_clock_title">Da Saat Qisam Khwakha Ka</string>
+    <string name="dialog_clock_timeonly">Yowazi Saat</string>
+    <string name="dialog_clock_englishtime">Englisi Neta aw Saat</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Da Katlo Zay</string>
+    <string-array name="easter_eggs_array">
+        <item>Khabardar! Da band zay de. Da nnawatlo lapara record shuru ka.</item>
+        <item>Ta patt button munda ka! Da hech na kawi lol</item>
+        <item>Zar sha! System chawidoonky de... ya shayad yaw record ye aram kri.</item>
+        <item>Kha, osa khata shwa...</item>
+        <item>Staso Bugatti sa rang de?</item>
+        <item>Za da kaar lapara na yam jor shaway. Gora ta ma hack kawal ghwaray?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>KHABARDARAY</item>
+        <item>FadCam da karoonko maloomat sati?</item>
+        <item>Pa FadCam ke ishtihar shta?</item>
+        <item>FadCam wali da zay ijazat ghwari?</item>
+        <item>FadCam internet ta wasli?</item>
+        <item>Kho maloomat pa bahir servers ke sati?</item>
+        <item>Zama videos wروsته له record na sa kegi?</item>
+        <item>FadCam zama maloomat da noro sara shareek kawi?</item>
+        <item> </item>
+        <item> </item>
+        <item>Amoomi</item>
+        <item>Watermark wali doomra wakt nisi?</item>
+        <item>Da \'temp\' video wali de?</item>
+        <item>Za sanga da video kaifiyat badlawalay sham?</item>
+        <item>Za preview banda walay sham?</item>
+        <item>Za sanga pa watermark ke khpal zay shamil kawalay sham?</item>
+        <item>Zama tanzeemat sati?</item>
+        <item>Za da record wakt taeen kawalay sham?</item>
+        <item>Za sanga app update kawalay sham?</item>
+        <item> </item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam da software na ghalat karona na mani. Da app na ghalat kareedana, laka da chaa jasusi ya da privacy matawol, zamung da qanoon khilaf di. Da app joroonki da app da ghalat karoolo masool na di.</item>
+        <item>Na, FadCam hech maloomat na sati.</item>
+        <item>Na, FadCam bilkul be ishtihara de.</item>
+        <item>Da watermark ke da zay maloomato shamil kawoolo lapara.</item>
+        <item>Na, FadCam internet ta na wasli.</item>
+        <item>Na, tol maloomat pa mobile ke sati.</item>
+        <item>Staso videos yowazi pa mobile ke sati.</item>
+        <item>Na, FadCam hech maloomat na shareek kawi aw na ye sati.</item>
+        <item> </item>
+        <item> </item>
+        <item>Amoomi</item>
+        <item>Watermark pa har frame ke shamil kegi. Somra che video oozd wi, domra wakt nisi.</item>
+        <item>Da \'temp\' video staso asli record de. Da watermark na wروsته pak kegi. Ka watermark kharab shi, \'temp\' file pati kegi.</item>
+        <item>Pa settings ke video kaifiyat badla ka: HD, SD, ya FHD.</item>
+        <item>Da preview bandawoolo lapara preview zay oozd press ka.</item>
+        <item>Pa settings ke zay chalu ka che pa watermark ke shamil shi. Da longitude aw latitude shamil kawi.</item>
+        <item>Ho, tanzeemat aw settings tol sati aw kaar kawi.</item>
+        <item>Da khasiyat zar razi.</item>
+        <item>Da update lapara rasmi GitHub repo wogoora.</item>
+        <item> </item>
+    </string-array>
+
+
+    
+    <string name="dialog_welcome_title">FadCam ta khe raghlay!</string>
+    <string name="note_under_dev">Zarori: Da app os jor kegi. Nawi khasiyatona warkegi.</string>
+    <string name="rencent_updates_title">Wروstani Updates:</string>
+    <string name="upcoming_features_title">Raتloonki Khasiyatona:</string>
+    <string name="stay_updated_title">Taza Osay:</string>
+    <string name="button_readme_github">GitHub Repository</string>
+    <string name="community_title">Zamung Tولنه Ke Shamil Sha:</string>
+    <string name="discord_title">Discord Server</string>
+    <string name="thankyou_msg">Da FadCam karoolo manana!</string>
+    <string name="settings_title">Tanzeemat</string>
+    <string name="array_watermark_time_fadcam">Wakt sara FadCam</string>
+    <string name="array_watermark_timeonly">Yowazi Wakt</string>
+    <string name="array_watermark_nomark">Be Watermark</string>
+    <string name="recent_features">• Naway UI design\n• Videos os pa app ke sati\n• Pa gallery ke da video sataloo option\n• Da khwakhe watermark\n• Da khe playback lapara ExoPlayer\n• Pa watermark ke da zay maloomat\n• Dynamic watermark options\n• Da oozd press feedback\n• Da nete aw wakt widget tanzeemat</string>
+    <string name="upcoming_features">• Automatic record tanzeem\n• Google Drive ta automatic upload\n• Da khwakhe app icons\n• Da privacy lapara app lock\n• Pa app ke video edit, laka trim kawal\n• Aw noor zyat khasiyatona!</string>
+    <string name="toast_video_not_found">Khata: Video Wa Na Mundal Shwa</string>
+    <string name="toast_video_saved">Video pa FadCam folder ke khe sata shwa</string>
+    <string name="toast_video_save_fail">Video sata keday wa na shwa</string>
+    <string name="rename_video_title">Da Video Nom Badal Ka</string>
+    <string name="rename_video_hint">Naway nom wolikey</string>
+    <string name="universal_cancel">Mansookh</string>
+    <string name="toast_rename_name_empty">Nom tash keday na shi</string>
+    <string name="toast_rename_failed">Nom badloon kharab sho</string>
+    <string name="toast_rename_success">Da video nom badalon baryali sho</string>
+    <string name="toast_rename_bad_video">Ghalat position ya video list tash de</string>
+    <string name="dialog_del_title">Pak Ye Ka?</string>
+    <string name="dialog_del_notice">Yaqeeni daa video pak kawal ghwaray?</string>
+    <string name="dialog_del_confirm">Pak Ye Ka</string>
+    <string name="dialog_multi_video_del_title">Video(s) Pak Ka? 💣💣</string>
+    <string name="dialog_multi_video_del_note">Yaqeeni daa video(s) pak kawal ghwaray? 🚀💥</string>
+    <string name="dialog_multi_video_del_yes">Ho, Pak Ye Ka! 🌋</string>
+    <string name="dialog_multi_video_del_no">Na, Pati Ye Kda! 😅</string>
+    <string name="setting_language_title">Da App Jaba</string>
+    <string name="note_language">Da list na ye khwakha ka.\n(Awal: Englisi)</string>
+    <string name="location_permission_title">Da Zay Ijazat</string>
+    <string name="location_permission_description">Da app ta da zay ijazat pakaar de che pa videos ke zay shamil kri. Mehabani oka ijazat warka.</string>
+    <string name="up_to_date">Taza Version De</string>
+    <string name="up_to_date_description">Taso os taza version karawey.</string>
+    <string name="up_to_date_loading">Da update katana kegi…</string>
+    <string name="update_available_title">Naway Version Shta</string>
+    <string name="update_available_message">Yaw naway version (%1$s) shta. Da update lapara, F-Droid ya zamung GitHub ta oorsha.</string>
+    <string name="visit_fdroid">F-Droid Ta Oorsha</string>
+    <string name="visit_github">GitHub Ta Oorsha</string>
+    <string name="delete_all_videos_title">Tol Videos Pak Ka</string>
+    <string name="delete_all_videos_description">Yaqeeni tol videos pak kawal ghwaray?</string>
+    <string name="switched_front_camera">Makhey camera ta badalon sho</string>
+    <string name="switched_rear_camera">Shaa camera ta badalon sho</string>
+</resources>
