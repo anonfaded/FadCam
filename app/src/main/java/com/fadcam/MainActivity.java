@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -33,6 +34,12 @@ public class MainActivity extends AppCompatActivity {
         applyLanguage(savedLanguageCode);  // Apply the language preference
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); setContentView(R.layout.activity_main); //force dark theme even on light themed devices
+        
+        // Check if current locale is Pashto
+        if (getResources().getConfiguration().locale.getLanguage().equals("ps")) {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        }
+        
         setContentView(R.layout.activity_main);
 
         viewPager = findViewById(R.id.view_pager);
