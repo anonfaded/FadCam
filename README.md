@@ -145,6 +145,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [degeregi on TikTok](https://www.tiktok.com/@degereji/video/7403781470180920581)
 - [Anurag - The Geek](https://youtu.be/uXDQhGgjhDU?si=dgYo_wMAxiCM77R5&t=166)
 - [@ALHATEFALDHAKI on YouTube](https://www.youtube.com/watch?v=jOqnfL3mRks)
+- [@techtricks306 on YouTube](https://www.youtube.com/watch?v=3C2XM4YnlDY)
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
