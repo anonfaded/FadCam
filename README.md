@@ -146,6 +146,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Anurag - The Geek](https://youtu.be/uXDQhGgjhDU?si=dgYo_wMAxiCM77R5&t=166)
 - [@ALHATEFALDHAKI on YouTube](https://www.youtube.com/watch?v=jOqnfL3mRks)
 - [@techtricks306 on YouTube](https://www.youtube.com/watch?v=3C2XM4YnlDY)
+- [Samfans VN on YouTube](https://www.youtube.com/watch?v=LSYKu51ibeI)
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
