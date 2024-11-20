@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.fadcam"
-    compileSdk = 34
+    compileSdk = 35
 
     splits {
         abi {

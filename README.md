@@ -144,12 +144,16 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Daniel Bueno - Tecnología on YouTube](https://www.youtube.com/watch?v=TuZBXJVPfOU)
 - [degeregi on TikTok](https://www.tiktok.com/@degereji/video/7403781470180920581)
 - [Anurag - The Geek](https://youtu.be/uXDQhGgjhDU?si=dgYo_wMAxiCM77R5&t=166)
+- [@ALHATEFALDHAKI on YouTube](https://www.youtube.com/watch?v=jOqnfL3mRks)
+- [@techtricks306 on YouTube](https://www.youtube.com/watch?v=3C2XM4YnlDY)
+- [Samfans VN on YouTube](https://www.youtube.com/watch?v=LSYKu51ibeI)
+<!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 
 ### Articles and Listings
+- [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
 - [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
-- [computer-wd](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
 - [appteka.com](https://appteka.store/app/bcdr185175)
 - [discuss.grapheneos.org](https://discuss.grapheneos.org/d/11667-what-featureapp-do-you-use-that-the-majority-never-talk-about/69)
 - [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
@@ -177,6 +181,10 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [techwiser.com](https://techwiser.com/how-to-secretly-record-a-video-with-screen-off-on-android/)
 - [geeky-gadgets.com (2nd feature)](https://www.geeky-gadgets.com/15-foss-android-apps-that-are-not-on-the-google-play-store/)
 - [iiktshf.com](https://iiktshf.com/fadcam/)
+- [androidfreeware.net](https://www.androidfreeware.net/download-fadcam-apk.html)
+- [computer-wd.com](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
+- [computer-wd.com (2nd feature)](https://www.computer-wd.com/2024/11/secretly-record-video-on-android.html)
+- [thetechboy.org](https://www.thetechboy.org/2024/11/undercover-recording-no-ads.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 

@@ -1,0 +1,206 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_icon_description" translatable="false">ikon aplikasi Fadcam</string>
+    <string name="check_for_updates">Periksa pembaruan</string>
+    <string name="fadsec_info">FadCam adalah bagian dari rangkaian FadSec Lab. Untuk informasi lebih lanjut, klik \'lihat kode sumber\' di bawah ini.</string>
+
+
+    <string name="app_description">
+    <![CDATA[
+    FadCam adalah aplikasi perekaman video sumber terbuka bebas iklan yang mengutamakan privasi dengan tidak melacak atau mengumpulkan data apa pun. Aplikasi ini tersedia secara eksklusif di GitHub dan melalui tautan resmi yang disebutkan dalam BACA SAYA.
+    <br/><br/>
+    FadCam telah ditampilkan di saluran YouTube populer seperti <font color="#cfbafd">HowToMen</font> dan <font color="#cfbafd">Xtream Droid</font>, serta dibahas dalam <font color="#cfbafd">GrapheneOS</font> dan delapan belas tempat penting lainnya.
+    ]]>
+</string>
+
+
+
+
+
+
+    <string name="view_source_code">Lihat Kode Sumber</string>
+    <string name="buy_me_a_coffee">Belikan saya kopi ☕</string>
+    <string name="contact">Kontak</string>
+    <string name="send_email">Kirim email</string>
+    <string name="join_community">Bergabunglah dengan komunitas untuk mendapatkan bantuan, berbagi ide, dan pembaruan aplikasi di masa mendatang</string>
+    <string name="privacy_information">Informasi Privasi</string>
+    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string-array name="video_quality_array">
+        <item name="quality_fhd">FHD (1920x1080)</item>
+        <item name="quality_hd">HD (1280x720)</item>
+        <item name="quality_sd">SD (640x480)</item>
+    </string-array>
+    <integer-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </integer-array>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Record time (est.):</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Elapsed time:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Remaining time:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Tekan lama pratinjau untuk menonaktifkannya.</item>
+        <item>2/11 | Tekan lama widget tanggal untuk memilih tampilan jam.</item>
+        <item>3/11 | Widget penyimpanan memperbarui ruang perekaman dalam waktu nyata.</item>
+        <item>4/11 | Widget statistik menunjukkan total video dan ruang yang digunakan.</item>
+        <item>5/11 | Mengubah kualitas video di pengaturan (HD, SD, FHD).</item>
+        <item>6/11 | Penyimpanan terbatas? Sesuaikan kualitas video untuk waktu perekaman yang lebih lama.</item>
+        <item>7/11 | Tambahkan watermark ke video di Pengaturan.</item>
+        <item>8/11 | Sematkan lokasi yang akurat dalam Watermark melalui pengaturan.</item>
+        <item>9/11 | Mau rekan dengan kamera depan? Pilih di Pengaturan.</item>
+        <item>10/11 | Preferensi Anda disimpan dan diterapkan dengan mulus.</item>
+        <item>11/11 | Butuh bantuan? Bergabunglah ke Discord kami melalui bagian Tentang.</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used Space:</font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+    <string name="button_start">Mulai</string>
+    <string name="button_pause">Jeda</string>
+    <string name="button_stop">Hentikan</string>
+    <string name="button_resume">Lanjutkan</string>
+    <string name="video_recording_started">Perekaman dimulai</string>
+    <string name="video_recording_stopped">Perekaman dihentikan</string>
+    <string name="video_recording_paused">Perekaman dijeda</string>
+    <string name="video_recording_resumed">Perekaman dilanjutkan</string>
+    <string name="current_camera">Kamera saat ini</string>
+    <string name="video_menu_del">Hapus</string>
+    <string name="video_menu_save">Simpan ke Galeri</string>
+    <string name="video_menu_rename">Ganti nama</string>
+    <string name="records_title">Rekaman</string>
+    <string name="nav_home">Beranda</string>
+    <string name="nav_records">Rekaman</string>
+    <string name="nav_settings">Pengaturan</string>
+    <string name="nav_about">Tentang</string>
+    <string name="button_settings_readme">Baca saya</string>
+    <string name="setting_cam_title">Pemilihan Kamera</string>
+    <string name="note_cam_sele">Pilih kamera \n(Default: Bagian belakang)</string>
+    <string name="button_settings_cam_back">Bagian belakang</string>
+    <string name="button_settings_cam_front">Bagian Depan</string>
+    <string name="setting_quailty_title">Kualitas Kamera</string>
+    <string name="setting_framerate_title">Framerate Video</string>
+    <string name="note_quailty">Pilih kualitas\n(Default: HD)</string>
+    <string name="note_framerate">Pilih framerate\n(Default: %1$d)</string>
+    <string name="setting_watermark">Watermark</string>
+    <string name="note_watermark">Pilih opsi watermark\n(Default: Waktu dengan FadCam)</string>
+    <string name="note_watermark_extra">Untuk menyimpan dengan cepat, pilih \'Tidak ada Watermark\'. Menambahkan watermark? Layak untuk ditunggu, hanya perlu waktu sedikit lebih lama untuk memprosesnya!</string>
+    <string name="setting_location_title">Lokasi Data</string>
+    <string name="note_location">Tambahkan lokasi data di watermark. \nMemerlukan GPS yang diaktifkan \n(Default: Dinonaktifkan)</string>
+    <string name="note_location_extra">Aktifkan GPS ponsel untuk menambahkan data lintang dan bujur ke watermark.</string>
+    <string name="button_setting_review">Tulis Ulusan 🌟</string>
+    <string name="dialog_clock_title">Pilih Tampilan Jam</string>
+    <string name="dialog_clock_timeonly">Hanya waktu</string>
+    <string name="dialog_clock_englishtime">Tanggal B.Inggris dengan waktu</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Area Pratinjau</string>
+    <string-array name="easter_eggs_array">
+        <item>Waspada! Ini adalah area terbatas. Mulai merekam untuk mendapatkan akses.</item>
+        <item>Anda telah menemukan tombol rahasia! Ga ada gunanya kocak!</item>
+        <item>Cepat! Sistem akan meledak... atau mungkin hanya butuh rekaman untuk menenangkan diri</item>
+        <item>Nah, ini menjadi canggung sekarang...</item>
+        <item>Warna Bugatti kamu apa?</item>
+        <item>Saya tidak diprogram untuk melakukan apa yang Anda lakukan. Tunggu, kau mencoba meretasku?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>PENAFIAN</item>
+        <item>Apakah Fadcam mengambil data pengguna?</item>
+        <item>Apakah ada iklan di FadCam?</item>
+        <item>Kenapa Fadkam meminta akses lokasi?</item>
+        <item>Apakah FadCam terhubung ke internet?</item>
+        <item>Apakah ada data yang disimpan di server eksternal?</item>
+        <item>Apa yang terjadi pada video saya setelah merekam?</item>
+        <item>Apakah FadCam membagikan data saya dengan pihak ketiga?</item>
+        <item> </item>
+        <item> </item>
+        <item>Umum</item>
+        <item>Mengapa penandaan air membutuhkan waktu lama?</item>
+        <item>Mengapa ada video \'temp\'?</item>
+        <item>Bagaimana cara mengubah kualitas video?</item>
+        <item>Dapatkah saya menonaktifkan pratinjau?</item>
+        <item>Bagaimana cara menyematkan lokasi saya di watermark?</item>
+        <item>Apakah preferensi saya tersimpan?</item>
+        <item>Dapatkah saya menjadwalkan rekaman?</item>
+        <item>Bagaimana cara memperbarui aplikasi?</item>
+        <item> </item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam tidak membenarkan atau mendukung penggunaan perangkat lunak ini secara tidak etis atau ilegal. Penyalahgunaan, seperti pengawasan yang tidak sah atau pelanggaran privasi, sangat bertentangan dengan pedoman kami. Penulis tidak bertanggung jawab atas penyalahgunaan aplikasi ini.
+        </item>
+        <item>Tidak, FadCam tidak mengumpulkan data pengguna apa pun.</item>
+        <item>Tidak, FadCam sepenuhnya bebas iklan.</item>
+        <item>Untuk menambahkan info lokasi ke tanda air Anda.</item>
+        <item>Tidak, FadCam tidak terhubung ke internet.</item>
+        <item>Tidak, semua data disimpan di perangkat Anda.</item>
+        <item>Video Anda disimpan secara lokal di perangkat Anda.</item>
+        <item>Tidak, FadCam tidak membagikan atau mengumpulkan data apa pun.</item>
+        <item> </item>
+        <item> </item>
+        <item> </item>
+        <item>Tanda air disematkan dalam setiap bingkai video. Semakin panjang video, semakin banyak waktu yang dibutuhkan.</item>
+        <item>Video \'temp\' adalah rekaman asli Anda. File ini akan dihapus secara otomatis setelah pemberian tanda air. Jika penandaan air gagal, file \'temp\' akan tetap ada sebagai cadangan.</item>
+        <item>Mengubah kualitas video dalam pengaturan: HD, SD, or FHD.</item>
+        <item>Tekan lama area pratinjau untuk menonaktifkannya.</item>
+        <item>Aktifkan lokasi dalam pengaturan untuk data lokasi di tanda air. Ini akan menyematkan garis bujur dan garis lintang yang tepat.</item>
+        <item>Ya, preferensi dan semua pengaturan disimpan dan diterapkan secara mulus.",</item>
+        <item>Fitur ini akan segera hadir.</item>
+        <item>Periksa repositori resmi GitHub untuk mengetahui pembaruan.</item>
+        <item> </item>
+    </string-array>
+    <string name="dialog_welcome_title">Selamat datang FadCam!</string>
+    <string name="note_under_dev">Penting: Aplikasi ini sedang dalam tahap pengembangan. Fitur-fitur baru akan ditambahkan secara berkala.</string>
+    <string name="rencent_updates_title">Pembaruan Terbaru:</string>
+    <string name="upcoming_features_title">Fitur yang Akan Datang:</string>
+    <string name="stay_updated_title">Tetap Terupdate:</string>
+    <string name="button_readme_github">Repositori GitHub</string>
+    <string name="community_title">Bergabunglah dengan Komunitas kami:</string>
+    <string name="discord_title">Server Discord</string>
+    <string name="thankyou_msg">Terima kasih telah menggunakan FadCam!</string>
+    <string name="settings_title">Pengaturan</string>
+    <string name="array_watermark_time_fadcam">Waktu dengan Fadcam</string>
+    <string name="array_watermark_timeonly">Cap waktu</string>
+    <string name="array_watermark_nomark">Tidak ada Watermark</string>
+    <string name="recent_features">• Desain UI baru\n• Video sekarang disimpan secara internal di dalam aplikasi\n• Opsi untuk menyimpan video ke galeri\n• Penandaan air yang dapat disesuaikan\n• Integrasi ExoPlayer untuk pemutaran yang lebih baik\n• Data lokasi dalam tanda air\n• Opsi tanda air dinamis\n• Umpan balik tekan lama dengan animasi\n• Kustomisasi widget Tanggal dan Waktu</string>
+    <string name="upcoming_features">• Rekaman terjadwal otomatis \n• Pengunggahan otomatis ke Google Drive \n• Ikon aplikasi khusus \n• Kunci aplikasi untuk meningkatkan privasi \n• Editor video dalam aplikasi untuk tugas-tugas sederhana seperti pemangkasan \n• Dan masih banyak lagi fitur menarik lainnya!</string>
+    <string name="toast_video_not_found">Error: Video tidak ditemukan</string>
+    <string name="toast_video_saved">Video disimpan ke folder FadCam di Unduhan</string>
+    <string name="toast_video_save_fail">Gagal menyimpan video</string>
+    <string name="rename_video_title">Ganti Nama Video</string>
+    <string name="rename_video_hint">Masukkan nama baru</string>
+    <string name="universal_cancel">Batalkan</string>
+    <string name="toast_rename_name_empty">Nama tidak bisa kosong</string>
+    <string name="toast_rename_failed">Gagal mengganti nama video</string>
+    <string name="toast_rename_success">Video berhasil diubah namanya</string>
+    <string name="toast_rename_bad_video">Posisi tidak valid atau daftar video adalah nol</string>
+    <string name="dialog_del_title">Hapus Selamanya?</string>
+    <string name="dialog_del_notice">Apakah Anda yakin ingin menghapus video ini?</string>
+    <string name="dialog_del_confirm">Hapus</string>
+    <string name="dialog_multi_video_del_title">Basmi video? 💣💣</string>
+    <string name="dialog_multi_video_del_note">Apakah Anda benar-benar yakin bahwa Anda ingin membakar video-video ini dari peredaran? 🚀💥</string>
+    <string name="dialog_multi_video_del_yes">Ya, Entot Mereka! 🌋</string>
+    <string name="dialog_multi_video_del_no">Tidak, Simpan Mereka! 😅</string>
+    <string name="setting_language_title">Bahasa Aplikasi</string>
+    <string name="note_language">Pilih dari menu tarik-turun.\n(Default: English)</string>
+    <string name="location_permission_title">Izin Lokasi</string>
+    <string name="location_permission_description">Aplikasi ini memerlukan izin lokasi untuk menambahkan data lokasi ke video. Mohon berikan izin tersebut.</string>
+    <string name="up_to_date">Terbaru</string>
+    <string name="up_to_date_description">Anda sudah menggunakan versi terbaru.</string>
+    <string name="up_to_date_loading">Memeriksa pembaruan...</string>
+    <string name="update_available_title">Pembaruan Tersedia</string>
+    <string name="update_available_message">Versi baru (%1$s) tersedia. Untuk memperbarui, silakan kunjungi toko F-Droid atau repositori GitHub kami untuk informasi lebih lanjut.</string>
+    <string name="visit_fdroid">Kunjungi F-Droid</string>
+    <string name="visit_github">Kunjungi GitHub</string>
+    <string name="delete_all_videos_title">Hapus semua Video</string>
+    <string name="delete_all_videos_description">Apakah kamu yakin mau menghapus semua video?</string>
+    <string name="switched_front_camera">Beralih ke kamera depan</string>
+    <string name="switched_rear_camera">Beralih ke kamera belakang</string>
+</resources>
