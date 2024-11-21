@@ -18,7 +18,8 @@
         <item name="quality_hd">HD (1280x720)</item>
         <item name="quality_sd">SD (640x480)</item>
     </string-array>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Record time (est.):</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
@@ -40,7 +41,8 @@
         <item>10/11 | Your preferences are saved and applied seamlessly.</item>
         <item>11/11 | Need help? Join our Discord via the About section.</item>
     </string-array>
-    <string name="mainpage_video_info">\n    <![CDATA[    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used Space:</font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
@@ -183,4 +185,7 @@
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
     <string name="switched_front_camera">Switched to front camera</string>
     <string name="switched_rear_camera">Switched to rear camera</string>
+    <string name="notification_video_recording">Video recording</string>
+    <string name="notification_video_recording_progress_description">Recording is in progress</string>
+    <string name="notification_video_recording_paused_description">Recording is paused</string>
 </resources>
