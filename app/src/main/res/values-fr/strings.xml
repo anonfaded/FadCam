@@ -195,4 +195,7 @@
     <string name="delete_all_videos_description">Êtes-vous sûr de vouloir supprimer toutes les vidéos ?</string>
     <string name="switched_front_camera">Interverti en caméra frontale</string>
     <string name="switched_rear_camera">Interverti en caméra arrière</string>
+    <string name="notification_video_recording">Enregistrement vidéo</string>
+    <string name="notification_video_recording_paused_description">Enregistrement en pause</string>
+    <string name="notification_video_recording_progress_description">Enregistrement en cours</string>
 </resources>

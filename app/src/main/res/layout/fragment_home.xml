@@ -276,6 +276,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:drawableLeft="@drawable/ic_play"
+            android:enabled="false"
             android:text="@string/button_start" />
 
         <Button
@@ -285,8 +286,7 @@
             android:layout_marginStart="8dp"
             android:drawableLeft="@drawable/ic_pause"
             android:enabled="false"
-            android:text="@string/button_pause" />
-            android:enabled="false"/>
+            android:text="@string/button_pause"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCamSwitch"
@@ -297,6 +297,7 @@
             app:iconSize="24dp"
             android:paddingLeft="12dp"
             android:paddingRight="0dp"
+            android:enabled="false"
             app:cornerRadius="15dp" />
 
     </LinearLayout>

@@ -73,6 +73,8 @@
         </provider>
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -90,8 +92,6 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera|microphone" />
-
-
 
     </application>
 

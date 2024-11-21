@@ -7,9 +7,9 @@ import android.location.Location;
 import android.util.Log;
 
 import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.IMyLocationConsumer;
 import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 
 public class LocationHelper {
 
