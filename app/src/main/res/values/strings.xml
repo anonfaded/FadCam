@@ -215,4 +215,5 @@
     <string name="torch_apply">Apply</string>
     <string name="torch_cancel">Cancel</string>
     <string name="torch_recording_note">Torch options cannot be changed during recording. The active camera\'s torch will be used.</string>
+    <string name="torch_both">Both Torches</string>
 </resources>

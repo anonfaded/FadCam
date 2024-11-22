@@ -66,45 +66,59 @@ public class TorchService extends Service {
     private void toggleTorch() {
         try {
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-            String selectedTorchSource = sharedPreferences.getString("selected_torch_source", null);
+            boolean useBothTorches = sharedPreferences.getBoolean("both_torches_enabled", false);
             
-            // If no torch source is selected, find the first available one
-            if (selectedTorchSource == null) {
+            if (useBothTorches) {
+                // Toggle both available torches
                 for (String id : cameraManager.getCameraIdList()) {
                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
                     Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                     if (hasFlash != null && hasFlash) {
-                        selectedTorchSource = id;
-                        break;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            int intensity = sharedPreferences.getInt("torch_intensity", 1);
+                            try {
+                                cameraManager.turnOnTorchWithStrengthLevel(id, intensity);
+                            } catch (Exception e) {
+                                cameraManager.setTorchMode(id, !isTorchOn);
+                            }
+                        } else {
+                            cameraManager.setTorchMode(id, !isTorchOn);
+                        }
                     }
                 }
-            }
-            
-            if (selectedTorchSource != null) {
                 isTorchOn = !isTorchOn;
-                if (isTorchOn) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        int intensity = sharedPreferences.getInt("torch_intensity", 1);
-                        try {
-                            cameraManager.turnOnTorchWithStrengthLevel(selectedTorchSource, intensity);
-                        } catch (Exception e) {
-                            // Fallback if intensity control fails
+            } else {
+                // Use selected single torch
+                String selectedTorchSource = sharedPreferences.getString("selected_torch_source", null);
+                
+                if (selectedTorchSource != null) {
+                    isTorchOn = !isTorchOn;
+                    if (isTorchOn) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            int intensity = sharedPreferences.getInt("torch_intensity", 1);
+                            try {
+                                cameraManager.turnOnTorchWithStrengthLevel(selectedTorchSource, intensity);
+                            } catch (Exception e) {
+                                // Fallback if intensity control fails
+                                cameraManager.setTorchMode(selectedTorchSource, true);
+                            }
+                        } else {
                             cameraManager.setTorchMode(selectedTorchSource, true);
                         }
                     } else {
-                        cameraManager.setTorchMode(selectedTorchSource, true);
+                        cameraManager.setTorchMode(selectedTorchSource, false);
                     }
-                } else {
-                    cameraManager.setTorchMode(selectedTorchSource, false);
+                    
+                    Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
                 }
-                
-                // Broadcast state change
-                Intent intent = new Intent(Constants.BROADCAST_TORCH_STATE_CHANGED);
-                intent.putExtra("torch_state", isTorchOn);
-                sendBroadcast(intent);
-                
-                Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
             }
+            
+            // Broadcast state change
+            Intent intent = new Intent(Constants.BROADCAST_TORCH_STATE_CHANGED);
+            intent.putExtra("torch_state", isTorchOn);
+            sendBroadcast(intent);
+            
+            Log.d(TAG, "Torch(es) turned " + (isTorchOn ? "ON" : "OFF"));
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch: " + e.getMessage());
         }

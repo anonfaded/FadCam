@@ -1386,17 +1386,7 @@ public class HomeFragment extends Fragment {
     }
     
     private void showTorchOptionsDialog() {
-        // Check if recording is in progress
-        boolean isRecording = false;
-        ActivityManager manager = (ActivityManager) requireContext().getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (RecordingService.class.getName().equals(service.service.getClassName())) {
-                isRecording = true;
-                break;
-            }
-        }
-
-        if (isRecording) {
+        if (isRecordingInProgress()) {
             Toast.makeText(requireContext(), 
                 R.string.torch_recording_note, 
                 Toast.LENGTH_LONG).show();
@@ -1407,7 +1397,8 @@ public class HomeFragment extends Fragment {
         try {
             List<String> torchSources = new ArrayList<>();
             int maxTorchLevel = 1;
-    
+            boolean hasMultipleTorches = false;
+
             // Check available torch sources
             for (String cameraId : cameraManager.getCameraIdList()) {
                 CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
@@ -1415,9 +1406,8 @@ public class HomeFragment extends Fragment {
                 if (hasFlash != null && hasFlash) {
                     torchSources.add(cameraId);
                     
-                    // Check torch level support (Android 13+ only)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
-                        characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
+                    if (characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK 
+                        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         try {
                             maxTorchLevel = characteristics.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL);
                         } catch (Exception e) {
@@ -1426,17 +1416,21 @@ public class HomeFragment extends Fragment {
                     }
                 }
             }
-    
+
+            hasMultipleTorches = torchSources.size() > 1;
+
             // Create dialog layout
             View dialogView = getLayoutInflater().inflate(R.layout.dialog_torch_options, null);
             RadioGroup torchGroup = dialogView.findViewById(R.id.torch_group);
             SeekBar intensitySeekBar = dialogView.findViewById(R.id.intensity_seekbar);
             TextView intensityValue = dialogView.findViewById(R.id.intensity_value);
-    
+
             // Setup torch source options
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
             String currentTorchSource = prefs.getString("selected_torch_source", null);
+            boolean currentBothTorches = prefs.getBoolean("both_torches_enabled", false);
             
+            // Add individual torch options
             for (String sourceId : torchSources) {
                 RadioButton rb = new RadioButton(requireContext());
                 CameraCharacteristics chars = cameraManager.getCameraCharacteristics(sourceId);
@@ -1446,17 +1440,29 @@ public class HomeFragment extends Fragment {
                 rb.setTag(sourceId);
                 torchGroup.addView(rb);
                 
-                if (sourceId.equals(currentTorchSource)) {
+                if (sourceId.equals(currentTorchSource) && !currentBothTorches) {
                     rb.setChecked(true);
                 }
             }
-    
+
+            // Add "Both Torches" option if multiple torches available
+            if (hasMultipleTorches) {
+                RadioButton bothTorches = new RadioButton(requireContext());
+                bothTorches.setText(R.string.torch_both);
+                bothTorches.setTag("both");
+                torchGroup.addView(bothTorches);
+                
+                if (currentBothTorches) {
+                    bothTorches.setChecked(true);
+                }
+            }
+
             // Select first source if none selected
-            if (currentTorchSource == null && torchGroup.getChildCount() > 0) {
+            if (currentTorchSource == null && !currentBothTorches && torchGroup.getChildCount() > 0) {
                 ((RadioButton) torchGroup.getChildAt(0)).setChecked(true);
             }
-    
-            // Setup intensity control if supported (Android 13+ only)
+
+            // Setup intensity control if supported
             View intensityContainer = dialogView.findViewById(R.id.intensity_container);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && maxTorchLevel > 1) {
                 intensitySeekBar.setMax(maxTorchLevel - 1);
@@ -1480,7 +1486,7 @@ public class HomeFragment extends Fragment {
             } else {
                 intensityContainer.setVisibility(View.GONE);
             }
-    
+
             new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.torch_options_title)
                 .setView(dialogView)
@@ -1488,18 +1494,22 @@ public class HomeFragment extends Fragment {
                     RadioButton selectedSource = dialogView.findViewById(torchGroup.getCheckedRadioButtonId());
                     if (selectedSource != null) {
                         String selectedSourceId = (String) selectedSource.getTag();
+                        boolean isBothSelected = "both".equals(selectedSourceId);
                         int intensity = intensitySeekBar.getProgress() + 1;
                         
                         // Save settings
                         SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString("selected_torch_source", selectedSourceId);
+                        editor.putBoolean("both_torches_enabled", isBothSelected);
+                        if (!isBothSelected) {
+                            editor.putString("selected_torch_source", selectedSourceId);
+                        }
                         editor.putInt("torch_intensity", intensity);
                         editor.apply();
                     }
                 })
                 .setNegativeButton(R.string.torch_cancel, null)
                 .show();
-    
+
         } catch (CameraAccessException e) {
             Log.e(TAG, "Error accessing torch: " + e.getMessage());
         }
@@ -1516,5 +1526,15 @@ public class HomeFragment extends Fragment {
         }
         Log.d(TAG, "No camera with flash found");
         return null;
+    }
+
+    private boolean isRecordingInProgress() {
+        ActivityManager manager = (ActivityManager) requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (RecordingService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
