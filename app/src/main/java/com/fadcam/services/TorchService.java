@@ -74,16 +74,7 @@ public class TorchService extends Service {
                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
                     Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                     if (hasFlash != null && hasFlash) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            int intensity = sharedPreferences.getInt("torch_intensity", 1);
-                            try {
-                                cameraManager.turnOnTorchWithStrengthLevel(id, intensity);
-                            } catch (Exception e) {
-                                cameraManager.setTorchMode(id, !isTorchOn);
-                            }
-                        } else {
-                            cameraManager.setTorchMode(id, !isTorchOn);
-                        }
+                        cameraManager.setTorchMode(id, !isTorchOn);
                     }
                 }
                 isTorchOn = !isTorchOn;
@@ -93,22 +84,7 @@ public class TorchService extends Service {
                 
                 if (selectedTorchSource != null) {
                     isTorchOn = !isTorchOn;
-                    if (isTorchOn) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            int intensity = sharedPreferences.getInt("torch_intensity", 1);
-                            try {
-                                cameraManager.turnOnTorchWithStrengthLevel(selectedTorchSource, intensity);
-                            } catch (Exception e) {
-                                // Fallback if intensity control fails
-                                cameraManager.setTorchMode(selectedTorchSource, true);
-                            }
-                        } else {
-                            cameraManager.setTorchMode(selectedTorchSource, true);
-                        }
-                    } else {
-                        cameraManager.setTorchMode(selectedTorchSource, false);
-                    }
-                    
+                    cameraManager.setTorchMode(selectedTorchSource, isTorchOn);
                     Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
                 }
             }
