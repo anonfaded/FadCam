@@ -14,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.CamcorderProfile;
@@ -1426,6 +1427,17 @@ public class HomeFragment extends Fragment {
                     boolean torchState = intent.getBooleanExtra("torch_state", false);
                     buttonTorchSwitch.setIconResource(torchState ? 
                         R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
+                    
+                    // Update icon and background tints
+                    buttonTorchSwitch.setIconTint(ColorStateList.valueOf(
+                        ContextCompat.getColor(requireContext(), 
+                            torchState ? R.color.torch_on : R.color.torch_off)
+                    ));
+                    buttonTorchSwitch.setBackgroundTintList(ColorStateList.valueOf(
+                        ContextCompat.getColor(requireContext(), 
+                            android.R.color.transparent)
+                    ));
+                    buttonTorchSwitch.setAlpha(torchState ? 1.0f : 0.7f);
                 }
             };
         }

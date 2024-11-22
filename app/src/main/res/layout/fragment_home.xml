@@ -277,6 +277,7 @@
             android:layout_marginEnd="8dp"
             app:icon="@drawable/ic_flashlight_off"
             app:iconSize="24dp"
+            app:iconTint="@color/torch_off"
             android:paddingLeft="12dp"
             android:paddingRight="0dp"
             android:enabled="false"
