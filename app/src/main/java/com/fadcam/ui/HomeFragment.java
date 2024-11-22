@@ -1384,7 +1384,7 @@ public class HomeFragment extends Fragment {
                 boolean isTorchOn = intent.getBooleanExtra("torch_state", false);
                 buttonTorchSwitch.setIcon(
                     ContextCompat.getDrawable(requireContext(),
-                        isTorchOn ? R.drawable.ic_flashlight_off : R.drawable.ic_flashlight_on)
+                        isTorchOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off)
                 );
             }
         };

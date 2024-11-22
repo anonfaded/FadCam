@@ -275,7 +275,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginEnd="8dp"
-            app:icon="@drawable/ic_flashlight_on"
+            app:icon="@drawable/ic_flashlight_off"
             app:iconSize="24dp"
             android:paddingLeft="12dp"
             android:paddingRight="0dp"
