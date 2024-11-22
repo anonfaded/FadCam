@@ -198,4 +198,12 @@
     <string name="notification_video_recording">Enregistrement vidéo</string>
     <string name="notification_video_recording_paused_description">Enregistrement en pause</string>
     <string name="notification_video_recording_progress_description">Enregistrement en cours</string>
+    <string name="torch_options_title">Options de la lampe torche</string>
+    <string name="torch_select_source">Sélectionnez la source :</string>
+    <string name="torch_back">Lampe torche arrière</string>
+    <string name="torch_front">Lampe torche avant</string>
+    <string name="torch_apply">Appliquer</string>
+    <string name="torch_cancel">Annuler</string>
+    <string name="torch_recording_note">Impossible de changer les options de la lampe torche pendant l\'enregistrement</string>
+    <string name="torch_both">Les deux lampes torches</string>
 </resources>
