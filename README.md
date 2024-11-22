@@ -185,6 +185,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [computer-wd.com](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
 - [computer-wd.com (2nd feature)](https://www.computer-wd.com/2024/11/secretly-record-video-on-android.html)
 - [thetechboy.org](https://www.thetechboy.org/2024/11/undercover-recording-no-ads.html)
+- [tz887.com](https://www.tz887.com/app/311291.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
