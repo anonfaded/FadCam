@@ -6,6 +6,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.text.Html;
 import android.text.Spanned;
@@ -38,6 +40,9 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -1361,7 +1366,12 @@ public class HomeFragment extends Fragment {
             requireActivity().startService(intent);
             vibrateTouch();
         });
-
+    
+        buttonTorchSwitch.setOnLongClickListener(v -> {
+            showTorchOptionsDialog();
+            return true;
+        });
+    
         // Register receiver for torch state changes
         torchReceiver = new BroadcastReceiver() {
             @Override
@@ -1373,6 +1383,126 @@ public class HomeFragment extends Fragment {
                 );
             }
         };
+    }
+    
+    private void showTorchOptionsDialog() {
+        // Check if recording is in progress
+        boolean isRecording = false;
+        ActivityManager manager = (ActivityManager) requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (RecordingService.class.getName().equals(service.service.getClassName())) {
+                isRecording = true;
+                break;
+            }
+        }
+
+        if (isRecording) {
+            Toast.makeText(requireContext(), 
+                R.string.torch_recording_note, 
+                Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        CameraManager cameraManager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        try {
+            List<String> torchSources = new ArrayList<>();
+            int maxTorchLevel = 1;
+    
+            // Check available torch sources
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                if (hasFlash != null && hasFlash) {
+                    torchSources.add(cameraId);
+                    
+                    // Check torch level support (Android 13+ only)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
+                        characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
+                        try {
+                            maxTorchLevel = characteristics.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL);
+                        } catch (Exception e) {
+                            maxTorchLevel = 1;
+                        }
+                    }
+                }
+            }
+    
+            // Create dialog layout
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_torch_options, null);
+            RadioGroup torchGroup = dialogView.findViewById(R.id.torch_group);
+            SeekBar intensitySeekBar = dialogView.findViewById(R.id.intensity_seekbar);
+            TextView intensityValue = dialogView.findViewById(R.id.intensity_value);
+    
+            // Setup torch source options
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            String currentTorchSource = prefs.getString("selected_torch_source", null);
+            
+            for (String sourceId : torchSources) {
+                RadioButton rb = new RadioButton(requireContext());
+                CameraCharacteristics chars = cameraManager.getCameraCharacteristics(sourceId);
+                int facing = chars.get(CameraCharacteristics.LENS_FACING);
+                rb.setText(facing == CameraCharacteristics.LENS_FACING_BACK ? 
+                    getString(R.string.torch_back) : getString(R.string.torch_front));
+                rb.setTag(sourceId);
+                torchGroup.addView(rb);
+                
+                if (sourceId.equals(currentTorchSource)) {
+                    rb.setChecked(true);
+                }
+            }
+    
+            // Select first source if none selected
+            if (currentTorchSource == null && torchGroup.getChildCount() > 0) {
+                ((RadioButton) torchGroup.getChildAt(0)).setChecked(true);
+            }
+    
+            // Setup intensity control if supported (Android 13+ only)
+            View intensityContainer = dialogView.findViewById(R.id.intensity_container);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && maxTorchLevel > 1) {
+                intensitySeekBar.setMax(maxTorchLevel - 1);
+                int currentIntensity = prefs.getInt("torch_intensity", 1);
+                intensitySeekBar.setProgress(currentIntensity - 1);
+                intensityValue.setText(getString(R.string.torch_level, currentIntensity));
+                
+                intensitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        intensityValue.setText(getString(R.string.torch_level, progress + 1));
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {}
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {}
+                });
+                intensityContainer.setVisibility(View.VISIBLE);
+            } else {
+                intensityContainer.setVisibility(View.GONE);
+            }
+    
+            new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.torch_options_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.torch_apply, (dialog, which) -> {
+                    RadioButton selectedSource = dialogView.findViewById(torchGroup.getCheckedRadioButtonId());
+                    if (selectedSource != null) {
+                        String selectedSourceId = (String) selectedSource.getTag();
+                        int intensity = intensitySeekBar.getProgress() + 1;
+                        
+                        // Save settings
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("selected_torch_source", selectedSourceId);
+                        editor.putInt("torch_intensity", intensity);
+                        editor.apply();
+                    }
+                })
+                .setNegativeButton(R.string.torch_cancel, null)
+                .show();
+    
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error accessing torch: " + e.getMessage());
+        }
     }
 
     private String getCameraWithFlash() throws CameraAccessException {

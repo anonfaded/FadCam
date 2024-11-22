@@ -41,4 +41,6 @@ public abstract class Constants {
     public static final String RECORDING_FILE_EXTENSION = "mp4";
 
     public static final String BROADCAST_TORCH_STATE_CHANGED = "com.fadcam.TORCH_STATE_CHANGED";
+
+    public static final String INTENT_ACTION_TORCH_CONFIG = "com.fadcam.action.TORCH_CONFIG";
 }

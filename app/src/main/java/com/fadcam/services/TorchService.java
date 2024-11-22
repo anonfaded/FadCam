@@ -2,7 +2,10 @@ package com.fadcam.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.content.Context;
 import android.util.Log;
@@ -10,6 +13,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.app.ActivityManager;
 import android.hardware.camera2.CaptureRequest;
+import android.preference.PreferenceManager;
 
 import com.fadcam.Constants;
 import com.fadcam.RecordingService;
@@ -19,6 +23,7 @@ public class TorchService extends Service {
     private boolean isTorchOn = false;
     private HandlerThread handlerThread;
     private Handler handler;
+    private SharedPreferences sharedPreferences;
 
     @Override
     public void onCreate() {
@@ -26,6 +31,7 @@ public class TorchService extends Service {
         handlerThread = new HandlerThread("TorchThread", android.os.Process.THREAD_PRIORITY_BACKGROUND);
         handlerThread.start();
         handler = new Handler(handlerThread.getLooper());
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     @Override
@@ -60,20 +66,45 @@ public class TorchService extends Service {
     private void toggleTorch() {
         try {
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-            String[] cameraIds = cameraManager.getCameraIdList();
+            String selectedTorchSource = sharedPreferences.getString("selected_torch_source", null);
             
-            // Usually the flash is on the first camera (back camera)
-            String cameraId = cameraIds[0];
+            // If no torch source is selected, find the first available one
+            if (selectedTorchSource == null) {
+                for (String id : cameraManager.getCameraIdList()) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                    Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                    if (hasFlash != null && hasFlash) {
+                        selectedTorchSource = id;
+                        break;
+                    }
+                }
+            }
             
-            isTorchOn = !isTorchOn;
-            cameraManager.setTorchMode(cameraId, isTorchOn);
-            
-            // Broadcast state change
-            Intent intent = new Intent(Constants.BROADCAST_TORCH_STATE_CHANGED);
-            intent.putExtra("torch_state", isTorchOn);
-            sendBroadcast(intent);
-            
-            Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF"));
+            if (selectedTorchSource != null) {
+                isTorchOn = !isTorchOn;
+                if (isTorchOn) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        int intensity = sharedPreferences.getInt("torch_intensity", 1);
+                        try {
+                            cameraManager.turnOnTorchWithStrengthLevel(selectedTorchSource, intensity);
+                        } catch (Exception e) {
+                            // Fallback if intensity control fails
+                            cameraManager.setTorchMode(selectedTorchSource, true);
+                        }
+                    } else {
+                        cameraManager.setTorchMode(selectedTorchSource, true);
+                    }
+                } else {
+                    cameraManager.setTorchMode(selectedTorchSource, false);
+                }
+                
+                // Broadcast state change
+                Intent intent = new Intent(Constants.BROADCAST_TORCH_STATE_CHANGED);
+                intent.putExtra("torch_state", isTorchOn);
+                sendBroadcast(intent);
+                
+                Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch: " + e.getMessage());
         }
