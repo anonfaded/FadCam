@@ -440,6 +440,11 @@ public class SettingsFragment extends Fragment {
         // Set the selected item based on the saved preference
         int selectedFramerate = sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
 
+        // If the selected framerate is not in the list of compatible framerates, reset it to the default value
+        if(!videoFrameratesCompatibles.contains(selectedFramerate)) {
+            selectedFramerate = Constants.DEFAULT_VIDEO_FRAME_RATE;
+        }
+
         if(!videoFrameratesCompatibles.isEmpty()) {
             frameRateSpinner.setSelection(videoFrameratesCompatibles.size() == 1 ? 0 : getVideoFrameRateIndex(selectedFramerate));
             frameRateSpinner.setEnabled(videoFrameratesCompatibles.size() > 1);

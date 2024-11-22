@@ -8,4 +8,6 @@
     <color name="colorPrimary">#cfbafd</color>
     <color name="material_on_surface_stroke">#cfbafd</color>
     <color name="material_on_surface_emphasis_medium">@color/white</color>
+    <color name="torch_off">#757575</color>
+    <color name="torch_on">#FFB300</color>
 </resources>

@@ -14,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.CamcorderProfile;
@@ -588,12 +589,24 @@ public class HomeFragment extends Fragment {
 
         updateStats();
 
+        // Initialize the receiver if null
+        if (torchReceiver == null) {
+            torchReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    // Your existing receiver code
+                }
+            };
+        }
+        
         // Register receiver with version check
         IntentFilter filter = new IntentFilter(Constants.BROADCAST_TORCH_STATE_CHANGED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
-            requireContext().registerReceiver(torchReceiver, filter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            }
         }
     }
 
@@ -603,7 +616,14 @@ public class HomeFragment extends Fragment {
         //locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
 
-        requireActivity().unregisterReceiver(torchReceiver);
+        // Only unregister if receiver exists
+        if (torchReceiver != null) {
+            try {
+                requireContext().unregisterReceiver(torchReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Receiver was not registered: " + e.getMessage());
+            }
+        }
     }
 
 //    @Override
@@ -1365,29 +1385,72 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupTorchButton() {
+        buttonTorchSwitch = requireView().findViewById(R.id.buttonTorchSwitch);
+        
+        // Set default torch source if none selected
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        if (prefs.getString("selected_torch_source", null) == null) {
+            try {
+                String defaultTorchId = getCameraWithFlash();
+                if (defaultTorchId != null) {
+                    prefs.edit()
+                        .putString("selected_torch_source", defaultTorchId)
+                        .putBoolean("both_torches_enabled", false)
+                        .apply();
+                    Log.d(TAG, "Set default torch source: " + defaultTorchId);
+                }
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "Error setting default torch source: " + e.getMessage());
+            }
+        }
+
+        // Setup click listener for torch toggle
         buttonTorchSwitch.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), TorchService.class);
+            Intent intent = new Intent(requireContext(), TorchService.class);
             intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
-            requireActivity().startService(intent);
+            requireContext().startService(intent);
             vibrateTouch();
         });
-    
+
+        // Setup long press listener for torch options
         buttonTorchSwitch.setOnLongClickListener(v -> {
             showTorchOptionsDialog();
+            vibrateTouch();
             return true;
         });
-    
-        // Register receiver for torch state changes
-        torchReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                boolean isTorchOn = intent.getBooleanExtra("torch_state", false);
-                buttonTorchSwitch.setIcon(
-                    ContextCompat.getDrawable(requireContext(),
-                        isTorchOn ? R.drawable.ic_flashlight_off : R.drawable.ic_flashlight_on)
-                );
+
+        // Register torch state receiver
+        if (torchReceiver == null) {
+            torchReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    boolean torchState = intent.getBooleanExtra("torch_state", false);
+                    buttonTorchSwitch.setIconResource(torchState ? 
+                        R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
+                    
+                    // Update icon and background tints
+                    buttonTorchSwitch.setIconTint(ColorStateList.valueOf(
+                        ContextCompat.getColor(requireContext(), 
+                            torchState ? R.color.torch_on : R.color.torch_off)
+                    ));
+                    buttonTorchSwitch.setBackgroundTintList(ColorStateList.valueOf(
+                        ContextCompat.getColor(requireContext(), 
+                            android.R.color.transparent)
+                    ));
+                    buttonTorchSwitch.setAlpha(torchState ? 1.0f : 0.7f);
+                }
+            };
+        }
+
+        // Register the receiver with proper checks
+        IntentFilter filter = new IntentFilter(Constants.BROADCAST_TORCH_STATE_CHANGED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             }
-        };
+        }
     }
     
     private void showTorchOptionsDialog() {
