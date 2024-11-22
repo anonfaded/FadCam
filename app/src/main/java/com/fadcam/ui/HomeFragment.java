@@ -52,6 +52,8 @@ import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.RecordingService;
 import com.fadcam.RecordingState;
+import com.fadcam.services.TorchService;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
@@ -70,6 +72,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraAccessException;
 
 public class HomeFragment extends Fragment {
 
@@ -131,6 +137,14 @@ public class HomeFragment extends Fragment {
     private BroadcastReceiver broadcastOnRecordingPaused;
     private BroadcastReceiver broadcastOnRecordingStopped;
     private BroadcastReceiver broadcastOnRecordingStateCallback;
+
+    private MaterialButton buttonTorchSwitch;
+
+    private CameraManager cameraManager;
+    private String cameraId;
+    private boolean isTorchOn = false;
+
+    private BroadcastReceiver torchReceiver;
 
     // important
     private void requestEssentialPermissions() {
@@ -568,6 +582,9 @@ public class HomeFragment extends Fragment {
         fetchRecordingState();
 
         updateStats();
+
+        requireActivity().registerReceiver(torchReceiver, 
+            new IntentFilter(Constants.BROADCAST_TORCH_STATE_CHANGED));
     }
 
     @Override
@@ -575,6 +592,8 @@ public class HomeFragment extends Fragment {
         super.onPause();
         //locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
+
+        requireActivity().unregisterReceiver(torchReceiver);
     }
 
 //    @Override
@@ -698,6 +717,10 @@ public class HomeFragment extends Fragment {
         setupButtonListeners();
         setupLongPressListener();
         updatePreviewVisibility();
+
+        buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
+        initializeTorch();
+        setupTorchButton();
     }
 
     private void setupTextureView(@NonNull View view) {
@@ -1308,5 +1331,60 @@ public class HomeFragment extends Fragment {
 
     public boolean isPaused() {
         return recordingState.equals(RecordingState.PAUSED);
+    }
+
+    private void initializeTorch() {
+        cameraManager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        try {
+            cameraId = getCameraWithFlash();
+            if (cameraId == null) {
+                Log.d(TAG, "No camera with flash found");
+                buttonTorchSwitch.setEnabled(false);
+                buttonTorchSwitch.setVisibility(View.GONE);
+            } else {
+                Log.d(TAG, "Flash available on camera: " + cameraId);
+                buttonTorchSwitch.setEnabled(true);
+                buttonTorchSwitch.setVisibility(View.VISIBLE);
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Camera access error: " + e.getMessage());
+            e.printStackTrace();
+            buttonTorchSwitch.setEnabled(false);
+            buttonTorchSwitch.setVisibility(View.GONE);
+        }
+    }
+
+    private void setupTorchButton() {
+        buttonTorchSwitch.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), TorchService.class);
+            intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
+            requireActivity().startService(intent);
+            vibrateTouch();
+        });
+
+        // Register receiver for torch state changes
+        torchReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                boolean isTorchOn = intent.getBooleanExtra("torch_state", false);
+                buttonTorchSwitch.setIcon(
+                    ContextCompat.getDrawable(requireContext(),
+                        isTorchOn ? R.drawable.ic_flashlight_off : R.drawable.ic_flashlight_on)
+                );
+            }
+        };
+    }
+
+    private String getCameraWithFlash() throws CameraAccessException {
+        for (String id : cameraManager.getCameraIdList()) {
+            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+            Boolean flashAvailable = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+            if (flashAvailable != null && flashAvailable) {
+                Log.d(TAG, "Found camera with flash: " + id);
+                return id;
+            }
+        }
+        Log.d(TAG, "No camera with flash found");
+        return null;
     }
 }

@@ -47,7 +47,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-
+<uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
 
 
@@ -92,6 +92,11 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera|microphone" />
+
+        <service
+            android:name=".services.TorchService"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 

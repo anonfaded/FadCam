@@ -34,7 +34,11 @@ public abstract class Constants {
     public static final String INTENT_ACTION_RESUME_RECORDING = "ACTION_RESUME_RECORDING";
     public static final String INTENT_ACTION_PAUSE_RECORDING = "ACTION_PAUSE_RECORDING";
     public static final String INTENT_ACTION_START_RECORDING = "ACTION_START_RECORDING";
+    public static final String INTENT_ACTION_TOGGLE_TORCH = "com.fadcam.action.TOGGLE_TORCH";
+    public static final String INTENT_ACTION_TORCH_RECORDING = "com.fadcam.action.TORCH_RECORDING";
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
+
+    public static final String BROADCAST_TORCH_STATE_CHANGED = "com.fadcam.TORCH_STATE_CHANGED";
 }
