@@ -283,13 +283,16 @@
             android:enabled="false"
             app:cornerRadius="15dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonStartStop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:drawableLeft="@drawable/ic_play"
+            app:icon="@drawable/ic_play"
             android:enabled="false"
+            app:backgroundTint="@color/button_start"
+            app:iconTint="@color/white"
+            android:textColor="@color/white"
             android:text="@string/button_start" />
 
         <com.google.android.material.button.MaterialButton

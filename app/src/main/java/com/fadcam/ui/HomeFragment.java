@@ -108,7 +108,7 @@ public class HomeFragment extends Fragment {
 
     private TextView tvStorageInfo;
     private TextView tvPreviewPlaceholder;
-    private Button buttonStartStop;
+    private MaterialButton buttonStartStop;
     private MaterialButton buttonPauseResume;
     private Button buttonCamSwitch;
     private boolean isPreviewEnabled = true;
@@ -502,14 +502,15 @@ public class HomeFragment extends Fragment {
 
     private void onRecordingStarted(boolean toast) {
         recordingState = RecordingState.IN_PROGRESS;
-
+        
         acquireWakeLock();
-
         setVideoBitrate();
-
+        
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
         buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
         buttonStartStop.setEnabled(true);
+        
         buttonPauseResume.setEnabled(true);
         buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonCamSwitch.setEnabled(false);
@@ -528,8 +529,9 @@ public class HomeFragment extends Fragment {
         buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(true);
 
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
         buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
         buttonStartStop.setEnabled(true);
 
         buttonCamSwitch.setEnabled(false);
@@ -545,8 +547,9 @@ public class HomeFragment extends Fragment {
 
         buttonCamSwitch.setEnabled(false);
 
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
         buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
     }
 
     private void onRecordingStopped() {
@@ -555,8 +558,9 @@ public class HomeFragment extends Fragment {
 
         releaseWakeLock();
 
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_start)));
         buttonStartStop.setText(getString(R.string.button_start));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
 
         setupStartStopButton();
 

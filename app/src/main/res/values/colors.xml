@@ -10,4 +10,6 @@
     <color name="material_on_surface_emphasis_medium">@color/white</color>
     <color name="torch_off">#757575</color>
     <color name="torch_on">#FFB300</color>
+    <color name="button_start">#4CAF50</color>
+    <color name="button_stop">#F44336</color>
 </resources>
