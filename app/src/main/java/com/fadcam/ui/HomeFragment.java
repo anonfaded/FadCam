@@ -52,6 +52,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -108,7 +109,7 @@ public class HomeFragment extends Fragment {
     private TextView tvStorageInfo;
     private TextView tvPreviewPlaceholder;
     private Button buttonStartStop;
-    private Button buttonPauseResume;
+    private MaterialButton buttonPauseResume;
     private Button buttonCamSwitch;
     private boolean isPreviewEnabled = true;
 
@@ -510,6 +511,7 @@ public class HomeFragment extends Fragment {
         buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
         buttonStartStop.setEnabled(true);
         buttonPauseResume.setEnabled(true);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonCamSwitch.setEnabled(false);
 
         startUpdatingInfo();
@@ -520,12 +522,10 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void onRecordingResumed()
-    {
+    private void onRecordingResumed() {
         recordingState = RecordingState.IN_PROGRESS;
 
-        buttonPauseResume.setText(getString(R.string.button_pause));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(true);
 
         buttonStartStop.setText(getString(R.string.button_stop));
@@ -537,12 +537,10 @@ public class HomeFragment extends Fragment {
         startUpdatingInfo();
     }
 
-    private void onRecordingPaused()
-    {
+    private void onRecordingPaused() {
         recordingState = RecordingState.PAUSED;
 
-        buttonPauseResume.setText(getString(R.string.button_resume));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
         buttonPauseResume.setEnabled(true);
 
         buttonCamSwitch.setEnabled(false);
@@ -562,8 +560,7 @@ public class HomeFragment extends Fragment {
 
         setupStartStopButton();
 
-        buttonPauseResume.setText(getString(R.string.button_pause));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(true);
@@ -1183,8 +1180,8 @@ public class HomeFragment extends Fragment {
     private void pauseRecording() {
         Log.d(TAG, "pauseRecording: Pausing video recording");
 
-        buttonPauseResume.setText(R.string.button_resume);
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
+        buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(false);
 
@@ -1196,8 +1193,7 @@ public class HomeFragment extends Fragment {
     private void resumeRecording() {
         Log.d(TAG, "resumeRecording: Resuming video recording");
 
-        buttonPauseResume.setText(getString(R.string.button_pause));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(false);
@@ -1421,12 +1417,12 @@ public class HomeFragment extends Fragment {
             Intent intent = new Intent(requireContext(), TorchService.class);
             intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
             requireContext().startService(intent);
-            
+
             // Update UI immediately for better responsiveness
             boolean newTorchState = !isTorchOn;
             updateTorchButtonState(newTorchState);
             isTorchOn = newTorchState;
-            
+
             vibrateTouch();
         });
 
@@ -1453,15 +1449,15 @@ public class HomeFragment extends Fragment {
     private void updateTorchButtonState(boolean isOn) {
         if (buttonTorchSwitch != null) {
             buttonTorchSwitch.post(() -> {
-                buttonTorchSwitch.setIconResource(isOn ? 
-                    R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
+                buttonTorchSwitch.setIconResource(isOn ?
+                        R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
                 buttonTorchSwitch.setIconTint(ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), 
-                        isOn ? R.color.torch_on : R.color.torch_off)
+                        ContextCompat.getColor(requireContext(),
+                                isOn ? R.color.torch_on : R.color.torch_off)
                 ));
                 buttonTorchSwitch.setBackgroundTintList(ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), 
-                        android.R.color.transparent)
+                        ContextCompat.getColor(requireContext(),
+                                android.R.color.transparent)
                 ));
                 buttonTorchSwitch.setAlpha(isOn ? 1.0f : 0.7f);
             });
@@ -1487,7 +1483,7 @@ public class HomeFragment extends Fragment {
                 CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
                 Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                 int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                
+
                 if (hasFlash != null && hasFlash) {
                     torchSources.add(cameraId);
                     if (facing == CameraCharacteristics.LENS_FACING_BACK) {
@@ -1514,11 +1510,11 @@ public class HomeFragment extends Fragment {
                 RadioButton rb = new RadioButton(requireContext());
                 CameraCharacteristics chars = cameraManager.getCameraCharacteristics(sourceId);
                 int facing = chars.get(CameraCharacteristics.LENS_FACING);
-                rb.setText(facing == CameraCharacteristics.LENS_FACING_BACK ? 
-                    getString(R.string.torch_back) : getString(R.string.torch_front));
+                rb.setText(facing == CameraCharacteristics.LENS_FACING_BACK ?
+                        getString(R.string.torch_back) : getString(R.string.torch_front));
                 rb.setTag(sourceId);
                 torchGroup.addView(rb);
-                
+
                 if (sourceId.equals(currentTorchSource) && !currentBothTorches) {
                     rb.setChecked(true);
                 }
@@ -1530,7 +1526,7 @@ public class HomeFragment extends Fragment {
                 bothTorches.setText(R.string.torch_both);
                 bothTorches.setTag("both");
                 torchGroup.addView(bothTorches);
-                
+
                 if (currentBothTorches) {
                     bothTorches.setChecked(true);
                 }

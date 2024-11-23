@@ -292,14 +292,22 @@
             android:enabled="false"
             android:text="@string/button_start" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonPauseResume"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="48dp"
+            android:layout_height="41dp"
             android:layout_marginStart="8dp"
-            android:drawableLeft="@drawable/ic_pause"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:icon="@drawable/ic_pause"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="24dp"
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
             android:enabled="false"
-            android:text="@string/button_pause"/>
+            app:cornerRadius="15dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCamSwitch"
