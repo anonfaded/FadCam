@@ -6,6 +6,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,6 +18,9 @@ import android.content.res.AssetManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.media.CamcorderProfile;
 import android.net.Uri;
 import android.os.Build;
@@ -43,7 +47,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -78,10 +81,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
-
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraAccessException;
 
 public class HomeFragment extends Fragment {
 
@@ -369,6 +368,7 @@ public class HomeFragment extends Fragment {
 //        }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onStart() {
         super.onStart();
@@ -383,20 +383,36 @@ public class HomeFragment extends Fragment {
         registerBrodcastOnRecordingStopped();
         registerBroadcastOnRecordingStateCallback();
 
+        IntentFilter[] filters = {
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK)
+        };
+
+        BroadcastReceiver[] receivers = {
+                broadcastOnRecordingStarted,
+                broadcastOnRecordingResumed,
+                broadcastOnRecordingPaused,
+                broadcastOnRecordingStopped,
+                broadcastOnRecordingStateCallback
+        };
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 11 and above
-            requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingResumed, new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingPaused, new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK), Context.RECEIVER_EXPORTED);
+            // Android 13 et plus
+            for (int i = 0; i < receivers.length; i++) {
+                requireContext().registerReceiver(
+                        receivers[i],
+                        filters[i],
+                        Context.RECEIVER_EXPORTED
+                );
+            }
         } else {
-            // Below Android 11
-            requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED));
-            requireActivity().registerReceiver(broadcastOnRecordingResumed, new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED));
-            requireActivity().registerReceiver(broadcastOnRecordingPaused, new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED));
-            requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED));
-            requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK));
+            // Android 12 et versions antérieures
+            for (int i = 0; i < receivers.length; i++) {
+                requireContext().registerReceiver(receivers[i], filters[i]);
+            }
         }
 
         //fetch Camera status
@@ -416,7 +432,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent i)
             {
-                RecordingState recordingStateIntent = (RecordingState) i.getSerializableExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE);
+                RecordingState recordingStateIntent = (RecordingState) i.getSerializableExtra(Constants.INTENT_EXTRA_RECORDING_STATE);
                 if (recordingStateIntent == null) {
                     recordingStateIntent = RecordingState.NONE;
                 }
@@ -446,10 +462,8 @@ public class HomeFragment extends Fragment {
     private void registerBroadcastOnRecordingStarted() {
         broadcastOnRecordingStarted = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent i)
-            {
-                recordingStartTime = i.getLongExtra(Constants.BROADCAST_EXTRA_RECORDING_START_TIME, 0);
-
+            public void onReceive(Context context, Intent i) {
+                recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, 0);
                 onRecordingStarted(true);
             }
         };
@@ -578,6 +592,7 @@ public class HomeFragment extends Fragment {
         requireActivity().unregisterReceiver(broadcastOnRecordingStateCallback);
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onResume() {
         super.onResume();
@@ -598,15 +613,13 @@ public class HomeFragment extends Fragment {
                 }
             };
         }
-        
+
         // Register receiver with version check
-        IntentFilter filter = new IntentFilter(Constants.BROADCAST_TORCH_STATE_CHANGED);
+        IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            }
+            requireContext().registerReceiver(torchReceiver, filter);
         }
     }
 
@@ -1386,17 +1399,17 @@ public class HomeFragment extends Fragment {
 
     private void setupTorchButton() {
         buttonTorchSwitch = requireView().findViewById(R.id.buttonTorchSwitch);
-        
+
         // Set default torch source if none selected
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        if (prefs.getString("selected_torch_source", null) == null) {
+        if (prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null) == null) {
             try {
                 String defaultTorchId = getCameraWithFlash();
                 if (defaultTorchId != null) {
                     prefs.edit()
-                        .putString("selected_torch_source", defaultTorchId)
-                        .putBoolean("both_torches_enabled", false)
-                        .apply();
+                            .putString(Constants.PREF_SELECTED_TORCH_SOURCE, defaultTorchId)
+                            .putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false)
+                            .apply();
                 }
             } catch (CameraAccessException e) {
                 Log.e(TAG, "Error setting default torch source: " + e.getMessage());
@@ -1493,8 +1506,8 @@ public class HomeFragment extends Fragment {
 
             // Setup torch source options
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-            String currentTorchSource = prefs.getString("selected_torch_source", null);
-            boolean currentBothTorches = prefs.getBoolean("both_torches_enabled", false);
+            String currentTorchSource = prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+            boolean currentBothTorches = prefs.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
 
             // Add individual torch options
             for (String sourceId : torchSources) {
@@ -1530,28 +1543,28 @@ public class HomeFragment extends Fragment {
             }
 
             new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.torch_options_title)
-                .setView(dialogView)
-                .setPositiveButton(R.string.torch_apply, (dialog, which) -> {
-                    RadioButton selectedSource = dialogView.findViewById(torchGroup.getCheckedRadioButtonId());
-                    if (selectedSource != null) {
-                        String selectedSourceId = (String) selectedSource.getTag();
-                        boolean isBothSelected = "both".equals(selectedSourceId);
-                        
-                        // Save settings
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putBoolean("both_torches_enabled", isBothSelected);
-                        if (!isBothSelected) {
-                            editor.putString("selected_torch_source", selectedSourceId);
+                    .setTitle(R.string.torch_options_title)
+                    .setView(dialogView)
+                    .setPositiveButton(R.string.torch_apply, (dialog, which) -> {
+                        RadioButton selectedSource = dialogView.findViewById(torchGroup.getCheckedRadioButtonId());
+                        if (selectedSource != null) {
+                            String selectedSourceId = (String) selectedSource.getTag();
+                            boolean isBothSelected = "both".equals(selectedSourceId);
+
+                            // Save settings
+                            SharedPreferences.Editor editor = prefs.edit();
+                            editor.putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, isBothSelected);
+                            if (!isBothSelected) {
+                                editor.putString(Constants.PREF_SELECTED_TORCH_SOURCE, selectedSourceId);
+                            }
+                            editor.apply();
+
+                            Log.d(TAG, "Saved torch settings - Both: " + isBothSelected +
+                                    ", Source: " + selectedSourceId);
                         }
-                        editor.apply();
-                        
-                        Log.d(TAG, "Saved torch settings - Both: " + isBothSelected + 
-                              ", Source: " + selectedSourceId);
-                    }
-                })
-                .setNegativeButton(R.string.torch_cancel, null)
-                .show();
+                    })
+                    .setNegativeButton(R.string.torch_cancel, null)
+                    .show();
 
         } catch (CameraAccessException e) {
             Log.e(TAG, "Error accessing camera: " + e.getMessage());

@@ -11,7 +11,6 @@ appcompat = "1.7.0"
 material = "1.12.0"
 activity = "1.9.3"
 constraintlayout = "2.2.0"
-name = "version"
 okhttp = "4.9.3"
 osmdroidAndroid = "6.1.10"
 viewpager2 = "1.1.0"
@@ -30,7 +29,6 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-name = { module = "group:name", version.ref = "name" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 osmdroid-wms = { module = "org.osmdroid:osmdroid-wms", version.ref = "osmdroidAndroid" }

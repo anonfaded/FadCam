@@ -14,10 +14,6 @@
 </string>
 
 
-
-
-
-
     <string name="view_source_code">View Source Code</string>
     <string name="buy_me_a_coffee">Buy me a coffee ☕</string>
     <string name="contact">Contact</string>
@@ -25,11 +21,9 @@
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="privacy_information">Privacy Information</string>
     <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
-    <string-array name="video_quality_array">
-        <item name="quality_fhd">FHD (1920x1080)</item>
-        <item name="quality_hd">HD (1280x720)</item>
-        <item name="quality_sd">SD (640x480)</item>
-    </string-array>
+    <string name="quality_fhd" translatable="false">FHD (1920x1080)</string>
+    <string name="quality_hd" translatable="false">HD (1280x720)</string>
+    <string name="quality_sd" translatable="false">SD (640x480)</string>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>

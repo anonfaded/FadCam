@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="video_quality_options">
-        <item>@item/quality_fhd</item>
-        <item>@item/quality_hd</item>
-        <item>@item/quality_sd</item>
+        <item>@string/quality_fhd</item>
+        <item>@string/quality_hd</item>
+        <item>@string/quality_sd</item>
     </string-array>
 
     <integer-array name="video_framerate_options">

@@ -143,19 +143,19 @@ public class RecordingService extends Service {
                     case Constants.INTENT_ACTION_TOGGLE_TORCH:
                         toggleTorch();
                         return START_STICKY;
-                    case Constants.INTENT_ACTION_TORCH_RECORDING:
+                    case Constants.BROADCAST_ON_TORCH_STATE_REQUEST:
                         if (cameraDevice != null) {
                             try {
                                 isTorchOn = !isTorchOn;
                                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
-                                    isTorchOn ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+                                        isTorchOn ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
                                 captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                                
+
                                 // Broadcast state change
-                                Intent torchIntent = new Intent(Constants.BROADCAST_TORCH_STATE_CHANGED);
-                                torchIntent.putExtra("torch_state", isTorchOn);
+                                Intent torchIntent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+                                torchIntent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
                                 sendBroadcast(torchIntent);
-                                
+
                                 Log.d(TAG, "Recording camera torch turned " + (isTorchOn ? "ON" : "OFF"));
                             } catch (CameraAccessException e) {
                                 Log.e(TAG, "Error toggling torch during recording: " + e.getMessage());
@@ -355,8 +355,8 @@ public class RecordingService extends Service {
 
     private void broadcastOnRecordingStarted() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
-        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_RECORDING_START_TIME, recordingStartTime);
-        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE, recordingState);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
         getApplicationContext().sendBroadcast(broadcastIntent);
     }
 
@@ -377,7 +377,7 @@ public class RecordingService extends Service {
 
     private void broadcastOnRecordingStateCallback() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
-        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE, recordingState);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
         getApplicationContext().sendBroadcast(broadcastIntent);
     }
 
@@ -842,8 +842,8 @@ public class RecordingService extends Service {
 
             // Get selected torch source from preferences
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            String selectedTorchSource = prefs.getString("selected_torch_source", null);
-            
+            String selectedTorchSource = prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+
             // If no source selected, find first available torch
             if (selectedTorchSource == null) {
                 for (String id : torchManager.getCameraIdList()) {

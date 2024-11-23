@@ -12,10 +12,6 @@
 </string>
 
 
-
-
-
-
     <string name="view_source_code">Voir Code Source</string>
     <string name="buy_me_a_coffee">Achète moi un café ☕</string>
     <string name="contact">Contact</string>
@@ -23,11 +19,6 @@
     <string name="join_community">Rejoignez la communauté pour obtenir de l\'aide, partager des idées et les mises à jour futur de l\'application</string>
     <string name="privacy_information">Information Confidentialité</string>
     <string name="copyright_info">© 2024 fadedhood.com\nSous licence GPL-3.0</string>
-    <string-array name="video_quality_array">
-        <item name="quality_fhd">FHD (1920x1080)</item>
-        <item name="quality_hd">HD (1280x720)</item>
-        <item name="quality_sd">SD (640x480)</item>
-    </string-array>
     <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Disponible :</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
@@ -198,4 +189,12 @@
     <string name="notification_video_recording">Enregistrement vidéo</string>
     <string name="notification_video_recording_paused_description">Enregistrement en pause</string>
     <string name="notification_video_recording_progress_description">Enregistrement en cours</string>
+    <string name="torch_options_title">Options de la lampe torche</string>
+    <string name="torch_select_source">Sélectionnez la source :</string>
+    <string name="torch_back">Lampe torche arrière</string>
+    <string name="torch_front">Lampe torche avant</string>
+    <string name="torch_apply">Appliquer</string>
+    <string name="torch_cancel">Annuler</string>
+    <string name="torch_recording_note">Impossible de changer les options de la lampe torche pendant l\'enregistrement</string>
+    <string name="torch_both">Les deux lampes torches</string>
 </resources>
