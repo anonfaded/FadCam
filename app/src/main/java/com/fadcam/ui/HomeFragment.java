@@ -1410,7 +1410,6 @@ public class HomeFragment extends Fragment {
                             .putString(Constants.PREF_SELECTED_TORCH_SOURCE, defaultTorchId)
                             .putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false)
                             .apply();
-                    Log.d(TAG, "Set default torch source: " + defaultTorchId);
                 }
             } catch (CameraAccessException e) {
                 Log.e(TAG, "Error setting default torch source: " + e.getMessage());
@@ -1422,10 +1421,16 @@ public class HomeFragment extends Fragment {
             Intent intent = new Intent(requireContext(), TorchService.class);
             intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
             requireContext().startService(intent);
+            
+            // Update UI immediately for better responsiveness
+            boolean newTorchState = !isTorchOn;
+            updateTorchButtonState(newTorchState);
+            isTorchOn = newTorchState;
+            
             vibrateTouch();
         });
 
-        // Setup long press listener for torch options
+        // Setup long press listener
         buttonTorchSwitch.setOnLongClickListener(v -> {
             showTorchOptionsDialog();
             vibrateTouch();
@@ -1437,35 +1442,32 @@ public class HomeFragment extends Fragment {
             torchReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
-                    buttonTorchSwitch.setIconResource(torchState ?
-                            R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
-
-                    // Update icon and background tints
-                    buttonTorchSwitch.setIconTint(ColorStateList.valueOf(
-                            ContextCompat.getColor(requireContext(),
-                                    torchState ? R.color.torch_on : R.color.torch_off)
-                    ));
-                    buttonTorchSwitch.setBackgroundTintList(ColorStateList.valueOf(
-                            ContextCompat.getColor(requireContext(),
-                                    android.R.color.transparent)
-                    ));
-                    buttonTorchSwitch.setAlpha(torchState ? 1.0f : 0.7f);
+                    boolean torchState = intent.getBooleanExtra("torch_state", false);
+                    isTorchOn = torchState;
+                    updateTorchButtonState(torchState);
                 }
             };
         }
+    }
 
-        // Register the receiver with proper checks
-        IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            }
+    private void updateTorchButtonState(boolean isOn) {
+        if (buttonTorchSwitch != null) {
+            buttonTorchSwitch.post(() -> {
+                buttonTorchSwitch.setIconResource(isOn ? 
+                    R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
+                buttonTorchSwitch.setIconTint(ColorStateList.valueOf(
+                    ContextCompat.getColor(requireContext(), 
+                        isOn ? R.color.torch_on : R.color.torch_off)
+                ));
+                buttonTorchSwitch.setBackgroundTintList(ColorStateList.valueOf(
+                    ContextCompat.getColor(requireContext(), 
+                        android.R.color.transparent)
+                ));
+                buttonTorchSwitch.setAlpha(isOn ? 1.0f : 0.7f);
+            });
         }
     }
-    
+
     private void showTorchOptionsDialog() {
         // Check if recording is in progress first
         if (isRecordingInProgress()) {
