@@ -14,10 +14,6 @@
 </string>
 
 
-
-
-
-
     <string name="view_source_code">Lihat Kode Sumber</string>
     <string name="buy_me_a_coffee">Belikan saya kopi ☕</string>
     <string name="contact">Kontak</string>
@@ -25,11 +21,6 @@
     <string name="join_community">Bergabunglah dengan komunitas untuk mendapatkan bantuan, berbagi ide, dan pembaruan aplikasi di masa mendatang</string>
     <string name="privacy_information">Informasi Privasi</string>
     <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
-    <string-array name="video_quality_array">
-        <item name="quality_fhd">FHD (1920x1080)</item>
-        <item name="quality_hd">HD (1280x720)</item>
-        <item name="quality_sd">SD (640x480)</item>
-    </string-array>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>

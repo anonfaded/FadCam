@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.fadcam.ui.ViewPagerAdapter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.File;
@@ -31,18 +32,18 @@ public class MainActivity extends AppCompatActivity {
         applyLanguage(savedLanguageCode);  // Apply the language preference
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); //force dark theme even on light themed devices
-        
+
         // Check if current locale is Pashto
         if (getResources().getConfiguration().locale.getLanguage().equals("ps")) {
             getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-      
+
         setContentView(R.layout.activity_main);
 
         viewPager = findViewById(R.id.view_pager);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        com.fadcam.ViewPagerAdapter adapter = new com.fadcam.ViewPagerAdapter(this);
+        ViewPagerAdapter adapter = new ViewPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
         // Assuming viewPager is the instance of your ViewPager

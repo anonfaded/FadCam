@@ -1,19 +1,17 @@
 package com.fadcam.services;
 
+import android.app.ActivityManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
-import android.os.Build;
-import android.os.IBinder;
-import android.content.Context;
-import android.util.Log;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.app.ActivityManager;
-import android.hardware.camera2.CaptureRequest;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.fadcam.Constants;
 import com.fadcam.RecordingService;
@@ -41,7 +39,7 @@ public class TorchService extends Service {
             if (isRecordingInProgress()) {
                 // Delegate to RecordingService
                 Intent recordingIntent = new Intent(this, RecordingService.class);
-                recordingIntent.setAction(Constants.INTENT_ACTION_TORCH_RECORDING);
+                recordingIntent.setAction(Constants.BROADCAST_ON_TORCH_STATE_REQUEST);
                 startService(recordingIntent);
             } else {
                 handler.post(this::toggleTorch);
@@ -66,8 +64,8 @@ public class TorchService extends Service {
     private void toggleTorch() {
         try {
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-            boolean useBothTorches = sharedPreferences.getBoolean("both_torches_enabled", false);
-            
+            boolean useBothTorches = sharedPreferences.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
+
             if (useBothTorches) {
                 // Toggle both available torches
                 for (String id : cameraManager.getCameraIdList()) {
@@ -80,20 +78,20 @@ public class TorchService extends Service {
                 isTorchOn = !isTorchOn;
             } else {
                 // Use selected single torch
-                String selectedTorchSource = sharedPreferences.getString("selected_torch_source", null);
-                
+                String selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+
                 if (selectedTorchSource != null) {
                     isTorchOn = !isTorchOn;
                     cameraManager.setTorchMode(selectedTorchSource, isTorchOn);
                     Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
                 }
             }
-            
+
             // Broadcast state change
-            Intent intent = new Intent(Constants.BROADCAST_TORCH_STATE_CHANGED);
-            intent.putExtra("torch_state", isTorchOn);
+            Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
             sendBroadcast(intent);
-            
+
             Log.d(TAG, "Torch(es) turned " + (isTorchOn ? "ON" : "OFF"));
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch: " + e.getMessage());

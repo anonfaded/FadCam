@@ -1,6 +1,7 @@
 package com.fadcam.ui;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -95,6 +96,7 @@ public class SettingsFragment extends Fragment {
         locationHelper = new LocationHelper(requireContext());
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onStart()
     {
@@ -371,7 +373,7 @@ public class SettingsFragment extends Fragment {
 
     private void setupQualitySpinner(View view, Spinner qualitySpinner) {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(),
-                R.array.video_quality_array, android.R.layout.simple_spinner_item);
+                R.array.video_quality_options, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         qualitySpinner.setAdapter(adapter);
 
