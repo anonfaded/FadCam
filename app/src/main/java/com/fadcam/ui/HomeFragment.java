@@ -621,7 +621,7 @@ public class HomeFragment extends Fragment {
                             try {
                                 buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
                                     requireContext(),
-                                    isTorchOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                                    R.drawable.ic_flashlight_on
                                 ));
                                 buttonTorchSwitch.setSelected(isTorchOn);
                                 buttonTorchSwitch.setEnabled(true);
@@ -735,7 +735,7 @@ public class HomeFragment extends Fragment {
         // Add this debug code
         try {
             Drawable onIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_on);
-            Drawable offIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_off);
+            Drawable offIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_on);
             Log.d("TorchDebug", "Icon resources loaded - ON: " + (onIcon != null) + ", OFF: " + (offIcon != null));
         } catch (Exception e) {
             Log.e("TorchDebug", "Error checking icon resources: " + e.getMessage());
@@ -1477,7 +1477,7 @@ public class HomeFragment extends Fragment {
                             try {
                                 buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
                                     requireContext(),
-                                    isTorchOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                                    R.drawable.ic_flashlight_on
                                 ));
                                 buttonTorchSwitch.setSelected(isTorchOn);
                                 buttonTorchSwitch.setEnabled(true);
@@ -1502,7 +1502,7 @@ public class HomeFragment extends Fragment {
         if (buttonTorchSwitch != null) {
             buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
                 requireContext(),
-                isOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                R.drawable.ic_flashlight_on
             ));
             buttonTorchSwitch.setEnabled(true);
         }
@@ -1640,7 +1640,7 @@ public class HomeFragment extends Fragment {
                 try {
                     buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
                         requireContext(),
-                        isOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                        R.drawable.ic_flashlight_on
                     ));
                     buttonTorchSwitch.setSelected(isOn);
                     buttonTorchSwitch.setEnabled(true);

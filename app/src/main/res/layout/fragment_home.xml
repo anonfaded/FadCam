@@ -276,7 +276,7 @@
             android:layout_height="41dp"
             android:layout_marginEnd="8dp"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            app:icon="@drawable/ic_flashlight_off"
+            app:icon="@drawable/ic_flashlight_on"
             app:iconSize="24dp"
             app:iconTint="@color/button_icon_tint_selector"
             app:iconGravity="textStart"
