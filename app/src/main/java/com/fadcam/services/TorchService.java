@@ -15,6 +15,9 @@ import android.util.Log;
 
 import com.fadcam.Constants;
 import com.fadcam.RecordingService;
+import com.fadcam.ui.HomeFragment;
+
+import java.lang.ref.WeakReference;
 
 public class TorchService extends Service {
     private static final String TAG = "TorchService";
@@ -22,6 +25,11 @@ public class TorchService extends Service {
     private HandlerThread handlerThread;
     private Handler handler;
     private SharedPreferences sharedPreferences;
+    private static WeakReference<HomeFragment> homeFragmentRef;
+
+    public static void setHomeFragment(HomeFragment fragment) {
+        homeFragmentRef = new WeakReference<>(fragment);
+    }
 
     @Override
     public void onCreate() {
@@ -84,6 +92,11 @@ public class TorchService extends Service {
                     isTorchOn = !isTorchOn;
                     cameraManager.setTorchMode(selectedTorchSource, isTorchOn);
                     Log.d(TAG, "Torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
+                    
+                    // Update UI through callback
+                    if (homeFragmentRef != null && homeFragmentRef.get() != null) {
+                        homeFragmentRef.get().updateTorchUI(isTorchOn);
+                    }
                 }
             }
 

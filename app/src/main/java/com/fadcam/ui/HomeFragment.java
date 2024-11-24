@@ -83,6 +83,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import android.graphics.drawable.Drawable;
+
 public class HomeFragment extends Fragment {
 
     private static final String TAG = "HomeFragment";
@@ -610,17 +612,34 @@ public class HomeFragment extends Fragment {
             torchReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    // Your existing receiver code
+                    if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
+                        boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
+                        isTorchOn = torchState;
+                        Log.d("TorchDebug", "Received broadcast - Torch state: " + torchState);
+                        
+                        requireActivity().runOnUiThread(() -> {
+                            try {
+                                buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                                    requireContext(),
+                                    isTorchOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                                ));
+                                buttonTorchSwitch.setSelected(isTorchOn);
+                                buttonTorchSwitch.setEnabled(true);
+                            } catch (Exception e) {
+                                Log.e("TorchDebug", "Error updating torch icon: " + e.getMessage());
+                            }
+                        });
+                    }
                 }
             };
-        }
-
-        // Register receiver with version check
-        IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            requireContext().registerReceiver(torchReceiver, filter);
+            
+            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            // Add the RECEIVER_NOT_EXPORTED flag for Android 13+ compatibility
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                requireContext().registerReceiver(torchReceiver, filter);
+            }
         }
     }
 
@@ -710,8 +729,19 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        tips = requireActivity().getResources().getStringArray(R.array.tips_widget);
         super.onViewCreated(view, savedInstanceState);
+        TorchService.setHomeFragment(this);
+        
+        // Add this debug code
+        try {
+            Drawable onIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_on);
+            Drawable offIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_off);
+            Log.d("TorchDebug", "Icon resources loaded - ON: " + (onIcon != null) + ", OFF: " + (offIcon != null));
+        } catch (Exception e) {
+            Log.e("TorchDebug", "Error checking icon resources: " + e.getMessage());
+        }
+        
+        tips = requireActivity().getResources().getStringArray(R.array.tips_widget);
         Log.d(TAG, "onViewCreated: Setting up UI components");
 
         setupTextureView(view);
@@ -1361,9 +1391,11 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-
-        Log.d(TAG, "onDestroyView: Cleaning up resources");
-
+        TorchService.setHomeFragment(null);
+        if (torchReceiver != null) {
+            requireContext().unregisterReceiver(torchReceiver);
+            torchReceiver = null;
+        }
         stopUpdatingInfo();
         stopUpdatingClock();
     }
@@ -1421,12 +1453,6 @@ public class HomeFragment extends Fragment {
             Intent intent = new Intent(requireContext(), TorchService.class);
             intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
             requireContext().startService(intent);
-
-            // Update UI immediately for better responsiveness
-            boolean newTorchState = !isTorchOn;
-            updateTorchButtonState(newTorchState);
-            isTorchOn = newTorchState;
-
             vibrateTouch();
         });
 
@@ -1442,29 +1468,43 @@ public class HomeFragment extends Fragment {
             torchReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    boolean torchState = intent.getBooleanExtra("torch_state", false);
-                    isTorchOn = torchState;
-                    updateTorchButtonState(torchState);
+                    if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
+                        boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
+                        isTorchOn = torchState;
+                        Log.d("TorchDebug", "Received broadcast - Torch state: " + torchState);
+                        
+                        requireActivity().runOnUiThread(() -> {
+                            try {
+                                buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                                    requireContext(),
+                                    isTorchOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                                ));
+                                buttonTorchSwitch.setSelected(isTorchOn);
+                                buttonTorchSwitch.setEnabled(true);
+                            } catch (Exception e) {
+                                Log.e("TorchDebug", "Error updating torch icon: " + e.getMessage());
+                            }
+                        });
+                    }
                 }
             };
+            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            // Add the RECEIVER_NOT_EXPORTED flag for Android 13+ compatibility
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                requireContext().registerReceiver(torchReceiver, filter);
+            }
         }
     }
 
     private void updateTorchButtonState(boolean isOn) {
         if (buttonTorchSwitch != null) {
-            buttonTorchSwitch.post(() -> {
-                buttonTorchSwitch.setIconResource(isOn ?
-                        R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off);
-                buttonTorchSwitch.setIconTint(ColorStateList.valueOf(
-                        ContextCompat.getColor(requireContext(),
-                                isOn ? R.color.torch_on : R.color.torch_off)
-                ));
-                buttonTorchSwitch.setBackgroundTintList(ColorStateList.valueOf(
-                        ContextCompat.getColor(requireContext(),
-                                android.R.color.transparent)
-                ));
-                buttonTorchSwitch.setAlpha(isOn ? 1.0f : 0.7f);
-            });
+            buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                requireContext(),
+                isOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+            ));
+            buttonTorchSwitch.setEnabled(true);
         }
     }
 
@@ -1592,5 +1632,23 @@ public class HomeFragment extends Fragment {
             }
         }
         return false;
+    }
+
+    public void updateTorchUI(boolean isOn) {
+        if (isAdded() && getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                try {
+                    buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                        requireContext(),
+                        isOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off
+                    ));
+                    buttonTorchSwitch.setSelected(isOn);
+                    buttonTorchSwitch.setEnabled(true);
+                    Log.d("TorchDebug", "Torch UI updated, isOn: " + isOn);
+                } catch (Exception e) {
+                    Log.e("TorchDebug", "Error updating torch UI: " + e.getMessage());
+                }
+            });
+        }
     }
 }
