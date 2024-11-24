@@ -37,3 +37,7 @@ app/debug/
 app/build/
 app/**/build/
 **/build/
+
+# Keystore files
+*.jks
+*.keystore
