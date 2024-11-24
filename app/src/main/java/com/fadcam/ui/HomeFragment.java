@@ -1392,10 +1392,17 @@ public class HomeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         TorchService.setHomeFragment(null);
+        
+        // Safely unregister the torch receiver
         if (torchReceiver != null) {
-            requireContext().unregisterReceiver(torchReceiver);
+            try {
+                requireContext().unregisterReceiver(torchReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Torch receiver was not registered or already unregistered");
+            }
             torchReceiver = null;
         }
+        
         stopUpdatingInfo();
         stopUpdatingClock();
     }
@@ -1465,6 +1472,13 @@ public class HomeFragment extends Fragment {
 
         // Register torch state receiver
         if (torchReceiver == null) {
+            try {
+                // First try to unregister any existing receiver
+                requireContext().unregisterReceiver(torchReceiver);
+            } catch (IllegalArgumentException e) {
+                // Ignore if not registered
+            }
+            
             torchReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -1488,8 +1502,8 @@ public class HomeFragment extends Fragment {
                     }
                 }
             };
+            
             IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-            // Add the RECEIVER_NOT_EXPORTED flag for Android 13+ compatibility
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             } else {
