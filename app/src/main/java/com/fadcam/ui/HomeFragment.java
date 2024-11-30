@@ -21,7 +21,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
-import android.media.CamcorderProfile;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,10 +57,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.fadcam.CameraType;
 import com.fadcam.Constants;
 import com.fadcam.R;
-import com.fadcam.RecordingService;
+import com.fadcam.services.RecordingService;
 import com.fadcam.RecordingState;
+import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -101,7 +103,6 @@ public class HomeFragment extends Fragment {
     private Runnable updateClockRunnable; // Declare here
 
     private TextureView textureView;
-    private SharedPreferences sharedPreferences;
 
     private Handler tipHandler = new Handler();
     private int typingIndex = 0;
@@ -153,6 +154,8 @@ public class HomeFragment extends Fragment {
     private boolean isTorchOn = false;
 
     private BroadcastReceiver torchReceiver;
+
+    private SharedPreferencesManager sharedPreferencesManager;
 
     // important
     private void requestEssentialPermissions() {
@@ -353,12 +356,12 @@ public class HomeFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        sharedPreferences = requireActivity().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
-
         Log.d(TAG, "HomeFragment created.");
 
         // Request essential permissions on every launch
         requestEssentialPermissions();
+
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
         // Check if it's the first launch
 //        boolean isFirstLaunch = sharedPreferences.getBoolean(PREF_FIRST_LAUNCH, true);
@@ -403,7 +406,7 @@ public class HomeFragment extends Fragment {
         };
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 et plus
+            // Android 13 and above
             for (int i = 0; i < receivers.length; i++) {
                 requireContext().registerReceiver(
                         receivers[i],
@@ -412,15 +415,28 @@ public class HomeFragment extends Fragment {
                 );
             }
         } else {
-            // Android 12 et versions antérieures
+            // Android 12 and earlier
             for (int i = 0; i < receivers.length; i++) {
                 requireContext().registerReceiver(receivers[i], filters[i]);
             }
         }
 
-        //fetch Camera status
-        String currentCameraSelection = getCameraSelection();
-        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraSelection, Toast.LENGTH_SHORT).show();
+        showCurrentCameraSelection();
+    }
+
+    /**
+     * Displays a toast message showing the currently selected camera based on shared preferences
+     */
+    private void showCurrentCameraSelection() {
+        CameraType currentCameraType = sharedPreferencesManager.getCameraSelection();
+        String currentCameraTypeString = "";
+        if (currentCameraType.equals(CameraType.FRONT)) {
+            currentCameraTypeString = getString(R.string.front);
+        } else if (currentCameraType.equals(CameraType.BACK)) {
+            currentCameraTypeString = getString(R.string.back);
+        }
+
+        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraTypeString.toLowerCase(), Toast.LENGTH_SHORT).show();
     }
 
     private void fetchRecordingState()
@@ -563,8 +579,7 @@ public class HomeFragment extends Fragment {
         buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_start)));
         buttonStartStop.setText(getString(R.string.button_start));
         buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
-
-        setupStartStopButton();
+        buttonStartStop.setEnabled(true);
 
         buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(false);
@@ -602,7 +617,6 @@ public class HomeFragment extends Fragment {
 
         Log.d(TAG, "HomeFragment resumed.");
 
-        setupStartStopButton();
         fetchRecordingState();
 
         updateStats();
@@ -707,7 +721,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void savePreviewState() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
+        SharedPreferences.Editor editor = sharedPreferencesManager.sharedPreferences.edit();
         editor.putBoolean("isPreviewEnabled", isPreviewEnabled);
         editor.apply();
     }
@@ -773,8 +787,7 @@ public class HomeFragment extends Fragment {
         cardPreview = view.findViewById(R.id.cardPreview);
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
 
-        sharedPreferences = requireActivity().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
-        isPreviewEnabled = sharedPreferences.getBoolean(Constants.PREF_IS_PREVIEW_ENABLED, true);
+        isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
 
         resetTimers();
         copyFontToInternalStorage();
@@ -1243,30 +1256,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void setVideoBitrate() {
-        String selectedQuality = sharedPreferences.getString(Constants.PREF_VIDEO_QUALITY, Constants.QUALITY_HD);
-        switch (selectedQuality) {
-            case Constants.QUALITY_SD:
-                videoBitrate = 1000000; // 1 Mbps
-                break;
-            case Constants.QUALITY_HD:
-                videoBitrate = 5000000; // 5 Mbps
-                break;
-            case Constants.QUALITY_FHD:
-                videoBitrate = 10000000; // 10 Mbps
-                break;
-            default:
-                videoBitrate = 5000000; // Default to HD
-                break;
-        }
+        videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
         Log.d(TAG, "setVideoBitrate: Set to " + videoBitrate + " bps");
-    }
-
-    private String getCameraSelection() {
-        return sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
-    }
-
-    private String getCameraQuality() {
-        return sharedPreferences.getString(Constants.PREF_VIDEO_QUALITY, Constants.QUALITY_HD);
     }
 
     private void stopRecording() {
@@ -1288,12 +1279,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void copyFontToInternalStorage() {
-        AssetManager assetManager = getContext().getAssets();
+        AssetManager assetManager = requireContext().getAssets();
         InputStream in = null;
         OutputStream out = null;
         try {
             in = assetManager.open("ubuntu_regular.ttf");
-            File outFile = new File(getContext().getFilesDir(), "ubuntu_regular.ttf");
+            File outFile = new File(requireContext().getFilesDir(), "ubuntu_regular.ttf");
             out = new FileOutputStream(outFile);
             copyFile(in, out);
             Log.d(TAG, "Font copied to internal storage.");
@@ -1318,13 +1309,12 @@ public class HomeFragment extends Fragment {
     }
 
     public void switchCamera() {
-        String currentCameraSelection = sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
-        if (currentCameraSelection.equals(Constants.CAMERA_BACK)) {
-            sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_FRONT).apply();
+        if (sharedPreferencesManager.getCameraSelection().equals(CameraType.BACK)) {
+            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, CameraType.FRONT.toString()).apply();
             Log.d(TAG, "Camera set to front");
             Toast.makeText(getContext(), R.string.switched_front_camera, Toast.LENGTH_SHORT).show();
         } else {
-            sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK).apply();
+            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, CameraType.BACK.toString()).apply();
             Log.d(TAG, "Camera set to rear");
             Toast.makeText(getContext(), R.string.switched_rear_camera, Toast.LENGTH_SHORT).show();
         }
@@ -1360,31 +1350,6 @@ public class HomeFragment extends Fragment {
         int read;
         while ((read = in.read(buffer)) != -1) {
             out.write(buffer, 0, read);
-        }
-    }
-
-    private void setupStartStopButton()
-    {
-        if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constants.CAMERA_FRONT) && getCameraQuality().equals(Constants.QUALITY_FHD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constants.CAMERA_FRONT) && getCameraQuality().equals(Constants.QUALITY_HD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constants.CAMERA_FRONT) && getCameraQuality().equals(Constants.QUALITY_SD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constants.CAMERA_BACK) && getCameraQuality().equals(Constants.QUALITY_FHD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constants.CAMERA_BACK) && getCameraQuality().equals(Constants.QUALITY_HD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constants.CAMERA_BACK) && getCameraQuality().equals(Constants.QUALITY_SD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else {
-            buttonStartStop.setEnabled(true);
         }
     }
 
@@ -1436,6 +1401,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void setupTorchButton() {
         buttonTorchSwitch = requireView().findViewById(R.id.buttonTorchSwitch);
 

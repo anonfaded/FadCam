@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="video_quality_options">
-        <item>@string/quality_fhd</item>
-        <item>@string/quality_hd</item>
-        <item>@string/quality_sd</item>
-    </string-array>
-
     <integer-array name="video_framerate_options">
         <item>24</item>
         <item>30</item>
         <item>60</item>
         <item>90</item>
+        <item>120</item>
     </integer-array>
 
     <string-array name="languages_array">

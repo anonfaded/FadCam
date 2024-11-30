@@ -14,7 +14,6 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.fadcam.Constants;
-import com.fadcam.RecordingService;
 import com.fadcam.ui.HomeFragment;
 
 import java.lang.ref.WeakReference;
