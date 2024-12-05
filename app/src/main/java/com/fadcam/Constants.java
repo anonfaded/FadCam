@@ -39,7 +39,7 @@ public abstract class Constants {
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
-    public static final double RECORDING_COMPRESSION_FACTOR = 0.07;
+    public static final double RECORDING_COMPRESSION_FACTOR = 0.33;
 
     public static final CameraType DEFAULT_CAMERA_TYPE = CameraType.BACK;
     public static final Size DEFAULT_VIDEO_RESOLUTION = new Size(1920, 1080);
