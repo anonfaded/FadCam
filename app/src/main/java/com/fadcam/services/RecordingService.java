@@ -35,6 +35,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.ReturnCode;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
@@ -558,10 +559,13 @@ public class RecordingService extends Service {
         Log.d(TAG, "Font Path: " + fontPath);
         Log.d(TAG, "Font Size: " + fontSizeStr);
 
+        int frameRates = sharedPreferencesManager.getVideoFrameRate();
+        int bitratesEstimated = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), frameRates);
+
         // Construct the FFmpeg command
         String ffmpegCommand = String.format(
-                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:a copy %s",
-                inputFilePath, watermarkText, fontSizeStr, fontPath, outputFilePath
+                "-i %s -r %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:v hevc_mediacodec -b:v %s -codec:a copy %s",
+                inputFilePath, frameRates, watermarkText, fontSizeStr, fontPath, bitratesEstimated, outputFilePath
         );
 
         executeFFmpegCommand(ffmpegCommand);
@@ -592,7 +596,7 @@ public class RecordingService extends Service {
     private void executeFFmpegCommand(String ffmpegCommand) {
         Log.d(TAG, "FFmpeg Command: " + ffmpegCommand);
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            if (session.getReturnCode().isSuccess()) {
+            if (ReturnCode.isSuccess(session.getReturnCode())) {
                 Log.d(TAG, "Watermark added successfully.");
                 // Start monitoring temp files
                 startMonitoring();

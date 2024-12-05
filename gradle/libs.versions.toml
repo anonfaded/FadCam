@@ -2,6 +2,7 @@
 agp = "8.7.2"
 coreKtx = "1.15.0"
 exoplayerCore = "2.19.1"
+ffmpegKitFull = "6.0-2"
 ffmpegKitVideo = "4.5"
 glide = "4.14.2"
 junit = "4.13.2"
@@ -20,6 +21,7 @@ compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 exoplayer-core = { module = "com.google.android.exoplayer:exoplayer-core", version.ref = "exoplayerCore" }
 exoplayer-ui = { module = "com.google.android.exoplayer:exoplayer-ui", version.ref = "exoplayerCore" }
+ffmpeg-kit-full = { module = "com.arthenica:ffmpeg-kit-full", version.ref = "ffmpegKitFull" }
 ffmpeg-kit-video = { module = "com.arthenica:ffmpeg-kit-video", version.ref = "ffmpegKitVideo" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
