@@ -223,7 +223,7 @@
                 </LinearLayout>
 
                 <Spinner
-                    android:id="@+id/quality_spinner"
+                    android:id="@+id/resolution_spinner"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"/>
 

@@ -21,9 +21,26 @@
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="privacy_information">Privacy Information</string>
     <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
-    <string name="quality_fhd" translatable="false">FHD (1920x1080)</string>
-    <string name="quality_hd" translatable="false">HD (1280x720)</string>
-    <string name="quality_sd" translatable="false">SD (640x480)</string>
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item> <!-- 8K -->
+        <item>3840x2160</item> <!-- 4K -->
+        <item>2560x1440</item> <!-- 2K -->
+        <item>1920x1080</item> <!-- FHD -->
+        <item>1280x720</item> <!-- HD -->
+        <item>640x480</item> <!-- SD -->
+        <item>720x480</item> <!-- SD -->
+        <item>480x360</item> <!-- SD -->
+    </string-array>
+    <string-array name="video_resolutions_values">
+        <item>8K</item>  <!-- 8K -->
+        <item>4K</item>  <!-- 4K -->
+        <item>2K</item>  <!-- 2K -->
+        <item>FHD</item> <!-- Full HD -->
+        <item>HD</item>  <!-- High Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+    </string-array>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>
@@ -68,6 +85,8 @@
     <string name="video_recording_paused">Recording paused</string>
     <string name="video_recording_resumed">Recording resumed</string>
     <string name="current_camera">Current camera</string>
+    <string name="back">Back</string>
+    <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
     <string name="video_menu_rename">Rename</string>

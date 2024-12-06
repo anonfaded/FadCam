@@ -1,4 +1,4 @@
-package com.fadcam;
+package com.fadcam.services;
 
 import static android.hardware.camera2.CameraDevice.StateCallback;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
@@ -11,7 +11,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -36,6 +35,14 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.ReturnCode;
+import com.fadcam.CameraType;
+import com.fadcam.Constants;
+import com.fadcam.MainActivity;
+import com.fadcam.R;
+import com.fadcam.RecordingState;
+import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Utils;
 import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.RecordsAdapter;
 
@@ -63,13 +70,9 @@ public class RecordingService extends Service {
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
 
-    private SharedPreferences sharedPreferences;
-
     private CaptureRequest.Builder captureRequestBuilder;
 
     private Surface previewSurface;
-
-    private static final String PREF_LOCATION_DATA = "location_data";
 
     private LocationHelper locationHelper;
 
@@ -95,15 +98,17 @@ public class RecordingService extends Service {
 
     private long recordingStartTime;
 
+    private SharedPreferencesManager sharedPreferencesManager;
+
     @Override
     public void onCreate() {
         super.onCreate();
 
-        sharedPreferences = getApplicationContext().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
-
         locationHelper = new LocationHelper(getApplicationContext());
 
         createNotificationChannel();
+
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
 
         Log.d(TAG, "Service created");
     }
@@ -231,33 +236,13 @@ public class RecordingService extends Service {
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
 
-            // Select video quality and adjust size and bitrate
-            switch (getCameraQuality()) {
-                case Constants.QUALITY_SD:
-                    // SD: 640x480 resolution, 0.5 Mbps (50% of original 1 Mbps)
-                    mediaRecorder.setVideoSize(640, 480);
-                    mediaRecorder.setVideoEncodingBitRate(500000);
-                    break;
-                case Constants.QUALITY_HD:
-                    // HD: 1280x720 resolution, 2.5 Mbps (50% of original 5 Mbps)
-                    mediaRecorder.setVideoSize(1280, 720);
-                    mediaRecorder.setVideoEncodingBitRate(2500000);
-                    break;
-                case Constants.QUALITY_FHD:
-                    // FHD: 1920x1080 resolution, 5 Mbps (50% of original 10 Mbps)
-                    mediaRecorder.setVideoSize(1920, 1080);
-                    mediaRecorder.setVideoEncodingBitRate(5000000);
-                    break;
-                default:
-                    // Default to HD settings
-                    mediaRecorder.setVideoSize(1280, 720);
-                    mediaRecorder.setVideoEncodingBitRate(2500000);
-                    break;
-            }
+            // Set video resolution and adjust size and bitrate
+            mediaRecorder.setVideoSize(sharedPreferencesManager.getCameraResolution().getWidth(), sharedPreferencesManager.getCameraResolution().getHeight());
+            mediaRecorder.setVideoEncodingBitRate(getVideoBitrate());
 
             // Set frame rate and capture rate
-            mediaRecorder.setVideoFrameRate(getCameraFrameRate());
-            mediaRecorder.setCaptureRate(getCameraFrameRate());
+            mediaRecorder.setVideoFrameRate(sharedPreferencesManager.getVideoFrameRate());
+            mediaRecorder.setCaptureRate(sharedPreferencesManager.getVideoFrameRate());
 
             // Audio settings: high-quality audio
             mediaRecorder.setAudioEncodingBitRate(384000);
@@ -268,7 +253,7 @@ public class RecordingService extends Service {
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.HEVC);
 
             // Set orientation based on camera selection
-            if (getCameraSelection().equals(Constants.CAMERA_FRONT)) {
+            if (sharedPreferencesManager.getCameraSelection().equals(CameraType.FRONT)) {
                 mediaRecorder.setOrientationHint(270);
             } else {
                 mediaRecorder.setOrientationHint(90);
@@ -309,7 +294,7 @@ public class RecordingService extends Service {
 
             captureRequestBuilder.addTarget(recorderSurface);
 
-            Range<Integer> fpsRange = Range.create(getCameraFrameRate(), getCameraFrameRate());
+            Range<Integer> fpsRange = Range.create(sharedPreferencesManager.getVideoFrameRate(), sharedPreferencesManager.getVideoFrameRate());
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
             cameraDevice.createCaptureSession(surfaces, new CaptureSessionCallback(), null);
         } catch (CameraAccessException e) {
@@ -385,9 +370,8 @@ public class RecordingService extends Service {
         Log.d(TAG, "openCamera: Opening camera");
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
-            String[] cameraIdList = manager.getCameraIdList();
-            String cameraId = getCameraSelection().equals(Constants.CAMERA_FRONT) ? cameraIdList[1] : cameraIdList[0];
-            manager.openCamera(cameraId, new StateCallback() {
+            int cameraId = sharedPreferencesManager.getCameraSelection().getCameraId();
+            manager.openCamera(String.valueOf(cameraId), new StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
                     Log.d(TAG, "onOpened: Camera opened successfully");
@@ -546,9 +530,9 @@ public class RecordingService extends Service {
     private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath) {
         String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
         String watermarkText;
-        String watermarkOption = getWatermarkOption();
+        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
 
-        boolean isLocationEnabled = sharedPreferences.getBoolean(PREF_LOCATION_DATA, false);
+        boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
         String locationText = isLocationEnabled ? getLocationData() : "";
 
         switch (watermarkOption) {
@@ -575,10 +559,13 @@ public class RecordingService extends Service {
         Log.d(TAG, "Font Path: " + fontPath);
         Log.d(TAG, "Font Size: " + fontSizeStr);
 
+        int frameRates = sharedPreferencesManager.getVideoFrameRate();
+        int bitratesEstimated = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), frameRates);
+
         // Construct the FFmpeg command
         String ffmpegCommand = String.format(
-                "-i %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:a copy %s",
-                inputFilePath, watermarkText, fontSizeStr, fontPath, outputFilePath
+                "-i %s -r %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:v hevc_mediacodec -b:v %s -codec:a copy %s",
+                inputFilePath, frameRates, watermarkText, fontSizeStr, fontPath, bitratesEstimated, outputFilePath
         );
 
         executeFFmpegCommand(ffmpegCommand);
@@ -586,7 +573,7 @@ public class RecordingService extends Service {
 
     private int getFontSizeBasedOnBitrate() {
         int fontSize;
-        int videoBitrate = getVideoBitrate(); // Ensure this method retrieves the correct bitrate based on the selected quality
+        long videoBitrate = getVideoBitrate(); // Ensure this method retrieves the correct bitrate based on the selected quality
 
         if (videoBitrate <= 1000000) {
             fontSize = 12; //SD quality
@@ -601,30 +588,15 @@ public class RecordingService extends Service {
     }
 
     private int getVideoBitrate() {
-        String selectedQuality = sharedPreferences.getString(Constants.PREF_VIDEO_QUALITY, Constants.QUALITY_HD);
-        int bitrate;
-        switch (selectedQuality) {
-            case Constants.QUALITY_SD:
-                bitrate = 1000000; // 1 Mbps
-                break;
-            case Constants.QUALITY_HD:
-                bitrate = 5000000; // 5 Mbps
-                break;
-            case Constants.QUALITY_FHD:
-                bitrate = 10000000; // 10 Mbps
-                break;
-            default:
-                bitrate = 5000000; // Default to HD
-                break;
-        }
-        Log.d(TAG, "Selected Video Bitrate: " + bitrate + " bps");
-        return bitrate;
+        int videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+        Log.d(TAG, "Selected Video Bitrate: " + videoBitrate + " bps");
+        return videoBitrate;
     }
 
     private void executeFFmpegCommand(String ffmpegCommand) {
         Log.d(TAG, "FFmpeg Command: " + ffmpegCommand);
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            if (session.getReturnCode().isSuccess()) {
+            if (ReturnCode.isSuccess(session.getReturnCode())) {
                 Log.d(TAG, "Watermark added successfully.");
                 // Start monitoring temp files
                 startMonitoring();
@@ -705,10 +677,6 @@ public class RecordingService extends Service {
                 .replaceAll("٧", "7")
                 .replaceAll("٨", "8")
                 .replaceAll("٩", "9");
-    }
-
-    private String getWatermarkOption() {
-        return sharedPreferences.getString("watermark_option", "timestamp_fadcam");
     }
 
     private File getLatestVideoFile() {
@@ -820,18 +788,6 @@ public class RecordingService extends Service {
 
     private String getLocationData() {
         return locationHelper.getLocationData();
-    }
-
-    private String getCameraSelection() {
-        return sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
-    }
-
-    private String getCameraQuality() {
-        return sharedPreferences.getString(Constants.PREF_VIDEO_QUALITY, Constants.QUALITY_HD);
-    }
-
-    private int getCameraFrameRate() {
-        return sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
     }
 
     private void toggleTorch() {

@@ -57,6 +57,7 @@
     <string name="video_recording_paused">Enregistrement vidéo en pause</string>
     <string name="video_recording_resumed">Enregistrement de la vidéo repris</string>
     <string name="current_camera">Caméra actuelle </string>
+    <string name="front">Avant</string>
     <string name="video_menu_del">Supprimer</string>
     <string name="video_menu_save">Sauvegarder vers la gallerie</string>
     <string name="video_menu_rename">Renommer</string>
@@ -197,4 +198,5 @@
     <string name="torch_cancel">Annuler</string>
     <string name="torch_recording_note">Impossible de changer les options de la lampe torche pendant l\'enregistrement</string>
     <string name="torch_both">Les deux lampes torches</string>
+    <string name="back">Arrière</string>
 </resources>

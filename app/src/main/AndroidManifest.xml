@@ -88,7 +88,7 @@
         <activity android:name=".ui.WebViewActivity" />
 
         <service
-            android:name=".RecordingService"
+            android:name=".services.RecordingService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera|microphone" />

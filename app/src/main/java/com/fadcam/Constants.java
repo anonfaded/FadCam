@@ -1,25 +1,21 @@
 package com.fadcam;
 
-public abstract class Constants {
+import android.util.Size;
 
-    public static final int DEFAULT_VIDEO_FRAME_RATE = 30;
+public abstract class Constants {
 
     public static final String PREFS_NAME = "app_prefs";
     public static final String LANGUAGE_KEY = "language";
 
-    public static final String PREF_VIDEO_QUALITY = "video_quality";
-    public static final String PREF_VIDEO_FRAME_RATE = "video_framerate";
+    public static final String PREF_VIDEO_RESOLUTION_WIDTH = "video_resolution_width";
+    public static final String PREF_VIDEO_RESOLUTION_HEIGHT = "video_resolution_height";
+    public static final String PREF_VIDEO_FRAME_RATE = "video_frame_rate";
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
     public static final String PREF_BOTH_TORCHES_ENABLED = "both_torches_enabled";
     public static final String PREF_SELECTED_TORCH_SOURCE = "selected_torch_source";
-
-    public static final String CAMERA_FRONT = "front";
-    public static final String CAMERA_BACK = "back";
-
-    public static final String QUALITY_SD = "SD";
-    public static final String QUALITY_HD = "HD";
-    public static final String QUALITY_FHD = "FHD";
+    public static final String PREF_LOCATION_DATA = "location_data";
+    public static final String PREF_WATERMARK_OPTION = "watermark_option";
 
     public static final String BROADCAST_ON_RECORDING_STARTED = "ON_RECORDING_STARTED";
     public static final String BROADCAST_ON_RECORDING_RESUMED = "ON_RECORDING_RESUMED";
@@ -43,4 +39,12 @@ public abstract class Constants {
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
+    public static final double RECORDING_COMPRESSION_FACTOR = 0.33;
+
+    public static final CameraType DEFAULT_CAMERA_TYPE = CameraType.BACK;
+    public static final Size DEFAULT_VIDEO_RESOLUTION = new Size(1920, 1080);
+    public static final int DEFAULT_VIDEO_FRAME_RATE = 30;
+
+    public static final String DEFAULT_WATERMARK_OPTION = "timestamp_fadcam";
+    public static final boolean DEFAULT_PREVIEW_ENABLED = true;
 }
