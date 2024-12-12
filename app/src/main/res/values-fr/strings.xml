@@ -75,6 +75,7 @@
     <string name="setting_framerate_title">Fréquence vidéo</string>
     <string name="note_quailty">Choix de la qualité\n(Défaut: HD)</string>
     <string name="note_framerate">Choix de la fréquence\n(Défaut: %1$d)</string>
+    <string name="note_codec">Choix du codec\n(Défaut: %1$s)</string>
     <string name="setting_watermark">Filigrane</string>
     <string name="note_watermark">Sélectionner l\'option filigrane\n(Défaut: Horodatage avec Fadcam)</string>
     <string name="note_watermark_extra">Pour une sauvegarde rapide, choisissez \'Aucun\'. Ajouter un filigrane ? Ça vaut la peine d\'attendre, juste un peu plus pour traiter !</string>
@@ -199,4 +200,5 @@
     <string name="torch_recording_note">Impossible de changer les options de la lampe torche pendant l\'enregistrement</string>
     <string name="torch_both">Les deux lampes torches</string>
     <string name="back">Arrière</string>
+    <string name="setting_codec_title">Codec vidéo</string>
 </resources>

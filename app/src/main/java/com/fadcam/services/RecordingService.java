@@ -13,10 +13,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.CameraCharacteristics;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
@@ -43,6 +43,7 @@ import com.fadcam.R;
 import com.fadcam.RecordingState;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
+import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.RecordsAdapter;
 
@@ -249,8 +250,8 @@ public class RecordingService extends Service {
             mediaRecorder.setAudioSamplingRate(48000);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 
-            // Set video encoder to HEVC (H.265) for better compression
-            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.HEVC);
+            VideoCodec videoCodec = sharedPreferencesManager.getVideoCodec();
+            mediaRecorder.setVideoEncoder(videoCodec.getEncoder());
 
             // Set orientation based on camera selection
             if (sharedPreferencesManager.getCameraSelection().equals(CameraType.FRONT)) {
@@ -562,10 +563,12 @@ public class RecordingService extends Service {
         int frameRates = sharedPreferencesManager.getVideoFrameRate();
         int bitratesEstimated = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), frameRates);
 
+        String codec = sharedPreferencesManager.getVideoCodec().getFfmpeg();
+
         // Construct the FFmpeg command
         String ffmpegCommand = String.format(
-                "-i %s -r %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:v hevc_mediacodec -b:v %s -codec:a copy %s",
-                inputFilePath, frameRates, watermarkText, fontSizeStr, fontPath, bitratesEstimated, outputFilePath
+                "-i %s -r %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:v %s -b:v %s -codec:a copy %s",
+                inputFilePath, frameRates, watermarkText, fontSizeStr, fontPath, codec, bitratesEstimated, outputFilePath
         );
 
         executeFFmpegCommand(ffmpegCommand);
