@@ -7,21 +7,25 @@ import androidx.annotation.NonNull;
 import java.io.Serializable;
 
 public enum VideoCodec implements Serializable {
-    AVC("H.264","video/avc", "h264_mediacodec"),
-    HEVC("H.265", "video/hevc", "hevc_mediacodec");
+    AVC(1,"H.264","video/avc", "h264_mediacodec"),
+    HEVC(2, "H.265", "video/hevc", "hevc_mediacodec");
 
+    private final int priority;
     private final String name;
     private final String mimeType;
     private final String ffmpeg;
 
-    VideoCodec(String name, String mimeType, String ffmpeg) {
+    VideoCodec(int priority, String name, String mimeType, String ffmpeg) {
+        this.priority = priority;
         this.name = name;
         this.mimeType = mimeType;
         this.ffmpeg = ffmpeg;
     }
 
+    public int getPriority() { return this.priority; }
+
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public String getMimeType() { return this.mimeType; }

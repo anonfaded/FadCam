@@ -104,6 +104,7 @@ public class SettingsFragment extends Fragment {
         locationHelper = new LocationHelper(requireContext());
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         initializeCamcorderProfiles();
+        initializeVideoCodec();
     }
 
     // Loads the available camcorder profiles for cameras
@@ -116,6 +117,12 @@ public class SettingsFragment extends Fragment {
         camcorderProfiles = getCamcorderProfiles(CameraType.BACK);
         if(!camcorderProfiles.isEmpty()) {
             camcorderProfilesAvailables.put(CameraType.BACK, camcorderProfiles);
+        }
+    }
+
+    private void initializeVideoCodec() {
+        if(!sharedPreferencesManager.isVideoCodecExist()) {
+            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, getCompatiblesVideoCodec().toString()).apply();
         }
     }
 
@@ -471,17 +478,8 @@ public class SettingsFragment extends Fragment {
 
         VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
 
-        // If the selected codec is not in the list of compatible codecs, reset it to the default value
-        if(!videoCodecsCompatibles.contains(selectedCodec)) {
-            selectedCodec = Constants.DEFAULT_VIDEO_CODEC;
-        }
-
-        if(!videoCodecsCompatibles.isEmpty()) {
-            codecSpinner.setSelection(videoCodecsCompatibles.size() == 1 ? 0 : getVideoCodecIndex(selectedCodec));
-            codecSpinner.setEnabled(videoCodecsCompatibles.size() > 1);
-        } else {
-            codecSpinner.setEnabled(false);
-        }
+        codecSpinner.setSelection(videoCodecsCompatibles.size() == 1 ? 0 : getVideoCodecIndex(selectedCodec));
+        codecSpinner.setEnabled(videoCodecsCompatibles.size() > 1);
 
         // Save the selected codec when user changes it
         codecSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -811,6 +809,24 @@ public class SettingsFragment extends Fragment {
 
         return videoCodecs;
     }
+
+    /**
+     * Returns the video codec with the highest priority from the list of compatible codecs.
+     * If no codec is compatible, it returns null.
+     */
+    private VideoCodec getCompatiblesVideoCodec() {
+        List<VideoCodec> compatibleCodecs = getCompatiblesVideoCodecs();
+        VideoCodec highestPriorityCodec = null;
+
+        for (VideoCodec videoCodec : compatibleCodecs) {
+            if (highestPriorityCodec == null || videoCodec.getPriority() > highestPriorityCodec.getPriority()) {
+                highestPriorityCodec = videoCodec;
+            }
+        }
+
+        return highestPriorityCodec;
+    }
+
 
     /**
      * Retrieves a list of available camcorder profiles for the specified camera type.

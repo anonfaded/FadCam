@@ -59,6 +59,11 @@ public class SharedPreferencesManager {
         return VideoCodec.valueOf(videoCodec);
     }
 
+    public boolean isVideoCodecExist() {
+        String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, null);
+        return videoCodec != null;
+    }
+
     public boolean isLocalisationEnabled() {
         return sharedPreferences.getBoolean(Constants.PREF_LOCATION_DATA, false);
     }
