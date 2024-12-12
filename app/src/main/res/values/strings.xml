@@ -104,6 +104,8 @@
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
+    <string name="setting_codec_title">Video Codec</string>
+    <string name="note_codec">Choose codec\n(Default: %1$s)</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
     <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It’s worth the wait, just a little longer to process!</string>

@@ -35,6 +35,8 @@ import com.fadcam.Constants;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Utils;
+import com.fadcam.VideoCodec;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -61,6 +63,7 @@ public class SettingsFragment extends Fragment {
 
     private Spinner resolutionSpinner;
     private Spinner frameRateSpinner;
+    private Spinner codecSpinner;
     private Spinner watermarkSpinner;
 
     MaterialButtonToggleGroup cameraSelectionToggle;
@@ -197,6 +200,7 @@ public class SettingsFragment extends Fragment {
         resolutionSpinner = view.findViewById(R.id.resolution_spinner);
 
         frameRateSpinner = view.findViewById(R.id.framerate_spinner);
+        codecSpinner = view.findViewById(R.id.codec_spinner);
 
         // Set up camera selection toggle
         setupCameraSelectionToggle(view, cameraSelectionToggle);
@@ -209,6 +213,8 @@ public class SettingsFragment extends Fragment {
 
         // Set up video framerate spinner
         setupFrameRateSpinner();
+
+        setupCodecSpinner();
 
         // Setup watermark option spinner
         watermarkSpinner = view.findViewById(R.id.watermark_spinner);
@@ -231,6 +237,9 @@ public class SettingsFragment extends Fragment {
         // Set up frame rate note text
         setupFrameRateNoteText();
 
+        // Set up codec note text
+        setupCodecNoteText();
+
         return view;
     }
 
@@ -244,6 +253,12 @@ public class SettingsFragment extends Fragment {
     {
         TextView frameworkNoteTextView = view.findViewById(R.id.framerate_note_textview);
         frameworkNoteTextView.setText(getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE));
+    }
+
+    private void setupCodecNoteText()
+    {
+        TextView frameworkNoteTextView = view.findViewById(R.id.codec_note_textview);
+        frameworkNoteTextView.setText(getString(R.string.note_codec, Constants.DEFAULT_VIDEO_CODEC.getName()));
     }
 
     private void setupLocationSwitch(MaterialSwitch locationSwitch) {
@@ -436,6 +451,50 @@ public class SettingsFragment extends Fragment {
         });
     }
 
+    private void setupCodecSpinner() {
+
+        List<VideoCodec> videoCodecsCompatibles = getCompatiblesVideoCodecs();
+
+        List<String> videoCodecsCompatiblesAsString = new ArrayList<>();
+        for (VideoCodec videoCodecCompatible : videoCodecsCompatibles) {
+            videoCodecsCompatiblesAsString.add(videoCodecCompatible.getName());
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                videoCodecsCompatiblesAsString
+        );
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        codecSpinner.setAdapter(adapter);
+
+        VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+
+        // If the selected codec is not in the list of compatible codecs, reset it to the default value
+        if(!videoCodecsCompatibles.contains(selectedCodec)) {
+            selectedCodec = Constants.DEFAULT_VIDEO_CODEC;
+        }
+
+        if(!videoCodecsCompatibles.isEmpty()) {
+            codecSpinner.setSelection(videoCodecsCompatibles.size() == 1 ? 0 : getVideoCodecIndex(selectedCodec));
+            codecSpinner.setEnabled(videoCodecsCompatibles.size() > 1);
+        } else {
+            codecSpinner.setEnabled(false);
+        }
+
+        // Save the selected codec when user changes it
+        codecSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, getCompatiblesVideoCodecs().get(position).toString()).apply();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
     private void updateFrameRateSpinner()
     {
         List<Integer> videoFrameRatesCompatibles = getCompatiblesVideoFrameRates(sharedPreferencesManager.getCameraSelection());
@@ -611,9 +670,10 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * Set the selected item based on the frame rate
-     * @param frameRate Frame rate
-     * @return Video frameRate index in selection list
+     * Retrieves the index of the selected frame rate from the frame rate options list.
+     *
+     * @param frameRate The desired frame rate.
+     * @return The index of the frame rate in the selection list, or 0 if not found.
      */
     private int getVideoFrameRateIndex(int frameRate)
     {
@@ -626,6 +686,23 @@ public class SettingsFragment extends Fragment {
             }
         }
         return 0;
+    }
+
+    /**
+     * Retrieves the index of the selected video codec from the codec list.
+     *
+     * @param videoCodec The desired video codec.
+     * @return The index of the video codec in the codec list, or -1 if not found.
+     */
+    private int getVideoCodecIndex(VideoCodec videoCodec)
+    {
+        VideoCodec[] codecs = VideoCodec.values();
+        for (int i = 0; i < codecs.length; i++) {
+            if (codecs[i] == videoCodec) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -715,6 +792,24 @@ public class SettingsFragment extends Fragment {
                 .filter(frameRate -> frameRate <= camcorderProfile.videoFrameRate)
                 .boxed()
                 .collect(Collectors.toList());
+    }
+
+    private List<VideoCodec> getCompatiblesVideoCodecs()
+    {
+        List<VideoCodec> videoCodecs = new ArrayList<>();
+
+        for(VideoCodec videoCodec : VideoCodec.values())
+        {
+            if(Utils.isCodecSupported(videoCodec.getMimeType())) {
+                videoCodecs.add(videoCodec);
+            }
+        }
+
+        if(videoCodecs.isEmpty()) {
+            videoCodecs.add(Constants.DEFAULT_VIDEO_CODEC);
+        }
+
+        return videoCodecs;
     }
 
     /**
