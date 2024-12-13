@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Size;
 
-import java.util.List;
 import java.util.Locale;
 
 public class SharedPreferencesManager {
@@ -53,6 +52,16 @@ public class SharedPreferencesManager {
      */
     public Integer getVideoFrameRate() {
         return sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
+    }
+
+    public VideoCodec getVideoCodec() {
+        String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, Constants.DEFAULT_VIDEO_CODEC.toString());
+        return VideoCodec.valueOf(videoCodec);
+    }
+
+    public boolean isVideoCodecExist() {
+        String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, null);
+        return videoCodec != null;
     }
 
     public boolean isLocalisationEnabled() {
