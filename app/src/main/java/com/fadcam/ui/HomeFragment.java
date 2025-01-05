@@ -37,7 +37,6 @@ import android.provider.Settings;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -59,6 +58,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
+import com.fadcam.Log;
 import com.fadcam.R;
 import com.fadcam.services.RecordingService;
 import com.fadcam.RecordingState;
@@ -355,6 +355,8 @@ public class HomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Log.init(requireContext());
 
         Log.d(TAG, "HomeFragment created.");
 
