@@ -23,7 +23,6 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.util.Range;
 import android.view.Surface;
 import android.widget.Toast;
@@ -38,6 +37,7 @@ import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
+import com.fadcam.Log;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.RecordingState;
@@ -104,6 +104,8 @@ public class RecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        Log.init(getApplicationContext());
 
         locationHelper = new LocationHelper(getApplicationContext());
 

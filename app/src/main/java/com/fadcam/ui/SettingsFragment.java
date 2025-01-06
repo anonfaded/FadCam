@@ -15,7 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +31,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
+import com.fadcam.Log;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
@@ -101,6 +101,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.init(requireContext());
         locationHelper = new LocationHelper(requireContext());
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         initializeCamcorderProfiles();
@@ -861,6 +862,8 @@ public class SettingsFragment extends Fragment {
                 CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
                 if(profile != null) {
                     profiles.add(profile);
+
+                    Log.d("SettingsFragment", cameraType + ": " + profile.videoFrameWidth + "x" + profile.videoFrameHeight + " (FPS: " + profile.videoFrameRate + ")");
                 }
             }
         }
