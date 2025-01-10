@@ -46,7 +46,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final List<File> selectedVideos = new ArrayList<>();
     private List<File> videoFiles;
 
-
     public RecordsAdapter(Context context, List<File> records, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener) {
         this.context = context;
         this.records = records;
@@ -261,37 +260,40 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         builder.show();
     }
 
-
-
     private void renameVideo(int position, String newName) {
-        if (videoFiles == null || position < 0 || position >= videoFiles.size()) {
-            Toast.makeText(context, R.string.toast_rename_bad_video, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         // Replace spaces with underscores
         String formattedName = newName.trim().replace(" ", "_");
 
         File oldFile = videoFiles.get(position);
-        File newFile = new File(oldFile.getParent(), formattedName + "." + Constants.RECORDING_FILE_EXTENSION);
+        File parentDir = oldFile.getParentFile();
+        String fileExtension = Constants.RECORDING_FILE_EXTENSION;
+
+        // Check for existing files with similar names
+        File newFile = new File(parentDir, formattedName + "." + fileExtension);
+        int copyNumber = 1;
+
+        // Find a unique filename
+        while (newFile.exists()) {
+            newFile = new File(parentDir, formattedName + "_" + copyNumber + "." + fileExtension);
+            copyNumber++;
+        }
 
         if (oldFile.renameTo(newFile)) {
             // Update the list and notify the adapter
             videoFiles.set(position, newFile);
             records.set(position, newFile); // Also update the records list if necessary
             notifyDataSetChanged();
-            Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
+
+            // Show a toast with the new filename if a copy number was added
+            String toastMessage = copyNumber > 1 ?
+                context.getString(R.string.toast_rename_with_copy, newFile.getName()) :
+                context.getString(R.string.toast_rename_success);
+
+            Toast.makeText(context, toastMessage, Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
         }
     }
-
-
-
-
-
-
-
 
     static class RecordViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewThumbnail;

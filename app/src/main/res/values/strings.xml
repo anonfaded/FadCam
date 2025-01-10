@@ -196,6 +196,7 @@
     <string name="toast_rename_failed">Failed to rename video</string>
     <string name="toast_rename_success">Video renamed successfully</string>
     <string name="toast_rename_bad_video">Invalid position or video list is null</string>
+    <string name="toast_rename_with_copy">Renamed to %1$s (duplicate name)</string>
     <string name="dialog_del_title">Delete Forever?</string>
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
     <string name="dialog_del_confirm">Delete</string>
