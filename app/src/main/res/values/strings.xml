@@ -246,4 +246,10 @@
     </string-array>
     <string name="more_options">More Options</string>
     <string name="records_options_title">Records Options</string>
+    <string name="setting_theme_title">App Theme</string>
+    <string name="note_theme">Choose your preferred app theme</string>
+    <string-array name="theme_options">
+        <item>Dark Mode</item>
+        <item>AMOLED Black</item>
+    </string-array>
 </resources>

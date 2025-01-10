@@ -32,13 +32,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Apply saved theme on startup
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+        
+        Log.d("MainActivity", "Saved theme: " + savedTheme);
+        
+        // Always force dark mode
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        
+        // Only set AMOLED theme if explicitly selected
+        if ("AMOLED Black".equals(savedTheme)) {
+            Log.d("MainActivity", "Setting AMOLED theme");
+            getTheme().applyStyle(R.style.Theme_FadCam_Amoled, true);
+        } else {
+            Log.d("MainActivity", "Using default dark theme");
+        }
+        
         // Load and apply the saved language preference before anything else
         SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
         String savedLanguageCode = prefs.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
 
         applyLanguage(savedLanguageCode);  // Apply the language preference
-
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); //force dark theme even on light themed devices
 
         // Check if current locale is Pashto
         if (getResources().getConfiguration().locale.getLanguage().equals("ps")) {

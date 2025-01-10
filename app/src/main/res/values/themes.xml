@@ -8,6 +8,40 @@
         <item name="android:statusBarColor">@color/gray</item>
     </style>
 
+    <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Completely black background everywhere -->
+        <item name="android:colorBackground">@color/amoled_background</item>
+        <item name="colorSurface">@color/amoled_surface</item>
+        <item name="backgroundColor">@color/amoled_background</item>
+        <item name="android:windowBackground">@color/amoled_background</item>
+        
+        <!-- Navigation and status bar -->
+        <item name="android:navigationBarColor">@color/amoled_background</item>
+        <item name="android:statusBarColor">@color/amoled_background</item>
+        
+        <!-- Text and icon colors -->
+        <item name="android:textColor">@color/amoled_text_primary</item>
+        <item name="android:textColorPrimary">@color/amoled_text_primary</item>
+        <item name="android:textColorSecondary">@color/amoled_text_secondary</item>
+        
+        <!-- Material Design component colors -->
+        <item name="colorPrimary">@color/amoled_background</item>
+        <item name="colorPrimaryVariant">@color/amoled_background</item>
+        <item name="colorSecondary">@color/amoled_background</item>
+        <item name="colorSecondaryVariant">@color/amoled_background</item>
+        
+        <!-- Card and surface styles -->
+        <item name="materialCardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
+        <item name="bottomNavigationStyle">@style/Theme.FadCam.AmoledBottomNavigation</item>
+    </style>
 
-    <style name="Theme.FadCam" parent="Base.Theme.FadCam" />
+    <style name="Theme.FadCam.AmoledCardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/amoled_surface</item>
+    </style>
+
+    <style name="Theme.FadCam.AmoledBottomNavigation" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+        <item name="android:background">@color/amoled_background</item>
+        <item name="itemIconTint">@color/amoled_text_primary</item>
+        <item name="itemTextColor">@color/amoled_text_primary</item>
+    </style>
 </resources>

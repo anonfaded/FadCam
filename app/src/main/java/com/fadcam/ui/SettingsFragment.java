@@ -25,6 +25,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -62,10 +63,13 @@ public class SettingsFragment extends Fragment {
     private static final int REQUEST_PERMISSIONS = 1;
     private static final String PREF_FIRST_LAUNCH = "first_launch";
 
+    private static final String PREF_APP_THEME = "app_theme";
+
     private Spinner resolutionSpinner;
     private Spinner frameRateSpinner;
     private Spinner codecSpinner;
     private Spinner watermarkSpinner;
+    private Spinner themeSpinner;
 
     MaterialButtonToggleGroup cameraSelectionToggle;
 
@@ -251,6 +255,9 @@ public class SettingsFragment extends Fragment {
 
         // Set up codec note text
         setupCodecNoteText();
+
+        // Setup theme spinner
+        setupThemeSpinner(view);
 
         return view;
     }
@@ -927,5 +934,72 @@ public class SettingsFragment extends Fragment {
             }
         }
         return 0;
+    }
+
+    private void setupThemeSpinner(View view) {
+        themeSpinner = view.findViewById(R.id.theme_spinner);
+        String[] themeOptions = {"Dark Mode", "AMOLED Black"};
+        ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, themeOptions);
+        themeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        themeSpinner.setAdapter(themeAdapter);
+
+        // Set the current theme in the spinner
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+        Log.d("SettingsFragment", "Current theme: " + currentTheme);
+        
+        int currentThemeIndex = Arrays.asList(themeOptions).indexOf(currentTheme);
+        Log.d("SettingsFragment", "Current theme index: " + currentThemeIndex);
+        
+        // Ensure valid index, default to 0 if not found
+        themeSpinner.setSelection(currentThemeIndex != -1 ? currentThemeIndex : 0);
+
+        themeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedTheme = themeOptions[position];
+                Log.d("SettingsFragment", "Selected theme: " + selectedTheme);
+                
+                // Check if theme is actually changing
+                String currentSavedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+                if (selectedTheme.equals(currentSavedTheme)) {
+                    Log.d("SettingsFragment", "Theme not changed, skipping recreation");
+                    return;
+                }
+                
+                // Save the selected theme
+                SharedPreferences.Editor editor = sharedPreferencesManager.sharedPreferences.edit();
+                editor.putString(Constants.PREF_APP_THEME, selectedTheme);
+                boolean saveSuccess = editor.commit(); // Use commit instead of apply for synchronous save
+                Log.d("SettingsFragment", "Theme save success: " + saveSuccess);
+                
+                // Always force dark mode
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                
+                // Optional: Add haptic feedback
+                vibrateTouch();
+                
+                // Prompt user to restart for theme change
+                new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Theme Change")
+                    .setMessage("Restart the app to apply the new theme?")
+                    .setPositiveButton("Restart", (dialog, which) -> {
+                        // Restart the entire application
+                        Intent intent = requireActivity().getPackageManager()
+                            .getLaunchIntentForPackage(requireActivity().getPackageName());
+                        if (intent != null) {
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent);
+                            requireActivity().finish();
+                        }
+                    })
+                    .setNegativeButton("Later", null)
+                    .show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                Log.d("SettingsFragment", "No theme selected");
+            }
+        });
     }
 }
