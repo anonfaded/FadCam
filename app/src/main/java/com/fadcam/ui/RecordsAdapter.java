@@ -3,11 +3,15 @@ package com.fadcam.ui;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.media.MediaExtractor;
+import android.media.MediaFormat;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +21,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -34,8 +37,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
 
@@ -72,9 +78,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
         File video = records.get(position);
-        setThumbnail(holder, video);
+        
+        // Set serial number based on current position
+        holder.textViewSerialNumber.setText(String.valueOf(position + 1));
+        
+        // Set video name
         holder.textViewRecord.setText(video.getName());
-
+        
+        // Set file size
+        long fileSize = video.length();
+        holder.textViewFileSize.setText(formatFileSize(fileSize));
+        
+        // Set video duration
+        long duration = getVideoDuration(video);
+        holder.textViewFileTime.setText(formatVideoDuration(duration));
+        
+        // Set thumbnail
+        setThumbnail(holder, video);
+        
         holder.itemView.setOnClickListener(v -> clickListener.onVideoClick(video));
         holder.itemView.setOnLongClickListener(v -> {
             boolean isSelected = !selectedVideos.contains(video);
@@ -83,7 +104,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return true;
         });
 
-        holder.menuButton.setOnClickListener(v -> showPopupMenu(v, video));
+        setupPopupMenu(holder, video);
         updateSelectionState(holder, selectedVideos.contains(video));
     }
 
@@ -114,50 +135,136 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
     }
 
-    private void showPopupMenu(View v, File video) {
-        int position = records.indexOf(video); // Find position from video
-        if (position == -1) {
-            Toast.makeText(context, R.string.toast_video_not_found, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        PopupMenu popup = new PopupMenu(v.getContext(), v);
-        popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
-
-        popup.getMenu().findItem(R.id.action_delete).setIcon(R.drawable.ic_delete);
-        popup.getMenu().findItem(R.id.action_save_to_gallery).setIcon(R.drawable.ic_save);
-        popup.getMenu().findItem(R.id.action_rename).setIcon(R.drawable.ic_rename);
-
-        popup.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_delete) {
-                confirmDelete(v.getContext(), records.get(position));
-                return true;
+    private void setupPopupMenu(RecordViewHolder holder, File video) {
+        holder.menuButton.setOnClickListener(v -> {
+            PopupMenu popupMenu = new PopupMenu(context, holder.menuButton);
+            popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu());
+            
+            // Force show icons
+            try {
+                Field field = PopupMenu.class.getDeclaredField("mPopup");
+                field.setAccessible(true);
+                Object menuPopupHelper = field.get(popupMenu);
+                Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
+                Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
+                setForceIcons.invoke(menuPopupHelper, true);
+            } catch (Exception e) {
+                Log.e("PopupMenu", "Error forcing icon display", e);
             }
-            if (item.getItemId() == R.id.action_save_to_gallery) {
-                saveToGallery(v.getContext(), records.get(position));
-                return true;
-            }
-            if (item.getItemId() == R.id.action_rename) {
-                showRenameDialog(position);
-                return true;
-            }
-            return false;
+            
+            popupMenu.setOnMenuItemClickListener(item -> {
+                int itemId = item.getItemId();
+                
+                if (itemId == R.id.action_rename) {
+                    showRenameDialog(records.indexOf(video));
+                    return true;
+                } else if (itemId == R.id.action_delete) {
+                    confirmDelete(context, video);
+                    return true;
+                } else if (itemId == R.id.action_save) {
+                    saveToGallery(context, video);
+                    return true;
+                } else if (itemId == R.id.action_info) {
+                    showVideoInfoDialog(video);
+                    return true;
+                }
+                
+                return false;
+            });
+            
+            popupMenu.show();
         });
-
-        try {
-            Field field = popup.getClass().getDeclaredField("mPopup");
-            field.setAccessible(true);
-            Object menuPopupHelper = field.get(popup);
-            Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-            Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-            setForceIcons.invoke(menuPopupHelper, true);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        popup.show();
     }
 
+    private void showVideoInfoDialog(File video) {
+        // Create dialog
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_video_info, null);
+        
+        // Find views
+        TextView tvFileName = dialogView.findViewById(R.id.tv_file_name);
+        TextView tvFileSize = dialogView.findViewById(R.id.tv_file_size);
+        TextView tvFilePath = dialogView.findViewById(R.id.tv_file_path);
+        TextView tvLastModified = dialogView.findViewById(R.id.tv_last_modified);
+        TextView tvDuration = dialogView.findViewById(R.id.tv_duration);
+        TextView tvResolution = dialogView.findViewById(R.id.tv_resolution);
+
+        ImageView ivCopyToClipboard = dialogView.findViewById(R.id.iv_copy_to_clipboard);
+        
+        // Gather video information
+        String fileName = video.getName();
+        long fileSize = video.length();
+        String filePath = video.getAbsolutePath();
+        long lastModified = video.lastModified();
+        long duration = getVideoDuration(video);
+        
+        // Format information
+        String formattedFileSize = formatFileSize(fileSize);
+        String formattedLastModified = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(new Date(lastModified));
+        String formattedDuration = formatVideoDuration(duration);
+        
+        // Get video metadata
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(video.getAbsolutePath());
+            
+            // Resolution
+            String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            String resolution = (width != null && height != null) ? width + " x " + height : "N/A";
+            
+            // Prepare full video info text for clipboard
+            String videoInfo = "File Name: " + fileName + "\n" +
+                    "File Size: " + formattedFileSize + "\n" +
+                    "File Path: " + filePath + "\n" +
+                    "Last Modified: " + formattedLastModified + "\n" +
+                    "Duration: " + formattedDuration;
+            
+            // Set views
+            tvFileName.setText(fileName);
+            tvFileSize.setText(formattedFileSize);
+            tvFilePath.setText(filePath);
+            tvLastModified.setText(formattedLastModified);
+            tvDuration.setText(formattedDuration);
+            tvResolution.setText(resolution);
+
+            
+            // Set up copy to clipboard
+            ivCopyToClipboard.setOnClickListener(v -> {
+                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                android.content.ClipData clip = android.content.ClipData.newPlainText("Video Info", videoInfo);
+                clipboard.setPrimaryClip(clip);
+                
+                // Show toast notification
+                Toast.makeText(context, "Video info copied to clipboard", Toast.LENGTH_SHORT).show();
+            });
+            
+        } catch (Exception e) {
+            Log.e("VideoInfoDialog", "Error retrieving video metadata", e);
+            
+            // Set default/fallback values
+            tvFileName.setText(fileName);
+            tvFileSize.setText(formattedFileSize);
+            tvFilePath.setText(filePath);
+            tvLastModified.setText(formattedLastModified);
+            tvDuration.setText(formattedDuration);
+            tvResolution.setText("N/A");
+          
+        } finally {
+            try {
+                retriever.release();
+            } catch (IOException e) {
+                Log.e("VideoInfoDialog", "Error releasing MediaMetadataRetriever", e);
+            }
+        }
+        
+        // Build and show dialog
+        builder.setTitle("Video Information")
+               .setView(dialogView)
+               .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+               .show();
+    }
 
     private void confirmDelete(Context context, File video) {
         new MaterialAlertDialogBuilder(context)
@@ -235,8 +342,45 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    // Helper method to format file size
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String pre = "KMGTPE".charAt(exp - 1) + "B";
+        return String.format("%.1f %s", bytes / Math.pow(1024, exp), pre);
+    }
 
+    // Helper method to format video duration
+    private String formatVideoDuration(long durationMs) {
+        long totalSeconds = durationMs / 1000;
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+        
+        if (minutes > 0) {
+            return String.format(Locale.getDefault(), "%d min", minutes);
+        } else {
+            return String.format(Locale.getDefault(), "%d sec", seconds);
+        }
+    }
 
+    // Helper method to get video duration
+    private long getVideoDuration(File videoFile) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(videoFile.getAbsolutePath());
+            String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            return duration != null ? Long.parseLong(duration) : 0;
+        } catch (Exception e) {
+            Log.e("RecordsAdapter", "Error getting video duration", e);
+            return 0;
+        } finally {
+            try {
+                retriever.release();
+            } catch (IOException e) {
+                Log.e("RecordsAdapter", "Error releasing MediaMetadataRetriever", e);
+            }
+        }
+    }
 
     private void showRenameDialog(final int position) {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
@@ -295,9 +439,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    public void updateRecords(List<File> newRecords) {
+        if (newRecords != null) {
+            records.clear();
+            records.addAll(newRecords);
+            notifyDataSetChanged();
+        }
+    }
+
+    public void updateThumbnail(String videoFilePath) {
+        notifyDataSetChanged();
+    }
+
     static class RecordViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewThumbnail;
         TextView textViewRecord;
+        TextView textViewFileSize;
+        TextView textViewFileTime;
+        TextView textViewSerialNumber;  // New serial number TextView
         ImageView checkIcon;
         ImageView menuButton;
 
@@ -305,41 +464,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             super(itemView);
             imageViewThumbnail = itemView.findViewById(R.id.image_view_thumbnail);
             textViewRecord = itemView.findViewById(R.id.text_view_record);
+            textViewFileSize = itemView.findViewById(R.id.text_view_file_size);
+            textViewFileTime = itemView.findViewById(R.id.text_view_file_time);
+            textViewSerialNumber = itemView.findViewById(R.id.text_view_serial_number);  // Initialize serial number TextView
             checkIcon = itemView.findViewById(R.id.check_icon);
             menuButton = itemView.findViewById(R.id.menu_button);
         }
-    }
-
-    public void updateRecords(List<File> newRecords) {
-        DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
-            @Override
-            public int getOldListSize() {
-                return records.size();
-            }
-
-            @Override
-            public int getNewListSize() {
-                return newRecords.size();
-            }
-
-            @Override
-            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-                return records.get(oldItemPosition).equals(newRecords.get(newItemPosition));
-            }
-
-            @Override
-            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-                return records.get(oldItemPosition).equals(newRecords.get(newItemPosition));
-            }
-        };
-
-        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
-        this.records = newRecords;
-        this.videoFiles = new ArrayList<>(newRecords); // Update videoFiles to match new records
-        diffResult.dispatchUpdatesTo(this);
-    }
-
-    public void updateThumbnail(String videoFilePath) {
-        notifyDataSetChanged();
     }
 }
