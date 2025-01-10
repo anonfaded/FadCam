@@ -96,21 +96,24 @@ public class Log {
 
     public static Uri createHtmlFile(Context context, String fileName) {
         try {
-            Uri existingFileUri = checkIfFileExists(context, fileName);
+            // Use a static filename for debug log
+            String debugFileName = "FADCAM_debug.html";
+
+            Uri existingFileUri = checkIfFileExists(context, debugFileName);
 
             if (existingFileUri != null) {
                 return existingFileUri;
             }
 
             ContentValues contentValues = new ContentValues();
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, debugFileName);
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "text/html");
             contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/FadCam");
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 fileUri = context.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
             } else {
-                fileUri = Uri.parse("file://" + context.getExternalFilesDir(null).getPath() + "/Download/" + fileName);
+                fileUri = Uri.parse("file://" + context.getExternalFilesDir(null).getPath() + "/Download/" + debugFileName);
             }
         } catch (Exception e) {
             e.printStackTrace();
