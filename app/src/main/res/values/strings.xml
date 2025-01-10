@@ -244,4 +244,6 @@
         <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
         <item>Patch coming soon™... Developer is debugging life 🐛</item>
     </string-array>
+    <string name="more_options">More Options</string>
+    <string name="records_options_title">Records Options</string>
 </resources>

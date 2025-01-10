@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -200,6 +201,24 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         loadRecordsList();
     }
 
+    private void showRecordsSidebar() {
+        // Create a bottom sheet dialog
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext());
+        View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
+
+        // Setup delete all option
+        View deleteAllOption = bottomSheetView.findViewById(R.id.option_delete_all);
+        deleteAllOption.setOnClickListener(v -> {
+            bottomSheetDialog.dismiss();
+            confirmDeleteAll();
+        });
+
+        // Add more options here in future
+
+        bottomSheetDialog.setContentView(bottomSheetView);
+        bottomSheetDialog.show();
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.records_menu, menu);
@@ -208,10 +227,16 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_delete_all) {
+        int itemId = item.getItemId();
+        
+        if (itemId == R.id.action_delete_all) {
             confirmDeleteAll();
             return true;
+        } else if (itemId == R.id.action_more_options) {
+            showRecordsSidebar();
+            return true;
         }
+        
         return super.onOptionsItemSelected(item);
     }
 
