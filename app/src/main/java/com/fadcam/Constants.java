@@ -15,6 +15,7 @@ public abstract class Constants {
     public static final String PREF_BOTH_TORCHES_ENABLED = "both_torches_enabled";
     public static final String PREF_SELECTED_TORCH_SOURCE = "selected_torch_source";
     public static final String PREF_LOCATION_DATA = "location_data";
+    public static final String PREF_DEBUG_DATA = "debug_data";
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
     public static final String PREF_VIDEO_CODEC = "video_codec";
 

@@ -57,6 +57,7 @@ public class SettingsFragment extends Fragment {
 
     private static final String PREF_WATERMARK_OPTION = "watermark_option";
     static final String PREF_LOCATION_DATA = "location_data";
+    private static final String PREF_DEBUG_DATA = "debug_data";
 
     private static final int REQUEST_PERMISSIONS = 1;
     private static final String PREF_FIRST_LAUNCH = "first_launch";
@@ -238,6 +239,9 @@ public class SettingsFragment extends Fragment {
         MaterialSwitch locationSwitch = view.findViewById(R.id.location_toggle_group);
         setupLocationSwitch(locationSwitch);
 
+        MaterialSwitch debugSwitch = view.findViewById(R.id.debug_toggle_group);
+        setupDebugSwitch(debugSwitch);
+
         // Initialize the Review Button
         MaterialButton reviewButton = view.findViewById(R.id.review_button);
         reviewButton.setOnClickListener(v -> openInAppBrowser("https://forms.gle/DvUoc1v9kB2bkFiS6"));
@@ -288,6 +292,16 @@ public class SettingsFragment extends Fragment {
         });
     }
 
+    private void setupDebugSwitch(MaterialSwitch debugSwitch) {
+        boolean isDebugEnabled = sharedPreferencesManager.isDebugLoggingEnabled();
+        debugSwitch.setChecked(isDebugEnabled);
+
+        debugSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_DEBUG_DATA, isChecked).apply();
+            Log.setDebugEnabled(isChecked);
+            vibrateTouch();
+        });
+    }
 
     private void showLocationPermissionDialog(MaterialSwitch locationSwitch) {
         new MaterialAlertDialogBuilder(requireContext())

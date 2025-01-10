@@ -29,11 +29,26 @@ public class Log {
 
     private static Uri fileUri;
 
+    private static boolean isDebugEnabled = false;
+
     public static void init(Context context)
     {
         Log.context = context;
+        
+        // Check SharedPreferences for debug setting
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
+        isDebugEnabled = sharedPreferencesManager.isDebugLoggingEnabled();
 
-        createHtmlFile(context, "debug.html");
+        if (isDebugEnabled) {
+            createHtmlFile(context, "debug.html");
+        }
+    }
+
+    public static void setDebugEnabled(boolean enabled) {
+        isDebugEnabled = enabled;
+        if (enabled) {
+            createHtmlFile(context, "debug.html");
+        }
     }
 
     private static String getCurrentTimeStamp() {
@@ -42,16 +57,22 @@ public class Log {
     }
 
     public static void d(String tag, String message) {
+        if (!isDebugEnabled) return;
+        
         String logMessage = "<font color=\"34495e\">" + getCurrentTimeStamp() + " INFO: [" + tag + "]" + message + "</font>";
         appendHtmlToFile(logMessage);
     }
 
     public static void w(String tag, String message) {
+        if (!isDebugEnabled) return;
+        
         String logMessage = "<font color=\"f1c40f\">" + getCurrentTimeStamp() + " WARNING: [" + tag + "]" + message + "</font>";
         appendHtmlToFile(logMessage);
     }
 
     public static void e(String tag, Object... objects) {
+        if (!isDebugEnabled) return;
+        
         StringBuilder message = new StringBuilder();
         for(Object object: objects)
         {
@@ -99,6 +120,8 @@ public class Log {
     }
 
     public static void appendHtmlToFile(String htmlContent) {
+        if (!isDebugEnabled) return;
+        
         OutputStream outputStream = null;
 
         try {

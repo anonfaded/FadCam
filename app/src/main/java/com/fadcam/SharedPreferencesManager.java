@@ -68,6 +68,10 @@ public class SharedPreferencesManager {
         return sharedPreferences.getBoolean(Constants.PREF_LOCATION_DATA, false);
     }
 
+    public boolean isDebugLoggingEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DEBUG_DATA, false);
+    }
+
     public String getWatermarkOption() {
         return sharedPreferences.getString(Constants.PREF_WATERMARK_OPTION, Constants.DEFAULT_WATERMARK_OPTION);
     }

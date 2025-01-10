@@ -20,7 +20,7 @@
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="privacy_information">Privacy Information</string>
-    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string name="copyright_info"> 2024 fadedhood.com\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item> <!-- 8K -->
         <item>3840x2160</item> <!-- 4K -->
@@ -112,7 +112,7 @@
     <string name="setting_location_title">Location Data</string>
     <string name="note_location">Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)</string>
     <string name="note_location_extra">Enable phone\'s GPS for adding latitude and longitude data to the watermark.</string>
-    <string name="button_setting_review">Write a Review 🌟</string>
+    <string name="button_setting_review">Write a Review </string>
     <string name="dialog_clock_title">Choose Clock Display</string>
     <string name="dialog_clock_timeonly">Time Only</string>
     <string name="dialog_clock_englishtime">English Date with time</string>
@@ -120,7 +120,7 @@
     <string name="ui_preview_area">Preview Area</string>
     <string-array name="easter_eggs_array">
         <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You\’ve found the secret button! It does nothing lol</item>
+        <item>You’ve found the secret button! It does nothing lol</item>
         <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
         <item>Well, this is awkward now…</item>
         <item>What color is your Bugatti?</item>
@@ -199,10 +199,10 @@
     <string name="dialog_del_title">Delete Forever?</string>
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
     <string name="dialog_del_confirm">Delete</string>
-    <string name="dialog_multi_video_del_title">Eradicate Video(s)? 💣💣</string>
-    <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? 🚀💥</string>
-    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! 🌋</string>
-    <string name="dialog_multi_video_del_no">No, Keep \'Em! 😅</string>
+    <string name="dialog_multi_video_del_title">Eradicate Video(s)? </string>
+    <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? </string>
+    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! </string>
+    <string name="dialog_multi_video_del_no">No, Keep \'Em! </string>
     <string name="setting_language_title">App\'s Language</string>
     <string name="note_language">Select from dropdown.\n(Default: English)</string>
     <string name="location_permission_title">Location Permission</string>
@@ -229,4 +229,7 @@
     <string name="torch_cancel">Cancel</string>
     <string name="torch_recording_note">Cannot change torch while recording</string>
     <string name="torch_both">Both Torches</string>
+    <string name="setting_debug_title">Debug Logging</string>
+    <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
+    <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
 </resources>
