@@ -12,8 +12,9 @@ public abstract class Constants {
     public static final String PREF_VIDEO_FRAME_RATE = "video_frame_rate";
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
-    public static final String PREF_BOTH_TORCHES_ENABLED = "both_torches_enabled";
-    public static final String PREF_SELECTED_TORCH_SOURCE = "selected_torch_source";
+    public static final String PREF_BOTH_TORCHES_ENABLED = "pref_both_torches_enabled";
+    public static final String PREF_SELECTED_TORCH_SOURCE = "pref_selected_torch_source";
+    public static final String PREF_TORCH_STATE = "pref_torch_state";
     public static final String PREF_LOCATION_DATA = "location_data";
     public static final String PREF_DEBUG_DATA = "debug_data";
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
@@ -38,6 +39,7 @@ public abstract class Constants {
     public static final String INTENT_EXTRA_RECORDING_STATE = "RECORDING_STATE";
     public static final String INTENT_EXTRA_RECORDING_START_TIME = "RECORDING_START_TIME";
     public static final String INTENT_EXTRA_TORCH_STATE = "TORCH_STATE";
+    public static final String INTENT_EXTRA_TORCH_STATE_CHANGED = "TORCH_STATE_CHANGED";
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_FILE_EXTENSION = "mp4";

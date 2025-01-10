@@ -1,11 +1,17 @@
 package com.fadcam;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
+import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.viewpager2.widget.ViewPager2;
@@ -14,6 +20,7 @@ import com.fadcam.ui.ViewPagerAdapter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -88,6 +95,29 @@ public class MainActivity extends AppCompatActivity {
         File osmdroidTileCache = new File(osmdroidBasePath, "tiles");
         org.osmdroid.config.Configuration.getInstance().setOsmdroidBasePath(osmdroidBasePath);
         org.osmdroid.config.Configuration.getInstance().setOsmdroidTileCache(osmdroidTileCache);
+
+        // Add dynamic shortcut for torch
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            createDynamicShortcuts();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N_MR1)
+    private void createDynamicShortcuts() {
+        ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
+
+        // Torch Toggle Shortcut
+        Intent torchIntent = new Intent(this, TorchToggleActivity.class);
+        torchIntent.setAction(Intent.ACTION_VIEW);
+
+        ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
+            .setShortLabel(getString(R.string.torch_shortcut_short_label))
+            .setLongLabel(getString(R.string.torch_shortcut_long_label))
+            .setIcon(Icon.createWithResource(this, R.drawable.ic_flashlight_on))
+            .setIntent(torchIntent)
+            .build();
+
+        shortcutManager.setDynamicShortcuts(Collections.singletonList(torchShortcut));
     }
 
     public void applyLanguage(String languageCode) {

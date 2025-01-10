@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:id="@+id/torch_toggle"
+        android:enabled="true"
+        android:icon="@drawable/ic_torch"
+        android:shortcutShortLabel="@string/torch_shortcut_short_label"
+        android:shortcutLongLabel="@string/torch_shortcut_long_label"
+        android:shortcutDisabledMessage="@string/torch_shortcut_disabled">
+        <intent
+            android:action="com.fadcam.TOGGLE_TORCH"
+            android:targetPackage="com.fadcam" />
+    </shortcut>
+</shortcuts>

@@ -232,4 +232,7 @@
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
     <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
+    <string name="torch_shortcut_short_label">Torch</string>
+    <string name="torch_shortcut_long_label">Toggle Torch</string>
+    <string name="torch_shortcut_disabled">Torch toggle is currently unavailable</string>
 </resources>
