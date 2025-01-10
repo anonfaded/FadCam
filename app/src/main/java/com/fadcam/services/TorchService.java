@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -19,6 +20,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
@@ -28,6 +30,7 @@ import com.fadcam.ui.HomeFragment;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Random;
 
 public class TorchService extends Service {
     private static final String TAG = "TorchService";
@@ -124,6 +127,7 @@ public class TorchService extends Service {
             }
         } catch (CameraAccessException e) {
             Log.e(TAG, "Camera access error: " + e.getMessage());
+            showTorchErrorToast(e.getMessage());
         }
     }
 
@@ -165,11 +169,27 @@ public class TorchService extends Service {
                 .setContentIntent(pendingIntent)  // Add tap action to turn off
                 .build();
 
-            startForeground(NOTIFICATION_ID, notification);
+            // For Android 13 and above, explicitly start as a foreground service with a type
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
         } else {
             // Stop foreground service
             stopForeground(true);
         }
+    }
+
+    private void showTorchErrorToast(String errorMessage) {
+        // Use string resources for torch error messages
+        String[] errorMessages = getResources().getStringArray(R.array.torch_error_messages);
+        String humorousMessage = errorMessages[new Random().nextInt(errorMessages.length)];
+        
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            Toast.makeText(this, humorousMessage, Toast.LENGTH_LONG).show();
+        });
     }
 
     @Override

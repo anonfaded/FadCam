@@ -117,8 +117,9 @@
 
         <service
             android:name=".services.TorchService"
-            android:enabled="true"
-            android:exported="false" />
+            android:foregroundServiceType="camera"
+            android:exported="true">
+        </service>
 
         <receiver 
             android:name=".receivers.TorchReceiver"

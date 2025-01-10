@@ -28,6 +28,7 @@ public abstract class Constants {
     public static final String BROADCAST_ON_RECORDING_STATE_CALLBACK = "ON_RECORDING_STATE_CALLBACK";
     public static final String BROADCAST_ON_TORCH_STATE_CHANGED = "ON_TORCH_STATE_CHANGED";
     public static final String BROADCAST_ON_TORCH_STATE_REQUEST = "ON_TORCH_STATE_REQUEST";
+    public static final String BROADCAST_CAMERA_ERROR = "CAMERA_ACCESS_ERROR";
 
     public static final String INTENT_ACTION_STOP_RECORDING = "ACTION_STOP_RECORDING";
     public static final String INTENT_ACTION_CHANGE_SURFACE = "ACTION_CHANGE_SURFACE";

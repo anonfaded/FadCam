@@ -235,4 +235,12 @@
     <string name="torch_shortcut_short_label">Torch</string>
     <string name="torch_shortcut_long_label">Toggle Torch</string>
     <string name="torch_shortcut_disabled">Torch toggle is currently unavailable</string>
+    <!-- Torch Error Messages -->
+    <string-array name="torch_error_messages">
+        <item>Torch is compiling... please don\'t wait 🖥️</item>
+        <item>Camera says: No flash today 🚦</item>
+        <item>Torch.exe not responding 🔦</item>
+        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
+        <item>Patch coming soon™... Developer is debugging life 🐛</item>
+    </string-array>
 </resources>
