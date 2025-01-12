@@ -353,13 +353,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Helper method to format video duration
     private String formatVideoDuration(long durationMs) {
         long totalSeconds = durationMs / 1000;
-        long minutes = totalSeconds / 60;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
         long seconds = totalSeconds % 60;
         
-        if (minutes > 0) {
-            return String.format(Locale.getDefault(), "%d min", minutes);
+        if (hours > 0) {
+            return String.format(Locale.getDefault(), "%dh %02dm", hours, minutes);
+        } else if (minutes > 0) {
+            return String.format(Locale.getDefault(), "%dm %02ds", minutes, seconds);
         } else {
-            return String.format(Locale.getDefault(), "%d sec", seconds);
+            return String.format(Locale.getDefault(), "%ds", seconds);
         }
     }
 
