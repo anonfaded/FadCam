@@ -405,11 +405,60 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     private void renameVideo(int position, String newName) {
-        // Replace spaces with underscores
-        String formattedName = newName.trim().replace(" ", "_");
+        // Extensive logging for debugging
+        Log.d("RecordsAdapter", "Rename attempt: position=" + position + 
+              ", newName=" + newName + 
+              ", records size=" + (records != null ? records.size() : "null") + 
+              ", videoFiles size=" + (videoFiles != null ? videoFiles.size() : "null"));
 
-        File oldFile = videoFiles.get(position);
+        // Validate input and list state with more robust checks
+        if (records == null || records.isEmpty()) {
+            Log.e("RecordsAdapter", "Records list is null or empty");
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Ensure position is valid
+        if (position < 0 || position >= records.size()) {
+            Log.e("RecordsAdapter", "Invalid position: " + position + ", records size: " + records.size());
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Replace spaces with underscores and ensure valid filename
+        String formattedName = newName.trim()
+                .replaceAll("[^a-zA-Z0-9.-]", "_")  // Replace invalid characters
+                .replaceAll("_+", "_")  // Replace multiple underscores
+                .replaceAll("^_|_$", "");  // Remove leading/trailing underscores
+
+        if (formattedName.isEmpty()) {
+            Log.e("RecordsAdapter", "Formatted name is empty after sanitization");
+            Toast.makeText(context, R.string.toast_rename_name_empty, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        File oldFile = records.get(position);
+        
+        // Comprehensive null and existence checks
+        if (oldFile == null) {
+            Log.e("RecordsAdapter", "Null file at position: " + position);
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (!oldFile.exists()) {
+            Log.e("RecordsAdapter", "File does not exist: " + oldFile.getAbsolutePath());
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+
         File parentDir = oldFile.getParentFile();
+        if (parentDir == null || !parentDir.exists()) {
+            Log.e("RecordsAdapter", "Parent directory does not exist");
+            Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+
         String fileExtension = Constants.RECORDING_FILE_EXTENSION;
 
         // Check for existing files with similar names
@@ -422,19 +471,41 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             copyNumber++;
         }
 
-        if (oldFile.renameTo(newFile)) {
-            // Update the list and notify the adapter
-            videoFiles.set(position, newFile);
-            records.set(position, newFile); // Also update the records list if necessary
-            notifyDataSetChanged();
+        try {
+            // Use renameTo with explicit logging
+            boolean renameSuccess = oldFile.renameTo(newFile);
+            
+            if (renameSuccess) {
+                // Synchronize list updates
+                synchronized (this) {
+                    // Update the list and notify the adapter
+                    records.set(position, newFile);
+                    
+                    // Reinitialize videoFiles if it's empty
+                    if (videoFiles == null || videoFiles.isEmpty()) {
+                        videoFiles = new ArrayList<>(records);
+                    } else {
+                        // Ensure videoFiles is updated
+                        videoFiles.set(position, newFile);
+                    }
+                }
+                
+                notifyDataSetChanged();
 
-            // Show a toast with the new filename if a copy number was added
-            String toastMessage = copyNumber > 1 ?
-                context.getString(R.string.toast_rename_with_copy, newFile.getName()) :
-                context.getString(R.string.toast_rename_success);
+                // Show a toast with the new filename
+                String toastMessage = copyNumber > 1 ?
+                    context.getString(R.string.toast_rename_with_copy, newFile.getName()) :
+                    context.getString(R.string.toast_rename_success);
 
-            Toast.makeText(context, toastMessage, Toast.LENGTH_LONG).show();
-        } else {
+                Toast.makeText(context, toastMessage, Toast.LENGTH_LONG).show();
+                
+                Log.d("RecordsAdapter", "Successfully renamed file: " + oldFile.getName() + " to " + newFile.getName());
+            } else {
+                Log.e("RecordsAdapter", "Failed to rename file: " + oldFile.getAbsolutePath() + " to " + newFile.getAbsolutePath());
+                Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Log.e("RecordsAdapter", "Exception during file rename", e);
             Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_LONG).show();
         }
     }
