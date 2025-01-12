@@ -455,96 +455,120 @@ public class RecordingService extends Service {
     }
 
     private void startRecording() {
+        try {
+            sharedPreferencesManager.setRecordingInProgress(true);
 
-        setupMediaRecorder();
+            setupMediaRecorder();
 
-        if (mediaRecorder == null) {
-            android.util.Log.e(TAG, "startRecording: MediaRecorder is not initialized");
-            return;
+            if (mediaRecorder == null) {
+                android.util.Log.e(TAG, "startRecording: MediaRecorder is not initialized");
+                return;
+            }
+
+            if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                android.util.Log.e(TAG, "startRecording: External storage not available, cannot start recording.");
+                return;
+            }
+
+            openCamera();
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting recording", e);
+            sharedPreferencesManager.setRecordingInProgress(false);
         }
-
-        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            android.util.Log.e(TAG, "startRecording: External storage not available, cannot start recording.");
-            return;
-        }
-
-        openCamera();
     }
 
     private void resumeRecording()
     {
-        if(cameraDevice != null) {
-            mediaRecorder.resume();
-            setupRecordingInProgressNotification();
-            recordingState = RecordingState.IN_PROGRESS;
-            showRecordingResumedToast();
-            broadcastOnRecordingResumed();
-        } else {
-            openCamera();
+        try {
+            sharedPreferencesManager.setRecordingInProgress(true);
+
+            if(cameraDevice != null) {
+                mediaRecorder.resume();
+                setupRecordingInProgressNotification();
+                recordingState = RecordingState.IN_PROGRESS;
+                showRecordingResumedToast();
+                broadcastOnRecordingResumed();
+            } else {
+                openCamera();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error resuming recording", e);
+            sharedPreferencesManager.setRecordingInProgress(false);
         }
     }
 
     private void pauseRecording()
     {
-        mediaRecorder.pause();
+        try {
+            sharedPreferencesManager.setRecordingInProgress(false);
 
-        recordingState = RecordingState.PAUSED;
+            mediaRecorder.pause();
 
-        setupRecordingResumeNotification();
+            recordingState = RecordingState.PAUSED;
 
-        showRecordingInPausedToast();
+            setupRecordingResumeNotification();
 
-        broadcastOnRecordingPaused();
+            showRecordingInPausedToast();
 
-        Toast.makeText(this, R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
+            broadcastOnRecordingPaused();
+
+            Toast.makeText(this, R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error pausing recording", e);
+        }
     }
 
     private void stopRecording() {
+        try {
+            sharedPreferencesManager.setRecordingInProgress(false);
 
-        if(recordingState.equals(RecordingState.NONE))
-        {
-            return;
-        }
-
-        android.util.Log.d(TAG, "stopRecording: Attempting to stop recording from recording service.");
-
-        if (mediaRecorder != null) {
-            try {
-                mediaRecorder.resume();
-                mediaRecorder.stop();
-                mediaRecorder.reset();
-            } catch (IllegalStateException e) {
-                android.util.Log.e(TAG, "stopRecording: Error while stopping the recording", e);
-            } finally {
-                mediaRecorder.release();
-                mediaRecorder = null;
-                android.util.Log.d(TAG, "stopRecording: Recording stopped");
-                stopForeground(true);
+            if(recordingState.equals(RecordingState.NONE))
+            {
+                return;
             }
-        }
 
-        if (captureSession != null) {
-            captureSession.close();
-            captureSession = null;
-        }
+            android.util.Log.d(TAG, "stopRecording: Attempting to stop recording from recording service.");
 
-        if (cameraDevice != null) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
+            if (mediaRecorder != null) {
+                try {
+                    mediaRecorder.resume();
+                    mediaRecorder.stop();
+                    mediaRecorder.reset();
+                } catch (IllegalStateException e) {
+                    android.util.Log.e(TAG, "stopRecording: Error while stopping the recording", e);
+                } finally {
+                    mediaRecorder.release();
+                    mediaRecorder = null;
+                    android.util.Log.d(TAG, "stopRecording: Recording stopped");
+                    stopForeground(true);
+                }
+            }
 
-        recordingState = RecordingState.NONE;
+            if (captureSession != null) {
+                captureSession.close();
+                captureSession = null;
+            }
 
-        cancelNotification();
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
 
-        processLatestVideoFileWithWatermark();
+            recordingState = RecordingState.NONE;
 
-        broadcastOnRecordingStopped();
+            cancelNotification();
 
-        Toast.makeText(this, R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
+            processLatestVideoFileWithWatermark();
 
-        if(!isWorkingInProgress()) {
-            stopSelf();
+            broadcastOnRecordingStopped();
+
+            Toast.makeText(this, R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
+
+            if(!isWorkingInProgress()) {
+                stopSelf();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping recording", e);
         }
     }
 

@@ -83,4 +83,16 @@ public class SharedPreferencesManager {
     public String getLanguage() {
         return sharedPreferences.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
     }
+
+    public boolean isRecordingInProgress() {
+        // Check if recording is in progress by checking the recording state
+        // This is a placeholder - you'll need to replace with actual implementation
+        // You might want to store the recording state in SharedPreferences
+        return sharedPreferences.getBoolean(Constants.PREF_IS_RECORDING_IN_PROGRESS, false);
+    }
+
+    public void setRecordingInProgress(boolean isInProgress) {
+        // Update the recording state in SharedPreferences
+        sharedPreferences.edit().putBoolean(Constants.PREF_IS_RECORDING_IN_PROGRESS, isInProgress).apply();
+    }
 }

@@ -20,6 +20,7 @@ public abstract class Constants {
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
     public static final String PREF_VIDEO_CODEC = "video_codec";
     public static final String PREF_APP_THEME = "app_theme";
+    public static final String PREF_IS_RECORDING_IN_PROGRESS = "is_recording_in_progress";
 
     public static final String BROADCAST_ON_RECORDING_STARTED = "ON_RECORDING_STARTED";
     public static final String BROADCAST_ON_RECORDING_RESUMED = "ON_RECORDING_RESUMED";
