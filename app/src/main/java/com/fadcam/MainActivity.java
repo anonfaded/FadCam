@@ -128,7 +128,8 @@ public class MainActivity extends AppCompatActivity {
         ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
             .setShortLabel(getString(R.string.torch_shortcut_short_label))
             .setLongLabel(getString(R.string.torch_shortcut_long_label))
-            .setIcon(Icon.createWithResource(this, R.drawable.ic_flashlight_on))
+            // Set the icon for the torch shortcut 
+            .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
             .setIntent(torchIntent)
             .build();
 
