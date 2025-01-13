@@ -24,6 +24,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.HomeFragment;
 
 import java.lang.ref.WeakReference;
@@ -46,6 +47,34 @@ public class TorchService extends Service {
     // Static method to set the home fragment
     public static void setHomeFragment(HomeFragment fragment) {
         homeFragmentRef = new WeakReference<>(fragment);
+    }
+
+    // In TorchService.java
+    private void toggleTorchInternal() {
+        try {
+            SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            
+            // If recording is in progress, delegate to RecordingService
+            if (sharedPreferencesManager.isRecordingInProgress()) {
+                Intent intent = new Intent(this, RecordingService.class);
+                intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
+                startService(intent);
+                return;
+            }
+
+            // Existing torch toggle code for when not recording
+            boolean newState = !isTorchOn.get();
+            selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+
+            if (selectedTorchSource != null) {
+                cameraManager.setTorchMode(selectedTorchSource, newState);
+                isTorchOn.set(newState);
+                updateUIAndBroadcastState(newState);
+                manageServiceNotification(newState);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling torch", e);
+        }
     }
 
     @Override
@@ -103,41 +132,41 @@ public class TorchService extends Service {
         return START_STICKY;
     }
 
-    private void toggleTorchInternal() {
-        try {
-            // Check if camera is already in use
-            if (isCameraInUse()) {
-                Log.w(TAG, "Camera is currently in use. Cannot toggle torch.");
-                return;
-            }
+    // private void toggleTorchInternal() {
+    //     try {
+    //         // Check if camera is already in use
+    //         if (isCameraInUse()) {
+    //             Log.w(TAG, "Camera is currently in use. Cannot toggle torch.");
+    //             return;
+    //         }
 
-            // Toggle torch state atomically
-            boolean newState = !isTorchOn.get();
-            selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+    //         // Toggle torch state atomically
+    //         boolean newState = !isTorchOn.get();
+    //         selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
 
-            if (selectedTorchSource != null) {
-                // Safely toggle torch
-                try {
-                    cameraManager.setTorchMode(selectedTorchSource, newState);
-                    isTorchOn.set(newState);
+    //         if (selectedTorchSource != null) {
+    //             // Safely toggle torch
+    //             try {
+    //                 cameraManager.setTorchMode(selectedTorchSource, newState);
+    //                 isTorchOn.set(newState);
 
-                    // Update UI and broadcast state
-                    updateUIAndBroadcastState(newState);
+    //                 // Update UI and broadcast state
+    //                 updateUIAndBroadcastState(newState);
 
-                    // Manage foreground service and notification
-                    manageServiceNotification(newState);
+    //                 // Manage foreground service and notification
+    //                 manageServiceNotification(newState);
 
-                    Log.d(TAG, "Torch turned " + (newState ? "ON" : "OFF"));
-                } catch (CameraAccessException e) {
-                    Log.e(TAG, "Camera access error: Cannot toggle torch", e);
-                }
-            } else {
-                Log.w(TAG, "No torch source selected");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error in torch toggle", e);
-        }
-    }
+    //                 Log.d(TAG, "Torch turned " + (newState ? "ON" : "OFF"));
+    //             } catch (CameraAccessException e) {
+    //                 Log.e(TAG, "Camera access error: Cannot toggle torch", e);
+    //             }
+    //         } else {
+    //             Log.w(TAG, "No torch source selected");
+    //         }
+    //     } catch (Exception e) {
+    //         Log.e(TAG, "Unexpected error in torch toggle", e);
+    //     }
+    // }
 
     // Check if camera is currently in use
     private boolean isCameraInUse() {

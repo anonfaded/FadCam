@@ -96,6 +96,8 @@ public class RecordingService extends Service {
 
     private CameraManager cameraManager;
     private Handler backgroundHandler;
+    private boolean isTorchEnabled = false;
+
 
     public boolean isRecording() {
         return recordingState.equals(RecordingState.IN_PROGRESS);
@@ -168,6 +170,9 @@ public class RecordingService extends Service {
                     case Constants.INTENT_ACTION_TOGGLE_TORCH:
                         toggleTorch();
                         return START_STICKY;
+                    case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH:
+                        toggleRecordingTorch();
+                        break;
                     case Constants.BROADCAST_ON_TORCH_STATE_REQUEST:
                         if (cameraDevice != null) {
                             try {
@@ -289,7 +294,6 @@ public class RecordingService extends Service {
     }
 
     private void createCameraPreviewSession() {
-
         if (captureSession != null) {
             captureSession.close();
             captureSession = null;
@@ -301,7 +305,11 @@ public class RecordingService extends Service {
         }
 
         try {
+            // First create the capture request builder
             captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
+            
+            // Now we can safely set the flash mode
+            captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
 
             List<Surface> surfaces = new ArrayList<>();
             Surface recorderSurface = mediaRecorder.getSurface();
@@ -314,13 +322,16 @@ public class RecordingService extends Service {
 
             captureRequestBuilder.addTarget(recorderSurface);
 
-            Range<Integer> fpsRange = Range.create(sharedPreferencesManager.getVideoFrameRate(), sharedPreferencesManager.getVideoFrameRate());
+            Range<Integer> fpsRange = Range.create(sharedPreferencesManager.getVideoFrameRate(), 
+                                                sharedPreferencesManager.getVideoFrameRate());
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+            
             cameraDevice.createCaptureSession(surfaces, new CaptureSessionCallback(), null);
         } catch (CameraAccessException e) {
             android.util.Log.e(TAG, "createCameraPreviewSession: Error while creating capture session", e);
         }
     }
+
 
     public class CaptureSessionCallback extends CameraCaptureSession.StateCallback {
         @Override
@@ -903,4 +914,27 @@ public class RecordingService extends Service {
             android.util.Log.e(TAG, "Error accessing torch during recording: " + e.getMessage());
         }
     }
+        // In RecordingService.java
+    private void toggleRecordingTorch() {
+        if (captureRequestBuilder != null) {
+            try {
+                boolean newTorchState = !isTorchEnabled;
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
+                        newTorchState ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+                
+                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                isTorchEnabled = newTorchState;
+                
+                // Broadcast state change to update UI
+                Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+                intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchEnabled);
+                sendBroadcast(intent);
+                
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "Could not toggle torch: " + e.getMessage());
+            }
+        }
+    }
+
 }
+

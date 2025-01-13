@@ -1425,10 +1425,24 @@ public class HomeFragment extends Fragment {
 
         // Setup click listener for torch toggle
         buttonTorchSwitch.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), TorchService.class);
-            intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
-            requireContext().startService(intent);
-            vibrateTouch();
+            SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            
+            Intent intent;
+            if (sharedPreferencesManager.isRecordingInProgress()) {
+                // If recording, use RecordingService
+                intent = new Intent(requireContext(), RecordingService.class);
+                intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
+            } else {
+                // If not recording, use TorchService
+                intent = new Intent(requireContext(), TorchService.class);
+                intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
+            }
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireContext().startForegroundService(intent);
+            } else {
+                requireContext().startService(intent);
+            }
         });
 
         // Setup long press listener

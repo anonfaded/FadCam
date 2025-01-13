@@ -55,4 +55,7 @@ public abstract class Constants {
 
     public static final String DEFAULT_WATERMARK_OPTION = "timestamp_fadcam";
     public static final boolean DEFAULT_PREVIEW_ENABLED = true;
+
+    public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH = "com.fadcam.TOGGLE_RECORDING_TORCH";
+
 }
