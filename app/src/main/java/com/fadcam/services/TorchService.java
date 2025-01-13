@@ -62,20 +62,43 @@ public class TorchService extends Service {
                 return;
             }
 
-            // Existing torch toggle code for when not recording
+            // Get the new torch state (opposite of current state)
             boolean newState = !isTorchOn.get();
-            selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
 
-            if (selectedTorchSource != null) {
-                cameraManager.setTorchMode(selectedTorchSource, newState);
-                isTorchOn.set(newState);
-                updateUIAndBroadcastState(newState);
-                manageServiceNotification(newState);
+            // Check if "both torches" option is enabled
+            boolean bothTorchesEnabled = sharedPreferences.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
+
+            if (bothTorchesEnabled) {
+                // Get all camera IDs with flash
+                for (String cameraId : cameraManager.getCameraIdList()) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                    Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                    if (hasFlash != null && hasFlash) {
+                        try {
+                            cameraManager.setTorchMode(cameraId, newState);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error toggling torch for camera " + cameraId + ": " + e.getMessage());
+                        }
+                    }
+                }
+            } else {
+                // Single torch mode - use selected source
+                selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+                if (selectedTorchSource != null) {
+                    cameraManager.setTorchMode(selectedTorchSource, newState);
+                }
             }
+
+            // Update state and UI regardless of mode
+            isTorchOn.set(newState);
+            updateUIAndBroadcastState(newState);
+            manageServiceNotification(newState);
+            
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch", e);
         }
     }
+
 
     @Override
     public void onCreate() {
