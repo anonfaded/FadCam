@@ -82,7 +82,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -109,6 +108,26 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".RecordingStartActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".RecordingStopActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:screenOrientation="portrait" />
+
+        <!-- Services and receivers remain unchanged -->
         <service
             android:name=".services.RecordingService"
             android:enabled="true"
@@ -120,7 +139,6 @@
             android:foregroundServiceType="camera"
             android:exported="true">
         </service>
-
         <receiver 
             android:name=".receivers.TorchReceiver"
             android:exported="false">
@@ -137,7 +155,6 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </receiver>
-
     </application>
 
 </manifest>

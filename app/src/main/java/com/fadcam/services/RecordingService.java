@@ -135,12 +135,13 @@ public class RecordingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // Checks if the intent is null
-        if (intent != null) {
+        if (intent != null && intent.getAction() != null) {
             String action = intent.getAction();
             if (action != null) {
-                switch (action) {
+                switch (intent.getAction()) {
                     case Constants.INTENT_ACTION_START_RECORDING:
-                        setupSurfaceTexture(intent);
+                        // Show notification immediately before starting recording
+                        setupRecordingInProgressNotification();
                         startRecording();
                         break;
                     case Constants.INTENT_ACTION_PAUSE_RECORDING:
@@ -562,7 +563,9 @@ public class RecordingService extends Service {
 
             broadcastOnRecordingStopped();
 
-            Toast.makeText(this, R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
+            // Toast.makeText(this, R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
+            Utils.showQuickToast(this, R.string.video_recording_stopped);
+
 
             if(!isWorkingInProgress()) {
                 stopSelf();

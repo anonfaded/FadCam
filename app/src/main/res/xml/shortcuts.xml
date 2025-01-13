@@ -11,4 +11,28 @@
             android:action="com.fadcam.TOGGLE_TORCH"
             android:targetPackage="com.fadcam" />
     </shortcut>
+
+    <shortcut
+        android:id="@+id/record_start"
+        android:enabled="true"
+        android:icon="@drawable/ic_play"
+        android:shortcutShortLabel="@string/start_recording"
+        android:shortcutLongLabel="@string/start_recording">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.RecordingStartActivity"
+            android:targetPackage="com.fadcam" />
+    </shortcut>
+
+    <shortcut
+        android:id="@+id/record_stop"
+        android:enabled="true"
+        android:icon="@drawable/ic_stop"
+        android:shortcutShortLabel="@string/stop_recording"
+        android:shortcutLongLabel="@string/stop_recording">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.RecordingStopActivity"
+            android:targetPackage="com.fadcam" />
+    </shortcut>
 </shortcuts>

@@ -248,6 +248,9 @@
     <string name="records_options_title">Records Options</string>
     <string name="setting_theme_title">App Theme</string>
     <string name="note_theme">Choose your preferred app theme</string>
+<!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
+    <string name="start_recording">Start</string>
+    <string name="stop_recording">Stop</string>
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>

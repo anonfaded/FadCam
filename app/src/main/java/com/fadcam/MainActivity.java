@@ -20,6 +20,7 @@ import com.fadcam.ui.ViewPagerAdapter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
 
@@ -117,24 +118,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N_MR1)
-    private void createDynamicShortcuts() {
-        ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
+@RequiresApi(api = Build.VERSION_CODES.N_MR1)
+private void createDynamicShortcuts() {
+    ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
 
-        // Torch Toggle Shortcut
-        Intent torchIntent = new Intent(this, TorchToggleActivity.class);
-        torchIntent.setAction(Intent.ACTION_VIEW);
+    // Torch Toggle Shortcut
+    Intent torchIntent = new Intent(this, TorchToggleActivity.class);
+    torchIntent.setAction(Intent.ACTION_VIEW);
 
-        ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
-            .setShortLabel(getString(R.string.torch_shortcut_short_label))
-            .setLongLabel(getString(R.string.torch_shortcut_long_label))
-            // Set the icon for the torch shortcut 
-            .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
-            .setIntent(torchIntent)
-            .build();
+    ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
+        .setShortLabel(getString(R.string.torch_shortcut_short_label))
+        .setLongLabel(getString(R.string.torch_shortcut_long_label))
+        .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
+        .setIntent(torchIntent)
+        .build();
 
-        shortcutManager.setDynamicShortcuts(Collections.singletonList(torchShortcut));
-    }
+    // Recording Start Shortcut
+    Intent startRecordIntent = new Intent(this, RecordingStartActivity.class);
+    startRecordIntent.setAction(Intent.ACTION_VIEW);
+
+    ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
+        .setShortLabel(getString(R.string.start_recording))
+        .setLongLabel(getString(R.string.start_recording))
+        .setIcon(Icon.createWithResource(this, R.drawable.start_shortcut))
+        .setIntent(startRecordIntent)
+        .build();
+
+    // Recording Stop Shortcut
+    Intent stopRecordIntent = new Intent(this, RecordingStopActivity.class);
+    stopRecordIntent.setAction(Intent.ACTION_VIEW);
+
+    ShortcutInfo stopRecordShortcut = new ShortcutInfo.Builder(this, "record_stop")
+        .setShortLabel(getString(R.string.stop_recording))
+        .setLongLabel(getString(R.string.stop_recording))
+        .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
+        .setIntent(stopRecordIntent)
+        .build();
+
+    // Set all shortcuts
+    shortcutManager.setDynamicShortcuts(Arrays.asList(
+        torchShortcut,
+        startRecordShortcut,
+        stopRecordShortcut
+    ));
+}
+
 
     public void applyLanguage(String languageCode) {
         // Get current app language

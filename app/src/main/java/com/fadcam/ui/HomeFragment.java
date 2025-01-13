@@ -438,7 +438,7 @@ public class HomeFragment extends Fragment {
             currentCameraTypeString = getString(R.string.back);
         }
 
-        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraTypeString.toLowerCase(), Toast.LENGTH_SHORT).show();
+//        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraTypeString.toLowerCase(), Toast.LENGTH_SHORT).show();
     }
 
     private void fetchRecordingState()
