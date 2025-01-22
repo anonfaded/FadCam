@@ -151,6 +151,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Sam Beckman 2nd Feature](https://youtu.be/E4Row0mFbfk?si=QLjgWyv5p3gO1giM&t=518)
 - [Tech In Hand on YouTube](https://youtu.be/OjuSXf5Dj8E?si=Ng6C7Ic_HZbzxWo5)
 - [AWAk3N on YouTube](https://youtu.be/B38XqQBT398?si=p7-jNVu-LxSXkNaF)
+- [Toped de Gama plus on YouTube](https://youtu.be/Vhg3IvyGXWE?si=EC_rSt6gcB-1AyRT&t=361)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
