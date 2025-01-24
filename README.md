@@ -11,7 +11,6 @@
 > This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
 
 
-
                 
 
 
