@@ -221,10 +221,10 @@ Or:
 
 
 
-**Downloads logs:**
+<!-- **Downloads logs:**
 - 5k -> 10 Jul 2024 (1st month)
 - 10k -> 21 Aug 2024 (6th week)
-- 15k -> 8 Sep 2024 (9th week)
+- 15k -> 8 Sep 2024 (9th week) -->
 
 ## Features:
 
