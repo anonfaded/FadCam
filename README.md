@@ -193,6 +193,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [tz887.com](https://www.tz887.com/app/311291.html)
 - [news.ycombinator.com](https://news.ycombinator.com/item?id=42802171)
 - [archivecan.info](https://archivecan.info/android-ios/)
+- [purepc.pl](https://www.purepc.pl/darmowe-aplikacje-na-telefon-z-androidem-stycze%C5%84-2025)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
