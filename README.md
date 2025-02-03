@@ -131,6 +131,9 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 
 ## Featured On
 
+### Featured Audio Podcast
+- [closednetwork.io](https://closednetwork.io/podcast/episode-42-deepseek-ai-oh-my/) at `1:15:22` timestamp
+
 ### Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [HowToMen 2nd feature :) ](https://youtu.be/3pOoU5JjfnE?si=JMwoHfGyocXuvkC7&t=520)
