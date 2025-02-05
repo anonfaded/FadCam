@@ -2,11 +2,11 @@
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description" translatable="false">FadCam uygulama simgesi</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
-    <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıdaki 'kaynak kodu görüntüle' seçeneğine tıklayın.</string>
+    <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıdaki \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
 
     <string name="app_description">
     <![CDATA[
-    FadCam, hiçbir veri toplamayan ve takip etmeyen, reklamsız, açık kaynaklı bir video kayıt uygulamasıdır. Sadece GitHub üzerinden ve README'de belirtilen resmi bağlantılardan edinebilirsiniz.
+    FadCam, hiçbir veri toplamayan ve takip etmeyen, reklamsız, açık kaynaklı bir video kayıt uygulamasıdır. Sadece GitHub üzerinden ve README\'de belirtilen resmi bağlantılardan edinebilirsiniz.
     <br/><br/>
     FadCam, <font color="#cfbafd">HowToMen</font> ve <font color="#cfbafd">Xtream Droid</font> gibi popüler YouTube kanallarında tanıtılmış, ayrıca <font color="#cfbafd">GrapheneOS</font> ve otuz bir diğer önemli platformda ele alınmıştır.
     ]]>
@@ -62,16 +62,16 @@
 
     <string-array name="tips_widget">
         <item>1/11 | Önizlemeyi kapatmak için uzun basın.</item>
-        <item>2/11 | Saat gösterimini seçmek için tarih widget'ına uzun basın.</item>
-        <item>3/11 | Depolama widget'ı kayıt alanını gerçek zamanlı günceller.</item>
-        <item>4/11 | İstatistik widget'ı toplam video sayısını ve kullanılan alanı gösterir.</item>
+        <item>2/11 | Saat gösterimini seçmek için tarih widget\'ına uzun basın.</item>
+        <item>3/11 | Depolama widget\'ı kayıt alanını gerçek zamanlı günceller.</item>
+        <item>4/11 | İstatistik widget\'ı toplam video sayısını ve kullanılan alanı gösterir.</item>
         <item>5/11 | Video kalitesini ayarlardan değiştirin (HD, SD, FHD).</item>
         <item>6/11 | Alan azaldı mı? Daha uzun kayıt için video kalitesini ayarlayın.</item>
         <item>7/11 | Ayarlardan videolara filigran ekleyin.</item>
         <item>8/11 | Ayarlardan filigrana tam konum ekleyin.</item>
         <item>9/11 | Ön kamerayla kayıt? Ayarlardan seçin.</item>
         <item>10/11 | Tercihleriniz kaydedilir ve sorunsuz uygulanır.</item>
-        <item>11/11 | Yardıma mı ihtiyacınız var? Hakkında bölümünden Discord'umuza katılın.</item>
+        <item>11/11 | Yardıma mı ihtiyacınız var? Hakkında bölümünden Discord\'umuza katılın.</item>
     </string-array>
 
     <string name="mainpage_video_info">\n    <![CDATA[
@@ -132,14 +132,14 @@
         <item>Gizli düğmeyi buldunuz! Hiçbir şey yapmıyor :)</item>
         <item>Acele edin! Sistem patlayacak... ya da belki de sakinleşmek için bir kayda ihtiyacı var.</item>
         <item>Şey, şimdi biraz garip oldu...</item>
-        <item>Bugatti'niz ne renk?</item>
-        <item>Yaptığınız şey için programlanmadım. Dur bir dakika, beni hack'lemeye mi çalışıyorsun?</item>
+        <item>Bugatti\'niz ne renk?</item>
+        <item>Yaptığınız şey için programlanmadım. Dur bir dakika, beni hack\'lemeye mi çalışıyorsun?</item>
     </string-array>
 
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>YASAL UYARI</item>
         <item>FadCam kullanıcı verisi topluyor mu?</item>
-        <item>FadCam'de reklam var mı?</item>
+        <item>FadCam\'de reklam var mı?</item>
         <item>FadCam neden konum izni istiyor?</item>
         <item>FadCam internete bağlanıyor mu?</item>
         <item>Veriler harici sunucularda saklanıyor mu?</item>
@@ -149,7 +149,7 @@
         <item> </item>
         <item>Genel</item>
         <item>Filigran eklemek neden uzun sürüyor?</item>
-        <item>'Temp' video nedir?</item>
+        <item>\'Temp\' video nedir?</item>
         <item>Video kalitesini nasıl değiştirebilirim?</item>
         <item>Önizlemeyi nasıl kapatabilirim?</item>
         <item>Filigrana konumumu nasıl ekleyebilirim?</item>
@@ -172,7 +172,7 @@
         <item> </item>
         <item> </item>
         <item>Filigran videonun her karesine eklenir. Video ne kadar uzunsa, o kadar çok süre alır.</item>
-        <item>'Temp' video orijinal kaydınızdır. Filigran eklendikten sonra otomatik silinir. Filigran eklemesi başarısız olursa, 'temp' dosyası yedek olarak kalır.</item>
+        <item>\'Temp\' video orijinal kaydınızdır. Filigran eklendikten sonra otomatik silinir. Filigran eklemesi başarısız olursa, \'temp\' dosyası yedek olarak kalır.</item>
         <item>Video kalitesini ayarlardan değiştirin: HD, SD veya FHD.</item>
         <item>Önizleme alanına uzun basarak devre dışı bırakabilirsiniz.</item>
         <item>Filigrana tam enlem ve boylam eklemek için ayarlardan konumu etkinleştirin.</item>
@@ -182,7 +182,7 @@
         <item> </item>
     </string-array>
 
-    <string name="dialog_welcome_title">FadCam'e Hoş Geldiniz!</string>
+    <string name="dialog_welcome_title">FadCam\'e Hoş Geldiniz!</string>
     <string name="note_under_dev">Önemli: Bu uygulama şu anda geliştirme aşamasındadır. Düzenli olarak yeni özellikler eklenmektedir.</string>
     <string name="rencent_updates_title">Son Güncellemeler:</string>
     <string name="upcoming_features_title">Gelecek Özellikler:</string>
@@ -190,7 +190,7 @@
     <string name="button_readme_github">GitHub Deposu</string>
     <string name="community_title">Topluluğumuza Katılın:</string>
     <string name="discord_title">Discord Sunucusu</string>
-    <string name="thankyou_msg">FadCam'i kullandığınız için teşekkürler!</string>
+    <string name="thankyou_msg">FadCam\'i kullandığınız için teşekkürler!</string>
     <string name="settings_title">Ayarlar</string>
     <string name="array_watermark_time_fadcam">FadCam ile Zaman</string>
     <string name="array_watermark_timeonly">Zaman Damgası</string>
@@ -198,7 +198,7 @@
 
     <string name="recent_features" translatable="false">• 3 yeni kısayol eklendi: Başlat, Kaydı Durdur ve Fener Aç/Kapa (erişmek için uygulama simgesine uzun basın)\n• Küçük resimler artık saat, dakika ve saniye gösteriyor\n• Fener kayıt sırasında sorunsuz çalışıyor\n• Sıralama seçenekleriyle gelişmiş video yönetimi\n• Yenilenmiş fener kısayol simgesi\n• Daha iyi görünüm için AMOLED siyah tema\n• İyileştirilmiş yeniden adlandırma işlevi ve hata düzeltmeleri</string>
 
-    <string name="upcoming_features" translatable="false">• Otomatik planlanan kayıtlar \n• Google Drive'a otomatik yükleme \n• Özel uygulama simgeleri \n• Gelişmiş gizlilik için uygulama kilidi \n• Kırpma gibi basit işlemler için uygulama içi video düzenleyici \n• Ve daha birçok heyecan verici özellik!</string>
+    <string name="upcoming_features" translatable="false">• Otomatik planlanan kayıtlar \n• Google Drive\'a otomatik yükleme \n• Özel uygulama simgeleri \n• Gelişmiş gizlilik için uygulama kilidi \n• Kırpma gibi basit işlemler için uygulama içi video düzenleyici \n• Ve daha birçok heyecan verici özellik!</string>
 
     <string name="toast_video_not_found">Hata: Video bulunamadı</string>
     <string name="toast_video_saved">Video İndirilenler/FadCam klasörüne kaydedildi</string>
@@ -230,8 +230,8 @@
     <string name="up_to_date_loading">Güncellemeler kontrol ediliyor…</string>
     <string name="update_available_title">Güncelleme Mevcut</string>
     <string name="update_available_message">Yeni bir sürüm (%1$s) mevcut. Güncellemek için lütfen F-Droid mağazasını veya GitHub depomuzu ziyaret edin.</string>
-    <string name="visit_fdroid">F-Droid'i Ziyaret Et</string>
-    <string name="visit_github">GitHub'ı Ziyaret Et</string>
+    <string name="visit_fdroid">F-Droid\'i Ziyaret Et</string>
+    <string name="visit_github">GitHub\'ı Ziyaret Et</string>
 
     <string name="delete_all_videos_title">Tüm Videoları Sil</string>
     <string name="delete_all_videos_description">Tüm videoları silmek istediğinizden emin misiniz?</string>
