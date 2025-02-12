@@ -200,6 +200,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [purepc.pl](https://www.purepc.pl/darmowe-aplikacje-na-telefon-z-androidem-stycze%C5%84-2025)
 - [aqweeb.com](https://www.aqweeb.com/2025/02/10-new-apps-android-and-ios-pt9.html)
 - [nomiapk.website](https://nomiapk.website/xscamera-smart-secure-video-recorder/)
+- [apkhubs.com](https://apkhubs.com/en/fadcam-apk)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
