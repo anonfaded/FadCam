@@ -155,6 +155,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Tech In Hand on YouTube](https://youtu.be/OjuSXf5Dj8E?si=Ng6C7Ic_HZbzxWo5)
 - [AWAk3N on YouTube](https://youtu.be/B38XqQBT398?si=p7-jNVu-LxSXkNaF)
 - [Toped de Gama plus on YouTube](https://youtu.be/Vhg3IvyGXWE?si=EC_rSt6gcB-1AyRT&t=361)
+- [Learn Freelancing with Tusher on YouTube](https://youtu.be/bgfTJsbXjLw?si=XJ6P8WF_KA4usLd6)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
@@ -203,6 +204,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [apkhubs.com](https://apkhubs.com/en/fadcam-apk)
 - [malavida.com](https://www.malavida.com/br/soft/fadcam/android/)
 - [apkclone.com](https://apkclone.com/ja/fadcam-apk)
+- [diyiyou.com](https://www.diyiyou.com/soft/1768.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
