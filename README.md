@@ -209,6 +209,9 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [malavida.com](https://www.malavida.com/br/soft/fadcam/android/)
 - [apkclone.com](https://apkclone.com/ja/fadcam-apk)
 - [diyiyou.com](https://www.diyiyou.com/soft/1768.html)
+- [zxki.cn](https://zxki.cn/syrj/18967.html)
+- [xmk8.com](https://www.xmk8.com/119603/.html)
+- [aukbbs.com](https://aukbbs.com/t-30218-1-1.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
