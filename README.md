@@ -211,6 +211,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [zxki.cn](https://zxki.cn/syrj/18967.html)
 - [xmk8.com](https://www.xmk8.com/119603/.html)
 - [aukbbs.com](https://aukbbs.com/t-30218-1-1.html)
+- [blog.csdn.net](https://blog.csdn.net/gitblog_00782/article/details/146972336)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
