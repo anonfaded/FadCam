@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#FFEB3B" android:state_enabled="true" android:state_selected="true"/> <!-- Yellow for ON -->
+    <item android:color="#80FFFFFF" android:state_enabled="true"/> <!-- 50% white for OFF -->
+    <item android:color="#40FFFFFF" android:state_enabled="false"/> <!-- 25% white for disabled -->
+</selector> 

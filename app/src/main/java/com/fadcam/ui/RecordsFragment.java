@@ -9,12 +9,16 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -25,11 +29,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,12 +44,14 @@ import java.util.concurrent.Executors;
 public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoClickListener, RecordsAdapter.OnVideoLongClickListener {
 
     private RecyclerView recyclerView;
-    private RecordsAdapter adapter;
+    private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
     private FloatingActionButton fabToggleView;
     private FloatingActionButton fabDeleteSelected;
     private List<File> selectedVideos = new ArrayList<>();
     private ExecutorService executorService = Executors.newSingleThreadExecutor(); // Executor for background tasks
+    private SortOption currentSortOption = SortOption.LATEST_FIRST;
+    private List<File> videoFiles = new ArrayList<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -70,8 +79,8 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
 
     private void setupRecyclerView() {
         setLayoutManager();
-        adapter = new RecordsAdapter(getContext(), new ArrayList<>(), this, this);
-        recyclerView.setAdapter(adapter);
+        recordsAdapter = new RecordsAdapter(getContext(), new ArrayList<>(), this, this);
+        recyclerView.setAdapter(recordsAdapter);
     }
 
     private void setLayoutManager() {
@@ -111,7 +120,20 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     private void loadRecordsList() {
         executorService.submit(() -> {
             List<File> recordsList = getRecordsList();
-            requireActivity().runOnUiThread(() -> adapter.updateRecords(recordsList));
+            
+            // Sort initially by latest first
+            recordsList.sort((a, b) -> {
+                long timeA = extractVideoTime(a);
+                long timeB = extractVideoTime(b);
+                return Long.compare(timeB, timeA);
+            });
+
+            videoFiles = new ArrayList<>(recordsList);
+            
+            requireActivity().runOnUiThread(() -> {
+                recordsAdapter.updateRecords(recordsList);
+                Log.d("RecordsFragment", "Initial records loaded and sorted. Count: " + recordsList.size());
+            });
         });
     }
 
@@ -119,8 +141,6 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         List<File> recordsList = new ArrayList<>();
         File recordsDir = new File(requireContext().getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         if (recordsDir.exists()) {
-            // Introduce a delay before refreshing the list
-            new Handler(Looper.getMainLooper()).postDelayed(this::loadRecordsList, 500);
             File[] files = recordsDir.listFiles();
             if (files != null) {
                 for (File file : files) {
@@ -130,7 +150,6 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
                 }
             }
         }
-        new Handler(Looper.getMainLooper()).postDelayed(this::loadRecordsList, 500);
         return recordsList;
     }
 
@@ -200,19 +219,131 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         loadRecordsList();
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.records_menu, menu);
-        super.onCreateOptionsMenu(menu, inflater);
+    private void showRecordsSidebar() {
+        View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext());
+        bottomSheetDialog.setContentView(bottomSheetView);
+
+        RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
+        LinearLayout deleteAllOption = bottomSheetView.findViewById(R.id.option_delete_all);
+
+        if (sortOptionsGroup != null) {
+            // Preselect current sort option
+            switch (currentSortOption) {
+                case LATEST_FIRST:
+                    sortOptionsGroup.check(R.id.sort_latest);
+                    break;
+                case OLDEST_FIRST:
+                    sortOptionsGroup.check(R.id.sort_oldest);
+                    break;
+                case SMALLEST_FILES:
+                    sortOptionsGroup.check(R.id.sort_smallest);
+                    break;
+                case LARGEST_FILES:
+                    sortOptionsGroup.check(R.id.sort_largest);
+                    break;
+            }
+
+            sortOptionsGroup.setOnCheckedChangeListener((group, checkedId) -> {
+                SortOption newSortOption;
+                if (checkedId == R.id.sort_latest) {
+                    newSortOption = SortOption.LATEST_FIRST;
+                } else if (checkedId == R.id.sort_oldest) {
+                    newSortOption = SortOption.OLDEST_FIRST;
+                } else if (checkedId == R.id.sort_smallest) {
+                    newSortOption = SortOption.SMALLEST_FILES;
+                } else if (checkedId == R.id.sort_largest) {
+                    newSortOption = SortOption.LARGEST_FILES;
+                } else {
+                    return; // No valid option selected
+                }
+
+                // Only sort if the option has changed
+                if (newSortOption != currentSortOption) {
+                    currentSortOption = newSortOption;
+                    performVideoSort();
+                }
+                
+                bottomSheetDialog.dismiss();
+            });
+        }
+
+        if (deleteAllOption != null) {
+            deleteAllOption.setOnClickListener(v -> {
+                bottomSheetDialog.dismiss();
+                confirmDeleteAll();
+            });
+        }
+
+        bottomSheetDialog.show();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_delete_all) {
-            confirmDeleteAll();
-            return true;
+    private void performVideoSort() {
+        if (videoFiles == null || videoFiles.isEmpty()) {
+            Log.e("RecordsFragment", "Cannot sort: videoFiles is null or empty");
+            return;
         }
-        return super.onOptionsItemSelected(item);
+
+        // Create a copy of the original list to preserve original order
+        List<File> sortedVideos = new ArrayList<>(videoFiles);
+
+        try {
+            switch (currentSortOption) {
+                case LATEST_FIRST:
+                    Collections.sort(sortedVideos, (a, b) -> {
+                        long timeA = extractVideoTime(a);
+                        long timeB = extractVideoTime(b);
+                        return Long.compare(timeB, timeA);
+                    });
+                    break;
+                case OLDEST_FIRST:
+                    Collections.sort(sortedVideos, (a, b) -> {
+                        long timeA = extractVideoTime(a);
+                        long timeB = extractVideoTime(b);
+                        return Long.compare(timeA, timeB);
+                    });
+                    break;
+                case SMALLEST_FILES:
+                    Collections.sort(sortedVideos, Comparator.comparingLong(File::length));
+                    break;
+                case LARGEST_FILES:
+                    Collections.sort(sortedVideos, (a, b) -> Long.compare(b.length(), a.length()));
+                    break;
+            }
+
+            // Update the list and adapter on the main thread
+            requireActivity().runOnUiThread(() -> {
+                videoFiles = sortedVideos;
+                recordsAdapter.updateRecords(videoFiles);
+                recyclerView.scrollToPosition(0);
+                
+                Log.d("RecordsFragment", "Sorted videos. Option: " + currentSortOption + 
+                      ", Total videos: " + videoFiles.size());
+            });
+
+        } catch (Exception e) {
+            Log.e("RecordsFragment", "Error sorting videos", e);
+        }
+    }
+
+    private long extractVideoTime(File videoFile) {
+        try {
+            String fileName = videoFile.getName();
+            // Assuming filename format: video_2024-01-11_12-30-45.mp4
+            int dateStartIndex = fileName.indexOf('_') + 1;
+            int dateEndIndex = fileName.indexOf('_', dateStartIndex);
+            
+            if (dateStartIndex > 0 && dateEndIndex > dateStartIndex) {
+                String dateTimeStr = fileName.substring(dateStartIndex, dateEndIndex);
+                Log.d("RecordsFragment", "Extracted datetime: " + dateTimeStr + " from " + fileName);
+                return videoFile.lastModified(); // Fallback to last modified time
+            }
+            
+            return videoFile.lastModified();
+        } catch (Exception e) {
+            Log.e("RecordsFragment", "Error extracting time from " + videoFile.getName(), e);
+            return 0;
+        }
     }
 
     private void confirmDeleteAll() {
@@ -230,8 +361,8 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.delete_all_videos_title))
                 .setMessage(getString(R.string.delete_all_videos_description))
-                .setPositiveButton("Delete", (dialog, which) -> deleteAllVideos())
-                .setNegativeButton("Cancel", null)
+                .setPositiveButton(getString(R.string.dialog_del_confirm), (dialog, which) -> deleteAllVideos())
+                .setNegativeButton(getString(R.string.universal_cancel), null)
                 .show();
     }
 
@@ -248,5 +379,34 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
             }
         }
         loadRecordsList();
+    }
+
+    // Enum for sort options
+    private enum SortOption {
+        LATEST_FIRST,
+        OLDEST_FIRST,
+        SMALLEST_FILES,
+        LARGEST_FILES
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.records_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+        
+        if (itemId == R.id.action_delete_all) {
+            confirmDeleteAll();
+            return true;
+        } else if (itemId == R.id.action_more_options) {
+            showRecordsSidebar();
+            return true;
+        }
+        
+        return super.onOptionsItemSelected(item);
     }
 }

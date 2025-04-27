@@ -20,8 +20,8 @@ android {
         applicationId = "com.fadcam"
         minSdk = 24
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.2.0-beta"
+        versionCode = 9
+        versionName = "1.2.1-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -67,5 +67,5 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
 
-    implementation(libs.ffmpeg.kit.video)
+    implementation(libs.ffmpeg.kit.full)
 }

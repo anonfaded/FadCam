@@ -35,7 +35,8 @@
 <!--    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>-->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
@@ -43,12 +44,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-
-
+<uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
 
     <application
@@ -59,9 +58,14 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.FadCam"
+        android:theme="@style/Base.Theme.FadCam"
         android:requestLegacyExternalStorage="true"
         tools:targetApi="q">
+        
+        <meta-data
+            android:name="android.app.shortcuts"
+            android:resource="@xml/shortcuts" />
+        
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -78,7 +82,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -86,13 +89,72 @@
             android:name=".ui.VideoPlayerActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".ui.WebViewActivity" />
+        <activity
+            android:name=".TorchToggleActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:screenOrientation="portrait"
+            android:documentLaunchMode="never"
+            android:clearTaskOnLaunch="true"
+            android:taskAffinity=""
+            android:allowTaskReparenting="false">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
 
+        <activity
+            android:name=".RecordingStartActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".RecordingStopActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:screenOrientation="portrait" />
+
+        <!-- Services and receivers remain unchanged -->
         <service
-            android:name=".RecordingService"
+            android:name=".services.RecordingService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera|microphone" />
 
+        <service
+            android:name=".services.TorchService"
+            android:foregroundServiceType="camera"
+            android:exported="true">
+        </service>
+        <receiver 
+            android:name=".receivers.TorchReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.fadcam.TORCH_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver 
+            android:name=".receivers.TorchToggleReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.fadcam.TOGGLE_TORCH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

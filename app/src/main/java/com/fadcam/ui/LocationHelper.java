@@ -13,12 +13,10 @@ import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
 
 public class LocationHelper {
 
-    private GpsMyLocationProvider provider;
-    private Context context;
+    private final GpsMyLocationProvider provider;
     private GeoPoint currentLocation;
 
     public LocationHelper(Context context) {
-        this.context = context;
         provider = new GpsMyLocationProvider(context);
 
         // Set a location update handler

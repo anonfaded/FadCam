@@ -13,30 +13,20 @@
     </string>
 
 
-
-
-
-
-
-<string name="view_source_code">Source Code ogorai</string>
-<string name="buy_me_a_coffee">Yao coffee ra wakhla ☕</string>
-<string name="contact">Rabta</string>
-<string name="send_email">Email oka</string>
-<string name="join_community">Community join kae, madad, ideas share kawalo, aw mustaqbil app updates da paara</string>
-<string name="privacy_information">Da Privacy Maloomat</string>
-<string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
-<string-array name="video_quality_array">
-<item name="quality_fhd">FHD (1920x1080)</item>
-<item name="quality_hd">HD (1280x720)</item>
-<item name="quality_sd">SD (640x480)</item>
-</string-array>
-<integer-array name="video_framerate_array">
-<item name="24">24</item>
-<item name="30">30</item>
-<item name="60">60</item>
-<item name="90">90</item>
-</integer-array>
-<string name="mainpage_storage_indicator">\n    <![CDATA[
+    <string name="view_source_code">Source Code ogorai</string>
+    <string name="buy_me_a_coffee">Yao coffee ra wakhla ☕</string>
+    <string name="contact">Rabta</string>
+    <string name="send_email">Email oka</string>
+    <string name="join_community">Community join kae, madad, ideas share kawalo, aw mustaqbil app updates da paara</string>
+    <string name="privacy_information">Da Privacy Maloomat</string>
+    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <integer-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </integer-array>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Dumra Zay shta:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Da Record wakh (andaza):</b></font><br>
@@ -46,162 +36,162 @@
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Paati wakh:</b></font><br>
     <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
     ]]>\n</string>
-<string-array name="tips_widget">
-<item>1/11 | Preview bandi ogad tap okai che band shi.</item>
-<item>2/11 | Date widget bandi ogad tap okai che clock display ogorai.</item>
-<item>3/11 | Storage widget pa realtime ki recording space update kai.</item>
-<item>4/11 | Stats widget videos aw istemal shawe space khai.</item>
-<item>5/11 | Video quality (HD, SD, FHD) pa settings ke badlede shi.</item>
-<item>6/11 | Kam space de? Video quality kam kai zyat recording wakh da paara.</item>
-<item>7/11 | Settings ki watermark add kai.</item>
-<item>8/11 | Exact location acholo la settings ki option ogorae.</item>
-<item>9/11 | Makhi wala camera na record kol di? Settings ki select kae.</item>
-<item>10/11 | Da app preferences save kigi aw agha pakhpala apply kigi.</item>
-<item>11/11 | Madad pakar de? About ki Discord link shte alta na join kae.</item>
-</string-array>
-<string name="mainpage_video_info">\n    <![CDATA[
+    <string-array name="tips_widget">
+        <item>1/11 | Preview bandi ogad tap okai che band shi.</item>
+        <item>2/11 | Date widget bandi ogad tap okai che clock display ogorai.</item>
+        <item>3/11 | Storage widget pa realtime ki recording space update kai.</item>
+        <item>4/11 | Stats widget videos aw istemal shawe space khai.</item>
+        <item>5/11 | Video quality (HD, SD, FHD) pa settings ke badlede shi.</item>
+        <item>6/11 | Kam space de? Video quality kam kai zyat recording wakh da paara.</item>
+        <item>7/11 | Settings ki watermark add kai.</item>
+        <item>8/11 | Exact location acholo la settings ki option ogorae.</item>
+        <item>9/11 | Makhi wala camera na record kol di? Settings ki select kae.</item>
+        <item>10/11 | Da app preferences save kigi aw agha pakhpala apply kigi.</item>
+        <item>11/11 | Madad pakar de? About ki Discord link shte alta na join kae.</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Istemal shawe Zay:</font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-<string name="button_start">Shuru</string>
-<string name="button_pause">Lag Odrawa</string>
-<string name="button_stop">Band</string>
-<string name="button_resume">Bya Shuru</string>
-<string name="video_recording_started">Recording shuru shu</string>
-<string name="video_recording_stopped">Recording band shu</string>
-<string name="video_recording_paused">Recording lag waqfa shu</string>
-<string name="video_recording_resumed">Recording bya chalu shu</string>
-<string name="current_camera">Maujooda camera</string>
-<string name="video_menu_del">Delete ka</string>
-<string name="video_menu_save">Gallery ta Save kai</string>
-<string name="video_menu_rename">Noom Badal kai</string>
-<string name="records_title">Record Shawi Videos</string>
-<string name="nav_home">Kor</string>
-<string name="nav_records">Records</string>
-<string name="nav_settings">Settings</string>
-<string name="nav_about">Maloomat</string>
-<string name="button_settings_readme">Zama Maloomat Ogora</string>
-<string name="setting_cam_title">Camera Intikhab</string>
-<string name="note_cam_sele">Camera intikhab kai \n(Default: Shata)</string>
-<string name="button_settings_cam_back">Shata</string>
-<string name="button_settings_cam_front">Makhki</string>
-<string name="setting_quailty_title">Da Video Quality</string>
-<string name="setting_framerate_title">Da Video Framerate</string>
-<string name="note_quailty">Quality intikhab kai\n(Default: HD)</string>
-<string name="note_framerate">Framerate intikhab kai\n(Default: %1$d)</string>
-<string name="setting_watermark">Watermark</string>
-<string name="note_watermark">Watermark option intikhab kai\n(Default: Timestamp sara da FadCam)</string>
-<string name="note_watermark_extra">Oke zar video save kol we, nu \'No Watermark\' intekhab kae. Watermark am add kol gware? Nu byam hes khabara nada, bs lag wakh ba der akhli!</string>
-<string name="setting_location_title">Da Location Data</string>
-<string name="note_location">Da location data am watermark ki shamil kae. \nGPS pehla zaruri on kol de \n(Default: Disabled)</string>
-<string name="note_location_extra">Da Phone GPS enable kae, da latitude aw longitude data watermark ke shaamil kolo dapara.</string>
-<string name="button_setting_review">Yo Review oleka 🌟</string>
-<string name="dialog_clock_title">Clock Display Intikhab kai</string>
-<string name="dialog_clock_timeonly">Sirf wakh</string>
-<string name="dialog_clock_englishtime">English Tarikh aw wakh</string>
-<string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
-<string name="ui_preview_area">Katalo zay</string>
-<string-array name="easter_eggs_array">
-<item>Oo! Dalta nashi ratlay. Recording shuru ka pehla che access darkam.</item>
-<item>Ta yo khaas button omuntalo! kho da sam nakai lol</item>
-<item>Zarrr sha! Sta system alutoo wala de… ya kideshi sirf recording shuru kolo sara theek shi.</item>
-<item>Asi, ajeeba kas ye yara…</item>
-<item>Sta da Bugatti kam rung de?</item>
-<item>Za de dapara na ym program shwe sa che rasara ta ke lagya. Yo minute, ta ma hack ke kho na?</item>
-</string-array>
-<string-array name="questions_array" tools:ignore="InconsistentArrays">
-<item>DISCLAIMER</item>
-<item>FadCam da user data jama kai zan sara?</item>
-<item>Di app ki ishtehar am shta?</item>
-<item>FadCam da location access wali gwari?</item>
-<item>FadCam internet sara am connect kegi?</item>
-<item>Hes runga data pa external servers bande store kegi?</item>
-<item>Zama videos sara sa kegi record kolo na pas?</item>
-<item>FadCam zama data third party services ta legi?</item>
-<item> </item>
-<item> </item>
-<item>General</item>
-<item>Da watermarking dumra der wakh wali akhli?</item>
-<item>Da \'temp\' num wala video sa shae de?</item>
-<item>Za video quality sanga badlole sham?</item>
-<item>Za da preview video band kole sham?</item>
-<item>Za location sanga pa watermark ki achole sham?</item>
-<item>Zama preferences de app ki save kegi?</item>
-<item>Za scheduled recordings kole sham?</item>
-<item>Da app za sanga update kole sham?</item>
-<item> </item>
-</string-array>
-<string-array name="answers_array" tools:ignore="InconsistentArrays">
+    <string name="button_start">Shuru</string>
+    <string name="button_pause">Lag Odrawa</string>
+    <string name="button_stop">Band</string>
+    <string name="button_resume">Bya Shuru</string>
+    <string name="video_recording_started">Recording shuru shu</string>
+    <string name="video_recording_stopped">Recording band shu</string>
+    <string name="video_recording_paused">Recording lag waqfa shu</string>
+    <string name="video_recording_resumed">Recording bya chalu shu</string>
+    <string name="current_camera">Maujooda camera</string>
+    <string name="video_menu_del">Delete ka</string>
+    <string name="video_menu_save">Gallery ta Save kai</string>
+    <string name="video_menu_rename">Noom Badal kai</string>
+    <string name="records_title">Record Shawi Videos</string>
+    <string name="nav_home">Kor</string>
+    <string name="nav_records">Records</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_about">Maloomat</string>
+    <string name="button_settings_readme">Zama Maloomat Ogora</string>
+    <string name="setting_cam_title">Camera Intikhab</string>
+    <string name="note_cam_sele">Camera intikhab kai \n(Default: Shata)</string>
+    <string name="button_settings_cam_back">Shata</string>
+    <string name="button_settings_cam_front">Makhki</string>
+    <string name="setting_quailty_title">Da Video Quality</string>
+    <string name="setting_framerate_title">Da Video Framerate</string>
+    <string name="note_quailty">Quality intikhab kai\n(Default: HD)</string>
+    <string name="note_framerate">Framerate intikhab kai\n(Default: %1$d)</string>
+    <string name="setting_watermark">Watermark</string>
+    <string name="note_watermark">Watermark option intikhab kai\n(Default: Timestamp sara da FadCam)</string>
+    <string name="note_watermark_extra">Oke zar video save kol we, nu \'No Watermark\' intekhab kae. Watermark am add kol gware? Nu byam hes khabara nada, bs lag wakh ba der akhli!</string>
+    <string name="setting_location_title">Da Location Data</string>
+    <string name="note_location">Da location data am watermark ki shamil kae. \nGPS pehla zaruri on kol de \n(Default: Disabled)</string>
+    <string name="note_location_extra">Da Phone GPS enable kae, da latitude aw longitude data watermark ke shaamil kolo dapara.</string>
+    <string name="button_setting_review">Yo Review oleka 🌟</string>
+    <string name="dialog_clock_title">Clock Display Intikhab kai</string>
+    <string name="dialog_clock_timeonly">Sirf wakh</string>
+    <string name="dialog_clock_englishtime">English Tarikh aw wakh</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Katalo zay</string>
+    <string-array name="easter_eggs_array">
+        <item>Oo! Dalta nashi ratlay. Recording shuru ka pehla che access darkam.</item>
+        <item>Ta yo khaas button omuntalo! kho da sam nakai lol</item>
+        <item>Zarrr sha! Sta system alutoo wala de… ya kideshi sirf recording shuru kolo sara theek shi.</item>
+        <item>Asi, ajeeba kas ye yara…</item>
+        <item>Sta da Bugatti kam rung de?</item>
+        <item>Za de dapara na ym program shwe sa che rasara ta ke lagya. Yo minute, ta ma hack ke kho na?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>DISCLAIMER</item>
+        <item>FadCam da user data jama kai zan sara?</item>
+        <item>Di app ki ishtehar am shta?</item>
+        <item>FadCam da location access wali gwari?</item>
+        <item>FadCam internet sara am connect kegi?</item>
+        <item>Hes runga data pa external servers bande store kegi?</item>
+        <item>Zama videos sara sa kegi record kolo na pas?</item>
+        <item>FadCam zama data third party services ta legi?</item>
+        <item> </item>
+        <item> </item>
+        <item>General</item>
+        <item>Da watermarking dumra der wakh wali akhli?</item>
+        <item>Da \'temp\' num wala video sa shae de?</item>
+        <item>Za video quality sanga badlole sham?</item>
+        <item>Za da preview video band kole sham?</item>
+        <item>Za location sanga pa watermark ki achole sham?</item>
+        <item>Zama preferences de app ki save kegi?</item>
+        <item>Za scheduled recordings kole sham?</item>
+        <item>Da app za sanga update kole sham?</item>
+        <item> </item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
 <item>FadCam hes am ghair akhlaqi ya illegal istemal la nade. Misuse, da cha surveillance ya privacy ki da dakhal, zamung da guidelines khilaf di. Da de app authors hes qisam am misuse jawabgar na di.
 </item>
 
-<item>Na, FadCam hes kisam user data na jama kai.</item>
-<item>Na, FadCam bilkul ad-free dai.</item>
-<item>Da location info watermark ke shaamil kawalo dapara.</item>
-<item>Na, FadCam internet sara connect na dai.</item>
-<item>Na, tola data sta pa device bandi store kigi.</item>
-<item>Sta videos sta pa device ki internal app storage ke save kigi.</item>
-<item>Na, FadCam da data share ya jamakol na kai.</item>
-<item> </item>
-<item> </item>
-<item> </item>
-<item>Watermark har frame ke shaamil kigi. Ogad video we nu, zyat wakh ba akhli.</item>
-<item>\'Temp\' video sta asli recording dai. Da watermarking process na pas pakhpala delete kigi. Oke watermarking fail she, no \'temp\' file backup pa tor bandi prot we.</item>
-<item>Video quality settings ke badal kideshi: HD, SD, or FHD.</item>
-<item>Preview wala zay bandi, disable kawalo dapara, long press okai.</item>
-<item>Location settings ke enable kae, che watermark ke da location data shaamil she. Da precise longitude aw latitude data shaamil kai.</item>
-<item>Ao, preferences aw tol settings save kegi ao pakhpala apply kigi.</item>
-<item>Da feature ba bad ki razi, In Sha Allah.</item>
-<item>Updates dapara, official GitHub repo check kae.</item>
-<item> </item>
-</string-array>
-<string name="dialog_welcome_title">Pa Khair raghle!</string>
-<string name="note_under_dev">Zaruri khabara: Da app la development ki de. Nawi features wakh sara add kegi.</string>
-<string name="rencent_updates_title">Taaza Updates:</string>
-<string name="upcoming_features_title">Rarawan Features:</string>
-<string name="stay_updated_title">Updated osay:</string>
-<string name="button_readme_github">GitHub Repository</string>
-<string name="community_title">Zamung Community ki shamil shae:</string>
-<string name="discord_title">Da Discord Server</string>
-<string name="thankyou_msg">FadCam istemal kolo dapara manana!</string>
-<string name="settings_title">Settings</string>
-<string name="array_watermark_time_fadcam">Wakh, sara da Fadcam</string>
-<string name="array_watermark_timeonly">Timestamp</string>
-<string name="array_watermark_nomark">No Watermark</string>
-<string name="recent_features">• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Customizable watermarking\n• ExoPlayer integration for better playback\n• Location data in watermarks\n• Dynamic watermark options\n• Long press feedback with animations\n• Date and Time widget customization</string>
-<string name="upcoming_features">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
-<string name="toast_video_not_found">Error: Video milao na shwa</string>
-<string name="toast_video_saved">Video ~/Downloads/FadCam folder ki save shwa</string>
-<string name="toast_video_save_fail">Video save kolo ke fail shwa</string>
-<string name="rename_video_title">Video la num badal kae</string>
-<string name="rename_video_hint">Nawe num olekai</string>
-<string name="universal_cancel">Cancel</string>
-<string name="toast_rename_name_empty">Num khali nashi kedali</string>
-<string name="toast_rename_failed">Video rename kolo ke fail</string>
-<string name="toast_rename_success">Video renamed shwa</string>
-<string name="toast_rename_bad_video">Ya darust position nade ya video list null dai</string>
-<string name="dialog_del_title">Hamesha la delete kam?</string>
-<string name="dialog_del_notice">Pa rishtiya da video delete kol gwari?</string>
-<string name="dialog_del_confirm">Delete e ka</string>
-<string name="dialog_multi_video_del_title">Khatam ka Video(s)? 💣💣</string>
-<string name="dialog_multi_video_del_note">Ta pa rishtya gware che da video(s) da safae hasti na mitao kam? 🚀💥</string>
-<string name="dialog_multi_video_del_yes">Ao, Pa daz e ola! 🌋</string>
-<string name="dialog_multi_video_del_no">Na, Gup lagom! 😅</string>
-<string name="setting_language_title">Da App Jaba</string>
-<string name="note_language">Dropdown na select ka.\n(Default: English)</string>
-<string name="location_permission_title">Da Location Permission</string>
-<string name="location_permission_description">Di app ta da location permission zarurat dai, location data videos ke shaamil kolo la. Mehrbani oka ao permission warka warla.</string>
-<string name="up_to_date">Updated de</string>
-<string name="up_to_date_description">Stasu pehla na latest version bandi de.</string>
-<string name="up_to_date_loading">Updates check kegi sabr…</string>
-<string name="update_available_title">Update Mojood de</string>
-<string name="update_available_message">Yo nawe version (%1$s) milaoshu. Update kolo dapara, F-Droid store ya GitHub repository na download kae. </string>
-<string name="visit_fdroid">F-Droid kolao ka</string>
-<string name="visit_github">GitHub kolao ka</string>
-<string name="delete_all_videos_title">Tol Videos pa Daz Ola</string>
-<string name="delete_all_videos_description">Ta tol videos delete kol gware?</string>
-<string name="switched_front_camera">Makhki camera chalu shwa</string>
-<string name="switched_rear_camera">Shaata camera chalu shwa</string>
-    </resources>
+        <item>Na, FadCam hes kisam user data na jama kai.</item>
+        <item>Na, FadCam bilkul ad-free dai.</item>
+        <item>Da location info watermark ke shaamil kawalo dapara.</item>
+        <item>Na, FadCam internet sara connect na dai.</item>
+        <item>Na, tola data sta pa device bandi store kigi.</item>
+        <item>Sta videos sta pa device ki internal app storage ke save kigi.</item>
+        <item>Na, FadCam da data share ya jamakol na kai.</item>
+        <item> </item>
+        <item> </item>
+        <item> </item>
+        <item>Watermark har frame ke shaamil kigi. Ogad video we nu, zyat wakh ba akhli.</item>
+        <item>\'Temp\' video sta asli recording dai. Da watermarking process na pas pakhpala delete kigi. Oke watermarking fail she, no \'temp\' file backup pa tor bandi prot we.</item>
+        <item>Video quality settings ke badal kideshi: HD, SD, or FHD.</item>
+        <item>Preview wala zay bandi, disable kawalo dapara, long press okai.</item>
+        <item>Location settings ke enable kae, che watermark ke da location data shaamil she. Da precise longitude aw latitude data shaamil kai.</item>
+        <item>Ao, preferences aw tol settings save kegi ao pakhpala apply kigi.</item>
+        <item>Da feature ba bad ki razi, In Sha Allah.</item>
+        <item>Updates dapara, official GitHub repo check kae.</item>
+        <item> </item>
+    </string-array>
+    <string name="dialog_welcome_title">Pa Khair raghle!</string>
+    <string name="note_under_dev">Zaruri khabara: Da app la development ki de. Nawi features wakh sara add kegi.</string>
+    <string name="rencent_updates_title">Taaza Updates:</string>
+    <string name="upcoming_features_title">Rarawan Features:</string>
+    <string name="stay_updated_title">Updated osay:</string>
+    <string name="button_readme_github">GitHub Repository</string>
+    <string name="community_title">Zamung Community ki shamil shae:</string>
+    <string name="discord_title">Da Discord Server</string>
+    <string name="thankyou_msg">FadCam istemal kolo dapara manana!</string>
+    <string name="settings_title">Settings</string>
+    <string name="array_watermark_time_fadcam">Wakh, sara da Fadcam</string>
+    <string name="array_watermark_timeonly">Timestamp</string>
+    <string name="array_watermark_nomark">No Watermark</string>
+    <string name="recent_features">• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Customizable watermarking\n• ExoPlayer integration for better playback\n• Location data in watermarks\n• Dynamic watermark options\n• Long press feedback with animations\n• Date and Time widget customization</string>
+    <string name="upcoming_features">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
+    <string name="toast_video_not_found">Error: Video milao na shwa</string>
+    <string name="toast_video_saved">Video ~/Downloads/FadCam folder ki save shwa</string>
+    <string name="toast_video_save_fail">Video save kolo ke fail shwa</string>
+    <string name="rename_video_title">Video la num badal kae</string>
+    <string name="rename_video_hint">Nawe num olekai</string>
+    <string name="universal_cancel">Cancel</string>
+    <string name="toast_rename_name_empty">Num khali nashi kedali</string>
+    <string name="toast_rename_failed">Video rename kolo ke fail</string>
+    <string name="toast_rename_success">Video renamed shwa</string>
+    <string name="toast_rename_bad_video">Ya darust position nade ya video list null dai</string>
+    <string name="dialog_del_title">Hamesha la delete kam?</string>
+    <string name="dialog_del_notice">Pa rishtiya da video delete kol gwari?</string>
+    <string name="dialog_del_confirm">Delete e ka</string>
+    <string name="dialog_multi_video_del_title">Khatam ka Video(s)? 💣💣</string>
+    <string name="dialog_multi_video_del_note">Ta pa rishtya gware che da video(s) da safae hasti na mitao kam? 🚀💥</string>
+    <string name="dialog_multi_video_del_yes">Ao, Pa daz e ola! 🌋</string>
+    <string name="dialog_multi_video_del_no">Na, Gup lagom! 😅</string>
+    <string name="setting_language_title">Da App Jaba</string>
+    <string name="note_language">Dropdown na select ka.\n(Default: English)</string>
+    <string name="location_permission_title">Da Location Permission</string>
+    <string name="location_permission_description">Di app ta da location permission zarurat dai, location data videos ke shaamil kolo la. Mehrbani oka ao permission warka warla.</string>
+    <string name="up_to_date">Updated de</string>
+    <string name="up_to_date_description">Stasu pehla na latest version bandi de.</string>
+    <string name="up_to_date_loading">Updates check kegi sabr…</string>
+    <string name="update_available_title">Update Mojood de</string>
+    <string name="update_available_message">Yo nawe version (%1$s) milaoshu. Update kolo dapara, F-Droid store ya GitHub repository na download kae. </string>
+    <string name="visit_fdroid">F-Droid kolao ka</string>
+    <string name="visit_github">GitHub kolao ka</string>
+    <string name="delete_all_videos_title">Tol Videos pa Daz Ola</string>
+    <string name="delete_all_videos_description">Ta tol videos delete kol gware?</string>
+    <string name="switched_front_camera">Makhki camera chalu shwa</string>
+    <string name="switched_rear_camera">Shaata camera chalu shwa</string>
+</resources>

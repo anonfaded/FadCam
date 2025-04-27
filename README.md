@@ -11,9 +11,7 @@
 > This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
 
 
-
-
-
+                
 
 
 ---
@@ -27,6 +25,7 @@
 **Seamless background video recorder for Android – ad-free and open-source, with customizable options.**
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
+[![SourceForge Downloads](https://img.shields.io/sourceforge/dt/fadcam.svg?label=SourceForge%20Downloads&color=red)](https://sourceforge.net/projects/fadcam/files/latest/download)
 
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
 
@@ -131,6 +130,9 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 
 ## Featured On
 
+### Featured Audio Podcast
+- [closednetwork.io](https://closednetwork.io/podcast/episode-42-deepseek-ai-oh-my/) at `1:15:22` timestamp
+
 ### Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [HowToMen 2nd feature :) ](https://youtu.be/3pOoU5JjfnE?si=JMwoHfGyocXuvkC7&t=520)
@@ -147,6 +149,17 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [@ALHATEFALDHAKI on YouTube](https://www.youtube.com/watch?v=jOqnfL3mRks)
 - [@techtricks306 on YouTube](https://www.youtube.com/watch?v=3C2XM4YnlDY)
 - [Samfans VN on YouTube](https://www.youtube.com/watch?v=LSYKu51ibeI)
+- [Sam Beckman on YouTube](https://youtu.be/GujW6qMdVGg?si=WLQ5PyneHkUQvyB7)
+- [Sam Beckman 2nd Feature](https://youtu.be/E4Row0mFbfk?si=QLjgWyv5p3gO1giM&t=518)
+- [Tech In Hand on YouTube](https://youtu.be/OjuSXf5Dj8E?si=Ng6C7Ic_HZbzxWo5)
+- [AWAk3N on YouTube](https://youtu.be/B38XqQBT398?si=p7-jNVu-LxSXkNaF)
+- [Toped de Gama plus on YouTube](https://youtu.be/Vhg3IvyGXWE?si=EC_rSt6gcB-1AyRT&t=361)
+- [Learn Freelancing with Tusher on YouTube](https://youtu.be/bgfTJsbXjLw?si=XJ6P8WF_KA4usLd6)
+- [iamrooney_ on TikTok](https://www.tiktok.com/@iamrooney_/video/7476628538636913925)
+- [Brandulox](https://youtu.be/yWg-quQIX1Y?si=-Wq_ZAV9WwAEV592)
+- [brandulox on TikTok](https://www.tiktok.com/@brandulox/video/7481545146144673030)
+- [El Androide Feliz on YouTube](https://youtu.be/H02x9pnJh_g?si=dXCmNLaDm9Hrra2C&t=669)
+- [ODORIZZI on YouTube](https://www.youtube.com/watch?v=e2IFJJgjKRg)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
@@ -184,7 +197,24 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [androidfreeware.net](https://www.androidfreeware.net/download-fadcam-apk.html)
 - [computer-wd.com](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
 - [computer-wd.com (2nd feature)](https://www.computer-wd.com/2024/11/secretly-record-video-on-android.html)
+- [computer-wd.com (3rd feature)](https://www.computer-wd.com/2024/12/best-android-apps-2024.html)
 - [thetechboy.org](https://www.thetechboy.org/2024/11/undercover-recording-no-ads.html)
+- [tz887.com](https://www.tz887.com/app/311291.html)
+- [news.ycombinator.com](https://news.ycombinator.com/item?id=42802171)
+- [archivecan.info](https://archivecan.info/android-ios/)
+- [purepc.pl](https://www.purepc.pl/darmowe-aplikacje-na-telefon-z-androidem-stycze%C5%84-2025)
+- [aqweeb.com](https://www.aqweeb.com/2025/02/10-new-apps-android-and-ios-pt9.html)
+- [nomiapk.website](https://nomiapk.website/xscamera-smart-secure-video-recorder/)
+- [apkhubs.com](https://apkhubs.com/en/fadcam-apk)
+- [malavida.com](https://www.malavida.com/br/soft/fadcam/android/)
+- [apkclone.com](https://apkclone.com/ja/fadcam-apk)
+- [diyiyou.com](https://www.diyiyou.com/soft/1768.html)
+- [zxki.cn](https://zxki.cn/syrj/18967.html)
+- [xmk8.com](https://www.xmk8.com/119603/.html)
+- [aukbbs.com](https://aukbbs.com/t-30218-1-1.html)
+- [blog.csdn.net](https://blog.csdn.net/gitblog_00782/article/details/146972336)
+- [lealternative.net](https://www.lealternative.net/2025/04/15/fadcam-fotocamera-sempre-attiva-per-la-tua-sicurezza/)
+
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
@@ -213,10 +243,10 @@ Or:
 
 
 
-**Downloads logs:**
+<!-- **Downloads logs:**
 - 5k -> 10 Jul 2024 (1st month)
 - 10k -> 21 Aug 2024 (6th week)
-- 15k -> 8 Sep 2024 (9th week)
+- 15k -> 8 Sep 2024 (9th week) -->
 
 ## Features:
 
@@ -241,7 +271,6 @@ Or:
 - **Custom Icon:** Personalize with custom app icons.
 - **Custom Notifications:** Custom messages for discreet notifications.
 - **App Lock:** Secure the app with an applock.
-- **Custom FPS:** Selection of 30/60fps.
 - **Custom Saving:** Provide custom location saving option.
 
 

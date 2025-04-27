@@ -287,6 +287,9 @@ public class AboutFragment extends Fragment {
     }
 
     private boolean isUpdateAvailable(String currentVersion, String latestVersion) {
+        boolean currentIsBeta = currentVersion.contains("beta");
+
+        currentVersion = currentVersion.replace("-beta", "");
         String[] current = currentVersion.split("\\.");
         String[] latest = latestVersion.split("\\.");
 
@@ -301,7 +304,7 @@ public class AboutFragment extends Fragment {
             }
         }
 
-        return latest.length > current.length;
+        return latest.length > current.length || (latest.length == current.length && currentIsBeta);
     }
 
     private void showLoadingDialog(String message) {

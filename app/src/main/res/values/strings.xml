@@ -9,13 +9,9 @@
     <![CDATA[
     FadCam is an ad-free, open-source video recording app that prioritizes privacy by not tracking or collecting any data. It is available exclusively on GitHub and through the official links mentioned in the README.
     <br/><br/>
-    FadCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and eighteen other notable spots.
+    FadCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and thirty one other notable spots.
     ]]>
 </string>
-
-
-
-
 
 
     <string name="view_source_code">View Source Code</string>
@@ -24,11 +20,26 @@
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="privacy_information">Privacy Information</string>
-    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
-    <string-array name="video_quality_array">
-        <item name="quality_fhd">FHD (1920x1080)</item>
-        <item name="quality_hd">HD (1280x720)</item>
-        <item name="quality_sd">SD (640x480)</item>
+    <string name="copyright_info"> 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item> <!-- 8K -->
+        <item>3840x2160</item> <!-- 4K -->
+        <item>2560x1440</item> <!-- 2K -->
+        <item>1920x1080</item> <!-- FHD -->
+        <item>1280x720</item> <!-- HD -->
+        <item>640x480</item> <!-- SD -->
+        <item>720x480</item> <!-- SD -->
+        <item>480x360</item> <!-- SD -->
+    </string-array>
+    <string-array name="video_resolutions_values">
+        <item>8K</item>  <!-- 8K -->
+        <item>4K</item>  <!-- 4K -->
+        <item>2K</item>  <!-- 2K -->
+        <item>FHD</item> <!-- Full HD -->
+        <item>HD</item>  <!-- High Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
     </string-array>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
@@ -74,6 +85,8 @@
     <string name="video_recording_paused">Recording paused</string>
     <string name="video_recording_resumed">Recording resumed</string>
     <string name="current_camera">Current camera</string>
+    <string name="back">Back</string>
+    <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
     <string name="video_menu_rename">Rename</string>
@@ -91,6 +104,8 @@
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
+    <string name="setting_codec_title">Video Codec</string>
+    <string name="note_codec">Choose codec\n(Default: %1$s)</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
     <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It’s worth the wait, just a little longer to process!</string>
@@ -105,7 +120,7 @@
     <string name="ui_preview_area">Preview Area</string>
     <string-array name="easter_eggs_array">
         <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You\’ve found the secret button! It does nothing lol</item>
+        <item>You’ve found the secret button! It does nothing lol</item>
         <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
         <item>Well, this is awkward now…</item>
         <item>What color is your Bugatti?</item>
@@ -169,8 +184,8 @@
     <string name="array_watermark_time_fadcam">Time with Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
-    <string name="recent_features">• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Customizable watermarking\n• ExoPlayer integration for better playback\n• Location data in watermarks\n• Dynamic watermark options\n• Long press feedback with animations\n• Date and Time widget customization</string>
-    <string name="upcoming_features">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
+    <string name="recent_features" translatable="false">• Added 3 new shortcuts: Start, Stop Recording, and Torch Toggle (long press app icon to access)\n• Thumbnails now show hours, minutes, and seconds\n• Torch works seamlessly during recording\n• Enhanced video management with sorting options\n• Refreshed flashlight shortcut icon\n• AMOLED black theme for better visuals\n• Improved renaming functionality and crash fixes</string>
+    <string name="upcoming_features" translatable="false">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
     <string name="toast_video_not_found">Error: Video not found</string>
     <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
     <string name="toast_video_save_fail">Failed to save video</string>
@@ -181,13 +196,14 @@
     <string name="toast_rename_failed">Failed to rename video</string>
     <string name="toast_rename_success">Video renamed successfully</string>
     <string name="toast_rename_bad_video">Invalid position or video list is null</string>
+    <string name="toast_rename_with_copy">Renamed to %1$s (duplicate name)</string>
     <string name="dialog_del_title">Delete Forever?</string>
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
     <string name="dialog_del_confirm">Delete</string>
-    <string name="dialog_multi_video_del_title">Eradicate Video(s)? 💣💣</string>
-    <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? 🚀💥</string>
-    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! 🌋</string>
-    <string name="dialog_multi_video_del_no">No, Keep \'Em! 😅</string>
+    <string name="dialog_multi_video_del_title">Eradicate Video(s)? </string>
+    <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? </string>
+    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! </string>
+    <string name="dialog_multi_video_del_no">No, Keep \'Em! </string>
     <string name="setting_language_title">App\'s Language</string>
     <string name="note_language">Select from dropdown.\n(Default: English)</string>
     <string name="location_permission_title">Location Permission</string>
@@ -206,4 +222,37 @@
     <string name="notification_video_recording">Video recording</string>
     <string name="notification_video_recording_progress_description">Recording is in progress</string>
     <string name="notification_video_recording_paused_description">Recording is paused</string>
+    <string name="torch_options_title">Torch Options</string>
+    <string name="torch_select_source">Select Torch Source:</string>
+    <string name="torch_back">Back Torch</string>
+    <string name="torch_front">Front Torch</string>
+    <string name="torch_apply">Apply</string>
+    <string name="torch_cancel">Cancel</string>
+    <string name="torch_recording_note">Cannot change torch while recording</string>
+    <string name="torch_both">Both Torches</string>
+    <string name="setting_debug_title">Debug Logging</string>
+    <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
+    <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
+    <string name="torch_shortcut_short_label">Torch</string>
+    <string name="torch_shortcut_long_label">Toggle Torch</string>
+    <string name="torch_shortcut_disabled">Torch toggle is currently unavailable</string>
+    <!-- Torch Error Messages -->
+    <string-array name="torch_error_messages">
+        <item>Torch is compiling... please don\'t wait 🖥️</item>
+        <item>Camera says: No flash today 🚦</item>
+        <item>Torch.exe not responding 🔦</item>
+        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
+        <item>Patch coming soon™... Developer is debugging life 🐛</item>
+    </string-array>
+    <string name="more_options">More Options</string>
+    <string name="records_options_title">Records Options</string>
+    <string name="setting_theme_title">App Theme</string>
+    <string name="note_theme">Choose your preferred app theme</string>
+<!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
+    <string name="start_recording">Start</string>
+    <string name="stop_recording">Stop</string>
+    <string-array name="theme_options">
+        <item>Dark Mode</item>
+        <item>AMOLED Black</item>
+    </string-array>
 </resources>

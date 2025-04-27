@@ -6,6 +6,8 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,9 +15,12 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
-import android.media.CamcorderProfile;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,31 +32,40 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.fadcam.CameraType;
 import com.fadcam.Constants;
+import com.fadcam.Log;
 import com.fadcam.R;
-import com.fadcam.RecordingService;
+import com.fadcam.services.RecordingService;
 import com.fadcam.RecordingState;
+import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Utils;
+import com.fadcam.services.TorchService;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
@@ -71,6 +85,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import android.graphics.drawable.Drawable;
+
 public class HomeFragment extends Fragment {
 
     private static final String TAG = "HomeFragment";
@@ -87,7 +103,6 @@ public class HomeFragment extends Fragment {
     private Runnable updateClockRunnable; // Declare here
 
     private TextureView textureView;
-    private SharedPreferences sharedPreferences;
 
     private Handler tipHandler = new Handler();
     private int typingIndex = 0;
@@ -96,8 +111,8 @@ public class HomeFragment extends Fragment {
 
     private TextView tvStorageInfo;
     private TextView tvPreviewPlaceholder;
-    private Button buttonStartStop;
-    private Button buttonPauseResume;
+    private MaterialButton buttonStartStop;
+    private MaterialButton buttonPauseResume;
     private Button buttonCamSwitch;
     private boolean isPreviewEnabled = true;
 
@@ -131,6 +146,16 @@ public class HomeFragment extends Fragment {
     private BroadcastReceiver broadcastOnRecordingPaused;
     private BroadcastReceiver broadcastOnRecordingStopped;
     private BroadcastReceiver broadcastOnRecordingStateCallback;
+
+    private MaterialButton buttonTorchSwitch;
+
+    private CameraManager cameraManager;
+    private String cameraId;
+    private boolean isTorchOn = false;
+
+    private BroadcastReceiver torchReceiver;
+
+    private SharedPreferencesManager sharedPreferencesManager;
 
     // important
     private void requestEssentialPermissions() {
@@ -331,12 +356,14 @@ public class HomeFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        sharedPreferences = requireActivity().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
+        Log.init(requireContext());
 
         Log.d(TAG, "HomeFragment created.");
 
         // Request essential permissions on every launch
         requestEssentialPermissions();
+
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
         // Check if it's the first launch
 //        boolean isFirstLaunch = sharedPreferences.getBoolean(PREF_FIRST_LAUNCH, true);
@@ -349,6 +376,7 @@ public class HomeFragment extends Fragment {
 //        }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onStart() {
         super.onStart();
@@ -363,25 +391,54 @@ public class HomeFragment extends Fragment {
         registerBrodcastOnRecordingStopped();
         registerBroadcastOnRecordingStateCallback();
 
+        IntentFilter[] filters = {
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED),
+                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK)
+        };
+
+        BroadcastReceiver[] receivers = {
+                broadcastOnRecordingStarted,
+                broadcastOnRecordingResumed,
+                broadcastOnRecordingPaused,
+                broadcastOnRecordingStopped,
+                broadcastOnRecordingStateCallback
+        };
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 11 and above
-            requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingResumed, new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingPaused, new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED), Context.RECEIVER_EXPORTED);
-            requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK), Context.RECEIVER_EXPORTED);
+            // Android 13 and above
+            for (int i = 0; i < receivers.length; i++) {
+                requireContext().registerReceiver(
+                        receivers[i],
+                        filters[i],
+                        Context.RECEIVER_EXPORTED
+                );
+            }
         } else {
-            // Below Android 11
-            requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED));
-            requireActivity().registerReceiver(broadcastOnRecordingResumed, new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED));
-            requireActivity().registerReceiver(broadcastOnRecordingPaused, new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED));
-            requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED));
-            requireActivity().registerReceiver(broadcastOnRecordingStateCallback, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK));
+            // Android 12 and earlier
+            for (int i = 0; i < receivers.length; i++) {
+                requireContext().registerReceiver(receivers[i], filters[i]);
+            }
         }
 
-        //fetch Camera status
-        String currentCameraSelection = getCameraSelection();
-        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraSelection, Toast.LENGTH_SHORT).show();
+        showCurrentCameraSelection();
+    }
+
+    /**
+     * Displays a toast message showing the currently selected camera based on shared preferences
+     */
+    private void showCurrentCameraSelection() {
+        CameraType currentCameraType = sharedPreferencesManager.getCameraSelection();
+        String currentCameraTypeString = "";
+        if (currentCameraType.equals(CameraType.FRONT)) {
+            currentCameraTypeString = getString(R.string.front);
+        } else if (currentCameraType.equals(CameraType.BACK)) {
+            currentCameraTypeString = getString(R.string.back);
+        }
+
+//        Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " + currentCameraTypeString.toLowerCase(), Toast.LENGTH_SHORT).show();
     }
 
     private void fetchRecordingState()
@@ -396,7 +453,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent i)
             {
-                RecordingState recordingStateIntent = (RecordingState) i.getSerializableExtra(Constants.BROADCAST_EXTRA_RECORDING_STATE);
+                RecordingState recordingStateIntent = (RecordingState) i.getSerializableExtra(Constants.INTENT_EXTRA_RECORDING_STATE);
                 if (recordingStateIntent == null) {
                     recordingStateIntent = RecordingState.NONE;
                 }
@@ -426,10 +483,8 @@ public class HomeFragment extends Fragment {
     private void registerBroadcastOnRecordingStarted() {
         broadcastOnRecordingStarted = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent i)
-            {
-                recordingStartTime = i.getLongExtra(Constants.BROADCAST_EXTRA_RECORDING_START_TIME, 0);
-
+            public void onReceive(Context context, Intent i) {
+                recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, 0);
                 onRecordingStarted(true);
             }
         };
@@ -467,15 +522,17 @@ public class HomeFragment extends Fragment {
 
     private void onRecordingStarted(boolean toast) {
         recordingState = RecordingState.IN_PROGRESS;
-
+        
         acquireWakeLock();
-
         setVideoBitrate();
-
+        
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
         buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
         buttonStartStop.setEnabled(true);
+        
         buttonPauseResume.setEnabled(true);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonCamSwitch.setEnabled(false);
 
         startUpdatingInfo();
@@ -486,16 +543,15 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void onRecordingResumed()
-    {
+    private void onRecordingResumed() {
         recordingState = RecordingState.IN_PROGRESS;
 
-        buttonPauseResume.setText(getString(R.string.button_pause));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(true);
 
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
         buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
         buttonStartStop.setEnabled(true);
 
         buttonCamSwitch.setEnabled(false);
@@ -503,18 +559,17 @@ public class HomeFragment extends Fragment {
         startUpdatingInfo();
     }
 
-    private void onRecordingPaused()
-    {
+    private void onRecordingPaused() {
         recordingState = RecordingState.PAUSED;
 
-        buttonPauseResume.setText(getString(R.string.button_resume));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
         buttonPauseResume.setEnabled(true);
 
         buttonCamSwitch.setEnabled(false);
 
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
         buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_stop, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
     }
 
     private void onRecordingStopped() {
@@ -523,13 +578,12 @@ public class HomeFragment extends Fragment {
 
         releaseWakeLock();
 
+        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_start)));
         buttonStartStop.setText(getString(R.string.button_start));
-        buttonStartStop.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
+        buttonStartStop.setEnabled(true);
 
-        setupStartStopButton();
-
-        buttonPauseResume.setText(getString(R.string.button_pause));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(true);
@@ -558,16 +612,51 @@ public class HomeFragment extends Fragment {
         requireActivity().unregisterReceiver(broadcastOnRecordingStateCallback);
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onResume() {
         super.onResume();
 
         Log.d(TAG, "HomeFragment resumed.");
 
-        setupStartStopButton();
         fetchRecordingState();
 
         updateStats();
+
+        // Initialize the receiver if null
+        if (torchReceiver == null) {
+            torchReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
+                        boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
+                        isTorchOn = torchState;
+                        Log.d("TorchDebug", "Received broadcast - Torch state: " + torchState);
+                        
+                        requireActivity().runOnUiThread(() -> {
+                            try {
+                                buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                                    requireContext(),
+                                    R.drawable.ic_flashlight_on
+                                ));
+                                buttonTorchSwitch.setSelected(isTorchOn);
+                                buttonTorchSwitch.setEnabled(true);
+                            } catch (Exception e) {
+                                Log.e("TorchDebug", "Error updating torch icon: " + e.getMessage());
+                            }
+                        });
+                    }
+                }
+            };
+            
+            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            // Add the RECEIVER_NOT_EXPORTED flag for Android 13+ compatibility
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                requireContext().registerReceiver(torchReceiver, filter);
+            }
+        }
     }
 
     @Override
@@ -575,6 +664,15 @@ public class HomeFragment extends Fragment {
         super.onPause();
         //locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
+
+        // Only unregister if receiver exists
+        if (torchReceiver != null) {
+            try {
+                requireContext().unregisterReceiver(torchReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Receiver was not registered: " + e.getMessage());
+            }
+        }
     }
 
 //    @Override
@@ -625,7 +723,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void savePreviewState() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
+        SharedPreferences.Editor editor = sharedPreferencesManager.sharedPreferences.edit();
         editor.putBoolean("isPreviewEnabled", isPreviewEnabled);
         editor.apply();
     }
@@ -647,8 +745,19 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        tips = requireActivity().getResources().getStringArray(R.array.tips_widget);
         super.onViewCreated(view, savedInstanceState);
+        TorchService.setHomeFragment(this);
+        
+        // Add this debug code
+        try {
+            Drawable onIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_on);
+            Drawable offIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_flashlight_on);
+            Log.d("TorchDebug", "Icon resources loaded - ON: " + (onIcon != null) + ", OFF: " + (offIcon != null));
+        } catch (Exception e) {
+            Log.e("TorchDebug", "Error checking icon resources: " + e.getMessage());
+        }
+        
+        tips = requireActivity().getResources().getStringArray(R.array.tips_widget);
         Log.d(TAG, "onViewCreated: Setting up UI components");
 
         setupTextureView(view);
@@ -680,8 +789,7 @@ public class HomeFragment extends Fragment {
         cardPreview = view.findViewById(R.id.cardPreview);
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
 
-        sharedPreferences = requireActivity().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
-        isPreviewEnabled = sharedPreferences.getBoolean(Constants.PREF_IS_PREVIEW_ENABLED, true);
+        isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
 
         resetTimers();
         copyFontToInternalStorage();
@@ -698,6 +806,10 @@ public class HomeFragment extends Fragment {
         setupButtonListeners();
         setupLongPressListener();
         updatePreviewVisibility();
+
+        buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
+        initializeTorch();
+        setupTorchButton();
     }
 
     private void setupTextureView(@NonNull View view) {
@@ -1117,8 +1229,8 @@ public class HomeFragment extends Fragment {
     private void pauseRecording() {
         Log.d(TAG, "pauseRecording: Pausing video recording");
 
-        buttonPauseResume.setText(R.string.button_resume);
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_play, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
+        buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(false);
 
@@ -1130,8 +1242,7 @@ public class HomeFragment extends Fragment {
     private void resumeRecording() {
         Log.d(TAG, "resumeRecording: Resuming video recording");
 
-        buttonPauseResume.setText(getString(R.string.button_pause));
-        buttonPauseResume.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_pause, 0, 0, 0);
+        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
         buttonPauseResume.setEnabled(false);
 
         buttonCamSwitch.setEnabled(false);
@@ -1147,30 +1258,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void setVideoBitrate() {
-        String selectedQuality = sharedPreferences.getString(Constants.PREF_VIDEO_QUALITY, Constants.QUALITY_HD);
-        switch (selectedQuality) {
-            case Constants.QUALITY_SD:
-                videoBitrate = 1000000; // 1 Mbps
-                break;
-            case Constants.QUALITY_HD:
-                videoBitrate = 5000000; // 5 Mbps
-                break;
-            case Constants.QUALITY_FHD:
-                videoBitrate = 10000000; // 10 Mbps
-                break;
-            default:
-                videoBitrate = 5000000; // Default to HD
-                break;
-        }
+        videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
         Log.d(TAG, "setVideoBitrate: Set to " + videoBitrate + " bps");
-    }
-
-    private String getCameraSelection() {
-        return sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
-    }
-
-    private String getCameraQuality() {
-        return sharedPreferences.getString(Constants.PREF_VIDEO_QUALITY, Constants.QUALITY_HD);
     }
 
     private void stopRecording() {
@@ -1192,12 +1281,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void copyFontToInternalStorage() {
-        AssetManager assetManager = getContext().getAssets();
+        AssetManager assetManager = requireContext().getAssets();
         InputStream in = null;
         OutputStream out = null;
         try {
             in = assetManager.open("ubuntu_regular.ttf");
-            File outFile = new File(getContext().getFilesDir(), "ubuntu_regular.ttf");
+            File outFile = new File(requireContext().getFilesDir(), "ubuntu_regular.ttf");
             out = new FileOutputStream(outFile);
             copyFile(in, out);
             Log.d(TAG, "Font copied to internal storage.");
@@ -1222,13 +1311,12 @@ public class HomeFragment extends Fragment {
     }
 
     public void switchCamera() {
-        String currentCameraSelection = sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK);
-        if (currentCameraSelection.equals(Constants.CAMERA_BACK)) {
-            sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_FRONT).apply();
+        if (sharedPreferencesManager.getCameraSelection().equals(CameraType.BACK)) {
+            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, CameraType.FRONT.toString()).apply();
             Log.d(TAG, "Camera set to front");
             Toast.makeText(getContext(), R.string.switched_front_camera, Toast.LENGTH_SHORT).show();
         } else {
-            sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, Constants.CAMERA_BACK).apply();
+            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, CameraType.BACK.toString()).apply();
             Log.d(TAG, "Camera set to rear");
             Toast.makeText(getContext(), R.string.switched_rear_camera, Toast.LENGTH_SHORT).show();
         }
@@ -1267,37 +1355,21 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void setupStartStopButton()
-    {
-        if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constants.CAMERA_FRONT) && getCameraQuality().equals(Constants.QUALITY_FHD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constants.CAMERA_FRONT) && getCameraQuality().equals(Constants.QUALITY_HD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(1, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constants.CAMERA_FRONT) && getCameraQuality().equals(Constants.QUALITY_SD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_1080P) && getCameraSelection().equals(Constants.CAMERA_BACK) && getCameraQuality().equals(Constants.QUALITY_FHD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_720P) && getCameraSelection().equals(Constants.CAMERA_BACK) && getCameraQuality().equals(Constants.QUALITY_HD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else if (!CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_VGA) && !CamcorderProfile.hasProfile(0, CamcorderProfile.QUALITY_480P) && getCameraSelection().equals(Constants.CAMERA_BACK) && getCameraQuality().equals(Constants.QUALITY_SD)) {
-            buttonStartStop.setEnabled(false);
-        }
-        else {
-            buttonStartStop.setEnabled(true);
-        }
-    }
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-
-        Log.d(TAG, "onDestroyView: Cleaning up resources");
-
+        TorchService.setHomeFragment(null);
+        
+        // Safely unregister the torch receiver
+        if (torchReceiver != null) {
+            try {
+                requireContext().unregisterReceiver(torchReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Torch receiver was not registered or already unregistered");
+            }
+            torchReceiver = null;
+        }
+        
         stopUpdatingInfo();
         stopUpdatingClock();
     }
@@ -1308,5 +1380,271 @@ public class HomeFragment extends Fragment {
 
     public boolean isPaused() {
         return recordingState.equals(RecordingState.PAUSED);
+    }
+
+    private void initializeTorch() {
+        cameraManager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        try {
+            cameraId = getCameraWithFlash();
+            if (cameraId == null) {
+                Log.d(TAG, "No camera with flash found");
+                buttonTorchSwitch.setEnabled(false);
+                buttonTorchSwitch.setVisibility(View.GONE);
+            } else {
+                Log.d(TAG, "Flash available on camera: " + cameraId);
+                buttonTorchSwitch.setEnabled(true);
+                buttonTorchSwitch.setVisibility(View.VISIBLE);
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Camera access error: " + e.getMessage());
+            e.printStackTrace();
+            buttonTorchSwitch.setEnabled(false);
+            buttonTorchSwitch.setVisibility(View.GONE);
+        }
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void setupTorchButton() {
+        buttonTorchSwitch = requireView().findViewById(R.id.buttonTorchSwitch);
+
+        // Set default torch source if none selected
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        if (prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null) == null) {
+            try {
+                String defaultTorchId = getCameraWithFlash();
+                if (defaultTorchId != null) {
+                    prefs.edit()
+                            .putString(Constants.PREF_SELECTED_TORCH_SOURCE, defaultTorchId)
+                            .putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false)
+                            .apply();
+                }
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "Error setting default torch source: " + e.getMessage());
+            }
+        }
+
+        // Setup click listener for torch toggle
+        buttonTorchSwitch.setOnClickListener(v -> {
+            SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            
+            Intent intent;
+            if (sharedPreferencesManager.isRecordingInProgress()) {
+                // If recording, use RecordingService
+                intent = new Intent(requireContext(), RecordingService.class);
+                intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
+            } else {
+                // If not recording, use TorchService
+                intent = new Intent(requireContext(), TorchService.class);
+                intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
+            }
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireContext().startForegroundService(intent);
+            } else {
+                requireContext().startService(intent);
+            }
+        });
+
+        // Setup long press listener
+        buttonTorchSwitch.setOnLongClickListener(v -> {
+            showTorchOptionsDialog();
+            vibrateTouch();
+            return true;
+        });
+
+        // Register torch state receiver
+        if (torchReceiver == null) {
+            try {
+                // First try to unregister any existing receiver
+                requireContext().unregisterReceiver(torchReceiver);
+            } catch (IllegalArgumentException e) {
+                // Ignore if not registered
+            }
+            
+            torchReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
+                        boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
+                        isTorchOn = torchState;
+                        Log.d("TorchDebug", "Received broadcast - Torch state: " + torchState);
+                        
+                        requireActivity().runOnUiThread(() -> {
+                            try {
+                                buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                                    requireContext(),
+                                    R.drawable.ic_flashlight_on
+                                ));
+                                buttonTorchSwitch.setSelected(isTorchOn);
+                                buttonTorchSwitch.setEnabled(true);
+                            } catch (Exception e) {
+                                Log.e("TorchDebug", "Error updating torch icon: " + e.getMessage());
+                            }
+                        });
+                    }
+                }
+            };
+            
+            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                requireContext().registerReceiver(torchReceiver, filter);
+            }
+        }
+    }
+
+    private void updateTorchButtonState(boolean isOn) {
+        if (buttonTorchSwitch != null) {
+            buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                requireContext(),
+                R.drawable.ic_flashlight_on
+            ));
+            buttonTorchSwitch.setEnabled(true);
+        }
+    }
+
+    private void showTorchOptionsDialog() {
+        // Check if recording is in progress first
+        if (isRecordingInProgress()) {
+            Toast.makeText(requireContext(), R.string.torch_recording_note, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        CameraManager cameraManager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        try {
+            List<String> torchSources = new ArrayList<>();
+            boolean hasMultipleTorches = false;
+            boolean hasBackTorch = false;
+            boolean hasFrontTorch = false;
+
+            // Check available torch sources
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+
+                if (hasFlash != null && hasFlash) {
+                    torchSources.add(cameraId);
+                    if (facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        hasBackTorch = true;
+                    } else if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        hasFrontTorch = true;
+                    }
+                }
+            }
+
+            hasMultipleTorches = hasBackTorch && hasFrontTorch;
+            Log.d(TAG, "Torch sources found: Back=" + hasBackTorch + ", Front=" + hasFrontTorch);
+
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_torch_options, null);
+            RadioGroup torchGroup = dialogView.findViewById(R.id.torch_group);
+
+            // Setup torch source options
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            String currentTorchSource = prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+            boolean currentBothTorches = prefs.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
+
+            // Add individual torch options
+            for (String sourceId : torchSources) {
+                RadioButton rb = new RadioButton(requireContext());
+                CameraCharacteristics chars = cameraManager.getCameraCharacteristics(sourceId);
+                int facing = chars.get(CameraCharacteristics.LENS_FACING);
+                rb.setText(facing == CameraCharacteristics.LENS_FACING_BACK ?
+                        getString(R.string.torch_back) : getString(R.string.torch_front));
+                rb.setTag(sourceId);
+                torchGroup.addView(rb);
+
+                if (sourceId.equals(currentTorchSource) && !currentBothTorches) {
+                    rb.setChecked(true);
+                }
+            }
+
+            // Add "Both Torches" option if multiple torches available
+            if (hasMultipleTorches) {
+                RadioButton bothTorches = new RadioButton(requireContext());
+                bothTorches.setText(R.string.torch_both);
+                bothTorches.setTag("both");
+                torchGroup.addView(bothTorches);
+
+                if (currentBothTorches) {
+                    bothTorches.setChecked(true);
+                }
+                Log.d(TAG, "Added 'Both Torches' option");
+            }
+
+            // Select first source if none selected
+            if (currentTorchSource == null && !currentBothTorches && torchGroup.getChildCount() > 0) {
+                ((RadioButton) torchGroup.getChildAt(0)).setChecked(true);
+            }
+
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.torch_options_title)
+                    .setView(dialogView)
+                    .setPositiveButton(R.string.torch_apply, (dialog, which) -> {
+                        RadioButton selectedSource = dialogView.findViewById(torchGroup.getCheckedRadioButtonId());
+                        if (selectedSource != null) {
+                            String selectedSourceId = (String) selectedSource.getTag();
+                            boolean isBothSelected = "both".equals(selectedSourceId);
+
+                            // Save settings
+                            SharedPreferences.Editor editor = prefs.edit();
+                            editor.putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, isBothSelected);
+                            if (!isBothSelected) {
+                                editor.putString(Constants.PREF_SELECTED_TORCH_SOURCE, selectedSourceId);
+                            }
+                            editor.apply();
+
+                            Log.d(TAG, "Saved torch settings - Both: " + isBothSelected +
+                                    ", Source: " + selectedSourceId);
+                        }
+                    })
+                    .setNegativeButton(R.string.torch_cancel, null)
+                    .show();
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error accessing camera: " + e.getMessage());
+        }
+    }
+
+    private String getCameraWithFlash() throws CameraAccessException {
+        for (String id : cameraManager.getCameraIdList()) {
+            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+            Boolean flashAvailable = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+            if (flashAvailable != null && flashAvailable) {
+                Log.d(TAG, "Found camera with flash: " + id);
+                return id;
+            }
+        }
+        Log.d(TAG, "No camera with flash found");
+        return null;
+    }
+
+    private boolean isRecordingInProgress() {
+        ActivityManager manager = (ActivityManager) requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (RecordingService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void updateTorchUI(boolean isOn) {
+        if (isAdded() && getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                try {
+                    buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
+                        requireContext(),
+                        R.drawable.ic_flashlight_on
+                    ));
+                    buttonTorchSwitch.setSelected(isOn);
+                    buttonTorchSwitch.setEnabled(true);
+                    Log.d("TorchDebug", "Torch UI updated, isOn: " + isOn);
+                } catch (Exception e) {
+                    Log.e("TorchDebug", "Error updating torch UI: " + e.getMessage());
+                }
+            });
+        }
     }
 }

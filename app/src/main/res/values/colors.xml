@@ -8,4 +8,18 @@
     <color name="colorPrimary">#cfbafd</color>
     <color name="material_on_surface_stroke">#cfbafd</color>
     <color name="material_on_surface_emphasis_medium">@color/white</color>
+    <color name="torch_off">#757575</color>
+    <color name="torch_on">#FFB300</color>
+    <color name="button_start">#4CAF50</color>
+    <color name="button_stop">#F44336</color>
+    <color name="danger_red">#D32F2F</color>
+    <color name="danger_red_light">#F44336</color>
+
+        <!-- AMOLED Theme Colors -->
+    <color name="amoled_background">#000000</color>
+    <color name="amoled_surface">#121212</color>
+    <color name="amoled_text_primary">#FFFFFF</color>
+    <color name="amoled_text_secondary">#B3FFFFFF</color>
+    <color name="amoled_border">#1AFFFFFF</color>
+
 </resources>

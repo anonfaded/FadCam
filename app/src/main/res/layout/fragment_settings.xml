@@ -31,7 +31,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/readme_button"
                 android:layout_width="match_parent"
@@ -42,12 +41,59 @@
                 android:textColor="@android:color/white"
                 android:textStyle="bold" />
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginBottom="16dp"/>
 
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_theme"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/white" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/setting_theme_title"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/note_theme"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </LinearLayout>
+
+                <Spinner
+                    android:id="@+id/theme_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"/>
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
             <LinearLayout
@@ -61,7 +107,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_language"
-                android:layout_marginEnd="8dp"/>
+                    android:layout_marginEnd="8dp"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -90,27 +136,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"/>
             </LinearLayout>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             <View
                 android:layout_width="match_parent"
@@ -175,9 +200,7 @@
                         android:text="@string/button_settings_cam_front"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp" />
-
                 </com.google.android.material.button.MaterialButtonToggleGroup>
-
             </LinearLayout>
 
             <View
@@ -219,14 +242,12 @@
                         android:text="@string/note_quailty"
                         android:textAppearance="?attr/textAppearanceCaption"
                         android:textColor="?android:attr/textColorSecondary" />
-
                 </LinearLayout>
 
                 <Spinner
-                    android:id="@+id/quality_spinner"
+                    android:id="@+id/resolution_spinner"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"/>
-
             </LinearLayout>
 
             <View
@@ -268,17 +289,14 @@
                         android:id="@+id/framerate_note_textview"
                         android:textAppearance="?attr/textAppearanceCaption"
                         android:textColor="?android:attr/textColorSecondary" />
-
                 </LinearLayout>
 
                 <Spinner
                     android:id="@+id/framerate_spinner"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"/>
-
             </LinearLayout>
 
-            <!-- Add divider for new section -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -286,7 +304,53 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- New Watermark Options Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_avc"
+                    android:layout_marginEnd="8dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/setting_codec_title"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/codec_note_textview"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </LinearLayout>
+
+                <Spinner
+                    android:id="@+id/codec_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"/>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -327,59 +391,6 @@
                     android:layout_height="48dp"/>
             </LinearLayout>
 
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:backgroundTint="@color/gray"
-                android:layout_marginTop="18dp">
-                <!-- Tooltip ImageView positioned above the text and aligned to the start -->
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentTop="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="1dp"
-                        android:src="@drawable/ic_info" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="@string/note_watermark_extra"
-                        android:textAppearance="?attr/textAppearanceCaption"
-                        android:textColor="?android:attr/textColorSecondary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -389,27 +400,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="0dp"
                 android:layout_marginBottom="10dp">
 
-                <!-- ImageView positioned on the left -->
                 <ImageView
                     android:id="@+id/ic_location"
                     android:layout_width="wrap_content"
@@ -417,7 +414,6 @@
                     android:src="@drawable/ic_location"
                     android:layout_marginEnd="8dp"/>
 
-                <!-- Title and Description in a vertical LinearLayout -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -430,8 +426,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="4dp"
                         android:text="@string/setting_location_title"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                        android:textColor="?attr/colorPrimary"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary"
                         android:textSize="16sp" />
 
                     <com.google.android.material.textview.MaterialTextView
@@ -443,60 +439,63 @@
                         android:textColor="?android:attr/textColorSecondary" />
                 </LinearLayout>
 
-                <!-- Switch positioned on the right -->
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/location_toggle_group"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"/>
             </LinearLayout>
-
-
-
-
-
-
-
-
-
-
-            <!-- Description TextView positioned below the ImageView -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/gray"
-            android:layout_marginTop="8dp">
-            <!-- Tooltip ImageView positioned above the text and aligned to the start -->
-
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
 
                 <ImageView
-                    android:id="@+id/tooltip_image"
+                    android:id="@+id/ic_debug"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentTop="true"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="1dp"
-                    android:src="@drawable/ic_info" />
+                    android:src="@drawable/ic_debug"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/white" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="@string/note_location_extra"
-                    android:textAppearance="?attr/textAppearanceCaption"
-                    android:textColor="?android:attr/textColorSecondary" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/debug_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/setting_debug_title"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/debug_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/note_debug"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/debug_toggle_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"/>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-
-
-
-
-            <!-- Review Button at the bottom -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -516,14 +515,6 @@
                     app:strokeColor="#B7D6AB2A"
                     app:strokeWidth="1dp" />
             </RelativeLayout>
-
-
-
-
-
-
-
-
 
         </LinearLayout>
 
