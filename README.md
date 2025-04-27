@@ -14,7 +14,6 @@
                 
 
 
-
 ---
 
 <div align="center">
@@ -155,6 +154,12 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Tech In Hand on YouTube](https://youtu.be/OjuSXf5Dj8E?si=Ng6C7Ic_HZbzxWo5)
 - [AWAk3N on YouTube](https://youtu.be/B38XqQBT398?si=p7-jNVu-LxSXkNaF)
 - [Toped de Gama plus on YouTube](https://youtu.be/Vhg3IvyGXWE?si=EC_rSt6gcB-1AyRT&t=361)
+- [Learn Freelancing with Tusher on YouTube](https://youtu.be/bgfTJsbXjLw?si=XJ6P8WF_KA4usLd6)
+- [iamrooney_ on TikTok](https://www.tiktok.com/@iamrooney_/video/7476628538636913925)
+- [Brandulox](https://youtu.be/yWg-quQIX1Y?si=-Wq_ZAV9WwAEV592)
+- [brandulox on TikTok](https://www.tiktok.com/@brandulox/video/7481545146144673030)
+- [El Androide Feliz on YouTube](https://youtu.be/H02x9pnJh_g?si=dXCmNLaDm9Hrra2C&t=669)
+- [ODORIZZI on YouTube](https://www.youtube.com/watch?v=e2IFJJgjKRg)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
@@ -198,6 +203,18 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [news.ycombinator.com](https://news.ycombinator.com/item?id=42802171)
 - [archivecan.info](https://archivecan.info/android-ios/)
 - [purepc.pl](https://www.purepc.pl/darmowe-aplikacje-na-telefon-z-androidem-stycze%C5%84-2025)
+- [aqweeb.com](https://www.aqweeb.com/2025/02/10-new-apps-android-and-ios-pt9.html)
+- [nomiapk.website](https://nomiapk.website/xscamera-smart-secure-video-recorder/)
+- [apkhubs.com](https://apkhubs.com/en/fadcam-apk)
+- [malavida.com](https://www.malavida.com/br/soft/fadcam/android/)
+- [apkclone.com](https://apkclone.com/ja/fadcam-apk)
+- [diyiyou.com](https://www.diyiyou.com/soft/1768.html)
+- [zxki.cn](https://zxki.cn/syrj/18967.html)
+- [xmk8.com](https://www.xmk8.com/119603/.html)
+- [aukbbs.com](https://aukbbs.com/t-30218-1-1.html)
+- [blog.csdn.net](https://blog.csdn.net/gitblog_00782/article/details/146972336)
+- [lealternative.net](https://www.lealternative.net/2025/04/15/fadcam-fotocamera-sempre-attiva-per-la-tua-sicurezza/)
+
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
