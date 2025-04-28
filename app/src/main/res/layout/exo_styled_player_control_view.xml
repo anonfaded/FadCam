@@ -76,10 +76,7 @@
                         app:tint="@android:color/white"
                         android:contentDescription="Playback Speed"/>
 
-                    <ImageButton android:id="@id/exo_fullscreen"
-                        style="@style/ExoStyledControls.Button.Bottom.FullScreen"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
+
 
                     <ImageButton android:id="@id/exo_overflow_show"
                         style="@style/ExoStyledControls.Button.Bottom.OverflowShow"
@@ -88,18 +85,7 @@
                         android:visibility="gone"/>
                 </LinearLayout>
 
-                <HorizontalScrollView android:id="@id/exo_extra_controls_scroll_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical|end"
-                    android:visibility="invisible">
-                    <LinearLayout android:id="@id/exo_extra_controls"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layoutDirection="ltr">
-                        <ImageButton android:id="@id/exo_overflow_hide" style="@style/ExoStyledControls.Button.Bottom.OverflowHide" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                    </LinearLayout>
-                </HorizontalScrollView>
+
 
             </LinearLayout>
         </LinearLayout>
