@@ -17,8 +17,10 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -127,77 +129,59 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // --- Updated onBindViewHolder ---
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
-        // Defensive check for invalid position or records list
-        if (records == null || position < 0 || position >= records.size()) {
-            Log.e(TAG, "Invalid position (" + position + ") or null records in onBindViewHolder. List size: " + (records != null ? records.size() : "null"));
-            // Hide the view to prevent potential crashes or incorrect data display
+        // ... (Existing null checks for records, item, uri, name) ...
+        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) {
+            // Log error and hide/collapse view
+            Log.e(TAG,"Invalid item or data at position: " + position);
             holder.itemView.setVisibility(View.GONE);
-            holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0)); // Collapse the view
+            holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
             return;
         }
-        holder.itemView.setVisibility(View.VISIBLE); // Ensure visibility if previously hidden
-        // Reset layout params if they were changed
+        holder.itemView.setVisibility(View.VISIBLE);
         holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
 
         final VideoItem videoItem = records.get(position);
-        // Defensive check for null item or URI
-        if (videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
-            Log.e(TAG, "VideoItem or its data is null at position: " + position + ". Item: " + videoItem);
-            holder.itemView.setVisibility(View.GONE);
-            holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0)); // Collapse
-            return;
-        }
-
-        // Safe to proceed, get URI and display name
         final Uri videoUri = videoItem.uri;
-        final String displayName = videoItem.displayName;
+        final String displayName = videoItem.displayName != null ? videoItem.displayName : "No Name";
 
-        // 1. Bind basic data from VideoItem
+        // Bind basic data
         holder.textViewSerialNumber.setText(String.valueOf(position + 1));
         holder.textViewRecord.setText(displayName);
         holder.textViewFileSize.setText(formatFileSize(videoItem.size));
-
-        // 2. Get and bind derived data (Duration)
-        long duration = getVideoDuration(videoUri); // Use URI helper
+        long duration = getVideoDuration(videoUri);
         holder.textViewFileTime.setText(formatVideoDuration(duration));
-
-        // 3. Load thumbnail using Glide (handles content:// and file://)
         setThumbnail(holder, videoUri);
 
-        // 4. Determine if it's a temporary file based on PATH
-        boolean isTempFile = isTemporaryFile(videoItem); // Use the path-checking helper
+        // Determine if temp based on path
+        boolean isTempFile = isTemporaryFile(videoItem);
+
+        // Set visibility for TEMP badge on thumbnail
         if (holder.textViewTempBadge != null) {
             holder.textViewTempBadge.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
-        } else {
-            Log.w(TAG, "textViewTempBadge is null in ViewHolder at position " + position + ". Check layout R.id.text_view_temp_badge");
         }
 
-        // 5. Set click listeners
-        holder.itemView.setOnClickListener(v -> {
-            if (clickListener != null) { // Check listener existence
-                clickListener.onVideoClick(videoItem);
-            } else {
-                Log.w(TAG,"clickListener is null, cannot handle video click.");
-            }
-        });
+        // *** START: Set visibility for the WARNING dot on the menu button ***
+        if (holder.menuWarningDot != null) {
+            holder.menuWarningDot.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
+        } else {
+            Log.w(TAG,"menuWarningDot view is null in ViewHolder.");
+        }
+        // *** END: Set visibility for the WARNING dot on the menu button ***
 
+        // Set click listeners (pass VideoItem)
+        holder.itemView.setOnClickListener(v -> { if (clickListener != null) clickListener.onVideoClick(videoItem); });
         holder.itemView.setOnLongClickListener(v -> {
-            boolean isCurrentlySelected = selectedVideosUris.contains(videoUri);
-            boolean makeSelected = !isCurrentlySelected; // Toggle state
-            toggleSelection(videoUri, makeSelected); // Manage selection list and notifyItemChanged
-            if(longClickListener != null) { // Check listener existence
-                longClickListener.onVideoLongClick(videoItem, makeSelected); // Notify fragment
-            } else {
-                Log.w(TAG,"longClickListener is null, cannot handle long click notification.");
-            }
-            return true; // Consume the long click
+            boolean isSelected = !selectedVideosUris.contains(videoUri);
+            toggleSelection(videoUri, isSelected);
+            if(longClickListener != null) longClickListener.onVideoLongClick(videoItem, isSelected);
+            return true;
         });
 
-        // 6. Setup the popup menu (which itself handles enabling/disabling items if needed)
-        setupPopupMenu(holder, videoItem);
+        // Setup popup menu - the modification to the menu item text happens inside here now
+        setupPopupMenu(holder, videoItem); // Pass VideoItem
 
-        // 7. Update visual selection state (check icon and background)
+        // Update selection state visuals
         updateSelectionState(holder, selectedVideosUris.contains(videoUri));
     }
 
@@ -263,15 +247,26 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // --- Popup Menu and Actions (Major Updates Here) ---
     private void setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
-        if (context == null || videoItem == null || videoItem.uri == null) { return; }
-        holder.menuButton.setEnabled(true); // Ensure enabled if valid
+        if (context == null || videoItem == null || videoItem.uri == null || holder.menuButtonContainer == null) {
+            // Disable click if invalid state
+            if (holder.menuButtonContainer != null) holder.menuButtonContainer.setOnClickListener(null);
+            if(holder.menuButton != null) holder.menuButton.setEnabled(false);
+            return;
+        }
+        if (holder.menuButton != null) holder.menuButton.setEnabled(true);
 
-        holder.menuButton.setOnClickListener(v -> {
-            PopupMenu popupMenu = new PopupMenu(context, holder.menuButton);
+        // Use the container to handle clicks now, as it covers the button and dot
+        holder.menuButtonContainer.setOnClickListener(v -> {
+            PopupMenu popupMenu = new PopupMenu(context, holder.menuButtonContainer); // Anchor to container
+            MenuItem infoItem = null; // To store reference
+            String defaultInfoTitle = "Video Info"; // Store default
+
             try {
                 popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu());
-                // Force icons
-                // ... (reflection code to show icons) ...
+                infoItem = popupMenu.getMenu().findItem(R.id.action_info); // Find the item
+                defaultInfoTitle = infoItem != null ? infoItem.getTitle().toString() : "Video Info"; // Get default title
+
+                // Force icons (keep existing try-catch)
                 Field field = PopupMenu.class.getDeclaredField("mPopup");
                 field.setAccessible(true);
                 Object menuPopupHelper = field.get(popupMenu);
@@ -279,14 +274,25 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
                 setForceIcons.invoke(menuPopupHelper, true);
 
-                // NOTE: Rename is NOT disabled here based on user request
+                // *** Modify Info item title for temp files ***
+                boolean isTempFile = isTemporaryFile(videoItem);
+                if (infoItem != null) {
+                    infoItem.setTitle(isTempFile ? "⚠️ Video Info (Unprocessed)" : defaultInfoTitle);
+                } else {
+                    Log.w(TAG,"Could not find R.id.action_info menu item.");
+                }
 
-            } catch (Exception e) { Log.e(TAG, "Error setting up popup menu", e); }
+            } catch (Exception e) {
+                Log.e(TAG, "Error setting up popup menu (inflation or reflection)", e);
+                // Fallback: Inflate without trying to modify/force icons
+                try { popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu()); } catch (Exception e2) { return; }
+            }
 
             popupMenu.setOnMenuItemClickListener(item -> {
+                // ... (Existing delete, save, rename logic remains the same) ...
                 int itemId = item.getItemId();
                 if (itemId == R.id.action_rename) {
-                    showRenameDialog(videoItem); // Always allow rename
+                    showRenameDialog(videoItem); // Rename still allowed
                     return true;
                 } else if (itemId == R.id.action_delete) {
                     confirmDelete(videoItem);
@@ -300,6 +306,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
                 return false;
             });
+
+            // Make sure to reset the title if the menu is dismissed without action,
+            // especially important if the viewholder might be recycled.
+            // (Though with unique menu instances per click, less critical here than in onBindViewHolder)
+            // popupMenu.setOnDismissListener(menu -> { /* Optional: Reset title if needed */ });
+
             popupMenu.show();
         });
     }
@@ -856,8 +868,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewFileTime;
         TextView textViewSerialNumber;
         ImageView checkIcon;
-        ImageView menuButton;
-        TextView textViewTempBadge; // *** ADDED: Reference for the badge ***
+        ImageView menuButton;           // Reference to the 3-dot icon itself
+        TextView textViewTempBadge;
+        ImageView menuWarningDot;       // *** ADDED: Reference for the warning dot ***
+        FrameLayout menuButtonContainer; // *** ADDED: Reference to the container holding the button and dot ***
+
 
         RecordViewHolder(View itemView) {
             super(itemView);
@@ -868,7 +883,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             textViewSerialNumber = itemView.findViewById(R.id.text_view_serial_number);
             checkIcon = itemView.findViewById(R.id.check_icon);
             menuButton = itemView.findViewById(R.id.menu_button);
-            textViewTempBadge = itemView.findViewById(R.id.text_view_temp_badge); // *** Find the badge ***
+            textViewTempBadge = itemView.findViewById(R.id.text_view_temp_badge);
+            menuWarningDot = itemView.findViewById(R.id.menu_warning_dot);             // *** Find the warning dot ***
+            menuButtonContainer = itemView.findViewById(R.id.menu_button_container);   // *** Find the container ***
         }
     }
 

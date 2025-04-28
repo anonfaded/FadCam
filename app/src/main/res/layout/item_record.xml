@@ -14,6 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <!-- Thumbnail Container -->
         <FrameLayout
             android:id="@+id/thumbnail_container"
             android:layout_width="0dp"
@@ -23,13 +24,13 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
+            <!-- ... ImageView, Serial Number, TEMP Badge ... -->
             <ImageView
                 android:id="@+id/image_view_thumbnail"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                tools:srcCompat="@tools:sample/backgrounds/scenic" />
-
+                tools:srcCompat="@tools:sample/backgrounds/scenic"/>
             <TextView
                 android:id="@+id/text_view_serial_number"
                 android:layout_width="wrap_content"
@@ -38,15 +39,13 @@
                 android:layout_margin="4dp"
                 android:background="#80000000"
                 android:paddingStart="4dp"
-                android:paddingTop="1dp"
                 android:paddingEnd="4dp"
+                android:paddingTop="1dp"
                 android:paddingBottom="1dp"
-                android:text="1"
                 android:textColor="@android:color/white"
                 android:textSize="10sp"
-                android:textStyle="bold" />
-
-            <!-- *** START: TEMP BADGE ADDED *** -->
+                android:textStyle="bold"
+                tools:text="1"/>
             <TextView
                 android:id="@+id/text_view_temp_badge"
                 android:layout_width="wrap_content"
@@ -55,8 +54,8 @@
                 android:layout_margin="4dp"
                 android:background="@drawable/temp_badge_background"
                 android:paddingStart="6dp"
-                android:paddingTop="2dp"
                 android:paddingEnd="6dp"
+                android:paddingTop="2dp"
                 android:paddingBottom="2dp"
                 android:text="TEMP"
                 android:textColor="@android:color/black"
@@ -64,10 +63,10 @@
                 android:textStyle="bold"
                 android:visibility="gone"
                 tools:visibility="visible"/>
-            <!-- *** END: TEMP BADGE ADDED *** -->
 
         </FrameLayout>
 
+        <!-- File Info Layout (Bottom Left) -->
         <LinearLayout
             android:id="@+id/file_info_layout"
             android:layout_width="wrap_content"
@@ -79,23 +78,25 @@
             android:paddingVertical="2dp"
             app:layout_constraintBottom_toBottomOf="@id/thumbnail_container"
             app:layout_constraintStart_toStartOf="@id/thumbnail_container">
-
+            <!-- ... File Size/Time TextViews ... -->
             <TextView
                 android:id="@+id/text_view_file_size"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
                 android:textColor="@android:color/white"
                 android:textSize="10sp"
-                android:layout_marginEnd="4dp"/>
-
+                tools:text="15.3 MB"/>
             <TextView
                 android:id="@+id/text_view_file_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/white"
-                android:textSize="10sp"/>
+                android:textSize="10sp"
+                tools:text="1m 25s"/>
         </LinearLayout>
 
+        <!-- Video Title TextView -->
         <TextView
             android:id="@+id/text_view_record"
             android:layout_width="0dp"
@@ -108,23 +109,45 @@
             android:ellipsize="end"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@id/menu_button"
+            app:layout_constraintEnd_toStartOf="@id/menu_button_container"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/thumbnail_container"
             app:layout_constraintBottom_toBottomOf="parent"/>
 
-        <ImageView
-            android:id="@+id/menu_button"
+        <!-- *** START: Menu Button Container *** -->
+        <FrameLayout
+            android:id="@+id/menu_button_container"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_more_vert"
-            android:padding="12dp"
             android:layout_marginEnd="4dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/text_view_record"
-            app:layout_constraintBottom_toBottomOf="@id/text_view_record"/>
+            app:layout_constraintBottom_toBottomOf="@id/text_view_record">
 
+            <ImageView
+                android:id="@+id/menu_button"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_more_vert"
+                android:padding="12dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"/>
+
+            <ImageView
+                android:id="@+id/menu_warning_dot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/yellow_dot"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </FrameLayout>
+        <!-- *** END: Menu Button Container *** -->
+
+
+        <!-- Selection Check Icon -->
         <ImageView
             android:id="@+id/check_icon"
             android:layout_width="wrap_content"
@@ -132,7 +155,9 @@
             android:src="@drawable/ic_check"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_margin="4dp"
+            app:tint="?attr/colorPrimary"/> <!-- Add tint if needed -->
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
