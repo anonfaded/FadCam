@@ -251,7 +251,17 @@
 <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
     <string name="start_recording">Start</string>
     <string name="stop_recording">Stop</string>
-    <string name="warning_temp_file_detail">NOTE: This is an unprocessed temporary file stored in cache because processing (e.g., adding a watermark) may have failed or was interrupted. Rename and Save it to the Gallery soon to prevent accidental data loss (e.g., if app cache is cleared). Recording more videos is usually safe, but prioritize saving this file.</string>
+    <string name="warning_temp_file_detail">
+        <![CDATA[
+        <b>IMPORTANT NOTE:</b><br/>
+        This is an <b>unprocessed temporary file</b>. Video processing (like adding a watermark) may have failed or been interrupted.<br/><br/>
+        <b>Recommended Action:</b><br/>
+        <b>1. Rename</b> this file now (using the menu).<br/>
+        <b>2. Save</b> it to your Gallery (using the menu).<br/><br/>
+        This secures your recording. After confirming it saved correctly in your gallery app, you can safely <b>delete this temporary file</b> from this Records list if you wish.<br/><br/>
+        Continuing to record without saving may risk losing this file if the app cache is cleared unexpectedly.
+        ]]>
+    </string>
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>

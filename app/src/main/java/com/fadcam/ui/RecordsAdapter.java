@@ -30,6 +30,7 @@ import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.text.HtmlCompat;
 
 import com.bumptech.glide.Glide;
 import com.fadcam.Constants;
@@ -700,21 +701,36 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // 5. Determine if it's a temp file and show/hide warning
         boolean isTempFile = isTemporaryFile(videoItem); // Use the path-checking helper
-        tvTempWarning.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
-        Log.d(TAG, "Info Dialog: Temp warning visibility set to: " + (isTempFile ? "VISIBLE" : "GONE") + " for file: " + fileName);
+        // Show/Hide and SET the processed HTML text
+        if (tvTempWarning != null) {
+            if (isTempFile) {
+                // *** FIX: Get the string, process HTML, and set it ***
+                String warningHtmlString = context.getString(R.string.warning_temp_file_detail);
+                tvTempWarning.setText(HtmlCompat.fromHtml(warningHtmlString, HtmlCompat.FROM_HTML_MODE_LEGACY));
+                tvTempWarning.setVisibility(View.VISIBLE);
+            } else {
+                tvTempWarning.setVisibility(View.GONE);
+            }
+            Log.d(TAG, "Info Dialog: Temp warning visibility/text set. IsTemp: " + isTempFile);
+        } else {
+            Log.w(TAG, "tv_temp_file_warning view not found in dialog layout.");
+        }
+        // ... (Prepare clipboard string - NOTE: HTML tags won't be in clipboard text) ...
+        String clipboardText;
+        if(isTempFile) {
+            // For clipboard, use a plain text version maybe? Or include raw HTML markers?
+            // Simple version without HTML:
+            clipboardText = "IMPORTANT NOTE: This is an unprocessed temporary file... (See dialog for details)";
+        } else {
+            clipboardText = ""; // Or just don't add extra note for normal files
+        }
+        String videoInfo = String.format(Locale.US,
+                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s\n%s",
+                fileName, formattedFileSize, filePathDisplay, formattedLastModified, formattedDuration, resolution, clipboardText.trim());
+
         // The actual warning text is set via R.string.warning_temp_file_detail in the XML layout
 
-        // 6. Prepare Clipboard String
-        String videoInfo = String.format(Locale.US,
-                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s%s", // Added placeholder for temp note
-                fileName,
-                formattedFileSize,
-                filePathDisplay,
-                formattedLastModified,
-                formattedDuration,
-                resolution,
-                (isTempFile ? "\n\nNOTE: This is a temporary, unprocessed file." : "") // Append note only if it's temp
-        );
+
 
         // 7. Set up Copy-to-Clipboard Action
         ivCopyToClipboard.setOnClickListener(v -> {
