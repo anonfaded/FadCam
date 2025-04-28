@@ -189,4 +189,7 @@ public class Log {
 
         return null;
     }
+
+    public static void v(String sharedPrefs, String s) {
+    }
 }

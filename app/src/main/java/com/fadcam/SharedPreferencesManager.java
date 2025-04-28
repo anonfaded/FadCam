@@ -3,6 +3,8 @@ package com.fadcam;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Size;
+import java.util.Set;
+import java.util.HashSet;
 
 import androidx.annotation.Nullable; // Import Nullable
 
@@ -16,10 +18,34 @@ public class SharedPreferencesManager {
     public static final String STORAGE_MODE_CUSTOM = "custom";
     public static final String PREF_CUSTOM_STORAGE_URI = "custom_storage_uri";
     // --- END STORAGE CONSTANTS ---
-
+    public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris"; // Defined in Constants now
 
     private static SharedPreferencesManager instance;
     public final SharedPreferences sharedPreferences;
+
+    // --- Opened Video Methods ---
+    public Set<String> getOpenedVideoUris() {
+        // Return a copy to prevent external modification
+        return new HashSet<>(sharedPreferences.getStringSet(Constants.PREF_OPENED_VIDEO_URIS, new HashSet<>()));
+    }
+
+    public void addOpenedVideoUri(String uriString) {
+        if (uriString == null || uriString.isEmpty()) return;
+        Set<String> openedUris = getOpenedVideoUris(); // Get current set (returns a copy)
+        if (openedUris.add(uriString)) { // Add the new URI (add returns true if set was changed)
+            sharedPreferences.edit().putStringSet(Constants.PREF_OPENED_VIDEO_URIS, openedUris).apply();
+            Log.d("SharedPrefs", "Added opened URI: " + uriString);
+        } else {
+            android.util.Log.v("SharedPrefs", "URI already marked as opened: " + uriString);
+        }
+    }
+
+    // Optional: Method to clear the opened set (e.g., for debugging)
+    public void clearOpenedVideoUris() {
+        sharedPreferences.edit().remove(Constants.PREF_OPENED_VIDEO_URIS).apply();
+        Log.w("SharedPrefs","Cleared all opened video URIs.");
+    }
+    // --- End Opened Video Methods ---
 
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class

@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,18 +55,23 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import androidx.cardview.widget.CardView; // *** ADD Import ***
-
+import com.fadcam.SharedPreferencesManager;
 
 
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
 
+    private Set<Uri> currentlyProcessingUris = new HashSet<>(); // Track processing URIs within adapter instance (passed from fragment)
+
     private static final String TAG = "RecordsAdapter";
     private final ExecutorService executorService; // Add ExecutorService
+    private final SharedPreferencesManager sharedPreferencesManager;
     private final RecordActionListener actionListener; // Add the listener interface
     private final Context context;
     private List<VideoItem> records; // Now holds VideoItem objects
@@ -85,22 +91,28 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // --- Constructor Updated ---
-    public RecordsAdapter(Context context, List<VideoItem> records, ExecutorService executorService, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener, RecordActionListener actionListener ) {
-        this.context = Objects.requireNonNull(context, "Context cannot be null for RecordsAdapter"); // Use Objects.requireNonNull
-        this.records = new ArrayList<>(records);
-        this.clickListener = clickListener;
-        this.longClickListener = longClickListener;
-        this.executorService = Objects.requireNonNull(executorService, "ExecutorService cannot be null"); // Require it
-        this.actionListener = Objects.requireNonNull(actionListener, "RecordActionListener cannot be null"); // Require it
-        // *** Initialize the cache directory path ***
+    // --- Complete Constructor ---
+    public RecordsAdapter(Context context, List<VideoItem> records, ExecutorService executorService,
+                          SharedPreferencesManager sharedPreferencesManager, // <<< Parameter Added
+                          OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener,
+                          RecordActionListener actionListener) {
+
+        this.context = Objects.requireNonNull(context, "Context cannot be null for RecordsAdapter");
+        this.records = new ArrayList<>(records); // Use a mutable copy
+        this.executorService = Objects.requireNonNull(executorService, "ExecutorService cannot be null");
+        this.sharedPreferencesManager = Objects.requireNonNull(sharedPreferencesManager, "SharedPreferencesManager cannot be null"); // <<< STORE IT
+        this.clickListener = clickListener; // Can be null if fragment doesn't implement/need it
+        this.longClickListener = longClickListener; // Can be null
+        this.actionListener = Objects.requireNonNull(actionListener, "RecordActionListener cannot be null"); // Assuming fragment always provides this
+
+
+        // Initialize the cache directory path for checking temp files
         File cacheBaseDir = context.getExternalCacheDir();
         if (cacheBaseDir != null) {
-            // Use the correct sub-directory where temp files are initially saved by MediaRecorder
             this.tempCacheDirectoryPath = new File(cacheBaseDir, "recording_temp").getAbsolutePath();
-            Log.d(TAG, "Temp cache directory path set to: " + this.tempCacheDirectoryPath);
+            Log.d(TAG, "Adapter Initialized. Temp cache path: " + this.tempCacheDirectoryPath);
         } else {
-            Log.e(TAG, "External cache dir is null! Cannot reliably identify temp files by path.");
-            // Set to null or an invalid path to ensure the check always fails safely
+            Log.e(TAG, "Adapter Initialized. External cache dir is null! Cannot reliably identify temp files.");
             this.tempCacheDirectoryPath = null;
         }
     }
@@ -134,29 +146,32 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         return new RecordViewHolder(view);
     }
 
-    // --- Updated onBindViewHolder ---
-    // In RecordsAdapter.java
+    // *** Need a method to update the processing set from the Fragment ***
+    public void updateProcessingUris(Set<Uri> processingUris) {
+        boolean changed = !this.currentlyProcessingUris.equals(processingUris);
+        if(changed){
+            this.currentlyProcessingUris = new HashSet<>(processingUris); // Use a copy
+            Log.d(TAG,"Adapter processing URIs updated: "+this.currentlyProcessingUris.size() +" items.");
+            // TODO: Consider optimizing this? Maybe only notify items that changed state?
+            // For simplicity now, refresh all potentially affected items (though maybe slow)
+            // Find positions of items that *were* processing or *are now* processing
+            // This requires iterating, might be simpler to just notifyDataSetChanged for now.
+            notifyDataSetChanged(); // Simplest way to reflect changes across list
+        }
+    }
 
     // --- Updated onBindViewHolder ---
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
-        // ... (Existing null checks for records, item, uri, name) ...
-        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) {
-            // Log error and hide/collapse view
-            Log.e(TAG,"Invalid item or data at position: " + position);
-            holder.itemView.setVisibility(View.GONE);
-            holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
-            return;
-        }
-        holder.itemView.setVisibility(View.VISIBLE);
-        holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-
+        // --- Basic checks (position, item null, uri null) ---
+        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) { /* handle */ return; }
         final VideoItem videoItem = records.get(position);
         final Uri videoUri = videoItem.uri;
         final String displayName = videoItem.displayName != null ? videoItem.displayName : "No Name";
+        final String uriString = videoUri.toString(); // For SharedPreferences check
 
-        // Bind basic data
+
+        // --- Bind standard data (Serial, Name, Size, Time, Thumbnail) ---
         holder.textViewSerialNumber.setText(String.valueOf(position + 1));
         holder.textViewRecord.setText(displayName);
         holder.textViewFileSize.setText(formatFileSize(videoItem.size));
@@ -164,35 +179,58 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         holder.textViewFileTime.setText(formatVideoDuration(duration));
         setThumbnail(holder, videoUri);
 
-        // Determine if temp based on path
-        boolean isTempFile = isTemporaryFile(videoItem);
+        // --- State Determination ---
+        boolean isTemp = isTemporaryFile(videoItem);
+        // Check if this URI is marked as 'opened' in SharedPreferences
+        boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString);
+        boolean isNew = !isOpened; // 'New' if NOT opened
+        boolean isProcessing = currentlyProcessingUris.contains(videoUri);
 
-        // Set visibility for TEMP badge on thumbnail
-        if (holder.textViewTempBadge != null) {
-            holder.textViewTempBadge.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
+        // --- Visibility Logic ---
+
+        // Temp Badge and Menu Dot
+        if (holder.textViewTempBadge != null) holder.textViewTempBadge.setVisibility(isTemp ? View.VISIBLE : View.GONE);
+        if (holder.menuWarningDot != null) holder.menuWarningDot.setVisibility(isTemp ? View.VISIBLE : View.GONE);
+
+        // New Badge (Show only if !isTemp AND !isOpened)
+        if (holder.textViewNewBadge != null) {
+            holder.textViewNewBadge.setVisibility(!isTemp && isNew && !isProcessing ? View.VISIBLE : View.GONE);
         }
 
-        // *** START: Set visibility for the WARNING dot on the menu button ***
-        if (holder.menuWarningDot != null) {
-            holder.menuWarningDot.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
-        } else {
-            Log.w(TAG,"menuWarningDot view is null in ViewHolder.");
-        }
-        // *** END: Set visibility for the WARNING dot on the menu button ***
+        // Processing Overlay (Show if isProcessing)
+        if(holder.processingScrim != null) holder.processingScrim.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
+        if(holder.processingSpinner != null) holder.processingSpinner.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
 
-        // Set click listeners (pass VideoItem)
-        holder.itemView.setOnClickListener(v -> { if (clickListener != null) clickListener.onVideoClick(videoItem); });
+
+        // --- Enable/Disable controls based on state ---
+        holder.itemView.setEnabled(!isProcessing); // Disable clicks while processing
+        holder.menuButtonContainer.setEnabled(!isProcessing); // Disable menu while processing
+
+
+        // --- Listeners ---
+        holder.itemView.setOnClickListener(v -> {
+            if (!isProcessing && clickListener != null) {
+                // Mark as opened *before* triggering click listener
+                sharedPreferencesManager.addOpenedVideoUri(uriString);
+                // Immediately update this item's UI to remove 'New' badge
+                if(holder.textViewNewBadge != null) holder.textViewNewBadge.setVisibility(View.GONE);
+                clickListener.onVideoClick(videoItem);
+            }
+        });
         holder.itemView.setOnLongClickListener(v -> {
-            boolean isSelected = !selectedVideosUris.contains(videoUri);
-            toggleSelection(videoUri, isSelected);
-            if(longClickListener != null) longClickListener.onVideoLongClick(videoItem, isSelected);
-            return true;
+            if (!isProcessing && longClickListener != null) {
+                boolean isSelected = !selectedVideosUris.contains(videoUri);
+                toggleSelection(videoUri, isSelected);
+                longClickListener.onVideoLongClick(videoItem, isSelected);
+            }
+            return !isProcessing; // Consume long click only if not processing
         });
 
-        // Setup popup menu - the modification to the menu item text happens inside here now
-        setupPopupMenu(holder, videoItem); // Pass VideoItem
 
-        // Update selection state visuals
+        // Setup popup menu (title modification logic based on isTemp inside this method)
+        setupPopupMenu(holder, videoItem);
+
+        // Update selection checkmark/background
         updateSelectionState(holder, selectedVideosUris.contains(videoUri));
     }
 
@@ -267,15 +305,22 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+
     // Helper to find item position by URI (important for notifyItemChanged)
-    private int findPositionByUri(Uri uri) {
-        if (uri == null || records == null) return -1;
+    // Make this public so the Fragment can call it after marking an item opened
+    public int findPositionByUri(Uri uri) { // <-- *** CHANGED to public ***
+        if (uri == null || records == null) {
+            Log.w(TAG, "findPositionByUri called with null uri or null records list.");
+            return -1;
+        }
         for (int i = 0; i < records.size(); i++) {
             VideoItem item = records.get(i);
-            if (item != null && uri.equals(item.uri)) { // Use equals for URI comparison
+            // Added null check for item as well for safety
+            if (item != null && item.uri != null && uri.equals(item.uri)) { // Use equals for URI comparison
                 return i;
             }
         }
+        Log.v(TAG,"URI not found in adapter list: " + uri); // Use v for verbose logs
         return -1; // Not found
     }
 
@@ -985,7 +1030,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewTempBadge;
         ImageView menuWarningDot;       // *** ADDED: Reference for the warning dot ***
         FrameLayout menuButtonContainer; // *** ADDED: Reference to the container holding the button and dot ***
-
+        // *** ADDED: References for New Badge and Processing Overlay ***
+        TextView textViewNewBadge;
+        View processingScrim;
+        ProgressBar processingSpinner;
 
         RecordViewHolder(View itemView) {
             super(itemView);
@@ -999,6 +1047,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             textViewTempBadge = itemView.findViewById(R.id.text_view_temp_badge);
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot);             // *** Find the warning dot ***
             menuButtonContainer = itemView.findViewById(R.id.menu_button_container);   // *** Find the container ***
+            // *** Find new views ***
+            textViewNewBadge = itemView.findViewById(R.id.text_view_new_badge);
+            processingScrim = itemView.findViewById(R.id.processing_scrim);
+            processingSpinner = itemView.findViewById(R.id.processing_spinner);
+
         }
     }
 

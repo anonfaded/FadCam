@@ -74,6 +74,8 @@ import java.util.concurrent.TimeUnit;
 import android.content.Intent; // Add Intent import
 import android.net.Uri;       // Add Uri import
 import com.fadcam.Constants; // Import your Constants class
+import java.util.Set; // Add if needed
+import java.util.HashSet; // Add if needed
 
 public class RecordingService extends Service {
 
@@ -522,22 +524,31 @@ public class RecordingService extends Service {
 
     // Execute FFmpeg, saving result to final internal directory
     private void executeFFmpegInternalOnly(String command, File internalTempInput, File finalInternalOutput) {
-        Log.d(TAG, "executeFFmpegInternalOnly: Processing " + internalTempInput.getName());
-        executeFFmpegAsync(command, () -> { // Success Runnable
-            Log.d(TAG, "FFmpeg internal success. Output: " + finalInternalOutput.getAbsolutePath());
-            if (internalTempInput.exists() && !internalTempInput.delete()) {
-                Log.w(TAG,"Failed to delete internal temp after success: "+internalTempInput.getName());
-            }
-            // Optional: Trigger media scan if needed for finalInternalOutput
-        }, () -> { // Failure Runnable
-            Log.e(TAG,"FFmpeg internal process failed for: " + internalTempInput.getName());
-            // Don't delete input on failure
-            // Optionally delete failed output if desired
-            if(finalInternalOutput.exists() && !finalInternalOutput.delete()){
-                Log.w(TAG,"Failed to delete failed internal output: "+finalInternalOutput.getName());
-            }
-        });
-    }      // Execute FFmpeg saving to temp internal, then move result to SAF
+        Log.d(TAG, "executeFFmpegInternalOnly: Processing " + internalTempInput.getName() + " -> " + finalInternalOutput.getName());
+
+        // ** FIX: Add inputFile and finalOutputUriIfKnown arguments to the call **
+        executeFFmpegAsync(
+                command,
+                internalTempInput,                          // Pass the input file object
+                Uri.fromFile(finalInternalOutput),          // Pass the known final output URI
+                () -> { // Success Runnable
+                    Log.d(TAG, "FFmpeg internal success. Output: " + finalInternalOutput.getAbsolutePath());
+                    // Delete the *input* temp file on success
+                    if (internalTempInput.exists() && !internalTempInput.delete()) {
+                        Log.w(TAG, "Failed to delete internal temp after successful processing: " + internalTempInput.getName());
+                    }
+                    // Optional: Media Scan if needed for finalInternalOutput
+                },
+                () -> { // Failure Runnable
+                    Log.e(TAG, "FFmpeg internal process failed for: " + internalTempInput.getName());
+                    // Clean up the FAILED *output* file if it exists
+                    if (finalInternalOutput.exists() && !finalInternalOutput.delete()) {
+                        Log.w(TAG, "Failed to delete failed internal output: " + finalInternalOutput.getName());
+                    }
+                    // Do NOT delete the input temp file on failure
+                }
+        ); // ** End of executeFFmpegAsync call **
+    }
 
     /**
      * Helper method to execute FFmpeg commands asynchronously and handle callbacks.
@@ -549,61 +560,66 @@ public class RecordingService extends Service {
      */
     // Centralized Async FFmpeg Execution
     // Updated helper to run FFmpeg and broadcast completion
-    private void executeFFmpegAsync(String ffmpegCommand, Runnable onSuccess, Runnable onFailure) {
-        Log.d(TAG, "Executing FFmpeg Async: " + ffmpegCommand);
-        isProcessingWatermark = true;
+    // Updated helper to run FFmpeg and broadcast START/END processing states
+    private void executeFFmpegAsync(String ffmpegCommand, File inputFile, Uri finalOutputUriIfKnown, Runnable onSuccess, Runnable onFailure) {
+        // ** Get URI of the file ABOUT to be processed **
+        Uri processingUri = Uri.fromFile(inputFile); // Temp file URI
+        Log.d(TAG, "Preparing to process URI: " + processingUri.toString());
+
+        // ** 1. Broadcast PROCESSING_STARTED **
+        sendProcessingStateBroadcast(true, processingUri);
+
+        isProcessingWatermark = true; // Set processing flag
+        Log.d(TAG, "Executing FFmpeg Async for " + inputFile.getName() + ": " + ffmpegCommand);
 
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
+            // This lambda runs AFTER FFmpeg finishes
             boolean success = ReturnCode.isSuccess(session.getReturnCode());
-            Uri resultUri = null; // Store the URI for the broadcast
-            String logTag = "FFmpegAsync Result"; // Tag for specific log
+            Uri resultUri = null; // The final resulting URI (temp or processed)
+            String logTag = "FFmpegAsync Result";
 
-            Log.d(logTag,"FFmpeg finished. Success: " + success + ", RC: " + session.getReturnCode());
+            Log.d(logTag, "FFmpeg finished. Success: " + success + ", RC: " + session.getReturnCode());
 
             if (success) {
-                if (onSuccess != null) {
-                    try {
-                        onSuccess.run(); // This might determine the final output URI
-                        // Try to determine the output URI based on where onSuccess likely wrote it
-                        resultUri = determineSuccessUri(); // Implement this helper if needed
-                        Log.i(logTag, "Processing SUCCESS. Result URI determined: " + resultUri);
-                    } catch (Exception e) {
-                        Log.e(logTag,"Exception during onSuccess runnable", e);
-                        success = false; // Treat exception in onSuccess as failure
-                    }
-                }
-            } else { // FFmpeg command failed
-                Log.e(logTag, "FFmpeg process FAILED!");
-                if(session.getFailStackTrace() != null) Log.e(logTag, "Stack Trace:\n" + session.getFailStackTrace());
-                if(session.getOutput() != null) Log.e(logTag,"Output:\n"+session.getOutput());
-
-                // Determine the temp file URI to include in broadcast
-                if (currentInternalTempFile != null && currentInternalTempFile.exists()){
-                    resultUri = Uri.fromFile(currentInternalTempFile);
-                } else {
-                    Log.w(logTag, "FFmpeg failed, but could not find the temp input file reference.");
-                }
-
-                if (onFailure != null) {
-                    try { onFailure.run(); } catch (Exception e){ Log.e(logTag,"Exception during onFailure runnable",e); }
-                }
+                // ... existing onSuccess logic ...
+                try { if (onSuccess != null) onSuccess.run(); } catch (Exception e) { success = false; /*...*/ }
+                resultUri = finalOutputUriIfKnown != null ? finalOutputUriIfKnown : determineSuccessUri(); // Try to get the final URI
+                Log.i(logTag, "Processing SUCCESS. Result URI determined: " + resultUri);
+            } else {
+                // ... existing onFailure logic ...
+                Log.e(logTag, "FFmpeg process FAILED! Logs: " + session.getAllLogsAsString());
+                if (onFailure != null) { try { onFailure.run(); } catch (Exception e){/*...*/} }
+                // On failure, the relevant file IS the input temp file
+                resultUri = processingUri; // Use the original input URI for the broadcast
             }
 
-            // --- Broadcast Completion ---
-            sendRecordingCompleteBroadcast(success, resultUri);
-            // --- End Broadcast ---
+            // ** 2. Broadcast PROCESSING_FINISHED **
+            // Use the input URI here, as that's what the fragment currently shows and needs to update
+            sendProcessingStateBroadcast(false, processingUri); // Signal end for the INPUT file URI
+            // Optionally send the generic ACTION_RECORDING_COMPLETE as well, or consolidate logic
+            // sendRecordingCompleteBroadcast(success, resultUri); // If this is still needed
 
 
-            isProcessingWatermark = false; // Reset flag AFTER broadcast/logging
+            isProcessingWatermark = false; // Reset flag
 
             // Check if service should stop
             if (!isWorkingInProgress()) {
-                Log.d(TAG, "FFmpeg Async finished and no other work, stopping service.");
+                Log.d(TAG, "FFmpeg Async finished, no other work, stopping service.");
                 stopSelf();
-            } else {
-                Log.d(TAG, "FFmpeg Async finished, but service still working.");
             }
         });
+    }
+
+    // --- NEW: Helper to send the PROCESSING start/end broadcast ---
+    private void sendProcessingStateBroadcast(boolean started, @NonNull Uri fileUri) {
+        if (fileUri == null) {
+            Log.e(TAG, "Cannot send processing state broadcast, file URI is null.");
+            return;
+        }
+        Intent stateIntent = new Intent(started ? Constants.ACTION_PROCESSING_STARTED : Constants.ACTION_PROCESSING_FINISHED);
+        stateIntent.putExtra(Constants.EXTRA_PROCESSING_URI_STRING, fileUri.toString());
+        sendBroadcast(stateIntent);
+        Log.i(TAG, "Broadcast sent: " + stateIntent.getAction() + " for URI: " + fileUri.toString());
     }
 
     // --- NEW: Helper to send the completion broadcast ---
@@ -659,32 +675,48 @@ public class RecordingService extends Service {
         return null;
     }
 
+// In RecordingService.java
+
+    // Execute FFmpeg saving to temp internal cache, then move result to SAF
     private void executeFFmpegAndMoveToSAF(String command, File internalTempInput, File tempInternalProcessedOutput, String targetSafDirUriString) {
         Log.d(TAG, "executeFFmpegAndMoveToSAF: Processing " + internalTempInput.getName() + " -> " + tempInternalProcessedOutput.getName() + " -> SAF");
-        executeFFmpegAsync(command, () -> { // FFmpeg Success Runnable
-            Log.d(TAG, "FFmpeg successful (intermediate file created): " + tempInternalProcessedOutput.getAbsolutePath());
-            // Now move the processed file to SAF
-            boolean moveSuccess = moveInternalFileToSAF(tempInternalProcessedOutput, targetSafDirUriString);
-            if (moveSuccess) {
-                Log.d(TAG,"Successfully moved processed file to SAF: " + targetSafDirUriString);
-                // Delete BOTH internal temp files on successful move
-                if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG,"Failed to delete initial temp: "+internalTempInput.getName());}
-                if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) { Log.w(TAG,"Failed to delete processed temp: "+tempInternalProcessedOutput.getName()); }
-            } else {
-                Log.e(TAG,"Failed to move processed file to SAF!");
-                Toast.makeText(this,"Failed to save to custom location",Toast.LENGTH_LONG).show();
-                // IMPORTANT: Leave the *processed* temp file in cache as backup
-                // But DO delete the *original* temp file if the processing succeeded but move failed
-                if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG,"Failed to delete initial temp after move failure: "+internalTempInput.getName());}
-            }
-        }, () -> { // FFmpeg Failure Runnable
-            Log.e(TAG,"FFmpeg process failed (before move) for: " + internalTempInput.getName());
-            // Don't delete input on failure. Don't attempt move.
-            // Optionally delete failed intermediate output
-            if(tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()){
-                Log.w(TAG,"Failed to delete failed processed output: "+tempInternalProcessedOutput.getName());
-            }
-        });
+
+        // ** FIX: Add inputFile and finalOutputUriIfKnown (which is null here) arguments **
+        executeFFmpegAsync(
+                command,
+                internalTempInput,              // Pass the original temp input file
+                null,                          // Pass null for final output URI, as it's determined later
+                () -> { // FFmpeg Success Runnable (FFmpeg wrote successfully to tempInternalProcessedOutput)
+                    Log.d(TAG, "FFmpeg successful (intermediate cache file created): " + tempInternalProcessedOutput.getAbsolutePath());
+                    // Now move the processed file from cache to SAF
+                    boolean moveSuccess = moveInternalFileToSAF(tempInternalProcessedOutput, targetSafDirUriString);
+                    if (moveSuccess) {
+                        Log.d(TAG, "Successfully moved processed cache file to SAF: " + targetSafDirUriString);
+                        // Delete BOTH internal temp files (original input and processed cache) on success
+                        if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG, "Failed to delete initial temp: " + internalTempInput.getName()); }
+                        if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) { Log.w(TAG, "Failed to delete processed cache temp: " + tempInternalProcessedOutput.getName()); }
+                        // Optional: Determine the final SAF URI here if needed for broadcasting success status of the *final* file
+                        // Uri finalSafUri = getFinalSafUri(targetSafDirUriString, tempInternalProcessedOutput.getName()); // Helper needed
+                        // sendRecordingCompleteBroadcast(true, finalSafUri); // Send specific success broadcast?
+                    } else {
+                        Log.e(TAG, "Failed to move processed cache file to SAF!");
+                        Toast.makeText(this, "Failed to save to custom location", Toast.LENGTH_LONG).show();
+                        // Leave the *processed* temp cache file as backup.
+                        // Delete the *original* input temp file if FFmpeg succeeded but move failed.
+                        if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG, "Failed to delete initial temp after move failure: " + internalTempInput.getName()); }
+                        // sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput)); // Send failure for original?
+                    }
+                },
+                () -> { // FFmpeg Failure Runnable (FFmpeg failed to write to tempInternalProcessedOutput)
+                    Log.e(TAG, "FFmpeg process failed (writing to cache) for: " + internalTempInput.getName());
+                    // Clean up the FAILED *processed* cache output if it exists
+                    if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) {
+                        Log.w(TAG, "Failed to delete failed processed cache output: " + tempInternalProcessedOutput.getName());
+                    }
+                    // Do NOT delete the original input temp file on FFmpeg failure
+                    // sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput)); // Send failure
+                }
+        ); // ** End of executeFFmpegAsync call **
     }
 
     // Helper to move an internal file to a SAF directory URI

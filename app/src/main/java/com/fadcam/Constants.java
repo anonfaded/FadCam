@@ -67,4 +67,14 @@ public abstract class Constants {
     // Broadcast action sent by SettingsFragment when storage location pref changes
     public static final String ACTION_STORAGE_LOCATION_CHANGED = "com.fadcam.STORAGE_LOCATION_CHANGED";
 
+    // Broadcast Actions for Video Processing State
+    public static final String ACTION_PROCESSING_STARTED = "com.fadcam.PROCESSING_STARTED";
+    public static final String ACTION_PROCESSING_FINISHED = "com.fadcam.PROCESSING_FINISHED"; // Can replace COMPLETE if always sent AFTER processing
+
+    // Extra key for the URI of the file being processed (usually the temp file)
+    public static final String EXTRA_PROCESSING_URI_STRING = "com.fadcam.EXTRA_PROCESSING_URI_STRING";
+
+    // SharedPreferences key for opened videos
+    public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris";
+
 }

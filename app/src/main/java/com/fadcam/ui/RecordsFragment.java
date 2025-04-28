@@ -64,6 +64,9 @@ import androidx.core.content.ContextCompat;  // ** ADD **
 import androidx.core.content.ContextCompat; // Use ContextCompat for receiver reg
 import android.content.IntentFilter;
 
+import java.util.Set; // Need Set import
+import java.util.HashSet; // Need HashSet import
+
 public class RecordsFragment extends Fragment implements
         RecordsAdapter.OnVideoClickListener,
         RecordsAdapter.OnVideoLongClickListener,
@@ -74,7 +77,8 @@ public class RecordsFragment extends Fragment implements
     // ** NEW: Fields for storage change receiver **
     private BroadcastReceiver storageLocationChangedReceiver;
     private boolean isStorageReceiverRegistered = false;
-
+    // ** NEW: Set to track URIs currently being processed **
+    private Set<Uri> currentlyProcessingUris = new HashSet<>();
     private static final String TAG = "RecordsFragment";
     private AlertDialog progressDialog; // Field to hold the dialog
     private RecyclerView recyclerView;
@@ -100,6 +104,7 @@ public class RecordsFragment extends Fragment implements
         super.onStart();
         registerRecordingCompleteReceiver(); // Call registration helper
         registerStorageLocationChangedReceiver(); // ** ADD registration for new receiver **
+        registerProcessingStateReceivers(); // ** ADD **
     }
 
     // *** Unregister in onStop ***
@@ -108,6 +113,7 @@ public class RecordsFragment extends Fragment implements
         super.onStop();
         unregisterRecordingCompleteReceiver(); // Call unregistration helper
         unregisterStorageLocationChangedReceiver(); // ** ADD unregistration for new receiver **
+        unregisterProcessingStateReceivers(); // ** ADD **
     }
 
     // ** NEW: Method to register the storage location change receiver **
@@ -318,30 +324,55 @@ public class RecordsFragment extends Fragment implements
 
     // --- End Implementation of RecordActionListener ---
 
+// ** In RecordsFragment.java **
+
     private void setupRecyclerView() {
-        // *** Remove existing item decorations first if they exist ***
-        // Keep a reference to add/remove it when toggling view mode
-        if (itemDecoration == null) {
-            // Calculate spacing based on half the desired total gap
-            // e.g., if item_record.xml margin is 8dp, use 4dp here
-            // If you want an 8dp gap *between* items, use 4dp spacing for the decoration
-            // If you want the 8dp margin respected *around* the item, start with 0 or a small value.
-            // Let's try forcing space equivalent to the margin first
-            int spaceInPixels = (int) (getResources().getDisplayMetrics().density * 8); // Convert 8dp margin to pixels
-            itemDecoration = new SpacesItemDecoration(spaceInPixels); // Create decoration
+        if (getContext() == null) {
+            Log.e(TAG,"Cannot setup RecyclerView, context is null.");
+            return;
         }
-        // Remove any decorations added previously
-        while (recyclerView.getItemDecorationCount() > 0) {
-            recyclerView.removeItemDecorationAt(0);
+        if(recyclerView == null){
+            Log.e(TAG, "RecyclerView is null in setupRecyclerView");
+            return;
         }
-        // Add the new/cached decoration
-        recyclerView.addItemDecoration(itemDecoration);
 
+        // Set the layout manager (Grid or Linear)
+        setLayoutManager(); // Uses the isGridView flag
 
-        setLayoutManager(); // Sets GridLayout or LinearLayoutManager
-        recordsAdapter = new RecordsAdapter(getContext(), videoItems, executorService, this, this, this);
+        // Ensure necessary dependencies are available
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
+        if (sharedPreferencesManager == null) {
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        }
+
+        // Create the adapter instance, passing all dependencies
+        // Note: videoItems might be empty here initially, adapter handles that.
+        // The 'this' refers to RecordsFragment implementing the necessary listener interfaces.
+        recordsAdapter = new RecordsAdapter(
+                getContext(),           // Context
+                videoItems,             // Initial (likely empty) data list
+                executorService,        // Background thread executor
+                sharedPreferencesManager, // Preferences for 'opened' status
+                this,                   // OnVideoClickListener
+                this,                   // OnVideoLongClickListener
+                this                    // RecordActionListener
+        );
+
+        // Set the adapter on the RecyclerView
         recyclerView.setAdapter(recordsAdapter);
+        Log.d(TAG, "RecyclerView setup complete. Adapter assigned.");
     }
+
+    // Need to update the Adapter constructor signature check
+
+
+    // Update Adapter Constructor call in setupRecyclerView
+    // Ensure constructor exists and matches this signature:
+    // RecordsAdapter(Context, List, ExecutorService, SharedPreferencesManager, OnClick, OnLongClick, ActionListener)
+    // **Add SharedPreferencesManager parameter to RecordsAdapter constructor:**
+
 
     // Keep your existing setLayoutManager method which switches between grid/linear
     private void setLayoutManager() {
@@ -420,26 +451,37 @@ public class RecordsFragment extends Fragment implements
     // Load records from Internal or SAF based on preference
 
 
-    // *** Updated loadRecordsList ***
-    // In RecordsFragment.java
+// ** In RecordsFragment.java **
 
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
+        Log.d(TAG, "loadRecordsList: Starting.");
         // 0. PREPARE UI FOR LOADING (Show spinner, hide content)
+        if (getView() == null) { // Extra safety check: ensure view is available
+            Log.e(TAG,"loadRecordsList called but fragment view is null.");
+            return;
+        }
+
+        // Show loading, hide others - Perform UI updates immediately on the current thread
         if (loadingIndicator != null) loadingIndicator.setVisibility(View.VISIBLE);
         if (recyclerView != null) recyclerView.setVisibility(View.GONE);
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
-        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(View.GONE);
-        selectedVideosUris.clear();
+        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(View.GONE); // Hide delete fab during load
+        selectedVideosUris.clear(); // Clear any existing selection state
+
+        // Ensure executor service is ready
+        if (executorService == null || executorService.isShutdown()) {
+            Log.w(TAG, "loadRecordsList: ExecutorService was null or shutdown, re-initializing.");
+            executorService = Executors.newSingleThreadExecutor();
+        }
 
         executorService.submit(() -> {
-
+            Log.d(TAG, "loadRecordsList (Background Thread): Started loading files.");
             // 1. Load from Primary Location (Internal or SAF)
-            // *** FIX: Replace placeholder comment with actual logic ***
             List<VideoItem> primaryItems; // Declare list
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            Log.i(TAG, "Loading records. Mode: " + storageMode + ", URI: " + customUriString);
+            Log.d(TAG, "loadRecordsList (Background Thread): Mode="+storageMode+", URI="+customUriString);
 
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
                 Uri treeUri = null;
@@ -447,40 +489,22 @@ public class RecordsFragment extends Fragment implements
                 try {
                     treeUri = Uri.parse(customUriString);
                     isValidUri = true;
-                } catch (Exception e) { Log.e(TAG, "Error parsing custom storage URI string: " + customUriString, e); }
+                } catch (Exception e) { Log.e(TAG,"Error parsing custom storage URI string", e);}
 
                 if (isValidUri && hasSafPermission(treeUri)) {
                     primaryItems = getSafRecordsList(treeUri);
                 } else {
-                    if (isValidUri) { // Permission failed or dir unreadable
-                        Log.e(TAG, "Permission error or cannot read custom SAF location: " + customUriString);
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> { /* Show Permission Error Dialog */
-                                new MaterialAlertDialogBuilder(requireContext())
-                                        .setTitle("Permission Issue")
-                                        .setMessage("Could not access the custom storage location...") // Full message
-                                        .setPositiveButton("OK", null)
-                                        .show();
-                            });
-                        }
-                    } else { // Invalid URI string
-                        if (getActivity() != null) getActivity().runOnUiThread(()-> Toast.makeText(getContext(), "Invalid custom storage path saved.", Toast.LENGTH_LONG).show());
-                    }
-                    primaryItems = new ArrayList<>(); // Return empty on error
+                    // Handle permission or invalid URI error (show toast/dialog later on UI thread if needed)
+                    if(isValidUri) Log.e(TAG, "Permission/Read error for custom SAF location: " + customUriString);
+                    else Log.e(TAG,"Invalid Custom URI string: " + customUriString);
+                    primaryItems = new ArrayList<>();
                 }
             } else { // Internal Storage mode or Custom mode with null URI
-                Log.d(TAG, "Loading from Internal App Storage.");
                 primaryItems = getInternalRecordsList();
-                if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString == null) {
-                    Log.w(TAG, "Storage mode Custom, but URI null. Loaded Internal.");
-                }
             }
-            // *** END FIX ***
-
 
             // 2. Load from Temp Cache Location
             List<VideoItem> tempItems = getTempCacheRecordsList();
-
 
             // 3. Combine Lists
             List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
@@ -488,20 +512,32 @@ public class RecordsFragment extends Fragment implements
             // 4. Sort the combined list
             sortItems(combinedItems, currentSortOption);
 
-            // 5. Update the fragment's main list reference
+            // 5. Create final list copy for the UI thread
             final List<VideoItem> finalItems = new ArrayList<>(combinedItems);
+            Log.d(TAG, "loadRecordsList (Background Thread): Loading complete. Total items: " + finalItems.size());
 
-            // 6. UPDATE UI ON COMPLETION
-            if(getActivity() != null) {
+
+            // 6. UPDATE UI ON COMPLETION (Post back to Main Thread)
+            if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    videoItems = finalItems; // Update the main list ref
+                    Log.d(TAG, "loadRecordsList (UI Thread): Updating UI.");
+                    videoItems = finalItems; // Update the main list reference in the fragment
 
-                    // Update adapter FIRST
+                    // Update adapter data FIRST
                     if (recordsAdapter != null) {
+                        // Clear adapter's processing state before feeding new data
+                        currentlyProcessingUris.clear(); // Also clear fragment's tracker on full reload
+                        recordsAdapter.updateProcessingUris(currentlyProcessingUris);
                         recordsAdapter.updateRecords(videoItems);
-                    } else { Log.e(TAG,"Adapter null during UI update after load"); }
+                        Log.d(TAG, "loadRecordsList (UI Thread): Adapter updated.");
+                    } else {
+                        Log.e(TAG, "Adapter was null during UI update.");
+                        // Try to set it up again if it became null somehow
+                        setupRecyclerView();
+                        if (recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+                    }
 
-                    // Then update visibility
+                    // Then update visibility based on the final data
                     updateUiVisibility();
 
                     // Hide loading indicator LAST
@@ -509,9 +545,11 @@ public class RecordsFragment extends Fragment implements
 
                     Log.i(TAG, "Records list updated. Total Count: " + videoItems.size());
                 });
-            } else { Log.e(TAG, "Activity is null after background load."); }
-        });
-    }
+            } else {
+                Log.e(TAG, "Activity was null when trying to update UI post-load.");
+            }
+        }); // End of submit lambda
+    } // End of loadRecordsList
 
     // *** NEW HELPER METHOD to update UI visibility ***
     private void updateUiVisibility() {
@@ -674,10 +712,23 @@ public class RecordsFragment extends Fragment implements
             return;
         }
 
-        Intent intent = new Intent(getActivity(), VideoPlayerActivity.class);
-        intent.setData(videoItem.uri); // Use setData for content:// or file:// URIs
+        // *** Mark as opened in SharedPreferences FIRST ***
+        String uriString = videoItem.uri.toString();
+        sharedPreferencesManager.addOpenedVideoUri(uriString);
+        Log.d(TAG,"Marked URI as opened: " + uriString);
 
-        // *** FIX: Grant temporary read permission to the player activity ***
+        // Refresh THIS specific item visually if adapter is available
+        if(recordsAdapter != null){
+            int position = recordsAdapter.findPositionByUri(videoItem.uri); // Use adapter's helper
+            if (position != -1){
+                recordsAdapter.notifyItemChanged(position); // Removes 'New' badge immediately
+            }
+        }
+
+
+        // Now launch the player
+        Intent intent = new Intent(getActivity(), VideoPlayerActivity.class);
+        intent.setData(videoItem.uri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
         Log.d(TAG, "Starting player for URI: " + videoItem.uri + " with read permission flag.");
@@ -691,6 +742,61 @@ public class RecordsFragment extends Fragment implements
             } else {
                 Toast.makeText(getContext(), "Could not open video player.", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    // *** NEW: Receiver for Processing Start/End ***
+    private BroadcastReceiver processingStateReceiver;
+    private boolean isProcessingReceiverRegistered = false;
+
+    private void registerProcessingStateReceivers() {
+        if (!isProcessingReceiverRegistered && getContext() != null) {
+            processingStateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent != null && intent.getAction() != null) {
+                        String uriString = intent.getStringExtra(Constants.EXTRA_PROCESSING_URI_STRING);
+                        if (uriString == null) { Log.w(TAG, "Received processing broadcast without URI."); return; }
+                        Uri fileUri = Uri.parse(uriString);
+                        boolean changed = false;
+
+                        if (Constants.ACTION_PROCESSING_STARTED.equals(intent.getAction())) {
+                            Log.i(TAG, "Processing started for: " + fileUri);
+                            changed = currentlyProcessingUris.add(fileUri);
+                        } else if (Constants.ACTION_PROCESSING_FINISHED.equals(intent.getAction())) {
+                            Log.i(TAG, "Processing finished for: " + fileUri);
+                            changed = currentlyProcessingUris.remove(fileUri);
+                            // Trigger a full list reload AFTER processing finishes to show the result
+                            // (as the file state on disk has changed).
+                            loadRecordsList();
+                            return; // Exit here, loadRecordsList handles the final UI update
+                        }
+
+                        // If processing started/stopped and the set changed, update adapter state
+                        if (changed && recordsAdapter != null) {
+                            Log.d(TAG, "Updating adapter processing state. Processing count: " + currentlyProcessingUris.size());
+                            recordsAdapter.updateProcessingUris(currentlyProcessingUris);
+                            // Note: updateProcessingUris in adapter calls notifyDataSetChanged,
+                            // which might be slightly inefficient but ensures consistency for now.
+                            // A targeted notifyItemChanged would be better if performance becomes an issue.
+                        }
+                    }
+                }
+            };
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Constants.ACTION_PROCESSING_STARTED);
+            filter.addAction(Constants.ACTION_PROCESSING_FINISHED);
+            ContextCompat.registerReceiver(requireContext(), processingStateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            isProcessingReceiverRegistered = true;
+            Log.d(TAG, "Processing state receivers registered.");
+        }
+    }
+
+    private void unregisterProcessingStateReceivers() {
+        if (isProcessingReceiverRegistered && processingStateReceiver != null && getContext() != null) {
+            try { requireContext().unregisterReceiver(processingStateReceiver); } catch (Exception e) { /* ignore */}
+            isProcessingReceiverRegistered = false;
+            Log.d(TAG, "Processing state receivers unregistered.");
         }
     }
 

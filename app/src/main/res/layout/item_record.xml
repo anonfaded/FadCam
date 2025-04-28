@@ -68,6 +68,46 @@
                  android:visibility="gone"
                  tools:visibility="visible"/>
 
+            <!-- *** START: NEW Badge (Top Left, below serial?) *** -->
+            <!-- *** END: NEW Badge *** -->
+            <!-- *** START: Processing Overlay *** -->
+
+            <TextView
+                android:id="@+id/text_view_new_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="22dp"
+                android:background="@drawable/new_badge_background"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:text="NEW"
+                android:textColor="@android:color/white"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <View
+                android:id="@+id/processing_scrim"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#B0000000"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+
+            <ProgressBar
+                android:id="@+id/processing_spinner"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminateTint="@color/white"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+            <!-- *** END: Processing Overlay *** -->
+
         </FrameLayout>
 
         <!-- File Info Overlay -->
