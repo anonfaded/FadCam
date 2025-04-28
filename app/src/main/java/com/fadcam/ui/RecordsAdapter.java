@@ -495,39 +495,45 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+// In RecordsAdapter.java
+
     private void showRenameDialog(VideoItem videoItem) {
-        if(context == null) return;
+        if (context == null) return;
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
         builder.setTitle(R.string.rename_video_title);
 
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_rename, null);
         final TextInputEditText input = dialogView.findViewById(R.id.edit_text_name);
-        // Pre-fill with current name without extension
+
         String currentName = videoItem.displayName;
         int dotIndex = currentName.lastIndexOf(".");
         String baseName = (dotIndex > 0) ? currentName.substring(0, dotIndex) : currentName;
         input.setText(baseName);
-        // Select the text for easy replacement
         input.requestFocus();
         input.selectAll();
-
 
         builder.setView(dialogView);
         builder.setPositiveButton("OK", (dialog, which) -> {
             String newNameBase = input.getText().toString().trim();
             if (!newNameBase.isEmpty()) {
-                String originalExtension = (dotIndex > 0) ? currentName.substring(dotIndex) : ("." + Constants.RECORDING_FILE_EXTENSION); // Keep original ext or fallback
+                String originalExtension = (dotIndex > 0) ? currentName.substring(dotIndex) : ("." + Constants.RECORDING_FILE_EXTENSION);
 
-                // Sanitize: Replace potentially problematic characters (adjust allowed chars as needed)
-                String sanitizedBaseName = newNameBase.replaceAll("[^a-zA-Z0-9\\-_ \\.]", "_").trim();
-                if(sanitizedBaseName.isEmpty()) sanitizedBaseName = "renamed_video"; // Ensure not empty after sanitize
+                // Sanitize: Allow letters, numbers, hyphen, underscore. Replace others (including space).
+                String sanitizedBaseName = newNameBase
+                        .replaceAll("[^a-zA-Z0-9\\-_]", "_") // Replace disallowed chars with _
+                        .replaceAll("\\s+", "_")          // *** Replace one or more spaces with _ ***
+                        .replaceAll("_+", "_")            // Collapse multiple underscores
+                        .replaceAll("^_|_$", "");         // Trim leading/trailing underscores
+
+                // Ensure it's not empty after sanitizing and trimming
+                if (sanitizedBaseName.isEmpty()) sanitizedBaseName = "renamed_video";
 
                 String newFullName = sanitizedBaseName + originalExtension;
 
                 if (newFullName.equals(videoItem.displayName)) {
                     Toast.makeText(context, "Name hasn't changed", Toast.LENGTH_SHORT).show();
                 } else {
-                    renameVideo(videoItem, newFullName); // Call rename logic
+                    renameVideo(videoItem, newFullName);
                 }
             } else {
                 Toast.makeText(context, R.string.toast_rename_name_empty, Toast.LENGTH_SHORT).show();
