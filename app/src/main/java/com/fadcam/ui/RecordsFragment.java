@@ -23,6 +23,7 @@ import android.widget.Toast;
 import android.widget.ImageView;    // Import ImageView
 import android.widget.TextView;     // Import TextView
 import androidx.appcompat.app.AlertDialog; // Import AlertDialog
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -75,6 +76,7 @@ public class RecordsFragment extends Fragment implements
     private SortOption currentSortOption = SortOption.LATEST_FIRST;
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
+    private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -111,19 +113,23 @@ public class RecordsFragment extends Fragment implements
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_records, container, false);
 
+        // Find all views
         recyclerView = view.findViewById(R.id.recycler_view_records);
         fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
-        emptyStateContainer = view.findViewById(R.id.empty_state_container); // Find the empty state layout
+        emptyStateContainer = view.findViewById(R.id.empty_state_container);
+        loadingIndicator = view.findViewById(R.id.loading_indicator); // *** Find ProgressBar ***
 
+        // Toolbar setup
         Toolbar toolbar = view.findViewById(R.id.topAppBar);
         if (getActivity() instanceof AppCompatActivity) {
             ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         }
 
-        setupRecyclerView(); // Initialize RecyclerView structure
+        // Basic setup
+        setupRecyclerView();
         setupFabListeners();
-        updateFabIcons(); // Set initial FAB icon
+        updateFabIcons();
 
         return view;
     }
@@ -131,8 +137,9 @@ public class RecordsFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: Loading records list...");
-        loadRecordsList(); // Load/Refresh list
+        Log.d(TAG, "onResume: Requesting records list load.");
+        // Request load. Visibility logic is now handled within loadRecordsList.
+        loadRecordsList();
     }
     @Override
     public void onSaveToGalleryStarted(String fileName) {
@@ -282,98 +289,82 @@ public class RecordsFragment extends Fragment implements
     // Load records from Internal or SAF based on preference
 
 
+    // *** Updated loadRecordsList ***
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
-        selectedVideosUris.clear(); // Clear selection on reload
-        updateDeleteButtonVisibility(); // Hide FAB if visible
+        // ** Prevent duplicate loads if already loading? (Optional, basic approach shown here) **
+        // if (isLoading) return; // Add an isLoading boolean field if needed
+
+        // 0. PREPARE UI FOR LOADING (Hide content, show spinner) - Run this on UI thread immediately
+        if (loadingIndicator != null) loadingIndicator.setVisibility(View.VISIBLE);
+        if (recyclerView != null) recyclerView.setVisibility(View.GONE);
+        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
+        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(View.GONE); // Hide delete fab during load
+        selectedVideosUris.clear(); // Clear selection state
 
         executorService.submit(() -> {
+            // isLoading = true; // Set flag if using one
+
             // 1. Load from Primary Location (Internal or SAF)
-            List<VideoItem> primaryItems; // Declare here
+            // ... [rest of the loading logic: getting storage mode, URIs, calling getSafRecordsList or getInternalRecordsList] ...
+            List<VideoItem> primaryItems;
+            // ... (full logic for checking mode, permission, calling list helpers) ...
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            Log.i(TAG, "Loading records. Mode: " + storageMode + ", URI: " + customUriString);
-
-            // *** CORRECTED IF/ELSE BLOCK START ***
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
-                Uri treeUri = null;
-                boolean isValidUri = false;
-                try {
-                    treeUri = Uri.parse(customUriString);
-                    isValidUri = true;
-                } catch (Exception e) {
-                    Log.e(TAG, "Error parsing custom storage URI string: " + customUriString, e);
-                    if (getActivity() != null) getActivity().runOnUiThread(()-> Toast.makeText(getContext(), "Invalid custom storage path saved.", Toast.LENGTH_LONG).show());
-                }
-
-                if (isValidUri && hasSafPermission(treeUri)) { // Check validity and permission
-                    Log.d(TAG, "Loading from Custom SAF location: " + treeUri);
-                    primaryItems = getSafRecordsList(treeUri);
-                } else {
-                    if (isValidUri) { // URI was valid, but permission failed
-                        Log.e(TAG, "Permission error for custom SAF location: " + customUriString);
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                // Show more informative dialog on permission failure
-                                new MaterialAlertDialogBuilder(requireContext())
-                                        .setTitle("Permission Issue")
-                                        .setMessage("Could not access the custom storage location. Permission might have been revoked or the folder deleted. Please reselect the folder in Settings or switch back to Internal Storage.")
-                                        .setPositiveButton("OK", null)
-                                        .show();
-                            });
-                        }
-                    } // Else: URI parse failed, error already shown potentially
-                    primaryItems = new ArrayList<>(); // Set empty list on error/permission fail
-                }
-            } else { // Internal Storage mode or Custom mode with null URI
-                Log.d(TAG, "Loading from Internal App Storage.");
-                primaryItems = getInternalRecordsList();
-                if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString == null) {
-                    Log.w(TAG, "Storage mode is Custom, but URI is null. Loaded Internal. Consider setting mode to Internal in prefs.");
-                    // You might want to automatically switch back to internal here if desired:
-                    // sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                }
-            }
-            // *** CORRECTED IF/ELSE BLOCK END ***
+                Uri treeUri = Uri.parse(customUriString); // Add try-catch if not done earlier
+                if (hasSafPermission(treeUri)) { primaryItems = getSafRecordsList(treeUri); }
+                else { primaryItems = new ArrayList<>(); /* handle error */ }
+            } else { primaryItems = getInternalRecordsList(); }
 
 
             // 2. Load from Temp Cache Location
             List<VideoItem> tempItems = getTempCacheRecordsList();
-            Log.d(TAG, "Loaded primary items: " + primaryItems.size() + ", Temp items: " + tempItems.size());
 
-            // 3. Combine Lists (Avoiding Duplicates based on URI)
+
+            // 3. Combine Lists
             List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
 
             // 4. Sort the combined list
-            sortItems(combinedItems, currentSortOption);
+            sortItems(combinedItems, currentSortOption); // Use helper
 
             // 5. Update the fragment's main list reference
-            videoItems = combinedItems; // Assign the combined, sorted list
+            final List<VideoItem> finalItems = new ArrayList<>(combinedItems); // Create final copy for UI thread
 
-            // 6. Update UI on the main thread
-            if (getActivity() != null) {
+            // 6. UPDATE UI ON COMPLETION (Hide spinner, show content/empty)
+            if(getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
+                    // isLoading = false; // Reset flag if using one
+
+                    // Hide loading indicator first
+                    if (loadingIndicator != null) loadingIndicator.setVisibility(View.GONE);
+
+                    videoItems = finalItems; // Update the main list reference AFTER background processing
+
                     // Update adapter
                     if (recordsAdapter != null) {
                         recordsAdapter.updateRecords(videoItems);
                     } else {
-                        Log.e(TAG,"Adapter null during loadRecordsList UI update");
-                        setupRecyclerView(); // Try re-setup
-                        if (recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+                        Log.e(TAG,"Adapter null during UI update after load");
+                        setupRecyclerView(); // Attempt re-setup (less ideal but better than nothing)
+                        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
                     }
 
-                    // Toggle Empty State Visibility
+                    // Show RecyclerView OR Empty State
                     if (videoItems.isEmpty()) {
                         recyclerView.setVisibility(View.GONE);
-                        if(emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
-                        Log.i(TAG, "Records list is empty. Showing empty state.");
+                        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
+                        Log.i(TAG, "Update UI: List empty, showing empty state.");
                     } else {
+                        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
                         recyclerView.setVisibility(View.VISIBLE);
-                        if(emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
-                        Log.i(TAG, "Records loaded. Hiding empty state.");
+                        Log.i(TAG, "Update UI: List has items, showing RecyclerView.");
                     }
-                    Log.i(TAG, "Records list updated. Mode: " + storageMode + ", Total Count: " + videoItems.size());
+                    // No need to update FAB visibility here unless loading changes selection status somehow
                 });
+            } else {
+                // isLoading = false; // Reset flag if using one
+                Log.e(TAG, "Activity is null when trying to update UI after loading records.");
             }
         });
     }

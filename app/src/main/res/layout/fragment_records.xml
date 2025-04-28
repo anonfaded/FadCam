@@ -6,12 +6,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- AppBarLayout (fixed, contains Toolbar) -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
-
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
@@ -21,10 +21,21 @@
             app:titleCentered="true"
             app:titleTextColor="@android:color/white"
             app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
-
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- *** START: Loading Indicator *** -->
+    <ProgressBar
+        android:id="@+id/loading_indicator"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        tools:visibility="visible"/>
+    <!-- *** END: Loading Indicator *** -->
 
+
+    <!-- Empty State View (Centred) -->
     <LinearLayout
         android:id="@+id/empty_state_container"
         android:layout_width="wrap_content"
@@ -32,9 +43,7 @@
         android:orientation="vertical"
         android:layout_gravity="center"
         android:gravity="center"
-        android:visibility="gone"
-        tools:visibility="visible">
-
+        android:visibility="gone"> <!-- Initially hidden -->
         <ImageView
             android:id="@+id/empty_state_icon"
             android:layout_width="80dp"
@@ -54,17 +63,18 @@
     </LinearLayout>
 
 
+    <!-- RecyclerView (scrolls under app bar) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_records"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:clipToPadding="false"
-        android:paddingTop="8dp" />
-    <!-- *** ADDED paddingTop="8dp" *** -->
-    <!-- Make sure clipToPadding is false -->
+        android:paddingTop="8dp"
+        android:visibility="gone"/> <!-- Initially hidden -->
 
 
+    <!-- FABs (remain the same) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_toggle_view"
         android:layout_width="wrap_content"
@@ -72,7 +82,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         app:srcCompat="@drawable/ic_list" />
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_delete_selected"
         android:layout_width="wrap_content"
