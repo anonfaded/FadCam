@@ -6,18 +6,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Toolbar (keep as is) -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topAppBar"
+    <!-- AppBarLayout ensures Toolbar placement is coordinated -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/gray"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:title="@string/records_title"
-        app:titleCentered="true"
-        app:titleTextColor="@android:color/white" />
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
 
-    <!-- *** START: Empty State View *** -->
+        <!-- Toolbar is FIXED because NO scroll flags are set -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/gray"
+            app:title="@string/records_title"
+            app:titleCentered="true"
+            app:titleTextColor="@android:color/white"
+            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+        <!-- NO app:layout_scrollFlags here -->
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+
+    <!-- Empty State View (Stays the same) -->
     <LinearLayout
         android:id="@+id/empty_state_container"
         android:layout_width="wrap_content"
@@ -27,7 +38,7 @@
         android:gravity="center"
         android:visibility="gone"
         tools:visibility="visible">
-
+        <!-- ... Icon and Text ... -->
         <ImageView
             android:id="@+id/empty_state_icon"
             android:layout_width="80dp"
@@ -36,7 +47,6 @@
             app:tint="#80FFFFFF"
             android:contentDescription="No videos found"
             android:layout_marginBottom="16dp"/>
-
         <TextView
             android:id="@+id/empty_state_text"
             android:layout_width="wrap_content"
@@ -45,20 +55,19 @@
             android:textSize="18sp"
             android:textColor="#80FFFFFF"
             android:gravity="center"/>
-
     </LinearLayout>
-    <!-- *** END: Empty State View *** -->
 
 
-    <!-- RecyclerView (move marginTop attribute from here if it existed) -->
+    <!-- RecyclerView still uses the behavior to know it goes under the AppBarLayout -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_records"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:paddingTop="?attr/actionBarSize"
         android:clipToPadding="false" />
-    <!-- android:layout_marginTop="?attr/actionBarSize" Apply padding instead if using behavior-->
+
+
+
 
 
     <!-- FABs (keep as is) -->
