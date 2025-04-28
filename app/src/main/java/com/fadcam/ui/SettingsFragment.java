@@ -65,6 +65,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import android.content.Intent; // Add Intent import
+import androidx.localbroadcastmanager.content.LocalBroadcastManager; // OR use ContextCompat if not using LocalBroadcastManager
+import androidx.core.content.ContextCompat; // If using standard broadcast
 
 public class SettingsFragment extends Fragment {
 
@@ -121,39 +124,63 @@ public class SettingsFragment extends Fragment {
         initializeCamcorderProfiles(); // Call initialization methods
         initializeVideoCodec();
 
-        // Register the launcher
+        // Register the launcher FOR CUSTOM LOCATION SELECTION
         openDocumentTreeLauncher = registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
-                uri -> {
+                uri -> { // This lambda executes AFTER user picks a folder (or cancels)
                     if (uri != null) {
-                        android.util.Log.d(TAG_SETTINGS, "SAF URI selected: " + uri.toString());
+                        Log.i(TAG_SETTINGS, "SAF URI selected: " + uri);
+                        boolean success = false;
                         try {
+                            // --- IMPORTANT: Persist Permission ---
                             final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                             requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+
+                            // --- Save Preferences ---
                             sharedPreferencesManager.setCustomStorageUri(uri.toString());
                             sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
-                            updateStorageLocationUI();
+                            success = true;
+
                             Toast.makeText(requireContext(), "Custom location set", Toast.LENGTH_SHORT).show();
-                        } catch (SecurityException e) {
-                            android.util.Log.e(TAG_SETTINGS, "Failed to take persistable permission for URI: " + uri, e);
-                            Toast.makeText(requireContext(), "Error setting custom location", Toast.LENGTH_LONG).show();
+
+                            // --- SEND BROADCAST on SUCCESS ---
+                            sendStorageChangedBroadcast();
+
+                        } catch (SecurityException e) { Log.e(TAG_SETTINGS, "Failed take permission", e); Toast.makeText(requireContext(),"Error setting permission",Toast.LENGTH_LONG).show();}
+                        catch (Exception e) { Log.e(TAG_SETTINGS, "Error processing URI", e); Toast.makeText(requireContext(),"Could not use folder",Toast.LENGTH_LONG).show(); }
+
+                        // --- Update UI & potentially reset prefs on failure ---
+                        if (!success) {
                             sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
                             sharedPreferencesManager.setCustomStorageUri(null);
-                            updateStorageLocationUI();
-                        } catch (Exception e) {
-                            android.util.Log.e(TAG_SETTINGS, "Error processing selected directory URI: " + uri, e);
-                            Toast.makeText(requireContext(), "Could not use selected folder", Toast.LENGTH_LONG).show();
-                            sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                            sharedPreferencesManager.setCustomStorageUri(null);
-                            updateStorageLocationUI();
                         }
+                        updateStorageLocationUI(); // Update UI regardless
+
                     } else {
-                        android.util.Log.d(TAG_SETTINGS, "No directory selected (SAF returned null)");
-                        updateStorageLocationUI(); // Ensure UI matches stored pref if user cancels
+                        Log.w(TAG_SETTINGS, "SAF folder selection cancelled (null URI returned).");
+                        // IMPORTANT: Revert radio button if user cancels selection while trying to enable Custom
+                        String currentMode = sharedPreferencesManager.getStorageMode();
+                        if(!SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(currentMode)){
+                            // If they weren't already in Custom mode, and cancelled, revert UI to internal
+                            storageLocationRadioGroup.check(R.id.radio_internal_storage);
+                        }
+                        updateStorageLocationUI(); // Ensure UI is consistent
                     }
-                });
+                }); // End of registerForActivityResult lambda
     }
 
+
+    // --- NEW: Helper method to send the broadcast ---
+    private void sendStorageChangedBroadcast() {
+        if(getContext() == null) return;
+        Intent intent = new Intent(Constants.ACTION_STORAGE_LOCATION_CHANGED);
+        // No specific data needed, the receiver just needs to know a change happened
+        // Using standard ContextCompat for broadcast without LocalBroadcastManager
+        // Make it explicit that it's not exported
+        // sendBroadcast(intent) // Using this implicitly might trigger lint warnings depending on target SDK
+        requireContext().sendBroadcast(intent); // Standard way if not using LocalBroadcastManager
+        Log.i(TAG_SETTINGS, "Sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -228,26 +255,77 @@ public class SettingsFragment extends Fragment {
 
     // --- NEW Storage Logic Methods ---
 
+    // ** Inside SettingsFragment.java **
+
     private void setupStorageLocationOptions() {
+        // Ensure RadioGroup exists
+        if (storageLocationRadioGroup == null) {
+            Log.e(TAG_SETTINGS,"storageLocationRadioGroup is null in setupStorageLocationOptions!");
+            return;
+        }
+
         storageLocationRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean preferenceChanged = false; // Flag to track if a broadcast is needed due to mode CHANGE
+
+            // Get current saved values BEFORE making changes
+            String previouslySavedMode = sharedPreferencesManager.getStorageMode();
+            String existingCustomUri = sharedPreferencesManager.getCustomStorageUri();
+
             if (checkedId == R.id.radio_internal_storage) {
-                sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                sharedPreferencesManager.setCustomStorageUri(null);
-                updateStorageLocationUI();
-                android.util.Log.d(TAG_SETTINGS, "Storage mode set to Internal via Radio");
-            } else if (checkedId == R.id.radio_custom_location) {
-                if (sharedPreferencesManager.getCustomStorageUri() == null) {
-                    launchDirectoryPicker(); // Prompt user if no custom path exists yet
-                } else {
-                    // URI exists, just set mode and update UI
-                    sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
-                    updateStorageLocationUI();
+                // Changing *to* Internal
+                if (!SharedPreferencesManager.STORAGE_MODE_INTERNAL.equals(previouslySavedMode)) {
+                    Log.i(TAG_SETTINGS, "User switched to Internal Storage via Radio Button.");
+                    sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                    sharedPreferencesManager.setCustomStorageUri(null); // Clear custom URI
+                    preferenceChanged = true;
                 }
-                android.util.Log.d(TAG_SETTINGS, "Storage mode attempt set to Custom via Radio");
+                updateStorageLocationUI(); // Update UI regardless
+            }
+            else if (checkedId == R.id.radio_custom_location) {
+                // Changing *to* Custom (or re-selecting it)
+
+                // ** FIX: Only launch picker if NO valid URI exists **
+                if (existingCustomUri == null || !isValidUri(existingCustomUri)) { // Add an isValidUri check if needed
+                    Log.i(TAG_SETTINGS,"Custom Radio checked, but no valid URI exists. Launching picker.");
+                    launchDirectoryPicker();
+                    // The mode and URI will be set ONLY AFTER successful picker result.
+                    // No preference change YET, so preferenceChanged remains false.
+                }
+                // ** Else: Valid URI already exists **
+                else {
+                    Log.d(TAG_SETTINGS,"Custom Radio checked, valid URI already exists. Setting mode.");
+                    // Check if the mode actually needs changing
+                    if (!SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(previouslySavedMode)) {
+                        sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
+                        preferenceChanged = true; // Mode changed, need broadcast
+                    }
+                    updateStorageLocationUI(); // Ensure UI reflects the custom state
+                }
+            }
+
+            // Send broadcast *only if* the mode preference actually changed and was committed
+            if (preferenceChanged) {
+                sendStorageChangedBroadcast();
             }
         });
 
-        buttonChooseCustomLocation.setOnClickListener(v -> launchDirectoryPicker());
+        // Choose button listener remains the same
+        if (buttonChooseCustomLocation != null) {
+            buttonChooseCustomLocation.setOnClickListener(v -> launchDirectoryPicker());
+        } else {
+            Log.e(TAG_SETTINGS, "buttonChooseCustomLocation is null!");
+        }
+    }
+
+    // Helper to quickly check if a URI string seems parseable (optional but good practice)
+    private boolean isValidUri(String uriString){
+        if(uriString == null || uriString.isEmpty()) return false;
+        try {
+            Uri.parse(uriString);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void launchDirectoryPicker() {

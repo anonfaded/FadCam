@@ -61,6 +61,8 @@ import android.content.Intent;          // ** ADD **
 import android.content.IntentFilter;     // ** ADD **
 import androidx.localbroadcastmanager.content.LocalBroadcastManager; // Use this for app-internal
 import androidx.core.content.ContextCompat;  // ** ADD **
+import androidx.core.content.ContextCompat; // Use ContextCompat for receiver reg
+import android.content.IntentFilter;
 
 public class RecordsFragment extends Fragment implements
         RecordsAdapter.OnVideoClickListener,
@@ -69,6 +71,9 @@ public class RecordsFragment extends Fragment implements
 
     private BroadcastReceiver recordingCompleteReceiver; // ** ADD field for the receiver **
     private boolean isReceiverRegistered = false; // Track registration status
+    // ** NEW: Fields for storage change receiver **
+    private BroadcastReceiver storageLocationChangedReceiver;
+    private boolean isStorageReceiverRegistered = false;
 
     private static final String TAG = "RecordsFragment";
     private AlertDialog progressDialog; // Field to hold the dialog
@@ -94,7 +99,7 @@ public class RecordsFragment extends Fragment implements
     public void onStart() {
         super.onStart();
         registerRecordingCompleteReceiver(); // Call registration helper
-        // Also register your other receivers if needed (e.g., for Recording Start/Stop/Pause etc.)
+        registerStorageLocationChangedReceiver(); // ** ADD registration for new receiver **
     }
 
     // *** Unregister in onStop ***
@@ -102,7 +107,45 @@ public class RecordsFragment extends Fragment implements
     public void onStop() {
         super.onStop();
         unregisterRecordingCompleteReceiver(); // Call unregistration helper
-        // Also unregister your other receivers
+        unregisterStorageLocationChangedReceiver(); // ** ADD unregistration for new receiver **
+    }
+
+    // ** NEW: Method to register the storage location change receiver **
+    private void registerStorageLocationChangedReceiver() {
+        if (!isStorageReceiverRegistered && getContext() != null) {
+            if (storageLocationChangedReceiver == null) {
+                storageLocationChangedReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (intent != null && Constants.ACTION_STORAGE_LOCATION_CHANGED.equals(intent.getAction())) {
+                            Log.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED broadcast. Refreshing records list...");
+                            // ** Simply reload the list. It will use the *new* preference. **
+                            loadRecordsList();
+                        }
+                    }
+                };
+            }
+            IntentFilter filter = new IntentFilter(Constants.ACTION_STORAGE_LOCATION_CHANGED);
+            ContextCompat.registerReceiver(requireContext(), storageLocationChangedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            isStorageReceiverRegistered = true;
+            Log.d(TAG, "ACTION_STORAGE_LOCATION_CHANGED receiver registered.");
+        }
+    }
+
+    // ** NEW: Method to unregister the storage location change receiver **
+    private void unregisterStorageLocationChangedReceiver() {
+        if (isStorageReceiverRegistered && storageLocationChangedReceiver != null && getContext() != null) {
+            try {
+                requireContext().unregisterReceiver(storageLocationChangedReceiver);
+                isStorageReceiverRegistered = false;
+                Log.d(TAG, "ACTION_STORAGE_LOCATION_CHANGED receiver unregistered.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Attempted to unregister storage receiver but it wasn't registered?");
+                isStorageReceiverRegistered = false;
+            }
+        }
+        // Optional: Nullify receiver instance here if desired
+        // storageLocationChangedReceiver = null;
     }
 
     // --- Method to register the new receiver ---
