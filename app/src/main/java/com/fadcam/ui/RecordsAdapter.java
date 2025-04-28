@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import androidx.cardview.widget.CardView; // *** ADD Import ***
 
 
 
@@ -236,10 +237,34 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     private void updateSelectionState(RecordViewHolder holder, boolean isSelected) {
-        holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-        // Optional: Add background highlight for selected items
-        holder.itemView.setBackgroundColor(isSelected ? ContextCompat.getColor(context, R.color.material_on_surface_stroke) : // Use a theme color or define one
-                ContextCompat.getColor(context, R.color.gray)); // Default card color
+        // Set check icon visibility
+        if (holder.checkIcon != null) {
+            holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+        } else {
+            Log.w(TAG, "checkIcon is null in ViewHolder");
+        }
+
+        // *** FIX: Use setCardBackgroundColor for CardView ***
+        // Ensure itemView is actually a CardView before casting
+        if (holder.itemView instanceof CardView) {
+            CardView cardView = (CardView) holder.itemView;
+            int colorResId = isSelected
+                    ? R.color.colorPrimary // Use your desired SELECTION highlight color here (e.g., primary, or a dedicated selection color)
+                    : R.color.gray; // Use the default background color DEFINED IN YOUR XML (@color/gray)
+
+            // Check context before getting color
+            if(context != null) {
+                cardView.setCardBackgroundColor(ContextCompat.getColor(context, colorResId));
+            } else {
+                Log.e(TAG, "Context is null, cannot set Card background color");
+            }
+        } else {
+            // Fallback if itemView is not a CardView (shouldn't happen with your layout)
+            Log.w(TAG, "ItemView is not an instance of CardView. Using standard setBackgroundColor.");
+            if(context != null) {
+                holder.itemView.setBackgroundColor(ContextCompat.getColor(context, isSelected ? R.color.colorPrimary : R.color.gray));
+            }
+        }
     }
 
     // Helper to find item position by URI (important for notifyItemChanged)
