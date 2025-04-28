@@ -6,14 +6,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- AppBarLayout ensures Toolbar placement is coordinated -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
 
-        <!-- Toolbar is FIXED because NO scroll flags are set -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
@@ -23,12 +21,10 @@
             app:titleCentered="true"
             app:titleTextColor="@android:color/white"
             app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
-        <!-- NO app:layout_scrollFlags here -->
 
     </com.google.android.material.appbar.AppBarLayout>
 
 
-    <!-- Empty State View (Stays the same) -->
     <LinearLayout
         android:id="@+id/empty_state_container"
         android:layout_width="wrap_content"
@@ -38,7 +34,7 @@
         android:gravity="center"
         android:visibility="gone"
         tools:visibility="visible">
-        <!-- ... Icon and Text ... -->
+
         <ImageView
             android:id="@+id/empty_state_icon"
             android:layout_width="80dp"
@@ -58,19 +54,17 @@
     </LinearLayout>
 
 
-    <!-- RecyclerView still uses the behavior to know it goes under the AppBarLayout -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_records"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:clipToPadding="false" />
+        android:clipToPadding="false"
+        android:paddingTop="8dp" />
+    <!-- *** ADDED paddingTop="8dp" *** -->
+    <!-- Make sure clipToPadding is false -->
 
 
-
-
-
-    <!-- FABs (keep as is) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_toggle_view"
         android:layout_width="wrap_content"
