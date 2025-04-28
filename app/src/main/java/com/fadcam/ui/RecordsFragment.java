@@ -130,62 +130,77 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     // Load records from Internal or SAF based on preference
-    @SuppressLint("NotifyDataSetChanged") // Suppressing for initial adapter update
+    // In RecordsFragment.java
+
+    @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
         selectedVideosUris.clear(); // Clear selection on reload
         updateDeleteButtonVisibility(); // Hide FAB
 
         executorService.submit(() -> {
-            List<VideoItem> loadedItems;
+            // 1. Load from Primary Location (Internal or SAF)
+            List<VideoItem> primaryItems;
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
-
             Log.i(TAG, "Loading records. Mode: " + storageMode);
-
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
                 Uri treeUri = Uri.parse(customUriString);
-                // Verify permission BEFORE attempting to list
                 if (hasSafPermission(treeUri)) {
-                    Log.d(TAG, "Loading from Custom SAF location: " + treeUri);
-                    loadedItems = getSafRecordsList(treeUri);
+                    primaryItems = getSafRecordsList(treeUri);
                 } else {
-                    Log.e(TAG, "Permission lost for custom SAF location or invalid URI: " + customUriString);
-                    requireActivity().runOnUiThread(() -> {
-                        new MaterialAlertDialogBuilder(requireContext())
-                                .setTitle("Permission Issue")
-                                .setMessage("Could not access the custom storage location. Permission might have been revoked. Please reselect the folder in Settings or switch back to Internal Storage.")
-                                .setPositiveButton("OK", null)
-                                .show();
-                        // Clear the UI to reflect the issue
-                        if(recordsAdapter != null) recordsAdapter.updateRecords(new ArrayList<>());
-                    });
-                    loadedItems = new ArrayList<>(); // Empty list on permission error
+                    Log.e(TAG, "Permission error for custom SAF location: " + customUriString);
+                    // Handle error as before (show toast, potentially reset prefs)
+                    if(getActivity()!=null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Permission error accessing custom location.", Toast.LENGTH_LONG).show());
+                    primaryItems = new ArrayList<>();
                 }
             } else {
-                Log.d(TAG, "Loading from Internal App Storage.");
-                loadedItems = getInternalRecordsList();
-                if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString == null) {
-                    Log.w(TAG, "Storage mode is Custom, but URI is null. Loading from Internal instead.");
-                    // Optionally notify user or reset mode in SharedPreferences
+                primaryItems = getInternalRecordsList();
+            }
+
+            // 2. Load from Temp Cache Location
+            List<VideoItem> tempItems = getTempCacheRecordsList();
+            Log.d(TAG, "Loaded primary items: " + primaryItems.size() + ", Temp items: " + tempItems.size());
+
+            // 3. Combine Lists (Avoiding Duplicates based on URI)
+            List<VideoItem> combinedItems = new ArrayList<>();
+            java.util.Set<Uri> existingUris = new java.util.HashSet<>();
+
+            // Add primary items first
+            for (VideoItem item : primaryItems) {
+                if (item != null && item.uri != null && existingUris.add(item.uri)) { // Add returns true if not already present
+                    combinedItems.add(item);
                 }
             }
 
-            // Initial sort
-            sortItems(loadedItems, currentSortOption); // Use initial sort option
-
-            videoItems = new ArrayList<>(loadedItems); // Update the main list
-
-            // Update UI on the main thread
-            requireActivity().runOnUiThread(() -> {
-                if (recordsAdapter != null) {
-                    recordsAdapter.updateRecords(videoItems); // Update adapter with VideoItems
-                } else {
-                    Log.e(TAG, "Adapter is null when trying to update UI.");
-                    setupRecyclerView(); // Try to re-setup (less ideal)
-                    if (recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+            // Add temp items only if they aren't already in the list (by URI)
+            for (VideoItem tempItem : tempItems) {
+                if (tempItem != null && tempItem.uri != null && existingUris.add(tempItem.uri)) { // Try adding to set
+                    combinedItems.add(tempItem);
+                    Log.d(TAG, "Adding unique temp file to list: " + tempItem.displayName);
+                } else if (tempItem != null){
+                    Log.w(TAG, "Skipping duplicate or invalid temp item. URI: "+ (tempItem.uri == null ? "null" : tempItem.uri.toString()));
                 }
-                Log.i(TAG, "Records loaded. Mode: " + storageMode + ", Count: " + videoItems.size());
-            });
+            }
+
+            // 4. Sort the combined list
+            sortItems(combinedItems, currentSortOption); // Use helper
+
+            // 5. Update the fragment's main list reference
+            videoItems = combinedItems; // Assign the combined, sorted list
+
+            // 6. Update UI on the main thread
+            if(getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (recordsAdapter != null) {
+                        recordsAdapter.updateRecords(videoItems); // Update adapter
+                    } else {
+                        Log.e(TAG,"Adapter null during loadRecordsList UI update");
+                        setupRecyclerView(); // Attempt re-setup
+                        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+                    }
+                    Log.i(TAG, "Records list updated. Mode: " + storageMode + ", Total Count (incl. temp): " + videoItems.size());
+                });
+            }
         });
     }
 
@@ -663,6 +678,85 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
                 //noinspection deprecation
                 vibrator.vibrate(50);
             }
+        }
+    }
+
+    // In RecordsFragment.java
+
+    /**
+     * Scans the relevant external cache directories for lingering temporary video files.
+     * @return A List of VideoItem objects representing the found temp files.
+     */
+    private List<VideoItem> getTempCacheRecordsList() {
+        List<VideoItem> items = new ArrayList<>();
+        Context context = getContext();
+        if (context == null) {
+            Log.e(TAG,"Context is null in getTempCacheRecordsList");
+            return items;
+        }
+
+        File cacheBaseDir = context.getExternalCacheDir();
+        if (cacheBaseDir == null) {
+            Log.e(TAG, "External cache dir is null, cannot scan for temp files.");
+            return items;
+        }
+
+        // Directory where MediaRecorder saves the initial temp file
+        File recordingTempDir = new File(cacheBaseDir, "recording_temp");
+        Log.d(TAG, "Scanning for temp files in: " + recordingTempDir.getAbsolutePath());
+        scanDirectoryForTempVideos(recordingTempDir, items);
+
+        // --- Optional: Scan the processed temp directory ---
+        // Only include this if your RecordingService FFmpeg command explicitly writes
+        // *another* temp file to a different cache location *before* the final move/copy.
+        // If FFmpeg writes directly to the final destination (internal) or creates
+        // its temp processed file in the *same* recording_temp dir, this second scan is NOT needed.
+        /*
+        File processedTempDir = new File(cacheBaseDir, "processed_temp");
+        if (!processedTempDir.equals(recordingTempDir)) { // Avoid scanning same dir twice
+             Log.d(TAG, "Scanning for temp files in: " + processedTempDir.getAbsolutePath());
+             scanDirectoryForTempVideos(processedTempDir, items);
+        }
+        */
+
+        Log.d(TAG, "Found " + items.size() + " temporary video files in cache.");
+        return items;
+    }
+
+    /**
+     * Helper method to scan a specific directory for files starting with "temp_"
+     * and ending with the video extension. Adds found files as VideoItems to the list.
+     * @param directory The directory to scan.
+     * @param items The list to add found VideoItems to.
+     */
+    private void scanDirectoryForTempVideos(File directory, List<VideoItem> items) {
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile()
+                            && file.getName().startsWith("temp_")
+                            && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION))
+                    {
+                        // Basic check if file has content
+                        if (file.length() > 0) {
+                            Log.d(TAG, "Found temp video: " + file.getName());
+                            items.add(new VideoItem(
+                                    Uri.fromFile(file), // Cache files are standard files
+                                    file.getName(),
+                                    file.length(),
+                                    file.lastModified()
+                            ));
+                        } else {
+                            Log.w(TAG,"Skipping empty temp file: "+file.getName());
+                        }
+                    }
+                }
+            } else {
+                Log.w(TAG, "Could not list files in cache directory: "+directory.getPath());
+            }
+        } else {
+            Log.d(TAG, "Cache directory does not exist or is not a directory: "+directory.getPath());
         }
     }
 }
