@@ -20,6 +20,9 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Toast;
+import android.widget.ImageView;    // Import ImageView
+import android.widget.TextView;     // Import TextView
+import androidx.appcompat.app.AlertDialog; // Import AlertDialog
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -46,12 +49,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.fadcam.ui.RecordActionListener;
 
-public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoClickListener, RecordsAdapter.OnVideoLongClickListener {
+public class RecordsFragment extends Fragment implements
+        RecordsAdapter.OnVideoClickListener,
+        RecordsAdapter.OnVideoLongClickListener,
+        RecordActionListener {
 
     private static final String TAG = "RecordsFragment";
-
+    private AlertDialog progressDialog; // Field to hold the dialog
     private RecyclerView recyclerView;
+    private LinearLayout emptyStateContainer; // Add field for the empty state layout
     private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
     private FloatingActionButton fabToggleView;
@@ -65,11 +73,36 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     private SortOption currentSortOption = SortOption.LATEST_FIRST;
     private SharedPreferencesManager sharedPreferencesManager;
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // *** FIX: Call super.onCreate() FIRST ***
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+
+        // Now perform other fragment setup
+        setHasOptionsMenu(true); // Enable options menu for this fragment
+
+        // Initialize SharedPreferencesManager (can be done here or later if needed)
+        // If it's definitely needed before onCreateView, initialize here.
+        // Ensure context is available - using requireContext() is safe within/after onCreate.
+        if (sharedPreferencesManager == null) {
+            try {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+                Log.d(TAG, "SharedPreferencesManager initialized in onCreate.");
+            } catch (IllegalStateException e) {
+                Log.e(TAG,"Error getting context in onCreate: Fragment not attached?", e);
+                // Handle error appropriately - maybe defer init to onViewCreated?
+            }
+        }
+
+        // Initialize ExecutorService if needed early
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+            Log.d(TAG, "ExecutorService initialized in onCreate.");
+        }
+
+        // *** Other initialization code specific to the fragment's creation ***
+        // (like setting arguments, retaining instance, etc., if applicable)
     }
 
     @Override
@@ -79,6 +112,7 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         recyclerView = view.findViewById(R.id.recycler_view_records);
         fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
+        emptyStateContainer = view.findViewById(R.id.empty_state_container); // Find the empty state layout
 
         Toolbar toolbar = view.findViewById(R.id.topAppBar);
         if (getActivity() instanceof AppCompatActivity) {
@@ -98,11 +132,56 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
         Log.d(TAG, "onResume: Loading records list...");
         loadRecordsList(); // Load/Refresh list
     }
+    @Override
+    public void onSaveToGalleryStarted(String fileName) {
+        if (getContext() == null) return; // Check context
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss(); // Dismiss any previous dialog
+        }
+
+        // Create and show the progress dialog
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext());
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        View dialogView = inflater.inflate(R.layout.dialog_progress, null);
+
+        TextView progressText = dialogView.findViewById(R.id.progress_text);
+        if (progressText != null) {
+            progressText.setText("Saving '" + fileName + "'..."); // Indicate which file
+        }
+
+        builder.setView(dialogView);
+        builder.setCancelable(false); // Prevent user from dismissing during save
+
+        progressDialog = builder.create();
+        progressDialog.show();
+        Log.d(TAG, "Showing progress dialog for saving: " + fileName);
+    }
+
+    @Override
+    public void onSaveToGalleryFinished(boolean success, String message, Uri outputUri) {
+        // Dismiss the dialog
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+            progressDialog = null; // Clear reference
+        }
+        Log.d(TAG, "Save finished. Success: " + success + ", Message: " + message);
+
+        // Show result Toast
+        if (getContext() != null) {
+            Toast.makeText(getContext(), message, success ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
+        }
+
+        // Optional: Refresh the list if needed, e.g., if saving could somehow affect displayed items,
+        // though usually not necessary for 'Save to Gallery' which is a copy operation.
+        // if (success) { loadRecordsList(); }
+    }
+
+    // --- End Implementation of RecordActionListener ---
 
     private void setupRecyclerView() {
         setLayoutManager();
-        // Adapter initialized here, list updated in loadRecordsList callback
-        recordsAdapter = new RecordsAdapter(getContext(), new ArrayList<>(), this, this); // Start empty
+        // *** Pass the fragment itself as the RecordActionListener ***
+        recordsAdapter = new RecordsAdapter(getContext(), videoItems, executorService, this, this, this);
         recyclerView.setAdapter(recordsAdapter);
     }
 
@@ -130,81 +209,125 @@ public class RecordsFragment extends Fragment implements RecordsAdapter.OnVideoC
     }
 
     // Load records from Internal or SAF based on preference
-    // In RecordsFragment.java
+
 
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
         selectedVideosUris.clear(); // Clear selection on reload
-        updateDeleteButtonVisibility(); // Hide FAB
+        updateDeleteButtonVisibility(); // Hide FAB if visible
 
         executorService.submit(() -> {
             // 1. Load from Primary Location (Internal or SAF)
-            List<VideoItem> primaryItems;
+            List<VideoItem> primaryItems; // Declare here
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            Log.i(TAG, "Loading records. Mode: " + storageMode);
+            Log.i(TAG, "Loading records. Mode: " + storageMode + ", URI: " + customUriString);
+
+            // *** CORRECTED IF/ELSE BLOCK START ***
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
-                Uri treeUri = Uri.parse(customUriString);
-                if (hasSafPermission(treeUri)) {
+                Uri treeUri = null;
+                boolean isValidUri = false;
+                try {
+                    treeUri = Uri.parse(customUriString);
+                    isValidUri = true;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing custom storage URI string: " + customUriString, e);
+                    if (getActivity() != null) getActivity().runOnUiThread(()-> Toast.makeText(getContext(), "Invalid custom storage path saved.", Toast.LENGTH_LONG).show());
+                }
+
+                if (isValidUri && hasSafPermission(treeUri)) { // Check validity and permission
+                    Log.d(TAG, "Loading from Custom SAF location: " + treeUri);
                     primaryItems = getSafRecordsList(treeUri);
                 } else {
-                    Log.e(TAG, "Permission error for custom SAF location: " + customUriString);
-                    // Handle error as before (show toast, potentially reset prefs)
-                    if(getActivity()!=null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Permission error accessing custom location.", Toast.LENGTH_LONG).show());
-                    primaryItems = new ArrayList<>();
+                    if (isValidUri) { // URI was valid, but permission failed
+                        Log.e(TAG, "Permission error for custom SAF location: " + customUriString);
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                // Show more informative dialog on permission failure
+                                new MaterialAlertDialogBuilder(requireContext())
+                                        .setTitle("Permission Issue")
+                                        .setMessage("Could not access the custom storage location. Permission might have been revoked or the folder deleted. Please reselect the folder in Settings or switch back to Internal Storage.")
+                                        .setPositiveButton("OK", null)
+                                        .show();
+                            });
+                        }
+                    } // Else: URI parse failed, error already shown potentially
+                    primaryItems = new ArrayList<>(); // Set empty list on error/permission fail
                 }
-            } else {
+            } else { // Internal Storage mode or Custom mode with null URI
+                Log.d(TAG, "Loading from Internal App Storage.");
                 primaryItems = getInternalRecordsList();
+                if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString == null) {
+                    Log.w(TAG, "Storage mode is Custom, but URI is null. Loaded Internal. Consider setting mode to Internal in prefs.");
+                    // You might want to automatically switch back to internal here if desired:
+                    // sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                }
             }
+            // *** CORRECTED IF/ELSE BLOCK END ***
+
 
             // 2. Load from Temp Cache Location
             List<VideoItem> tempItems = getTempCacheRecordsList();
             Log.d(TAG, "Loaded primary items: " + primaryItems.size() + ", Temp items: " + tempItems.size());
 
             // 3. Combine Lists (Avoiding Duplicates based on URI)
-            List<VideoItem> combinedItems = new ArrayList<>();
-            java.util.Set<Uri> existingUris = new java.util.HashSet<>();
-
-            // Add primary items first
-            for (VideoItem item : primaryItems) {
-                if (item != null && item.uri != null && existingUris.add(item.uri)) { // Add returns true if not already present
-                    combinedItems.add(item);
-                }
-            }
-
-            // Add temp items only if they aren't already in the list (by URI)
-            for (VideoItem tempItem : tempItems) {
-                if (tempItem != null && tempItem.uri != null && existingUris.add(tempItem.uri)) { // Try adding to set
-                    combinedItems.add(tempItem);
-                    Log.d(TAG, "Adding unique temp file to list: " + tempItem.displayName);
-                } else if (tempItem != null){
-                    Log.w(TAG, "Skipping duplicate or invalid temp item. URI: "+ (tempItem.uri == null ? "null" : tempItem.uri.toString()));
-                }
-            }
+            List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
 
             // 4. Sort the combined list
-            sortItems(combinedItems, currentSortOption); // Use helper
+            sortItems(combinedItems, currentSortOption);
 
             // 5. Update the fragment's main list reference
             videoItems = combinedItems; // Assign the combined, sorted list
 
             // 6. Update UI on the main thread
-            if(getActivity() != null) {
+            if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
+                    // Update adapter
                     if (recordsAdapter != null) {
-                        recordsAdapter.updateRecords(videoItems); // Update adapter
+                        recordsAdapter.updateRecords(videoItems);
                     } else {
                         Log.e(TAG,"Adapter null during loadRecordsList UI update");
-                        setupRecyclerView(); // Attempt re-setup
-                        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+                        setupRecyclerView(); // Try re-setup
+                        if (recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
                     }
-                    Log.i(TAG, "Records list updated. Mode: " + storageMode + ", Total Count (incl. temp): " + videoItems.size());
+
+                    // Toggle Empty State Visibility
+                    if (videoItems.isEmpty()) {
+                        recyclerView.setVisibility(View.GONE);
+                        if(emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
+                        Log.i(TAG, "Records list is empty. Showing empty state.");
+                    } else {
+                        recyclerView.setVisibility(View.VISIBLE);
+                        if(emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
+                        Log.i(TAG, "Records loaded. Hiding empty state.");
+                    }
+                    Log.i(TAG, "Records list updated. Mode: " + storageMode + ", Total Count: " + videoItems.size());
                 });
             }
         });
     }
 
+
+
     // --- Listing Helpers ---
+
+    // Helper to combine lists, avoiding duplicates
+    private List<VideoItem> combineVideoLists(List<VideoItem> primary, List<VideoItem> temp) {
+        List<VideoItem> combined = new ArrayList<>();
+        java.util.Set<Uri> existingUris = new java.util.HashSet<>();
+
+        for (VideoItem item : primary) {
+            if (item != null && item.uri != null && existingUris.add(item.uri)) {
+                combined.add(item);
+            }
+        }
+        for (VideoItem item : temp) {
+            if (item != null && item.uri != null && existingUris.add(item.uri)) {
+                combined.add(item);
+            }
+        }
+        return combined;
+    }
 
     private List<VideoItem> getInternalRecordsList() {
         List<VideoItem> items = new ArrayList<>();

@@ -1,6 +1,7 @@
 package com.fadcam.ui;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
@@ -12,6 +13,8 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
@@ -54,11 +57,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+
+
 
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
 
     private static final String TAG = "RecordsAdapter";
-
+    private final ExecutorService executorService; // Add ExecutorService
+    private final RecordActionListener actionListener; // Add the listener interface
     private final Context context;
     private List<VideoItem> records; // Now holds VideoItem objects
     private final OnVideoClickListener clickListener;
@@ -77,12 +84,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // --- Constructor Updated ---
-    public RecordsAdapter(Context context, List<VideoItem> records, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener) {
+    public RecordsAdapter(Context context, List<VideoItem> records, ExecutorService executorService, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener, RecordActionListener actionListener ) {
         this.context = Objects.requireNonNull(context, "Context cannot be null for RecordsAdapter"); // Use Objects.requireNonNull
         this.records = new ArrayList<>(records);
         this.clickListener = clickListener;
         this.longClickListener = longClickListener;
-
+        this.executorService = Objects.requireNonNull(executorService, "ExecutorService cannot be null"); // Require it
+        this.actionListener = Objects.requireNonNull(actionListener, "RecordActionListener cannot be null"); // Require it
         // *** Initialize the cache directory path ***
         File cacheBaseDir = context.getExternalCacheDir();
         if (cacheBaseDir != null) {
@@ -300,7 +308,45 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     confirmDelete(videoItem);
                     return true;
                 } else if (itemId == R.id.action_save) {
-                    saveToGallery(videoItem.uri);
+                    // *** START: Progress Handling for Save ***
+                    final String filename = videoItem.displayName; // Get name for messages
+                    final Uri uriToSave = videoItem.uri;
+
+                    // Notify fragment that save is starting
+                    actionListener.onSaveToGalleryStarted(filename);
+
+                    // Run actual save operation in the background
+                    executorService.submit(() -> {
+                        Uri resultUri = null; // To store the result URI
+
+                        if ("file".equals(uriToSave.getScheme())) {
+                            resultUri = saveFileUriToGallery(uriToSave);
+                        } else if ("content".equals(uriToSave.getScheme())) {
+                            resultUri = saveContentUriToGallery(uriToSave);
+                        } else {
+                            Log.w(TAG, "Unsupported URI scheme for saving to gallery: " + uriToSave.getScheme());
+                        }
+
+                        final boolean success = resultUri != null;
+                        final Uri finalResultUri = resultUri; // Effectively final for lambda
+
+                        // Notify fragment of completion on the main thread
+                        if(context instanceof Activity){ // Check context type
+                            ((Activity) context).runOnUiThread(() -> {
+                                String message = success ? context.getString(R.string.toast_video_saved) + " (Downloads/FadCam)"
+                                        : context.getString(R.string.toast_video_save_fail);
+                                actionListener.onSaveToGalleryFinished(success, message, finalResultUri);
+                            });
+                        } else {
+                            Log.e(TAG, "Context is not an Activity, cannot run on UI thread for save completion.");
+                            // Handle this case if necessary - maybe use a Handler with Looper.getMainLooper()
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                String message = success ? "Video Saved (Downloads/FadCam)" : "Save Failed";
+                                actionListener.onSaveToGalleryFinished(success, message, finalResultUri);
+                            });
+                        }
+                    });
+                    // *** END: Progress Handling for Save ***
                     return true;
                 } else if (itemId == R.id.action_info) {
                     showVideoInfoDialog(videoItem);
@@ -364,82 +410,49 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
 
     // Method for saving internal files (file:// URI) to gallery -> Downloads/FadCam
-    private void saveFileUriToGallery(Uri fileUri) {
-        if (context == null || fileUri == null) return;
+// Changed return type to Uri (or null on failure)
+    private Uri saveFileUriToGallery(Uri fileUri) {
+        // ... (checks for context, fileUri, videoFile existence) ...
+        if (context == null || fileUri == null) return null;
         File videoFile = new File(fileUri.getPath());
-        if (!videoFile.exists()){
-            Toast.makeText(context, R.string.toast_video_not_found, Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (!videoFile.exists()){ return null; } // Return null if file doesn't exist
 
         ContentResolver resolver = context.getContentResolver();
         ContentValues values = new ContentValues();
+        // ... (set values for DISPLAY_NAME, MIME_TYPE, RELATIVE_PATH (to Downloads/FadCam)) ...
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, videoFile.getName());
-        values.put(MediaStore.MediaColumns.MIME_TYPE, "video/" + Constants.RECORDING_FILE_EXTENSION); // Still set MIME type
+        values.put(MediaStore.MediaColumns.MIME_TYPE, "video/" + Constants.RECORDING_FILE_EXTENSION);
 
         Uri collection;
-        // Use MediaStore.Downloads for Android 10+ to target the Downloads directory
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + File.separator + Constants.RECORDING_DIRECTORY);
             collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-            Log.d(TAG, "Save Target (Q+): Downloads/FadCam via MediaStore.Downloads");
-        }
-        // Use legacy approach for pre-Android 10
-        else {
-            // !!! Requires WRITE_EXTERNAL_STORAGE permission for API < 29 !!!
-            // Check permission before proceeding if targetSdk < 29
-            // if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            //     Log.e(TAG,"WRITE_EXTERNAL_STORAGE permission needed for pre-Q save to public Downloads");
-            //     Toast.makeText(context,"Storage permission needed to save to Gallery",Toast.LENGTH_SHORT).show();
-            //     // Ideally request permission here, but simplified for now
-            //     return;
-            // }
-
+        } else {
+            // Handle legacy - NOTE: This section NEEDS WRITE_EXTERNAL_STORAGE
             File publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            if (publicDir == null) {
-                Toast.makeText(context, "Downloads directory unavailable", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            if (publicDir == null) { Log.e(TAG, "Downloads directory null (pre-Q)"); return null; }
             File fadCamPublicDir = new File(publicDir, Constants.RECORDING_DIRECTORY);
-            if (!fadCamPublicDir.exists() && !fadCamPublicDir.mkdirs()) {
-                Log.e(TAG,"Failed to create public Downloads/FadCam dir: "+fadCamPublicDir.getPath());
-                Toast.makeText(context, "Failed to create gallery directory", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            if (!fadCamPublicDir.exists() && !fadCamPublicDir.mkdirs()) { Log.e(TAG, "Failed create Downloads/FadCam (pre-Q)"); return null; }
             File destFile = new File(fadCamPublicDir, videoFile.getName());
-            // For legacy, we insert metadata but copy manually, then scan.
-            // The 'insert' gives us a URI mostly for bookkeeping in MediaStore.
-            values.put(MediaStore.MediaColumns.DATA, destFile.getAbsolutePath());
-            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI; // Use Video URI for metadata consistency
-            Log.d(TAG, "Save Target (<Q): Downloads/FadCam via direct file write");
+            values.put(MediaStore.MediaColumns.DATA, destFile.getAbsolutePath()); // For MediaScanner
+            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
 
-            // --- Direct file copy for legacy ---
-            try (InputStream in = new FileInputStream(videoFile);
-                 OutputStream out = new FileOutputStream(destFile)) {
-                byte[] buf = new byte[8192];
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                }
-                // Trigger Media Scanner
+            try (InputStream in = new FileInputStream(videoFile); OutputStream out = new FileOutputStream(destFile)) {
+                byte[] buf = new byte[8192]; int len;
+                while ((len = in.read(buf)) > 0) { out.write(buf, 0, len); }
                 MediaScannerConnection.scanFile(context, new String[]{destFile.getAbsolutePath()}, new String[]{values.getAsString(MediaStore.MediaColumns.MIME_TYPE)}, null);
-                Log.i(TAG,"Saved legacy file to Downloads and triggered scan: " + destFile.getPath());
-                Toast.makeText(context, context.getString(R.string.toast_video_saved) + " (Downloads/FadCam)", Toast.LENGTH_SHORT).show();
-                // Insert metadata record after successful copy (optional but good practice)
-                resolver.insert(collection, values);
-                return; // Exit here after successful legacy save
-
+                Log.i(TAG,"Saved legacy file to Downloads: " + destFile.getPath());
+                // Attempt metadata insert, ignore failure if direct write succeeded
+                try { resolver.insert(collection, values); } catch (Exception metaE){ Log.w(TAG,"Failed meta insert pre-Q", metaE);}
+                return Uri.fromFile(destFile); // Return the file URI of the saved copy
             } catch (IOException e) {
                 Log.e(TAG,"Error during legacy file copy to Downloads", e);
-                Toast.makeText(context, context.getString(R.string.toast_video_save_fail) + " (Legacy copy error)", Toast.LENGTH_SHORT).show();
-                // Attempt cleanup if file partially created
-                if(destFile.exists()) destFile.delete();
-                return; // Exit on failure
+                if(destFile.exists()) destFile.delete(); // Clean up partial copy
+                return null; // Return null on failure
             }
-            // --- End direct file copy for legacy ---
         }
 
-        // --- Stream copy for API 29+ using MediaStore.Downloads ---
+        // --- Stream copy for API 29+ ---
         Uri itemUri = null;
         OutputStream out = null;
         InputStream in = null;
@@ -448,24 +461,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (itemUri == null) throw new IOException("Failed to create MediaStore entry (Downloads API)");
 
             out = resolver.openOutputStream(itemUri);
-            in = new FileInputStream(videoFile); // Reading from the original internal file
+            in = new FileInputStream(videoFile);
 
             if (out == null || in == null) throw new IOException("Failed to open streams for MediaStore Downloads");
 
             byte[] buf = new byte[8192];
             int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            Toast.makeText(context, context.getString(R.string.toast_video_saved) + " (Downloads/FadCam)", Toast.LENGTH_SHORT).show();
+            while ((len = in.read(buf)) > 0) { out.write(buf, 0, len); }
+            // REMOVED Toast from here
             Log.i(TAG, "Saved file:// URI to Downloads: " + itemUri);
+            return itemUri; // Return the new content URI on success
 
         } catch (Exception e) {
-            Toast.makeText(context, context.getString(R.string.toast_video_save_fail), Toast.LENGTH_SHORT).show();
+            // REMOVED Toast from here
             Log.e(TAG, "Failed to save file URI to Downloads", e);
-            // Clean up partially created MediaStore entry
             if (itemUri != null) { try { resolver.delete(itemUri, null, null); } catch (Exception ignored) {} }
+            return null; // Return null on failure
         } finally {
+            // Close streams...
             try { if (in != null) in.close(); } catch (IOException ignored) {}
             try { if (out != null) out.close(); } catch (IOException ignored) {}
         }
@@ -473,51 +486,47 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
 
     // Method for saving SAF files (content:// URI) to gallery -> Downloads/FadCam
-    private void saveContentUriToGallery(Uri sourceUri) {
-        if (context == null || sourceUri == null) return;
+// Changed return type to Uri (or null on failure)
+    private Uri saveContentUriToGallery(Uri sourceUri) {
+        // ... (checks for context, sourceUri) ...
+        if (context == null || sourceUri == null) return null;
         ContentResolver resolver = context.getContentResolver();
         String displayName = getFileName(sourceUri);
-        if (displayName == null) {
-            displayName = "FadCam_Video_" + System.currentTimeMillis() + "." + Constants.RECORDING_FILE_EXTENSION;
-        }
+        // ... (fallback for displayName) ...
+        if (displayName == null) displayName = "FadCam_Video_" + System.currentTimeMillis() + "." + Constants.RECORDING_FILE_EXTENSION;
 
         ContentValues values = new ContentValues();
+        // ... (set DISPLAY_NAME, MIME_TYPE) ...
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, displayName);
         values.put(MediaStore.MediaColumns.MIME_TYPE, "video/" + Constants.RECORDING_FILE_EXTENSION);
 
         Uri collection;
-        // Use MediaStore.Downloads for Android 10+
+        // API 29+ using Downloads collection
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + File.separator + Constants.RECORDING_DIRECTORY);
             collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-            Log.d(TAG, "Save Target (Q+): Downloads/FadCam via MediaStore.Downloads");
         }
-        // Pre-Q content URI to Public Downloads is tricky. Easiest is via a temp internal file.
+        // Pre-Q Handling (temp file copy)
         else {
-            // !!! Requires WRITE_EXTERNAL_STORAGE permission for API < 29 !!!
-            // Check permission here if necessary based on targetSdk/minSdk
-
-            // Strategy: Copy content URI to temp internal file, then use legacy file copy+scan
             Log.w(TAG, "Using temp file strategy for pre-Q Content URI -> Public Downloads");
             File tempInternalFile = new File(context.getCacheDir(), "temp_gallery_save_" + System.currentTimeMillis() + ".mp4");
             try (InputStream inStream = resolver.openInputStream(sourceUri);
                  OutputStream outStream = new FileOutputStream(tempInternalFile)) {
                 if(inStream == null) throw new IOException("Could not open input stream from source URI");
-                byte[] buf = new byte[8192];
-                int len;
+                byte[] buf = new byte[8192]; int len;
                 while ((len = inStream.read(buf)) > 0) { outStream.write(buf, 0, len); }
 
-                // Now call the legacy file save method with the temp file URI
-                saveFileUriToGallery(Uri.fromFile(tempInternalFile)); // Recursive call essentially
+                // Call the file save method - its return value is what we need
+                Uri savedFileUri = saveFileUriToGallery(Uri.fromFile(tempInternalFile));
+                return savedFileUri; // Return result of the legacy save call
 
             } catch (IOException e) {
                 Log.e(TAG,"Error copying content URI to temp file for legacy save", e);
-                Toast.makeText(context, context.getString(R.string.toast_video_save_fail) + " (Temp copy failed)", Toast.LENGTH_SHORT).show();
+                return null; // Indicate failure
             } finally {
-                // Clean up temp file regardless of success/failure of subsequent steps
                 if(tempInternalFile.exists()) tempInternalFile.delete();
             }
-            return; // Exit here, the called saveFileUriToGallery handled the rest
+            // End pre-Q handling here
         }
 
         // --- Stream copy for API 29+ using MediaStore.Downloads ---
@@ -529,24 +538,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (itemUri == null) throw new IOException("Failed to create MediaStore entry (Downloads API) for content URI");
 
             out = resolver.openOutputStream(itemUri);
-            // Read directly from the source content URI provided
             in = resolver.openInputStream(sourceUri);
 
-            if (out == null || in == null) throw new IOException("Failed to open streams (In:"+ (in!=null) + " Out:"+(out!=null) +") for content URI save to Downloads");
+            if (out == null || in == null) throw new IOException("Failed to open streams for content URI save to Downloads");
 
             byte[] buf = new byte[8192];
             int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            Toast.makeText(context, context.getString(R.string.toast_video_saved) + " (Downloads/FadCam)", Toast.LENGTH_SHORT).show();
+            while ((len = in.read(buf)) > 0) { out.write(buf, 0, len); }
+            // REMOVED Toast
             Log.i(TAG, "Saved content:// URI to Downloads: " + itemUri);
+            return itemUri; // Return new URI on success
 
         } catch (Exception e) {
-            Toast.makeText(context, context.getString(R.string.toast_video_save_fail), Toast.LENGTH_SHORT).show();
+            // REMOVED Toast
             Log.e(TAG, "Failed to save content URI to Downloads. URI: " + sourceUri, e);
             if (itemUri != null) { try { resolver.delete(itemUri, null, null); } catch (Exception ignored) {} }
+            return null; // Return null on failure
         } finally {
+            // Close streams...
             try { if (in != null) in.close(); } catch (IOException ignored) {}
             try { if (out != null) out.close(); } catch (IOException ignored) {}
         }

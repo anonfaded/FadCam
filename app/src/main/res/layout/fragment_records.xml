@@ -2,9 +2,11 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Toolbar (keep as is) -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
@@ -15,12 +17,51 @@
         app:titleCentered="true"
         app:titleTextColor="@android:color/white" />
 
+    <!-- *** START: Empty State View *** -->
+    <LinearLayout
+        android:id="@+id/empty_state_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:id="@+id/empty_state_icon"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_no_videos"
+            app:tint="#80FFFFFF"
+            android:contentDescription="No videos found"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/empty_state_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Recordings Yet"
+            android:textSize="18sp"
+            android:textColor="#80FFFFFF"
+            android:gravity="center"/>
+
+    </LinearLayout>
+    <!-- *** END: Empty State View *** -->
+
+
+    <!-- RecyclerView (move marginTop attribute from here if it existed) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_records"
         android:layout_width="match_parent"
-        android:layout_marginTop="64dp"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:paddingTop="?attr/actionBarSize"
+        android:clipToPadding="false" />
+    <!-- android:layout_marginTop="?attr/actionBarSize" Apply padding instead if using behavior-->
 
+
+    <!-- FABs (keep as is) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_toggle_view"
         android:layout_width="wrap_content"
