@@ -164,12 +164,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
         // --- Basic checks (position, item null, uri null) ---
-        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) { /* handle */ return; }
+        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) { /* handle error */ return; }
         final VideoItem videoItem = records.get(position);
         final Uri videoUri = videoItem.uri;
         final String displayName = videoItem.displayName != null ? videoItem.displayName : "No Name";
-        final String uriString = videoUri.toString(); // For SharedPreferences check
-
+        final String uriString = videoUri.toString();
 
         // --- Bind standard data (Serial, Name, Size, Time, Thumbnail) ---
         holder.textViewSerialNumber.setText(String.valueOf(position + 1));
@@ -181,65 +180,75 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // --- State Determination ---
         boolean isTemp = isTemporaryFile(videoItem);
-        // Check if this URI is marked as 'opened' in SharedPreferences
         boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString);
-        boolean isNew = !isOpened; // 'New' if NOT opened
+        boolean isNew = !isOpened;
         boolean isProcessing = currentlyProcessingUris.contains(videoUri);
+
 
         // --- Visibility Logic ---
 
-        // *** START: Logic for the Single Status Badge ***
-        if (holder.textViewStatusBadge != null && context != null) { // Check context and view
+        // *** START: Menu Warning Dot (based only on isTemp) ***
+        // Keep this separate from the main status badge
+        if (holder.menuWarningDot != null) {
+            holder.menuWarningDot.setVisibility(isTemp ? View.VISIBLE : View.GONE);
+        } else {
+            Log.w(TAG, "menuWarningDot view is null in ViewHolder.");
+        }
+        // *** END: Menu Warning Dot ***
+
+        // Processing Overlay
+        if(holder.processingScrim != null) holder.processingScrim.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
+        if(holder.processingSpinner != null) holder.processingSpinner.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
+
+        // Single Status Badge (TEMP or NEW)
+        if (holder.textViewStatusBadge != null && context != null) {
             if (isProcessing) {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide badge during processing
             } else if (isTemp) {
                 holder.textViewStatusBadge.setText("TEMP");
                 holder.textViewStatusBadge.setBackground(ContextCompat.getDrawable(context, R.drawable.temp_badge_background));
-                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.black)); // Contrast for yellow
+                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.black));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
             } else if (isNew) { // Show NEW only if NOT temp and NOT opened
                 holder.textViewStatusBadge.setText("NEW");
                 holder.textViewStatusBadge.setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
-                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white)); // Contrast for green
+                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
             } else {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide if not temp and not new
             }
-        } else if (context == null){
-            Log.e(TAG, "Context null in onBindViewHolder, cannot set badge resources.");
-        } else {
-            Log.w(TAG, "textViewStatusBadge view not found in ViewHolder.");
-        }
-        // *** END: Logic for the Single Status Badge ***
+        } // (Else clause for null context/view already handled)
 
-        // --- Enable/Disable controls based on state ---
-        holder.itemView.setEnabled(!isProcessing); // Disable clicks while processing
-        holder.menuButtonContainer.setEnabled(!isProcessing); // Disable menu while processing
 
+        // --- Enable/Disable controls based on processing state ---
+        holder.itemView.setEnabled(!isProcessing);
+        holder.menuButtonContainer.setEnabled(!isProcessing);
 
         // --- Listeners ---
         holder.itemView.setOnClickListener(v -> {
             if (!isProcessing && clickListener != null) {
-                // Mark as opened FIRST
                 sharedPreferencesManager.addOpenedVideoUri(uriString);
-                // Then trigger the click listener
+                // Get adapter position safely
+                int currentPosition = holder.getBindingAdapterPosition();
+                if (currentPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(currentPosition); // Update view to remove 'NEW' badge
+                }
                 clickListener.onVideoClick(videoItem);
-                // Then update *this* item's badge state AFTER notifying fragment
-                // (Otherwise the badge disappears before fragment can react if needed)
-                notifyItemChanged(holder.getBindingAdapterPosition()); // Use binding position for safety
-
-                 /* OLD: Immediate update -> leads to inconsistent state if fragment needs to act first
-                 if(holder.textViewStatusBadge != null) holder.textViewStatusBadge.setVisibility(View.GONE);
-                 clickListener.onVideoClick(videoItem);
-                 */
             }
         });
+        holder.itemView.setOnLongClickListener(v -> {
+            if (!isProcessing && longClickListener != null) {
+                boolean isSelected = !selectedVideosUris.contains(videoUri);
+                toggleSelection(videoUri, isSelected);
+                longClickListener.onVideoLongClick(videoItem, isSelected);
+            }
+            return !isProcessing; // Consume long click only if not processing
+        });
 
-
-        // Setup popup menu (title modification logic based on isTemp inside this method)
+        // Setup popup menu (title modification logic for TEMP still applies here)
         setupPopupMenu(holder, videoItem);
 
-        // Update selection checkmark/background
+        // Update selection state visuals
         updateSelectionState(holder, selectedVideosUris.contains(videoUri));
     }
 
