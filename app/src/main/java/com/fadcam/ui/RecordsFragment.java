@@ -49,7 +49,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.fadcam.ui.RecordActionListener;
+import androidx.recyclerview.widget.RecyclerView;
+import android.graphics.Rect;
+import android.view.View;
 
 public class RecordsFragment extends Fragment implements
         RecordsAdapter.OnVideoClickListener,
@@ -72,7 +74,7 @@ public class RecordsFragment extends Fragment implements
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private SortOption currentSortOption = SortOption.LATEST_FIRST;
     private SharedPreferencesManager sharedPreferencesManager;
-
+    private SpacesItemDecoration itemDecoration; // Keep a reference
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -179,19 +181,88 @@ public class RecordsFragment extends Fragment implements
     // --- End Implementation of RecordActionListener ---
 
     private void setupRecyclerView() {
-        setLayoutManager();
-        // *** Pass the fragment itself as the RecordActionListener ***
+        // *** Remove existing item decorations first if they exist ***
+        // Keep a reference to add/remove it when toggling view mode
+        if (itemDecoration == null) {
+            // Calculate spacing based on half the desired total gap
+            // e.g., if item_record.xml margin is 8dp, use 4dp here
+            // If you want an 8dp gap *between* items, use 4dp spacing for the decoration
+            // If you want the 8dp margin respected *around* the item, start with 0 or a small value.
+            // Let's try forcing space equivalent to the margin first
+            int spaceInPixels = (int) (getResources().getDisplayMetrics().density * 8); // Convert 8dp margin to pixels
+            itemDecoration = new SpacesItemDecoration(spaceInPixels); // Create decoration
+        }
+        // Remove any decorations added previously
+        while (recyclerView.getItemDecorationCount() > 0) {
+            recyclerView.removeItemDecorationAt(0);
+        }
+        // Add the new/cached decoration
+        recyclerView.addItemDecoration(itemDecoration);
+
+
+        setLayoutManager(); // Sets GridLayout or LinearLayoutManager
         recordsAdapter = new RecordsAdapter(getContext(), videoItems, executorService, this, this, this);
         recyclerView.setAdapter(recordsAdapter);
     }
 
+    // Keep your existing setLayoutManager method which switches between grid/linear
     private void setLayoutManager() {
-        RecyclerView.LayoutManager layoutManager = isGridView ?
-                new GridLayoutManager(getContext(), 2) :
-                new LinearLayoutManager(getContext());
-        recyclerView.setLayoutManager(layoutManager);
-    }
+        boolean currentlyGrid = (recyclerView.getLayoutManager() instanceof GridLayoutManager);
 
+        // Only change if the desired state is different or no layout manager set yet
+        if (isGridView != currentlyGrid || recyclerView.getLayoutManager() == null) {
+            RecyclerView.LayoutManager layoutManager = isGridView ?
+                    new GridLayoutManager(getContext(), 2) : // 2 columns for grid
+                    new LinearLayoutManager(getContext());
+            recyclerView.setLayoutManager(layoutManager);
+            Log.d(TAG, "LayoutManager set to: " + (isGridView ? "GridLayout" : "LinearLayout"));
+        }
+    }
+    // Inner class for simple ItemDecoration
+    public static class SpacesItemDecoration extends RecyclerView.ItemDecoration {
+        private final int space;
+
+        public SpacesItemDecoration(int space) {
+            this.space = space;
+        }
+
+        @Override
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
+                                   @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+
+            // Apply consistent spacing to all sides for simplicity here
+            // More complex logic needed for perfect grid edge spacing
+            outRect.left = space / 2;
+            outRect.right = space / 2;
+            outRect.bottom = space;
+            outRect.top = 0; // Add space mostly at the bottom and sides
+
+
+            // Example for more complex grid spacing (adjust as needed):
+            /*
+            int position = parent.getChildAdapterPosition(view); // item position
+            RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
+
+            if (layoutManager instanceof GridLayoutManager) {
+                 GridLayoutManager gridLayoutManager = (GridLayoutManager) layoutManager;
+                 int spanCount = gridLayoutManager.getSpanCount();
+                 GridLayoutManager.LayoutParams lp = (GridLayoutManager.LayoutParams) view.getLayoutParams();
+                 int column = lp.getSpanIndex(); // item column
+
+                 outRect.left = space - column * space / spanCount;
+                 outRect.right = (column + 1) * space / spanCount;
+                 if (position < spanCount) { // top edge
+                    outRect.top = space;
+                }
+                outRect.bottom = space; // item bottom
+             } else { // For LinearLayoutManager
+                 if (position > 0) {
+                     outRect.top = space;
+                 }
+             }
+             */
+        }
+    }
     private void setupFabListeners() {
         fabToggleView.setOnClickListener(v -> toggleViewMode());
         fabDeleteSelected.setOnClickListener(v -> confirmDeleteSelected());

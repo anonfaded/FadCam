@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Root CardView for each video item -->
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_margin="8dp"  
     app:cardBackgroundColor="@color/gray"
-    android:background="?android:attr/selectableItemBackground"
     app:cardElevation="2dp"
-    app:cardCornerRadius="8dp"> <!-- *** ENSURE THIS LINE EXISTS AND HAS A VALUE > 0dp *** -->
+    app:cardCornerRadius="8dp"
+    android:background="?android:attr/selectableItemBackground">
 
+    <!-- ConstraintLayout holding all inner content -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- FrameLayout for Thumbnail + Overlays -->
+        <!-- FrameLayout for Thumbnail and Overlays -->
         <FrameLayout
             android:id="@+id/thumbnail_container"
             android:layout_width="0dp"
@@ -24,48 +27,50 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <ImageView
-                android:id="@+id/image_view_thumbnail"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                tools:srcCompat="@tools:sample/backgrounds/scenic"/>
+             <!-- Video Thumbnail -->
+             <ImageView
+                 android:id="@+id/image_view_thumbnail"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:scaleType="centerCrop"
+                 tools:srcCompat="@tools:sample/backgrounds/scenic"
+                 android:contentDescription="Video thumbnail"/>
 
-            <!-- Serial Number (Top Left) -->
-            <TextView
-                android:id="@+id/text_view_serial_number"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top|start"
-                android:layout_margin="4dp"
-                android:background="#80000000"
-                android:paddingHorizontal="4dp"
-                android:paddingVertical="1dp"
-                android:textColor="@android:color/white"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                tools:text="99"/>
+             <!-- Serial Number Overlay -->
+             <TextView
+                 android:id="@+id/text_view_serial_number"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="top|start"
+                 android:layout_margin="4dp"
+                 android:background="#80000000"
+                 android:paddingHorizontal="4dp"
+                 android:paddingVertical="1dp"
+                 android:textColor="@android:color/white"
+                 android:textSize="10sp"
+                 android:textStyle="bold"
+                 tools:text="99"/>
 
-            <!-- TEMP Badge (Top Right) -->
+            <!-- TEMP Badge Overlay -->
             <TextView
-                android:id="@+id/text_view_temp_badge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top|end"
-                android:layout_margin="4dp"
-                android:background="@drawable/temp_badge_background"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:text="TEMP"
-                android:textColor="@android:color/black"
-                android:textSize="9sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:visibility="visible"/>
+                 android:id="@+id/text_view_temp_badge"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="top|end"
+                 android:layout_margin="4dp"
+                 android:background="@drawable/temp_badge_background"
+                 android:paddingHorizontal="6dp"
+                 android:paddingVertical="2dp"
+                 android:text="TEMP"
+                 android:textColor="@android:color/black"
+                 android:textSize="9sp"
+                 android:textStyle="bold"
+                 android:visibility="gone"
+                 tools:visibility="visible"/>
 
         </FrameLayout>
 
-        <!-- File Info (Bottom Left on Thumbnail) -->
+        <!-- File Info Overlay -->
         <LinearLayout
             android:id="@+id/file_info_layout"
             android:layout_width="wrap_content"
@@ -77,32 +82,32 @@
             android:paddingVertical="2dp"
             app:layout_constraintBottom_toBottomOf="@id/thumbnail_container"
             app:layout_constraintStart_toStartOf="@id/thumbnail_container">
-            <!-- Size TextView -->
-            <TextView
+             <!-- Size TextView -->
+             <TextView
                 android:id="@+id/text_view_file_size"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
-                android:textColor="@android:color/white"
-                android:textSize="10sp"
-                tools:text="123.4 MB"/>
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_marginEnd="4dp"
+                 android:textColor="@android:color/white"
+                 android:textSize="10sp"
+                 tools:text="123.4 MB"/>
             <!-- Time TextView -->
             <TextView
                 android:id="@+id/text_view_file_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
-                android:textSize="10sp"
-                tools:text="1m 25s"/>
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:textColor="@android:color/white"
+                 android:textSize="10sp"
+                 tools:text="1m 25s"/>
         </LinearLayout>
 
-        <!-- Video Title (Below Thumbnail) -->
+        <!-- Video Title TextView -->
         <TextView
             android:id="@+id/text_view_record"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:layout_marginEnd="0dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:maxLines="2"
@@ -115,7 +120,7 @@
             app:layout_constraintTop_toBottomOf="@id/thumbnail_container"
             tools:text="My Important Renamed Video File Name Is Very Long"/>
 
-        <!-- Menu Button Area (Container for Button + Dot) -->
+        <!-- Menu Button Area Container -->
         <FrameLayout
             android:id="@+id/menu_button_container"
             android:layout_width="48dp"
@@ -125,6 +130,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/text_view_record">
 
+            <!-- 3-dot button Image -->
             <ImageView
                 android:id="@+id/menu_button"
                 android:layout_width="match_parent"
@@ -134,21 +140,21 @@
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Video options"/>
 
-            <!-- Warning Dot (Top Right) -->
+             <!-- Warning Dot Overlay -->
             <ImageView
-                android:id="@+id/menu_warning_dot"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:layout_gravity="top|end"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="8dp"
-                android:src="@drawable/yellow_dot"
-                android:visibility="gone"
-                tools:visibility="visible"/>
+                 android:id="@+id/menu_warning_dot"
+                 android:layout_width="10dp"
+                 android:layout_height="10dp"
+                 android:layout_gravity="top|end"
+                 android:layout_marginTop="8dp"
+                 android:layout_marginEnd="8dp"
+                 android:src="@drawable/yellow_dot"
+                 android:visibility="gone"
+                 tools:visibility="visible"/>
 
         </FrameLayout>
 
-        <!-- Selection Checkmark (Top Right on whole card) -->
+        <!-- Selection Checkmark Overlay -->
         <ImageView
             android:id="@+id/check_icon"
             android:layout_width="wrap_content"
@@ -159,8 +165,7 @@
             app:tint="?attr/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:elevation="2dp"/> <!-- Elevate check slightly above content -->
-
+            android:elevation="2dp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
