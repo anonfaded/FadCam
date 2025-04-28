@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- Semi-transparent, slightly different from bottom bar or same if you prefer -->
+    <solid android:color="#A0000000" />
+    <!-- Make it quite rounded -->
+    <corners android:radius="32dp" />
+</shape>

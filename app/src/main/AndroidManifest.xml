@@ -87,7 +87,7 @@
         </activity>
         <activity
             android:name=".ui.VideoPlayerActivity"
-            android:theme="@style/Theme.AppCompat.NoActionBar" />
+            android:theme="@style/Base.Theme.FadCam" />
         <activity android:name=".ui.WebViewActivity" />
         <activity
             android:name=".TorchToggleActivity"

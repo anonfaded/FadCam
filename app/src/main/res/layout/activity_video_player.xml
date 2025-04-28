@@ -8,17 +8,29 @@
         android:id="@+id/player_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:controller_layout_id="@layout/exo_styled_player_control_view"
         app:use_controller="true"
-        app:show_timeout="0"
+        app:show_timeout="3000"
         app:show_buffering="when_playing"
-        app:resize_mode="fit" />
+        app:resize_mode="fit"
+
+        app:played_color="@color/colorPrimary"
+        app:unplayed_color="#66CCCCCC"
+        app:buffered_color="#99FFFFFF"
+        app:scrubber_color="@color/colorPrimary"
+        app:scrubber_enabled_size="14dp"
+        app:scrubber_dragged_size="18dp"
+        app:bar_height="5dp"
+        />
 
     <ImageButton
         android:id="@+id/back_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/ic_back"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
         android:padding="16dp"
-        android:layout_margin="16dp" />
+        android:layout_margin="16dp"
+        app:tint="@android:color/white" />
 
 </FrameLayout>

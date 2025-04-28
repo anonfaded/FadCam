@@ -1,46 +1,57 @@
 package com.fadcam.ui;
 
+import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageButton;
-
-import android.util.Log; // Add Log import
-import android.view.WindowManager; // Add WindowManager import
 import android.widget.Toast;
 
-import androidx.annotation.NonNull; // Import NonNull if needed by override
-
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.exoplayer2.ui.R; // Use ExoPlayer UI R
 
-import com.fadcam.R;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 
 public class VideoPlayerActivity extends AppCompatActivity {
-    
-    // Add a TAG for logging (consistent with project rules)
+
     private static final String TAG = "VideoPlayerActivity";
 
     private ExoPlayer player;
     private StyledPlayerView playerView;
     private ImageButton backButton;
+    private ImageButton settingsButton;
+    // REMOVED: ffwdButton, rewButton declarations
+
+    private final CharSequence[] speedOptions = {"0.5x", "1x (Normal)", "1.5x", "2x", "3x", "4x", "6x", "8x", "10x"};
+    private final float[] speedValues = {0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 10.0f};
+    private int currentSpeedIndex = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_video_player);
+        // Use app's R file for app layouts/ids
+        setContentView(com.fadcam.R.layout.activity_video_player);
 
-        playerView = findViewById(R.id.player_view);
-        backButton = findViewById(R.id.back_button);
+        playerView = findViewById(com.fadcam.R.id.player_view);
+        backButton = findViewById(com.fadcam.R.id.back_button);
 
         String videoPath = getIntent().getStringExtra("VIDEO_PATH");
         if (videoPath != null) {
             initializePlayer(videoPath);
+            setupCustomSettingsAction();
+            // REMOVED: call to setupCustomSeekActions();
         } else {
             Log.e(TAG, "Video path is null. Cannot initialize player.");
-            // Optionally show an error message or finish the activity
-            finish(); // Finish if no video path is provided
+            Toast.makeText(this, "Error: Video not found", Toast.LENGTH_LONG).show();
+            finish();
             return;
         }
         setupBackButton();
@@ -53,14 +64,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
             MediaItem mediaItem = MediaItem.fromUri(Uri.parse(videoPath));
             player.setMediaItem(mediaItem);
+            player.setPlaybackParameters(new PlaybackParameters(speedValues[currentSpeedIndex]));
             player.prepare();
             player.play();
             Log.d(TAG, "ExoPlayer initialized and started for path: " + videoPath);
         } catch (Exception e) {
             Log.e(TAG, "Error initializing player", e);
-            // Show error to user or handle appropriately
-            Toast.makeText(this, "Error playing video", Toast.LENGTH_SHORT).show(); // Example user feedback
-            finish(); // Close activity if player fails
+            Toast.makeText(this, "Error playing video", Toast.LENGTH_SHORT).show();
+            finish();
         }
     }
 
@@ -68,45 +79,70 @@ public class VideoPlayerActivity extends AppCompatActivity {
         backButton.setOnClickListener(v -> finish());
     }
 
+    private void setupCustomSettingsAction() {
+        if (playerView != null) {
+            // Use ExoPlayer UI Library's R file for the internal ID
+            settingsButton = playerView.findViewById(R.id.exo_settings);
+            if (settingsButton != null) {
+                settingsButton.setOnClickListener(v -> showPlaybackSpeedDialog());
+                Log.d(TAG, "Manual settings button listener attached.");
+            } else {
+                Log.w(TAG, "Could not find settings button (@id/exo_settings) in PlayerView.");
+            }
+        } else {
+            Log.w(TAG, "PlayerView is null, cannot attach settings button listener.");
+        }
+    }
 
-    // --- Lifecycle Methods for Screen Awake ---
+    // REMOVED: setupCustomSeekActions() method
 
+    private void showPlaybackSpeedDialog() {
+        if (player == null) {
+            Log.e(TAG, "Player is null, cannot show speed dialog.");
+            return;
+        }
+        if (playerView != null) {
+            playerView.hideController();
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Playback Speed")
+                .setSingleChoiceItems(speedOptions, currentSpeedIndex, (dialog, which) -> {
+                    currentSpeedIndex = which;
+                    player.setPlaybackParameters(new PlaybackParameters(speedValues[which]));
+                    Log.d(TAG, "Playback speed set to: " + speedOptions[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    // onResume, onPause, onDestroy remain the same
     @Override
     protected void onResume() {
         super.onResume();
-        // Add the flag to keep the screen on when the activity is visible
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        Log.d(TAG, "FLAG_KEEP_SCREEN_ON added.");
-        // Resume playback if player exists and was paused (optional, depends on desired behavior)
-        if (player != null && !player.isPlaying()) {
-            // player.play(); // Uncomment if you want video to auto-resume
+        if (player != null && !player.isPlaying() && player.getPlaybackState() == ExoPlayer.STATE_READY) {
+            // player.play();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Clear the flag when the activity is no longer in the foreground
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        Log.d(TAG, "FLAG_KEEP_SCREEN_ON cleared.");
-        // Pause playback when activity pauses (good practice)
         if (player != null && player.isPlaying()) {
             player.pause();
+            Log.d(TAG,"Player paused in onPause.");
         }
     }
 
-    // --- End Lifecycle Methods ---
-
     @Override
     protected void onDestroy() {
-        // Ensure flag is cleared during destruction as a final cleanup
-        // (Although onPause should have already cleared it)
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        Log.d(TAG, "FLAG_KEEP_SCREEN_ON cleared in onDestroy as safety measure.");
-
         super.onDestroy();
         if (player != null) {
-            player.release(); // Release player resources
+            player.release();
             player = null;
             Log.d(TAG, "ExoPlayer released.");
         }
