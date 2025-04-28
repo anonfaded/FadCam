@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.UriPermission;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.ColorStateList;
@@ -47,6 +48,8 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageView; // Add this
+import androidx.cardview.widget.CardView; // Add this
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -54,6 +57,7 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.CameraType;
@@ -63,6 +67,8 @@ import com.fadcam.R;
 import com.fadcam.services.RecordingService;
 import com.fadcam.RecordingState;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.ui.VideoItem; // Import VideoItem
+
 import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
 import com.google.android.material.button.MaterialButton;
@@ -84,6 +90,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.HashSet; // For combining lists
+import java.util.Set;    // For combining lists
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.graphics.drawable.Drawable;
 
@@ -155,7 +165,13 @@ public class HomeFragment extends Fragment {
 
     private BroadcastReceiver torchReceiver;
 
+
+
+    // --- Fields Needed for Stats Update ---
     private SharedPreferencesManager sharedPreferencesManager;
+    private ExecutorService executorService;
+    private BroadcastReceiver recordingCompleteReceiver;
+    private boolean isStatsReceiverRegistered = false;
 
     // important
     private void requestEssentialPermissions() {
@@ -380,6 +396,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        registerStatsReceiver(); // Register receiver when fragment starts
 
         if(!textureView.isAvailable()) {
             textureView.setVisibility(View.VISIBLE);
@@ -596,6 +613,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
+        unregisterStatsReceiver(); // Unregister receiver when fragment stops
 
         Log.e(TAG, "HomeFragment stopped");
 
@@ -620,7 +638,8 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "HomeFragment resumed.");
 
         fetchRecordingState();
-
+        // Update stats when resuming, in case file changes occurred while paused
+        Log.d(TAG, "onResume: Triggering stats update.");
         updateStats();
 
         // Initialize the receiver if null
@@ -795,6 +814,8 @@ public class HomeFragment extends Fragment {
         copyFontToInternalStorage();
         updateStorageInfo();
         updateTip();
+        // Initial stats update
+        Log.d(TAG, "onViewCreated: Triggering initial stats update.");
         updateStats();
         startUpdatingClock();
 
@@ -1201,29 +1222,203 @@ public class HomeFragment extends Fragment {
         handler.post(runnable);
     }
 
-    private void updateStats() {
-        Log.d(TAG, "updateStats: Updating video statistics");
-        File recordsDir = new File(requireContext().getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-        int numVideos = 0;
-        long totalSize = 0;
+    // --- BroadcastReceiver Implementation ---
 
-        if (recordsDir.exists()) {
-            File[] files = recordsDir.listFiles();
+    private void registerStatsReceiver() {
+        if (!isStatsReceiverRegistered && getContext() != null) {
+            if (recordingCompleteReceiver == null) {
+                recordingCompleteReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (intent != null && Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+                            android.util.Log.i(TAG, "Received ACTION_RECORDING_COMPLETE in HomeFragment, updating stats...");
+                            updateStats(); // Trigger stats recalculation
+                        }
+                    }
+                };
+            }
+            IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
+            ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            isStatsReceiverRegistered = true;
+            Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver registered.");
+        }
+    }
+
+    private void unregisterStatsReceiver() {
+        if (isStatsReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
+            try {
+                requireContext().unregisterReceiver(recordingCompleteReceiver);
+                isStatsReceiverRegistered = false;
+                Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver unregistered.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG,"Attempted to unregister stats receiver but it wasn't registered?");
+                isStatsReceiverRegistered = false; // Ensure flag is reset
+            }
+        }
+    }
+
+    // --- Updated updateStats Method ---
+
+    private void updateStats() {
+        Log.d(TAG, "updateStats: Starting calculation...");
+        if (executorService == null || executorService.isShutdown()) {
+            Log.w(TAG,"ExecutorService not available for updateStats");
+            // Reinitialize if needed or handle gracefully
+            executorService = Executors.newSingleThreadExecutor();
+        }
+
+        executorService.submit(() -> {
+            // --- Get current storage settings ---
+            String storageMode = sharedPreferencesManager.getStorageMode();
+            String customUriString = sharedPreferencesManager.getCustomStorageUri();
+            List<VideoItem> primaryItems;
+            List<VideoItem> tempItems;
+
+            // --- Load File Lists (Same logic as RecordsFragment) ---
+            Log.d(TAG,"updateStats BG: Loading file lists. Mode: "+storageMode);
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
+                Uri treeUri = null; try { treeUri = Uri.parse(customUriString); } catch (Exception e) { Log.e(TAG,"BG updateStats: Error parsing custom URI", e);}
+                if (treeUri != null && hasSafPermission(treeUri)) {
+                    primaryItems = getSafRecordsList(treeUri);
+                } else {
+                    Log.e(TAG,"BG updateStats: Permission error or invalid URI for custom location: "+ customUriString);
+                    primaryItems = new ArrayList<>();
+                }
+            } else {
+                primaryItems = getInternalRecordsList();
+            }
+            tempItems = getTempCacheRecordsList();
+
+            // Combine (ok to run on background thread)
+            List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
+
+            // --- Calculate Stats (Count and Size) ---
+            int numVideos = combinedItems.size();
+            long totalSizeBytes = 0;
+            for (VideoItem item : combinedItems) {
+                if (item != null) { // Basic null check
+                    totalSizeBytes += item.size;
+                }
+            }
+
+            // Format size
+            String totalSizeFormatted = (getContext() != null)
+                    ? Formatter.formatFileSize(getContext(), totalSizeBytes)
+                    : String.format(Locale.US,"%.2f GB", totalSizeBytes / (1024.0*1024.0*1024.0)); // Fallback format
+
+            // Prepare final text for UI
+            final String statsText = String.format(Locale.getDefault(),
+                    getString(R.string.mainpage_video_info), // Using your existing string resource
+                    numVideos, totalSizeFormatted);
+            final Spanned formattedText = Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY); // If your string uses HTML
+
+            Log.d(TAG,"updateStats BG: Calculation complete. Count="+numVideos+", Size="+totalSizeFormatted);
+
+            // --- Update UI on Main Thread ---
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (tvStats != null) {
+                        tvStats.setText(formattedText); // Use the final formatted text
+                        Log.d(TAG, "updateStats UI: Updated tvStats text.");
+                    } else {
+                        Log.w(TAG, "updateStats UI: tvStats is null.");
+                    }
+                });
+            }
+        });
+    }
+
+    // --- COPIED Helper Methods (from RecordsFragment or move to shared Utils class) ---
+    // You NEED these methods here or accessible via Utils
+
+    private boolean hasSafPermission(Uri treeUri) {
+        Context context = getContext();
+        if (context == null || treeUri == null) return false;
+        try {
+            List<UriPermission> persistedUris = context.getContentResolver().getPersistedUriPermissions();
+            boolean permissionFound = false;
+            for (UriPermission uriPermission : persistedUris) {
+                if (uriPermission.getUri().equals(treeUri) && uriPermission.isReadPermission() && uriPermission.isWritePermission()) {
+                    permissionFound = true; break;
+                }
+            }
+            if (!permissionFound) return false;
+            DocumentFile docDir = DocumentFile.fromTreeUri(context, treeUri);
+            return docDir != null && docDir.canRead();
+        } catch (Exception e) { Log.e(TAG, "Error checking SAF permission", e); return false; }
+    }
+
+    private List<VideoItem> getInternalRecordsList() {
+        List<VideoItem> items = new ArrayList<>();
+        File recordsDir = getContext() != null ? getContext().getExternalFilesDir(null) : null;
+        if (recordsDir == null) { Log.e(TAG, "Context or ExternalFilesDir null in getInternalRecordsList"); return items; }
+        File fadCamDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
+        if (fadCamDir.exists() && fadCamDir.isDirectory()) {
+            File[] files = fadCamDir.listFiles();
             if (files != null) {
                 for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
-                        numVideos++;
-                        totalSize += file.length();
+                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) && !file.getName().startsWith("temp_")) {
+                        items.add(new VideoItem(Uri.fromFile(file), file.getName(), file.length(), file.lastModified()));
                     }
                 }
             }
         }
+        return items;
+    }
 
-        String statsText = String.format(Locale.getDefault(),
-                getString(R.string.mainpage_video_info),
-                numVideos, Formatter.formatFileSize(getContext(), totalSize));
+    private List<VideoItem> getSafRecordsList(Uri treeUri) {
+        List<VideoItem> items = new ArrayList<>();
+        Context context = getContext();
+        if (context == null || treeUri == null) { Log.e(TAG,"Context or treeUri null in getSafRecordsList"); return items;}
+        DocumentFile dir = DocumentFile.fromTreeUri(context, treeUri);
+        if (dir != null && dir.isDirectory() && dir.canRead()) {
+            try {
+                for (DocumentFile file : dir.listFiles()) {
+                    if (file != null && file.isFile() && file.getName() != null &&
+                            (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || "video/mp4".equals(file.getType())) &&
+                            !file.getName().startsWith("temp_"))
+                    {
+                        items.add(new VideoItem(file.getUri(), file.getName(), file.length(), file.lastModified()));
+                    }
+                }
+            } catch (Exception e) { Log.e(TAG, "Error listing SAF files in updateStats for " + treeUri, e); }
+        } else { Log.e(TAG, "Cannot read/access SAF dir in updateStats: " + treeUri); }
+        return items;
+    }
 
-        tvStats.setText(Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY));
+    private List<VideoItem> getTempCacheRecordsList() {
+        List<VideoItem> items = new ArrayList<>();
+        Context context = getContext();
+        if (context == null) return items;
+        File cacheBaseDir = context.getExternalCacheDir();
+        if (cacheBaseDir == null) return items;
+        File recordingTempDir = new File(cacheBaseDir, "recording_temp");
+        scanDirectoryForTempVideos(recordingTempDir, items);
+        // Scan other temp dirs if needed based on RecordingService logic
+        return items;
+    }
+
+    private void scanDirectoryForTempVideos(File directory, List<VideoItem> items) {
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile() && file.getName().startsWith("temp_") && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
+                        if (file.length() > 0) {
+                            items.add(new VideoItem(Uri.fromFile(file), file.getName(), file.length(), file.lastModified()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private List<VideoItem> combineVideoLists(List<VideoItem> primary, List<VideoItem> temp) {
+        List<VideoItem> combined = new ArrayList<>();
+        Set<Uri> existingUris = new HashSet<>();
+        for (VideoItem item : primary) { if (item != null && item.uri != null && existingUris.add(item.uri)) { combined.add(item); } }
+        for (VideoItem item : temp) { if (item != null && item.uri != null && existingUris.add(item.uri)) { combined.add(item); } }
+        return combined;
     }
 
     private void pauseRecording() {
