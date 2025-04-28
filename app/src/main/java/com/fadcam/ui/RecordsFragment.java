@@ -26,6 +26,7 @@ import androidx.appcompat.app.AlertDialog; // Import AlertDialog
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.documentfile.provider.DocumentFile;
@@ -54,10 +55,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.graphics.Rect;
 import android.view.View;
 
+import android.content.BroadcastReceiver;  // ** ADD **
+import android.content.Context;          // ** ADD **
+import android.content.Intent;          // ** ADD **
+import android.content.IntentFilter;     // ** ADD **
+import androidx.localbroadcastmanager.content.LocalBroadcastManager; // Use this for app-internal
+import androidx.core.content.ContextCompat;  // ** ADD **
+
 public class RecordsFragment extends Fragment implements
         RecordsAdapter.OnVideoClickListener,
         RecordsAdapter.OnVideoLongClickListener,
         RecordActionListener {
+
+    private BroadcastReceiver recordingCompleteReceiver; // ** ADD field for the receiver **
+    private boolean isReceiverRegistered = false; // Track registration status
 
     private static final String TAG = "RecordsFragment";
     private AlertDialog progressDialog; // Field to hold the dialog
@@ -77,6 +88,72 @@ public class RecordsFragment extends Fragment implements
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
+
+    // *** Register in onStart ***
+    @Override
+    public void onStart() {
+        super.onStart();
+        registerRecordingCompleteReceiver(); // Call registration helper
+        // Also register your other receivers if needed (e.g., for Recording Start/Stop/Pause etc.)
+    }
+
+    // *** Unregister in onStop ***
+    @Override
+    public void onStop() {
+        super.onStop();
+        unregisterRecordingCompleteReceiver(); // Call unregistration helper
+        // Also unregister your other receivers
+    }
+
+    // --- Method to register the new receiver ---
+    private void registerRecordingCompleteReceiver() {
+        // Prevent double registration
+        if (isReceiverRegistered || getContext() == null) return;
+
+        if (recordingCompleteReceiver == null) {
+            recordingCompleteReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    // Ensure we are attached and context is valid
+                    if (intent == null || !isAdded() || getContext() == null) {
+                        return;
+                    }
+
+                    if (Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+                        boolean success = intent.getBooleanExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
+                        String uriString = intent.getStringExtra(Constants.EXTRA_RECORDING_URI_STRING);
+                        Log.i(TAG, "Received ACTION_RECORDING_COMPLETE broadcast. Success: " + success + ", URI: " + uriString);
+
+                        // ** Refresh the list **
+                        // The received URI could be used for highlighting, but reload is simpler/safer.
+                        Log.d(TAG,"Refreshing records list due to broadcast.");
+                        loadRecordsList();
+                    }
+                }
+            };
+        }
+        IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
+        // Register using ContextCompat for modern Android (ensures correct flags)
+        ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        isReceiverRegistered = true; // Mark as registered
+        Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
+    }
+
+    // --- Method to unregister the new receiver ---
+    private void unregisterRecordingCompleteReceiver() {
+        if (isReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
+            try {
+                requireContext().unregisterReceiver(recordingCompleteReceiver);
+                isReceiverRegistered = false; // Mark as unregistered
+                Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver unregistered.");
+            } catch (IllegalArgumentException e){
+                Log.w(TAG,"Attempted to unregister recording complete receiver but it wasn't registered?");
+                isReceiverRegistered = false; // Ensure flag is reset even on error
+            }
+        }
+        // Don't nullify receiver here, just ensure it's not registered
+        // recordingCompleteReceiver = null;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -134,12 +211,23 @@ public class RecordsFragment extends Fragment implements
         return view;
     }
 
+    // --- onViewCreated remains the same (loads data initially) ---
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if (videoItems.isEmpty()) {
+            loadRecordsList(); // Initial load
+        } else {
+            updateUiVisibility(); // Update visibility if data already exists
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: Requesting records list load.");
-        // Request load. Visibility logic is now handled within loadRecordsList.
-        loadRecordsList();
+        // ** REMOVED loadRecordsList() from here **
+        Log.d(TAG, "onResume: Fragment resumed. Data loaded state: " + (!videoItems.isEmpty()));
+        // If you implement manual refresh later, you might re-enable it here or check timestamps
     }
     @Override
     public void onSaveToGalleryStarted(String fileName) {
@@ -290,32 +378,61 @@ public class RecordsFragment extends Fragment implements
 
 
     // *** Updated loadRecordsList ***
+    // In RecordsFragment.java
+
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
-        // ** Prevent duplicate loads if already loading? (Optional, basic approach shown here) **
-        // if (isLoading) return; // Add an isLoading boolean field if needed
-
-        // 0. PREPARE UI FOR LOADING (Hide content, show spinner) - Run this on UI thread immediately
+        // 0. PREPARE UI FOR LOADING (Show spinner, hide content)
         if (loadingIndicator != null) loadingIndicator.setVisibility(View.VISIBLE);
         if (recyclerView != null) recyclerView.setVisibility(View.GONE);
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
-        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(View.GONE); // Hide delete fab during load
-        selectedVideosUris.clear(); // Clear selection state
+        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(View.GONE);
+        selectedVideosUris.clear();
 
         executorService.submit(() -> {
-            // isLoading = true; // Set flag if using one
 
             // 1. Load from Primary Location (Internal or SAF)
-            // ... [rest of the loading logic: getting storage mode, URIs, calling getSafRecordsList or getInternalRecordsList] ...
-            List<VideoItem> primaryItems;
-            // ... (full logic for checking mode, permission, calling list helpers) ...
+            // *** FIX: Replace placeholder comment with actual logic ***
+            List<VideoItem> primaryItems; // Declare list
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
+            Log.i(TAG, "Loading records. Mode: " + storageMode + ", URI: " + customUriString);
+
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
-                Uri treeUri = Uri.parse(customUriString); // Add try-catch if not done earlier
-                if (hasSafPermission(treeUri)) { primaryItems = getSafRecordsList(treeUri); }
-                else { primaryItems = new ArrayList<>(); /* handle error */ }
-            } else { primaryItems = getInternalRecordsList(); }
+                Uri treeUri = null;
+                boolean isValidUri = false;
+                try {
+                    treeUri = Uri.parse(customUriString);
+                    isValidUri = true;
+                } catch (Exception e) { Log.e(TAG, "Error parsing custom storage URI string: " + customUriString, e); }
+
+                if (isValidUri && hasSafPermission(treeUri)) {
+                    primaryItems = getSafRecordsList(treeUri);
+                } else {
+                    if (isValidUri) { // Permission failed or dir unreadable
+                        Log.e(TAG, "Permission error or cannot read custom SAF location: " + customUriString);
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> { /* Show Permission Error Dialog */
+                                new MaterialAlertDialogBuilder(requireContext())
+                                        .setTitle("Permission Issue")
+                                        .setMessage("Could not access the custom storage location...") // Full message
+                                        .setPositiveButton("OK", null)
+                                        .show();
+                            });
+                        }
+                    } else { // Invalid URI string
+                        if (getActivity() != null) getActivity().runOnUiThread(()-> Toast.makeText(getContext(), "Invalid custom storage path saved.", Toast.LENGTH_LONG).show());
+                    }
+                    primaryItems = new ArrayList<>(); // Return empty on error
+                }
+            } else { // Internal Storage mode or Custom mode with null URI
+                Log.d(TAG, "Loading from Internal App Storage.");
+                primaryItems = getInternalRecordsList();
+                if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString == null) {
+                    Log.w(TAG, "Storage mode Custom, but URI null. Loaded Internal.");
+                }
+            }
+            // *** END FIX ***
 
 
             // 2. Load from Temp Cache Location
@@ -326,50 +443,48 @@ public class RecordsFragment extends Fragment implements
             List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
 
             // 4. Sort the combined list
-            sortItems(combinedItems, currentSortOption); // Use helper
+            sortItems(combinedItems, currentSortOption);
 
             // 5. Update the fragment's main list reference
-            final List<VideoItem> finalItems = new ArrayList<>(combinedItems); // Create final copy for UI thread
+            final List<VideoItem> finalItems = new ArrayList<>(combinedItems);
 
-            // 6. UPDATE UI ON COMPLETION (Hide spinner, show content/empty)
+            // 6. UPDATE UI ON COMPLETION
             if(getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    // isLoading = false; // Reset flag if using one
+                    videoItems = finalItems; // Update the main list ref
 
-                    // Hide loading indicator first
-                    if (loadingIndicator != null) loadingIndicator.setVisibility(View.GONE);
-
-                    videoItems = finalItems; // Update the main list reference AFTER background processing
-
-                    // Update adapter
+                    // Update adapter FIRST
                     if (recordsAdapter != null) {
                         recordsAdapter.updateRecords(videoItems);
-                    } else {
-                        Log.e(TAG,"Adapter null during UI update after load");
-                        setupRecyclerView(); // Attempt re-setup (less ideal but better than nothing)
-                        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
-                    }
+                    } else { Log.e(TAG,"Adapter null during UI update after load"); }
 
-                    // Show RecyclerView OR Empty State
-                    if (videoItems.isEmpty()) {
-                        recyclerView.setVisibility(View.GONE);
-                        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
-                        Log.i(TAG, "Update UI: List empty, showing empty state.");
-                    } else {
-                        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
-                        recyclerView.setVisibility(View.VISIBLE);
-                        Log.i(TAG, "Update UI: List has items, showing RecyclerView.");
-                    }
-                    // No need to update FAB visibility here unless loading changes selection status somehow
+                    // Then update visibility
+                    updateUiVisibility();
+
+                    // Hide loading indicator LAST
+                    if (loadingIndicator != null) loadingIndicator.setVisibility(View.GONE);
+
+                    Log.i(TAG, "Records list updated. Total Count: " + videoItems.size());
                 });
-            } else {
-                // isLoading = false; // Reset flag if using one
-                Log.e(TAG, "Activity is null when trying to update UI after loading records.");
-            }
+            } else { Log.e(TAG, "Activity is null after background load."); }
         });
     }
 
-
+    // *** NEW HELPER METHOD to update UI visibility ***
+    private void updateUiVisibility() {
+        if (videoItems.isEmpty()) {
+            if (recyclerView != null) recyclerView.setVisibility(View.GONE);
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
+        } else {
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
+            if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+        }
+        // Loading indicator should be hidden by the time this is called usually,
+        // but ensure it is hidden anyway.
+        if (loadingIndicator != null && loadingIndicator.getVisibility() == View.VISIBLE) {
+            loadingIndicator.setVisibility(View.GONE);
+        }
+    }
 
     // --- Listing Helpers ---
 

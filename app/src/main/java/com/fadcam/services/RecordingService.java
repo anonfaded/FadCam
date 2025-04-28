@@ -71,6 +71,9 @@ import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import android.content.Intent; // Add Intent import
+import android.net.Uri;       // Add Uri import
+import com.fadcam.Constants; // Import your Constants class
 
 public class RecordingService extends Service {
 
@@ -545,31 +548,115 @@ public class RecordingService extends Service {
      * @param onFailure Runnable to execute if FFmpeg fails.
      */
     // Centralized Async FFmpeg Execution
+    // Updated helper to run FFmpeg and broadcast completion
     private void executeFFmpegAsync(String ffmpegCommand, Runnable onSuccess, Runnable onFailure) {
         Log.d(TAG, "Executing FFmpeg Async: " + ffmpegCommand);
-        isProcessingWatermark = true; // Ensure flag is set before async start
+        isProcessingWatermark = true;
 
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
             boolean success = ReturnCode.isSuccess(session.getReturnCode());
-            Log.d(TAG,"FFmpeg async finished - Success: " + success + ", RC: " + session.getReturnCode());
+            Uri resultUri = null; // Store the URI for the broadcast
+            String logTag = "FFmpegAsync Result"; // Tag for specific log
+
+            Log.d(logTag,"FFmpeg finished. Success: " + success + ", RC: " + session.getReturnCode());
 
             if (success) {
-                if(onSuccess != null) onSuccess.run();
-            } else {
-                Log.e(TAG, "FFmpeg Async failed! Logs:");
-                Log.e(TAG, session.getAllLogsAsString()); // Print logs
-                if(onFailure != null) onFailure.run();
+                if (onSuccess != null) {
+                    try {
+                        onSuccess.run(); // This might determine the final output URI
+                        // Try to determine the output URI based on where onSuccess likely wrote it
+                        resultUri = determineSuccessUri(); // Implement this helper if needed
+                        Log.i(logTag, "Processing SUCCESS. Result URI determined: " + resultUri);
+                    } catch (Exception e) {
+                        Log.e(logTag,"Exception during onSuccess runnable", e);
+                        success = false; // Treat exception in onSuccess as failure
+                    }
+                }
+            } else { // FFmpeg command failed
+                Log.e(logTag, "FFmpeg process FAILED!");
+                if(session.getFailStackTrace() != null) Log.e(logTag, "Stack Trace:\n" + session.getFailStackTrace());
+                if(session.getOutput() != null) Log.e(logTag,"Output:\n"+session.getOutput());
+
+                // Determine the temp file URI to include in broadcast
+                if (currentInternalTempFile != null && currentInternalTempFile.exists()){
+                    resultUri = Uri.fromFile(currentInternalTempFile);
+                } else {
+                    Log.w(logTag, "FFmpeg failed, but could not find the temp input file reference.");
+                }
+
+                if (onFailure != null) {
+                    try { onFailure.run(); } catch (Exception e){ Log.e(logTag,"Exception during onFailure runnable",e); }
+                }
             }
 
-            isProcessingWatermark = false; // Reset flag AFTER completion handler
-            // Check if service can stop now
+            // --- Broadcast Completion ---
+            sendRecordingCompleteBroadcast(success, resultUri);
+            // --- End Broadcast ---
+
+
+            isProcessingWatermark = false; // Reset flag AFTER broadcast/logging
+
+            // Check if service should stop
             if (!isWorkingInProgress()) {
-                Log.d(TAG,"FFmpeg Async finished and no other work, stopping service.");
+                Log.d(TAG, "FFmpeg Async finished and no other work, stopping service.");
                 stopSelf();
             } else {
-                Log.d(TAG,"FFmpeg Async finished, but service still working.");
+                Log.d(TAG, "FFmpeg Async finished, but service still working.");
             }
         });
+    }
+
+    // --- NEW: Helper to send the completion broadcast ---
+    private void sendRecordingCompleteBroadcast(boolean success, @Nullable Uri resultUri) {
+        Intent completeIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+        completeIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, success);
+        if (resultUri != null) {
+            completeIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, resultUri.toString());
+        } else {
+            Log.w(TAG,"Sending RECORDING_COMPLETE broadcast without a result URI (Success="+success+").");
+        }
+        // Optional: Include package name if you want to restrict the broadcast
+        // completeIntent.setPackage(getPackageName());
+        sendBroadcast(completeIntent);
+        Log.i(TAG, "Broadcast sent: " + Constants.ACTION_RECORDING_COMPLETE + " (Success=" + success + ")");
+    }
+
+    // --- NEW / Placeholder: Helper to determine the success URI ---
+    // This needs to be adapted based on HOW/WHERE your onSuccess runnable saves the final file
+    private Uri determineSuccessUri() {
+        // Option 1: If onSuccess writes to a known variable (like 'finalInternalOutputFile' or 'finalOutputDocFile's URI)
+        // return finalOutputFileUri; // You need to capture this URI after the FFmpegKit.execute block completes
+
+        // Option 2: Reconstruct it based on known inputs (less reliable if renaming occurs)
+        String storageMode = sharedPreferencesManager.getStorageMode();
+        if (SharedPreferencesManager.STORAGE_MODE_INTERNAL.equals(storageMode)) {
+            File finalInternalDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+            // You NEED the final file name here - this might require passing it into executeFFmpegAsync or storing it
+            String finalName = reconstructFinalNameFromTemp(); // Requires the original temp name was tracked
+            if (finalName != null) {
+                return Uri.fromFile(new File(finalInternalDir, finalName));
+            }
+        } else {
+            String customUriString = sharedPreferencesManager.getCustomStorageUri();
+            if (customUriString != null) {
+                String finalName = reconstructFinalNameFromTemp();
+                if(finalName != null){
+                    // To get the final SAF URI, you need to list the directory or know the exact URI created
+                    // This is harder without passing the final DocumentFile URI back from the success callback
+                    Log.w(TAG,"Cannot reliably determine final SAF URI here without more context.");
+                    // Could potentially pass null or try a best guess
+                }
+            }
+        }
+        return null; // Return null if URI cannot be determined
+    }
+
+    // Helper - Needs access to the *original* temp filename when FFmpeg started
+    private String reconstructFinalNameFromTemp(){
+        if(currentInternalTempFile != null){ // Assuming this holds the ORIGINAL temp file before processing
+            return currentInternalTempFile.getName().replace("temp_", Constants.RECORDING_DIRECTORY + "_");
+        }
+        return null;
     }
 
     private void executeFFmpegAndMoveToSAF(String command, File internalTempInput, File tempInternalProcessedOutput, String targetSafDirUriString) {

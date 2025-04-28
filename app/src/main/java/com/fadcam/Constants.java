@@ -57,5 +57,11 @@ public abstract class Constants {
     public static final boolean DEFAULT_PREVIEW_ENABLED = true;
 
     public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH = "com.fadcam.TOGGLE_RECORDING_TORCH";
+    // Broadcast action sent by RecordingService when video processing is done
+    public static final String ACTION_RECORDING_COMPLETE = "com.fadcam.RECORDING_COMPLETE";
+    // Extra key for the URI of the final or temporary file (as String)
+    public static final String EXTRA_RECORDING_URI_STRING = "com.fadcam.EXTRA_RECORDING_URI_STRING";
+    // Extra key indicating if processing was successful
+    public static final String EXTRA_RECORDING_SUCCESS = "com.fadcam.EXTRA_RECORDING_SUCCESS";
 
 }
