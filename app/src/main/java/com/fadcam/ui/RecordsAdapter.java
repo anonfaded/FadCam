@@ -188,19 +188,29 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // --- Visibility Logic ---
 
-        // Temp Badge and Menu Dot
-        if (holder.textViewTempBadge != null) holder.textViewTempBadge.setVisibility(isTemp ? View.VISIBLE : View.GONE);
-        if (holder.menuWarningDot != null) holder.menuWarningDot.setVisibility(isTemp ? View.VISIBLE : View.GONE);
-
-        // New Badge (Show only if !isTemp AND !isOpened)
-        if (holder.textViewNewBadge != null) {
-            holder.textViewNewBadge.setVisibility(!isTemp && isNew && !isProcessing ? View.VISIBLE : View.GONE);
+        // *** START: Logic for the Single Status Badge ***
+        if (holder.textViewStatusBadge != null && context != null) { // Check context and view
+            if (isProcessing) {
+                holder.textViewStatusBadge.setVisibility(View.GONE); // Hide badge during processing
+            } else if (isTemp) {
+                holder.textViewStatusBadge.setText("TEMP");
+                holder.textViewStatusBadge.setBackground(ContextCompat.getDrawable(context, R.drawable.temp_badge_background));
+                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.black)); // Contrast for yellow
+                holder.textViewStatusBadge.setVisibility(View.VISIBLE);
+            } else if (isNew) { // Show NEW only if NOT temp and NOT opened
+                holder.textViewStatusBadge.setText("NEW");
+                holder.textViewStatusBadge.setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
+                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white)); // Contrast for green
+                holder.textViewStatusBadge.setVisibility(View.VISIBLE);
+            } else {
+                holder.textViewStatusBadge.setVisibility(View.GONE); // Hide if not temp and not new
+            }
+        } else if (context == null){
+            Log.e(TAG, "Context null in onBindViewHolder, cannot set badge resources.");
+        } else {
+            Log.w(TAG, "textViewStatusBadge view not found in ViewHolder.");
         }
-
-        // Processing Overlay (Show if isProcessing)
-        if(holder.processingScrim != null) holder.processingScrim.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
-        if(holder.processingSpinner != null) holder.processingSpinner.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
-
+        // *** END: Logic for the Single Status Badge ***
 
         // --- Enable/Disable controls based on state ---
         holder.itemView.setEnabled(!isProcessing); // Disable clicks while processing
@@ -210,20 +220,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // --- Listeners ---
         holder.itemView.setOnClickListener(v -> {
             if (!isProcessing && clickListener != null) {
-                // Mark as opened *before* triggering click listener
+                // Mark as opened FIRST
                 sharedPreferencesManager.addOpenedVideoUri(uriString);
-                // Immediately update this item's UI to remove 'New' badge
-                if(holder.textViewNewBadge != null) holder.textViewNewBadge.setVisibility(View.GONE);
+                // Then trigger the click listener
                 clickListener.onVideoClick(videoItem);
+                // Then update *this* item's badge state AFTER notifying fragment
+                // (Otherwise the badge disappears before fragment can react if needed)
+                notifyItemChanged(holder.getBindingAdapterPosition()); // Use binding position for safety
+
+                 /* OLD: Immediate update -> leads to inconsistent state if fragment needs to act first
+                 if(holder.textViewStatusBadge != null) holder.textViewStatusBadge.setVisibility(View.GONE);
+                 clickListener.onVideoClick(videoItem);
+                 */
             }
-        });
-        holder.itemView.setOnLongClickListener(v -> {
-            if (!isProcessing && longClickListener != null) {
-                boolean isSelected = !selectedVideosUris.contains(videoUri);
-                toggleSelection(videoUri, isSelected);
-                longClickListener.onVideoLongClick(videoItem, isSelected);
-            }
-            return !isProcessing; // Consume long click only if not processing
         });
 
 
@@ -1027,11 +1036,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewSerialNumber;
         ImageView checkIcon;
         ImageView menuButton;           // Reference to the 3-dot icon itself
-        TextView textViewTempBadge;
+        TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot;       // *** ADDED: Reference for the warning dot ***
         FrameLayout menuButtonContainer; // *** ADDED: Reference to the container holding the button and dot ***
-        // *** ADDED: References for New Badge and Processing Overlay ***
-        TextView textViewNewBadge;
+
         View processingScrim;
         ProgressBar processingSpinner;
 
@@ -1044,11 +1052,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             textViewSerialNumber = itemView.findViewById(R.id.text_view_serial_number);
             checkIcon = itemView.findViewById(R.id.check_icon);
             menuButton = itemView.findViewById(R.id.menu_button);
-            textViewTempBadge = itemView.findViewById(R.id.text_view_temp_badge);
+
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot);             // *** Find the warning dot ***
             menuButtonContainer = itemView.findViewById(R.id.menu_button_container);   // *** Find the container ***
-            // *** Find new views ***
-            textViewNewBadge = itemView.findViewById(R.id.text_view_new_badge);
+            textViewStatusBadge = itemView.findViewById(R.id.text_view_status_badge); // *** Find the new single badge ***
+
             processingScrim = itemView.findViewById(R.id.processing_scrim);
             processingSpinner = itemView.findViewById(R.id.processing_spinner);
 
