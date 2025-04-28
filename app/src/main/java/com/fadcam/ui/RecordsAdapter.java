@@ -61,6 +61,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final OnVideoLongClickListener longClickListener;
     private final List<Uri> selectedVideosUris = new ArrayList<>(); // Track selection by URI
 
+    // *** NEW: Store the path to the specific cache directory ***
+    private final String tempCacheDirectoryPath;
     // --- Interfaces Updated ---
     public interface OnVideoClickListener {
         void onVideoClick(VideoItem videoItem); // Pass VideoItem
@@ -72,15 +74,44 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // --- Constructor Updated ---
     public RecordsAdapter(Context context, List<VideoItem> records, OnVideoClickListener clickListener, OnVideoLongClickListener longClickListener) {
-        this.context = context;
-        this.records = new ArrayList<>(records); // Use a mutable copy
+        this.context = Objects.requireNonNull(context, "Context cannot be null for RecordsAdapter"); // Use Objects.requireNonNull
+        this.records = new ArrayList<>(records);
         this.clickListener = clickListener;
         this.longClickListener = longClickListener;
-        // Make sure context is not null early
-        if(context == null) {
-            Log.e(TAG,"Adapter created with null context!");
-            throw new NullPointerException("Context cannot be null for RecordsAdapter");
+
+        // *** Initialize the cache directory path ***
+        File cacheBaseDir = context.getExternalCacheDir();
+        if (cacheBaseDir != null) {
+            // Use the correct sub-directory where temp files are initially saved by MediaRecorder
+            this.tempCacheDirectoryPath = new File(cacheBaseDir, "recording_temp").getAbsolutePath();
+            Log.d(TAG, "Temp cache directory path set to: " + this.tempCacheDirectoryPath);
+        } else {
+            Log.e(TAG, "External cache dir is null! Cannot reliably identify temp files by path.");
+            // Set to null or an invalid path to ensure the check always fails safely
+            this.tempCacheDirectoryPath = null;
         }
+    }
+
+    // *** NEW: Helper method to check if a VideoItem is in the cache directory ***
+    private boolean isTemporaryFile(VideoItem item) {
+        if (item == null || item.uri == null || tempCacheDirectoryPath == null) {
+            return false; // Cannot determine if data is invalid or cache path unknown
+        }
+        // Temp files should *always* have a file:// scheme as they are created directly by MediaRecorder in cache
+        if ("file".equals(item.uri.getScheme())) {
+            String path = item.uri.getPath();
+            if (path != null) {
+                File file = new File(path);
+                File parentDir = file.getParentFile();
+                // Check if the file's parent directory matches the designated cache directory
+                boolean isInCache = parentDir != null && tempCacheDirectoryPath.equals(parentDir.getAbsolutePath());
+                // Optional: Add logging for debugging
+                // Log.v(TAG, "isTemporaryFile check for " + item.displayName + ": Path=" + path + ", Parent="+(parentDir != null ? parentDir.getAbsolutePath() : "null")+ ", IsInCache=" + isInCache);
+                return isInCache;
+            }
+        }
+        // Not a file URI, so not a temp file from cache
+        return false;
     }
 
     @NonNull
@@ -90,51 +121,83 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         return new RecordViewHolder(view);
     }
 
-    // --- onBindViewHolder Updated ---
+    // --- Updated onBindViewHolder ---
+    // In RecordsAdapter.java
+
+    // --- Updated onBindViewHolder ---
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
+        // Defensive check for invalid position or records list
         if (records == null || position < 0 || position >= records.size()) {
-            Log.e(TAG,"Invalid position or null records in onBindViewHolder: " + position);
-            // Optionally hide the view or show an error state
+            Log.e(TAG, "Invalid position (" + position + ") or null records in onBindViewHolder. List size: " + (records != null ? records.size() : "null"));
+            // Hide the view to prevent potential crashes or incorrect data display
             holder.itemView.setVisibility(View.GONE);
+            holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0)); // Collapse the view
             return;
         }
-        holder.itemView.setVisibility(View.VISIBLE);
+        holder.itemView.setVisibility(View.VISIBLE); // Ensure visibility if previously hidden
+        // Reset layout params if they were changed
+        holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
 
         final VideoItem videoItem = records.get(position);
-        if (videoItem == null || videoItem.uri == null) {
-            Log.e(TAG, "VideoItem or its URI is null at position: " + position);
+        // Defensive check for null item or URI
+        if (videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
+            Log.e(TAG, "VideoItem or its data is null at position: " + position + ". Item: " + videoItem);
             holder.itemView.setVisibility(View.GONE);
+            holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0)); // Collapse
             return;
         }
 
+        // Safe to proceed, get URI and display name
         final Uri videoUri = videoItem.uri;
+        final String displayName = videoItem.displayName;
 
-        // Use data from VideoItem
+        // 1. Bind basic data from VideoItem
         holder.textViewSerialNumber.setText(String.valueOf(position + 1));
-        holder.textViewRecord.setText(videoItem.displayName);
+        holder.textViewRecord.setText(displayName);
         holder.textViewFileSize.setText(formatFileSize(videoItem.size));
 
-        // Get duration using helper that accepts URI
-        long duration = getVideoDuration(videoUri);
+        // 2. Get and bind derived data (Duration)
+        long duration = getVideoDuration(videoUri); // Use URI helper
         holder.textViewFileTime.setText(formatVideoDuration(duration));
 
-        // Load thumbnail via Glide using URI (Glide handles content:// and file://)
+        // 3. Load thumbnail using Glide (handles content:// and file://)
         setThumbnail(holder, videoUri);
 
-        // Click listeners pass the VideoItem
-        holder.itemView.setOnClickListener(v -> clickListener.onVideoClick(videoItem));
-        holder.itemView.setOnLongClickListener(v -> {
-            boolean isSelected = !selectedVideosUris.contains(videoUri); // Check selection using URI
-            toggleSelection(videoUri, isSelected); // Manage selection list
-            longClickListener.onVideoLongClick(videoItem, isSelected); // Notify fragment
-            return true;
+        // 4. Determine if it's a temporary file based on PATH
+        boolean isTempFile = isTemporaryFile(videoItem); // Use the path-checking helper
+        if (holder.textViewTempBadge != null) {
+            holder.textViewTempBadge.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
+        } else {
+            Log.w(TAG, "textViewTempBadge is null in ViewHolder at position " + position + ". Check layout R.id.text_view_temp_badge");
+        }
+
+        // 5. Set click listeners
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) { // Check listener existence
+                clickListener.onVideoClick(videoItem);
+            } else {
+                Log.w(TAG,"clickListener is null, cannot handle video click.");
+            }
         });
 
-        // Setup popup menu
+        holder.itemView.setOnLongClickListener(v -> {
+            boolean isCurrentlySelected = selectedVideosUris.contains(videoUri);
+            boolean makeSelected = !isCurrentlySelected; // Toggle state
+            toggleSelection(videoUri, makeSelected); // Manage selection list and notifyItemChanged
+            if(longClickListener != null) { // Check listener existence
+                longClickListener.onVideoLongClick(videoItem, makeSelected); // Notify fragment
+            } else {
+                Log.w(TAG,"longClickListener is null, cannot handle long click notification.");
+            }
+            return true; // Consume the long click
+        });
+
+        // 6. Setup the popup menu (which itself handles enabling/disabling items if needed)
         setupPopupMenu(holder, videoItem);
 
-        // Update visual selection state based on URI list
+        // 7. Update visual selection state (check icon and background)
         updateSelectionState(holder, selectedVideosUris.contains(videoUri));
     }
 
@@ -200,32 +263,36 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // --- Popup Menu and Actions (Major Updates Here) ---
     private void setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
-        if(context == null) return; // Need context
+        if (context == null || videoItem == null || videoItem.uri == null) { return; }
+        holder.menuButton.setEnabled(true); // Ensure enabled if valid
+
         holder.menuButton.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(context, holder.menuButton);
-            popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu());
-
-            // Force icons to show
             try {
+                popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu());
+                // Force icons
+                // ... (reflection code to show icons) ...
                 Field field = PopupMenu.class.getDeclaredField("mPopup");
                 field.setAccessible(true);
                 Object menuPopupHelper = field.get(popupMenu);
                 Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
                 Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
                 setForceIcons.invoke(menuPopupHelper, true);
-            } catch (Exception e) { Log.e(TAG, "Error forcing icon display", e); }
 
+                // NOTE: Rename is NOT disabled here based on user request
+
+            } catch (Exception e) { Log.e(TAG, "Error setting up popup menu", e); }
 
             popupMenu.setOnMenuItemClickListener(item -> {
                 int itemId = item.getItemId();
                 if (itemId == R.id.action_rename) {
-                    showRenameDialog(videoItem);
+                    showRenameDialog(videoItem); // Always allow rename
                     return true;
                 } else if (itemId == R.id.action_delete) {
                     confirmDelete(videoItem);
                     return true;
                 } else if (itemId == R.id.action_save) {
-                    saveToGallery(videoItem.uri); // Action uses URI
+                    saveToGallery(videoItem.uri);
                     return true;
                 } else if (itemId == R.id.action_info) {
                     showVideoInfoDialog(videoItem);
@@ -546,12 +613,35 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
 
+    // --- Updated showVideoInfoDialog ---
+
+    /**
+     * Displays a dialog with detailed information about the selected video item.
+     * Shows a specific warning if the item is identified as a temporary file
+     * residing in the cache directory.
+     *
+     * @param videoItem The VideoItem representing the selected video.
+     */
     private void showVideoInfoDialog(VideoItem videoItem) {
-        if(context == null) return;
+        // 1. Pre-checks
+        if (context == null) {
+            Log.e(TAG,"Cannot show info dialog, context is null.");
+            return;
+        }
+        if (videoItem == null || videoItem.uri == null) {
+            Log.e(TAG,"Cannot show info dialog, videoItem or its URI is null.");
+            Toast.makeText(context, "Cannot get video information.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2. Inflate layout and find views
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_video_info, null);
+        if (dialogView == null) {
+            Log.e(TAG, "Failed to inflate dialog_video_info layout.");
+            return;
+        }
 
-        // Find Views
         TextView tvFileName = dialogView.findViewById(R.id.tv_file_name);
         TextView tvFileSize = dialogView.findViewById(R.id.tv_file_size);
         TextView tvFilePath = dialogView.findViewById(R.id.tv_file_path);
@@ -559,76 +649,106 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView tvDuration = dialogView.findViewById(R.id.tv_duration);
         TextView tvResolution = dialogView.findViewById(R.id.tv_resolution);
         ImageView ivCopyToClipboard = dialogView.findViewById(R.id.iv_copy_to_clipboard);
+        TextView tvTempWarning = dialogView.findViewById(R.id.tv_temp_file_warning); // Find warning TextView
 
+        // Check if all essential views were found
+        if (tvFileName == null || tvFileSize == null || tvFilePath == null || tvLastModified == null ||
+                tvDuration == null || tvResolution == null || ivCopyToClipboard == null || tvTempWarning == null) {
+            Log.e(TAG,"One or more views were not found in dialog_video_info.xml. Check IDs.");
+            Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 3. Prepare Data
         Uri videoUri = videoItem.uri;
+        String fileName = videoItem.displayName != null ? videoItem.displayName : "Unknown Name"; // Handle null display name
 
-        // Populate basic info from VideoItem
-        String fileName = videoItem.displayName;
         String formattedFileSize = formatFileSize(videoItem.size);
         String formattedLastModified = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 .format(new Date(videoItem.lastModified));
-        // Display full URI for clarity, especially for content:// URIs
-        String filePathDisplay = videoUri.toString();
 
+        // Determine display path (URI string or actual file path)
+        String filePathDisplay = videoUri.toString(); // Default to URI
+        if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
+            filePathDisplay = videoUri.getPath();
+        }
+
+        // Fetch metadata (using helpers that handle URI)
+        long durationMs = getVideoDuration(videoUri);
+        String resolution = getVideoResolution(videoUri);
+        String formattedDuration = formatVideoDuration(durationMs);
+
+        // 4. Populate UI Text Views
         tvFileName.setText(fileName);
         tvFileSize.setText(formattedFileSize);
         tvFilePath.setText(filePathDisplay);
         tvLastModified.setText(formattedLastModified);
-
-        // --- Fetch metadata using MediaMetadataRetriever ---
-        long durationMs = 0;
-        String resolution = "N/A";
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && "content".equals(videoUri.getScheme())) {
-                try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(videoUri, "r")) {
-                    if (pfd != null) { retriever.setDataSource(pfd.getFileDescriptor()); }
-                    else { throw new IOException("Could not open ParcelFileDescriptor for " + videoUri); }
-                }
-            } else {
-                retriever.setDataSource(context, videoUri);
-            }
-
-            // Extract Duration
-            String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            if (durationStr != null) { durationMs = Long.parseLong(durationStr); }
-
-            // Extract Resolution
-            String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-            String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-            if (width != null && height != null) { resolution = width + " x " + height; }
-
-        } catch (Exception e) { Log.e(TAG, "Error retrieving video metadata for URI: " + videoUri, e);
-        } finally {
-            try { retriever.release(); } catch (IOException e) { Log.e(TAG, "Error releasing MMD Retriever", e); }
-        }
-        // --- End Metadata Fetch ---
-
-        String formattedDuration = formatVideoDuration(durationMs);
         tvDuration.setText(formattedDuration);
         tvResolution.setText(resolution);
 
-        // Prepare text for clipboard
-        String videoInfo = String.format(Locale.US,
-                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s",
-                fileName, formattedFileSize, filePathDisplay, formattedLastModified, formattedDuration, resolution);
+        // 5. Determine if it's a temp file and show/hide warning
+        boolean isTempFile = isTemporaryFile(videoItem); // Use the path-checking helper
+        tvTempWarning.setVisibility(isTempFile ? View.VISIBLE : View.GONE);
+        Log.d(TAG, "Info Dialog: Temp warning visibility set to: " + (isTempFile ? "VISIBLE" : "GONE") + " for file: " + fileName);
+        // The actual warning text is set via R.string.warning_temp_file_detail in the XML layout
 
-        // Set up copy to clipboard action
+        // 6. Prepare Clipboard String
+        String videoInfo = String.format(Locale.US,
+                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s%s", // Added placeholder for temp note
+                fileName,
+                formattedFileSize,
+                filePathDisplay,
+                formattedLastModified,
+                formattedDuration,
+                resolution,
+                (isTempFile ? "\n\nNOTE: This is a temporary, unprocessed file." : "") // Append note only if it's temp
+        );
+
+        // 7. Set up Copy-to-Clipboard Action
         ivCopyToClipboard.setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("Video Info", videoInfo);
+            ClipData clip = ClipData.newPlainText("Video Info", videoInfo); // Use the constructed string
             if (clipboard != null) {
                 clipboard.setPrimaryClip(clip);
                 Toast.makeText(context, "Video info copied to clipboard", Toast.LENGTH_SHORT).show();
             } else {
+                Log.e(TAG, "ClipboardManager service is null.");
                 Toast.makeText(context, "Could not access clipboard", Toast.LENGTH_SHORT).show();
             }
         });
 
+        // 8. Build and Show Dialog
         builder.setTitle("Video Information")
                 .setView(dialogView)
                 .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
                 .show();
+    } // End of showVideoInfoDialog
+
+    // --- NEW Helper to get resolution (refactored from info dialog) ---
+    private String getVideoResolution(Uri videoUri) {
+        if (context == null || videoUri == null) return "N/A";
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        String resolution = "N/A";
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && "content".equals(videoUri.getScheme())) {
+                try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(videoUri, "r")) {
+                    if(pfd != null) retriever.setDataSource(pfd.getFileDescriptor());
+                    else throw new IOException("PFD was null for " + videoUri);
+                }
+            } else {
+                retriever.setDataSource(context, videoUri);
+            }
+            String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            if (width != null && height != null) {
+                resolution = width + " x " + height;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error retrieving video resolution for URI: " + videoUri, e);
+        } finally {
+            try { retriever.release(); } catch (IOException e) { Log.e(TAG, "Error releasing MMD retriever for resolution", e); }
+        }
+        return resolution;
     }
 
     // --- Update and Utility Methods ---
@@ -728,6 +848,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // --- ViewHolder ---
+    // --- Updated ViewHolder ---
     static class RecordViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewThumbnail;
         TextView textViewRecord;
@@ -736,6 +857,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewSerialNumber;
         ImageView checkIcon;
         ImageView menuButton;
+        TextView textViewTempBadge; // *** ADDED: Reference for the badge ***
 
         RecordViewHolder(View itemView) {
             super(itemView);
@@ -746,6 +868,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             textViewSerialNumber = itemView.findViewById(R.id.text_view_serial_number);
             checkIcon = itemView.findViewById(R.id.check_icon);
             menuButton = itemView.findViewById(R.id.menu_button);
+            textViewTempBadge = itemView.findViewById(R.id.text_view_temp_badge); // *** Find the badge ***
         }
     }
 

@@ -251,6 +251,7 @@
 <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
     <string name="start_recording">Start</string>
     <string name="stop_recording">Stop</string>
+    <string name="warning_temp_file_detail">NOTE: This is an unprocessed temporary file stored in cache because processing (e.g., adding a watermark) may have failed or was interrupted. Rename and Save it to the Gallery soon to prevent accidental data loss (e.g., if app cache is cleared). Recording more videos is usually safe, but prioritize saving this file.</string>
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>
