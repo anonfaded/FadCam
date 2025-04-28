@@ -15,24 +15,34 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.DocumentsContract;
+import android.util.Log; // Make sure Log is imported
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.RadioButton; // Import RadioButton
+import android.widget.RadioGroup;  // Import RadioGroup
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
-import com.fadcam.Log;
+// Replace FadCam's Log with standard android.util.Log or remove if not needed for logging here
+// import com.fadcam.Log;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
@@ -43,481 +53,548 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.textview.MaterialTextView;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 public class SettingsFragment extends Fragment {
 
     private LocationHelper locationHelper;
 
-    private static final String PREF_WATERMARK_OPTION = "watermark_option";
-    static final String PREF_LOCATION_DATA = "location_data";
-    private static final String PREF_DEBUG_DATA = "debug_data";
+    // Storage location prefs were moved to SharedPreferencesManager
+    // Remove these duplicates if they exist here:
+    // private static final String PREF_WATERMARK_OPTION = "watermark_option";
+    // static final String PREF_LOCATION_DATA = "location_data";
+    // private static final String PREF_DEBUG_DATA = "debug_data";
 
     private static final int REQUEST_PERMISSIONS = 1;
-    private static final String PREF_FIRST_LAUNCH = "first_launch";
-
-    private static final String PREF_APP_THEME = "app_theme";
+    private static final int REQUEST_LOCATION_PERMISSION = 1;
 
     private Spinner resolutionSpinner;
     private Spinner frameRateSpinner;
     private Spinner codecSpinner;
     private Spinner watermarkSpinner;
     private Spinner themeSpinner;
+    private Spinner languageSpinner; // Declare languageSpinner
 
-    MaterialButtonToggleGroup cameraSelectionToggle;
+    private MaterialButtonToggleGroup cameraSelectionToggle;
+    private MaterialSwitch locationSwitch; // Declare locationSwitch
+    private MaterialSwitch debugSwitch; // Declare debugSwitch
 
-    View view;
+    private View view; // Make sure view is accessible
 
     private BroadcastReceiver broadcastOnRecordingStarted;
     private BroadcastReceiver broadcastOnRecordingStopped;
 
-    private Map<CameraType, List<CamcorderProfile>> camcorderProfilesAvailables;
+    private Map<CameraType, List<CamcorderProfile>> camcorderProfilesAvailables = new HashMap<>();
 
+    // --- STORAGE VARIABLES ---
     private SharedPreferencesManager sharedPreferencesManager;
+    private RadioGroup storageLocationRadioGroup;
+    private RadioButton radioInternalStorage;
+    private RadioButton radioCustomLocation;
+    private MaterialButton buttonChooseCustomLocation;
+    private MaterialTextView tvCustomLocationPath;
+    private ActivityResultLauncher<Uri> openDocumentTreeLauncher;
+    private static final String TAG_SETTINGS = "SettingsFragment"; // Use a specific tag
+    // --- END STORAGE VARIABLES ---
 
-    private void vibrateTouch() {
-        // Haptic Feedback
-        Vibrator vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
-        if (vibrator != null && vibrator.hasVibrator()) {
-            VibrationEffect effect = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(effect);
-            }
-        }
-    }
 
-    private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
-        button.setIconTintResource(isSelected ? R.color.black : android.R.color.transparent); // color for check icon
-        button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke); // the last color is for the button that's not selected
-        button.setTextColor(ContextCompat.getColor(requireContext(), isSelected ? R.color.black : R.color.material_on_surface_emphasis_medium));
-        button.setBackgroundColor(ContextCompat.getColor(requireContext(), isSelected ? R.color.colorPrimary : android.R.color.transparent));
-    }
-
+    // --- Activity Result Launcher Initialization & onCreate---
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.init(requireContext());
+        // Use standard Log
+        android.util.Log.d(TAG_SETTINGS,"onCreate: Initializing fragment.");
+        // Initialize helpers/managers FIRST
         locationHelper = new LocationHelper(requireContext());
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        initializeCamcorderProfiles();
+        initializeCamcorderProfiles(); // Call initialization methods
         initializeVideoCodec();
+
+        // Register the launcher
+        openDocumentTreeLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocumentTree(),
+                uri -> {
+                    if (uri != null) {
+                        android.util.Log.d(TAG_SETTINGS, "SAF URI selected: " + uri.toString());
+                        try {
+                            final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                            requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+                            sharedPreferencesManager.setCustomStorageUri(uri.toString());
+                            sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
+                            updateStorageLocationUI();
+                            Toast.makeText(requireContext(), "Custom location set", Toast.LENGTH_SHORT).show();
+                        } catch (SecurityException e) {
+                            android.util.Log.e(TAG_SETTINGS, "Failed to take persistable permission for URI: " + uri, e);
+                            Toast.makeText(requireContext(), "Error setting custom location", Toast.LENGTH_LONG).show();
+                            sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                            sharedPreferencesManager.setCustomStorageUri(null);
+                            updateStorageLocationUI();
+                        } catch (Exception e) {
+                            android.util.Log.e(TAG_SETTINGS, "Error processing selected directory URI: " + uri, e);
+                            Toast.makeText(requireContext(), "Could not use selected folder", Toast.LENGTH_LONG).show();
+                            sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                            sharedPreferencesManager.setCustomStorageUri(null);
+                            updateStorageLocationUI();
+                        }
+                    } else {
+                        android.util.Log.d(TAG_SETTINGS, "No directory selected (SAF returned null)");
+                        updateStorageLocationUI(); // Ensure UI matches stored pref if user cancels
+                    }
+                });
     }
 
-    // Loads the available camcorder profiles for cameras
-    private void initializeCamcorderProfiles() {
-        camcorderProfilesAvailables = new HashMap<>();
-        List<CamcorderProfile> camcorderProfiles = getCamcorderProfiles(CameraType.FRONT);
-        if(!camcorderProfiles.isEmpty()) {
-            camcorderProfilesAvailables.put(CameraType.FRONT, camcorderProfiles);
-        }
-        camcorderProfiles = getCamcorderProfiles(CameraType.BACK);
-        if(!camcorderProfiles.isEmpty()) {
-            camcorderProfilesAvailables.put(CameraType.BACK, camcorderProfiles);
-        }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        view = inflater.inflate(R.layout.fragment_settings, container, false);
+        android.util.Log.d(TAG_SETTINGS,"onCreateView: Inflating layout and setting up views.");
+
+        // Find views by ID
+        languageSpinner = view.findViewById(R.id.language_spinner);
+        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
+        MaterialButton readmeButton = view.findViewById(R.id.readme_button);
+        cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
+        resolutionSpinner = view.findViewById(R.id.resolution_spinner);
+        frameRateSpinner = view.findViewById(R.id.framerate_spinner);
+        codecSpinner = view.findViewById(R.id.codec_spinner);
+        watermarkSpinner = view.findViewById(R.id.watermark_spinner);
+        locationSwitch = view.findViewById(R.id.location_toggle_group);
+        debugSwitch = view.findViewById(R.id.debug_toggle_group);
+        MaterialButton reviewButton = view.findViewById(R.id.review_button);
+        themeSpinner = view.findViewById(R.id.theme_spinner); // Initialize themeSpinner
+
+        // Initialize Storage UI elements
+        storageLocationRadioGroup = view.findViewById(R.id.storage_location_radio_group);
+        radioInternalStorage = view.findViewById(R.id.radio_internal_storage);
+        radioCustomLocation = view.findViewById(R.id.radio_custom_location);
+        buttonChooseCustomLocation = view.findViewById(R.id.button_choose_custom_location);
+        tvCustomLocationPath = view.findViewById(R.id.tv_custom_location_path);
+
+        // Setup components
+        setupLanguageSpinner(languageSpinner);
+        readmeButton.setOnClickListener(v -> showReadmeDialog());
+        setupCameraSelectionToggle(view, cameraSelectionToggle);
+        setupResolutionSpinner();
+        setupFrameRateSpinner();
+        setupCodecSpinner();
+        setupWatermarkSpinner(view, watermarkSpinner);
+        setupLocationSwitch(locationSwitch); // Use switch variable
+        setupDebugSwitch(debugSwitch);     // Use switch variable
+        reviewButton.setOnClickListener(v -> openInAppBrowser("https://forms.gle/DvUoc1v9kB2bkFiS6"));
+        setupThemeSpinner(view);
+        setupFrameRateNoteText();
+        setupCodecNoteText();
+
+        // Setup listeners for storage options
+        setupStorageLocationOptions();
+        // Set initial UI state based on saved preferences
+        updateStorageLocationUI();
+
+        return view;
     }
 
-    private void initializeVideoCodec() {
-        if(!sharedPreferencesManager.isVideoCodecExist()) {
-            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, getCompatiblesVideoCodec().toString()).apply();
-        }
-    }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onStart()
     {
         super.onStart();
-
+        android.util.Log.d(TAG_SETTINGS,"onStart: Registering receivers.");
         registerBroadcastOnRecordingStarted();
         registerBrodcastOnRecordingStopped();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 11 and above
             requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED), Context.RECEIVER_EXPORTED);
             requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED), Context.RECEIVER_EXPORTED);
         } else {
-            // Below Android 11
             requireActivity().registerReceiver(broadcastOnRecordingStarted, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED));
             requireActivity().registerReceiver(broadcastOnRecordingStopped, new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED));
         }
+        // Call sync camera switch AFTER views are inflated and listeners possibly set
+        syncCameraSwitch(view, cameraSelectionToggle);
     }
 
-    private void registerBroadcastOnRecordingStarted() {
-        broadcastOnRecordingStarted = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i)
-            {
-                cameraSelectionToggle.setEnabled(false);
-                resolutionSpinner.setEnabled(false);
-                frameRateSpinner.setEnabled(false);
-                watermarkSpinner.setEnabled(false);
+
+    // --- NEW Storage Logic Methods ---
+
+    private void setupStorageLocationOptions() {
+        storageLocationRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.radio_internal_storage) {
+                sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                sharedPreferencesManager.setCustomStorageUri(null);
+                updateStorageLocationUI();
+                android.util.Log.d(TAG_SETTINGS, "Storage mode set to Internal via Radio");
+            } else if (checkedId == R.id.radio_custom_location) {
+                if (sharedPreferencesManager.getCustomStorageUri() == null) {
+                    launchDirectoryPicker(); // Prompt user if no custom path exists yet
+                } else {
+                    // URI exists, just set mode and update UI
+                    sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
+                    updateStorageLocationUI();
+                }
+                android.util.Log.d(TAG_SETTINGS, "Storage mode attempt set to Custom via Radio");
             }
-        };
+        });
+
+        buttonChooseCustomLocation.setOnClickListener(v -> launchDirectoryPicker());
     }
 
-    private void registerBrodcastOnRecordingStopped() {
-        broadcastOnRecordingStopped = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i)
-            {
-                cameraSelectionToggle.setEnabled(true);
-                resolutionSpinner.setEnabled(true);
-                frameRateSpinner.setEnabled(true);
-                watermarkSpinner.setEnabled(true);
-            }
-        };
+    private void launchDirectoryPicker() {
+        android.util.Log.d(TAG_SETTINGS, "Launching directory picker (ACTION_OPEN_DOCUMENT_TREE)");
+        Uri initialUri = null;
+        try {
+            openDocumentTreeLauncher.launch(initialUri);
+        } catch (Exception e) {
+            android.util.Log.e(TAG_SETTINGS, "Error launching directory picker", e);
+            Toast.makeText(requireContext(),"Could not open folder picker", Toast.LENGTH_SHORT).show();
+            sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+            updateStorageLocationUI(); // Reset UI if launch fails
+        }
     }
+
+    private void updateStorageLocationUI() {
+        // Ensure view elements are not null before accessing
+        if(storageLocationRadioGroup == null || buttonChooseCustomLocation == null || tvCustomLocationPath == null){
+            Log.w(TAG_SETTINGS,"updateStorageLocationUI: UI elements not yet initialized.");
+            return;
+        }
+
+        String currentMode = sharedPreferencesManager.getStorageMode();
+        String customUriString = sharedPreferencesManager.getCustomStorageUri();
+        boolean isInCustomMode = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(currentMode) && customUriString != null;
+
+        Log.d(TAG_SETTINGS, "Updating UI - Mode: " + currentMode + ", URI set: " + (customUriString != null));
+
+        if (isInCustomMode) {
+            storageLocationRadioGroup.check(R.id.radio_custom_location);
+            buttonChooseCustomLocation.setVisibility(View.VISIBLE);
+            tvCustomLocationPath.setVisibility(View.VISIBLE);
+            tvCustomLocationPath.setText(getDisplayPath(customUriString));
+            Log.d(TAG_SETTINGS, "UI updated to show Custom Location: " + tvCustomLocationPath.getText());
+        } else {
+            storageLocationRadioGroup.check(R.id.radio_internal_storage);
+            buttonChooseCustomLocation.setVisibility(View.GONE);
+            tvCustomLocationPath.setVisibility(View.GONE);
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(currentMode)){
+                Log.w(TAG_SETTINGS,"Custom mode was set but URI is null, reverting mode to internal.");
+                sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+            }
+            Log.d(TAG_SETTINGS, "UI updated to show Internal Storage");
+        }
+    }
+
+    private String getDisplayPath(String uriString) {
+        if (uriString == null) return "None selected";
+        try {
+            Uri treeUri = Uri.parse(uriString);
+            DocumentFile pickedDir = DocumentFile.fromTreeUri(requireContext(), treeUri);
+            if (pickedDir != null && pickedDir.canRead()) { // Check readability
+                String name = pickedDir.getName();
+                String path = treeUri.getPath();
+                // Basic check for typical external storage/SD card format
+                if (name == null && path != null && path.contains(":") && path.startsWith("/tree/")) {
+                    return "SD Card / Ext. Storage";
+                } else if (name != null) {
+                    return "Folder: " + name;
+                } else {
+                    // Fallback if name is null but readable
+                    return "Selected Folder";
+                }
+            } else {
+                Log.w(TAG_SETTINGS,"Could not get DocumentFile, name or cannot read URI: "+uriString);
+                return "Custom Location (Unreadable/Invalid)";
+            }
+        } catch (Exception e) {
+            Log.e(TAG_SETTINGS, "Error parsing URI for display: "+uriString, e);
+            return "Custom Location (Error)";
+        }
+    }
+    // --- END NEW Storage Logic Methods ---
+
+
+    // --- Existing Helper & Setup methods ---
+
+    // Helper method to apply ripple effect on touch (used by various listeners)
+    private void vibrateTouch() {
+        Vibrator vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(50); // Deprecated in API 26
+            }
+        }
+    }
+
+    // Method to visually update toggle button group state
+    private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
+        if(getContext() == null) return; // Prevent crashes if context is gone
+        button.setIconTintResource(isSelected ? R.color.black : android.R.color.transparent);
+        button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke);
+        button.setTextColor(ContextCompat.getColor(requireContext(), isSelected ? R.color.black : R.color.material_on_surface_emphasis_medium));
+        button.setBackgroundColor(ContextCompat.getColor(requireContext(), isSelected ? R.color.colorPrimary : android.R.color.transparent));
+    }
+
+
+    // Loads the available camcorder profiles for cameras
+    private void initializeCamcorderProfiles() {
+        camcorderProfilesAvailables.clear(); // Clear previous data
+        Log.d(TAG_SETTINGS, "Initializing Camcorder Profiles");
+        for(CameraType type : CameraType.values()) {
+            List<CamcorderProfile> camcorderProfiles = getCamcorderProfiles(type);
+            if(!camcorderProfiles.isEmpty()) {
+                Log.d(TAG_SETTINGS,"Profiles found for " + type + ": " + camcorderProfiles.size());
+                camcorderProfilesAvailables.put(type, camcorderProfiles);
+            } else {
+                Log.w(TAG_SETTINGS,"No profiles found for " + type);
+            }
+        }
+    }
+
+    private void initializeVideoCodec() {
+        if(!sharedPreferencesManager.isVideoCodecExist()) {
+            VideoCodec compatibleCodec = getCompatiblesVideoCodec();
+            if(compatibleCodec != null) {
+                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, compatibleCodec.toString()).apply();
+                Log.d(TAG_SETTINGS, "Initialized video codec preference to: " + compatibleCodec);
+            } else {
+                Log.e(TAG_SETTINGS,"Could not find any compatible video codec!");
+                // Fallback or handle error appropriately
+                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, Constants.DEFAULT_VIDEO_CODEC.toString()).apply();
+            }
+        } else {
+            Log.d(TAG_SETTINGS,"Video codec preference already exists: " + sharedPreferencesManager.getVideoCodec());
+        }
+    }
+
 
     @Override
     public void onStop() {
         super.onStop();
-
-        requireActivity().unregisterReceiver(broadcastOnRecordingStarted);
-        requireActivity().unregisterReceiver(broadcastOnRecordingStopped);
+        Log.d(TAG_SETTINGS,"onStop: Unregistering receivers.");
+        try {
+            if(broadcastOnRecordingStarted != null) requireActivity().unregisterReceiver(broadcastOnRecordingStarted);
+            if(broadcastOnRecordingStopped != null) requireActivity().unregisterReceiver(broadcastOnRecordingStopped);
+        } catch(IllegalArgumentException e){
+            Log.w(TAG_SETTINGS,"Receiver not registered? "+e.getMessage());
+        }
+        broadcastOnRecordingStarted = null; // Nullify to prevent leaks
+        broadcastOnRecordingStopped = null;
     }
 
+
+    private void registerBroadcastOnRecordingStarted() {
+        if(broadcastOnRecordingStarted != null) return; // Already registered
+        broadcastOnRecordingStarted = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent i)
+            {
+                Log.d(TAG_SETTINGS, "Received BROADCAST_ON_RECORDING_STARTED");
+                // Disable UI elements when recording starts
+                if(cameraSelectionToggle != null) cameraSelectionToggle.setEnabled(false);
+                if(resolutionSpinner != null) resolutionSpinner.setEnabled(false);
+                if(frameRateSpinner != null) frameRateSpinner.setEnabled(false);
+                if(watermarkSpinner != null) watermarkSpinner.setEnabled(false);
+                if(codecSpinner != null) codecSpinner.setEnabled(false);
+                if(storageLocationRadioGroup != null) { // Disable storage options too
+                    for(int j = 0; j < storageLocationRadioGroup.getChildCount(); j++) {
+                        storageLocationRadioGroup.getChildAt(j).setEnabled(false);
+                    }
+                }
+                if(buttonChooseCustomLocation != null) buttonChooseCustomLocation.setEnabled(false);
+            }
+        };
+        Log.d(TAG_SETTINGS,"Recording started broadcast receiver created.");
+    }
+
+    private void registerBrodcastOnRecordingStopped() {
+        if(broadcastOnRecordingStopped != null) return; // Already registered
+        broadcastOnRecordingStopped = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent i)
+            {
+                Log.d(TAG_SETTINGS, "Received BROADCAST_ON_RECORDING_STOPPED");
+                // Re-enable UI elements when recording stops
+                if(cameraSelectionToggle != null) cameraSelectionToggle.setEnabled(true);
+                if(resolutionSpinner != null) resolutionSpinner.setEnabled(true);
+                if(frameRateSpinner != null) frameRateSpinner.setEnabled(true);
+                if(watermarkSpinner != null) watermarkSpinner.setEnabled(true);
+                if(codecSpinner != null) codecSpinner.setEnabled(sharedPreferencesManager.isVideoCodecExist()); // Enable based on prefs
+                if(storageLocationRadioGroup != null) { // Enable storage options
+                    for(int j = 0; j < storageLocationRadioGroup.getChildCount(); j++) {
+                        storageLocationRadioGroup.getChildAt(j).setEnabled(true);
+                    }
+                }
+                if(buttonChooseCustomLocation != null) buttonChooseCustomLocation.setEnabled(true);
+            }
+        };
+        Log.d(TAG_SETTINGS,"Recording stopped broadcast receiver created.");
+    }
+
+    // Overriding onResume to ensure UI is correctly updated when fragment becomes visible
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG_SETTINGS, "onResume: Syncing UI states.");
+        // Ensure sharedPreferencesManager is valid
+        if (sharedPreferencesManager == null) {
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        }
+        // Sync UI state with current preferences
         syncCameraSwitch(view, cameraSelectionToggle);
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.fragment_settings, container, false);
-
-        // Setup  language selection spinner items with array resource
-        Spinner languageSpinner = view.findViewById(R.id.language_spinner);
-        ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
-                requireContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
-        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        languageSpinner.setAdapter(languageAdapter );
-
-        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
-
-        MaterialButton readmeButton = view.findViewById(R.id.readme_button);
-        readmeButton.setOnClickListener(v -> showReadmeDialog());
-
-        cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
-        // Setup spinner items with array resource
-        resolutionSpinner = view.findViewById(R.id.resolution_spinner);
-
-        frameRateSpinner = view.findViewById(R.id.framerate_spinner);
-        codecSpinner = view.findViewById(R.id.codec_spinner);
-
-        // Set up camera selection toggle
-        setupCameraSelectionToggle(view, cameraSelectionToggle);
-
-        camcorderProfilesAvailables.put(CameraType.BACK, getCamcorderProfiles(CameraType.BACK));
-        camcorderProfilesAvailables.put(CameraType.FRONT, getCamcorderProfiles(CameraType.FRONT));
-
-        // Set up video quality spinner
-        setupResolutionSpinner();
-
-        // Set up video framerate spinner
-        setupFrameRateSpinner();
-
-        setupCodecSpinner();
-
-        // Setup watermark option spinner
-        watermarkSpinner = view.findViewById(R.id.watermark_spinner);
-        setupWatermarkSpinner(view, watermarkSpinner);
-
-        // Set up spinner based on saved language preference
-        setupLanguageSpinner(languageSpinner);
-
-//        // Set up location toggle group
-//        MaterialButtonToggleGroup locationToggleGroup = view.findViewById(R.id.location_toggle_group);
-//        setupLocationToggle(view, locationToggleGroup);
-
-        MaterialSwitch locationSwitch = view.findViewById(R.id.location_toggle_group);
-        setupLocationSwitch(locationSwitch);
-
-        MaterialSwitch debugSwitch = view.findViewById(R.id.debug_toggle_group);
-        setupDebugSwitch(debugSwitch);
-
-        // Initialize the Review Button
-        MaterialButton reviewButton = view.findViewById(R.id.review_button);
-        reviewButton.setOnClickListener(v -> openInAppBrowser("https://forms.gle/DvUoc1v9kB2bkFiS6"));
-
-        // Set up frame rate note text
-        setupFrameRateNoteText();
-
-        // Set up codec note text
-        setupCodecNoteText();
-
-        // Setup theme spinner
-        setupThemeSpinner(view);
-
-        return view;
-    }
-
-    private void openInAppBrowser(String url) {
-        Intent intent = new Intent(getContext(), WebViewActivity.class);
-        intent.putExtra("url", url);
-        startActivity(intent);
-    }
-
-    private void setupFrameRateNoteText()
-    {
-        TextView frameworkNoteTextView = view.findViewById(R.id.framerate_note_textview);
-        frameworkNoteTextView.setText(getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE));
-    }
-
-    private void setupCodecNoteText()
-    {
-        TextView frameworkNoteTextView = view.findViewById(R.id.codec_note_textview);
-        frameworkNoteTextView.setText(getString(R.string.note_codec, Constants.DEFAULT_VIDEO_CODEC.getName()));
-    }
-
-    private void setupLocationSwitch(MaterialSwitch locationSwitch) {
-        boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
-        locationSwitch.setChecked(isLocationEnabled);
-
-        locationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    showLocationPermissionDialog(locationSwitch);
-                } else {
-                    sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, true).apply();
-                }
-            } else {
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
-            }
-            vibrateTouch();
-        });
-    }
-
-    private void setupDebugSwitch(MaterialSwitch debugSwitch) {
-        boolean isDebugEnabled = sharedPreferencesManager.isDebugLoggingEnabled();
-        debugSwitch.setChecked(isDebugEnabled);
-
-        debugSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_DEBUG_DATA, isChecked).apply();
-            Log.setDebugEnabled(isChecked);
-            vibrateTouch();
-        });
-    }
-
-    private void showLocationPermissionDialog(MaterialSwitch locationSwitch) {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.location_permission_title)) // Use string resource for title
-                .setMessage(getString(R.string.location_permission_description))
-                .setPositiveButton("Grant", (dialog, which) -> requestLocationPermission())
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                    locationSwitch.setChecked(false); // Disable the switch if the user cancels
-                    sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
-                    dialog.dismiss();
-                })
-                .show();
-    }
-    private void requestLocationPermission() {
-        ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+        updateStorageLocationUI(); // Update storage UI on resume
+        updateResolutionSpinner(); // Ensure spinner reflects current camera
+        updateFrameRateSpinner(); // Ensure framerate reflects resolution
     }
 
 
-    private void setupLocationToggle(View view, MaterialSwitch locationSwitch) {
-        boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
-        locationSwitch.setChecked(isLocationEnabled);
-
-        if (isLocationEnabled) {
-            locationHelper.startLocationUpdates();
-        } else {
-            locationHelper.stopLocationUpdates();
-        }
-
-        locationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, isChecked).apply();
-            if (isChecked) {
-                requestLocationPermission();
-            } else {
-                locationHelper.stopLocationUpdates();
-            }
-            vibrateTouch();
-        });
-    }
-
-
-    private static final int REQUEST_LOCATION_PERMISSION = 1;
-//    private void requestLocationPermission() {
-//        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
-//        } else {
-//            locationHelper.startLocationUpdates();
-//        }
-//    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, true).apply();
-            } else {
-                MaterialSwitch locationSwitch = requireView().findViewById(R.id.location_toggle_group);
-                if (locationSwitch != null) {
-                    locationSwitch.setChecked(false);
-                }
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_LOCATION_DATA, false).apply();
-            }
-        }
-    }
-    //To sync with the camera switch button on main page...
-    private void syncCameraSwitch(View view, MaterialButtonToggleGroup cameraSelectionToggle){
+    private void syncCameraSwitch(View view, MaterialButtonToggleGroup toggleGroup){
+        if(view == null || toggleGroup == null) return;
 
         MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
         MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+        if(backCameraButton == null || frontCameraButton == null) return;
 
-        if (sharedPreferencesManager.getCameraSelection().equals(CameraType.FRONT)) {
-            cameraSelectionToggle.check(R.id.button_front_camera);
+        CameraType selected = sharedPreferencesManager.getCameraSelection();
+
+        // Disable unavailable buttons first
+        backCameraButton.setEnabled(camcorderProfilesAvailables.containsKey(CameraType.BACK));
+        frontCameraButton.setEnabled(camcorderProfilesAvailables.containsKey(CameraType.FRONT));
+
+
+        if (selected == CameraType.FRONT && frontCameraButton.isEnabled()) {
+            toggleGroup.check(R.id.button_front_camera);
             updateButtonAppearance(frontCameraButton, true);
             updateButtonAppearance(backCameraButton, false);
-        } else {
-            cameraSelectionToggle.check(R.id.button_back_camera);
+        } else { // Default to BACK if front is selected but disabled, or if BACK is selected
+            toggleGroup.check(R.id.button_back_camera);
             updateButtonAppearance(backCameraButton, true);
             updateButtonAppearance(frontCameraButton, false);
+            // Ensure preference matches if defaulted
+            if (selected == CameraType.FRONT && !frontCameraButton.isEnabled()){
+                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, CameraType.BACK.toString()).apply();
+            }
         }
-        cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+        Log.d(TAG_SETTINGS,"Synced camera switch UI to: " + sharedPreferencesManager.getCameraSelection());
+    }
+
+
+    private void setupCameraSelectionToggle(View view, MaterialButtonToggleGroup toggleGroup) {
+        if(toggleGroup == null) return;
+        syncCameraSwitch(view, toggleGroup); // Initial setup based on prefs
+
+        toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
+                // Ensure UI matches the checked state immediately
+                updateButtonAppearance(view.findViewById(R.id.button_back_camera), checkedId == R.id.button_back_camera);
+                updateButtonAppearance(view.findViewById(R.id.button_front_camera), checkedId == R.id.button_front_camera);
+
+                // Save the preference AFTER visual update
                 CameraType selectedCamera = (checkedId == R.id.button_front_camera) ? CameraType.FRONT : CameraType.BACK;
                 sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, selectedCamera.toString()).apply();
-                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
-                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
+                Log.d(TAG_SETTINGS, "Camera selection changed to: " + selectedCamera);
+                vibrateTouch(); // Add feedback
+                updateResolutionSpinner(); // Update resolutions for the new camera
+                updateFrameRateSpinner(); // Update frame rates as well
             }
         });
     }
 
-    private void setupCameraSelectionToggle(View view, MaterialButtonToggleGroup cameraSelectionToggle) {
-        MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
-        MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
-
-        if(!camcorderProfilesAvailables.containsKey(CameraType.BACK)) {
-            backCameraButton.setEnabled(false);
-        }
-
-        if(!camcorderProfilesAvailables.containsKey(CameraType.FRONT)) {
-            frontCameraButton.setEnabled(false);
-        }
-
-        if (sharedPreferencesManager.getCameraSelection().equals(CameraType.FRONT)) {
-            cameraSelectionToggle.check(R.id.button_front_camera);
-            updateButtonAppearance(frontCameraButton, true);
-            updateButtonAppearance(backCameraButton, false);
-        } else {
-            cameraSelectionToggle.check(R.id.button_back_camera);
-            updateButtonAppearance(backCameraButton, true);
-            updateButtonAppearance(frontCameraButton, false);
-        }
-
-        cameraSelectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                CameraType selectedCamera = (checkedId == R.id.button_front_camera) ? CameraType.FRONT : CameraType.BACK;
-                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, selectedCamera.toString()).apply();
-                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
-                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
-            }
-            updateResolutionSpinner();
-            updateFrameRateSpinner();
-        });
-    }
 
     private void setupResolutionSpinner() {
-
-        updateResolutionSpinner();
-
-        // Save the selected quality when user changes it
+        updateResolutionSpinner(); // Populate initially
         resolutionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                List<CamcorderProfile> camcorderProfile = getCamcorderProfiles(sharedPreferencesManager.getCameraSelection());
+                // Get the current camera to find correct profiles
+                CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                List<CamcorderProfile> camcorderProfiles = camcorderProfilesAvailables.get(currentCamera);
 
-                sharedPreferencesManager.sharedPreferences.edit().putInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, camcorderProfile.get(position).videoFrameWidth).apply();
-                sharedPreferencesManager.sharedPreferences.edit().putInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, camcorderProfile.get(position).videoFrameHeight).apply();
-
-                updateFrameRateSpinner();
+                if(camcorderProfiles != null && position >= 0 && position < camcorderProfiles.size()) {
+                    CamcorderProfile selectedProfile = camcorderProfiles.get(position);
+                    // Save the selected width and height
+                    sharedPreferencesManager.sharedPreferences.edit()
+                            .putInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, selectedProfile.videoFrameWidth)
+                            .putInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, selectedProfile.videoFrameHeight)
+                            .apply();
+                    Log.d(TAG_SETTINGS,"Resolution preference saved: "+ selectedProfile.videoFrameWidth + "x" + selectedProfile.videoFrameHeight);
+                    updateFrameRateSpinner(); // Update compatible frame rates
+                } else {
+                    Log.e(TAG_SETTINGS, "Error getting selected profile for resolution saving.");
+                }
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
+
     private void updateResolutionSpinner() {
-        List<String> camcorderProfilesList = getCompatiblesVideoResolutionsAsString(sharedPreferencesManager.getCameraSelection());
+        if(resolutionSpinner == null) return;
+        CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
+        Log.d(TAG_SETTINGS, "Updating resolutions for camera: "+ selectedCamera);
+        List<String> camcorderProfilesList = getCompatiblesVideoResolutionsAsString(selectedCamera);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, camcorderProfilesList);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         resolutionSpinner.setAdapter(adapter);
 
-        int selectedIndex = getCamcorderProfileIndexPreferences(sharedPreferencesManager.getCameraSelection());
-        resolutionSpinner.setSelection(selectedIndex);
+        if(!camcorderProfilesList.isEmpty()) {
+            int selectedIndex = getCamcorderProfileIndexPreferences(selectedCamera);
+            // Ensure selectedIndex is within bounds
+            if(selectedIndex < 0 || selectedIndex >= camcorderProfilesList.size()){
+                Log.w(TAG_SETTINGS,"Selected resolution index "+selectedIndex+ " out of bounds, defaulting to 0");
+                selectedIndex = 0;
+                // Optionally update prefs to match default if out of bounds
+            }
+            resolutionSpinner.setSelection(selectedIndex);
+            resolutionSpinner.setEnabled(true); // Enable if list is not empty
+            Log.d(TAG_SETTINGS,"Resolution spinner updated. Count: "+camcorderProfilesList.size() + ". Selected index: "+selectedIndex);
+        } else {
+            resolutionSpinner.setEnabled(false); // Disable if no resolutions found
+            Log.w(TAG_SETTINGS,"No compatible resolutions found for "+ selectedCamera);
+        }
     }
 
+
     private void setupFrameRateSpinner() {
-
-        updateFrameRateSpinner();
-
-        // Save the selected quality when user changes it
+        updateFrameRateSpinner(); // Populate initially
         frameRateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                sharedPreferencesManager.sharedPreferences.edit().putInt(Constants.PREF_VIDEO_FRAME_RATE, getCompatiblesVideoFrameRates(sharedPreferencesManager.getCameraSelection()).get(position)).apply();
+                CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
+                List<Integer> compatibleRates = getCompatiblesVideoFrameRates(selectedCamera);
+                if (position >= 0 && position < compatibleRates.size()) {
+                    int selectedRate = compatibleRates.get(position);
+                    sharedPreferencesManager.sharedPreferences.edit().putInt(Constants.PREF_VIDEO_FRAME_RATE, selectedRate).apply();
+                    Log.d(TAG_SETTINGS,"Frame rate preference saved: "+ selectedRate);
+                } else {
+                    Log.e(TAG_SETTINGS, "Error getting selected frame rate.");
+                }
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
-    private void setupCodecSpinner() {
-
-        List<VideoCodec> videoCodecsCompatibles = getCompatiblesVideoCodecs();
-
-        List<String> videoCodecsCompatiblesAsString = new ArrayList<>();
-        for (VideoCodec videoCodecCompatible : videoCodecsCompatibles) {
-            videoCodecsCompatiblesAsString.add(videoCodecCompatible.getName());
-        }
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_spinner_item,
-                videoCodecsCompatiblesAsString
-        );
-
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        codecSpinner.setAdapter(adapter);
-
-        VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
-
-        codecSpinner.setSelection(videoCodecsCompatibles.size() == 1 ? 0 : getVideoCodecIndex(selectedCodec));
-        codecSpinner.setEnabled(videoCodecsCompatibles.size() > 1);
-
-        // Save the selected codec when user changes it
-        codecSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, getCompatiblesVideoCodecs().get(position).toString()).apply();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-    }
 
     private void updateFrameRateSpinner()
     {
-        List<Integer> videoFrameRatesCompatibles = getCompatiblesVideoFrameRates(sharedPreferencesManager.getCameraSelection());
+        if(frameRateSpinner == null) return;
+        CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
+        Log.d(TAG_SETTINGS, "Updating frame rates for camera: "+ selectedCamera);
+        List<Integer> videoFrameRatesCompatibles = getCompatiblesVideoFrameRates(selectedCamera);
 
         List<String> videoFrameRatesCompatiblesAsString = new ArrayList<>();
         for (Integer frameRate : videoFrameRatesCompatibles) {
@@ -529,27 +606,83 @@ public class SettingsFragment extends Fragment {
                 android.R.layout.simple_spinner_item,
                 videoFrameRatesCompatiblesAsString
         );
-
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         frameRateSpinner.setAdapter(adapter);
 
-        // Set the selected item based on the saved preference
-        int selectedFramerate = sharedPreferencesManager.getVideoFrameRate();
-
-        // If the selected frame rate is not in the list of compatible frame rates, reset it to the default value
-        if(!videoFrameRatesCompatibles.contains(selectedFramerate)) {
-            selectedFramerate = Constants.DEFAULT_VIDEO_FRAME_RATE;
-        }
-
         if(!videoFrameRatesCompatibles.isEmpty()) {
-            frameRateSpinner.setSelection(videoFrameRatesCompatibles.size() == 1 ? 0 : getVideoFrameRateIndex(selectedFramerate));
-            frameRateSpinner.setEnabled(videoFrameRatesCompatibles.size() > 1);
+            int selectedFramerate = sharedPreferencesManager.getVideoFrameRate();
+            int selectedIndex = videoFrameRatesCompatibles.indexOf(selectedFramerate);
+
+            if (selectedIndex == -1) { // If saved framerate is not compatible anymore
+                Log.w(TAG_SETTINGS, "Saved framerate "+selectedFramerate+" no longer compatible. Defaulting.");
+                selectedIndex = videoFrameRatesCompatibles.indexOf(Constants.DEFAULT_VIDEO_FRAME_RATE); // Try default
+                if(selectedIndex == -1) selectedIndex = 0; // Fallback to first available
+
+                sharedPreferencesManager.sharedPreferences.edit().putInt(Constants.PREF_VIDEO_FRAME_RATE, videoFrameRatesCompatibles.get(selectedIndex)).apply();
+            }
+
+            frameRateSpinner.setSelection(selectedIndex);
+            frameRateSpinner.setEnabled(videoFrameRatesCompatibles.size() > 1); // Only enable if multiple options
+            Log.d(TAG_SETTINGS,"Frame rate spinner updated. Count: "+ videoFrameRatesCompatibles.size() +". Selected index: "+selectedIndex);
         } else {
             frameRateSpinner.setEnabled(false);
+            Log.w(TAG_SETTINGS,"No compatible frame rates found for " + selectedCamera);
         }
     }
 
+
+    private void setupCodecSpinner() {
+        if(codecSpinner == null) return;
+        List<VideoCodec> videoCodecsCompatibles = getCompatiblesVideoCodecs();
+        Log.d(TAG_SETTINGS, "Setting up codec spinner. Compatible: " + videoCodecsCompatibles);
+
+        List<String> videoCodecsCompatiblesAsString = new ArrayList<>();
+        for (VideoCodec videoCodecCompatible : videoCodecsCompatibles) {
+            videoCodecsCompatiblesAsString.add(videoCodecCompatible.getName());
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                videoCodecsCompatiblesAsString
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        codecSpinner.setAdapter(adapter);
+
+        VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+        int selectedIndex = videoCodecsCompatibles.indexOf(selectedCodec);
+
+        // Handle case where saved codec is somehow no longer compatible
+        if(selectedIndex < 0){
+            Log.w(TAG_SETTINGS,"Saved codec "+selectedCodec+" not compatible. Defaulting.");
+            selectedIndex = videoCodecsCompatibles.indexOf(getCompatiblesVideoCodec()); // Get highest priority
+            if (selectedIndex < 0) selectedIndex = 0; // Fallback
+            sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, videoCodecsCompatibles.get(selectedIndex).toString()).apply();
+        }
+
+        codecSpinner.setSelection(selectedIndex);
+        codecSpinner.setEnabled(videoCodecsCompatibles.size() > 1); // Enable only if choices exist
+        Log.d(TAG_SETTINGS, "Codec spinner updated. Count: "+videoCodecsCompatibles.size()+". Selected index: "+selectedIndex);
+
+        codecSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                List<VideoCodec> codecs = getCompatiblesVideoCodecs();
+                if (position >= 0 && position < codecs.size()){
+                    sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, codecs.get(position).toString()).apply();
+                    Log.d(TAG_SETTINGS, "Codec preference saved: "+ codecs.get(position));
+                } else {
+                    Log.e(TAG_SETTINGS,"Invalid position selected in codec spinner: "+position);
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+
     private void setupWatermarkSpinner(View view, Spinner watermarkSpinner) {
+        if(watermarkSpinner == null) return;
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(),
                 R.array.watermark_options, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -558,21 +691,21 @@ public class SettingsFragment extends Fragment {
         String savedWatermark = sharedPreferencesManager.getWatermarkOption();
         int watermarkIndex = getWatermarkIndex(savedWatermark);
         watermarkSpinner.setSelection(watermarkIndex);
+        Log.d(TAG_SETTINGS, "Watermark spinner set to index: " + watermarkIndex);
 
         watermarkSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedWatermark = getWatermarkValue(position);
-                sharedPreferencesManager.sharedPreferences.edit().putString(PREF_WATERMARK_OPTION, selectedWatermark).apply();
+                String selectedWatermarkValue = getWatermarkValue(position);
+                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_WATERMARK_OPTION, selectedWatermarkValue).apply();
+                Log.d(TAG_SETTINGS, "Watermark preference saved: " + selectedWatermarkValue);
             }
-
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Do nothing
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
+    // Helper methods for watermark spinner
     private int getWatermarkIndex(String value) {
         String[] values = getResources().getStringArray(R.array.watermark_values);
         for (int i = 0; i < values.length; i++) {
@@ -580,183 +713,294 @@ public class SettingsFragment extends Fragment {
                 return i;
             }
         }
-        return 0; // Default to first option
+        Log.w(TAG_SETTINGS,"Watermark value '"+value+"' not found in R.array.watermark_values, defaulting to 0.");
+        return 0; // Default to first option if not found
     }
 
     private String getWatermarkValue(int index) {
         String[] values = getResources().getStringArray(R.array.watermark_values);
-        return values[index];
+        if(index >=0 && index < values.length) {
+            return values[index];
+        }
+        Log.e(TAG_SETTINGS, "Invalid index for watermark values: " + index);
+        return values[0]; // Default to first on error
     }
+
 
     private void showReadmeDialog() {
         vibrateTouch();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
         builder.setTitle(R.string.dialog_welcome_title);
-
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_readme, null);
-
+        if(dialogView == null) return; // Check if inflation failed
         MaterialButton githubButton = dialogView.findViewById(R.id.github_button);
-        githubButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
-
         MaterialButton discordButton = dialogView.findViewById(R.id.discord_button);
-        discordButton.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
-
+        if (githubButton != null) {
+            githubButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
+        }
+        if (discordButton != null) {
+            discordButton.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
+        }
         builder.setView(dialogView);
-        builder.setPositiveButton("OK", null);
+        builder.setPositiveButton(android.R.string.ok, null); // Use standard OK text
         builder.show();
     }
 
+
     private void openUrl(String url) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(intent);
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        } catch(Exception e){
+            Log.e(TAG_SETTINGS, "Could not open URL: " + url, e);
+            Toast.makeText(requireContext(), "Could not open link", Toast.LENGTH_SHORT).show();
+        }
     }
+
 
     private void saveLanguagePreference(String languageCode) {
-        SharedPreferences prefs = requireActivity().getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
+        SharedPreferences.Editor editor = sharedPreferencesManager.sharedPreferences.edit();
         editor.putString(Constants.LANGUAGE_KEY, languageCode);
         editor.apply();
-        Log.d("SettingsFragment", "Language preference saved: " + languageCode);
+        Log.d(TAG_SETTINGS, "Language preference saved: " + languageCode);
     }
 
-    private void setupLanguageSpinner(Spinner languageSpinner) {
+
+    private void setupLanguageSpinner(Spinner spinner) {
+        if(spinner == null) return;
+        // Setup language adapter using array resource
+        ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
+                requireContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
+        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(languageAdapter);
+
+
         String savedLanguageCode = sharedPreferencesManager.getLanguage();
         int selectedIndex = getLanguageIndex(savedLanguageCode);
-        languageSpinner.setSelection(selectedIndex);
+        spinner.setSelection(selectedIndex);
+        Log.d(TAG_SETTINGS, "Language spinner set to index: " + selectedIndex + " (Code: "+savedLanguageCode+")");
 
-        languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String languageCode = getLanguageCode(position);
-                if (!languageCode.equals(savedLanguageCode)) {
-                    saveLanguagePreference(languageCode);
-                    ((MainActivity) requireActivity()).applyLanguage(languageCode);  // This will recreate the activity if the language is different
+                String currentSavedLanguageCode = sharedPreferencesManager.getLanguage();
+                String newlySelectedLanguageCode = getLanguageCode(position);
+                Log.d(TAG_SETTINGS, "Language selected: " + newlySelectedLanguageCode + " (Position: "+position+")");
+
+                // Only apply if language actually changed
+                if (!newlySelectedLanguageCode.equals(currentSavedLanguageCode)) {
+                    saveLanguagePreference(newlySelectedLanguageCode);
+                    // Apply the language change (recreates activity)
+                    if(getActivity() instanceof MainActivity){
+                        ((MainActivity) requireActivity()).applyLanguage(newlySelectedLanguageCode);
+                    } else {
+                        Log.e(TAG_SETTINGS, "Cannot apply language, activity is not MainActivity instance.");
+                        // Maybe just recreate fragment or show toast to restart app?
+                        Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
+
+    // Helper to map language code to spinner index
     private int getLanguageIndex(String languageCode) {
         switch (languageCode) {
-            case "zh":
-                return 1;
-            case "ar":
-                return 2;
-            case "fr":
-                return 3;
-            case "tr":
-                return 4;
-            case "ps":
-                return 5;
-            case "in":
-                return 6;
-            default:
-                return 0; // Default to English
+            case "en": return 0;
+            case "zh": return 1;
+            case "ar": return 2;
+            case "fr": return 3;
+            case "tr": return 4;
+            case "ps": return 5;
+            case "in": return 6;
+            default: return 0; // Default to English if unknown
         }
     }
 
+    // Helper to map spinner index to language code
     private String getLanguageCode(int position) {
         switch (position) {
-            case 1:
-                return "zh";
-            case 2:
-                return "ar";
-            case 3:
-                return "fr";
-            case 4:
-                return "tr";
-            case 5:
-                return "ps";
-            case 6:
-                return "in";
-            default:
-                return "en";
+            case 0: return "en";
+            case 1: return "zh";
+            case 2: return "ar";
+            case 3: return "fr";
+            case 4: return "tr";
+            case 5: return "ps";
+            case 6: return "in";
+            default: return "en"; // Default to English on error
         }
     }
 
-    private void applyLanguage(String languageCode) {
-        Log.d("SettingsFragment", "Applying new language: " + languageCode);
-        Locale locale = new Locale(languageCode);
-        Locale.setDefault(locale);
-        Configuration config = new Configuration();
-        config.setLocale(locale);
-        requireActivity().getResources().updateConfiguration(config, requireActivity().getResources().getDisplayMetrics());
 
-        // Restart the activity or fragment to apply changes
-        requireActivity().recreate();
+    private void setupLocationSwitch(MaterialSwitch switchView) {
+        if(switchView == null) return;
+        boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+        switchView.setChecked(isLocationEnabled);
+        Log.d(TAG_SETTINGS,"Location switch initialized. State: " + isLocationEnabled);
+
+        switchView.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            vibrateTouch();
+            if (isChecked) {
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    showLocationPermissionDialog(switchView); // Pass the switch to handle denial
+                } else {
+                    sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, true).apply();
+                    Log.d(TAG_SETTINGS,"Location permission granted, setting enabled.");
+                }
+            } else {
+                sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, false).apply();
+                Log.d(TAG_SETTINGS,"Location setting disabled.");
+                if(locationHelper != null) locationHelper.stopLocationUpdates(); // Stop updates when disabled
+            }
+        });
     }
 
-    /**
-     * Retrieves the index of the selected frame rate from the frame rate options list.
-     *
-     * @param frameRate The desired frame rate.
-     * @return The index of the frame rate in the selection list, or 0 if not found.
-     */
+
+    private void showLocationPermissionDialog(MaterialSwitch switchView) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.location_permission_title))
+                .setMessage(getString(R.string.location_permission_description))
+                .setPositiveButton("Grant", (dialog, which) -> requestLocationPermission())
+                .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
+                    // User denied permission via dialog, uncheck the switch and save pref
+                    if (switchView != null) switchView.setChecked(false);
+                    sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, false).apply();
+                    Log.d(TAG_SETTINGS,"User cancelled location permission request.");
+                    dialog.dismiss();
+                })
+                .setCancelable(false) // Prevent dismissing without choice
+                .show();
+    }
+
+
+    private void requestLocationPermission() {
+        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
+            Log.w(TAG_SETTINGS,"Location permission previously denied, showing rationale dialog first.");
+            // Optionally show a rationale again before requesting
+            // For simplicity now, just re-request:
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+        } else {
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+            Log.d(TAG_SETTINGS,"Requesting location permission.");
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, true).apply();
+                Log.d(TAG_SETTINGS, "Location permission granted via system dialog.");
+                // Re-check the switch (should already be checked if dialog was triggered by toggle)
+                if (locationSwitch != null && !locationSwitch.isChecked()) locationSwitch.setChecked(true);
+                if(locationHelper != null) locationHelper.startLocationUpdates(); // Start updates now
+            } else {
+                // User denied permission via system dialog
+                sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, false).apply();
+                // Ensure the switch is unchecked
+                if (locationSwitch != null) locationSwitch.setChecked(false);
+                Log.w(TAG_SETTINGS,"Location permission denied via system dialog.");
+                Toast.makeText(getContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+        // Handle other permission results if necessary
+    }
+
+
+    private void setupDebugSwitch(MaterialSwitch switchView) {
+        if(switchView == null) return;
+        boolean isDebugEnabled = sharedPreferencesManager.isDebugLoggingEnabled();
+        switchView.setChecked(isDebugEnabled);
+        Log.d(TAG_SETTINGS,"Debug switch initialized. State: " + isDebugEnabled);
+
+        switchView.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_DEBUG_DATA, isChecked).apply();
+            // Use standard Log - Replace com.fadcam.Log if it exists
+            // Log.setDebugEnabled(isChecked); // Remove if com.fadcam.Log is removed
+            vibrateTouch();
+            Log.d(TAG_SETTINGS,"Debug logging preference changed to: " + isChecked);
+        });
+    }
+
+
+    private void openInAppBrowser(String url) {
+        try {
+            Intent intent = new Intent(getContext(), WebViewActivity.class);
+            intent.putExtra("url", url);
+            startActivity(intent);
+        } catch(Exception e){
+            Log.e(TAG_SETTINGS, "Could not open WebViewActivity: " + url, e);
+            Toast.makeText(requireContext(), "Could not open link", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private void setupFrameRateNoteText()
+    {
+        TextView noteTextView = view.findViewById(R.id.framerate_note_textview);
+        if (noteTextView != null) {
+            noteTextView.setText(getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE));
+        }
+    }
+
+
+    private void setupCodecNoteText()
+    {
+        TextView noteTextView = view.findViewById(R.id.codec_note_textview);
+        if(noteTextView != null) {
+            VideoCodec defaultCodec = Constants.DEFAULT_VIDEO_CODEC;
+            noteTextView.setText(getString(R.string.note_codec, defaultCodec != null ? defaultCodec.getName() : "N/A"));
+        }
+    }
+
+    // Helper to map frame rate value to spinner index (using specific array)
     private int getVideoFrameRateIndex(int frameRate)
     {
-        int[] frameRateOptions = getResources().getIntArray(R.array.video_framerate_options);
-        for(int i = 0;i < frameRateOptions.length;i++)
-        {
-            if(frameRateOptions[i] == frameRate)
-            {
-                return i;
-            }
-        }
-        return 0;
+        List<Integer> rates = getCompatiblesVideoFrameRates(sharedPreferencesManager.getCameraSelection());
+        int index = rates.indexOf(frameRate);
+        return Math.max(index, 0); // Return 0 if not found
     }
 
-    /**
-     * Retrieves the index of the selected video codec from the codec list.
-     *
-     * @param videoCodec The desired video codec.
-     * @return The index of the video codec in the codec list, or -1 if not found.
-     */
+    // Helper to map codec value to spinner index
     private int getVideoCodecIndex(VideoCodec videoCodec)
     {
-        VideoCodec[] codecs = VideoCodec.values();
-        for (int i = 0; i < codecs.length; i++) {
-            if (codecs[i] == videoCodec) {
-                return i;
-            }
-        }
-        return -1;
+        List<VideoCodec> codecs = getCompatiblesVideoCodecs();
+        int index = codecs.indexOf(videoCodec);
+        return Math.max(index, 0); // Return 0 if not found
     }
 
     /**
      * Retrieves a list of compatible video resolutions for the specified camera type.
-     * The resolutions are derived from the camcorder profiles available for the camera.
-     *
-     * @param cameraType the type of camera (e.g., front or back) for which resolutions are determined.
-     * @return a list of compatible video resolutions as {@link Size} objects, each containing width and height.
      */
     public List<Size> getCompatiblesVideoResolutions(CameraType cameraType)
     {
         List<CamcorderProfile> camcorderProfiles = this.getCamcorderProfiles(cameraType);
-
-        // Get the available frame rates
         List<Size> videoResolutionCompatibles = new ArrayList<>();
 
-        for(CamcorderProfile camcorderProfile : camcorderProfiles) {
-            videoResolutionCompatibles.add(new Size(camcorderProfile.videoFrameWidth, camcorderProfile.videoFrameHeight));
+        if(camcorderProfiles != null) {
+            for (CamcorderProfile camcorderProfile : camcorderProfiles) {
+                // Filter out null profiles just in case
+                if(camcorderProfile != null){
+                    videoResolutionCompatibles.add(new Size(camcorderProfile.videoFrameWidth, camcorderProfile.videoFrameHeight));
+                }
+            }
         }
+        Log.d(TAG_SETTINGS, "Compatible resolutions for " + cameraType + ": " + videoResolutionCompatibles.size());
         return videoResolutionCompatibles;
     }
 
     /**
-     * Retrieves a list of compatible video resolutions for the specified camera type
-     * in a human-readable string format. Each resolution is matched with its
-     * corresponding display value from predefined resources.
-     *
-     * @param cameraType the type of camera (e.g., front or back) for which resolutions are determined.
-     * @return a list of compatible video resolutions as formatted strings.
+     * Retrieves a list of compatible video resolutions as strings.
      */
     public List<String> getCompatiblesVideoResolutionsAsString(CameraType cameraType)
     {
         List<Size> videoResolutions = this.getCompatiblesVideoResolutions(cameraType);
-
         String[] resolutionKeys = getResources().getStringArray(R.array.video_resolutions_keys);
         String[] resolutionValues = getResources().getStringArray(R.array.video_resolutions_values);
         List<String> videoResolutionList = new ArrayList<>();
@@ -768,23 +1012,22 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * Builds a human-readable string representation of a video resolution.
-     * The string is constructed by matching the resolution dimensions with predefined keys
-     * and appending the corresponding value. If no matching value is found, the dimensions are appended directly.
-     *
-     * @param videoResolution the resolution to be converted to a string (contains width and height).
-     * @param resolutionKeys an array of resolution keys (e.g., "1920x1080").
-     * @param resolutionValues an array of resolution values corresponding to the keys (e.g., "Full HD").
-     * @return a string representing the video resolution, either using the predefined value or the width/height.
+     * Builds a display string for a video resolution.
      */
     @NonNull
     private static String getVideoResolutionStringBuilder(Size videoResolution, String[] resolutionKeys, String[] resolutionValues) {
         StringBuilder videoResolutionText = new StringBuilder();
+        String label = null;
+        String resKey = videoResolution.getWidth() + "x" + videoResolution.getHeight();
 
         for (int i = 0; i < resolutionKeys.length; i++) {
-            if (resolutionKeys[i].equals(videoResolution.getWidth() + "x" + videoResolution.getHeight())) {
-                videoResolutionText.append(resolutionValues[i]);
+            if (resolutionKeys[i].equals(resKey)) {
+                label = resolutionValues[i];
+                break;
             }
+        }
+        if (label != null){
+            videoResolutionText.append(label);
         }
 
         videoResolutionText.append(" (")
@@ -796,210 +1039,209 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * Retrieves a list of compatible video frame rates for the specified camera type.
-     *
-     * @param cameraType the type of camera (e.g., front or back) for which frame rates are determined.
-     * @return a list of compatible video frame rates as Integer values.
+     * Retrieves a list of compatible frame rates for the current camera and resolution.
      */
-    private List<Integer> getCompatiblesVideoFrameRates(CameraType cameraType)
-    {
-        CamcorderProfile camcorderProfile = getCamcorderProfile(cameraType);
+    private List<Integer> getCompatiblesVideoFrameRates(CameraType cameraType) {
+        // Get the CamcorderProfile for the CURRENTLY selected resolution
+        CamcorderProfile currentProfile = getCamcorderProfile(cameraType);
+        if (currentProfile == null) {
+            Log.e(TAG_SETTINGS,"Could not get profile for "+cameraType+", cannot determine compatible frame rates.");
+            return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE); // Fallback
+        }
 
-        int[] videoFrameRatesAvailable = getResources().getIntArray(R.array.video_framerate_options);
+        int maxSupportedRate = currentProfile.videoFrameRate;
+        Log.d(TAG_SETTINGS, "Max supported rate for current resolution: " + maxSupportedRate);
+        int[] allRateOptions = getResources().getIntArray(R.array.video_framerate_options);
 
-        return Arrays.stream(videoFrameRatesAvailable)
-                // Only frame rates that are less than or equal to the camera's maximum supported frame rate are included
-                .filter(frameRate -> frameRate <= camcorderProfile.videoFrameRate)
-                .boxed()
-                .collect(Collectors.toList());
+        List<Integer> compatibleRates = new ArrayList<>();
+        for (int rate : allRateOptions) {
+            if (rate <= maxSupportedRate) {
+                compatibleRates.add(rate);
+            }
+        }
+
+        if (compatibleRates.isEmpty()) {
+            Log.w(TAG_SETTINGS,"No standard frame rates compatible <= " + maxSupportedRate + ". Adding max rate itself.");
+            compatibleRates.add(maxSupportedRate); // Add the max if none of the standards fit
+        }
+        Log.d(TAG_SETTINGS,"Compatible frame rates found: " + compatibleRates);
+        return compatibleRates;
     }
 
+    /**
+     * Retrieves a list of supported video codecs on the device.
+     */
     private List<VideoCodec> getCompatiblesVideoCodecs()
     {
         List<VideoCodec> videoCodecs = new ArrayList<>();
-
-        for(VideoCodec videoCodec : VideoCodec.values())
-        {
+        for(VideoCodec videoCodec : VideoCodec.values()) {
             if(Utils.isCodecSupported(videoCodec.getMimeType())) {
                 videoCodecs.add(videoCodec);
             }
         }
-
         if(videoCodecs.isEmpty()) {
+            Log.e(TAG_SETTINGS, "No standard video codecs found! Defaulting.");
             videoCodecs.add(Constants.DEFAULT_VIDEO_CODEC);
         }
-
         return videoCodecs;
     }
 
-    /**
-     * Returns the video codec with the highest priority from the list of compatible codecs.
-     * If no codec is compatible, it returns null.
-     */
+
+    // Retrieves the video codec with the highest priority among compatible ones.
     private VideoCodec getCompatiblesVideoCodec() {
         List<VideoCodec> compatibleCodecs = getCompatiblesVideoCodecs();
-        VideoCodec highestPriorityCodec = null;
+        if (compatibleCodecs.isEmpty()){
+            return Constants.DEFAULT_VIDEO_CODEC; // Should not happen if list isn't empty
+        }
 
+        // Simple priority check (can be made more complex if needed)
+        VideoCodec highestPriorityCodec = compatibleCodecs.get(0); // Start with first
         for (VideoCodec videoCodec : compatibleCodecs) {
-            if (highestPriorityCodec == null || videoCodec.getPriority() > highestPriorityCodec.getPriority()) {
+            // Assuming lower integer value means higher priority if getPriority defined that way
+            if (videoCodec.getPriority() < highestPriorityCodec.getPriority()) {
                 highestPriorityCodec = videoCodec;
             }
         }
-
         return highestPriorityCodec;
     }
 
 
     /**
-     * Retrieves a list of available camcorder profiles for the specified camera type.
-     * The profiles are determined based on the camera's ID and supported resolutions.
-     *
-     * @param cameraType the type of camera (e.g., front or back) for which camcorder profiles are retrieved.
-     * @return a list of {@link CamcorderProfile} objects representing the supported profiles.
+     * Retrieves CamcorderProfiles for a given camera type.
      */
     private List<CamcorderProfile> getCamcorderProfiles(CameraType cameraType) {
-
         List<CamcorderProfile> profiles = new ArrayList<>();
-
         int cameraId = cameraType.getCameraId();
 
-        List<Integer> qualities = new ArrayList<>();
-        qualities.add(CamcorderProfile.QUALITY_480P);
-        qualities.add(CamcorderProfile.QUALITY_720P);
-        qualities.add(CamcorderProfile.QUALITY_1080P);
+        // Prioritize common qualities
+        int[] qualities = {
+                CamcorderProfile.QUALITY_1080P,
+                CamcorderProfile.QUALITY_720P,
+                CamcorderProfile.QUALITY_480P,
+                // Less common / higher-end
+                CamcorderProfile.QUALITY_2160P, // 4K
+        };
+
+        // Add qualities based on SDK version compatibility
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Check and add 8K - order might matter for dropdown appearance
+            if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_8KUHD)) profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_8KUHD));
+        }
+        // Check and add 4K (check again for redundancy if SDK < S handled 2160P)
+        if(!profiles.stream().anyMatch(p -> p.quality == CamcorderProfile.QUALITY_2160P) && CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P)){
+            profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_2160P));
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            qualities.add(CamcorderProfile.QUALITY_2K);
+            if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2K)) profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_2K));
         }
 
-        qualities.add(CamcorderProfile.QUALITY_2160P); // 4K
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            qualities.add(CamcorderProfile.QUALITY_8KUHD); // 8K
-        }
-
+        // Add standard qualities if available
         for (int quality : qualities) {
-            if (CamcorderProfile.hasProfile(cameraId, quality)) {
-                CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
-                if(profile != null) {
-                    profiles.add(profile);
-
-                    Log.d("SettingsFragment", cameraType + ": " + profile.videoFrameWidth + "x" + profile.videoFrameHeight + " (FPS: " + profile.videoFrameRate + ")");
-                }
+            if (CamcorderProfile.hasProfile(cameraId, quality) && !profiles.stream().anyMatch(p -> p.quality == quality)) {
+                profiles.add(CamcorderProfile.get(cameraId, quality));
             }
         }
+
+        // Ensure profiles list is not null and remove null entries
+        profiles.removeIf(p -> p == null);
+        Log.d(TAG_SETTINGS,"Camcorder profiles retrieved for "+cameraType +": "+profiles.size());
         return profiles;
     }
 
     /**
-     * Retrieves the selected camcorder profile for the specified camera type based on user preferences.
-     * The method checks the preferences for the index of the desired profile and returns the corresponding profile.
-     *
-     * @param cameraType the type of camera (e.g., front or back) for which the camcorder profile is retrieved.
-     * @return the selected {@link CamcorderProfile}, or null if no profile matches the selection.
+     * Retrieves the selected CamcorderProfile based on saved resolution preferences.
      */
     private CamcorderProfile getCamcorderProfile(CameraType cameraType) {
-        int camcorderProfileIndexPreference = this.getCamcorderProfileIndexPreferences(cameraType);
-        for (Map.Entry<CameraType, List<CamcorderProfile>> entry : camcorderProfilesAvailables.entrySet()) {
-            if(entry.getKey() == cameraType) {
-                return entry.getValue().get(camcorderProfileIndexPreference);
+        int savedWidth = sharedPreferencesManager.sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, Constants.DEFAULT_VIDEO_RESOLUTION.getWidth());
+        int savedHeight = sharedPreferencesManager.sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, Constants.DEFAULT_VIDEO_RESOLUTION.getHeight());
+
+        List<CamcorderProfile> profiles = camcorderProfilesAvailables.get(cameraType);
+        if (profiles == null || profiles.isEmpty()) {
+            Log.e(TAG_SETTINGS, "No profiles available for " + cameraType + " when getting specific profile.");
+            return CamcorderProfile.get(cameraType.getCameraId(), CamcorderProfile.QUALITY_HIGH); // Fallback needed
+        }
+
+        for (CamcorderProfile profile : profiles) {
+            if (profile != null && profile.videoFrameWidth == savedWidth && profile.videoFrameHeight == savedHeight) {
+                return profile;
             }
         }
-        return null;
+        // If saved resolution not found in available profiles, return the first available (or default)
+        Log.w(TAG_SETTINGS,"Saved resolution "+savedWidth+"x"+savedHeight+ " not found for " + cameraType + ", returning first available.");
+        return profiles.get(0); // Return first as fallback
     }
 
     /**
-     * Retrieves the index of the preferred camcorder profile for the specified camera type
-     * based on the stored video resolution in shared preferences.
-     * If no matching resolution is found, the default profile index (0) is returned.
-     *
-     * @param cameraType the type of camera (e.g., front or back) for which the profile index is determined.
-     * @return the index of the camcorder profile that matches the stored video resolution, or 0 if no match is found.
+     * Gets the index of the CamcorderProfile matching saved preferences.
      */
     private int getCamcorderProfileIndexPreferences(CameraType cameraType)
     {
-        Size videoResolution = sharedPreferencesManager.getCameraResolution();
+        int savedWidth = sharedPreferencesManager.sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, Constants.DEFAULT_VIDEO_RESOLUTION.getWidth());
+        int savedHeight = sharedPreferencesManager.sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, Constants.DEFAULT_VIDEO_RESOLUTION.getHeight());
 
-        List<CamcorderProfile> camcorderProfiles = camcorderProfilesAvailables.get(cameraType);
+        List<CamcorderProfile> profiles = camcorderProfilesAvailables.get(cameraType);
+        if (profiles == null || profiles.isEmpty()) {
+            return 0; // Default to first index if no profiles
+        }
 
-        int index = 0;
-
-        if(camcorderProfiles != null && !camcorderProfiles.isEmpty()) {
-            for (CamcorderProfile camcorderProfile : camcorderProfiles) {
-                if (camcorderProfile.videoFrameWidth == videoResolution.getWidth()
-                        && camcorderProfile.videoFrameHeight == videoResolution.getHeight()) {
-                    return index;
-                }
-                index++;
+        for (int i = 0; i < profiles.size(); i++) {
+            CamcorderProfile profile = profiles.get(i);
+            if (profile != null && profile.videoFrameWidth == savedWidth && profile.videoFrameHeight == savedHeight) {
+                return i; // Found matching profile
             }
         }
-        return 0;
+        return 0; // Default to first index if saved resolution not found
     }
 
+
+    // --- Theme Spinner Logic ---
     private void setupThemeSpinner(View view) {
         themeSpinner = view.findViewById(R.id.theme_spinner);
+        if (themeSpinner == null) {
+            Log.e(TAG_SETTINGS, "Theme spinner not found!");
+            return;
+        }
         String[] themeOptions = {"Dark Mode", "AMOLED Black"};
         ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, themeOptions);
         themeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         themeSpinner.setAdapter(themeAdapter);
 
-        // Set the current theme in the spinner
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        Log.d("SettingsFragment", "Current theme: " + currentTheme);
-        
         int currentThemeIndex = Arrays.asList(themeOptions).indexOf(currentTheme);
-        Log.d("SettingsFragment", "Current theme index: " + currentThemeIndex);
-        
-        // Ensure valid index, default to 0 if not found
-        themeSpinner.setSelection(currentThemeIndex != -1 ? currentThemeIndex : 0);
+        themeSpinner.setSelection(currentThemeIndex >= 0 ? currentThemeIndex : 0); // Select current or default
+        Log.d(TAG_SETTINGS,"Theme spinner set to index: " + themeSpinner.getSelectedItemPosition());
 
         themeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selectedTheme = themeOptions[position];
-                Log.d("SettingsFragment", "Selected theme: " + selectedTheme);
-                
-                // Check if theme is actually changing
                 String currentSavedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-                if (selectedTheme.equals(currentSavedTheme)) {
-                    Log.d("SettingsFragment", "Theme not changed, skipping recreation");
-                    return;
-                }
-                
-                // Save the selected theme
-                SharedPreferences.Editor editor = sharedPreferencesManager.sharedPreferences.edit();
-                editor.putString(Constants.PREF_APP_THEME, selectedTheme);
-                boolean saveSuccess = editor.commit(); // Use commit instead of apply for synchronous save
-                Log.d("SettingsFragment", "Theme save success: " + saveSuccess);
-                
-                // Always force dark mode
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                
-                // Optional: Add haptic feedback
-                vibrateTouch();
-                
-                // Prompt user to restart for theme change
-                new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Theme Change")
-                    .setMessage("Restart the app to apply the new theme?")
-                    .setPositiveButton("Restart", (dialog, which) -> {
-                        // Restart the entire application
-                        Intent intent = requireActivity().getPackageManager()
-                            .getLaunchIntentForPackage(requireActivity().getPackageName());
-                        if (intent != null) {
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            startActivity(intent);
-                            requireActivity().finish();
-                        }
-                    })
-                    .setNegativeButton("Later", null)
-                    .show();
-            }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                Log.d("SettingsFragment", "No theme selected");
+                if (!selectedTheme.equals(currentSavedTheme)) {
+                    Log.d(TAG_SETTINGS, "Theme selection changed to: " + selectedTheme);
+                    sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_APP_THEME, selectedTheme).apply();
+                    vibrateTouch();
+                    // Prompt user to restart
+                    new MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Theme Change")
+                            .setMessage("Restart the app to apply the new theme?")
+                            .setPositiveButton("Restart", (dialog, which) -> {
+                                Intent intent = requireActivity().getPackageManager()
+                                        .getLaunchIntentForPackage(requireActivity().getPackageName());
+                                if (intent != null) {
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    startActivity(intent);
+                                    requireActivity().finishAffinity(); // Close all activities of the app
+                                }
+                            })
+                            .setNegativeButton("Later", null)
+                            .show();
+                }
             }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
+    // --- End Theme Spinner Logic ---
 }

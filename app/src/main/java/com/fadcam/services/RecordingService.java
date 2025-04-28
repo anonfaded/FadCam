@@ -1,748 +1,1251 @@
 package com.fadcam.services;
 
+import android.Manifest;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import android.provider.DocumentsContract;
+import android.util.Log; // Use standard Log
+import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
-
-import com.fadcam.Constants;
-import com.fadcam.R;
-import com.fadcam.SharedPreferencesManager;
-import com.fadcam.CameraType;
-import java.util.Arrays;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
-import static android.hardware.camera2.CameraDevice.StateCallback;
-import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.documentfile.provider.DocumentFile;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.pm.PackageManager;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CaptureRequest;
-import android.os.Bundle;
-import android.util.Range;
-import android.widget.Toast;
-
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationManagerCompat;
+import android.content.pm.ServiceInfo;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.ReturnCode;
+import com.fadcam.CameraType;
+import com.fadcam.Constants;
 import com.fadcam.MainActivity;
+import com.fadcam.R;
 import com.fadcam.RecordingState;
+import com.fadcam.SharedPreferencesManager; // Use your manager
 import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.RecordsAdapter;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "RecordingServiceChannel";
-
-    private static final String TAG = "RecordingService";
-
-    private RecordsAdapter adapter;
+    private static final String TAG = "RecordingService"; // Use standard Log TAG
 
     private MediaRecorder mediaRecorder;
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
-
     private CaptureRequest.Builder captureRequestBuilder;
-
-    private Surface previewSurface;
+    private Surface previewSurface; // Surface from UI if preview enabled
 
     private LocationHelper locationHelper;
 
-    private File tempFileBeingProcessed;
+    // File / URI tracking
+    private File currentRecordingFile; // Track file path if internal
+    private Uri currentRecordingSafUri; // Track SAF URI if custom
+    private DocumentFile currentRecordingDocFile; // Track DocumentFile if custom
+    private ParcelFileDescriptor currentParcelFileDescriptor; // Track PFD if custom
 
     private RecordingState recordingState = RecordingState.NONE;
+    private boolean isProcessingWatermark = false; // Flag for FFmpeg processing
 
+    // Torch related (from previous implementations)
     private CameraManager torchManager;
-    private String torchCameraId;
+    private String torchCameraId; // Might be used by torch logic
     private boolean isTorchOn = false;
+    private boolean isRecordingTorchEnabled = false; // Tracks state of torch during recording
 
-    private CameraManager cameraManager;
-    private Handler backgroundHandler;
-    private boolean isTorchEnabled = false;
-
-
-    public boolean isRecording() {
-        return recordingState.equals(RecordingState.IN_PROGRESS);
-    }
-
-    public boolean isPaused() {
-        return recordingState.equals(RecordingState.PAUSED);
-    }
-
-    public boolean isWorkingInProgress() { return !recordingState.equals(RecordingState.NONE) || isProcessingWatermark; }
-
-    private boolean isProcessingWatermark = false;
+    private CameraManager cameraManager; // Primary camera manager
+    private Handler backgroundHandler; // For camera operations
 
     private long recordingStartTime;
 
-    private com.fadcam.SharedPreferencesManager sharedPreferencesManager;
+    private SharedPreferencesManager sharedPreferencesManager; // Your settings manager
+    private File currentInternalTempFile;
 
+    // --- Lifecycle Methods ---
     @Override
     public void onCreate() {
         super.onCreate();
-
-        locationHelper = new LocationHelper(getApplicationContext());
-
-        createNotificationChannel();
-
-        sharedPreferencesManager = com.fadcam.SharedPreferencesManager.getInstance(getApplicationContext());
+        Log.d(TAG, "onCreate: Service creating...");
+        // Initialize essential components first
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
+        locationHelper = new LocationHelper(getApplicationContext()); // Assuming needed
+        createNotificationChannel(); // Setup notifications early
 
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        if(cameraManager == null) {
+            Log.e(TAG, "Failed to get CameraManager service.");
+            stopSelf(); // Cannot function without CameraManager
+            return;
+        }
 
         HandlerThread backgroundThread = new HandlerThread("CameraBackground");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
 
-        android.util.Log.d(TAG, "Service created");
+        Log.d(TAG, "Service created successfully.");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // Checks if the intent is null
-        if (intent != null && intent.getAction() != null) {
-            String action = intent.getAction();
-            if (action != null) {
-                switch (intent.getAction()) {
-                    case Constants.INTENT_ACTION_START_RECORDING:
-                        // Show notification immediately before starting recording
-                        setupRecordingInProgressNotification();
-                        startRecording();
-                        break;
-                    case Constants.INTENT_ACTION_PAUSE_RECORDING:
-                        pauseRecording();
-                        break;
-                    case Constants.INTENT_ACTION_RESUME_RECORDING:
-                        setupSurfaceTexture(intent);
-                        resumeRecording();
-                        break;
-                    case Constants.INTENT_ACTION_CHANGE_SURFACE:
-                        setupSurfaceTexture(intent);
-                        createCameraPreviewSession();
-                        break;
-                    case Constants.INTENT_ACTION_STOP_RECORDING:
-                        stopRecording();
-                        break;
-                    case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST:
-                        broadcastOnRecordingStateCallback();
-
-                        if (!isWorkingInProgress()) {
-                            stopSelf();
-                        }
-                        break;
-                    case Constants.INTENT_ACTION_TOGGLE_TORCH:
-                        toggleTorch();
-                        return START_STICKY;
-                    case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH:
-                        toggleRecordingTorch();
-                        break;
-                    case Constants.BROADCAST_ON_TORCH_STATE_REQUEST:
-                        if (cameraDevice != null) {
-                            try {
-                                isTorchOn = !isTorchOn;
-                                captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
-                                        isTorchOn ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
-                                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-
-                                // Broadcast state change
-                                Intent torchIntent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-                                torchIntent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
-                                sendBroadcast(torchIntent);
-
-                                android.util.Log.d(TAG, "Recording camera torch turned " + (isTorchOn ? "ON" : "OFF"));
-                            } catch (CameraAccessException e) {
-                                android.util.Log.e(TAG, "Error toggling torch during recording: " + e.getMessage());
-                            }
-                        } else {
-                            android.util.Log.e(TAG, "Cannot toggle torch - camera not initialized");
-                        }
-                        break;
-                }
-            }
+        Log.d(TAG, "onStartCommand received: Action=" + (intent != null ? intent.getAction() : "null"));
+        if (intent == null || intent.getAction() == null) {
+            Log.w(TAG, "Intent or Action is null, returning START_NOT_STICKY");
+            // Stop if started without explicit action and not already working
+            if(!isWorkingInProgress()) stopSelf();
+            return START_NOT_STICKY; // Avoid zombie restarts without intent
         }
-        return START_STICKY;
-    }
 
-    private void setupSurfaceTexture(Intent intent)
-    {
-        previewSurface = intent.getParcelableExtra("SURFACE");
-    }
+        String action = intent.getAction();
+        switch (action) {
+            case Constants.INTENT_ACTION_START_RECORDING:
+                // Check if already recording/processing to prevent overlaps
+                if (isWorkingInProgress()) {
+                    Log.w(TAG,"Start requested, but already working. Ignoring. State: " + recordingState + ", Processing: "+isProcessingWatermark);
+                    Utils.showQuickToast(this, R.string.video_recording_started); // Give feedback anyway
+                    return START_STICKY; // Remain active
+                }
+                setupRecordingInProgressNotification(); // Show notification immediately
+                startRecording(); // Begin recording process
+                break;
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
+            case Constants.INTENT_ACTION_PAUSE_RECORDING:
+                pauseRecording();
+                break;
 
-        android.util.Log.d(TAG, "Service destroyed");
+            case Constants.INTENT_ACTION_RESUME_RECORDING:
+                setupSurfaceTexture(intent); // Get new surface if needed
+                resumeRecording();
+                break;
 
-        cancelNotification();
-        stopRecording();
+            case Constants.INTENT_ACTION_CHANGE_SURFACE:
+                setupSurfaceTexture(intent); // Update surface
+                if (isRecording()) { // Recreate session only if actively recording
+                    createCameraPreviewSession();
+                }
+                break;
+
+            case Constants.INTENT_ACTION_STOP_RECORDING:
+                stopRecording();
+                break;
+
+            // Request/Callback pattern for UI synchronization
+            case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST:
+                Log.d(TAG,"Responding to state request");
+                broadcastOnRecordingStateCallback();
+                if (!isWorkingInProgress()) { // Stop only if truly idle
+                    stopSelf();
+                }
+                break;
+
+            // Torch control during recording
+            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH:
+                toggleRecordingTorch(); // Method to handle torch on recording camera
+                break;
+
+            default:
+                Log.w(TAG, "Unknown action received: " + action);
+                break;
+        }
+
+        return START_STICKY; // Keep service running for background recording
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return null; // Not a bound service
     }
 
-    private void setupMediaRecorder() {
-        /*
-         * This method sets up the MediaRecorder for video recording.
-         * It creates a directory for saving videos if it doesn't exist,
-         * generates a timestamp-based filename, and configures the
-         * MediaRecorder with the appropriate settings based on the
-         * selected video quality (SD, HD, FHD). It reduces bitrates
-         * by 50% using the HEVC (H.265) encoder for efficient compression
-         * without significantly affecting video quality.
-         *
-         * - SD: 640x480 @ 0.5 Mbps
-         * - HD: 1280x720 @ 2.5 Mbps
-         * - FHD: 1920x1080 @ 5 Mbps
-         *
-         * It also adjusts the frame rate, sets audio settings, and configures
-         * the orientation based on the camera selection (front or rear).
-         */
 
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "onDestroy: Service destroying...");
+        // Cleanup resources aggressively
+        releaseRecordingResources(); // Centralized cleanup
+        if (backgroundHandler != null) {
+            backgroundHandler.getLooper().quitSafely(); // Stop background thread
+            backgroundHandler = null;
+        }
+        cancelNotification(); // Ensure notification is removed
+        Log.d(TAG, "Service destroyed.");
+        super.onDestroy();
+    }
+    // --- End Lifecycle Methods ---
+
+
+    // --- Core Recording Logic ---
+    private void startRecording() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG,"Permissions missing, cannot start recording.");
+            Toast.makeText(this,"Permissions required for recording", Toast.LENGTH_LONG).show();
+            stopSelf();
+            return;
+        }
+        Log.d(TAG,"startRecording: Attempting to start.");
         try {
-            // Create directory for saving videos if it doesn't exist
-            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-            if (!videoDir.exists()) {
-                if (videoDir.mkdirs()) {
-                    android.util.Log.d(TAG, "setupMediaRecorder: Directory created successfully");
-                } else {
-                    android.util.Log.e(TAG, "setupMediaRecorder: Failed to create directory");
+            setupMediaRecorder(); // Configure the recorder + storage path/URI
+            if (mediaRecorder == null) { // Check if setup failed
+                Log.e(TAG, "startRecording: MediaRecorder setup failed.");
+                return; // setupMediaRecorder handles errors/stopping service
+            }
+            openCamera(); // Open camera to start the capture session
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting recording process", e);
+            releaseRecordingResources(); // Clean up on failure
+            Toast.makeText(this,"Error starting recording", Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+    }
+
+    private void stopRecording() {
+        Log.d(TAG, "stopRecording: Attempting to stop. Current state: " + recordingState);
+        if (recordingState == RecordingState.NONE && !isProcessingWatermark) {
+            Log.w(TAG,"stopRecording called but not active/processing.");
+            return; // Avoid stopping if already stopped/idle
+        }
+
+        // Store the reference using 'this.' explicitly
+        File tempFileToProcess = this.currentInternalTempFile;
+
+        // Capture state BEFORE stopping components
+        boolean wasRecordingOrPaused = recordingState != RecordingState.NONE;
+        recordingState = RecordingState.NONE; // Mark as stopped first
+        sharedPreferencesManager.setRecordingInProgress(false); // Also update pref early
+
+        // Release MediaRecorder safely
+        if (mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+                Log.d(TAG, "MediaRecorder stopped.");
+            } catch (RuntimeException stopException) {
+                Log.e(TAG, "RuntimeException trying to stop MediaRecorder: " + stopException.getMessage());
+                // Recording might be corrupt, but try to proceed with processing anyway if file exists
+            } finally {
+                try {
+                    mediaRecorder.reset();
+                    mediaRecorder.release();
+                    Log.d(TAG, "MediaRecorder reset and released.");
+                } catch (Exception releaseEx) {
+                    Log.e(TAG, "Exception during MediaRecorder reset/release", releaseEx);
+                }
+                mediaRecorder = null;
+            }
+        } else {
+            Log.w(TAG,"stopRecording: mediaRecorder was already null.");
+        }
+
+        // Close Camera Resources
+        if (captureSession != null) {
+            try { captureSession.close(); } catch (Exception e) { Log.e(TAG, "Error closing CaptureSession", e); }
+            captureSession = null;
+            Log.d(TAG, "CaptureSession closed.");
+        }
+        if (cameraDevice != null) {
+            try { cameraDevice.close(); } catch (Exception e) { Log.e(TAG, "Error closing CameraDevice", e); }
+            cameraDevice = null;
+            Log.d(TAG, "CameraDevice closed.");
+        }
+
+        // Stop foreground service and notifications
+        stopForeground(true);
+        cancelNotification();
+
+        // Only process if recording was active and we have a temp file reference
+        if (wasRecordingOrPaused && tempFileToProcess != null) {
+            processAndMoveVideo(tempFileToProcess); // Process the saved file
+        } else {
+            Log.w(TAG, "stopRecording: Not processing. WasActive: " + wasRecordingOrPaused + ", TempFile: " + (tempFileToProcess != null ? tempFileToProcess.getName() : "null"));
+            if (tempFileToProcess != null) {
+                // If somehow stopped without processing needed, still clean up temp
+                if (tempFileToProcess.exists() && tempFileToProcess.delete()) {
+                    Log.d(TAG, "Cleaned up unused temp file on stop: " + tempFileToProcess.getName());
                 }
             }
+        }
+        currentInternalTempFile = null; // Clear the global reference AFTER passing it
 
-            // Generate a timestamp-based filename for the video
-            String timestamp = new SimpleDateFormat("yyyyMMdd_hh_mm_ssa", Locale.getDefault()).format(new Date());
-            File videoFile = new File(videoDir, "temp_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION);
 
-            // Initialize MediaRecorder
-            mediaRecorder = new MediaRecorder();
+        broadcastOnRecordingStopped();
+        Utils.showQuickToast(this, R.string.video_recording_stopped);
+
+        // Check if service can stop now
+        if (!isWorkingInProgress()) {
+            Log.d(TAG, "stopRecording: No recording or processing active, stopping service.");
+            stopSelf();
+        } else {
+            Log.d(TAG, "stopRecording: Service stays alive for processing/moving.");
+        }
+    }
+
+    private void pauseRecording() {
+        if (recordingState != RecordingState.IN_PROGRESS) {
+            Log.w(TAG,"pauseRecording requested but not IN_PROGRESS. State: " + recordingState);
+            return;
+        }
+        Log.d(TAG, "pauseRecording: Pausing.");
+        try {
+            if (mediaRecorder != null) {
+                mediaRecorder.pause();
+                recordingState = RecordingState.PAUSED;
+                sharedPreferencesManager.setRecordingInProgress(false); // Consider if 'paused' is 'in progress'
+                setupRecordingResumeNotification(); // Update notification for resume action
+                showRecordingInPausedToast();
+                broadcastOnRecordingPaused();
+                Log.d(TAG, "Recording paused.");
+            } else {
+                Log.e(TAG,"pauseRecording: mediaRecorder is null!");
+            }
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "Error pausing recording (IllegalStateException)", e);
+            // This might mean recording was already stopped or in error state
+            stopRecording(); // Attempt graceful stop if pause fails
+        } catch (Exception e) {
+            Log.e(TAG,"General error pausing recording",e);
+            stopRecording(); // Attempt graceful stop on error
+        }
+    }
+
+    private void resumeRecording() {
+        if (recordingState != RecordingState.PAUSED) {
+            Log.w(TAG,"resumeRecording requested but not PAUSED. State: " + recordingState);
+            // If state is NONE, might mean app was killed and restarted, try starting?
+            // If state is IN_PROGRESS, ignore.
+            return;
+        }
+        Log.d(TAG,"resumeRecording: Resuming...");
+        try {
+            if (mediaRecorder != null) {
+                // Surface setup should happen before resume if needed
+                if(previewSurface == null || !previewSurface.isValid()) {
+                    Log.w(TAG,"resumeRecording: Preview surface invalid/null, may not show preview.");
+                    // Consider recreating capture session if surface is critical and missing?
+                }
+
+                mediaRecorder.resume();
+                recordingState = RecordingState.IN_PROGRESS;
+                sharedPreferencesManager.setRecordingInProgress(true);
+                setupRecordingInProgressNotification(); // Update notification
+                showRecordingResumedToast();
+                broadcastOnRecordingResumed();
+                Log.d(TAG,"Recording resumed.");
+            } else {
+                Log.e(TAG,"resumeRecording: mediaRecorder is null! Cannot resume.");
+                // If recorder is null, likely something went wrong. Stop? Start new?
+                stopRecording(); // Attempt safe stop
+            }
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "Error resuming recording (IllegalStateException)", e);
+            stopRecording(); // Attempt stop if resume fails
+        } catch (Exception e) {
+            Log.e(TAG,"General error resuming recording",e);
+            stopRecording(); // Attempt stop on error
+        }
+    }
+
+
+    // Method to cleanup all recording related resources
+    // Method to cleanup all recording related resources
+    private void releaseRecordingResources() {
+        Log.d(TAG,"Releasing recording resources...");
+        if (mediaRecorder != null) {
+            try { mediaRecorder.reset(); mediaRecorder.release(); }
+            catch (Exception e) { Log.e(TAG,"Error releasing mediaRecorder",e);}
+            mediaRecorder = null;
+        }
+        // ParcelFileDescriptor is no longer used directly by MediaRecorder output
+        if (captureSession != null) {
+            try { captureSession.close();} catch (Exception e) { Log.e(TAG,"Error closing captureSession",e);}
+            captureSession = null;
+        }
+        if (cameraDevice != null) {
+            try { cameraDevice.close(); } catch (Exception e) { Log.e(TAG,"Error closing cameraDevice",e); }
+            cameraDevice = null;
+        }
+        // Clean up temp file if recording was aborted mid-way
+        if(currentInternalTempFile != null && currentInternalTempFile.exists()){
+            Log.w(TAG,"Cleaning up lingering temp file during resource release: " + currentInternalTempFile.getName());
+            if(!currentInternalTempFile.delete()){
+                Log.e(TAG,"Failed to delete lingering temp file: "+currentInternalTempFile.getAbsolutePath());
+            }
+            currentInternalTempFile = null; // Nullify the reference
+        }
+        Log.d(TAG,"Finished releasing recording resources.");
+    }
+    // --- End Core Recording Logic ---
+
+    private void processAndMoveVideo(@NonNull File internalTempFileToProcess) { // Arg is now in external cache
+        Log.d(TAG,"processAndMoveVideo starting for (ext cache): " + internalTempFileToProcess.getName());
+        if (!internalTempFileToProcess.exists() || internalTempFileToProcess.length() == 0) {
+            Log.e(TAG,"Temp file invalid/empty: " + internalTempFileToProcess.getAbsolutePath());
+            isProcessingWatermark = false; if(internalTempFileToProcess.exists()&&!internalTempFileToProcess.delete()) Log.w(TAG,"Failed del invalid temp"); return;
+        }
+        isProcessingWatermark = true;
+        String storageMode = sharedPreferencesManager.getStorageMode();
+        String customUriString = sharedPreferencesManager.getCustomStorageUri();
+        String tempFileName = internalTempFileToProcess.getName();
+        String finalBaseName = tempFileName.replace("temp_", Constants.RECORDING_DIRECTORY + "_");
+        String internalTempInputPath = internalTempFileToProcess.getAbsolutePath(); // Path is in ext cache now
+
+        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
+            Log.d(TAG, "Target is Custom SAF Location: " + customUriString);
+
+            // Define intermediate output path also in EXTERNAL CACHE
+            File cacheDir = getExternalCacheDir(); // <--- CHANGE HERE
+            if (cacheDir == null) { cacheDir = new File(getCacheDir(), "processed_temp"); Log.w(TAG,"Ext Cache null, using int cache for processed temp"); } else { cacheDir = new File(cacheDir, "processed_temp"); } // Create subdir in external cache
+            if (!cacheDir.exists() && !cacheDir.mkdirs()) { handleProcessingError("Cannot create processed cache dir", internalTempInputPath); return; }
+            File internalProcessedOutputFile = new File(cacheDir, finalBaseName);
+            String internalProcessedOutputPath = internalProcessedOutputFile.getAbsolutePath(); // Path is in ext cache now
+
+            Log.d(TAG, "Intermediate processed path (ext cache): " + internalProcessedOutputPath);
+
+            String ffmpegCommand = buildFFmpegCommand(internalTempInputPath, internalProcessedOutputPath);
+            if (ffmpegCommand == null) { handleProcessingError("Failed build FFmpeg command", internalTempInputPath); return; }
+            executeFFmpegAndMoveToSAF(ffmpegCommand, internalTempFileToProcess, internalProcessedOutputFile, customUriString); // Pass correct files
+
+        } else {
+            Log.d(TAG, "Target is Internal App Storage");
+            // Process from external cache -> final internal directory
+            File finalInternalDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY); // Standard final location
+            if (!finalInternalDir.exists() && !finalInternalDir.mkdirs()) { handleProcessingError("Cannot create final internal dir", internalTempInputPath); return; }
+            File finalInternalOutputFile = new File(finalInternalDir, finalBaseName);
+            String finalInternalOutputPath = finalInternalOutputFile.getAbsolutePath();
+            Log.d(TAG, "Final internal path: " + finalInternalOutputPath);
+
+            String ffmpegCommand = buildFFmpegCommand(internalTempInputPath, finalInternalOutputPath);
+            if (ffmpegCommand == null) { handleProcessingError("Failed build FFmpeg command", internalTempInputPath); return; }
+            executeFFmpegInternalOnly(ffmpegCommand, internalTempFileToProcess, finalInternalOutputFile); // Pass correct temp input file
+        }
+    }
+
+    // Builds the appropriate FFmpeg command
+    @Nullable
+    private String buildFFmpegCommand(String inputPath, String outputPath) {
+        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+
+        if ("no_watermark".equals(watermarkOption)) {
+            Log.d(TAG,"Building FFmpeg copy command.");
+            return String.format(Locale.US, "-i %s -codec copy -y %s", escapeFFmpegPath(inputPath), escapeFFmpegPath(outputPath));
+        } else {
+            Log.d(TAG,"Building FFmpeg watermark command.");
+            try {
+                String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf"; // Ensure font exists
+                File fontFile = new File(fontPath);
+                if(!fontFile.exists()){ Log.e(TAG,"Font file missing at: "+fontPath); return null;}
+
+                String watermarkText;
+                boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+                String locationText = isLocationEnabled ? getLocationData() : "";
+                switch (watermarkOption) {
+                    case "timestamp": watermarkText = getCurrentTimestamp() + locationText; break;
+                    default: watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + locationText; break;
+                }
+                watermarkText = convertArabicNumeralsToEnglish(watermarkText);
+                String escapedWatermarkText = escapeFFmpegString(watermarkText); // Escape needed characters
+                String escapedFontPath = escapeFFmpegPath(fontPath);
+
+                int fontSize = getFontSizeBasedOnBitrate();
+                String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
+                int frameRates = sharedPreferencesManager.getVideoFrameRate();
+                int bitratesEstimated = getVideoBitrate(); // Use consistent helper
+                String codec = sharedPreferencesManager.getVideoCodec().getFfmpeg();
+
+                // --- MODIFIED LINE BELOW: Removed ",escape_text=0" ---
+                return String.format(Locale.US,
+                        "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d -codec:a copy -y %s",
+                        escapeFFmpegPath(inputPath),
+                        frameRates,
+                        escapedWatermarkText,
+                        fontSizeStr,
+                        escapedFontPath,
+                        codec,
+                        bitratesEstimated,
+                        escapeFFmpegPath(outputPath)
+                );
+            } catch (Exception e){
+                Log.e(TAG, "Error building watermark FFmpeg command",e);
+                return null;
+            }
+        }
+    }
+
+    // Execute FFmpeg, saving result to final internal directory
+    private void executeFFmpegInternalOnly(String command, File internalTempInput, File finalInternalOutput) {
+        Log.d(TAG, "executeFFmpegInternalOnly: Processing " + internalTempInput.getName());
+        executeFFmpegAsync(command, () -> { // Success Runnable
+            Log.d(TAG, "FFmpeg internal success. Output: " + finalInternalOutput.getAbsolutePath());
+            if (internalTempInput.exists() && !internalTempInput.delete()) {
+                Log.w(TAG,"Failed to delete internal temp after success: "+internalTempInput.getName());
+            }
+            // Optional: Trigger media scan if needed for finalInternalOutput
+        }, () -> { // Failure Runnable
+            Log.e(TAG,"FFmpeg internal process failed for: " + internalTempInput.getName());
+            // Don't delete input on failure
+            // Optionally delete failed output if desired
+            if(finalInternalOutput.exists() && !finalInternalOutput.delete()){
+                Log.w(TAG,"Failed to delete failed internal output: "+finalInternalOutput.getName());
+            }
+        });
+    }      // Execute FFmpeg saving to temp internal, then move result to SAF
+
+    /**
+     * Helper method to execute FFmpeg commands asynchronously and handle callbacks.
+     * Sets/resets the processing flag and checks if the service should stop itself.
+     *
+     * @param ffmpegCommand The FFmpeg command string to execute.
+     * @param onSuccess Runnable to execute if FFmpeg finishes successfully.
+     * @param onFailure Runnable to execute if FFmpeg fails.
+     */
+    // Centralized Async FFmpeg Execution
+    private void executeFFmpegAsync(String ffmpegCommand, Runnable onSuccess, Runnable onFailure) {
+        Log.d(TAG, "Executing FFmpeg Async: " + ffmpegCommand);
+        isProcessingWatermark = true; // Ensure flag is set before async start
+
+        FFmpegKit.executeAsync(ffmpegCommand, session -> {
+            boolean success = ReturnCode.isSuccess(session.getReturnCode());
+            Log.d(TAG,"FFmpeg async finished - Success: " + success + ", RC: " + session.getReturnCode());
+
+            if (success) {
+                if(onSuccess != null) onSuccess.run();
+            } else {
+                Log.e(TAG, "FFmpeg Async failed! Logs:");
+                Log.e(TAG, session.getAllLogsAsString()); // Print logs
+                if(onFailure != null) onFailure.run();
+            }
+
+            isProcessingWatermark = false; // Reset flag AFTER completion handler
+            // Check if service can stop now
+            if (!isWorkingInProgress()) {
+                Log.d(TAG,"FFmpeg Async finished and no other work, stopping service.");
+                stopSelf();
+            } else {
+                Log.d(TAG,"FFmpeg Async finished, but service still working.");
+            }
+        });
+    }
+
+    private void executeFFmpegAndMoveToSAF(String command, File internalTempInput, File tempInternalProcessedOutput, String targetSafDirUriString) {
+        Log.d(TAG, "executeFFmpegAndMoveToSAF: Processing " + internalTempInput.getName() + " -> " + tempInternalProcessedOutput.getName() + " -> SAF");
+        executeFFmpegAsync(command, () -> { // FFmpeg Success Runnable
+            Log.d(TAG, "FFmpeg successful (intermediate file created): " + tempInternalProcessedOutput.getAbsolutePath());
+            // Now move the processed file to SAF
+            boolean moveSuccess = moveInternalFileToSAF(tempInternalProcessedOutput, targetSafDirUriString);
+            if (moveSuccess) {
+                Log.d(TAG,"Successfully moved processed file to SAF: " + targetSafDirUriString);
+                // Delete BOTH internal temp files on successful move
+                if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG,"Failed to delete initial temp: "+internalTempInput.getName());}
+                if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) { Log.w(TAG,"Failed to delete processed temp: "+tempInternalProcessedOutput.getName()); }
+            } else {
+                Log.e(TAG,"Failed to move processed file to SAF!");
+                Toast.makeText(this,"Failed to save to custom location",Toast.LENGTH_LONG).show();
+                // IMPORTANT: Leave the *processed* temp file in cache as backup
+                // But DO delete the *original* temp file if the processing succeeded but move failed
+                if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG,"Failed to delete initial temp after move failure: "+internalTempInput.getName());}
+            }
+        }, () -> { // FFmpeg Failure Runnable
+            Log.e(TAG,"FFmpeg process failed (before move) for: " + internalTempInput.getName());
+            // Don't delete input on failure. Don't attempt move.
+            // Optionally delete failed intermediate output
+            if(tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()){
+                Log.w(TAG,"Failed to delete failed processed output: "+tempInternalProcessedOutput.getName());
+            }
+        });
+    }
+
+    // Helper to move an internal file to a SAF directory URI
+    private boolean moveInternalFileToSAF(File internalSourceFile, String targetDirUriString) {
+        if (!internalSourceFile.exists()) {
+            Log.e(TAG,"moveInternalFileToSAF: Source file does not exist: " + internalSourceFile.getAbsolutePath());
+            return false;
+        }
+        if (targetDirUriString == null) {
+            Log.e(TAG,"moveInternalFileToSAF: Target SAF directory URI is null.");
+            return false;
+        }
+
+        ContentResolver resolver = getContentResolver();
+        Uri dirUri = Uri.parse(targetDirUriString);
+        DocumentFile targetDir = DocumentFile.fromTreeUri(this, dirUri);
+
+        if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
+            Log.e(TAG, "moveInternalFileToSAF: Target SAF directory is invalid or not writable: " + targetDirUriString);
+            return false;
+        }
+
+        String mimeType = "video/" + Constants.RECORDING_FILE_EXTENSION; // Adjust if needed
+        String displayName = internalSourceFile.getName(); // Use the final processed name
+
+        // Create destination file (overwrite might need check/delete first if needed)
+        DocumentFile existingFile = targetDir.findFile(displayName);
+        if(existingFile != null){
+            Log.w(TAG,"SAF Move: Destination file already exists. Deleting first.");
+            if(!existingFile.delete()) { Log.e(TAG,"SAF Move: Failed to delete existing file."); return false; }
+        }
+
+        DocumentFile newSafFile = targetDir.createFile(mimeType, displayName);
+        if (newSafFile == null || !newSafFile.exists()) {
+            Log.e(TAG, "moveInternalFileToSAF: Failed to create destination file in SAF: " + displayName);
+            return false;
+        }
+        Log.d(TAG,"moveInternalFileToSAF: Created destination SAF file: " + newSafFile.getUri());
+
+
+        // Copy content using streams
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+        try {
+            inputStream = new FileInputStream(internalSourceFile);
+            outputStream = resolver.openOutputStream(newSafFile.getUri());
+            if (outputStream == null) {
+                throw new IOException("Failed to open output stream for SAF URI: " + newSafFile.getUri());
+            }
+
+            byte[] buffer = new byte[8192]; // 8K buffer
+            int bytesRead;
+            long totalBytesCopied = 0;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+                totalBytesCopied += bytesRead;
+            }
+            Log.d(TAG,"moveInternalFileToSAF: Copied " + totalBytesCopied + " bytes to " + newSafFile.getName());
+            return true; // Copy successful
+
+        } catch (IOException e) {
+            Log.e(TAG, "moveInternalFileToSAF: Error during file copy to SAF", e);
+            // Attempt to delete the partially created/failed SAF file
+            if (newSafFile.exists() && !newSafFile.delete()) {
+                Log.w(TAG, "Could not delete partially written SAF file: "+newSafFile.getName());
+            }
+            return false; // Copy failed
+        } finally {
+            // Close streams safely
+            try { if (inputStream != null) inputStream.close(); } catch (IOException e) { /* Ignore */ }
+            try { if (outputStream != null) outputStream.close(); } catch (IOException e) { /* Ignore */ }
+        }
+    }
+
+
+    // --- MediaRecorder & Camera Session Setup ---
+    // Updated setupMediaRecorder to target EXTERNAL cache first
+    private void setupMediaRecorder() throws IOException { // Throw exception on failure
+        Log.d(TAG, "setupMediaRecorder: Configuring recorder to save to EXTERNAL cache.");
+        currentInternalTempFile = null; // Reset (though name is now slightly misleading)
+
+        // 1. Define EXTERNAL Cache Output Path
+        File cacheDir = getExternalCacheDir(); // <--- CHANGE HERE
+        if (cacheDir == null) { // Fallback if external cache is somehow unavailable
+            Log.w(TAG, "External cache dir unavailable, falling back to internal cache.");
+            cacheDir = new File(getCacheDir(), "recording_temp"); // Use internal as fallback
+        } else {
+            cacheDir = new File(cacheDir, "recording_temp"); // Create subdir in external cache
+        }
+
+        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+            throw new IOException("Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
+        }
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String tempFilename = "temp_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;
+        // This variable now points to the external cache path
+        currentInternalTempFile = new File(cacheDir, tempFilename);
+        Log.d(TAG, "Temporary output path set to (external?) cache: " + currentInternalTempFile.getAbsolutePath());
+
+        // 2. Create and Configure MediaRecorder instance
+        mediaRecorder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? new MediaRecorder(this) : new MediaRecorder();
+        try {
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
+            mediaRecorder.setOutputFile(currentInternalTempFile.getAbsolutePath()); // Use (external?) cache path
 
-            // Set video resolution and adjust size and bitrate
-            mediaRecorder.setVideoSize(sharedPreferencesManager.getCameraResolution().getWidth(), sharedPreferencesManager.getCameraResolution().getHeight());
-            mediaRecorder.setVideoEncodingBitRate(getVideoBitrate());
+            // --- Apply standard configurations ---
+            Size resolution = sharedPreferencesManager.getCameraResolution();
+            int frameRate = sharedPreferencesManager.getVideoFrameRate();
+            VideoCodec codec = sharedPreferencesManager.getVideoCodec();
+            int bitRate = getVideoBitrate();
 
-            // Set frame rate and capture rate
-            mediaRecorder.setVideoFrameRate(sharedPreferencesManager.getVideoFrameRate());
-            mediaRecorder.setCaptureRate(sharedPreferencesManager.getVideoFrameRate());
-
-            // Audio settings: high-quality audio
+            mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
+            mediaRecorder.setVideoEncodingBitRate(bitRate);
+            mediaRecorder.setVideoFrameRate(frameRate);
             mediaRecorder.setAudioEncodingBitRate(384000);
             mediaRecorder.setAudioSamplingRate(48000);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            mediaRecorder.setVideoEncoder(codec.getEncoder());
+            if (sharedPreferencesManager.getCameraSelection() == CameraType.FRONT) mediaRecorder.setOrientationHint(270); else mediaRecorder.setOrientationHint(90);
+            // --- End configurations ---
 
-            VideoCodec videoCodec = sharedPreferencesManager.getVideoCodec();
-            mediaRecorder.setVideoEncoder(videoCodec.getEncoder());
-
-            // Set orientation based on camera selection
-            if (sharedPreferencesManager.getCameraSelection().equals(CameraType.FRONT)) {
-                mediaRecorder.setOrientationHint(270);
-            } else {
-                mediaRecorder.setOrientationHint(90);
-            }
-
-            // Prepare MediaRecorder
             mediaRecorder.prepare();
+            Log.d(TAG, "setupMediaRecorder: MediaRecorder prepared successfully for cache file.");
 
-        } catch (IOException e) {
-            android.util.Log.e(TAG, "setupMediaRecorder: Error setting up media recorder", e);
-            e.printStackTrace();
+        } catch (IOException | IllegalStateException e) {
+            Log.e(TAG, "setupMediaRecorder: Failed", e);
+            // Do NOT call full releaseRecordingResources here to keep camera open
+            if(mediaRecorder != null) { try { mediaRecorder.release(); } catch (Exception ignored) {} mediaRecorder = null; }
+            if(currentInternalTempFile != null && currentInternalTempFile.exists()) currentInternalTempFile.delete();
+            currentInternalTempFile = null;
+            throw new IOException("MediaRecorder setup failed: " + e.getMessage(), e); // Propagate
         }
     }
 
-    private void createCameraPreviewSession() {
-        if (captureSession != null) {
-            captureSession.close();
-            captureSession = null;
+    private void openCamera() {
+        Log.d(TAG, "openCamera: Opening camera");
+        if (cameraManager == null) {
+            Log.e(TAG,"openCamera: CameraManager is null.");
+            stopSelf(); return;
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG,"openCamera: Camera permission denied.");
+            stopSelf(); return;
         }
 
-        if(cameraDevice == null) {
-            openCamera();
-            return;
-        }
+        CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+        String selectedCameraId = null;
 
         try {
-            // First create the capture request builder
-            captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
-            
-            // Now we can safely set the flash mode
-            captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-
-            List<Surface> surfaces = new ArrayList<>();
-            Surface recorderSurface = mediaRecorder.getSurface();
-            surfaces.add(recorderSurface);
-
-            if(previewSurface != null && previewSurface.isValid()) {
-                captureRequestBuilder.addTarget(previewSurface);
-                surfaces.add(previewSurface);
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null) {
+                    if (selectedType == CameraType.FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        selectedCameraId = cameraId; break;
+                    }
+                    if (selectedType == CameraType.BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        selectedCameraId = cameraId; break;
+                    }
+                }
             }
 
-            captureRequestBuilder.addTarget(recorderSurface);
+            if (selectedCameraId == null) {
+                Log.e(TAG, "No camera found for selected type: " + selectedType);
+                stopSelf(); return;
+            }
+            Log.d(TAG,"Attempting to open camera ID: "+ selectedCameraId);
 
-            Range<Integer> fpsRange = Range.create(sharedPreferencesManager.getVideoFrameRate(), 
-                                                sharedPreferencesManager.getVideoFrameRate());
-            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
-            
-            cameraDevice.createCaptureSession(surfaces, new CaptureSessionCallback(), null);
+            // Ensure previous camera is closed before opening a new one
+            if(cameraDevice != null) {
+                Log.w(TAG,"openCamera: Closing existing cameraDevice instance first.");
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+
+            cameraManager.openCamera(selectedCameraId, cameraStateCallback, backgroundHandler);
+
         } catch (CameraAccessException e) {
-            android.util.Log.e(TAG, "createCameraPreviewSession: Error while creating capture session", e);
+            Log.e(TAG, "openCamera: Camera Access Exception", e);
+            stopSelf();
+        } catch (Exception e) {
+            Log.e(TAG, "openCamera: Unexpected error", e);
+            stopSelf();
+        }
+    }
+
+    private final CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            Log.d(TAG, "Camera " + camera.getId() + " opened.");
+            cameraDevice = camera;
+            // Start the capture session now that camera is open
+            createCameraPreviewSession();
+        }
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            Log.w(TAG, "Camera " + camera.getId() + " disconnected.");
+            releaseRecordingResources(); // Cleanup everything if camera disconnects
+            // Possibly notify UI or attempt restart? For now, just stop.
+            stopSelf();
+        }
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            Log.e(TAG, "Camera " + camera.getId() + " error: " + error);
+            releaseRecordingResources(); // Cleanup on error
+            Toast.makeText(RecordingService.this,"Camera error: "+error, Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+        @Override
+        public void onClosed(@NonNull CameraDevice camera) {
+            Log.d(TAG,"Camera " + camera.getId() + " closed.");
+            // Optionally nullify cameraDevice here if managing state closely
+            // cameraDevice = null;
+        }
+    };
+
+
+    private void createCameraPreviewSession() {
+        if (cameraDevice == null) {
+            Log.e(TAG, "createCameraPreviewSession: cameraDevice is null!");
+            stopRecording(); // Cannot create session without camera
+            return;
+        }
+        if (mediaRecorder == null) {
+            Log.e(TAG,"createCameraPreviewSession: mediaRecorder is null!");
+            stopRecording(); // Cannot create session without recorder
+            return;
+        }
+        Log.d(TAG,"createCameraPreviewSession: Creating session...");
+        try {
+            List<Surface> surfaces = new ArrayList<>();
+
+            // Get the MediaRecorder surface
+            Surface recorderSurface = mediaRecorder.getSurface();
+            surfaces.add(recorderSurface);
+            Log.d(TAG,"Added MediaRecorder surface.");
+
+            // Add UI preview surface IF available and valid
+            if (previewSurface != null && previewSurface.isValid()) {
+                surfaces.add(previewSurface);
+                Log.d(TAG,"Added Preview surface.");
+            } else {
+                Log.w(TAG,"Preview surface is null or invalid, not adding.");
+            }
+
+            // Create the CaptureRequest builder
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+
+            // Add surfaces as targets
+            captureRequestBuilder.addTarget(recorderSurface);
+            if (previewSurface != null && previewSurface.isValid()) {
+                captureRequestBuilder.addTarget(previewSurface);
+            }
+
+            // Set desired frame rate range for stability
+            int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+            Range<Integer> fpsRange = new Range<>(targetFrameRate, targetFrameRate);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+            Log.d(TAG,"Set target FPS range: "+fpsRange);
+
+
+            // Create the session
+            cameraDevice.createCaptureSession(surfaces, captureSessionCallback, backgroundHandler);
+            Log.d(TAG, "Requested camera capture session creation.");
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "createCameraPreviewSession: Camera Access Exception", e);
+            stopRecording(); // Stop if session creation fails
+        } catch (Exception e) {
+            Log.e(TAG, "createCameraPreviewSession: Unexpected error", e);
+            stopRecording(); // Stop on general errors
         }
     }
 
 
-    public class CaptureSessionCallback extends CameraCaptureSession.StateCallback {
+    private final CameraCaptureSession.StateCallback captureSessionCallback = new CameraCaptureSession.StateCallback() {
         @Override
-        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-            captureSession = cameraCaptureSession;
+        public void onConfigured(@NonNull CameraCaptureSession session) {
+            Log.d(TAG, "Capture session configured: " + session);
+            if (cameraDevice == null) {
+                Log.e(TAG,"onConfigured: Camera closed before session configured!");
+                session.close(); // Close the session if camera is gone
+                return;
+            }
+            captureSession = session; // Assign the configured session
 
             try {
-                cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-            } catch (CameraAccessException | IllegalArgumentException e) {
-                android.util.Log.e(TAG, "onConfigured: Error setting repeating request", e);
-                e.printStackTrace();
-            } catch (IllegalStateException e) {
-                android.util.Log.e(TAG, "onConfigured: Error camera session", e);
-                e.printStackTrace();
-            }
+                // Start the repeating request (includes preview and feeds recorder)
+                captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO); // Use auto mode
+                // Apply recording torch state IF it was toggled before session configured
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
 
-            if (recordingState.equals(RecordingState.NONE)) {
-                recordingStartTime = SystemClock.elapsedRealtime();
-                mediaRecorder.start();
-                setupRecordingInProgressNotification();
-                recordingState = RecordingState.IN_PROGRESS;
-                broadcastOnRecordingStarted();
-            } else if (recordingState.equals(RecordingState.PAUSED)) {
-                mediaRecorder.resume();
-                setupRecordingInProgressNotification();
-                recordingState = RecordingState.IN_PROGRESS;
-                showRecordingResumedToast();
-                broadcastOnRecordingResumed();
+                session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                Log.d(TAG,"Repeating request started.");
+
+
+                // Now that the session is configured and request running, handle recording state
+                if (recordingState == RecordingState.NONE) { // This is the initial start
+                    recordingStartTime = SystemClock.elapsedRealtime();
+                    mediaRecorder.start(); // START RECORDING
+                    recordingState = RecordingState.IN_PROGRESS;
+                    sharedPreferencesManager.setRecordingInProgress(true);
+                    Log.d(TAG, "MediaRecorder started! Recording IN_PROGRESS.");
+                    setupRecordingInProgressNotification();
+                    broadcastOnRecordingStarted();
+                } else if (recordingState == RecordingState.PAUSED) { // This is resuming
+                    // The mediaRecorder.resume() was likely called before session recreated
+                    Log.w(TAG,"Session reconfigured while paused, now resuming state (MediaRecorder already resumed)");
+                    recordingState = RecordingState.IN_PROGRESS;
+                    sharedPreferencesManager.setRecordingInProgress(true);
+                    setupRecordingInProgressNotification();
+                    broadcastOnRecordingResumed(); // Notify UI resumed
+                }
+
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "onConfigured: Error starting repeating request", e);
+                stopRecording(); // Stop if cannot set repeating request
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "onConfigured: IllegalStateException (Session or Camera closed?)", e);
+                stopRecording();
             }
         }
 
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            android.util.Log.e(TAG, "onConfigureFailed: Failed to configure capture session");
+            Log.e(TAG, "Capture session configuration failed: " + session);
+            stopRecording(); // Stop if session configuration fails
         }
-    }
-
-    private void broadcastOnRecordingStarted() {
-        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
-        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
-        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
-        getApplicationContext().sendBroadcast(broadcastIntent);
-    }
-
-    private void broadcastOnRecordingResumed() {
-        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_RESUMED);
-        getApplicationContext().sendBroadcast(broadcastIntent);
-    }
-
-    private void broadcastOnRecordingPaused() {
-        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_PAUSED);
-        getApplicationContext().sendBroadcast(broadcastIntent);
-    }
-
-    private void broadcastOnRecordingStopped() {
-        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
-        getApplicationContext().sendBroadcast(broadcastIntent);
-    }
-
-    private void broadcastOnRecordingStateCallback() {
-        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
-        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
-        getApplicationContext().sendBroadcast(broadcastIntent);
-    }
-
-    private void openCamera() {
-        android.util.Log.d(TAG, "openCamera: Opening camera");
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            // Log available camera IDs
-            String[] cameraIds = manager.getCameraIdList();
-            Log.d(TAG, "Available camera IDs: " + Arrays.toString(cameraIds));
-
-            // Safely get camera selection
-            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
-            
-            // Find the camera ID based on the camera type
-            String selectedCameraId = null;
-            for (String cameraId : cameraIds) {
-                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-                int cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING);
-                
-                if ((cameraType == CameraType.FRONT && cameraDirection == CameraCharacteristics.LENS_FACING_FRONT) ||
-                    (cameraType == CameraType.BACK && cameraDirection == CameraCharacteristics.LENS_FACING_BACK)) {
-                    selectedCameraId = cameraId;
-                    break;
-                }
-            }
-
-            if (selectedCameraId == null) {
-                Log.e(TAG, "No camera found for type: " + cameraType);
-                stopSelf();
-                return;
-            }
-
-            manager.openCamera(selectedCameraId, new CameraDevice.StateCallback() {
-                @Override
-                public void onOpened(@NonNull CameraDevice camera) {
-                    android.util.Log.d(TAG, "onOpened: Camera opened successfully");
-                    cameraDevice = camera;
-                    createCameraPreviewSession();
-                }
-
-                @Override
-                public void onDisconnected(@NonNull CameraDevice camera) {
-                    android.util.Log.w(TAG, "onDisconnected: Camera disconnected");
-                    camera.close();
-                    cameraDevice = null;
-                    stopSelf();
-                }
-
-                @Override
-                public void onError(@NonNull CameraDevice camera, int error) {
-                    android.util.Log.e(TAG, "onError: Camera error: " + error);
-                    camera.close();
-                    cameraDevice = null;
-                    stopSelf();
-                }
-            }, null);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "openCamera: Error accessing camera", e);
-            android.util.Log.e(TAG, "openCamera: Error accessing camera", e);
-            stopSelf();
-        } catch (SecurityException e) {
-            Log.e(TAG, "openCamera: Camera permission denied", e);
-            android.util.Log.e(TAG, "openCamera: Camera permission denied", e);
-            stopSelf();
-        } catch (Exception e) {
-            Log.e(TAG, "openCamera: Unexpected error", e);
-            android.util.Log.e(TAG, "openCamera: Unexpected error", e);
-            stopSelf();
+        @Override
+        public void onClosed(@NonNull CameraCaptureSession session) {
+            Log.d(TAG,"Capture session closed: "+ session);
+            // captureSession = null; // Nullify if needed elsewhere
         }
-    }
+    };
+    // --- End MediaRecorder & Camera Session Setup ---
 
-    private void startRecording() {
-        try {
-            sharedPreferencesManager.setRecordingInProgress(true);
-
-            setupMediaRecorder();
-
-            if (mediaRecorder == null) {
-                android.util.Log.e(TAG, "startRecording: MediaRecorder is not initialized");
-                return;
-            }
-
-            if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                android.util.Log.e(TAG, "startRecording: External storage not available, cannot start recording.");
-                return;
-            }
-
-            openCamera();
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting recording", e);
-            sharedPreferencesManager.setRecordingInProgress(false);
-        }
-    }
-
-    private void resumeRecording()
-    {
-        try {
-            sharedPreferencesManager.setRecordingInProgress(true);
-
-            if(cameraDevice != null) {
-                mediaRecorder.resume();
-                setupRecordingInProgressNotification();
-                recordingState = RecordingState.IN_PROGRESS;
-                showRecordingResumedToast();
-                broadcastOnRecordingResumed();
-            } else {
-                openCamera();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error resuming recording", e);
-            sharedPreferencesManager.setRecordingInProgress(false);
-        }
-    }
-
-    private void pauseRecording()
-    {
-        try {
-            sharedPreferencesManager.setRecordingInProgress(false);
-
-            mediaRecorder.pause();
-
-            recordingState = RecordingState.PAUSED;
-
-            setupRecordingResumeNotification();
-
-            showRecordingInPausedToast();
-
-            broadcastOnRecordingPaused();
-
-            Toast.makeText(this, R.string.video_recording_paused, Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.e(TAG, "Error pausing recording", e);
-        }
-    }
-
-    private void stopRecording() {
-        try {
-            sharedPreferencesManager.setRecordingInProgress(false);
-
-            if(recordingState.equals(RecordingState.NONE))
-            {
-                return;
-            }
-
-            android.util.Log.d(TAG, "stopRecording: Attempting to stop recording from recording service.");
-
-            if (mediaRecorder != null) {
-                try {
-                    mediaRecorder.resume();
-                    mediaRecorder.stop();
-                    mediaRecorder.reset();
-                } catch (IllegalStateException e) {
-                    android.util.Log.e(TAG, "stopRecording: Error while stopping the recording", e);
-                } finally {
-                    mediaRecorder.release();
-                    mediaRecorder = null;
-                    android.util.Log.d(TAG, "stopRecording: Recording stopped");
-                    stopForeground(true);
-                }
-            }
-
-            if (captureSession != null) {
-                captureSession.close();
-                captureSession = null;
-            }
-
-            if (cameraDevice != null) {
-                cameraDevice.close();
-                cameraDevice = null;
-            }
-
-            recordingState = RecordingState.NONE;
-
-            cancelNotification();
-
-            processLatestVideoFileWithWatermark();
-
-            broadcastOnRecordingStopped();
-
-            // Toast.makeText(this, R.string.video_recording_stopped, Toast.LENGTH_SHORT).show();
-            Utils.showQuickToast(this, R.string.video_recording_stopped);
-
-
-            if(!isWorkingInProgress()) {
-                stopSelf();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error stopping recording", e);
-        }
-    }
-
+    // --- Watermarking & Processing ---
     private void processLatestVideoFileWithWatermark() {
-        isProcessingWatermark = true;
-        File latestVideoFile = getLatestVideoFile();
-        if (latestVideoFile != null) {
-            String inputFilePath = latestVideoFile.getAbsolutePath();
-            String originalFileName = latestVideoFile.getName().replace("temp_", "");
-            String outputFilePath = latestVideoFile.getParent() + "/FADCAM_" + originalFileName;
-            android.util.Log.d(TAG, "Watermarking: Input file path: " + inputFilePath);
-            android.util.Log.d(TAG, "Watermarking: Output file path: " + outputFilePath);
+        Log.d(TAG,"processLatestVideoFileWithWatermark starting...");
+        String inputUriOrPath;
+        String outputUriOrPath;
+        String tempFileName; // Needed for constructing output name
+        Uri inputUri = null;
+        File inputFile = null;
+        Uri outputDirectoryUri = null; // Only for SAF output directory
 
-            tempFileBeingProcessed = latestVideoFile;
-            addTextWatermarkToVideo(inputFilePath, outputFilePath);
+        isProcessingWatermark = true; // Set flag immediately
+
+        // Identify the source file/URI that was just recorded
+        if (currentRecordingFile != null) {
+            inputFile = currentRecordingFile;
+            inputUriOrPath = inputFile.getAbsolutePath();
+            tempFileName = inputFile.getName();
+            Log.d(TAG,"Processing Internal File: " + inputUriOrPath);
+        } else if (currentRecordingSafUri != null) {
+            inputUri = currentRecordingSafUri;
+            inputUriOrPath = inputUri.toString();
+            if (currentRecordingDocFile != null) {
+                tempFileName = currentRecordingDocFile.getName();
+            } else { // Fallback to deriving from URI if doc file lost
+                tempFileName = DocumentFile.fromSingleUri(this,inputUri).getName();
+            }
+            // Get parent directory for SAF output
+            DocumentFile parentDir = DocumentFile.fromSingleUri(this,inputUri).getParentFile();
+            if(parentDir != null) outputDirectoryUri = parentDir.getUri();
+
+            Log.d(TAG,"Processing SAF URI: " + inputUriOrPath +", Temp Name: "+tempFileName);
         } else {
-            android.util.Log.e(TAG, "No video file found.");
+            Log.e(TAG, "processLatest: No valid recording file/URI tracked!");
+            isProcessingWatermark = false; // Reset flag
+            return;
         }
-        isProcessingWatermark = false;
-    }
+        if(tempFileName == null) {
+            Log.e(TAG, "Could not determine temporary filename, aborting processing.");
+            isProcessingWatermark = false; // Reset flag
+            cleanupTemporaryFile(); // Attempt cleanup
+            return;
+        }
 
-    private void addTextWatermarkToVideo(String inputFilePath, String outputFilePath) {
-        String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
-        String watermarkText;
-        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
 
-        boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
-        String locationText = isLocationEnabled ? getLocationData() : "";
+        // Construct final output filename (always prefixed)
+        String finalOutputName = tempFileName.replace("temp_", Constants.RECORDING_DIRECTORY + "_");
 
-        switch (watermarkOption) {
-            case "timestamp":
-                watermarkText = getCurrentTimestamp() + (isLocationEnabled ? locationText : "");
-                break;
-            case "no_watermark":
-                String ffmpegCommandNoWatermark = String.format("-i %s -codec copy %s", inputFilePath, outputFilePath);
-                executeFFmpegCommand(ffmpegCommandNoWatermark);
+        // Determine and Create Output Target (Path or SAF URI)
+        DocumentFile finalOutputDocFile = null; // For SAF cleanup on failure
+
+        if (outputDirectoryUri != null) { // Custom SAF Location
+            DocumentFile parentDir = DocumentFile.fromTreeUri(this, outputDirectoryUri);
+            if (parentDir == null || !parentDir.canWrite()) {
+                handleProcessingError("Cannot write to SAF output directory: " + outputDirectoryUri, inputUriOrPath);
                 return;
-            default:
-                watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + (isLocationEnabled ? locationText : "");
-                break;
+            }
+            // Check if final file already exists (shouldn't normally, but handle anyway)
+            if(parentDir.findFile(finalOutputName) != null){
+                Log.w(TAG, "Final output file already exists in SAF dir: "+finalOutputName+". Overwriting might fail or take time.");
+                // FFmpeg might handle overwrite depending on version/options
+            }
+
+            finalOutputDocFile = parentDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, finalOutputName);
+            if (finalOutputDocFile == null || !finalOutputDocFile.exists()) {
+                handleProcessingError("Failed to create output SAF file: " + finalOutputName + " in " + outputDirectoryUri, inputUriOrPath);
+                return;
+            }
+            outputUriOrPath = finalOutputDocFile.getUri().toString();
+            Log.d(TAG,"Output target: SAF URI = "+ outputUriOrPath);
+
+        } else { // Internal Storage Location
+            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+            File outputFile = new File(videoDir, finalOutputName);
+            outputUriOrPath = outputFile.getAbsolutePath();
+            Log.d(TAG,"Output target: Internal Path = " + outputUriOrPath);
         }
 
-        // Convert the watermark text to English numerals
-        watermarkText = convertArabicNumeralsToEnglish(watermarkText);
+        // Prepare and Execute FFmpeg Command
+        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+        String ffmpegCommand;
 
-        // Get and convert the font size to English numerals
-        int fontSize = getFontSizeBasedOnBitrate();
-        String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
-
-        android.util.Log.d(TAG, "Watermark Text: " + watermarkText);
-        android.util.Log.d(TAG, "Font Path: " + fontPath);
-        android.util.Log.d(TAG, "Font Size: " + fontSizeStr);
-
-        int frameRates = sharedPreferencesManager.getVideoFrameRate();
-        int bitratesEstimated = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), frameRates);
-
-        String codec = sharedPreferencesManager.getVideoCodec().getFfmpeg();
-
-        // Construct the FFmpeg command
-        String ffmpegCommand = String.format(
-                "-i %s -r %s -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile=%s\" -q:v 0 -codec:v %s -b:v %s -codec:a copy %s",
-                inputFilePath, frameRates, watermarkText, fontSizeStr, fontPath, codec, bitratesEstimated, outputFilePath
-        );
-
-        executeFFmpegCommand(ffmpegCommand);
-    }
-
-    private int getFontSizeBasedOnBitrate() {
-        int fontSize;
-        long videoBitrate = getVideoBitrate(); // Ensure this method retrieves the correct bitrate based on the selected quality
-
-        if (videoBitrate <= 1000000) {
-            fontSize = 12; //SD quality
-        } else if (videoBitrate == 10000000) {
-            fontSize = 24; // FHD quality
+        if ("no_watermark".equals(watermarkOption)) {
+            Log.d(TAG,"No watermark selected, using copy codec.");
+            // Use -movflags +faststart potentially?
+            ffmpegCommand = String.format("-i %s -codec copy -y %s", inputUriOrPath, outputUriOrPath); // -y overwrites
         } else {
-            fontSize = 16; // HD or higher quality
+            Log.d(TAG,"Applying watermark: " + watermarkOption);
+            // Fetch watermark text and format it
+            String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf"; // Ensure font exists
+            String watermarkText;
+            boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+            String locationText = isLocationEnabled ? getLocationData() : "";
+            switch (watermarkOption) {
+                case "timestamp":
+                    watermarkText = getCurrentTimestamp() + (isLocationEnabled ? locationText : "");
+                    break;
+                default: // timestamp_fadcam
+                    watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + (isLocationEnabled ? locationText : "");
+                    break;
+            }
+            watermarkText = convertArabicNumeralsToEnglish(watermarkText);
+            String escapedWatermarkText = escapeFFmpegString(watermarkText); // Escape needed characters
+
+            int fontSize = getFontSizeBasedOnBitrate();
+            String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
+            int frameRates = sharedPreferencesManager.getVideoFrameRate();
+            int bitratesEstimated = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), frameRates); // Or getVideoBitrate() if always accurate
+            String codec = sharedPreferencesManager.getVideoCodec().getFfmpeg();
+            String escapedFontPath = escapeFFmpegString(fontPath);
+
+
+            // Build FFmpeg command carefully
+            ffmpegCommand = String.format(
+                    Locale.US, // Use US Locale for number formatting consistency
+                    "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s':escape_text=0\" -q:v 0 -codec:v %s -b:v %d -codec:a copy -y %s",
+                    inputUriOrPath,
+                    frameRates,
+                    escapedWatermarkText,
+                    fontSizeStr,
+                    escapedFontPath,
+                    codec,
+                    bitratesEstimated,
+                    outputUriOrPath
+            );
         }
 
-        android.util.Log.d(TAG, "Determined Font Size: " + fontSize);
-        return fontSize;
+        executeFFmpegCommand(ffmpegCommand, inputUriOrPath, outputUriOrPath); // Pass both input and potential failed SAF output path
     }
 
-    private int getVideoBitrate() {
-        int videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
-        android.util.Log.d(TAG, "Selected Video Bitrate: " + videoBitrate + " bps");
-        return videoBitrate;
+    /**
+     * Handles errors that occur during the preparation or execution of video processing.
+     * Logs the error, shows a Toast, resets the processing flag, and attempts to clean up
+     * the temporary input file associated with the failed process.
+     *
+     * @param errorMessage A description of the error that occurred.
+     * @param inputUriOrPathToDelete The URI (as String) or absolute path of the temporary input file
+     *                               that should be cleaned up because its processing failed. Can be null.
+     */
+    // Helper to handle storage setup errors consistently
+    private void handleProcessingError(String errorMessage, @Nullable String internalTempInputPath) {
+        Log.e(TAG, "Processing Error: " + errorMessage);
+        Toast.makeText(this, "Error processing video recording", Toast.LENGTH_LONG).show();
+
+        isProcessingWatermark = false; // Reset the processing flag IMPORTANTLY
+
+        // If an input path/URI was provided, log attempt to clean it
+        if (internalTempInputPath != null) {
+            Log.d(TAG, "handleProcessingError: Original temp file to keep (maybe): " + internalTempInputPath);
+            // We generally DO NOT delete the input temp file on processing errors,
+            // as it might be the only copy left. We just log it.
+            // CleanupTemporaryFile() call will be skipped if processing failed.
+        } else {
+            Log.w(TAG, "handleProcessingError called without specific input path reference.");
+        }
+
+        // Reset the global tracking variable since the process tied to it failed
+        currentInternalTempFile = null;
+        // SAF/PFD related vars aren't directly used here anymore in error case
+        // closeCurrentPfd(); // Method removed
+
+        // Check if the service should stop now that processing has failed/stopped
+        if (!isWorkingInProgress()) {
+            Log.d(TAG,"handleProcessingError: No other work pending, stopping service.");
+            stopSelf();
+        }
     }
 
-    private void executeFFmpegCommand(String ffmpegCommand) {
-        android.util.Log.d(TAG, "FFmpeg Command: " + ffmpegCommand);
+    // Use this primarily for file paths, maybe less critical for content:// URIs
+    private String escapeFFmpegPath(String path) {
+        if (path == null) return "";
+        // For content URIs, usually best not to quote/escape unless specifically needed
+        if (path.startsWith("content://")) {
+            return path;
+        } else {
+            // Escape single quotes for shell safety when wrapping path in single quotes
+            return "'" + path.replace("'", "'\\''") + "'";
+        }
+    }
+
+    private void executeFFmpegCommand(String ffmpegCommand, final String inputUriOrPath, final String outputUriOrPath) {
+        Log.d(TAG, "Executing FFmpeg: " + ffmpegCommand);
+
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            if (ReturnCode.isSuccess(session.getReturnCode())) {
-                android.util.Log.d(TAG, "Watermark added successfully.");
-                // Start monitoring temp files
-                startMonitoring();
+            boolean success = ReturnCode.isSuccess(session.getReturnCode());
+            Log.d(TAG, "FFmpeg session finished - Success: " + success + ", RC: " + session.getReturnCode());
 
-                // Notify the adapter to update the thumbnail
-                File latestVideo = getLatestVideoFile();
-                if (latestVideo != null) {
-                    String videoFilePath = latestVideo.getAbsolutePath();
-                    updateThumbnailInAdapter(videoFilePath);
-                }
+            if (success) {
+                Log.d(TAG, "FFmpeg process successful. Output: " + outputUriOrPath);
+                cleanupTemporaryFile(); // Delete the temp file (inputUriOrPath)
 
-                stopSelf();
+                // Optional: Update records UI / Media Scanner if needed (more complex for SAF)
 
             } else {
-                android.util.Log.e(TAG, "Failed to add watermark: " + session.getFailStackTrace());
+                Log.e(TAG, "FFmpeg failed! Logs:");
+                Log.e(TAG, session.getAllLogsAsString());
+                Log.e(TAG, "Command was: "+ffmpegCommand);
+                Toast.makeText(this, "Error processing video", Toast.LENGTH_LONG).show();
+
+                // Try to cleanup the FAILED output file if it was created via SAF
+                if (outputUriOrPath != null && outputUriOrPath.startsWith("content://")) {
+                    try {
+                        DocumentFile failedOutput = DocumentFile.fromSingleUri(this, Uri.parse(outputUriOrPath));
+                        if(failedOutput != null && failedOutput.exists() && failedOutput.delete()){
+                            Log.d(TAG,"Deleted failed SAF output file: "+ outputUriOrPath);
+                        } else {
+                            Log.w(TAG, "Could not delete failed SAF output file: "+outputUriOrPath);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG,"Error deleting failed SAF output", e);
+                    }
+                }
+                // IMPORTANT: DO NOT delete the input temp file if processing failed.
+                currentRecordingFile = null; // Clear tracking refs so subsequent cleanup doesn't try again
+                currentRecordingSafUri = null;
+                currentRecordingDocFile = null;
+            }
+
+            isProcessingWatermark = false; // Reset flag *after* cleanup/logging
+            // Check if service can stop now
+            if (!isWorkingInProgress()) {
+                Log.d(TAG,"FFmpeg finished and no other work pending, stopping service.");
+                stopSelf();
+            } else {
+                Log.d(TAG,"FFmpeg finished, but service might still be recording/working.");
             }
         });
     }
 
-    private void startMonitoring() {
-        final long CHECK_INTERVAL_MS = 1000; // 1 second
 
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::checkAndDeleteSpecificTempFile, 0, CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    // Centralized Temp File Cleanup
+    // Centralized Temp File Cleanup
+    private void cleanupTemporaryFile() {
+        Log.d(TAG,"cleanupTemporaryFile: Attempting cleanup of temporary recording file...");
+        File tempToClean = currentInternalTempFile; // Use the instance variable
+
+        if (tempToClean != null) {
+            Log.d(TAG, "Cleaning up internal file: " + tempToClean.getAbsolutePath());
+            if (tempToClean.exists()) {
+                if (tempToClean.delete()) {
+                    Log.d(TAG, "Deleted internal temp file: " + tempToClean.getName());
+                } else {
+                    Log.w(TAG, "Failed to delete internal temp file: " + tempToClean.getName());
+                }
+            } else {
+                Log.w(TAG, "Internal temp file reference exists but file not found for cleanup.");
+            }
+            currentInternalTempFile = null; // Clear reference after attempt
+        } else {
+            Log.d(TAG,"No temporary file currently tracked for cleanup.");
+        }
+        // Removed logic for cleaning SAF temps as they are handled differently
     }
 
-    private void checkAndDeleteSpecificTempFile() {
-        if (tempFileBeingProcessed != null) {
-            // Construct FADCAM_ filename with the same timestamp
-            String outputFilePath = tempFileBeingProcessed.getParent() + "/" + Constants.RECORDING_DIRECTORY + "_" + tempFileBeingProcessed.getName().replace("temp_", "");
-            File outputFile = new File(outputFilePath);
+    // Helper to handle storage setup errors consistently
+    private void handleStorageError(String message) {
+        Log.e(TAG, message);
+        Toast.makeText(this, message + ", Using Internal.", Toast.LENGTH_LONG).show();
+        sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+        sharedPreferencesManager.setCustomStorageUri(null);
+        // Note: Do not call stopSelf here, let setupMediaRecorder fail naturally
+    }
+    // --- End Watermarking & Processing ---
 
-            // Check if the FADCAM_ file exists
-            if (outputFile.exists()) {
-                // Delete temp file
-                if (tempFileBeingProcessed.delete()) {
-                    android.util.Log.d(TAG, "Temp file deleted successfully.");
-                } else {
-                    android.util.Log.e(TAG, "Failed to delete temp file.");
-                }
-                // Reset tempFileBeingProcessed to null after deletion
-                tempFileBeingProcessed = null;
-            } else {
-                // FADCAM_ file does not exist yet
-                android.util.Log.d(TAG, "Matching " + Constants.RECORDING_DIRECTORY + "_ file not found. Temp file remains.");
+
+    // --- Helper Methods ---
+    private void setupSurfaceTexture(Intent intent) {
+        if(intent != null) {
+            previewSurface = intent.getParcelableExtra("SURFACE");
+            Log.d(TAG, "Preview surface updated: " + (previewSurface != null && previewSurface.isValid()));
+        }
+    }
+
+    private void closeCurrentPfd() {
+        if (currentParcelFileDescriptor != null) {
+            try {
+                currentParcelFileDescriptor.close();
+                Log.d(TAG, "Closed ParcelFileDescriptor");
+            } catch (IOException e) {
+                Log.e(TAG, "Error closing ParcelFileDescriptor", e);
+            } finally {
+                currentParcelFileDescriptor = null;
             }
         }
     }
 
-    private String extractTimestamp(String filename) {
-        // Assuming filename format is "prefix_TIMESTAMP.mp4"
-        // Example: "temp_20240730_01_39_26PM.mp4"
-        // Extracting timestamp part: "20240730_01_39_26PM"
-        int startIndex = filename.indexOf('_') + 1;
-        int endIndex = filename.lastIndexOf('.');
-        return filename.substring(startIndex, endIndex);
+
+    private int getVideoBitrate() {
+        int videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+        Log.d(TAG, "Selected Video Bitrate: " + videoBitrate + " bps");
+        return videoBitrate;
     }
 
-    private void updateThumbnailInAdapter(String videoFilePath) {
-        if (adapter != null) {
-            adapter.notifyDataSetChanged(); // Notify adapter that data has changed
-        }
+
+    private int getFontSizeBasedOnBitrate() {
+        int fontSize;
+        long videoBitrate = getVideoBitrate();
+        if (videoBitrate <= 1_000_000) fontSize = 12; // <= 1 Mbps (Approx SD)
+        else if (videoBitrate <= 5_000_000) fontSize = 16; // <= 5 Mbps (Approx HD)
+        else if (videoBitrate <= 15_000_000) fontSize = 24; // <= 15 Mbps (Approx FHD)
+        else fontSize = 30; // Higher bitrates (e.g., 4K)
+        Log.d(TAG, "Determined Font Size: " + fontSize + " for bitrate " + videoBitrate);
+        return fontSize;
     }
+
 
     private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh-mm a", Locale.ENGLISH);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy HH:mm:ss", Locale.ENGLISH); // Include seconds
         return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
+
 
     private String convertArabicNumeralsToEnglish(String text) {
         if (text == null) return null;
@@ -758,183 +1261,243 @@ public class RecordingService extends Service {
                 .replaceAll("٩", "9");
     }
 
-    private File getLatestVideoFile() {
-        File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-        File[] files = videoDir.listFiles();
-        if (files == null || files.length == 0) {
-            return null;
+    private String getLocationData() {
+        if(locationHelper == null) {
+            Log.w(TAG, "LocationHelper not initialized, cannot get location data.");
+            return ""; // Return empty, not "Not available" to avoid user confusion
         }
-
-        // Sort files by last modified date
-        Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
-        return files[0]; // Return the most recently modified file
+        String locData = locationHelper.getLocationData();
+        // Avoid adding "Location not available" to watermark, just add lat/lon if present
+        return (locData != null && locData.contains("Lat=")) ? locData : "";
     }
 
-    private PendingIntent createOpenAppIntent() {
-        Intent openAppIntent = new Intent(this, MainActivity.class);
-        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        return PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+    private String escapeFFmpegString(String text) {
+        if (text == null) return "";
+        return text
+                .replace("\\", "\\\\") // Escape backslashes
+                .replace(":", "\\:")  // Escape colons
+                .replace("'", "")      // Remove single quotes entirely (safer than escaping)
+                .replace("\"", "")     // Remove double quotes
+                .replace("%", "%%"); // Escape percent signs
     }
 
-    private PendingIntent createStopRecordingIntent() {
-        Intent stopIntent = new Intent(this, RecordingService.class);
-        stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
-        return PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-    }
 
-    private PendingIntent createResumeRecordingIntent() {
-        Intent stopIntent = new Intent(this, RecordingService.class);
-        stopIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
-        return PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    // --- End Helper Methods ---
+
+
+    // --- Broadcasts ---
+    private void broadcastOnRecordingStarted() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
+        sendBroadcast(broadcastIntent);
+        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_STARTED");
+    }
+    private void broadcastOnRecordingResumed() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_RESUMED);
+        sendBroadcast(broadcastIntent);
+        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_RESUMED");
+    }
+    private void broadcastOnRecordingPaused() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_PAUSED);
+        sendBroadcast(broadcastIntent);
+        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_PAUSED");
+    }
+    private void broadcastOnRecordingStopped() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
+        sendBroadcast(broadcastIntent);
+        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_STOPPED");
+    }
+    private void broadcastOnRecordingStateCallback() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
+        sendBroadcast(broadcastIntent);
+        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: "+recordingState);
+    }
+    // --- End Broadcasts ---
+
+
+    // --- Notifications ---
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.app_name) + " Recording";
+            String description = "Notifications for FadCam recording service";
+            int importance = NotificationManager.IMPORTANCE_LOW; // Low importance to be less intrusive
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            channel.setSound(null, null); // No sound
+            channel.enableVibration(false); // No vibration
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+                Log.d(TAG, "Notification channel created or updated.");
+            } else {
+                Log.e(TAG, "NotificationManager service not found.");
+            }
+        }
     }
 
     private void setupRecordingInProgressNotification() {
-
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            return;
+            Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification setup.");
+            // If Android Tiramisu or higher, START_FOREGROUND without notification IS allowed if user denies permission
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    startForeground(NOTIFICATION_ID, createBaseNotificationBuilder().build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+                    Log.d(TAG,"Started foreground without notification permission (Tiramisu+).");
+                    return;
+                } catch (Exception e){
+                    Log.e(TAG,"Error starting foreground on Tiramisu+ without permission",e);
+                    stopSelf(); // Critical error if foreground fails
+                    return;
+                }
+            } else {
+                // On older versions, foreground service needs a notification, permission IS required
+                Toast.makeText(this,"Notification permission needed", Toast.LENGTH_LONG).show();
+                stopSelf(); // Cannot run foreground service properly
+                return;
+            }
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.notification_video_recording))
+        NotificationCompat.Builder builder = createBaseNotificationBuilder()
                 .setContentText(getString(R.string.notification_video_recording_progress_description))
-                .setSmallIcon(R.drawable.unknown_icon3)
-                .setContentIntent(createOpenAppIntent())
-                .setAutoCancel(false)
+                // Use STOP action
+                .clearActions() // Remove previous actions
                 .addAction(new NotificationCompat.Action(
                         R.drawable.ic_stop,
                         getString(R.string.button_stop),
-                        createStopRecordingIntent()))
-                .setPriority(NotificationCompat.PRIORITY_LOW);
+                        createStopRecordingIntent()));
 
-        if(recordingState.equals(RecordingState.NONE)) {
-            startForeground(NOTIFICATION_ID, builder.build());
-        } else {
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-            notificationManager.notify(NOTIFICATION_ID, builder.build());
-        }
+        startForeground(NOTIFICATION_ID, builder.build());
+        Log.d(TAG, "Foreground notification updated for IN_PROGRESS.");
     }
 
-    private void setupRecordingResumeNotification() {
 
+    private void setupRecordingResumeNotification() { // Notification shown when PAUSED
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            return;
+            Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification update.");
+            return; // Don't crash if user denied permission after start
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.notification_video_recording))
+        NotificationCompat.Builder builder = createBaseNotificationBuilder()
                 .setContentText(getString(R.string.notification_video_recording_paused_description))
-                .setSmallIcon(R.drawable.unknown_icon3)
-                .setContentIntent(createOpenAppIntent())
-                .setAutoCancel(false)
+                // Use RESUME action
+                .clearActions() // Remove previous actions
                 .addAction(new NotificationCompat.Action(
-                        R.drawable.ic_play,
+                        R.drawable.ic_play, // Use Play icon for Resume action
                         getString(R.string.button_resume),
                         createResumeRecordingIntent()))
-                .setPriority(NotificationCompat.PRIORITY_LOW);
+                .addAction(new NotificationCompat.Action( // Keep STOP action available
+                        R.drawable.ic_stop,
+                        getString(R.string.button_stop),
+                        createStopRecordingIntent()));
+
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
+        notificationManager.notify(NOTIFICATION_ID, builder.build()); // Just update existing notification
+        Log.d(TAG, "Foreground notification updated for PAUSED.");
     }
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Recording Service Channel",
-                    NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if(manager != null) {
-                manager.createNotificationChannel(channel);
-                android.util.Log.d(TAG, "Notification channel created");
-            } else {
-                android.util.Log.e(TAG, "NotificationManager is null, unable to create notification channel");
-            }
-        }
+
+    private NotificationCompat.Builder createBaseNotificationBuilder() {
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.notification_video_recording))
+                .setSmallIcon(R.drawable.ic_notification_icon) // Replace with actual suitable small icon
+                .setContentIntent(createOpenAppIntent()) // Tap notification -> open app
+                .setOngoing(true) // Makes it non-dismissible
+                .setSilent(true) // Suppress sound/vibration defaults
+                .setPriority(NotificationCompat.PRIORITY_LOW);
     }
 
     private void cancelNotification() {
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.cancel(NOTIFICATION_ID);
+        Log.d(TAG,"Cancelled notification.");
     }
 
+
+    private PendingIntent createOpenAppIntent() {
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        // Standard flags to bring existing task to front or start new
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Use FLAG_IMMUTABLE for security best practices on newer Androids
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getActivity(this, 0, openAppIntent, flags);
+    }
+
+    private PendingIntent createStopRecordingIntent() {
+        Intent stopIntent = new Intent(this, RecordingService.class);
+        stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getService(this, 1, stopIntent, flags); // Use unique request code (1)
+    }
+
+    private PendingIntent createResumeRecordingIntent() {
+        Intent resumeIntent = new Intent(this, RecordingService.class);
+        resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+        // Make sure surface data isn't needed here - pass null if required or handle differently
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getService(this, 2, resumeIntent, flags); // Use unique request code (2)
+    }
+
+    // --- End Notifications ---
+
+    // --- Toast Helpers ---
     private void showRecordingResumedToast() {
-        Toast.makeText(getApplicationContext(), getText(R.string.video_recording_resumed), Toast.LENGTH_SHORT).show();
+        Utils.showQuickToast(this, R.string.video_recording_resumed);
     }
-
     private void showRecordingInPausedToast() {
-        Toast.makeText(getApplicationContext(), getText(R.string.video_recording_paused), Toast.LENGTH_SHORT).show();
+        Utils.showQuickToast(this, R.string.video_recording_paused);
     }
+    // --- End Toast Helpers ---
 
-    private String getLocationData() {
-        return locationHelper.getLocationData();
-    }
 
-    private void toggleTorch() {
-        try {
-            if (torchManager == null) {
-                torchManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-            }
-
-            // Get selected torch source from preferences
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            String selectedTorchSource = prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
-
-            // If no source selected, find first available torch
-            if (selectedTorchSource == null) {
-                for (String id : torchManager.getCameraIdList()) {
-                    if (torchManager.getCameraCharacteristics(id)
-                            .get(CameraCharacteristics.FLASH_INFO_AVAILABLE)) {
-                        selectedTorchSource = id;
-                        break;
-                    }
-                }
-            }
-            
-            if (selectedTorchSource != null) {
-                isTorchOn = !isTorchOn;
-                if (isTorchOn) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        int intensity = prefs.getInt("torch_intensity", 1);
-                        try {
-                            torchManager.turnOnTorchWithStrengthLevel(selectedTorchSource, intensity);
-                        } catch (Exception e) {
-                            // Fallback if intensity control fails
-                            torchManager.setTorchMode(selectedTorchSource, true);
-                        }
-                    } else {
-                        torchManager.setTorchMode(selectedTorchSource, true);
-                    }
-                } else {
-                    torchManager.setTorchMode(selectedTorchSource, false);
-                }
-                
-                android.util.Log.d(TAG, "Recording torch turned " + (isTorchOn ? "ON" : "OFF") + " using source: " + selectedTorchSource);
-            }
-        } catch (CameraAccessException e) {
-            android.util.Log.e(TAG, "Error accessing torch during recording: " + e.getMessage());
-        }
-    }
-        // In RecordingService.java
+    // --- Torch Logic ---
     private void toggleRecordingTorch() {
-        if (captureRequestBuilder != null) {
+        if (captureRequestBuilder != null && captureSession != null && cameraDevice != null) {
             try {
-                boolean newTorchState = !isTorchEnabled;
+                isRecordingTorchEnabled = !isRecordingTorchEnabled; // Toggle the state
+                Log.d(TAG,"Toggling recording torch. New state: "+ isRecordingTorchEnabled);
+
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
-                        newTorchState ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
-                
-                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                isTorchEnabled = newTorchState;
-                
-                // Broadcast state change to update UI
+                        isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+
+                // Apply the change by updating the repeating request
+                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                Log.d(TAG, "Recording torch repeating request updated.");
+
+                // Broadcast state change TO THE UI if needed (though UI might request it directly?)
                 Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-                intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchEnabled);
+                intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
                 sendBroadcast(intent);
-                
+
             } catch (CameraAccessException e) {
-                Log.e(TAG, "Could not toggle torch: " + e.getMessage());
+                Log.e(TAG, "Could not toggle recording torch: " + e.getMessage());
+                isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
+            } catch(IllegalStateException e) {
+                Log.e(TAG,"Could not toggle recording torch - session/camera closed?", e);
+                isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
             }
+        } else {
+            Log.w(TAG, "Cannot toggle recording torch - session, request builder, or camera device is null.");
         }
     }
+    // --- End Torch Logic ---
 
+    // --- Status Check ---
+    public boolean isRecording() {
+        return recordingState == RecordingState.IN_PROGRESS;
+    }
+
+    public boolean isPaused() {
+        return recordingState == RecordingState.PAUSED;
+    }
+
+    // Combined status check
+    public boolean isWorkingInProgress() {
+        return isProcessingWatermark || recordingState != RecordingState.NONE;
+    }
+    // --- End Status Check ---
 }
-
