@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <View android:id="@id/exo_controls_background"
         android:layout_width="0dp"
@@ -35,6 +36,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/exo_styled_bottom_bar_height"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <LinearLayout android:id="@id/exo_time"
@@ -54,16 +56,11 @@
                         style="@style/ExoStyledControls.TimeText.Duration"/>
                 </LinearLayout>
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-
                 <LinearLayout android:id="@id/exo_basic_controls"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical|end"
-                    android:gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:gravity="end|center_vertical"
                     android:layoutDirection="ltr">
 
                     <ImageButton android:id="@id/exo_vr" style="@style/ExoStyledControls.Button.Bottom.VR" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
@@ -131,9 +128,45 @@
         android:layoutDirection="ltr"
         android:background="@drawable/player_center_controls_background">
 
-        <include layout="@layout/exo_styled_player_control_rewind_button" />
-        <ImageButton android:id="@id/exo_play_pause" style="@style/ExoStyledControls.Button.Center.PlayPause" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <include layout="@layout/exo_styled_player_control_ffwd_button" />
+        <!-- Rewind Button using standard background -->
+        <ImageButton
+            android:id="@id/exo_rew"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginEnd="12dp"
+            android:padding="12dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_rewind_15s_24"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Rewind 5 seconds"
+            tools:ignore="ContentDescription" />
+
+        <!-- Play/Pause Button using standard background -->
+        <ImageButton
+            android:id="@id/exo_play_pause"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:padding="12dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/exo_styled_controls_play"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/exo_controls_play_description"
+            tools:ignore="ContentDescription" />
+
+        <!-- Fast Forward Button using standard background -->
+        <ImageButton
+            android:id="@id/exo_ffwd"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="12dp"
+            android:padding="12dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_ffwd_15s_24"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Forward 15 seconds"
+            tools:ignore="ContentDescription" />
 
     </LinearLayout>
 
