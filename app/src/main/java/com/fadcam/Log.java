@@ -192,4 +192,7 @@ public class Log {
 
     public static void v(String sharedPrefs, String s) {
     }
+
+    public static void i(String tag, String s) {
+    }
 }

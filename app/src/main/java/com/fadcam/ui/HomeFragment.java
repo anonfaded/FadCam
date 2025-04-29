@@ -597,26 +597,125 @@ public class HomeFragment extends Fragment {
         buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
     }
 
-    private void onRecordingStopped() {
-
-        recordingState = RecordingState.NONE;
-
+    // --- Receiver for MediaRecorder Stopped signal ---
+    private void onRecordingStopped() { // Called by BROADCAST_ON_RECORDING_STOPPED
+        Log.i(TAG, "<<< Received BROADCAST_ON_RECORDING_STOPPED (Recorder stopped, HW released) >>>");
+        if (!isAdded() || getContext() == null || getView() == null) {
+            Log.w(TAG, "onRecordingStopped ignored: fragment not ready.");
+            recordingState = RecordingState.NONE; // Update state even if UI isn't updated yet
+            return;
+        }
+        recordingState = RecordingState.NONE; // Update local state
         releaseWakeLock();
-
-        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_start)));
-        buttonStartStop.setText(getString(R.string.button_start));
-        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
-        buttonStartStop.setEnabled(true);
-
-        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
-        buttonPauseResume.setEnabled(false);
-
-        buttonCamSwitch.setEnabled(true);
-
-        updatePreviewVisibility();
-
+        try {
+            Log.d(TAG,"onRecordingStopped: Resetting UI to IDLE...");
+            resetUIButtonsToIdleState(); // <<< UI reset happens here
+        } catch (Exception e){ Log.e(TAG, "Error reset UI", e); }
         stopUpdatingInfo();
+        try { Utils.showQuickToast(requireContext(), R.string.video_recording_stopped); } catch(Exception e) {}
+        Log.d(TAG, "onRecordingStopped: UI set to IDLE. Background processing may continue.");
     }
+
+    // Inside HomeFragment.java
+
+    /**
+     * Safely resets the main control buttons (Start, Pause, CamSwitch, Torch)
+     * and related UI elements (like preview) to their default IDLE state.
+     * This means recording is stopped and the user can initiate a new one.
+     * Should only be called when the fragment is attached and view is available.
+     */
+    private void resetUIButtonsToIdleState() {
+        Log.d(TAG, ">>> resetUIButtonsToIdleState: Resetting UI to IDLE state <<<");
+        // Guard against running if fragment/context isn't ready
+        if (!isAdded() || getContext() == null || getView() == null) {
+            Log.w(TAG, "resetUIButtonsToIdleState: Cannot reset UI - Fragment not attached, context/view is null.");
+            return;
+        }
+
+        try {
+            // --- Start/Stop Button ---
+            if (buttonStartStop != null) {
+                buttonStartStop.setEnabled(true); // Enable starting
+                buttonStartStop.setText(getString(R.string.button_start)); // Set text to "Start"
+                buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)); // Set icon to Play
+                // Ensure background tint is Green for start
+                buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_start)));
+                Log.d(TAG, "Reset Start/Stop button to IDLE.");
+            } else {
+                Log.w(TAG, "resetUIButtonsToIdleState: buttonStartStop is null!");
+            }
+
+            // --- Pause/Resume Button ---
+            if (buttonPauseResume != null) {
+                buttonPauseResume.setEnabled(false); // Disable pausing/resuming when idle
+                buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause)); // Reset icon to Pause
+                Log.d(TAG, "Reset Pause/Resume button to IDLE.");
+            } else {
+                Log.w(TAG, "resetUIButtonsToIdleState: buttonPauseResume is null!");
+            }
+
+            // --- Camera Switch Button ---
+            if (buttonCamSwitch != null) {
+                buttonCamSwitch.setEnabled(true); // Enable camera switching when idle
+                Log.d(TAG, "Reset Camera Switch button to IDLE.");
+            } else {
+                Log.w(TAG, "resetUIButtonsToIdleState: buttonCamSwitch is null!");
+            }
+
+            // --- Torch Button ---
+            if (buttonTorchSwitch != null) {
+                // Check flash availability again, just in case
+                // initializeTorch(); // Can be redundant, checking is lighter
+                boolean flashAvailable = (cameraManager != null && getCameraWithFlashQuietly() != null);
+                buttonTorchSwitch.setEnabled(flashAvailable); // Enable only if flash is actually available
+                // The torch 'selected' state (on/off icon tint) is handled by updateTorchUI based on its broadcast receiver
+                Log.d(TAG, "Reset Torch button enabled state (based on flash availability): " + flashAvailable);
+            } else {
+                Log.w(TAG, "resetUIButtonsToIdleState: buttonTorchSwitch is null!");
+            }
+
+            // --- Preview Area ---
+            // Ensure placeholder is visible and texture view is hidden when idle
+            updatePreviewVisibility(); // This method handles the logic based on recordingState == NONE
+            Log.d(TAG, "Reset Preview Visibility.");
+
+            Log.i(TAG, ">>> UI successfully reset to IDLE state. <<<");
+
+        } catch (IllegalStateException e) {
+            // Can happen if requireContext() is called after fragment detached
+            Log.e(TAG, "resetUIButtonsToIdleState: IllegalStateException resetting UI (Fragment likely detached)", e);
+        } catch (Exception e) {
+            // Catch any other unexpected errors during UI update
+            Log.e(TAG, "resetUIButtonsToIdleState: Unexpected error resetting buttons/UI", e);
+        }
+    } // End resetUIButtonsToIdleState
+
+    /** Helper for resetUIButtonsToIdleState to check flash without throwing checked exception */
+    private String getCameraWithFlashQuietly() {
+        // Ensure cameraManager is initialized (e.g., in onViewCreated or onAttach)
+        if(cameraManager == null) {
+            try {
+                cameraManager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+            } catch (Exception e) {
+                Log.e(TAG,"Failed to get CameraManager in getCameraWithFlashQuietly", e);
+                return null;
+            }
+        }
+        if(cameraManager == null) return null; // Check again if getSystemService failed
+
+        try {
+            // Assuming getCameraWithFlash is defined elsewhere and throws CameraAccessException
+            return getCameraWithFlash();
+        } catch (CameraAccessException e){
+            Log.w(TAG,"CameraAccessException checking flash quietly: " + e.getMessage()); // Changed to warning
+            return null;
+        } catch (Exception e) {
+            Log.e(TAG,"Unexpected error checking flash quietly", e);
+            return null;
+        }
+    }
+
+
 
     @Override
     public void onStop() {
@@ -638,52 +737,345 @@ public class HomeFragment extends Fragment {
         requireActivity().unregisterReceiver(broadcastOnRecordingStateCallback);
     }
 
+    // --- `onResume()` Method (Simplified - focuses on fetch state) ---
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onResume() {
         super.onResume();
-
         Log.d(TAG, "HomeFragment resumed.");
+        if (!isAdded() || getContext() == null || getActivity() == null) { Log.e(TAG,"onResume: Not attached!"); return; }
+        if (sharedPreferencesManager == null) { sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext()); }
 
-        fetchRecordingState();
-        // Update stats when resuming, in case file changes occurred while paused
+        Log.d(TAG, "onResume: Fetching current recording state from service...");
+        fetchRecordingState(); // Let service callback handle UI sync
+
+        registerBroadcastReceivers(); // Centralized registration
+
         Log.d(TAG, "onResume: Triggering stats update.");
         updateStats();
+        updateTorchUI(isTorchOn);
+    }
 
-        // Initialize the receiver if null
+    // Inside HomeFragment.java
+
+    // --- Receiver Field Declarations (Should already exist near top of HomeFragment) ---
+    // private BroadcastReceiver broadcastOnRecordingStarted;
+    // private BroadcastReceiver broadcastOnRecordingResumed;
+    // private BroadcastReceiver broadcastOnRecordingPaused;
+    // private BroadcastReceiver broadcastOnRecordingStopped; // Handles UI idle reset now
+    // private BroadcastReceiver broadcastOnRecordingStateCallback; // Handles initial sync
+    // private BroadcastReceiver recordingCompleteReceiver; // Handles stats update after processing
+    // private BroadcastReceiver torchReceiver;
+
+    // --- Registration Flags (Optional but recommended for robust unregistering) ---
+    private boolean isStateReceiversRegistered = false;
+    private boolean isCompletionReceiverRegistered = false; // Renamed from isStatsReceiverRegistered
+    private boolean isTorchReceiverRegistered = false;
+
+
+    // --- MAIN Registration Method ---
+    /**
+     * Centralized method to register all necessary BroadcastReceivers for this fragment.
+     * Ensures initialization and calls individual registration helpers.
+     * Should be called from onResume or onStart.
+     */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag") // Suppress only if targeting older SDKs AND necessary
+    private void registerBroadcastReceivers() {
+        if (!isAdded() || getContext() == null) {
+            Log.e(TAG,"Cannot register receivers, fragment not attached or context null.");
+            return;
+        }
+        Context safeContext = requireContext();
+        Log.i(TAG, "Registering ALL Broadcast Receivers...");
+
+        // --- 1. Initialize ALL receiver instances ---
+        initializeRecordingStateReceivers();   // Defines state receivers if null
+        initializeRecordingCompleteReceiver(); // Defines completion receiver if null
+        initializeTorchReceiver();             // Defines torch receiver if null
+        // NOTE: No initialize for ResourcesReleased receiver as it's removed in this logic path
+
+
+        // --- 2. Register the Receivers ---
+        registerRecordingStateReceivers(safeContext);      // Registers: START, RESUME, PAUSE, STOPPED, STATE_CALLBACK
+        registerRecordingCompleteReceiver(safeContext);    // Registers: ACTION_RECORDING_COMPLETE
+        registerTorchReceiver(safeContext);            // Registers: BROADCAST_ON_TORCH_STATE_CHANGED
+
+        Log.i(TAG, "Finished registering receivers.");
+    }
+
+    // --- Initialization Helper Methods ---
+
+    /** Initializes the BroadcastReceiver instances for recording state changes */
+    private void initializeRecordingStateReceivers() {
+        // Initialize Receiver for START action
+        if (broadcastOnRecordingStarted == null) {
+            broadcastOnRecordingStarted = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded() || i == null) return;
+                    Log.d(TAG, "Received BROADCAST_ON_RECORDING_STARTED");
+                    // Get start time, call onRecordingStarted to update UI
+                    recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, SystemClock.elapsedRealtime());
+                    onRecordingStarted(true); // true for initial toast
+                }
+            };
+            Log.d(TAG,"Initialized broadcastOnRecordingStarted receiver");
+        }
+        // Initialize Receiver for RESUME action
+        if (broadcastOnRecordingResumed == null) {
+            broadcastOnRecordingResumed = new BroadcastReceiver() {
+                @Override public void onReceive(Context c, Intent i) { if(isAdded()) onRecordingResumed(); }
+            };
+            Log.d(TAG,"Initialized broadcastOnRecordingResumed receiver");
+        }
+        // Initialize Receiver for PAUSE action
+        if (broadcastOnRecordingPaused == null) {
+            broadcastOnRecordingPaused = new BroadcastReceiver() {
+                @Override public void onReceive(Context c, Intent i) { if(isAdded()) onRecordingPaused(); }
+            };
+            Log.d(TAG,"Initialized broadcastOnRecordingPaused receiver");
+        }
+        // Initialize Receiver for STOPPED action (triggers UI Idle)
+        if (broadcastOnRecordingStopped == null) {
+            broadcastOnRecordingStopped = new BroadcastReceiver() {
+                @Override public void onReceive(Context context, Intent i) { if(isAdded()) onRecordingStopped(); }
+            };
+            Log.d(TAG,"Initialized broadcastOnRecordingStopped receiver");
+        }
+        // Initialize Receiver for SERVICE STATE CALLBACK
+        if (broadcastOnRecordingStateCallback == null) {
+            broadcastOnRecordingStateCallback = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded() || i == null) return;
+                    // Get the state reported by the service
+                    RecordingState serviceState = (RecordingState) i.getSerializableExtra(Constants.INTENT_EXTRA_RECORDING_STATE);
+                    Log.i(TAG, "Received Service State Callback: " + serviceState);
+                    if (serviceState == null) serviceState = RecordingState.NONE; // Default to NONE
+
+                    // *** CALL the handler method ***
+                    handleServiceStateUpdate(serviceState);
+                }
+            };
+            Log.d(TAG,"Initialized broadcastOnRecordingStateCallback receiver");
+        }
+    }
+
+
+
+    /**
+     * **Definition:** Updates the HomeFragment UI based on the definitive state
+     * reported by the RecordingService's state callback.
+     * @param reportedState The RecordingState received from the service.
+     */
+    private void handleServiceStateUpdate(RecordingState reportedState) {
+        if (!isAdded()) { // Check if fragment is attached
+            Log.w(TAG, "handleServiceStateUpdate: Fragment not attached, ignoring state update: " + reportedState);
+            return;
+        }
+        Log.i(TAG, "handleServiceStateUpdate: Applying UI for Service State = " + reportedState);
+
+        // Update the local recording state variable
+        recordingState = reportedState;
+
+        // Update UI elements based on the state
+        switch (reportedState) {
+            case IN_PROGRESS:
+                setUIForRecordingActive(); // Call helper to set Stop/Pause buttons etc.
+                break;
+            case PAUSED:
+                setUIForRecordingPaused(); // Call helper to set Stop/Resume buttons etc.
+                break;
+            case NONE:
+            default:
+                // Service state is NONE. Recording is stopped.
+                // UI *should* be idle unless background processing is happening
+                // for a *previous* video. Reset UI directly here as this confirms
+                // the *current* recording attempt is definitely stopped.
+                Log.d(TAG, "handleServiceStateUpdate: Service state is NONE. Resetting UI to idle.");
+                resetUIButtonsToIdleState();
+                break;
+        }
+        Log.d(TAG, "handleServiceStateUpdate finished. Fragment state is now: " + recordingState);
+    }
+
+    /** Helper to set UI elements for the ACTIVE recording state */
+    private void setUIForRecordingActive() {
+        if(!isAdded() || getContext() == null) return;
+        Log.d(TAG,"Setting UI to: ACTIVE Recording");
+        try{
+            // Ensure interaction buttons reflect recording
+            buttonStartStop.setEnabled(true); // Enable STOP
+            buttonStartStop.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.button_stop));
+            buttonStartStop.setText(getString(R.string.button_stop));
+            buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
+
+            buttonPauseResume.setEnabled(true); // Enable PAUSE
+            buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
+
+            buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
+            if(buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(getCameraWithFlashQuietly() != null); // Enable TORCH if available
+
+            // Manage preview and timers
+            updatePreviewVisibility(); startUpdatingInfo();
+        } catch(Exception e){ Log.e(TAG,"Error setting UI for Active state", e); }
+    }
+
+    /** Helper to set UI elements for the PAUSED recording state */
+    private void setUIForRecordingPaused() {
+        if(!isAdded() || getContext() == null) return;
+        Log.d(TAG,"Setting UI to: PAUSED Recording");
+        try{
+            // Set buttons for Paused state (Stop ON, Resume(Play) ON, Switch OFF, Torch OFF)
+            buttonStartStop.setEnabled(true); // Enable STOP
+            buttonStartStop.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.button_stop));
+            buttonStartStop.setText(getString(R.string.button_stop));
+            buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
+
+            buttonPauseResume.setEnabled(true); // Enable RESUME
+            buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)); // Show Play icon for RESUME
+
+            buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
+            if(buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(false); // Disable TORCH when paused
+
+            // Manage preview and timers
+            updatePreviewVisibility(); stopUpdatingInfo(); // Show placeholder/last frame, stop timers
+        } catch(Exception e){ Log.e(TAG,"Error setting UI for Paused state", e); }
+    }
+
+    /** Initializes the BroadcastReceiver for ACTION_RECORDING_COMPLETE */
+    private void initializeRecordingCompleteReceiver() {
+        if (recordingCompleteReceiver == null) {
+            recordingCompleteReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (!isAdded() || intent == null || intent.getAction() == null) return;
+                    if (Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+                        Log.i(TAG, "<<< Received ACTION_RECORDING_COMPLETE (Processing Finished) >>>");
+                        if(getView() == null) { Log.w(TAG,"Completion: View null, skip stats UI"); return; }
+                        try { updateStats(); Log.d(TAG,"Completion: Updated stats."); }
+                        catch (Exception e) { Log.e(TAG, "Completion: Err update stats", e);}
+                    }
+                }
+            };
+            Log.d(TAG,"Initialized recordingCompleteReceiver");
+        }
+    }
+
+    /** Initializes the BroadcastReceiver for Torch State Changes */
+    private void initializeTorchReceiver() {
         if (torchReceiver == null) {
             torchReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
+                    if (!isAdded() || getActivity()==null || intent == null || intent.getAction() == null) return;
                     if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
-                        boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
-                        isTorchOn = torchState;
-                        Log.d("TorchDebug", "Received broadcast - Torch state: " + torchState);
-                        
-                        requireActivity().runOnUiThread(() -> {
-                            try {
-                                buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
-                                    requireContext(),
-                                    R.drawable.ic_flashlight_on
-                                ));
-                                buttonTorchSwitch.setSelected(isTorchOn);
-                                buttonTorchSwitch.setEnabled(true);
-                            } catch (Exception e) {
-                                Log.e("TorchDebug", "Error updating torch icon: " + e.getMessage());
-                            }
-                        });
+                        isTorchOn = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
+                        Log.d("TorchDebug", "Received state update via Broadcast: " + isTorchOn);
+                        updateTorchUI(isTorchOn); // Update button visuals
                     }
                 }
             };
-            
-            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-            // Add the RECEIVER_NOT_EXPORTED flag for Android 13+ compatibility
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                requireContext().registerReceiver(torchReceiver, filter);
-            }
+            Log.d(TAG,"Initialized torchReceiver");
         }
+    }
+
+    // --- Registration Helper Methods ---
+
+    /** Helper to register all recording state change receivers */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerRecordingStateReceivers(Context context){
+        if(isStateReceiversRegistered) return; // Prevent double registration
+        try {
+            IntentFilter startedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED);
+            IntentFilter resumedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED);
+            IntentFilter pausedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED);
+            IntentFilter stoppedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED);
+            IntentFilter callbackFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+
+            // Ensure receiver instances exist before registering
+            if (broadcastOnRecordingStarted == null) initializeRecordingStateReceivers(); // Check individual receivers too...
+            if (broadcastOnRecordingResumed == null) initializeRecordingStateReceivers();
+            if (broadcastOnRecordingPaused == null) initializeRecordingStateReceivers();
+            if (broadcastOnRecordingStopped == null) initializeRecordingStateReceivers();
+            if (broadcastOnRecordingStateCallback == null) initializeRecordingStateReceivers();
+
+            // Perform registration only if instances are valid
+            if(broadcastOnRecordingStarted!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingStarted, startedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            if(broadcastOnRecordingResumed!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingResumed, resumedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            if(broadcastOnRecordingPaused!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingPaused, pausedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            if(broadcastOnRecordingStopped!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingStopped, stoppedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            if(broadcastOnRecordingStateCallback!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingStateCallback, callbackFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+
+            isStateReceiversRegistered = true; // Mark as registered
+            Log.d(TAG,"Registered ALL recording state receivers.");
+        } catch(Exception e) {
+            Log.e(TAG,"Error registering recording state receivers", e);
+            isStateReceiversRegistered = false; // Reset flag on error
+        }
+    }
+
+    /** Helper to register the ACTION_RECORDING_COMPLETE receiver */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerRecordingCompleteReceiver(Context context) {
+        if (isCompletionReceiverRegistered) return;
+        if (recordingCompleteReceiver == null) {
+            initializeRecordingCompleteReceiver();
+            if (recordingCompleteReceiver == null) {Log.e(TAG,"Cannot register: Failed to initialize completion receiver!"); return;}
+        }
+        IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
+        try {
+            ContextCompat.registerReceiver(context, recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            isCompletionReceiverRegistered = true; // Use specific flag
+            Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
+        } catch (Exception e) { Log.e(TAG, "Error registering ACTION_RECORDING_COMPLETE receiver", e); isCompletionReceiverRegistered = false; }
+    }
+
+    /** Helper to register the Torch receiver */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerTorchReceiver(Context context) {
+        if (isTorchReceiverRegistered) return;
+        if (torchReceiver == null) {
+            initializeTorchReceiver();
+            if (torchReceiver == null) {Log.e(TAG,"Cannot register: Failed init torch receiver"); return;}
+        }
+        IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+        try{
+            ContextCompat.registerReceiver(context, torchReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            isTorchReceiverRegistered = true; // Use specific flag
+            Log.d(TAG,"Torch receiver registered.");
+        } catch (Exception e) { Log.e(TAG, "Error registering Torch Receiver", e); isTorchReceiverRegistered = false;}
+    }
+
+    // --- Ensure Unregistration Logic ---
+    // Place this method in HomeFragment.java and call it from onStop()
+    private void unregisterBroadcastReceivers() {
+        if (getContext() == null) { Log.w(TAG,"Cannot unregister, context null."); return; }
+        Context safeContext = requireContext();
+        Log.i(TAG, "Unregistering ALL Broadcast Receivers...");
+
+        // Unregister State Receivers
+        if (isStateReceiversRegistered) { // Check flag before trying
+            BroadcastReceiver[] stateReceivers = { broadcastOnRecordingStarted, broadcastOnRecordingResumed, broadcastOnRecordingPaused, broadcastOnRecordingStopped, broadcastOnRecordingStateCallback };
+            for (BroadcastReceiver receiver : stateReceivers) { if (receiver != null) try { safeContext.unregisterReceiver(receiver); } catch (IllegalArgumentException e) { /* Ignore */ } }
+            isStateReceiversRegistered = false; // Reset flag
+            Log.d(TAG,"Unregistered recording state receivers.");
+        } else Log.d(TAG,"State receivers already unregistered.");
+
+
+        // Unregister Completion Receiver
+        if (isCompletionReceiverRegistered && recordingCompleteReceiver != null) {
+            try { safeContext.unregisterReceiver(recordingCompleteReceiver); Log.d(TAG,"Unregistered Completion receiver."); } catch (IllegalArgumentException e) { /* Ignore */ }
+            isCompletionReceiverRegistered = false; // Reset flag
+        }
+
+        // Unregister Torch Receiver
+        if (isTorchReceiverRegistered && torchReceiver != null) {
+            try { safeContext.unregisterReceiver(torchReceiver); Log.d(TAG,"Unregistered Torch receiver."); } catch (IllegalArgumentException e) { /* Ignore */ }
+            isTorchReceiverRegistered = false; // Reset flag
+            torchReceiver = null; // Nullify to ensure re-initialization in onResume
+        }
+        Log.i(TAG, "Finished unregistering receivers.");
     }
 
     @Override
@@ -940,23 +1332,76 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    // --- Start Recording ---
     private void startRecording() {
+        if (!isAdded() || getActivity() == null) { Log.w(TAG,"Start: Not attached"); return; }
+        if (recordingState != RecordingState.NONE) { Log.w(TAG,"Start: Already state: " + recordingState); Utils.showQuickToast(requireContext(), R.string.recording_already_active); return; }
+
+        Log.i(TAG, ">> startRecording user action");
         SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+        Surface surfaceToSend = (surfaceTexture != null) ? new Surface(surfaceTexture) : null;
+        if(surfaceTexture == null) Log.w(TAG,"Start: SurfaceTexture null");
 
-        tvPreviewPlaceholder.setVisibility(View.GONE);
-        textureView.setVisibility(View.VISIBLE);
-
-        buttonStartStop.setEnabled(false);
-        buttonCamSwitch.setEnabled(false);
+        try { // Optimistic UI, button disable
+            if(textureView != null) textureView.setVisibility(View.VISIBLE);
+            if(tvPreviewPlaceholder != null) tvPreviewPlaceholder.setVisibility(View.GONE);
+            disableInteractionButtons(); Log.d(TAG, "Start: Btns disabled.");
+        } catch(Exception e) { Log.e(TAG,"Err UI start",e);}
 
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
         startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
+        if (surfaceToSend != null) { startIntent.putExtra("SURFACE", surfaceToSend); }
+        else { startIntent.removeExtra("SURFACE"); }
 
-        if(surfaceTexture != null) {
-            startIntent.putExtra("SURFACE", new Surface(surfaceTexture));
+        try {
+            requireActivity().startService(startIntent); Log.i(TAG, "Sent START intent.");
+        } catch (Exception e) {
+            Log.e(TAG, "Error sending START intent: ", e); Toast.makeText(getContext(), "Error start rec", Toast.LENGTH_SHORT).show();
+            resetUIButtonsToIdleState(); Log.d(TAG, "startIntent fail: UI Reset.");
         }
+    }
 
-        requireActivity().startService(startIntent);
+    // Inside HomeFragment.java
+
+    /**
+     * Helper method to disable buttons typically unavailable during
+     * recording initiation, stopping transitions, or active recording/pausing.
+     * Checks if views exist before modifying them.
+     */
+    private void disableInteractionButtons() {
+        Log.d(TAG,"Attempting to disable interaction buttons.");
+        if (!isAdded() || getView() == null) { // Extra check for view availability
+            Log.w(TAG, "disableInteractionButtons: View not available, cannot disable buttons.");
+            return;
+        }
+        try {
+            // Null checks are crucial inside helper methods
+            if (buttonStartStop != null) {
+                buttonStartStop.setEnabled(false);
+                Log.v(TAG,"Disabled: Start/Stop Button"); // Verbose log
+            } else Log.w(TAG,"buttonStartStop is null in disableInteractionButtons");
+
+            if (buttonPauseResume != null) {
+                buttonPauseResume.setEnabled(false);
+                Log.v(TAG,"Disabled: Pause/Resume Button");
+            } else Log.w(TAG,"buttonPauseResume is null in disableInteractionButtons");
+
+            if (buttonCamSwitch != null) {
+                buttonCamSwitch.setEnabled(false);
+                Log.v(TAG,"Disabled: Camera Switch Button");
+            } else Log.w(TAG,"buttonCamSwitch is null in disableInteractionButtons");
+
+            if (buttonTorchSwitch != null) {
+                buttonTorchSwitch.setEnabled(false); // Also disable torch during these states
+                Log.v(TAG,"Disabled: Torch Button");
+            } else Log.w(TAG,"buttonTorchSwitch is null in disableInteractionButtons");
+
+            Log.d(TAG,"Interaction buttons disabled.");
+
+        } catch (Exception e) {
+            // Catch potential NPE or other issues if views are somehow null unexpectedly
+            Log.e(TAG, "Error occurred while disabling interaction buttons", e);
+        }
     }
 
     private void updateRecordingSurface()
@@ -1471,21 +1916,22 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "setVideoBitrate: Set to " + videoBitrate + " bps");
     }
 
+    // --- Stop Recording ---
     private void stopRecording() {
-        Log.d(TAG, "stopRecording: Stopping video recording");
+        if (!isAdded() || getActivity() == null) { Log.w(TAG,"Stop: Not attached"); return; }
+        if(recordingState == RecordingState.NONE){ Log.w(TAG,"Stop clicked but state NONE?"); return; } // Prevent multi-stop
 
-        // Release wake lock when recording stops
-        releaseWakeLock();
+        Log.i(TAG, ">> stopRecording user action");
+        disableInteractionButtons(); Log.d(TAG,"stopRecording: Btns disabled.");
 
-        buttonPauseResume.setEnabled(false);
-        buttonStartStop.setEnabled(false);
-        buttonCamSwitch.setEnabled(false);
-
-        // Stop the recording service
         Intent stopIntent = new Intent(getActivity(), RecordingService.class);
         stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
-        requireActivity().startService(stopIntent);
-
+        try {
+            requireActivity().startService(stopIntent); Log.i(TAG, "Sent STOP intent.");
+        } catch (Exception e) {
+            Log.e(TAG, "Error sending STOP intent: ", e); Toast.makeText(getContext(),"Error stop svc", Toast.LENGTH_SHORT).show();
+            resetUIButtonsToIdleState(); Log.d(TAG, "stopIntent fail: UI Reset.");
+        }
         vibrateTouch();
     }
 

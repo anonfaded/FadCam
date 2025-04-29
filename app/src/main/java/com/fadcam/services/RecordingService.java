@@ -138,69 +138,48 @@ public class RecordingService extends Service {
         Log.d(TAG, "Service created successfully.");
     }
 
+    // --- onStartCommand (Ensure START action ignores processing state) ---
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand received: Action=" + (intent != null ? intent.getAction() : "null"));
-        if (intent == null || intent.getAction() == null) {
-            Log.w(TAG, "Intent or Action is null, returning START_NOT_STICKY");
-            // Stop if started without explicit action and not already working
-            if(!isWorkingInProgress()) stopSelf();
-            return START_NOT_STICKY; // Avoid zombie restarts without intent
-        }
+        if (intent == null || intent.getAction() == null) { /* ... handle null ... */ return START_NOT_STICKY; }
 
         String action = intent.getAction();
         switch (action) {
             case Constants.INTENT_ACTION_START_RECORDING:
-                // Check if already recording/processing to prevent overlaps
-                if (isWorkingInProgress()) {
-                    Log.w(TAG,"Start requested, but already working. Ignoring. State: " + recordingState + ", Processing: "+isProcessingWatermark);
-                    Utils.showQuickToast(this, R.string.video_recording_started); // Give feedback anyway
+                // *** REMOVED isWorkingInProgress check, only check current RECORDING state ***
+                if (recordingState != RecordingState.NONE) {
+                    Log.w(TAG,"Start requested, but already RECORDING/PAUSED. State: " + recordingState + ". Ignoring.");
+                    broadcastOnRecordingStateCallback(); // Notify UI of current state
                     return START_STICKY; // Remain active
                 }
+                // Check for processing flag is NO LONGER DONE HERE. Allow start attempt.
+                Log.i(TAG,"Handling START_RECORDING intent. Service recording state is NONE.");
+                setupSurfaceTexture(intent);
                 setupRecordingInProgressNotification(); // Show notification immediately
-                startRecording(); // Begin recording process
+                startRecording(); // Attempt to start hardware recording
                 break;
 
-            case Constants.INTENT_ACTION_PAUSE_RECORDING:
-                pauseRecording();
-                break;
-
-            case Constants.INTENT_ACTION_RESUME_RECORDING:
-                setupSurfaceTexture(intent); // Get new surface if needed
-                resumeRecording();
-                break;
-
-            case Constants.INTENT_ACTION_CHANGE_SURFACE:
-                setupSurfaceTexture(intent); // Update surface
-                if (isRecording()) { // Recreate session only if actively recording
-                    createCameraPreviewSession();
-                }
-                break;
-
-            case Constants.INTENT_ACTION_STOP_RECORDING:
-                stopRecording();
-                break;
-
-            // Request/Callback pattern for UI synchronization
-            case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST:
-                Log.d(TAG,"Responding to state request");
-                broadcastOnRecordingStateCallback();
-                if (!isWorkingInProgress()) { // Stop only if truly idle
-                    stopSelf();
-                }
-                break;
-
-            // Torch control during recording
-            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH:
-                toggleRecordingTorch(); // Method to handle torch on recording camera
-                break;
-
-            default:
-                Log.w(TAG, "Unknown action received: " + action);
-                break;
+            // ... other cases remain the same ...
+            case Constants.INTENT_ACTION_PAUSE_RECORDING:      pauseRecording(); break;
+            case Constants.INTENT_ACTION_RESUME_RECORDING:     setupSurfaceTexture(intent); resumeRecording(); break;
+            case Constants.INTENT_ACTION_CHANGE_SURFACE:       setupSurfaceTexture(intent); if (isRecording() || isPaused()) { createCameraPreviewSession(); } break;
+            case Constants.INTENT_ACTION_STOP_RECORDING:       stopRecording(); break;
+            case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST: Log.d(TAG,"Resp state request"); broadcastOnRecordingStateCallback(); if (!isWorkingInProgress()) { stopSelf(); } break;
+            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH: toggleRecordingTorch(); break;
+            default: Log.w(TAG, "Unknown action: " + action); break;
         }
+        return START_STICKY;
+    }
 
-        return START_STICKY; // Keep service running for background recording
+    /** Helper method to fully release MediaRecorder instance safely */
+    private void releaseMediaRecorderSafely() {
+        if (mediaRecorder != null) {
+            Log.d(TAG, "Releasing MediaRecorder instance safely...");
+            try { mediaRecorder.reset(); mediaRecorder.release(); Log.i(TAG, "MediaRecorder released successfully."); }
+            catch (Exception e) { Log.e(TAG, "Exception during MediaRecorder reset/release", e); }
+            finally { mediaRecorder = null; }
+        }
     }
 
     @Nullable
@@ -251,83 +230,105 @@ public class RecordingService extends Service {
         }
     }
 
+    /**
+     * Initiates the sequence to stop recording, release hardware resources,
+     * notify the UI, and then potentially start background processing.
+     */
     private void stopRecording() {
-        Log.d(TAG, "stopRecording: Attempting to stop. Current state: " + recordingState);
-        if (recordingState == RecordingState.NONE && !isProcessingWatermark) {
-            Log.w(TAG,"stopRecording called but not active/processing.");
-            return; // Avoid stopping if already stopped/idle
+        Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
+        if (recordingState == RecordingState.NONE) { // Already stopped (or never started)
+            Log.w(TAG, "stopRecording called but state is already NONE.");
+            // Ensure pref is consistent and check if service should stop
+            sharedPreferencesManager.setRecordingInProgress(false);
+            if (!isWorkingInProgress()) stopSelf();
+            return;
         }
 
-        // Store the reference using 'this.' explicitly
-        File tempFileToProcess = this.currentInternalTempFile;
+        // --- Stage 1: Stop MediaRecorder & Update Internal State ---
+        File tempFileToProcess = this.currentInternalTempFile; // Grab reference for processing later
+        final RecordingState previousState = recordingState;
+        recordingState = RecordingState.NONE; // Set service state to NONE immediately
+        sharedPreferencesManager.setRecordingInProgress(false); // Update persistent state
 
-        // Capture state BEFORE stopping components
-        boolean wasRecordingOrPaused = recordingState != RecordingState.NONE;
-        recordingState = RecordingState.NONE; // Mark as stopped first
-        sharedPreferencesManager.setRecordingInProgress(false); // Also update pref early
-
-        // Release MediaRecorder safely
+        boolean stoppedCleanly = false;
         if (mediaRecorder != null) {
             try {
-                mediaRecorder.stop();
-                Log.d(TAG, "MediaRecorder stopped.");
-            } catch (RuntimeException stopException) {
-                Log.e(TAG, "RuntimeException trying to stop MediaRecorder: " + stopException.getMessage());
-                // Recording might be corrupt, but try to proceed with processing anyway if file exists
-            } finally {
-                try {
-                    mediaRecorder.reset();
-                    mediaRecorder.release();
-                    Log.d(TAG, "MediaRecorder reset and released.");
-                } catch (Exception releaseEx) {
-                    Log.e(TAG, "Exception during MediaRecorder reset/release", releaseEx);
-                }
-                mediaRecorder = null;
+                mediaRecorder.stop(); // Stop the recording engine
+                stoppedCleanly = true;
+                Log.d(TAG, "MediaRecorder stopped successfully.");
+            } catch (Exception e) { // Catch RuntimeException or others
+                Log.e(TAG, "Exception stopping MediaRecorder: " + e.getMessage());
+                stoppedCleanly = true; // Treat as stopped even if unclean for resource release path
             }
+            // DO NOT release mediaRecorder object yet.
         } else {
-            Log.w(TAG,"stopRecording: mediaRecorder was already null.");
+            Log.w(TAG, "stopRecording: mediaRecorder was already null.");
+            stoppedCleanly = true; // Nothing to stop
         }
 
-        // Close Camera Resources
-        if (captureSession != null) {
-            try { captureSession.close(); } catch (Exception e) { Log.e(TAG, "Error closing CaptureSession", e); }
-            captureSession = null;
-            Log.d(TAG, "CaptureSession closed.");
-        }
-        if (cameraDevice != null) {
-            try { cameraDevice.close(); } catch (Exception e) { Log.e(TAG, "Error closing CameraDevice", e); }
-            cameraDevice = null;
-            Log.d(TAG, "CameraDevice closed.");
-        }
-
-        // Stop foreground service and notifications
+        // --- Stage 2: Stop Foreground Notification ---
+        // Stop foreground state immediately to remove persistent notification sooner
         stopForeground(true);
         cancelNotification();
+        Log.d(TAG,"Stopped foreground and cancelled notification.");
 
-        // Only process if recording was active and we have a temp file reference
-        if (wasRecordingOrPaused && tempFileToProcess != null) {
-            processAndMoveVideo(tempFileToProcess); // Process the saved file
+        // --- Stage 3: Release Camera HARDWARE Resources ---
+        // This is crucial and must happen before signaling UI can become fully idle
+        try { if (captureSession != null) { captureSession.close(); Log.d(TAG,"CaptureSession closed."); } } catch (Exception e) { Log.w(TAG,"Error closing captureSession",e); } finally { captureSession = null; }
+        try { if (cameraDevice != null) { cameraDevice.close(); Log.d(TAG,"CameraDevice closed."); } } catch (Exception e) { Log.w(TAG,"Error closing cameraDevice",e); } finally { cameraDevice = null; }
+        Log.i(TAG, "CameraDevice and CaptureSession close initiated.");
+
+        // --- Stage 4: Send STOPPED broadcast (Signal to Fragment: Recording HW is done/releasing) ---
+        broadcastOnRecordingStopped(); // <<< UI CAN NOW RESET TO IDLE <<<
+        Log.d(TAG, "Sent BROADCAST_ON_RECORDING_STOPPED.");
+
+
+        // --- Stage 5: Decide and Initiate Background Processing (if needed) ---
+        boolean tempFileIsValid = tempFileToProcess != null && tempFileToProcess.exists() && tempFileToProcess.length() > 0;
+        boolean needsProcessing = (previousState != RecordingState.NONE) && stoppedCleanly && tempFileIsValid;
+
+        if (needsProcessing) {
+            Log.i(TAG, "Proceeding to background video processing for: " + tempFileToProcess.getName());
+            isProcessingWatermark = true; // Set flag ONLY if processing starts
+            this.currentInternalTempFile = tempFileToProcess; // Keep reference for processing
+            processAndMoveVideo(tempFileToProcess); // Starts async FFmpeg
         } else {
-            Log.w(TAG, "stopRecording: Not processing. WasActive: " + wasRecordingOrPaused + ", TempFile: " + (tempFileToProcess != null ? tempFileToProcess.getName() : "null"));
-            if (tempFileToProcess != null) {
-                // If somehow stopped without processing needed, still clean up temp
-                if (tempFileToProcess.exists() && tempFileToProcess.delete()) {
-                    Log.d(TAG, "Cleaned up unused temp file on stop: " + tempFileToProcess.getName());
-                }
-            }
+            Log.w(TAG, "Skipping processing. PrevState:" + previousState + " CleanStop:" + stoppedCleanly + " TempValid:" + tempFileIsValid);
+            cleanupTemporaryFile(); // Cleanup temp file if not processing
+            sendRecordingCompleteBroadcast(stoppedCleanly, tempFileToProcess != null ? Uri.fromFile(tempFileToProcess) : null); // Signal immediate completion
+            checkIfServiceCanStop(); // Check if idle now
         }
-        currentInternalTempFile = null; // Clear the global reference AFTER passing it
 
+        // --- Stage 6: Final MediaRecorder Object Release ---
+        // Can be released now as its resources aren't needed for processing starting
+        if (mediaRecorder != null) {
+            releaseMediaRecorderSafely();
+        }
+        Log.i(TAG,"<< stopRecording sequence finished. >>");
+    }
 
-        broadcastOnRecordingStopped();
-        Utils.showQuickToast(this, R.string.video_recording_stopped);
+    // Inside RecordingService.java
 
-        // Check if service can stop now
-        if (!isWorkingInProgress()) {
-            Log.d(TAG, "stopRecording: No recording or processing active, stopping service.");
-            stopSelf();
+    /**
+     * Checks if the service has any active work (recording, pausing, or processing)
+     * and calls stopSelf() if it is completely idle.
+     * This should be called whenever a task completes (recording stops, processing finishes).
+     */
+    private void checkIfServiceCanStop() {
+        // Read volatile flag and check state atomically as best as possible
+        boolean isProcessing = isProcessingWatermark;
+        boolean isRecordingActive = (recordingState != RecordingState.NONE);
+
+        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", isProcessing=" + isProcessing);
+
+        // If NOT currently recording/paused AND NOT currently processing...
+        if (!isRecordingActive && !isProcessing) {
+            Log.i(TAG, "No active recording or background processing detected. Stopping service.");
+            // Add a slight delay before stopping? Optional, might help ensure broadcasts are fully handled.
+            // new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
+            stopSelf(); // Stop the service as its work is done.
         } else {
-            Log.d(TAG, "stopRecording: Service stays alive for processing/moving.");
+            Log.d(TAG, "Service continues running (Task active).");
         }
     }
 
@@ -397,33 +398,28 @@ public class RecordingService extends Service {
     }
 
 
-    // Method to cleanup all recording related resources
-    // Method to cleanup all recording related resources
+    /** Ensures ALL hardware resources related to recording are released. */
     private void releaseRecordingResources() {
-        Log.d(TAG,"Releasing recording resources...");
-        if (mediaRecorder != null) {
-            try { mediaRecorder.reset(); mediaRecorder.release(); }
-            catch (Exception e) { Log.e(TAG,"Error releasing mediaRecorder",e);}
-            mediaRecorder = null;
+        Log.d(TAG, "Releasing ALL recording resources (Camera, Session, Recorder)...");
+        // Order: Session -> Device -> Recorder
+        try { if (captureSession != null) { captureSession.close(); Log.d(TAG,"Rel: CaptureSession closed."); } } catch (Exception e) { Log.w(TAG,"Err close CaptureSession",e); } finally { captureSession = null; }
+        try { if (cameraDevice != null) { cameraDevice.close(); Log.d(TAG,"Rel: CameraDevice closed."); } } catch (Exception e) { Log.w(TAG,"Err close CameraDevice",e); } finally { cameraDevice = null; }
+        releaseMediaRecorderSafely(); // Release recorder object
+
+        // Reset state if not already done
+        recordingState = RecordingState.NONE;
+        if (sharedPreferencesManager.isRecordingInProgress()){ // Check pref mismatch
+            Log.w(TAG,"Release: Pref indicated recording, resetting it.");
+            sharedPreferencesManager.setRecordingInProgress(false);
         }
-        // ParcelFileDescriptor is no longer used directly by MediaRecorder output
-        if (captureSession != null) {
-            try { captureSession.close();} catch (Exception e) { Log.e(TAG,"Error closing captureSession",e);}
-            captureSession = null;
+
+        // Cleanup temp file only if processing isn't active
+        if (!isProcessingWatermark) {
+            cleanupTemporaryFile();
+        } else {
+            Log.d(TAG,"Release: Keeping temp file reference for ongoing processing.");
         }
-        if (cameraDevice != null) {
-            try { cameraDevice.close(); } catch (Exception e) { Log.e(TAG,"Error closing cameraDevice",e); }
-            cameraDevice = null;
-        }
-        // Clean up temp file if recording was aborted mid-way
-        if(currentInternalTempFile != null && currentInternalTempFile.exists()){
-            Log.w(TAG,"Cleaning up lingering temp file during resource release: " + currentInternalTempFile.getName());
-            if(!currentInternalTempFile.delete()){
-                Log.e(TAG,"Failed to delete lingering temp file: "+currentInternalTempFile.getAbsolutePath());
-            }
-            currentInternalTempFile = null; // Nullify the reference
-        }
-        Log.d(TAG,"Finished releasing recording resources.");
+        Log.d(TAG, "Finished releasing recording resources.");
     }
     // --- End Core Recording Logic ---
 
