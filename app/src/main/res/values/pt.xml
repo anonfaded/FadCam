@@ -259,6 +259,7 @@
         This secures your recording. After confirming it saved correctly in your gallery app, you can safely <b>delete this temporary file</b> from this Records list if you wish.<br/><br/>
         Continuing to record without saving may risk losing this file if the app cache is cleared unexpectedly.
         ]]></string>
+    <string name="recording_already_active">Recording is already in progress or paused.</string>
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>
