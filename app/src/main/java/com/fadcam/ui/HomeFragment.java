@@ -598,22 +598,43 @@ public class HomeFragment extends Fragment {
     }
 
     // --- Receiver for MediaRecorder Stopped signal ---
-    private void onRecordingStopped() { // Called by BROADCAST_ON_RECORDING_STOPPED
-        Log.i(TAG, "<<< Received BROADCAST_ON_RECORDING_STOPPED (Recorder stopped, HW released) >>>");
+    /**
+     * Called when the BROADCAST_ON_RECORDING_STOPPED is received,
+     * indicating the MediaRecorder engine has stopped and hardware resources
+     * are likely released or being released immediately by the service.
+     * This method resets the UI to the IDLE state.
+     */
+    private void onRecordingStopped() {
+        Log.i(TAG, "<<< Received BROADCAST_ON_RECORDING_STOPPED >>>");
         if (!isAdded() || getContext() == null || getView() == null) {
-            Log.w(TAG, "onRecordingStopped ignored: fragment not ready.");
-            recordingState = RecordingState.NONE; // Update state even if UI isn't updated yet
+            Log.w(TAG, "onRecordingStopped received but fragment not ready.");
+            // Update local state even if UI isn't updated yet
+            recordingState = RecordingState.NONE;
             return;
         }
-        recordingState = RecordingState.NONE; // Update local state
-        releaseWakeLock();
+
+        // Update local state FIRST
+        recordingState = RecordingState.NONE;
+        Log.d(TAG, "onRecordingStopped: Local state set to NONE.");
+
+        releaseWakeLock(); // Release wake lock
+
+        // --- RESET UI TO IDLE STATE ---
         try {
-            Log.d(TAG,"onRecordingStopped: Resetting UI to IDLE...");
-            resetUIButtonsToIdleState(); // <<< UI reset happens here
-        } catch (Exception e){ Log.e(TAG, "Error reset UI", e); }
+            Log.d(TAG,"onRecordingStopped: Calling resetUIButtonsToIdleState...");
+            resetUIButtonsToIdleState(); // Re-enables Start button etc.
+        } catch (Exception e){
+            Log.e(TAG, "onRecordingStopped: Error calling resetUIButtonsToIdleState", e);
+        }
+
+        // Stop updating timers/info display
         stopUpdatingInfo();
-        try { Utils.showQuickToast(requireContext(), R.string.video_recording_stopped); } catch(Exception e) {}
-        Log.d(TAG, "onRecordingStopped: UI set to IDLE. Background processing may continue.");
+
+        // --- FIX: Removed the irrelevant toast message ---
+        // Utils.showQuickToast(requireContext(), R.string.video_recording_stopped); // <<< REMOVED THIS LINE
+        // --- End FIX ---
+
+        Log.d(TAG, "onRecordingStopped: UI reset to IDLE. Background processing may continue.");
     }
 
     // Inside HomeFragment.java
@@ -1333,31 +1354,67 @@ public class HomeFragment extends Fragment {
     }
 
     // --- Start Recording ---
+    // Inside HomeFragment.java
     private void startRecording() {
-        if (!isAdded() || getActivity() == null) { Log.w(TAG,"Start: Not attached"); return; }
-        if (recordingState != RecordingState.NONE) { Log.w(TAG,"Start: Already state: " + recordingState); Utils.showQuickToast(requireContext(), R.string.recording_already_active); return; }
+        if (!isAdded() || getActivity() == null) {
+            Log.w(TAG, "startRecording called but fragment/activity not attached.");
+            return;
+        }
+
+        // Prevent starting only if already actively recording/paused
+        if (recordingState != RecordingState.NONE) {
+            Log.w(TAG, "Start: Already recording/paused (State: " + recordingState + "). Ignoring request.");
+            Utils.showQuickToast(requireContext(), R.string.recording_already_active);
+            return;
+        }
 
         Log.i(TAG, ">> startRecording user action");
         SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
         Surface surfaceToSend = (surfaceTexture != null) ? new Surface(surfaceTexture) : null;
-        if(surfaceTexture == null) Log.w(TAG,"Start: SurfaceTexture null");
 
-        try { // Optimistic UI, button disable
-            if(textureView != null) textureView.setVisibility(View.VISIBLE);
-            if(tvPreviewPlaceholder != null) tvPreviewPlaceholder.setVisibility(View.GONE);
-            disableInteractionButtons(); Log.d(TAG, "Start: Btns disabled.");
-        } catch(Exception e) { Log.e(TAG,"Err UI start",e);}
+        // *** FIX: Set initial preview visibility based on preference BEFORE sending intent ***
+        try {
+            if (isPreviewEnabled) { // Only show TextureView if preview IS enabled
+                if (textureView != null) textureView.setVisibility(View.VISIBLE);
+                if (tvPreviewPlaceholder != null) tvPreviewPlaceholder.setVisibility(View.GONE);
+                Log.d(TAG,"Start: Preview enabled, showing TextureView.");
+            } else { // Keep TextureView hidden if preview is DISABLED
+                if (textureView != null) textureView.setVisibility(View.INVISIBLE); // Or GONE
+                if (tvPreviewPlaceholder != null) {
+                    tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+                    // Optionally set text indicating recording started without preview
+                    // tvPreviewPlaceholder.setText("Recording starting...");
+                }
+                Log.d(TAG,"Start: Preview disabled, keeping TextureView hidden.");
+            }
+            // --- END FIX ---
+
+            // Disable buttons temporarily while intent is processed
+            disableInteractionButtons();
+            Log.d(TAG, "Start: Buttons temporarily disabled.");
+        } catch(Exception e) { Log.e(TAG,"Err setting initial UI state for start",e);}
+
 
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
         startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
-        if (surfaceToSend != null) { startIntent.putExtra("SURFACE", surfaceToSend); }
-        else { startIntent.removeExtra("SURFACE"); }
+        if (surfaceToSend != null) {
+            startIntent.putExtra("SURFACE", surfaceToSend);
+            Log.d(TAG,"Start: Surface available, adding to intent.");
+        } else {
+            startIntent.removeExtra("SURFACE");
+            Log.w(TAG,"Start: Surface not available now, sending intent without it.");
+        }
 
         try {
-            requireActivity().startService(startIntent); Log.i(TAG, "Sent START intent.");
+            requireActivity().startService(startIntent);
+            Log.i(TAG, "Sent START_RECORDING intent. Waiting for service confirmation...");
+            // UI waits for BROADCAST_ON_RECORDING_STARTED
         } catch (Exception e) {
-            Log.e(TAG, "Error sending START intent: ", e); Toast.makeText(getContext(), "Error start rec", Toast.LENGTH_SHORT).show();
-            resetUIButtonsToIdleState(); Log.d(TAG, "startIntent fail: UI Reset.");
+            Log.e(TAG, "Error sending START_RECORDING intent: ", e);
+            Toast.makeText(getContext(), "Error starting recording", Toast.LENGTH_SHORT).show();
+            // Reset UI immediately if intent sending fails
+            resetUIButtonsToIdleState();
+            Log.d(TAG, "startRecording intent failed: Reset UI.");
         }
     }
 
