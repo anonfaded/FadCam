@@ -125,10 +125,15 @@ public class SharedPreferencesManager {
         return sharedPreferences.getString(Constants.PREF_WATERMARK_OPTION, Constants.DEFAULT_WATERMARK_OPTION);
     }
 
+    // Method to retrieve the preview state
     public Boolean isPreviewEnabled() {
+        // Default to true if the preference doesn't exist yet
         return sharedPreferences.getBoolean(Constants.PREF_IS_PREVIEW_ENABLED, Constants.DEFAULT_PREVIEW_ENABLED);
     }
-
+    // Method to save the preview state (often inline in the Fragment's savePreviewState, but could be here too)
+    public void setPreviewEnabled(boolean isEnabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_IS_PREVIEW_ENABLED, isEnabled).apply();
+    }
     public String getLanguage() {
         return sharedPreferences.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
     }
@@ -141,4 +146,7 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(Constants.PREF_IS_RECORDING_IN_PROGRESS, isInProgress).apply();
     }
     // --- End Other methods ---
+
+    public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists
+    public static final boolean DEFAULT_PREVIEW_ENABLED = true; // Check default exists
 }

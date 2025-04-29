@@ -502,7 +502,15 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent i) {
                 recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, 0);
-                onRecordingStarted(true);
+                // Call the existing onRecordingStarted method FIRST
+                // This updates internal state and button UI
+                onRecordingStarted(true); // Pass true for the toast as before
+
+                // *** ADDED FIX: Explicitly update surface and preview state AFTER confirming start ***
+                updateRecordingSurface();   // Send the current surface to the service
+                updatePreviewVisibility();  // Update visibility based on isPreviewEnabled flag
+                Log.d(TAG, "BROADCAST_ON_RECORDING_STARTED received: Sent surface update and refreshed preview visibility.");
+                // --- END FIX ---
             }
         };
     }
@@ -779,11 +787,19 @@ public class HomeFragment extends Fragment {
         tips = requireActivity().getResources().getStringArray(R.array.tips_widget);
         Log.d(TAG, "onViewCreated: Setting up UI components");
 
+        // *** ADDED FIX: Load preview enabled state from SharedPreferences ***
+        if (sharedPreferencesManager == null) { // Ensure manager is initialized
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        }
+        isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled(); // Initialize with saved state
+        Log.d(TAG, "onViewCreated: Loaded isPreviewEnabled state = " + isPreviewEnabled);
+        // --- END FIX ---
+
         setupTextureView(view);
 
         tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
-        tvPreviewPlaceholder.setVisibility(View.VISIBLE);
+
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
@@ -800,9 +816,7 @@ public class HomeFragment extends Fragment {
         // Set up long press listener for clock widget
         setupClockLongPressListener();
 
-        tvClock = view.findViewById(R.id.tvClock);
-        tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
-        tvDateArabic = view.findViewById(R.id.tvDateArabic);
+
 
 
         cardPreview = view.findViewById(R.id.cardPreview);
@@ -822,11 +836,11 @@ public class HomeFragment extends Fragment {
         // Update clock and date initially
         updateClock();
 
-        updateTip(); // Start the tip animation
+        // updateTip(); // Duplicate call? Check if startTipsAnimation is sufficient
         startTipsAnimation();
         setupButtonListeners();
         setupLongPressListener();
-        updatePreviewVisibility();
+        updatePreviewVisibility(); // CRUCIAL: Update visibility based on the loaded state
 
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
         initializeTorch();
