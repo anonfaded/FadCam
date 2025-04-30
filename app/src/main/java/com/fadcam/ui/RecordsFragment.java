@@ -22,8 +22,11 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.widget.ImageView;    // Import ImageView
 import android.widget.TextView;     // Import TextView
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog; // Import AlertDialog
 import android.widget.ProgressBar;
+import androidx.appcompat.widget.Toolbar; // Import Toolbar
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,6 +44,7 @@ import com.fadcam.SharedPreferencesManager; // Import your manager
 import com.fadcam.Utils;
 import com.fadcam.ui.VideoItem; // Import the new VideoItem class
 import com.fadcam.ui.RecordsAdapter; // Ensure adapter import is correct
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -99,6 +103,12 @@ public class RecordsFragment extends Fragment implements
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
 
+    private MaterialToolbar toolbar;
+    private CharSequence originalToolbarTitle;
+
+    // --- Selection State ---
+    private boolean isInSelectionMode = false;
+    private List<Uri> selectedUris = new ArrayList<>(); // Manage the actual selected URIs here
     // *** IMPLEMENT THE NEW INTERFACE METHOD ***
     @Override
     public void onDeletionFinishedCheckEmptyState() {
@@ -219,8 +229,7 @@ public class RecordsFragment extends Fragment implements
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        // *** FIX: Call super.onCreate() FIRST ***
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // Now perform other fragment setup
@@ -244,46 +253,82 @@ public class RecordsFragment extends Fragment implements
             executorService = Executors.newSingleThreadExecutor();
             Log.d(TAG, "ExecutorService initialized in onCreate.");
         }
-
+        // --- Back Press Handling ---
+        requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() {
+                if (isInSelectionMode) exitSelectionMode();
+                else { if (isEnabled()) { setEnabled(false); requireActivity().onBackPressed(); }}
+            }
+        });
         // *** Other initialization code specific to the fragment's creation ***
         // (like setting arguments, retaining instance, etc., if applicable)
     }
 
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView: Inflating layout R.layout.fragment_records");
+        // --- ONLY INFLATE AND RETURN ---
         View view = inflater.inflate(R.layout.fragment_records, container, false);
+        return view;
+        // --- REMOVE findViewByid and setup calls from here ---
+    }
 
-        // Find all views
+    // Inside RecordsFragment.java
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
+
+        // --- Perform ALL findViewById calls here ---
         recyclerView = view.findViewById(R.id.recycler_view_records);
         fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
-        loadingIndicator = view.findViewById(R.id.loading_indicator); // *** Find ProgressBar ***
+        loadingIndicator = view.findViewById(R.id.loading_indicator);
+        toolbar = view.findViewById(R.id.topAppBar);
 
-        // Toolbar setup
-        Toolbar toolbar = view.findViewById(R.id.topAppBar);
+        // --- Basic safety checks ---
+        if (recyclerView == null || fabToggleView == null || fabDeleteSelected == null || toolbar == null) {
+            Log.e(TAG, "onViewCreated: CRITICAL - One or more essential views not found!");
+            // You might want to show an error message or prevent further setup
+            Toast.makeText(getContext(),"Layout Error", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        // --- Setup Components using the found views ---
         if (getActivity() instanceof AppCompatActivity) {
             ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+            if (originalToolbarTitle == null) { originalToolbarTitle = toolbar.getTitle(); }
+            if (originalToolbarTitle == null || originalToolbarTitle.length() == 0){ originalToolbarTitle = getString(R.string.records_title); } // Use default/string res
+            // Initial toolbar state might need to be set depending on selection mode persistence logic
+            updateUiForSelectionMode(); // Set initial toolbar based on mode
         }
 
-        // Basic setup
-        setupRecyclerView();
-        setupFabListeners();
+        // Initialize adapter and RecyclerView
+        setupRecyclerView(); // Safe to call now
+
+        // Setup FAB listeners
+        setupFabListeners(); // Safe to call now
+
+        // Set initial FAB icons
         updateFabIcons();
 
-        return view;
-    }
-
-    // --- onViewCreated remains the same (loads data initially) ---
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        if (videoItems.isEmpty()) {
-            loadRecordsList(); // Initial load
+        // --- Initial Data Load ---
+        // Load data *after* adapter is set up
+        if (videoItems == null || videoItems.isEmpty()) { // videoItems might be retained across config changes
+            if(videoItems == null) videoItems = new ArrayList<>(); // Ensure list exists
+            Log.d(TAG, "onViewCreated: No existing data, initiating loadRecordsList.");
+            loadRecordsList();
         } else {
-            updateUiVisibility(); // Update visibility if data already exists
+            Log.d(TAG, "onViewCreated: Existing data found ("+videoItems.size()+" items), updating UI visibility.");
+            // If data exists (e.g., fragment recreated), update adapter & UI
+            if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems); // Make sure adapter has the data
+            updateUiVisibility();
         }
-    }
+    } // End onViewCreated
 
     @Override
     public void onResume() {
@@ -447,8 +492,33 @@ public class RecordsFragment extends Fragment implements
         }
     }
     private void setupFabListeners() {
-        fabToggleView.setOnClickListener(v -> toggleViewMode());
-        fabDeleteSelected.setOnClickListener(v -> confirmDeleteSelected());
+        Log.d(TAG,"Setting up FAB listeners.");
+        // Ensure FABs are not null before setting listeners
+        if (fabToggleView != null) {
+            fabToggleView.setOnClickListener(v -> {
+                Log.d(TAG, "fabToggleView clicked!");
+                toggleViewMode();
+            });
+            Log.d(TAG,"FAB Toggle listener set.");
+        } else {
+            Log.e(TAG, "fabToggleView is null in setupFabListeners!");
+        }
+
+        if (fabDeleteSelected != null) {
+            fabDeleteSelected.setOnClickListener(v -> {
+                // *** ADD LOGGING to confirm click registration ***
+                Log.d(TAG, "fabDeleteSelected CLICKED!");
+                // Check fragment state and context just before acting
+                if (!isAdded() || getContext() == null) {
+                    Log.e(TAG, "fabDeleteSelected clicked but fragment not ready!");
+                    return;
+                }
+                confirmDeleteSelected(); // Call the confirmation dialog method
+            });
+            Log.d(TAG,"FAB Delete listener set.");
+        } else {
+            Log.w(TAG, "fabDeleteSelected is null in setupFabListeners (Might be initially GONE).");
+        }
     }
 
     private void toggleViewMode() {
@@ -755,42 +825,20 @@ public class RecordsFragment extends Fragment implements
 
     @Override
     public void onVideoClick(VideoItem videoItem) {
-        if (getActivity() == null || videoItem == null || videoItem.uri == null) {
-            Log.e(TAG, "Cannot start player - activity, video item, or URI is null.");
-            Toast.makeText(getContext(), "Error opening video.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (videoItem == null || videoItem.uri == null) return;
 
-        // *** Mark as opened in SharedPreferences FIRST ***
-        String uriString = videoItem.uri.toString();
-        sharedPreferencesManager.addOpenedVideoUri(uriString);
-        Log.d(TAG,"Marked URI as opened: " + uriString);
-
-        // Refresh THIS specific item visually if adapter is available
-        if(recordsAdapter != null){
-            int position = recordsAdapter.findPositionByUri(videoItem.uri); // Use adapter's helper
-            if (position != -1){
-                recordsAdapter.notifyItemChanged(position); // Removes 'New' badge immediately
-            }
-        }
-
-
-        // Now launch the player
-        Intent intent = new Intent(getActivity(), VideoPlayerActivity.class);
-        intent.setData(videoItem.uri);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        Log.d(TAG, "Starting player for URI: " + videoItem.uri + " with read permission flag.");
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to start VideoPlayerActivity for URI: " + videoItem.uri, e);
-            // Provide more specific feedback if possible
-            if (e instanceof SecurityException) {
-                Toast.makeText(getContext(), "Permission denied opening video.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(getContext(), "Could not open video player.", Toast.LENGTH_SHORT).show();
-            }
+        if (isInSelectionMode) {
+            // Mode ACTIVE: Click toggles selection
+            Log.d(TAG,"Fragment onVideoClick: Toggling selection for " + videoItem.displayName);
+            toggleSelection(videoItem.uri); // Toggle the item
+        } else {
+            // Mode INACTIVE: Click plays video
+            Log.d(TAG,"Fragment onVideoClick: Playing video " + videoItem.displayName);
+            String uriString = videoItem.uri.toString();
+            sharedPreferencesManager.addOpenedVideoUri(uriString);
+            if(recordsAdapter != null){ int pos = recordsAdapter.findPositionByUri(videoItem.uri); if(pos!=-1) recordsAdapter.notifyItemChanged(pos);}
+            Intent intent = new Intent(getActivity(), VideoPlayerActivity.class); intent.setData(videoItem.uri); intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            try { startActivity(intent); } catch (Exception e) { Log.e(TAG, "Failed to start player", e); Toast.makeText(getContext(), "Error opening video", Toast.LENGTH_SHORT).show();}
         }
     }
 
@@ -850,19 +898,36 @@ public class RecordsFragment extends Fragment implements
     }
 
     @Override
-    public void onVideoLongClick(VideoItem videoItem, boolean isSelected) {
-        Uri videoUri = videoItem.uri;
-        if (isSelected) {
-            if (!selectedVideosUris.contains(videoUri)) {
-                selectedVideosUris.add(videoUri);
-                Log.d(TAG, "Selected: " + videoUri);
-            }
-        } else {
-            selectedVideosUris.remove(videoUri);
-            Log.d(TAG, "Deselected: " + videoUri);
+    public void onVideoLongClick(VideoItem videoItem, boolean isSelectedIntention) { // isSelectedIntention is less relevant here
+        if (videoItem == null || videoItem.uri == null) return;
+        Log.d(TAG,"Fragment onVideoLongClick: " + videoItem.displayName);
+
+        if (!isInSelectionMode) {
+            enterSelectionMode(); // Enter selection mode on the FIRST long press
         }
-        updateDeleteButtonVisibility();
-        vibrate();
+        // Whether entering or already in, toggle the long-pressed item
+        toggleSelection(videoItem.uri);
+        vibrate(); // Haptic feedback
+    }
+
+
+    // --- Selection Management ---
+    private void enterSelectionMode() {
+        if (isInSelectionMode) return;
+        isInSelectionMode = true;
+        selectedUris.clear(); // Start fresh
+        Log.i(TAG, ">>> Entering Selection Mode <<<");
+        if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+        updateUiForSelectionMode(); // Update toolbar/FABs
+    }
+
+    private void exitSelectionMode() {
+        if (!isInSelectionMode) return;
+        isInSelectionMode = false;
+        selectedUris.clear();
+        Log.i(TAG, "<<< Exiting Selection Mode >>>");
+        if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(false, selectedUris);
+        updateUiForSelectionMode(); // Update toolbar/FABs
     }
 
     private void updateDeleteButtonVisibility() {
@@ -872,91 +937,92 @@ public class RecordsFragment extends Fragment implements
     }
 
 
+    private void toggleSelection(Uri videoUri) {
+        if (!isInSelectionMode) { // Should theoretically not happen if called correctly
+            Log.w(TAG,"toggleSelection called but not in selection mode!");
+            enterSelectionMode(); // Enter mode if accidentally called outside
+            // return; // Or return after entering? Let's proceed to select/deselect.
+        }
+
+        boolean changed = false;
+        if (selectedUris.contains(videoUri)) {
+            selectedUris.remove(videoUri); changed = true;
+            Log.d(TAG,"Deselected URI: "+videoUri);
+        } else {
+            selectedUris.add(videoUri); changed = true;
+            Log.d(TAG,"Selected URI: "+videoUri);
+        }
+
+        if (changed) {
+            // ** CRITICAL: Update the adapter with the new selection list **
+            if(recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+            updateUiForSelectionMode(); // Update toolbar count and FAB visibility
+        }
+        // Exit selection mode if list becomes empty again? User preference.
+        // if(selectedUris.isEmpty()){ exitSelectionMode(); }
+    }
+
+    // --- UI Updates ---
+    /** Updates Toolbar, FABs based on whether selection mode is active */
+    private void updateUiForSelectionMode() {
+        if (!isAdded() || toolbar == null || getActivity() == null) { Log.w(TAG,"Cannot update selection UI - not ready"); return;}
+
+        if (isInSelectionMode) {
+            int count = selectedUris.size();
+            toolbar.setTitle(count > 0 ? count + " selected" : "Select items");
+            toolbar.setNavigationIcon(R.drawable.ic_close); // Ensure you have ic_close drawable
+            toolbar.setNavigationContentDescription("Exit selection mode");
+            toolbar.setNavigationOnClickListener(v -> exitSelectionMode());
+            fabDeleteSelected.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
+            fabToggleView.setVisibility(View.GONE);
+        } else {
+            toolbar.setTitle(originalToolbarTitle);
+            toolbar.setNavigationIcon(null);
+            toolbar.setNavigationOnClickListener(null);
+            fabDeleteSelected.setVisibility(View.GONE);
+            fabToggleView.setVisibility(View.VISIBLE);
+        }
+        // Refresh the options menu (to show/hide "More Options")
+        getActivity().invalidateOptionsMenu();
+    }
     // --- Deletion Logic ---
 
+    // Add null check in confirmDeleteSelected just in case
     private void confirmDeleteSelected() {
         vibrate();
-        if (selectedVideosUris.isEmpty()) { return; }
-        int count = selectedVideosUris.size();
+        if (!isAdded() || getContext() == null || selectedUris.isEmpty()) { // Added safety checks
+            Log.w(TAG,"confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
+            return;
+        }
+        int count = selectedUris.size();
+        Log.d(TAG,"Showing confirm delete dialog for " + count + " items.");
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getResources().getString(R.string.dialog_multi_video_del_title) + " ("+count+")")
                 .setMessage(getResources().getString(R.string.dialog_multi_video_del_note))
                 .setNegativeButton(getResources().getString(R.string.dialog_multi_video_del_no), null)
-                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos())
+                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos()) // Calls corrected delete method
                 .show();
     }
 
-    // Inside RecordsFragment.java
+    // --- deleteSelectedVideos (Corrected version from previous step) ---
+    /** Handles deletion of selected videos */
     private void deleteSelectedVideos() {
-        List<Uri> itemsToDelete = new ArrayList<>(selectedVideosUris);
-        if(itemsToDelete.isEmpty()){ return; }
-        selectedVideosUris.clear();
-        updateDeleteButtonVisibility();
+        final List<Uri> itemsToDelete = new ArrayList<>(selectedUris); // Use fragment's list
+        if(itemsToDelete.isEmpty()){ Log.d(TAG,"Deletion requested but selectedUris is empty."); exitSelectionMode(); return; }
 
-        executorService.submit(() -> {
-            int successCount = 0;
-            int failCount = 0;
-            List<Integer> positionsToRemove = new ArrayList<>(); // Keep track of adapter positions
+        Log.i(TAG,"Deleting "+itemsToDelete.size()+" selected videos...");
+        exitSelectionMode(); // Exit selection mode UI first
 
-            // First, identify positions corresponding to URIs to be deleted
-            for (Uri uri : itemsToDelete) {
-                int position = recordsAdapter.findPositionByUri(uri); // Assuming adapter has findPositionByUri helper
-                if (position != -1) {
-                    positionsToRemove.add(position);
-                } else {
-                    Log.w(TAG,"URI "+uri+" not found in adapter during deleteSelected identification.");
-                    // Might still attempt deletion by URI if adapter position isn't critical for file access
-                    if(deleteVideoUri(uri)) successCount++; else failCount++; // Attempt deletion anyway
-                }
-            }
-            // Sort positions in descending order to avoid index shifting issues when removing
-            Collections.sort(positionsToRemove, Collections.reverseOrder());
-
-            // Perform deletions from storage and adapter data
-            for (int position : positionsToRemove) {
-                VideoItem item = (position < videoItems.size()) ? videoItems.get(position) : null; // Check bounds
-                if (item != null && item.uri != null) {
-                    if (deleteVideoUri(item.uri)) { // Delete from storage
-                        videoItems.remove(position); // Remove from fragment's list
-                        successCount++;
-                    } else {
-                        failCount++;
-                        Log.e(TAG,"Failed to delete URI from storage: "+item.uri);
-                        // Don't remove from list if storage deletion failed
-                    }
-                } else {
-                    Log.w(TAG,"Item at pos "+position+" was null or had null URI during actual deleteSelected loop.");
-                    failCount++;
-                }
-            }
-
-            // UI updates on the main thread
-            final int finalSuccessCount = successCount;
-            final int finalFailCount = failCount;
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    if (recordsAdapter != null) {
-                        // --- Update Adapter after Deletions ---
-                        // If we reliably tracked positions and removed from `videoItems`:
-                        recordsAdapter.updateRecords(videoItems); // Just sync adapter with updated list
-                        // Alternatively, if we didn't track perfectly, do a full notify:
-                        // recordsAdapter.notifyDataSetChanged();
-
-                        // *** FIX: Update UI visibility AFTER adapter is notified ***
-                        updateUiVisibility(); // Check if list is empty now
-                        // --- End FIX ---
-                    }
-
-                    // Show result toast
-                    String message = (finalFailCount > 0) ?
-                            finalSuccessCount + " deleted, " + finalFailCount + " failed." :
-                            finalSuccessCount + " video(s) deleted.";
-                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                });
-            }
+        if (executorService == null || executorService.isShutdown()){ executorService = Executors.newSingleThreadExecutor(); }
+        executorService.submit(() -> { /* ... background deletion loop (calling deleteVideoUri) ... */
+            int successCount = 0; int failCount = 0;
+            for(Uri uri: itemsToDelete) { if(deleteVideoUri(uri)) successCount++; else failCount++; }
+            Log.d(TAG,"BG Deletion Finished. Success: "+successCount+", Fail: "+failCount);
+            // Post results and UI refresh back to main thread
+            final int finalSuccessCount = successCount; final int finalFailCount = failCount;
+            if(getActivity()!=null){ getActivity().runOnUiThread(()->{/* ... Show Toast ... */ loadRecordsList(); }); }
         });
     }
-
     private void confirmDeleteAll() {
         vibrate();
         if (videoItems.isEmpty()){
@@ -1056,15 +1122,20 @@ public class RecordsFragment extends Fragment implements
 
     // --- Options Menu & Sorting ---
 
+    // --- Menu Handling ---
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater); // Call super
+        menu.clear(); // Clear previous items first
         inflater.inflate(R.menu.records_menu, menu);
-        // We handle the "Delete All" option inside the bottom sheet now.
-        MenuItem deleteAllItem = menu.findItem(R.id.action_delete_all);
-        if (deleteAllItem != null) {
-            deleteAllItem.setVisible(false); // Hide from overflow menu
-        }
-        super.onCreateOptionsMenu(menu, inflater);
+        MenuItem moreItem = menu.findItem(R.id.action_more_options);
+        MenuItem deleteAllItem = menu.findItem(R.id.action_delete_all); // Find delete all
+
+        // Visibility depends on selection mode
+        if(moreItem != null) moreItem.setVisible(!isInSelectionMode);
+        if(deleteAllItem != null) deleteAllItem.setVisible(false); // Always hide from toolbar menu
+
+        Log.d(TAG,"onCreateOptionsMenu called, More Options Visible: " + !isInSelectionMode);
     }
 
     @Override

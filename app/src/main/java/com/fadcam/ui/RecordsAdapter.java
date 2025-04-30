@@ -8,6 +8,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -36,6 +37,7 @@ import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.core.text.HtmlCompat;
+import androidx.core.content.res.ResourcesCompat; // For getting drawables
 
 import com.bumptech.glide.Glide;
 import com.fadcam.Constants;
@@ -79,7 +81,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final OnVideoClickListener clickListener;
     private final OnVideoLongClickListener longClickListener;
     private final List<Uri> selectedVideosUris = new ArrayList<>(); // Track selection by URI
-
+    private boolean isSelectionModeActive = false; // Track current mode within adapter
+    private List<Uri> currentSelectedUris = new ArrayList<>(); // Keep track of selected items for binding
     // *** NEW: Store the path to the specific cache directory ***
     private final String tempCacheDirectoryPath;
     // --- Interfaces Updated ---
@@ -161,104 +164,126 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
-    // --- Updated onBindViewHolder ---
+    // Inside RecordsAdapter.java
+
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
-        // --- Basic checks (position, item null, uri null) ---
-        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) { /* handle error */ return; }
+        // --- 1. Basic Checks & Get Data ---
+        if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) {
+            Log.e(TAG,"onBindViewHolder: Invalid item/data at position " + position);
+            // Optionally clear the views in the holder to avoid displaying stale data
+            // holder.textViewRecord.setText(""); etc.
+            return;
+        }
         final VideoItem videoItem = records.get(position);
         final Uri videoUri = videoItem.uri;
-        final String displayName = videoItem.displayName != null ? videoItem.displayName : "No Name";
+        final String displayName = videoItem.displayName != null ? videoItem.displayName : "Unnamed Video";
         final String uriString = videoUri.toString();
 
-        // --- Bind standard data (Serial, Name, Size, Time, Thumbnail) ---
-        holder.textViewSerialNumber.setText(String.valueOf(position + 1));
-        holder.textViewRecord.setText(displayName);
-        holder.textViewFileSize.setText(formatFileSize(videoItem.size));
-        long duration = getVideoDuration(videoUri);
-        holder.textViewFileTime.setText(formatVideoDuration(duration));
-        setThumbnail(holder, videoUri);
-        // --- Bind Time Ago ---
-        if (holder.textViewTimeAgo != null) { // Check view exists
-            String timeAgo = Utils.formatTimeAgo(videoItem.lastModified); // Use Utils method
-            holder.textViewTimeAgo.setText(timeAgo);
-        } else { Log.w(TAG,"textViewTimeAgo is null in ViewHolder!"); }
 
-        // --- State Determination & Visibility (Processing, Temp, New, Selection) ---
-        boolean isProcessing = currentlyProcessingUris.contains(videoUri);
-        // --- State Determination ---
-        boolean isTemp = isTemporaryFile(videoItem);
-        boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString);
-        boolean isNew = !isOpened;
+        // --- 2. Determine Item States ---
+        final boolean isCurrentlySelected = this.currentSelectedUris.contains(videoUri); // Selection state from Adapter
+        final boolean isProcessing = this.currentlyProcessingUris.contains(videoUri);   // Processing state from Adapter
+        final boolean isTemp = isTemporaryFile(videoItem);                               // Check if it's a temp file
+        final boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString); // Check if viewed before
+        final boolean showNewBadge = !isTemp && !isOpened && !isProcessing;               // Logic for "NEW" badge visibility
+        final boolean allowGeneralInteractions = !isProcessing;                             // Can user interact at all?
+        final boolean allowMenuClick = allowGeneralInteractions && !this.isSelectionModeActive; // Can user open the item menu?
+
+        Log.v(TAG,"onBindViewHolder Pos "+position+": Name="+displayName+ " Sel="+isCurrentlySelected+", Mode="+isSelectionModeActive+", Proc="+isProcessing+", Temp="+isTemp+", New="+showNewBadge+", AllowGen="+allowGeneralInteractions+", AllowMenu="+allowMenuClick);
 
 
+        // --- 3. Bind Standard Data ---
+        if (holder.textViewSerialNumber != null) holder.textViewSerialNumber.setText(String.valueOf(position + 1));
+        if (holder.textViewRecord != null) holder.textViewRecord.setText(displayName);
+        if (holder.textViewFileSize != null) holder.textViewFileSize.setText(formatFileSize(videoItem.size));
+        if (holder.textViewFileTime != null) holder.textViewFileTime.setText(formatVideoDuration(getVideoDuration(videoUri)));
+        if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setText(Utils.formatTimeAgo(videoItem.lastModified));
+        if (holder.imageViewThumbnail != null) setThumbnail(holder, videoUri);
 
-        // --- Visibility Logic ---
 
-        // *** START: Menu Warning Dot (based only on isTemp) ***
-        // Keep this separate from the main status badge
+        // --- 4. Visibility Logic for Overlays/Badges ---
+
+        // Warning Dot for TEMP files (only visible if not processing)
         if (holder.menuWarningDot != null) {
-            holder.menuWarningDot.setVisibility(isTemp ? View.VISIBLE : View.GONE);
-        } else {
-            Log.w(TAG, "menuWarningDot view is null in ViewHolder.");
+            holder.menuWarningDot.setVisibility(isTemp && allowGeneralInteractions ? View.VISIBLE : View.GONE);
         }
-        // *** END: Menu Warning Dot ***
 
-        // Processing Overlay
-        if(holder.processingScrim != null) holder.processingScrim.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
-        if(holder.processingSpinner != null) holder.processingSpinner.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
+        // Processing Overlay (Scrim and Spinner)
+        if (holder.processingScrim != null) holder.processingScrim.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
+        if (holder.processingSpinner != null) holder.processingSpinner.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
 
-        // Single Status Badge (TEMP or NEW)
+        // *** RESTORED Status Badge Logic ***
         if (holder.textViewStatusBadge != null && context != null) {
             if (isProcessing) {
-                holder.textViewStatusBadge.setVisibility(View.GONE); // Hide badge during processing
+                holder.textViewStatusBadge.setVisibility(View.GONE); // Hide all badges during processing
             } else if (isTemp) {
+                // Show TEMP badge
                 holder.textViewStatusBadge.setText("TEMP");
                 holder.textViewStatusBadge.setBackground(ContextCompat.getDrawable(context, R.drawable.temp_badge_background));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.black));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
-            } else if (isNew) { // Show NEW only if NOT temp and NOT opened
+            } else if (showNewBadge) {
+                // Show NEW badge (only if not Temp and not Opened)
                 holder.textViewStatusBadge.setText("NEW");
                 holder.textViewStatusBadge.setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
             } else {
-                holder.textViewStatusBadge.setVisibility(View.GONE); // Hide if not temp and not new
+                // Hide badge if neither Temp nor New
+                holder.textViewStatusBadge.setVisibility(View.GONE);
             }
-        } // (Else clause for null context/view already handled)
+        }
+        // *** END RESTORED Status Badge Logic ***
 
 
-        // --- Enable/Disable controls based on processing state ---
-        holder.itemView.setEnabled(!isProcessing);
-        holder.menuButtonContainer.setEnabled(!isProcessing);
-
-        // --- Listeners ---
-        holder.itemView.setOnClickListener(v -> {
-            if (!isProcessing && clickListener != null) {
-                sharedPreferencesManager.addOpenedVideoUri(uriString);
-                // Get adapter position safely
-                int currentPosition = holder.getBindingAdapterPosition();
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    notifyItemChanged(currentPosition); // Update view to remove 'NEW' badge
+        // --- 5. Handle Selection Mode Visuals (Checkbox & BACKGROUND/TEXT COLOR) ---
+        if (holder.checkIcon != null) {
+            if (this.isSelectionModeActive) {
+                holder.checkIcon.setVisibility(View.VISIBLE);
+                if (isCurrentlySelected) {
+                    holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_checked); // Replace with actual drawable
+                    holder.checkIcon.setAlpha(1.0f);
+                    // Highlight background and adjust text color for contrast
+                    if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                    if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK); // Use BLACK for contrast on primary color
+                } else {
+                    holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_outline); // Replace with actual drawable
+                    holder.checkIcon.setAlpha(0.7f);
+                    // Reset background and text color
+                    if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
+                    if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor); // Use stored default
                 }
-                clickListener.onVideoClick(videoItem);
+            } else { // Not in selection mode
+                holder.checkIcon.setVisibility(View.GONE);
+                // Ensure default background and text color are restored
+                if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
+                if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor);
             }
+        } else { Log.w(TAG, "checkIcon is null in ViewHolder at pos "+position); }
+
+
+        // --- 6. Set Enabled State and Listeners ---
+        holder.itemView.setEnabled(allowGeneralInteractions); // Click/LongClick allowed if not processing
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setEnabled(allowMenuClick); // Menu allowed if !processing AND !selectionMode
+            holder.menuButtonContainer.setClickable(allowMenuClick);
+            if(holder.menuButton != null) holder.menuButton.setAlpha(allowMenuClick ? 1.0f : 0.4f); // Dim if disabled
+        } else { Log.w(TAG,"menuButtonContainer is null at pos "+position); }
+
+
+        holder.itemView.setOnClickListener(v -> {
+            if (allowGeneralInteractions && clickListener != null) { clickListener.onVideoClick(videoItem); }
         });
         holder.itemView.setOnLongClickListener(v -> {
-            if (!isProcessing && longClickListener != null) {
-                boolean isSelected = !selectedVideosUris.contains(videoUri);
-                toggleSelection(videoUri, isSelected);
-                longClickListener.onVideoLongClick(videoItem, isSelected);
-            }
-            return !isProcessing; // Consume long click only if not processing
+            if (allowGeneralInteractions && longClickListener != null) { longClickListener.onVideoLongClick(videoItem, true); }
+            return allowGeneralInteractions;
         });
 
-        // Setup popup menu (title modification logic for TEMP still applies here)
+        // Always set up the menu logic, but its trigger (menuButtonContainer) is enabled/disabled above
         setupPopupMenu(holder, videoItem);
 
-        // Update selection state visuals
-        updateSelectionState(holder, selectedVideosUris.contains(videoUri));
-    }
+    } // End onBindViewHolder
 
     @Override
     public int getItemCount() {
@@ -300,36 +325,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
-    private void updateSelectionState(RecordViewHolder holder, boolean isSelected) {
-        // Set check icon visibility
-        if (holder.checkIcon != null) {
-            holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-        } else {
-            Log.w(TAG, "checkIcon is null in ViewHolder");
-        }
 
-        // *** FIX: Use setCardBackgroundColor for CardView ***
-        // Ensure itemView is actually a CardView before casting
-        if (holder.itemView instanceof CardView) {
-            CardView cardView = (CardView) holder.itemView;
-            int colorResId = isSelected
-                    ? R.color.colorPrimary // Use your desired SELECTION highlight color here (e.g., primary, or a dedicated selection color)
-                    : R.color.gray; // Use the default background color DEFINED IN YOUR XML (@color/gray)
-
-            // Check context before getting color
-            if(context != null) {
-                cardView.setCardBackgroundColor(ContextCompat.getColor(context, colorResId));
-            } else {
-                Log.e(TAG, "Context is null, cannot set Card background color");
-            }
-        } else {
-            // Fallback if itemView is not a CardView (shouldn't happen with your layout)
-            Log.w(TAG, "ItemView is not an instance of CardView. Using standard setBackgroundColor.");
-            if(context != null) {
-                holder.itemView.setBackgroundColor(ContextCompat.getColor(context, isSelected ? R.color.colorPrimary : R.color.gray));
-            }
-        }
-    }
 
 
     // Helper to find item position by URI (important for notifyItemChanged)
@@ -1097,7 +1093,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         ProgressBar processingSpinner;
         // *** ADD field for the new TextView ***
         TextView textViewTimeAgo;
-
+        // *** ADD Field for Default Text Color ***
+        int defaultTextColor; // Store the default color
         RecordViewHolder(View itemView) {
             super(itemView);
             imageViewThumbnail = itemView.findViewById(R.id.image_view_thumbnail);
@@ -1116,6 +1113,40 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             processingSpinner = itemView.findViewById(R.id.processing_spinner);
             // *** Find the new TextView ***
             textViewTimeAgo = itemView.findViewById(R.id.text_view_time_ago);
+
+            // *** Store the default text color ***
+            if (textViewRecord != null) {
+                defaultTextColor = textViewRecord.getCurrentTextColor();
+            } else {
+                Log.e(TAG,"ViewHolder: textViewRecord is NULL, cannot get default text color!");
+                // Set a fallback default color?
+                defaultTextColor = Color.WHITE; // Example fallback
+            }
+
+        }
+    }
+
+    /**
+     * Method called by the Fragment to update the adapter's visual mode
+     * and provide the current list of selected URIs.
+     *
+     * @param isActive         True if selection mode should be active, false otherwise.
+     * @param currentSelection The list of URIs currently selected in the Fragment.
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setSelectionModeActive(boolean isActive, @NonNull List<Uri> currentSelection) {
+        boolean modeChanged = this.isSelectionModeActive != isActive;
+        boolean selectionChanged = !this.currentSelectedUris.equals(currentSelection); // Check if selection list differs
+
+        this.isSelectionModeActive = isActive;
+        this.currentSelectedUris = new ArrayList<>(currentSelection); // Update internal copy
+
+        // If mode changed OR selection changed, refresh visuals
+        if (modeChanged || selectionChanged) {
+            Log.d(TAG,"setSelectionModeActive: Mode=" + isActive + ", SelCount=" + currentSelectedUris.size() + ". Triggering notifyDataSetChanged.");
+            notifyDataSetChanged(); // Full refresh easiest way to update all visuals
+        } else {
+            Log.d(TAG,"setSelectionModeActive: Mode and selection unchanged, no refresh needed.");
         }
     }
 
