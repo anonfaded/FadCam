@@ -27,29 +27,29 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-             <!-- Video Thumbnail -->
-             <ImageView
-                 android:id="@+id/image_view_thumbnail"
-                 android:layout_width="match_parent"
-                 android:layout_height="match_parent"
-                 android:scaleType="centerCrop"
-                 tools:srcCompat="@tools:sample/backgrounds/scenic"
-                 android:contentDescription="Video thumbnail"/>
+            <!-- Video Thumbnail -->
+            <ImageView
+                android:id="@+id/image_view_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="Video thumbnail"
+                android:scaleType="centerCrop"
+                tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
-             <!-- Serial Number Overlay -->
-             <TextView
-                 android:id="@+id/text_view_serial_number"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:layout_gravity="top|start"
-                 android:layout_margin="4dp"
-                 android:background="#80000000"
-                 android:paddingHorizontal="4dp"
-                 android:paddingVertical="1dp"
-                 android:textColor="@android:color/white"
-                 android:textSize="10sp"
-                 android:textStyle="bold"
-                 tools:text="99"/>
+            <!-- Serial Number Overlay -->
+            <TextView
+                android:id="@+id/text_view_serial_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_margin="4dp"
+                android:background="#80000000"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="1dp"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                tools:text="99" />
 
             <!-- TEMP Badge Overlay -->
             <!-- *** START: SINGLE STATUS BADGE (Replaces TEMP and NEW badges) *** -->
@@ -64,10 +64,10 @@
                 android:textSize="9sp"
                 android:textStyle="bold"
                 android:visibility="gone"
+                tools:background="@drawable/temp_badge_background"
                 tools:text="TEMP"
                 tools:textColor="@color/black"
-                tools:background="@drawable/temp_badge_background"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
             <!-- *** END: SINGLE STATUS BADGE *** -->
 
             <View
@@ -76,7 +76,7 @@
                 android:layout_height="match_parent"
                 android:background="#B0000000"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
 
             <ProgressBar
                 android:id="@+id/processing_spinner"
@@ -86,7 +86,7 @@
                 android:layout_gravity="center"
                 android:indeterminateTint="@color/white"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
             <!-- *** END: Processing Overlay *** -->
 
         </FrameLayout>
@@ -96,30 +96,30 @@
             android:id="@+id/file_info_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:layout_margin="6dp"
             android:background="@drawable/file_size_background"
+            android:orientation="horizontal"
             android:paddingHorizontal="4dp"
             android:paddingVertical="2dp"
             app:layout_constraintBottom_toBottomOf="@id/thumbnail_container"
             app:layout_constraintStart_toStartOf="@id/thumbnail_container">
-             <!-- Size TextView -->
-             <TextView
+            <!-- Size TextView -->
+            <TextView
                 android:id="@+id/text_view_file_size"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:layout_marginEnd="4dp"
-                 android:textColor="@android:color/white"
-                 android:textSize="10sp"
-                 tools:text="123.4 MB"/>
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                tools:text="123.4 MB" />
             <!-- Time TextView -->
             <TextView
                 android:id="@+id/text_view_file_time"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:textColor="@android:color/white"
-                 android:textSize="10sp"
-                 tools:text="1m 25s"/>
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                tools:text="1m 25s" />
         </LinearLayout>
 
         <!-- Video Title TextView -->
@@ -128,36 +128,36 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            android:maxLines="2"
             android:ellipsize="end"
+            android:maxLines="2"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/menu_button_container"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/thumbnail_container"
-            tools:text="My Important Renamed Video File Name Is Very Long"/>
+            tools:text="My Important Renamed Video File Name Is Very Long" />
 
         <!-- *** ADDED TextView for Time Ago *** -->
+        <!-- *** END Time Ago TextView *** -->
+
+        <!-- Menu Button Area Container -->
         <TextView
             android:id="@+id/text_view_time_ago"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp"
             android:textColor="?android:attr/textColorSecondary"
             android:textSize="10sp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="6dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/menu_button_container"
-            app:layout_constraintTop_toBottomOf="@id/text_view_record"
-            app:layout_constraintVertical_bias="1.0"
+            app:layout_constraintStart_toStartOf="@+id/text_view_record"
+            app:layout_constraintTop_toBottomOf="@+id/text_view_record"
             tools:text="2 days ago" />
-        <!-- *** END Time Ago TextView *** -->
 
-        <!-- Menu Button Area Container -->
         <FrameLayout
             android:id="@+id/menu_button_container"
             android:layout_width="48dp"
@@ -172,22 +172,22 @@
                 android:id="@+id/menu_button"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_more_vert"
-                android:padding="12dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Video options"/>
+                android:contentDescription="Video options"
+                android:padding="12dp"
+                android:src="@drawable/ic_more_vert" />
 
-             <!-- Warning Dot Overlay -->
+            <!-- Warning Dot Overlay -->
             <ImageView
-                 android:id="@+id/menu_warning_dot"
-                 android:layout_width="10dp"
-                 android:layout_height="10dp"
-                 android:layout_gravity="top|end"
-                 android:layout_marginTop="8dp"
-                 android:layout_marginEnd="8dp"
-                 android:src="@drawable/yellow_dot"
-                 android:visibility="gone"
-                 tools:visibility="visible"/>
+                android:id="@+id/menu_warning_dot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/yellow_dot"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
         </FrameLayout>
 
@@ -197,12 +197,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
+            android:elevation="2dp"
             android:src="@drawable/ic_check"
             android:visibility="gone"
-            app:tint="?attr/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:elevation="2dp"/>
+            app:tint="?attr/colorPrimary" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
