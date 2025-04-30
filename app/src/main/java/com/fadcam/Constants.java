@@ -10,6 +10,10 @@ public abstract class Constants {
     public static final String PREF_VIDEO_RESOLUTION_WIDTH = "video_resolution_width";
     public static final String PREF_VIDEO_RESOLUTION_HEIGHT = "video_resolution_height";
     public static final String PREF_VIDEO_FRAME_RATE = "video_frame_rate";
+    // *** NEW: Specific FPS Prefs per Camera ***
+    public static final String PREF_VIDEO_FRAME_RATE_FRONT = "video_frame_rate_front";
+    public static final String PREF_VIDEO_FRAME_RATE_BACK = "video_frame_rate_back";
+    // *** End New FPS Prefs ***
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
     public static final String PREF_BOTH_TORCHES_ENABLED = "pref_both_torches_enabled";
