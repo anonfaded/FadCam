@@ -48,13 +48,12 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ImageView; // Add this
+
 import androidx.cardview.widget.CardView; // Add this
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
-import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
@@ -67,7 +66,6 @@ import com.fadcam.R;
 import com.fadcam.services.RecordingService;
 import com.fadcam.RecordingState;
 import com.fadcam.SharedPreferencesManager;
-import com.fadcam.ui.VideoItem; // Import VideoItem
 
 import com.fadcam.Utils;
 import com.fadcam.services.TorchService;

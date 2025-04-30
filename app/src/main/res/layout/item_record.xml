@@ -141,6 +141,22 @@
             app:layout_constraintTop_toBottomOf="@id/thumbnail_container"
             tools:text="My Important Renamed Video File Name Is Very Long"/>
 
+        <!-- *** ADDED TextView for Time Ago *** -->
+        <TextView
+            android:id="@+id/text_view_time_ago"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="10sp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="6dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/menu_button_container"
+            app:layout_constraintTop_toBottomOf="@id/text_view_record"
+            app:layout_constraintVertical_bias="1.0"
+            tools:text="2 days ago" />
+        <!-- *** END Time Ago TextView *** -->
+
         <!-- Menu Button Area Container -->
         <FrameLayout
             android:id="@+id/menu_button_container"

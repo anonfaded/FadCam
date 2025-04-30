@@ -43,6 +43,7 @@ import com.fadcam.R;
 import com.fadcam.ui.VideoItem; // Ensure VideoItem import is correct
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
+import com.fadcam.Utils; // Import Utils for the new formatter
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -177,12 +178,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         long duration = getVideoDuration(videoUri);
         holder.textViewFileTime.setText(formatVideoDuration(duration));
         setThumbnail(holder, videoUri);
+        // --- Bind Time Ago ---
+        if (holder.textViewTimeAgo != null) { // Check view exists
+            String timeAgo = Utils.formatTimeAgo(videoItem.lastModified); // Use Utils method
+            holder.textViewTimeAgo.setText(timeAgo);
+        } else { Log.w(TAG,"textViewTimeAgo is null in ViewHolder!"); }
 
+        // --- State Determination & Visibility (Processing, Temp, New, Selection) ---
+        boolean isProcessing = currentlyProcessingUris.contains(videoUri);
         // --- State Determination ---
         boolean isTemp = isTemporaryFile(videoItem);
         boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString);
         boolean isNew = !isOpened;
-        boolean isProcessing = currentlyProcessingUris.contains(videoUri);
+
 
 
         // --- Visibility Logic ---
@@ -1051,6 +1059,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         View processingScrim;
         ProgressBar processingSpinner;
+        // *** ADD field for the new TextView ***
+        TextView textViewTimeAgo;
 
         RecordViewHolder(View itemView) {
             super(itemView);
@@ -1068,7 +1078,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
             processingScrim = itemView.findViewById(R.id.processing_scrim);
             processingSpinner = itemView.findViewById(R.id.processing_spinner);
-
+            // *** Find the new TextView ***
+            textViewTimeAgo = itemView.findViewById(R.id.text_view_time_ago);
         }
     }
 

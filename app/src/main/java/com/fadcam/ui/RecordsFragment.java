@@ -38,6 +38,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager; // Import your manager
+import com.fadcam.Utils;
 import com.fadcam.ui.VideoItem; // Import the new VideoItem class
 import com.fadcam.ui.RecordsAdapter; // Ensure adapter import is correct
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -602,12 +603,23 @@ public class RecordsFragment extends Fragment implements
                 for (File file : files) {
                     // Check for correct extension and ignore temp files if they somehow linger
                     if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) && !file.getName().startsWith("temp_")) {
-                        items.add(new VideoItem(
-                                Uri.fromFile(file), // Internal files use file:// URI
-                                file.getName(),
-                                file.length(),
-                                file.lastModified()
-                        ));
+                        long lastModifiedMeta = file.lastModified();
+                        long timestampFromFile = Utils.parseTimestampFromFilename(file.getName());
+                        long finalTimestamp = lastModifiedMeta; // Default to metadata
+
+                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { // If metadata is bad, use filename timestamp
+                            finalTimestamp = timestampFromFile;
+                            Log.d(TAG,"Internal: Used filename timestamp for " + file.getName());
+                        } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
+                            Log.w(TAG,"Internal: Both metadata and filename parse failed for " + file.getName() + ", using current time as fallback.");
+                            finalTimestamp = System.currentTimeMillis(); // Fallback needed
+                        } else {
+                            // Use metadata by default if valid
+                            // Log.v(TAG,"Internal: Using metadata timestamp for " + file.getName());
+                        }
+                        Uri uri = Uri.fromFile(file);
+                        Log.d(TAG, "Internal Added: " + file.getName() + " | Using Timestamp: " + finalTimestamp);
+                        items.add(new VideoItem(uri, file.getName(), file.length(), finalTimestamp));
                     }
                 }
             } else {
@@ -637,12 +649,25 @@ public class RecordsFragment extends Fragment implements
                             (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || "video/mp4".equals(file.getType())) && // Check name or MIME
                             !file.getName().startsWith("temp_")) // Ignore temporary files
                     {
-                        items.add(new VideoItem(
-                                file.getUri(), // SAF files use content:// URI
-                                file.getName(),
-                                file.length(),
-                                file.lastModified()
-                        ));
+                        long lastModifiedMeta = file.lastModified();
+                        String name = file.getName();
+                        long timestampFromFile = Utils.parseTimestampFromFilename(name);
+                        long finalTimestamp = lastModifiedMeta; // Default to metadata
+
+                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { // If metadata is bad (often 0 for SAF), use filename timestamp
+                            finalTimestamp = timestampFromFile;
+                            Log.d(TAG,"SAF: Used filename timestamp for " + name);
+                        } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
+                            Log.w(TAG,"SAF: Both metadata and filename parse failed for " + name + ", using current time as fallback.");
+                            finalTimestamp = System.currentTimeMillis(); // Fallback needed
+                        } else {
+                            // Use metadata by default if valid (it might be valid sometimes)
+                            // Log.v(TAG,"SAF: Using metadata timestamp for " + name);
+                        }
+
+                        Uri uri = file.getUri();
+                        Log.d(TAG, "SAF Added: " + name + " | Using Timestamp: " + finalTimestamp);
+                        items.add(new VideoItem(uri, name, file.length(), finalTimestamp));
                     }
                 }
                 Log.d(TAG, "Found " + items.size() + " SAF records in '" + dir.getName()+"'");
