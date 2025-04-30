@@ -99,6 +99,19 @@ public class RecordsFragment extends Fragment implements
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
 
+    // *** IMPLEMENT THE NEW INTERFACE METHOD ***
+    @Override
+    public void onDeletionFinishedCheckEmptyState() {
+        Log.d(TAG, "Adapter signaled deletion finished. Checking empty state...");
+        // This method is called AFTER the adapter has removed the item
+        // and notified itself. Now, we update the Fragment's overall UI visibility.
+        if(getView() != null){ // Ensure view is available
+            getActivity().runOnUiThread(this::updateUiVisibility); // Use the existing helper
+        } else {
+            Log.w(TAG,"onDeletionFinishedCheckEmptyState called but view is null.");
+        }
+    }
+
     // *** Register in onStart ***
     @Override
     public void onStart() {
@@ -552,17 +565,28 @@ public class RecordsFragment extends Fragment implements
         }); // End of submit lambda
     } // End of loadRecordsList
 
-    // *** NEW HELPER METHOD to update UI visibility ***
+
+    // Ensure updateUiVisibility is defined correctly:
     private void updateUiVisibility() {
-        if (videoItems.isEmpty()) {
+        if (getView() == null) return; // Check if fragment view exists
+
+        // Get the current count directly from the adapter if possible, or fragment's list
+        boolean isEmpty = (recordsAdapter != null) ?
+                recordsAdapter.getItemCount() == 0 :
+                videoItems.isEmpty();
+
+        Log.d(TAG, "updateUiVisibility called. Is list empty? " + isEmpty);
+
+        if (isEmpty) {
             if (recyclerView != null) recyclerView.setVisibility(View.GONE);
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
+            Log.d(TAG,"Showing empty state.");
         } else {
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
             if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+            Log.d(TAG,"Showing recycler view.");
         }
-        // Loading indicator should be hidden by the time this is called usually,
-        // but ensure it is hidden anyway.
+        // Ensure loading indicator is hidden
         if (loadingIndicator != null && loadingIndicator.getVisibility() == View.VISIBLE) {
             loadingIndicator.setVisibility(View.GONE);
         }
@@ -862,49 +886,72 @@ public class RecordsFragment extends Fragment implements
                 .show();
     }
 
+    // Inside RecordsFragment.java
     private void deleteSelectedVideos() {
-        List<Uri> itemsToDelete = new ArrayList<>(selectedVideosUris); // Copy to avoid issues
-        if(itemsToDelete.isEmpty()){
-            Log.d(TAG,"deleteSelectedVideos called but selection is empty.");
-            return; // Nothing to do
-        }
-        selectedVideosUris.clear(); // Clear selection UI immediately
+        List<Uri> itemsToDelete = new ArrayList<>(selectedVideosUris);
+        if(itemsToDelete.isEmpty()){ return; }
+        selectedVideosUris.clear();
         updateDeleteButtonVisibility();
 
         executorService.submit(() -> {
             int successCount = 0;
             int failCount = 0;
+            List<Integer> positionsToRemove = new ArrayList<>(); // Keep track of adapter positions
+
+            // First, identify positions corresponding to URIs to be deleted
             for (Uri uri : itemsToDelete) {
-                if(uri == null) { // Added null check for URIs
-                    Log.w(TAG,"Skipping null URI during deleteSelected");
-                    failCount++;
-                    continue;
-                }
-                if (deleteVideoUri(uri)) {
-                    successCount++;
+                int position = recordsAdapter.findPositionByUri(uri); // Assuming adapter has findPositionByUri helper
+                if (position != -1) {
+                    positionsToRemove.add(position);
                 } else {
+                    Log.w(TAG,"URI "+uri+" not found in adapter during deleteSelected identification.");
+                    // Might still attempt deletion by URI if adapter position isn't critical for file access
+                    if(deleteVideoUri(uri)) successCount++; else failCount++; // Attempt deletion anyway
+                }
+            }
+            // Sort positions in descending order to avoid index shifting issues when removing
+            Collections.sort(positionsToRemove, Collections.reverseOrder());
+
+            // Perform deletions from storage and adapter data
+            for (int position : positionsToRemove) {
+                VideoItem item = (position < videoItems.size()) ? videoItems.get(position) : null; // Check bounds
+                if (item != null && item.uri != null) {
+                    if (deleteVideoUri(item.uri)) { // Delete from storage
+                        videoItems.remove(position); // Remove from fragment's list
+                        successCount++;
+                    } else {
+                        failCount++;
+                        Log.e(TAG,"Failed to delete URI from storage: "+item.uri);
+                        // Don't remove from list if storage deletion failed
+                    }
+                } else {
+                    Log.w(TAG,"Item at pos "+position+" was null or had null URI during actual deleteSelected loop.");
                     failCount++;
                 }
             }
 
-            // --- FIX START ---
-            // Create final variables to capture the counts
+            // UI updates on the main thread
             final int finalSuccessCount = successCount;
             final int finalFailCount = failCount;
-            // --- FIX END ---
-
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    String message;
-                    // Use the final variables inside the lambda
-                    if (finalFailCount > 0) {
-                        message = finalSuccessCount + " deleted, " + finalFailCount + " failed.";
-                    } else {
-                        message = finalSuccessCount + " video(s) deleted.";
+                    if (recordsAdapter != null) {
+                        // --- Update Adapter after Deletions ---
+                        // If we reliably tracked positions and removed from `videoItems`:
+                        recordsAdapter.updateRecords(videoItems); // Just sync adapter with updated list
+                        // Alternatively, if we didn't track perfectly, do a full notify:
+                        // recordsAdapter.notifyDataSetChanged();
+
+                        // *** FIX: Update UI visibility AFTER adapter is notified ***
+                        updateUiVisibility(); // Check if list is empty now
+                        // --- End FIX ---
                     }
+
+                    // Show result toast
+                    String message = (finalFailCount > 0) ?
+                            finalSuccessCount + " deleted, " + finalFailCount + " failed." :
+                            finalSuccessCount + " video(s) deleted.";
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    // Refresh the list to show remaining items
-                    loadRecordsList();
                 });
             }
         });
@@ -924,53 +971,39 @@ public class RecordsFragment extends Fragment implements
                 .show();
     }
 
+    // Inside RecordsFragment.java
     private void deleteAllVideos() {
-        List<VideoItem> itemsToDelete = new ArrayList<>(videoItems); // Copy current list
-        if (itemsToDelete.isEmpty()) {
-            Log.d(TAG,"deleteAllVideos called but list is empty.");
-            if(getActivity() != null) {
-                getActivity().runOnUiThread(()-> Toast.makeText(getContext(), "No videos to delete.", Toast.LENGTH_SHORT).show());
-            }
-            return;
-        }
-        videoItems.clear(); // Clear UI list immediately
-        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems); // Update adapter immediately with empty list
+        List<VideoItem> itemsToDelete = new ArrayList<>(videoItems);
+        if (itemsToDelete.isEmpty()) { /* ... show toast, return ... */ return; }
 
+        // Visually clear immediately (optimistic)
+        videoItems.clear();
+        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+        // *** FIX: Update visibility immediately after clearing for UI responsiveness ***
+        updateUiVisibility(); // Show empty state now
+        // --- End FIX ---
 
         executorService.submit(() -> {
             int successCount = 0;
             int failCount = 0;
             for (VideoItem item : itemsToDelete) {
-                if (item != null && item.uri != null) { // Added null checks
-                    if (deleteVideoUri(item.uri)) { // Use URI helper
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } else {
-                    Log.w(TAG,"Skipping null item or item with null URI during deleteAll");
-                    failCount++; // Count it as a failure to delete
-                }
+                if (item != null && item.uri != null) {
+                    if (deleteVideoUri(item.uri)) successCount++; else failCount++;
+                } else { failCount++; }
             }
 
-            // --- FIX START ---
-            // Create final variables to capture the counts after the loop
+            // Final status update on main thread
             final int finalSuccessCount = successCount;
             final int finalFailCount = failCount;
-            // --- FIX END ---
-
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    String message;
-                    // Use the final variables inside the lambda
-                    if (finalFailCount > 0) {
-                        message = "Deleted " + finalSuccessCount + ", Failed " + finalFailCount;
-                    } else {
-                        message = "Deleted all " + finalSuccessCount + " videos.";
-                    }
+                    String message = (finalFailCount > 0) ?
+                            "Deleted " + finalSuccessCount + ", Failed " + finalFailCount :
+                            "Deleted all " + finalSuccessCount + " videos.";
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    // No need to call loadRecordsList here as the list should be empty.
-                    // If there were failures, they are already reflected in the counts.
+
+                    // *** Optional: Double-check UI visibility here, though should already be set ***
+                    // updateUiVisibility();
                 });
             }
         });

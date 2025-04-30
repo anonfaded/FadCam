@@ -21,5 +21,10 @@ public interface RecordActionListener {
      */
     void onSaveToGalleryFinished(boolean success, String message, Uri outputUri);
 
+    /**
+     * Called by the adapter after a deletion has occurred, allowing the
+     * listener (Fragment) to check if the list is now empty and update UI.
+     */
+    void onDeletionFinishedCheckEmptyState();
     // Add more methods here for other actions if needed (e.g., onDeleteStarted/Finished)
 }

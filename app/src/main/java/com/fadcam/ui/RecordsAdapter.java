@@ -462,31 +462,67 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // --- Action Implementations (Need URI Handling) ---
 
+    // Inside RecordsAdapter.java
+
+    /**
+     * Shows confirmation dialog and handles deletion for a single item.
+     * @param videoItem The item to potentially delete.
+     */
     private void confirmDelete(VideoItem videoItem) {
-        if(context == null) return;
+        if(context == null || videoItem == null || videoItem.uri == null) return;
+
         new MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.dialog_del_title))
                 .setMessage(context.getString(R.string.dialog_del_notice) + "\n(" + videoItem.displayName + ")")
-                .setPositiveButton(context.getString(R.string.dialog_del_confirm), (dialog, which) -> {
-                    if (deleteVideoUri(videoItem.uri)) { // Use central delete helper
-                        int position = findPositionByUri(videoItem.uri);
-                        if (position != -1) {
-                            // Remove from both data list and selection list
-                            if (position < records.size()) records.remove(position); // Check bounds
-                            selectedVideosUris.remove(videoItem.uri);
-                            notifyItemRemoved(position);
-                            notifyItemRangeChanged(position, records.size()); // Update subsequent positions
-                        } else {
-                            Log.w(TAG, "Item not found in adapter for deletion, list possibly changed. Refreshing all.");
-                            notifyDataSetChanged(); // Less efficient fallback
-                        }
-                    } else {
-                        Toast.makeText(context, "Failed to delete video.", Toast.LENGTH_SHORT).show();
-                    }
-                })
                 .setNegativeButton(context.getString(R.string.universal_cancel), null)
+                .setPositiveButton(context.getString(R.string.dialog_del_confirm), (dialog, which) -> {
+                    executorService.submit(() -> { // Perform deletion off the main thread
+                        boolean deleted = deleteVideoUri(videoItem.uri);
+
+                        // Update UI back on the main thread
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (deleted) {
+                                int position = findPositionByUri(videoItem.uri); // Find position *before* removing
+                                if (position != -1) {
+                                    if (position < records.size()){ // Bounds check before removing from adapter's list
+                                        Log.d(TAG, "confirmDelete: Removing item from adapter list at pos " + position);
+                                        records.remove(position);
+                                        notifyItemRemoved(position); // Notify adapter about the removal
+                                        // Maybe notify range changed if serial numbers matter, but can cause flicker
+                                        // notifyItemRangeChanged(position, getItemCount());
+                                    } else {
+                                        Log.e(TAG, "confirmDelete: Deletion OK, but pos "+position+" out of bounds. Size="+records.size());
+                                        notifyDataSetChanged(); // Fallback full refresh
+                                    }
+
+                                    // Remove from the fragment's selection list IF it was selected
+                                    selectedVideosUris.remove(videoItem.uri);
+                                    // *** REMOVE THIS LINE - Adapter doesn't control Fragment's FAB ***
+                                    // updateDeleteButtonVisibility();
+
+                                    // Signal fragment to check if the list became empty
+                                    if (actionListener != null) {
+                                        actionListener.onDeletionFinishedCheckEmptyState();
+                                        Log.d(TAG, "Called onDeletionFinishedCheckEmptyState listener.");
+                                    }
+
+                                } else {
+                                    // Item deleted but not found in list? List might have changed. Force refresh.
+                                    Log.w(TAG, "Item deleted from storage, but not found in adapter list (URI: " + videoItem.uri+"). Refreshing.");
+                                    notifyDataSetChanged();
+                                    if (actionListener != null) {
+                                        actionListener.onDeletionFinishedCheckEmptyState();
+                                    }
+                                }
+                            } else {
+                                // Deletion failed
+                                if(context!=null) Toast.makeText(context, "Failed to delete video.", Toast.LENGTH_SHORT).show();
+                            }
+                        }); // End runOnUiThread
+                    }); // End submit
+                })
                 .show();
-    }
+    } // End confirmDelete
 
 
     private void saveToGallery(Uri videoUri) {
