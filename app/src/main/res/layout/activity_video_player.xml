@@ -27,7 +27,7 @@
         android:id="@+id/back_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_back"
+        android:src="@drawable/ic_close"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:padding="16dp"
         android:layout_margin="16dp"
