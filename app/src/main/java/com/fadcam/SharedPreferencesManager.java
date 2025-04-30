@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Size;
 import java.util.Set;
 import java.util.HashSet;
+import com.fadcam.CameraType; // Ensure CameraType is imported
 
 import androidx.annotation.Nullable; // Import Nullable
 
@@ -71,9 +72,63 @@ public class SharedPreferencesManager {
                 sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, Constants.DEFAULT_VIDEO_RESOLUTION.getHeight()));
     }
 
+    // --- Existing FPS method (Maybe deprecate later) ---
+    @Deprecated
     public Integer getVideoFrameRate() {
+        // Keep original default logic maybe? Or point to Back Camera?
+        // For safety, maybe return Back camera's value if new ones exist
+        if(sharedPreferences.contains(Constants.PREF_VIDEO_FRAME_RATE_BACK)){
+            return getSpecificVideoFrameRate(CameraType.BACK);
+        }
         return sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
     }
+
+    // --- NEW: Specific Getters/Setters ---
+
+    /**
+     * Gets the saved frame rate preference for a specific camera type.
+     * If no specific preference is saved, it falls back to the old generic
+     * preference OR the default FPS.
+     *
+     * @param cameraType FRONT or BACK camera.
+     * @return The saved frame rate (int).
+     */
+    public int getSpecificVideoFrameRate(CameraType cameraType) {
+        String specificKey = (cameraType == CameraType.FRONT) ?
+                Constants.PREF_VIDEO_FRAME_RATE_FRONT : Constants.PREF_VIDEO_FRAME_RATE_BACK;
+
+        // 1. Check if the specific key exists
+        if (sharedPreferences.contains(specificKey)) {
+            return sharedPreferences.getInt(specificKey, Constants.DEFAULT_VIDEO_FRAME_RATE);
+        }
+        // 2. Specific key doesn't exist, check if the OLD generic key exists (for migration)
+        else if (sharedPreferences.contains(Constants.PREF_VIDEO_FRAME_RATE)) {
+            int oldGenericValue = sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
+            Log.w("SharedPrefs", "Migrating old FPS pref ("+oldGenericValue+") to key: "+ specificKey);
+            // Save the migrated value to the new key
+            setSpecificVideoFrameRate(cameraType, oldGenericValue);
+            // Optionally remove the old key after migration
+            // sharedPreferences.edit().remove(Constants.PREF_VIDEO_FRAME_RATE).apply();
+            return oldGenericValue;
+        }
+        // 3. Neither specific nor old generic exists, return default
+        else {
+            return Constants.DEFAULT_VIDEO_FRAME_RATE;
+        }
+    }
+
+    /**
+     * Saves the frame rate preference for a specific camera type.
+     * @param cameraType FRONT or BACK camera.
+     * @param frameRate The frame rate value to save.
+     */
+    public void setSpecificVideoFrameRate(CameraType cameraType, int frameRate) {
+        String specificKey = (cameraType == CameraType.FRONT) ?
+                Constants.PREF_VIDEO_FRAME_RATE_FRONT : Constants.PREF_VIDEO_FRAME_RATE_BACK;
+        sharedPreferences.edit().putInt(specificKey, frameRate).apply();
+    }
+
+    // --- End New FPS Methods ---
 
     public VideoCodec getVideoCodec() {
         String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, Constants.DEFAULT_VIDEO_CODEC.toString());
