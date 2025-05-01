@@ -468,17 +468,28 @@ public class RecordingService extends Service {
     }
 
     // Builds the appropriate FFmpeg command
+    // Replace the existing buildFFmpegCommand method in RecordingService.java
+
+    // Replace the existing buildFFmpegCommand method in RecordingService.java
+
     @Nullable
     private String buildFFmpegCommand(String inputPath, String outputPath) {
         String watermarkOption = sharedPreferencesManager.getWatermarkOption();
 
         if ("no_watermark".equals(watermarkOption)) {
-            Log.d(TAG,"Building FFmpeg copy command.");
+            Log.d(TAG,"Building FFmpeg copy command (no watermark).");
+            // When copying, no re-encoding happens, codec and pixel format don't matter.
             return String.format(Locale.US, "-i %s -codec copy -y %s", escapeFFmpegPath(inputPath), escapeFFmpegPath(outputPath));
         } else {
             Log.d(TAG,"Building FFmpeg watermark command.");
+
+            // Always use H.264 hardware encoder for watermarking processing for compatibility
+            String codecStringForProcessing = "h264_mediacodec";
+            Log.i(TAG,"Watermark enabled. Using processing codec: " + codecStringForProcessing);
+
             try {
-                String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf"; // Ensure font exists
+                // Existing logic to prepare watermark text, font, etc.
+                String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
                 File fontFile = new File(fontPath);
                 if(!fontFile.exists()){ Log.e(TAG,"Font file missing at: "+fontPath); return null;}
 
@@ -490,25 +501,30 @@ public class RecordingService extends Service {
                     default: watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + locationText; break;
                 }
                 watermarkText = convertArabicNumeralsToEnglish(watermarkText);
-                String escapedWatermarkText = escapeFFmpegString(watermarkText); // Escape needed characters
+                String escapedWatermarkText = escapeFFmpegString(watermarkText);
                 String escapedFontPath = escapeFFmpegPath(fontPath);
 
                 int fontSize = getFontSizeBasedOnBitrate();
                 String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
-                int frameRates = sharedPreferencesManager.getVideoFrameRate();
-                int bitratesEstimated = getVideoBitrate(); // Use consistent helper
-                String codec = sharedPreferencesManager.getVideoCodec().getFfmpeg();
+                int frameRates = sharedPreferencesManager.getSpecificVideoFrameRate(sharedPreferencesManager.getCameraSelection());
+                int bitratesEstimated = getVideoBitrate();
 
-                // --- MODIFIED LINE BELOW: Removed ",escape_text=0" ---
+                // *** ADDED: Force pixel format to NV12 before encoding ***
+                String pixelFormatOption = "-pix_fmt nv12";
+                Log.d(TAG, "Adding pixel format option: " + pixelFormatOption);
+
+                // Build the command using the forced H.264 codec AND forced pixel format
+                // Order: Input -> Filters -> Output Codec -> Output Bitrate -> Pixel Format -> Audio Codec -> Output Path
                 return String.format(Locale.US,
-                        "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d -codec:a copy -y %s",
+                        "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d %s -codec:a copy -y %s",
                         escapeFFmpegPath(inputPath),
                         frameRates,
                         escapedWatermarkText,
                         fontSizeStr,
                         escapedFontPath,
-                        codec,
+                        codecStringForProcessing, // Force h264_mediacodec
                         bitratesEstimated,
+                        pixelFormatOption,        // *** ADDED -pix_fmt nv12 here ***
                         escapeFFmpegPath(outputPath)
                 );
             } catch (Exception e){
