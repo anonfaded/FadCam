@@ -102,7 +102,7 @@ public class RecordsFragment extends Fragment implements
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
-
+    private boolean needsRefreshOnResume = false;
     private MaterialToolbar toolbar;
     private CharSequence originalToolbarTitle;
 
@@ -147,10 +147,27 @@ public class RecordsFragment extends Fragment implements
                 storageLocationChangedReceiver = new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        if (intent != null && Constants.ACTION_STORAGE_LOCATION_CHANGED.equals(intent.getAction())) {
-                            Log.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED broadcast. Refreshing records list...");
-                            // ** Simply reload the list. It will use the *new* preference. **
-                            loadRecordsList();
+                        // Ensure we are attached and context is valid
+                        if (intent == null || !isAdded() || getContext() == null) {
+                            return;
+                        }
+
+                        if (Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+                            boolean success = intent.getBooleanExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
+                            String uriString = intent.getStringExtra(Constants.EXTRA_RECORDING_URI_STRING);
+                            Log.i(TAG, "Received ACTION_RECORDING_COMPLETE. Success: " + success + ", URI: " + uriString + ". Setting refresh flag.");
+
+                            // Set the flag indicating a refresh is needed
+                            needsRefreshOnResume = true;
+
+                            // OPTIONAL: If the fragment is currently visible (resumed), trigger the load immediately
+                            if (isResumed()) {
+                                Log.d(TAG, "Fragment is resumed, triggering immediate load list from broadcast receiver.");
+                                loadRecordsList();
+                                needsRefreshOnResume = false; // Reset flag as we loaded immediately
+                            } else {
+                                Log.d(TAG, "Fragment not resumed, refresh will happen in onResume.");
+                            }
                         }
                     }
                 };
@@ -333,10 +350,32 @@ public class RecordsFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        // ** REMOVED loadRecordsList() from here **
-        Log.d(TAG, "onResume: Fragment resumed. Data loaded state: " + (!videoItems.isEmpty()));
-        // If you implement manual refresh later, you might re-enable it here or check timestamps
+        Log.d(TAG, "onResume: Fragment resumed. Checking refresh flag. Flag is: " + needsRefreshOnResume);
+
+        // Add null check for safety
+        if (sharedPreferencesManager == null && getContext() != null) {
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        }
+
+
+        // If a refresh is needed (flagged by the broadcast receiver)
+        if (needsRefreshOnResume) {
+            Log.i(TAG, "Needs refresh flag is set, calling loadRecordsList from onResume.");
+            loadRecordsList(); // Load the fresh list
+            needsRefreshOnResume = false; // Reset the flag now that we've refreshed
+        } else {
+            // Optional: Consider if a refresh is needed for other reasons on resume,
+            // e.g., if settings like sort order could have changed while away.
+            // For now, only refresh if flagged by completion.
+            Log.d(TAG, "No refresh needed on resume based on flag.");
+            // **Crucial:** If no load happened, ensure the current view state is correct
+            // in case the adapter has data but the RecyclerView was hidden.
+            if (getView() != null && recordsAdapter != null && recordsAdapter.getItemCount() > 0) {
+                updateUiVisibility();
+            }
+        }
     }
+
     @Override
     public void onSaveToGalleryStarted(String fileName) {
         if (getContext() == null) return; // Check context

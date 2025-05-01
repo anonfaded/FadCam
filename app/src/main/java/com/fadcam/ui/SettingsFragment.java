@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -492,19 +493,28 @@ public class SettingsFragment extends Fragment {
     }
 
 
-    // Loads the available camcorder profiles for cameras
+    // --- Ensure initializeCamcorderProfiles is defined ---
     private void initializeCamcorderProfiles() {
-        camcorderProfilesAvailables.clear(); // Clear previous data
-        Log.d(TAG_SETTINGS, "Initializing Camcorder Profiles");
+        // Ensure camcorderProfilesAvailables map is created
+        if(camcorderProfilesAvailables == null) {
+            camcorderProfilesAvailables = new HashMap<>();
+        } else {
+            camcorderProfilesAvailables.clear(); // Clear previous data if re-initializing
+        }
+
+        Log.d(TAG, "Initializing Camcorder Profiles Map");
         for(CameraType type : CameraType.values()) {
-            List<CamcorderProfile> camcorderProfiles = getCamcorderProfiles(type);
+            List<CamcorderProfile> camcorderProfiles = getCamcorderProfilesForTypeInternal(type); // Renamed helper
             if(!camcorderProfiles.isEmpty()) {
-                Log.d(TAG_SETTINGS,"Profiles found for " + type + ": " + camcorderProfiles.size());
+                Log.d(TAG,"Profiles found for " + type + ": " + camcorderProfiles.size());
                 camcorderProfilesAvailables.put(type, camcorderProfiles);
             } else {
-                Log.w(TAG_SETTINGS,"No profiles found for " + type);
+                Log.w(TAG,"No profiles found for " + type);
+                // Optionally add a default high profile if list is empty?
+                // camcorderProfilesAvailables.put(type, Collections.singletonList(CamcorderProfile.get(type.getCameraId(), CamcorderProfile.QUALITY_HIGH)));
             }
         }
+        Log.d(TAG,"Finished initializing profiles map.");
     }
 
     private void initializeVideoCodec() {
@@ -950,109 +960,128 @@ public class SettingsFragment extends Fragment {
     }
 
 
-    // --- Setup Listener - Saves to Specific Preference ---
+    // Ensure setupFrameRateSpinner method uses the specific pref keys correctly
     private void setupFrameRateSpinner() {
-        updateFrameRateSpinner(); // Populate initially
+        updateFrameRateSpinner(); // Populate initially based on current camera type
 
         frameRateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if(getContext() == null) return;
 
-                CameraType currentSelectedCamera = sharedPreferencesManager.getCameraSelection();
-                List<Integer> currentHardwareRates = getHardwareSupportedFrameRates(currentSelectedCamera);
+                CameraType currentSelectedCamera = sharedPreferencesManager.getCameraSelection(); // Get currently selected TYPE
+                List<Integer> currentHardwareRates = getHardwareSupportedFrameRates(currentSelectedCamera); // Get rates for THIS type
 
                 if (position >= 0 && position < currentHardwareRates.size()) {
                     int newlySelectedRate = currentHardwareRates.get(position);
-                    // Get the current preference specific TO THIS CAMERA
-                    int currentlySavedRateSpecific = sharedPreferencesManager.getSpecificVideoFrameRate(currentSelectedCamera);
+                    int currentlySavedRateSpecific = sharedPreferencesManager.getSpecificVideoFrameRate(currentSelectedCamera); // Get SPECIFIC pref
 
-                    Log.d(TAG_SETTINGS,"FPS Spinner Item Selected: Value="+newlySelectedRate + " for Camera "+currentSelectedCamera+". Previously Saved Specific="+currentlySavedRateSpecific);
+                    Log.d(TAG,"FPS Spinner Item Selected: Value="+newlySelectedRate + " for CameraType "+currentSelectedCamera+". Currently Saved Specific="+currentlySavedRateSpecific);
 
-                    // Save ONLY IF the selection is different from the SPECIFIC saved pref
                     if (newlySelectedRate != currentlySavedRateSpecific) {
-
-                        // *** NO cross-camera check needed anymore ***
-                        // Save to the preference key FOR THIS SPECIFIC CAMERA
+                        // Save to the preference key FOR THIS SPECIFIC CAMERA TYPE
                         sharedPreferencesManager.setSpecificVideoFrameRate(currentSelectedCamera, newlySelectedRate);
-                        Log.i(TAG_SETTINGS, "FPS PREFERENCE SAVED for [" + currentSelectedCamera + "]: " + newlySelectedRate + "fps");
-
+                        Log.i(TAG, "FPS PREFERENCE SAVED for CameraType [" + currentSelectedCamera + "]: " + newlySelectedRate + "fps");
+                        vibrateTouch(); // Add feedback on successful save
                     } else {
-                        Log.d(TAG_SETTINGS,"User selected same FPS as already saved for "+currentSelectedCamera+". No save needed.");
+                        Log.d(TAG,"User selected same FPS as already saved for "+currentSelectedCamera+". No save needed.");
                     }
                 } else {
-                    Log.e(TAG_SETTINGS, "Invalid position selected in FPS spinner: " + position);
+                    Log.e(TAG, "Invalid position selected in FPS spinner: " + position + ". Rates available: "+ currentHardwareRates.size());
                 }
             }
             @Override public void onNothingSelected(AdapterView<?> parent) {}
         });
-    } // End setupFrameRateSpinner
+    }// End setupFrameRateSpinner
 
 
     // Keep getHardwareSupportedFrameRates as defined previously, it works per camera
 
     /**
-     * Updates the frame rate spinner based on hardware capabilities
-     * and the SAVED PREFERENCE FOR THE CURRENTLY SELECTED CAMERA.
+     * Updates the frame rate spinner's adapter and selection based on hardware capabilities
+     * and the SAVED PREFERENCE FOR THE CURRENTLY SELECTED CAMERA TYPE.
      */
     private void updateFrameRateSpinner() {
+        // Safety checks
         if (frameRateSpinner == null || getContext() == null || sharedPreferencesManager == null) {
             Log.w(TAG_SETTINGS,"updateFrameRateSpinner: Prerequisites not met (Spinner/Context/PrefsMgr null).");
+            if (frameRateSpinner != null) frameRateSpinner.setEnabled(false); // Disable spinner if cannot populate
             return;
         }
 
-        CameraType selectedCamera = sharedPreferencesManager.getCameraSelection(); // BACK or FRONT
-        Log.d(TAG_SETTINGS, "Updating FPS spinner display FOR CAMERA: " + selectedCamera);
+        CameraType selectedCameraType = sharedPreferencesManager.getCameraSelection();
+        Log.d(TAG_SETTINGS, "Updating FPS spinner display FOR CAMERA TYPE: " + selectedCameraType);
 
-        // Get hardware rates for THIS camera
-        List<Integer> hardwareRates = getHardwareSupportedFrameRates(selectedCamera);
+        // 1. Get the list of actually supported rates for this camera type using the refined method
+        List<Integer> supportedHardwareRates = getHardwareSupportedFrameRates(selectedCameraType);
 
-        // Populate adapter
-        List<String> ratesAsString = hardwareRates.stream().map(String::valueOf).collect(Collectors.toList()); // Java 8 stream
+        // 2. Populate adapter
+        // Convert integer list to string list for the adapter
+        List<String> ratesAsString = new ArrayList<>();
+        for (Integer rate : supportedHardwareRates) {
+            ratesAsString.add(String.valueOf(rate));
+        }
+
         ArrayAdapter<String> adapter = new ArrayAdapter<>( requireContext(),
                 android.R.layout.simple_spinner_item, ratesAsString);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         frameRateSpinner.setAdapter(adapter);
 
-        // --- Selection Logic: Use Specific Preference ---
-        int selectedIndex = -1; // Default if errors occur
+        // 3. Determine Selection
+        int selectedIndex = -1; // Default to invalid index
 
-        if (!hardwareRates.isEmpty()) {
-            // *** Get the specific saved preference for THIS camera ***
-            int savedRateForThisCamera = sharedPreferencesManager.getSpecificVideoFrameRate(selectedCamera);
-            Log.d(TAG_SETTINGS,"Spinner Update: Saved FPS Pref for "+selectedCamera+" = "+savedRateForThisCamera);
+        if (!supportedHardwareRates.isEmpty()) {
+            // Get the FPS preference specifically saved for this camera type (FRONT or BACK)
+            int savedRateForThisCameraType = sharedPreferencesManager.getSpecificVideoFrameRate(selectedCameraType);
+            Log.d(TAG_SETTINGS,"FPS Spinner Update: Saved FPS Pref for Type "+selectedCameraType+" = "+savedRateForThisCameraType);
 
-            // 1. Check if the specific saved rate is supported by this camera's hardware list
-            if (hardwareRates.contains(savedRateForThisCamera)) {
-                selectedIndex = hardwareRates.indexOf(savedRateForThisCamera);
-                Log.d(TAG_SETTINGS,"Spinner Update: Saved rate ("+savedRateForThisCamera+") IS supported by "+selectedCamera+". Selecting index: "+selectedIndex);
+            // Check if the saved preference value is actually in the list of supported rates
+            if (supportedHardwareRates.contains(savedRateForThisCameraType)) {
+                selectedIndex = supportedHardwareRates.indexOf(savedRateForThisCameraType);
+                Log.d(TAG_SETTINGS,"FPS Spinner Update: Selecting SAVED rate ("+savedRateForThisCameraType+") at index: "+selectedIndex);
             } else {
-                // 2. Specific saved rate is NOT supported. Fallback VISUALLY to default (30fps).
-                Log.w(TAG_SETTINGS,"Spinner Update: Saved rate ("+savedRateForThisCamera+") NOT supported by "+selectedCamera+". Trying VISUAL fallback 30fps.");
+                // Saved rate is NOT supported/available. Fallback needed.
+                Log.w(TAG_SETTINGS,"FPS Spinner Update: Saved rate ("+savedRateForThisCameraType+") is NOT in the supported list " + supportedHardwareRates + ". Falling back.");
+
+                // Try falling back to the default rate (30 FPS)
                 int defaultRate = Constants.DEFAULT_VIDEO_FRAME_RATE;
-                if (hardwareRates.contains(defaultRate)) {
-                    selectedIndex = hardwareRates.indexOf(defaultRate);
-                    Log.d(TAG_SETTINGS,"Spinner Update: Default (30) IS supported by "+selectedCamera+". VISUALLY selecting index: "+selectedIndex);
-                    // We might *consider* updating the pref for *this* camera back to default if its specific saved pref was invalid? Optional.
-                    // setSpecificVideoFrameRate(selectedCamera, defaultRate);
-                } else {
-                    // 3. Even 30 not supported. VISUALLY select the FIRST available rate.
+                if (supportedHardwareRates.contains(defaultRate)) {
+                    selectedIndex = supportedHardwareRates.indexOf(defaultRate);
+                    Log.d(TAG_SETTINGS,"FPS Spinner Update: Falling back to Default ("+defaultRate+") at index: "+selectedIndex);
+                    // Update the preference ONLY because the previously saved one was invalid
+                    sharedPreferencesManager.setSpecificVideoFrameRate(selectedCameraType, defaultRate);
+                } else if (!supportedHardwareRates.isEmpty()){
+                    // If even default 30 isn't supported, select the first available rate in the list
                     selectedIndex = 0;
-                    int firstRate = hardwareRates.get(selectedIndex);
-                    Log.w(TAG_SETTINGS,"Spinner Update: Default (30) also NOT supported. VISUALLY selecting first rate: "+firstRate);
-                    // Optionally update pref for *this* camera to this valid rate?
-                    // setSpecificVideoFrameRate(selectedCamera, firstRate);
+                    int firstAvailableRate = supportedHardwareRates.get(selectedIndex);
+                    Log.w(TAG_SETTINGS,"FPS Spinner Update: Default (30) also NOT supported. Selecting first available rate: "+firstAvailableRate +" at index 0.");
+                    // Update preference to the first valid rate since saved/default were invalid
+                    sharedPreferencesManager.setSpecificVideoFrameRate(selectedCameraType, firstAvailableRate);
+                } else {
+                    // This case should be prevented by getHardwareSupportedFrameRates returning [30] if empty
+                    Log.e(TAG_SETTINGS,"FPS Spinner Update: CRITICAL ERROR - supportedHardwareRates became empty unexpectedly!");
                 }
             }
-            frameRateSpinner.setSelection(selectedIndex);
-            frameRateSpinner.setEnabled(true);
-        } else {
-            frameRateSpinner.setEnabled(false); // No rates available
-            Log.e(TAG_SETTINGS,"Spinner Update: CRITICAL - No FPS rates found for " + selectedCamera);
-        }
-        Log.d(TAG_SETTINGS,"FPS Spinner display updated for "+selectedCamera+". Final Visual index: "+selectedIndex);
-    } // End updateFrameRateSpinner
 
+            // 4. Set Spinner Selection and Enabled State
+            if(selectedIndex >= 0 && selectedIndex < ratesAsString.size()) { // Check index bounds
+                frameRateSpinner.setSelection(selectedIndex, false); // Set selection without triggering listener initially
+                frameRateSpinner.setEnabled(true); // Enable spinner as there are options
+                Log.d(TAG_SETTINGS,"FPS Spinner: Final selection set to index "+selectedIndex);
+            } else {
+                Log.e(TAG_SETTINGS,"FPS Spinner Update: Invalid final index ("+selectedIndex+"), cannot set selection. Disabling spinner.");
+                frameRateSpinner.setEnabled(false); // Disable if no valid selection found
+            }
+
+        } else {
+            // No rates were found/supported by getHardwareSupportedFrameRates (which should return [30] in that case)
+            // If this block is reached, something is inconsistent. Disable the spinner.
+            frameRateSpinner.setEnabled(false);
+            Log.e(TAG_SETTINGS,"FPS Spinner Update: CRITICAL - supportedHardwareRates is unexpectedly empty for " + selectedCameraType + ". Disabling spinner.");
+            // Clear the adapter to show nothing or placeholder? (Adapter already set with empty list earlier)
+        }
+        Log.d(TAG_SETTINGS,"FPS Spinner update finished for "+selectedCameraType+". Enabled: "+frameRateSpinner.isEnabled());
+    } // End updateFrameRateSpinner
 
     private void setupCodecSpinner() {
         if(codecSpinner == null) return;
@@ -1398,24 +1427,57 @@ public class SettingsFragment extends Fragment {
         return Math.max(index, 0); // Return 0 if not found
     }
 
+    // Replace the entire existing getCompatiblesVideoResolutions method in SettingsFragment.java
+
     /**
-     * Retrieves a list of compatible video resolutions for the specified camera type.
+     * Retrieves a list of compatible video resolutions (as Size objects)
+     * for the specified camera type by using the internal profile loading helper.
+     *
+     * @param cameraType The camera type (FRONT or BACK) to get resolutions for.
+     * @return A List of Size objects representing compatible resolutions. Returns empty list on error.
      */
-    public List<Size> getCompatiblesVideoResolutions(CameraType cameraType)
-    {
-        List<CamcorderProfile> camcorderProfiles = this.getCamcorderProfiles(cameraType);
+    public List<Size> getCompatiblesVideoResolutions(CameraType cameraType) {
+        Log.d(TAG_SETTINGS, "Getting compatible video resolutions for: " + cameraType);
+
+        // *** CORRECTION: Call the correctly named internal helper method ***
+        List<CamcorderProfile> camcorderProfiles = this.getCamcorderProfilesForTypeInternal(cameraType);
         List<Size> videoResolutionCompatibles = new ArrayList<>();
 
-        if(camcorderProfiles != null) {
+        // Perform null check on the result from the helper
+        if(camcorderProfiles != null && !camcorderProfiles.isEmpty()) {
+            Log.d(TAG_SETTINGS, "Processing " + camcorderProfiles.size() + " profiles from internal helper.");
             for (CamcorderProfile camcorderProfile : camcorderProfiles) {
-                // Filter out null profiles just in case
+                // Filter out null profiles just in case (belt-and-suspenders)
                 if(camcorderProfile != null){
+                    // Create Size object from profile dimensions
                     videoResolutionCompatibles.add(new Size(camcorderProfile.videoFrameWidth, camcorderProfile.videoFrameHeight));
+                } else {
+                    Log.w(TAG_SETTINGS, "Encountered a null CamcorderProfile in the list for " + cameraType);
                 }
             }
+        } else {
+            Log.e(TAG_SETTINGS, "getCamcorderProfilesForTypeInternal returned null or empty list for " + cameraType);
+            // Return empty list in this case
         }
-        Log.d(TAG_SETTINGS, "Compatible resolutions for " + cameraType + ": " + videoResolutionCompatibles.size());
-        return videoResolutionCompatibles;
+
+        // Use a Set to get unique sizes, as multiple profiles might have the same resolution
+        Set<Size> uniqueSizes = new HashSet<>(videoResolutionCompatibles);
+        List<Size> uniqueSortedSizes = new ArrayList<>(uniqueSizes);
+
+        // Sort the unique sizes (e.g., descending by area)
+        try {
+            Collections.sort(uniqueSortedSizes, (s1, s2) -> {
+                long area1 = (long) s1.getWidth() * s1.getHeight();
+                long area2 = (long) s2.getWidth() * s2.getHeight();
+                return Long.compare(area2, area1); // Descending order
+            });
+        } catch (Exception e) {
+            Log.e(TAG_SETTINGS,"Error sorting compatible resolutions", e);
+        }
+
+
+        Log.d(TAG_SETTINGS, "Returning " + uniqueSortedSizes.size() + " unique compatible resolutions for " + cameraType);
+        return uniqueSortedSizes; // Return the sorted list of unique sizes
     }
 
     /**
@@ -1532,69 +1594,172 @@ public class SettingsFragment extends Fragment {
     /**
      * Retrieves CamcorderProfiles for a given camera type.
      */
-    private List<CamcorderProfile> getCamcorderProfiles(CameraType cameraType) {
-        List<CamcorderProfile> profiles = new ArrayList<>();
-        int cameraId = cameraType.getCameraId();
+    // Make sure your getCamcorderProfile method is present and correct
+    // (as used in the fallback above)
 
-        // Prioritize common qualities
+
+    // Internal helper renamed from the previous 'getCamcorderProfiles' to avoid conflict
+    private List<CamcorderProfile> getCamcorderProfilesForTypeInternal(CameraType cameraType) {
+        // --- Ensure context is available ---
+        if(getContext() == null) {
+            Log.e(TAG, "Context null in getCamcorderProfilesForTypeInternal for "+cameraType);
+            return new ArrayList<>(); // Return empty
+        }
+
+        List<CamcorderProfile> profiles = new ArrayList<>();
+        int cameraId = cameraType.getCameraId(); // Assume this correctly gets 0 or 1 etc.
+
+        // --- Standard Qualities Array ---
+        // Include common resolutions first, higher/lower later
         int[] qualities = {
-                CamcorderProfile.QUALITY_1080P,
-                CamcorderProfile.QUALITY_720P,
-                CamcorderProfile.QUALITY_480P,
-                // Less common / higher-end
-                CamcorderProfile.QUALITY_2160P, // 4K
+                CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P, CamcorderProfile.QUALITY_480P,
+                CamcorderProfile.QUALITY_CIF, CamcorderProfile.QUALITY_QCIF, CamcorderProfile.QUALITY_LOW
         };
 
-        // Add qualities based on SDK version compatibility
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Check and add 8K - order might matter for dropdown appearance
+        // --- SDK-Specific High Resolutions (Highest first) ---
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // 8K Check (API 31+)
             if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_8KUHD)) profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_8KUHD));
         }
-        // Check and add 4K (check again for redundancy if SDK < S handled 2160P)
-        if(!profiles.stream().anyMatch(p -> p.quality == CamcorderProfile.QUALITY_2160P) && CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P)){
+        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P)) { // 4K (API 21+)
             profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_2160P));
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // 2K (QHD) Check (API 30+)
             if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2K)) profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_2K));
         }
+        // Handle QUALITY_QHD which was reused for 2K before API 30 (might be needed for older devices)
+        // It's generally same resolution as QUALITY_2K but constant differs by SDK level
+        // This can get complex, stick to API 30+ check for 2K for simplicity for now unless QHD devices fail
 
-        // Add standard qualities if available
+        // --- Add Standard Qualities if Available and Not Already Added ---
+        Set<Integer> addedQualities = new HashSet<>(); // Keep track of qualities already added by resolution value
+        for(CamcorderProfile p : profiles) { if(p!=null) addedQualities.add(p.quality); }
+
         for (int quality : qualities) {
-            if (CamcorderProfile.hasProfile(cameraId, quality) && !profiles.stream().anyMatch(p -> p.quality == quality)) {
-                profiles.add(CamcorderProfile.get(cameraId, quality));
+            if (!addedQualities.contains(quality) && CamcorderProfile.hasProfile(cameraId, quality)) {
+                CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
+                if(profile != null) { // Check profile is not null
+                    profiles.add(profile);
+                    addedQualities.add(quality);
+                }
             }
         }
 
-        // Ensure profiles list is not null and remove null entries
-        profiles.removeIf(p -> p == null);
-        Log.d(TAG_SETTINGS,"Camcorder profiles retrieved for "+cameraType +": "+profiles.size());
+        // --- Quality High/Low as Fallbacks ---
+        // Often QUALITY_HIGH is redundant with 1080p/720p but add if needed
+        if(!addedQualities.contains(CamcorderProfile.QUALITY_HIGH) && CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH)){
+            profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_HIGH));
+        }
+        // QUALITY_LOW is often redundant with QCIF etc.
+        // if(!addedQualities.contains(CamcorderProfile.QUALITY_LOW) && CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_LOW)){
+        //    profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_LOW));
+        // }
+
+
+        // --- Final Cleanup ---
+        profiles.removeIf(Objects::isNull); // Ensure no null profiles remain
+
+        Log.d(TAG,"Camcorder profiles retrieved internally for "+cameraType +": "+profiles.size());
+        // Optionally sort them by resolution descending here if needed?
+        // Collections.sort(profiles, (p1, p2) -> Integer.compare(p2.videoFrameWidth * p2.videoFrameHeight, p1.videoFrameWidth * p1.videoFrameHeight));
         return profiles;
     }
 
     /**
      * Retrieves the selected CamcorderProfile based on saved resolution preferences.
+     * Used as a fallback when AE ranges aren't available for FPS determination.
+     */
+    // Replace the existing getCamcorderProfile method in SettingsFragment.java with this complete version:
+
+    /**
+     * Retrieves the selected CamcorderProfile based on saved resolution preferences
+     * for the given CameraType. Used as a fallback when AE ranges aren't available
+     * for FPS determination or when specific profile info is needed.
+     *
+     * @param cameraType The camera type (FRONT or BACK) to get the profile for.
+     * @return The matching CamcorderProfile, or a fallback (like QUALITY_HIGH), or null if errors occur.
      */
     private CamcorderProfile getCamcorderProfile(CameraType cameraType) {
-        int savedWidth = sharedPreferencesManager.sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, Constants.DEFAULT_VIDEO_RESOLUTION.getWidth());
-        int savedHeight = sharedPreferencesManager.sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, Constants.DEFAULT_VIDEO_RESOLUTION.getHeight());
-
-        List<CamcorderProfile> profiles = camcorderProfilesAvailables.get(cameraType);
-        if (profiles == null || profiles.isEmpty()) {
-            Log.e(TAG_SETTINGS, "No profiles available for " + cameraType + " when getting specific profile.");
-            return CamcorderProfile.get(cameraType.getCameraId(), CamcorderProfile.QUALITY_HIGH); // Fallback needed
-        }
-
-        for (CamcorderProfile profile : profiles) {
-            if (profile != null && profile.videoFrameWidth == savedWidth && profile.videoFrameHeight == savedHeight) {
-                return profile;
+        // Ensure SharedPreferencesManager is initialized
+        if (sharedPreferencesManager == null) {
+            // Try initializing if context is available
+            if (getContext() != null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            // Still null? Log error and prepare for basic fallback
+            if (sharedPreferencesManager == null) {
+                Log.e(TAG, "getCamcorderProfile: SharedPreferencesManager is null, context likely missing.");
+                // Determine Camera ID safely even if context is gone initially
+                int camId = (cameraType != null) ? cameraType.getCameraId() : CameraType.BACK.getCameraId();
+                try {
+                    Log.w(TAG, "Falling back to default HIGH quality profile due to missing SharedPrefsManager.");
+                    return CamcorderProfile.get(camId, CamcorderProfile.QUALITY_HIGH); // Basic fallback
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to get even default fallback profile", e);
+                    return null; // Return null if even basic fails
+                }
             }
         }
-        // If saved resolution not found in available profiles, return the first available (or default)
-        Log.w(TAG_SETTINGS,"Saved resolution "+savedWidth+"x"+savedHeight+ " not found for " + cameraType + ", returning first available.");
-        return profiles.get(0); // Return first as fallback
-    }
 
+        // Get saved resolution preferences using the SharedPreferencesManager
+        int savedWidth = sharedPreferencesManager.getCameraResolution().getWidth();
+        int savedHeight = sharedPreferencesManager.getCameraResolution().getHeight();
+        Log.d(TAG,"getCamcorderProfile: Looking for profile matching " + savedWidth + "x" + savedHeight + " for " + cameraType);
+
+        // Ensure camcorderProfilesAvailables map is populated
+        // Check if the map exists AND contains the key for the requested type
+        if (camcorderProfilesAvailables == null || !camcorderProfilesAvailables.containsKey(cameraType)){
+            Log.w(TAG,"getCamcorderProfile: Camcorder profiles map not initialized or missing key for " + cameraType + ". Re-initializing.");
+            initializeCamcorderProfiles(); // Make sure this method populates the map correctly
+            // Check again after init
+            if(camcorderProfilesAvailables == null || !camcorderProfilesAvailables.containsKey(cameraType)){
+                Log.e(TAG,"Still no profiles after re-init for " + cameraType + ". Cannot get specific profile, using fallback.");
+                // Fallback to default HIGH if initialization failed or still no profiles
+                try {
+                    return CamcorderProfile.get(cameraType.getCameraId(), CamcorderProfile.QUALITY_HIGH);
+                } catch (Exception e){
+                    Log.e(TAG, "Failed getting HIGH quality fallback after re-init failed for " + cameraType, e);
+                    return null;
+                }
+            }
+        }
+
+        // Get the list of profiles for the specified camera type
+        List<CamcorderProfile> profiles = camcorderProfilesAvailables.get(cameraType);
+        if (profiles == null || profiles.isEmpty()) {
+            Log.e(TAG, "No profiles available in map for " + cameraType + " even after check. Cannot get specific profile, using fallback.");
+            // Fallback to default HIGH quality if list is empty
+            try {
+                return CamcorderProfile.get(cameraType.getCameraId(), CamcorderProfile.QUALITY_HIGH);
+            } catch (Exception e){
+                Log.e(TAG, "Failed getting HIGH quality fallback for empty profile list for " + cameraType, e);
+                return null;
+            }
+        }
+
+        // Iterate through the available profiles to find a match for the saved resolution
+        for (CamcorderProfile profile : profiles) {
+            // Important: Check profile is not null before accessing its members
+            if (profile != null && profile.videoFrameWidth == savedWidth && profile.videoFrameHeight == savedHeight) {
+                Log.d(TAG,"Found matching CamcorderProfile for " + savedWidth + "x" + savedHeight);
+                return profile; // Return the matching profile
+            }
+        }
+
+        // If saved resolution not found in available profiles, return the first available profile as a fallback
+        Log.w(TAG,"Saved resolution "+savedWidth+"x"+savedHeight+ " not found in profile list for " + cameraType + ". Returning first available profile as fallback.");
+        if (!profiles.isEmpty() && profiles.get(0) != null) {
+            return profiles.get(0); // Return the first non-null profile in the list
+        } else {
+            Log.e(TAG,"First profile in list is null or list empty after search for "+ cameraType +". Final fallback.");
+            // Final fallback if even the first profile was null or list was empty unexpectedly
+            try {
+                return CamcorderProfile.get(cameraType.getCameraId(), CamcorderProfile.QUALITY_HIGH);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed getting final HIGH quality fallback for " + cameraType, e);
+                return null; // Return null if all fallbacks fail
+            }
+        }
+    } // End of getCamcorderProfile method
     /**
      * Gets the index of the CamcorderProfile matching saved preferences.
      */
@@ -1668,112 +1833,156 @@ public class SettingsFragment extends Fragment {
     }
     // --- End Theme Spinner Logic ---
 
+
     /**
-     * Queries the Camera2 API to get supported standard FPS ranges for a given camera
-     * and returns a filtered list of common, usable frame rates.
+     * Queries the Camera2 API to get supported standard FPS ranges for a given camera TYPE (FRONT/BACK)
+     * and returns a filtered list of common, usable frame rates defined in arrays.xml.
      *
-     * @param cameraType The camera (FRONT or BACK) to query.
-     * @return A sorted List<Integer> of supported frame rates (e.g., [30, 60]). Returns default [30] on error.
+     * @param cameraType The camera TYPE (FRONT or BACK) to query. Queries the primary ID for that type.
+     * @return A sorted List<Integer> of supported frame rates from R.array.video_framerate_options. Returns default [30] on error.
+     */
+    /**
+     * Queries the Camera2 API for supported FPS ranges for the primary camera of the specified type
+     * and returns a filtered list of frame rates from R.array.video_framerate_options that are supported.
+     *
+     * @param cameraType The camera type (FRONT or BACK) to query.
+     * @return A sorted List<Integer> of supported frame rates. Returns default [30] on critical errors.
      */
     private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
-        Log.d(TAG_SETTINGS, "Getting hardware supported FPS for: " + cameraType);
-        if (getContext() == null) return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE); // Need context
+        Log.i(TAG_SETTINGS, "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " ===");
+        final List<Integer> defaultRateList = Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
+
+        if (getContext() == null) {
+            Log.e(TAG_SETTINGS, "FPS Query: Context is null.");
+            return defaultRateList;
+        }
 
         CameraManager manager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
         if (manager == null) {
-            Log.e(TAG_SETTINGS, "CameraManager is null.");
-            return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE); // Default on error
+            Log.e(TAG_SETTINGS, "FPS Query: CameraManager is null.");
+            return defaultRateList;
         }
 
-        // Map CameraType enum to camera ID string
-        String selectedCameraId = null;
+        String targetCameraId = null;
         try {
-            for (String cameraId : manager.getCameraIdList()) {
-                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            // Find the primary camera ID for the requested type (Prioritize ID "0" for BACK)
+            String firstBackIdFallback = null;
+            for (String id : manager.getCameraIdList()) {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null) {
                     if (cameraType == CameraType.FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                        selectedCameraId = cameraId; break;
+                        targetCameraId = id;
+                        Log.d(TAG_SETTINGS,"FPS Query: Found FRONT camera ID: " + targetCameraId);
+                        break;
                     }
                     if (cameraType == CameraType.BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                        selectedCameraId = cameraId; break;
+                        if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                            targetCameraId = id; // Found preferred default BACK ID "0"
+                            Log.d(TAG_SETTINGS,"FPS Query: Found Primary BACK camera ID: " + targetCameraId);
+                            break;
+                        } else if (firstBackIdFallback == null) {
+                            firstBackIdFallback = id; // Store first BACK ID encountered as fallback
+                        }
                     }
                 }
             }
-        } catch (CameraAccessException e) {
-            Log.e(TAG_SETTINGS, "Error accessing camera list/characteristics", e);
-            return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
-        }
-
-        if (selectedCameraId == null) {
-            Log.e(TAG_SETTINGS, "Could not find a valid Camera ID for type: " + cameraType);
-            return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
-        }
-        Log.d(TAG_SETTINGS, "Querying FPS ranges for Camera ID: " + selectedCameraId);
-
-
-        // Use TreeSet to automatically handle sorting and uniqueness
-        Set<Integer> supportedRates = new TreeSet<>();
-        try {
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(selectedCameraId);
-            Range<Integer>[] fpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-
-            if (fpsRanges != null && fpsRanges.length > 0) {
-                Log.d(TAG_SETTINGS, "Available AE FPS Ranges: " + Arrays.toString(fpsRanges));
-                for (Range<Integer> range : fpsRanges) {
-                    // Add the upper bound of the range as a potentially supported rate
-                    supportedRates.add(range.getUpper());
-                }
-            } else {
-                Log.w(TAG_SETTINGS, "No AE FPS ranges reported by hardware for camera " + selectedCameraId);
-                // Fallback if no ranges reported - check CamcorderProfile as last resort? Or just default?
-                CamcorderProfile profile = getCamcorderProfile(cameraType); // Use existing helper maybe?
-                if(profile != null) supportedRates.add(profile.videoFrameRate);
+            // If default BACK "0" wasn't found, use the fallback if available
+            if (cameraType == CameraType.BACK && targetCameraId == null && firstBackIdFallback != null){
+                targetCameraId = firstBackIdFallback;
+                Log.w(TAG_SETTINGS,"FPS Query: Default Back ID '0' not found/back-facing. Using first available back ID: " + targetCameraId);
             }
-        } catch (CameraAccessException e) {
-            Log.e(TAG_SETTINGS, "Camera access exception while getting FPS ranges", e);
-            // Fallback to default on error
-            supportedRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
-        } catch (Exception e) {
-            Log.e(TAG_SETTINGS, "Unexpected error getting FPS ranges", e);
-            supportedRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.e(TAG_SETTINGS, "FPS Query: Error accessing camera list/characteristics during ID selection", e);
+            return defaultRateList;
         }
 
+        if (targetCameraId == null) {
+            Log.e(TAG_SETTINGS, "FPS Query: Could not find a valid Camera ID for type: " + cameraType);
+            return defaultRateList;
+        }
+        Log.d(TAG_SETTINGS, "FPS Query: Using Camera ID: " + targetCameraId + " for characteristic lookup.");
 
-        // --- Filter against our desired options & Ensure Default ---
-        List<Integer> finalRates = new ArrayList<>();
+        // Get the available AE FPS ranges for the target camera
+        Range<Integer>[] hardwareFpsRanges = null;
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(targetCameraId);
+            hardwareFpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.e(TAG_SETTINGS, "FPS Query: Camera access/arg exception getting FPS ranges for ID " + targetCameraId, e);
+            // Return default [30] on error accessing ranges
+            return defaultRateList;
+        } catch (Exception e){
+            Log.e(TAG_SETTINGS, "FPS Query: Unexpected error getting FPS ranges for ID " + targetCameraId, e);
+            return defaultRateList;
+        }
+
+        if (hardwareFpsRanges == null || hardwareFpsRanges.length == 0) {
+            Log.w(TAG_SETTINGS, "FPS Query: No AE FPS ranges reported by hardware for camera " + targetCameraId + ". Checking profile.");
+            // Fallback: Use the rate from the CamcorderProfile for the *current* resolution setting
+            CamcorderProfile profile = getCamcorderProfile(cameraType); // Make sure this returns a valid profile or fallback
+            if (profile != null) {
+                Log.d(TAG_SETTINGS, "FPS Query: Using fallback rate from CamcorderProfile: " + profile.videoFrameRate);
+                return Collections.singletonList(profile.videoFrameRate); // Return only the profile rate
+            } else {
+                Log.e(TAG_SETTINGS, "FPS Query: Both AE Ranges and CamcorderProfile failed. Returning default [30].");
+                return defaultRateList; // Ultimate fallback
+            }
+        }
+
+        Log.d(TAG_SETTINGS, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": " + Arrays.toString(hardwareFpsRanges));
+
+        // Filter the predefined options based on hardware ranges
+        List<Integer> finalSupportedRates = new ArrayList<>();
         int[] predefinedOptions = getResources().getIntArray(R.array.video_framerate_options);
 
-        boolean found30Fps = false;
-        for (int hwRate : supportedRates) { // Iterate sorted hardware rates
-            // Check if this hardware rate is in our predefined list
-            boolean isInPredefined = IntStream.of(predefinedOptions).anyMatch(x -> x == hwRate);
-            if (isInPredefined) {
-                finalRates.add(hwRate);
-                if (hwRate == 30) {
-                    found30Fps = true;
+        for (int option : predefinedOptions) {
+            boolean supported = false;
+            for (Range<Integer> range : hardwareFpsRanges) {
+                // A predefined FPS option is supported if it's less than or equal to the MAX of *any* reported range.
+                // This is a common interpretation. Some might argue it needs to be >= min AND <= max.
+                // Let's stick to the simpler check first: Can the hardware potentially reach this rate?
+                if (range != null && range.getUpper() != null && option <= range.getUpper()) {
+                    // Optional stricter check: && option >= range.getLower()
+                    supported = true;
+                    Log.v(TAG_SETTINGS, "FPS Query: Option " + option + " IS potentially supported by range " + range);
+                    break; // No need to check other ranges for this option
                 }
+            }
+            if (supported) {
+                finalSupportedRates.add(option);
+                Log.v(TAG_SETTINGS,"FPS Query: Adding option " + option + " to final list.");
             } else {
-                Log.d(TAG_SETTINGS,"Hardware reported FPS "+hwRate+" but it's not in our predefined options array, skipping.");
+                Log.v(TAG_SETTINGS,"FPS Query: Option " + option + " is NOT supported by any hardware range upper bound.");
             }
         }
 
-        // If 30 wasn't found BUT other rates were, add 30 ONLY if hardware *did* report it as available originally
-        // This handles cases where e.g. only [60, 60] is reported but [15, 30] was missed or unavailable AE range
-        if (!found30Fps && !finalRates.isEmpty() && supportedRates.contains(30)) {
-            finalRates.add(30); // Add 30 if hardware supported it but wasn't in filtered set's range upper bounds
-            Collections.sort(finalRates); // Re-sort after adding
-            Log.d(TAG_SETTINGS,"Added 30fps fallback as hardware supported it.");
+
+        // Ensure default rate is present if possible, even if not in predefined options exactly
+        if (!finalSupportedRates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE)) {
+            boolean defaultSupportedByHardware = false;
+            for (Range<Integer> range : hardwareFpsRanges) {
+                if(range != null && range.getUpper() != null && Constants.DEFAULT_VIDEO_FRAME_RATE <= range.getUpper()) {
+                    defaultSupportedByHardware = true; break;
+                }
+            }
+            if(defaultSupportedByHardware) {
+                Log.d(TAG_SETTINGS, "FPS Query: Adding default rate " + Constants.DEFAULT_VIDEO_FRAME_RATE + " because it's supported by hardware but wasn't in final list.");
+                finalSupportedRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+            }
         }
 
 
-        // If after all that, the list is STILL empty, add the default
-        if (finalRates.isEmpty()) {
-            Log.w(TAG_SETTINGS, "No compatible standard FPS rates found after filtering/checking hardware. Adding default: " + Constants.DEFAULT_VIDEO_FRAME_RATE);
-            finalRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        // If the list is STILL empty after filtering, add the default 30fps as a last resort
+        if (finalSupportedRates.isEmpty()) {
+            Log.e(TAG_SETTINGS, "FPS Query: No predefined rates found matching hardware ranges! Adding default: " + Constants.DEFAULT_VIDEO_FRAME_RATE);
+            finalSupportedRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
         }
 
-        Log.i(TAG_SETTINGS, "Final filtered & sorted FPS options for " + cameraType + ": " + finalRates);
-        return finalRates;
+        // Ensure the final list is sorted numerically
+        Collections.sort(finalSupportedRates);
+
+        Log.i(TAG_SETTINGS, "=== Final Supported FPS options for " + cameraType + " (ID: " + targetCameraId + "): " + finalSupportedRates + " ===");
+        return finalSupportedRates;
     }
 }
