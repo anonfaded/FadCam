@@ -260,6 +260,10 @@
         Continuing to record without saving may risk losing this file if the app cache is cleared unexpectedly.
         ]]></string>
     <string name="recording_already_active">Recording is already in progress or paused.</string>
+    <string name="setting_back_lens_title">Back Camera Lens</string>
+    <string name="setting_back_lens_note">Select specific lens if available e.g. Wide Angle Lens\n(Default: Main Lens(0))</string>
+    <string name="setting_back_lens_info_single">Main lens only</string>
+    <string name="setting_back_lens_info_single_v2">Only main back camera detected</string>
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>
