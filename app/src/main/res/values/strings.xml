@@ -263,6 +263,8 @@
         ]]>
     </string>
     <string name="recording_already_active">Recording is already in progress or paused.</string>
+    <string name="setting_back_lens_title">Back Camera Lens</string>
+    <string name="setting_back_lens_note">Select specific lens if available\\n(Requires Back Camera)</string>
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>

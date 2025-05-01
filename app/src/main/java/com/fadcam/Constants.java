@@ -81,4 +81,8 @@ public abstract class Constants {
     // SharedPreferences key for opened videos
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris";
 
+
+    public static final String PREF_SELECTED_BACK_CAMERA_ID = "selected_back_camera_id";
+    public static final String DEFAULT_BACK_CAMERA_ID = "0"; // Default physical ID for back cameras is often "0"
+
 }

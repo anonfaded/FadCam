@@ -204,4 +204,28 @@ public class SharedPreferencesManager {
 
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists
     public static final boolean DEFAULT_PREVIEW_ENABLED = true; // Check default exists
+
+    /**
+     * Gets the preferred physical camera ID for the back camera.
+     * Defaults to Constants.DEFAULT_BACK_CAMERA_ID if not set or invalid.
+     * @return The saved physical camera ID string.
+     */
+    public String getSelectedBackCameraId() {
+        // Basic validation could be added here if needed (e.g., check if ID is purely numeric?)
+        return sharedPreferences.getString(Constants.PREF_SELECTED_BACK_CAMERA_ID, Constants.DEFAULT_BACK_CAMERA_ID);
+    }
+
+    /**
+     * Saves the preferred physical camera ID for the back camera.
+     * @param cameraId The physical camera ID string to save.
+     */
+    public void setSelectedBackCameraId(String cameraId) {
+        if (cameraId == null || cameraId.isEmpty()) {
+            Log.w("SharedPrefs", "Attempted to save null or empty back camera ID. Resetting to default.");
+            cameraId = Constants.DEFAULT_BACK_CAMERA_ID; // Fallback to default if invalid ID provided
+        }
+        sharedPreferences.edit().putString(Constants.PREF_SELECTED_BACK_CAMERA_ID, cameraId).apply();
+        Log.d("SharedPrefs", "Saved selected back camera ID: " + cameraId);
+    }
+
 }

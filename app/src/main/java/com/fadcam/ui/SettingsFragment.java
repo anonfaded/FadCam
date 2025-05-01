@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import static android.content.ContentValues.TAG;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -12,6 +14,7 @@ import android.content.res.Configuration;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.media.CamcorderProfile;
 import android.net.Uri;
 import android.os.Build;
@@ -26,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.RadioButton; // Import RadioButton
 import android.widget.RadioGroup;  // Import RadioGroup
 import android.widget.Spinner;
@@ -66,11 +70,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import android.util.Range; // Make sure this import is present
 import java.util.TreeSet; // Used for sorting and uniqueness
 import java.util.Set;     // Used for intermediate storage
 import java.util.stream.IntStream; // For easy array conversion
+import java.util.Comparator; // For sorting camera IDs
+import java.util.concurrent.ExecutorService; // Make sure this import exists
+import java.util.concurrent.Executors;
 
 import android.content.Intent; // Add Intent import
 import androidx.localbroadcastmanager.content.LocalBroadcastManager; // OR use ContextCompat if not using LocalBroadcastManager
@@ -119,7 +127,30 @@ public class SettingsFragment extends Fragment {
     private ActivityResultLauncher<Uri> openDocumentTreeLauncher;
     private static final String TAG_SETTINGS = "SettingsFragment"; // Use a specific tag
     // --- END STORAGE VARIABLES ---
+    private Spinner backCameraLensSpinner;
+    private LinearLayout backCameraLensLayout;
+    private ExecutorService executorService; // <-- *** ADD THIS DECLARATION ***
+    private List<CameraIdInfo> availableBackCameras = new ArrayList<>(); // Store detected back cameras
 
+    // Simple class to hold camera ID and its display name
+    private static class CameraIdInfo {
+        final String id;
+        final String displayName;
+
+        CameraIdInfo(String id, String displayName) {
+            this.id = id;
+            this.displayName = displayName;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return displayName; // What's shown in the Spinner
+        }
+        // equals/hashCode needed if comparing these objects
+        @Override public boolean equals(Object o) { if (this == o) return true; if (o == null || getClass() != o.getClass()) return false; CameraIdInfo that = (CameraIdInfo) o; return id.equals(that.id); }
+        @Override public int hashCode() { return Objects.hash(id); }
+    }
 
     // --- Activity Result Launcher Initialization & onCreate---
     @Override
@@ -130,6 +161,10 @@ public class SettingsFragment extends Fragment {
         // Initialize helpers/managers FIRST
         locationHelper = new LocationHelper(requireContext());
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        executorService = Executors.newSingleThreadExecutor(); // Ensure initialized
+        // *** ADD: Detect cameras ONCE here (or consider a dedicated CameraHelper class) ***
+        detectAvailableBackCameras();
+
         initializeCamcorderProfiles(); // Call initialization methods
         initializeVideoCodec();
 
@@ -217,6 +252,10 @@ public class SettingsFragment extends Fragment {
         buttonChooseCustomLocation = view.findViewById(R.id.button_choose_custom_location);
         tvCustomLocationPath = view.findViewById(R.id.tv_custom_location_path);
 
+        // *** Find the NEW views ***
+        backCameraLensSpinner = view.findViewById(R.id.back_camera_lens_spinner);
+        backCameraLensLayout = view.findViewById(R.id.back_camera_lens_layout);
+
         // Setup components
         setupLanguageSpinner(languageSpinner);
         readmeButton.setOnClickListener(v -> showReadmeDialog());
@@ -236,6 +275,12 @@ public class SettingsFragment extends Fragment {
         setupStorageLocationOptions();
         // Set initial UI state based on saved preferences
         updateStorageLocationUI();
+
+        setupCameraSelectionToggle(view, cameraSelectionToggle); // Setup front/back toggle FIRST
+        // *** Setup the NEW spinner AFTER the main toggle ***
+        setupBackCameraLensSpinner();
+        // Call initial UI update for the lens spinner based on current Front/Back selection
+        updateBackLensSpinnerVisibility();
 
         return view;
     }
@@ -540,11 +585,60 @@ public class SettingsFragment extends Fragment {
         }
         // Sync UI state with current preferences
         syncCameraSwitch(view, cameraSelectionToggle);
+        updateBackLensSpinnerVisibility(); // Sync lens visibility based on F/B state
         updateStorageLocationUI(); // Update storage UI on resume
         updateResolutionSpinner(); // Ensure spinner reflects current camera
         updateFrameRateSpinner(); // Ensure framerate reflects resolution
     }
 
+    // --- New Method: Detect Available Back Cameras ---
+    private void detectAvailableBackCameras() {
+        availableBackCameras.clear(); // Clear previous list
+        if (getContext() == null) return;
+        CameraManager manager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        if (manager == null) {
+            Log.e(TAG, "CameraManager is null during back camera detection.");
+            return;
+        }
+
+        Log.d(TAG, "Detecting available back cameras...");
+        try {
+            String[] cameraIds = manager.getCameraIdList();
+            for (String id : cameraIds) {
+                try {
+                    CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
+                    Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+
+                    if (facing != null && facing == CameraMetadata.LENS_FACING_BACK) {
+                        // Simple naming: Back Camera (ID)
+                        // More complex naming would check focal lengths etc. but keep it simple/robust for now
+                        String displayName = "Back Camera (" + id + ")";
+
+                        // Basic attempt to identify Wide/Tele based on focal length (if available)
+                        float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                        if (focalLengths != null && focalLengths.length > 0) {
+                            // Rough classification (may vary by device): < 35mm is often Wide/UltraWide
+                            if (focalLengths[0] < 35) displayName += " [Wide]";
+                                // > 70mm is often Telephoto
+                            else if (focalLengths[0] > 70) displayName += " [Tele]";
+                        }
+
+                        availableBackCameras.add(new CameraIdInfo(id, displayName));
+                        Log.d(TAG, "Found Back Camera: ID=" + id + ", Name=" + displayName);
+                    }
+                } catch (CameraAccessException | IllegalArgumentException e) {
+                    Log.e(TAG, "Could not access characteristics for camera ID: " + id, e);
+                }
+            }
+
+            // Sort cameras by ID string (often 0 is main, others follow)
+            Collections.sort(availableBackCameras, Comparator.comparing(info -> info.id));
+            Log.i(TAG, "Finished detecting back cameras. Count: " + availableBackCameras.size());
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error getting camera ID list", e);
+        }
+    }
 
     private void syncCameraSwitch(View view, MaterialButtonToggleGroup toggleGroup){
         if(view == null || toggleGroup == null) return;
@@ -593,16 +687,127 @@ public class SettingsFragment extends Fragment {
                     sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, selectedCamera.toString()).apply();
                     Log.i(TAG_SETTINGS, "Camera selection changed to: " + selectedCamera);
                     vibrateTouch();
-                    // ** Update resolution AND frame rate based on NEW camera selection **
-                    updateResolutionSpinner();
-                    updateFrameRateSpinner(); // This now loads the specific pref for the new camera
+                    // *** Update Visibility & Dependent Spinners ***
+                    updateBackLensSpinnerVisibility(); // Show/Hide lens spinner
+                    updateResolutionSpinner();         // Update resolutions for the new camera
+                    updateFrameRateSpinner();          // Update framerates for the new camera
+                } else {
+                    Log.d(TAG, "Camera main selection didn't change.");
+                    // Still need to update lens spinner visibility if fragment was just created
+                    updateBackLensSpinnerVisibility();
                 }
             }
         });
     } // End setupCameraSelectionToggle
 
+    // --- New Method: Control Lens Spinner Visibility ---
+    private void updateBackLensSpinnerVisibility() {
+        if (backCameraLensLayout == null || cameraSelectionToggle == null) return;
 
-    // Inside SettingsFragment.java
+        // Check if multiple back cameras exist and Back is selected
+        boolean showLensSpinner = sharedPreferencesManager.getCameraSelection() == CameraType.BACK
+                && availableBackCameras.size() > 1; // Only show if more than one back camera detected
+
+        backCameraLensLayout.setVisibility(showLensSpinner ? View.VISIBLE : View.GONE);
+        Log.d(TAG, "Back Lens Spinner Visibility: " + (showLensSpinner ? "VISIBLE" : "GONE"));
+
+        // Re-populate if becoming visible and wasn't populated before, or needs refresh
+        if (showLensSpinner) {
+            populateBackCameraLensSpinner(); // Populate spinner if visible
+        }
+    }
+
+    // --- New Method: Setup Back Camera Lens Spinner ---
+    private void setupBackCameraLensSpinner() {
+        if (backCameraLensSpinner == null) {
+            Log.e(TAG, "Back camera lens spinner is null, cannot set up.");
+            return;
+        }
+
+        backCameraLensSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position >= 0 && position < availableBackCameras.size()) {
+                    CameraIdInfo selectedInfo = availableBackCameras.get(position);
+                    String selectedId = selectedInfo.id;
+                    String currentlySavedId = sharedPreferencesManager.getSelectedBackCameraId();
+
+                    // Save ONLY if the selection is different from saved preference
+                    if (!selectedId.equals(currentlySavedId)) {
+                        sharedPreferencesManager.setSelectedBackCameraId(selectedId);
+                        Log.i(TAG, "Selected back camera lens ID saved: " + selectedId + " (" + selectedInfo.displayName + ")");
+                        vibrateTouch();
+                        // Optionally update Resolution/FPS spinners IF they are lens-dependent (less common)
+                        // updateResolutionSpinner();
+                        // updateFrameRateSpinner();
+                    }
+                } else {
+                    Log.e(TAG, "Invalid position selected in back lens spinner: " + position);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+
+        // Initial population will happen in updateBackLensSpinnerVisibility/populate...
+    }
+
+    // --- New Method: Populate Back Camera Lens Spinner ---
+    private void populateBackCameraLensSpinner() {
+        if (backCameraLensSpinner == null || getContext() == null || availableBackCameras.isEmpty()) {
+            Log.w(TAG, "Cannot populate back lens spinner (null view, context, or no cameras).");
+            if(backCameraLensLayout != null) backCameraLensLayout.setVisibility(View.GONE); // Ensure it's hidden
+            return;
+        }
+
+        ArrayAdapter<CameraIdInfo> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                availableBackCameras // Use the list of CameraIdInfo objects
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        backCameraLensSpinner.setAdapter(adapter);
+
+        // Set current selection based on preference
+        String savedId = sharedPreferencesManager.getSelectedBackCameraId();
+        int selectedIndex = -1;
+        for (int i = 0; i < availableBackCameras.size(); i++) {
+            if (availableBackCameras.get(i).id.equals(savedId)) {
+                selectedIndex = i;
+                break;
+            }
+        }
+
+        // If saved ID not found (e.g., camera removed), default to first back camera (usually ID "0")
+        if (selectedIndex == -1) {
+            Log.w(TAG,"Saved back camera ID '"+savedId+"' not found in available list. Defaulting.");
+            for (int i = 0; i < availableBackCameras.size(); i++) {
+                if (Constants.DEFAULT_BACK_CAMERA_ID.equals(availableBackCameras.get(i).id)) {
+                    selectedIndex = i;
+                    sharedPreferencesManager.setSelectedBackCameraId(Constants.DEFAULT_BACK_CAMERA_ID); // Reset pref
+                    break;
+                }
+            }
+            // If even default "0" isn't found (unlikely), select the first available
+            if (selectedIndex == -1 && !availableBackCameras.isEmpty()) {
+                selectedIndex = 0;
+                sharedPreferencesManager.setSelectedBackCameraId(availableBackCameras.get(0).id); // Save the first valid one
+            }
+        }
+
+        if(selectedIndex != -1){
+            backCameraLensSpinner.setSelection(selectedIndex);
+            Log.d(TAG,"Back Lens Spinner populated. Count: "+availableBackCameras.size()+", Selected Index: "+selectedIndex);
+        } else {
+            Log.e(TAG,"Could not set any selection for back lens spinner.");
+            backCameraLensSpinner.setEnabled(false);
+        }
+        // Spinner enabled state controlled by parent layout visibility
+        backCameraLensSpinner.setEnabled(true); // Keep spinner itself enabled if layout visible
+    }
+
+
     private void setupResolutionSpinner() {
         updateResolutionSpinner(); // Populate initially
 

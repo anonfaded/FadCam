@@ -191,10 +191,10 @@
                         android:text="@string/note_cam_sele"/>
                 </LinearLayout>
                 <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/camera_selection_toggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:singleSelection="true">
+                        android:id="@+id/camera_selection_toggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true">
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_back_camera"
                         style="?attr/materialButtonOutlinedStyle"
@@ -216,6 +216,65 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
+
+
+            <!-- ***** START NEW BACK CAMERA LENS SELECTION ***** -->
+            <LinearLayout
+                android:id="@+id/back_camera_lens_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginStart="24dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_lens"
+                    app:tint="?android:attr/textColorSecondary"
+                    android:contentDescription="Back Camera Lens Icon"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="2dp"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:text="@string/setting_back_lens_title" /> <!-- New String -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"
+                        app:lineHeight="16sp"
+                        android:text="@string/setting_back_lens_note" /> <!-- New String -->
+                </LinearLayout>
+                <Spinner
+                    android:id="@+id/back_camera_lens_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:gravity="end"/>
+            </LinearLayout>
+            <!-- ***** END NEW BACK CAMERA LENS SELECTION ***** -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
             <!-- Video Quality -->
             <LinearLayout
                 android:layout_width="match_parent"

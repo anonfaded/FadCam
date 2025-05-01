@@ -849,39 +849,117 @@ public class RecordingService extends Service {
         }
     }
 
+// Replace the ENTIRE existing openCamera method in RecordingService.java with this corrected version:
+
     private void openCamera() {
         Log.d(TAG, "openCamera: Opening camera");
+        // Use the class field 'cameraManager' consistently
         if (cameraManager == null) {
-            Log.e(TAG,"openCamera: CameraManager is null.");
-            stopSelf(); return;
+            Log.e(TAG,"openCamera: CameraManager (class field) is null.");
+            stopSelf();
+            return;
         }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG,"openCamera: Camera permission denied.");
-            stopSelf(); return;
+            // Consider sending a broadcast/showing toast if permission issue persists
+            stopSelf();
+            return;
         }
 
         CameraType selectedType = sharedPreferencesManager.getCameraSelection();
-        String selectedCameraId = null;
+        String cameraToOpenId = null; // The ID we will eventually try to open
 
         try {
-            for (String cameraId : cameraManager.getCameraIdList()) {
-                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
-                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null) {
-                    if (selectedType == CameraType.FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                        selectedCameraId = cameraId; break;
-                    }
-                    if (selectedType == CameraType.BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                        selectedCameraId = cameraId; break;
+            // *** CORRECTION: Use 'cameraManager' field instead of undefined 'manager' ***
+            String[] availableCameraIds = cameraManager.getCameraIdList();
+            Log.d(TAG, "Available Camera IDs: " + Arrays.toString(availableCameraIds));
+
+            if (selectedType == CameraType.FRONT) {
+                // Find the first front-facing camera
+                for (String id : availableCameraIds) {
+                    // *** CORRECTION: Use 'cameraManager' field ***
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                    Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        cameraToOpenId = id;
+                        Log.d(TAG, "Found FRONT camera: ID=" + cameraToOpenId);
+                        break;
                     }
                 }
-            }
+            } else { // CameraType.BACK
+                // Get the specific preferred back camera ID from preferences
+                String preferredBackId = sharedPreferencesManager.getSelectedBackCameraId();
+                Log.d(TAG,"Preferred BACK camera ID from prefs: " + preferredBackId);
 
-            if (selectedCameraId == null) {
-                Log.e(TAG, "No camera found for selected type: " + selectedType);
-                stopSelf(); return;
+                // Validate if the preferred back ID is actually available and BACK facing
+                boolean isValidAndAvailable = false;
+                for(String id : availableCameraIds){
+                    if(id.equals(preferredBackId)){
+                        // *** CORRECTION: Use 'cameraManager' field ***
+                        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                        Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                        if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                            isValidAndAvailable = true;
+                            break;
+                        } else {
+                            Log.w(TAG,"Preferred back ID "+preferredBackId+" exists but is not LENS_FACING_BACK!");
+                        }
+                    }
+                }
+
+                if (isValidAndAvailable) {
+                    cameraToOpenId = preferredBackId;
+                    Log.d(TAG, "Using preferred BACK camera ID: " + cameraToOpenId);
+                } else {
+                    // Fallback: Preferred ID is invalid/unavailable. Use the default back camera ID ("0").
+                    Log.w(TAG,"Preferred back camera ID '"+preferredBackId+"' is invalid or unavailable. Falling back to default ID '"+Constants.DEFAULT_BACK_CAMERA_ID+"'.");
+                    cameraToOpenId = Constants.DEFAULT_BACK_CAMERA_ID;
+
+                    // Optional: Verify the default ID "0" exists and is back-facing
+                    boolean defaultExistsAndIsBack = false;
+                    for(String id : availableCameraIds){
+                        if(id.equals(cameraToOpenId)) {
+                            // *** CORRECTION: Use 'cameraManager' field ***
+                            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                            Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                defaultExistsAndIsBack = true;
+                            }
+                            break; // Found the default ID, check done
+                        }
+                    }
+
+                    if(!defaultExistsAndIsBack){ // If default ID "0" is NOT found OR not back-facing
+                        Log.e(TAG,"Critical: Default back camera ID '"+cameraToOpenId+"' not found or not back-facing! Cannot select default back camera.");
+                        // Attempt to find *any* back camera as a last resort
+                        String fallbackBackId = null;
+                        for(String id: availableCameraIds){
+                            // *** CORRECTION: Use 'cameraManager' field ***
+                            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                            Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                            if(facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                Log.w(TAG,"Using first available back camera as final fallback: "+id);
+                                fallbackBackId = id; // Store the first found back camera
+                                break; // Use the first one found
+                            }
+                        }
+                        if (fallbackBackId != null){
+                            cameraToOpenId = fallbackBackId; // Assign the fallback ID
+                        } else {
+                            cameraToOpenId = null; // Set to null if no back camera was found at all
+                            Log.e(TAG, "Could not find any back-facing camera.");
+                        }
+                    } // End check for default ID validity
+                }
+            } // End BACK camera logic
+
+            if (cameraToOpenId == null) {
+                Log.e(TAG, "Could not determine a valid camera ID to open for selected type: " + selectedType);
+                Toast.makeText(this, "Failed to find selected camera", Toast.LENGTH_LONG).show();
+                stopSelf();
+                return;
             }
-            Log.d(TAG,"Attempting to open camera ID: "+ selectedCameraId);
+            Log.i(TAG,"Attempting to open final Camera ID: "+ cameraToOpenId); // Log the final chosen ID
 
             // Ensure previous camera is closed before opening a new one
             if(cameraDevice != null) {
@@ -890,17 +968,20 @@ public class RecordingService extends Service {
                 cameraDevice = null;
             }
 
-            cameraManager.openCamera(selectedCameraId, cameraStateCallback, backgroundHandler);
+            // *** Use the CORRECT 'cameraManager' field here to open the camera ***
+            cameraManager.openCamera(cameraToOpenId, cameraStateCallback, backgroundHandler); // Use the final determined ID
 
         } catch (CameraAccessException e) {
             Log.e(TAG, "openCamera: Camera Access Exception", e);
+            stopSelf();
+        } catch (IllegalArgumentException e){
+            Log.e(TAG, "openCamera: Illegal Argument Exception (likely invalid camera ID '"+cameraToOpenId+"' passed to getCharacteristics)", e);
             stopSelf();
         } catch (Exception e) {
             Log.e(TAG, "openCamera: Unexpected error", e);
             stopSelf();
         }
-    }
-
+    } // End openCamera method
     private final CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
