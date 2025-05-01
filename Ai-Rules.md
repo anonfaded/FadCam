@@ -117,7 +117,21 @@ try {
 - Always validate external inputs (e.g., from network, user input).
 - Avoid exposing internals unnecessarily (prefer `private`/`protected` access).
 
----
+##  Assume Hardware/OEM Differences:
+
+-  Features heavily reliant on hardware components (Camera2 API, MediaCodec, Sensors, specific file system behaviors) must be designed defensively.
+
+-  Anticipate variations across manufacturers (e.g., Samsung, Google Pixel, Xiaomi) and Android versions. Avoid assuming uniform behavior for hardware-accelerated tasks or low-level APIs.
+
+-  Implement robust fallbacks or alternative strategies where possible if a primary hardware-accelerated approach might fail on certain devices.
+
+##  Prioritize Compatibility for Processing Tasks:
+
+-  When performing post-processing or re-encoding tasks (e.g., watermarking, format conversion) using libraries like FFmpeg that interact with hardware encoders (MediaCodec):
+
+-  Prioritize universally compatible output settings (e.g., H.264 codec, common pixel formats like NV12) over trying to exactly match the user's initial recording settings (like HEVC), especially if the input involves filtering or format changes. This mitigates risks from OEM MediaCodec implementation quirks.
+
+-  The initial recording can respect user settings (e.g., record in HEVC), but subsequent processing that re-encodes should default to safer options if hardware acceleration is used. -codec copy is safe as it doesn't re-encode.
 
 # 🧵 FINAL REMARKS
 
