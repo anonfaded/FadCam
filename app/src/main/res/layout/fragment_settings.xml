@@ -218,7 +218,7 @@
 
 
 
-            <!-- ***** START NEW BACK CAMERA LENS SELECTION ***** -->
+            <!-- ***** START REVISED BACK CAMERA LENS SELECTION ***** -->
             <LinearLayout
                 android:id="@+id/back_camera_lens_layout"
                 android:layout_width="match_parent"
@@ -229,15 +229,17 @@
                 android:paddingBottom="8dp"
                 android:visibility="gone"
                 tools:visibility="visible">
+                <!-- Lens Icon (Aligned Left) -->
+
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:layout_marginStart="24dp"
+                    android:contentDescription="Back Camera Lens Icon"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_lens"
-                    app:tint="?android:attr/textColorSecondary"
-                    android:contentDescription="Back Camera Lens Icon"/>
+                    app:tint="?android:attr/textColorSecondary" />
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -251,14 +253,28 @@
                         android:textColor="@color/colorPrimary"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:text="@string/setting_back_lens_title" /> <!-- New String -->
+                        android:text="@string/setting_back_lens_title" />
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceCaption"
                         android:textColor="?android:attr/textColorSecondary"
                         app:lineHeight="16sp"
-                        android:text="@string/setting_back_lens_note" /> <!-- New String -->
+                        android:inputType="textMultiLine"
+                        android:singleLine="false"
+                        android:text="@string/setting_back_lens_note" />
+
+                    <!-- *** Info Text moved INSIDE vertical LinearLayout *** -->
+                    <TextView
+                        android:id="@+id/back_camera_lens_info_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:text="@string/setting_back_lens_info_single_v2" /> <!-- Use new V2 string -->
+
                 </LinearLayout>
                 <Spinner
                     android:id="@+id/back_camera_lens_spinner"
@@ -270,11 +286,13 @@
             <!-- ***** END NEW BACK CAMERA LENS SELECTION ***** -->
 
             <View
+                android:id="@+id/back_camera_lens_divider"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
+
             <!-- Video Quality -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -499,7 +517,7 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:scaleType="centerInside"
-                        android:src="@drawable/ic_storage"
+                        android:src="@drawable/ic_custom_location"
                         app:tint="@color/white"
                         android:contentDescription="Storage Icon"/>
                     <LinearLayout

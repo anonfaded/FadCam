@@ -111,6 +111,7 @@ public class SettingsFragment extends Fragment {
     private MaterialSwitch debugSwitch; // Declare debugSwitch
 
     private View view; // Make sure view is accessible
+    private View backCameraLensDivider; // *** ADD FIELD FOR THE DIVIDER ***
 
     private BroadcastReceiver broadcastOnRecordingStarted;
     private BroadcastReceiver broadcastOnRecordingStopped;
@@ -255,11 +256,23 @@ public class SettingsFragment extends Fragment {
         // *** Find the NEW views ***
         backCameraLensSpinner = view.findViewById(R.id.back_camera_lens_spinner);
         backCameraLensLayout = view.findViewById(R.id.back_camera_lens_layout);
+        backCameraLensDivider = view.findViewById(R.id.back_camera_lens_divider); // *** FIND THE DIVIDER ***
+
+
+        // *** Safety check for the new view ***
+        if (backCameraLensDivider == null) {
+            Log.e(TAG, "onCreateView: Critical - back_camera_lens_divider View not found!");
+        }
+        // *** Add null check for the layout too if not done elsewhere ***
+        if (backCameraLensLayout == null) {
+            Log.e(TAG, "onCreateView: Critical - back_camera_lens_layout LinearLayout not found!");
+        }
 
         // Setup components
         setupLanguageSpinner(languageSpinner);
         readmeButton.setOnClickListener(v -> showReadmeDialog());
         setupCameraSelectionToggle(view, cameraSelectionToggle);
+        setupBackCameraLensSpinner();                             // Setup spinner listener
         setupResolutionSpinner();
         setupFrameRateSpinner();
         setupCodecSpinner();
@@ -591,7 +604,7 @@ public class SettingsFragment extends Fragment {
         updateFrameRateSpinner(); // Ensure framerate reflects resolution
     }
 
-    // --- New Method: Detect Available Back Cameras ---
+    // --- UPDATE Method: Detect and LABEL Available Back Cameras ---
     private void detectAvailableBackCameras() {
         availableBackCameras.clear(); // Clear previous list
         if (getContext() == null) return;
@@ -610,28 +623,36 @@ public class SettingsFragment extends Fragment {
                     Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
 
                     if (facing != null && facing == CameraMetadata.LENS_FACING_BACK) {
-                        // Simple naming: Back Camera (ID)
-                        // More complex naming would check focal lengths etc. but keep it simple/robust for now
-                        String displayName = "Back Camera (" + id + ")";
+                        String baseName = "Camera (" + id + ")"; // Default base name
+                        String lensTypeSuffix = "";
 
-                        // Basic attempt to identify Wide/Tele based on focal length (if available)
+                        // Attempt to classify based on focal length (if available)
                         float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
-                        if (focalLengths != null && focalLengths.length > 0) {
-                            // Rough classification (may vary by device): < 35mm is often Wide/UltraWide
-                            if (focalLengths[0] < 35) displayName += " [Wide]";
-                                // > 70mm is often Telephoto
-                            else if (focalLengths[0] > 70) displayName += " [Tele]";
+                        if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                            // Explicitly label ID "0" as Main
+                            baseName = "Main Camera (" + id + ")";
+                        } else if (focalLengths != null && focalLengths.length > 0) {
+                            float focal = focalLengths[0];
+                            // ** Refined Focal Length Guessing (Adjust thresholds as needed) **
+                            if (focal < 20f) lensTypeSuffix = " [Ultra Wide?]"; // Typically < 20mm
+                            else if (focal >= 20f && focal < 35f) lensTypeSuffix = " [Wide?]"; // ~24-35mm often main/wide
+                            else if (focal > 60f) lensTypeSuffix = " [Telephoto?]"; // Often > 60/70mm
+                            // Note: Mid-range (35-60mm) might be main or standard, left unlabeled for simplicity
+                        } else {
+                            // Keep baseName if no focal length info
+                            Log.d(TAG,"No focal length info for back camera ID: "+id);
                         }
 
-                        availableBackCameras.add(new CameraIdInfo(id, displayName));
-                        Log.d(TAG, "Found Back Camera: ID=" + id + ", Name=" + displayName);
+                        String finalDisplayName = baseName + lensTypeSuffix;
+                        availableBackCameras.add(new CameraIdInfo(id, finalDisplayName));
+                        Log.d(TAG, "Found Back Camera: ID=" + id + ", Name=" + finalDisplayName);
                     }
                 } catch (CameraAccessException | IllegalArgumentException e) {
                     Log.e(TAG, "Could not access characteristics for camera ID: " + id, e);
                 }
             }
 
-            // Sort cameras by ID string (often 0 is main, others follow)
+            // Sort cameras by ID string
             Collections.sort(availableBackCameras, Comparator.comparing(info -> info.id));
             Log.i(TAG, "Finished detecting back cameras. Count: " + availableBackCameras.size());
 
@@ -700,20 +721,52 @@ public class SettingsFragment extends Fragment {
         });
     } // End setupCameraSelectionToggle
 
-    // --- New Method: Control Lens Spinner Visibility ---
+    // *** Method requested: updateBackLensSpinnerVisibility (Complete Revised Code) ***
+    /**
+     * Updates the visibility of the back camera lens row AND its following divider.
+     * Configures the spinner's enabled state based on detected lenses.
+     */
     private void updateBackLensSpinnerVisibility() {
-        if (backCameraLensLayout == null || cameraSelectionToggle == null) return;
+        // Safety check view readiness (include divider)
+        if (backCameraLensLayout == null || backCameraLensSpinner == null || backCameraLensDivider == null || cameraSelectionToggle == null || getContext() == null) {
+            Log.w(TAG,"updateBackLensSpinnerVisibility: Views or context not ready, skipping update.");
+            return;
+        }
 
-        // Check if multiple back cameras exist and Back is selected
-        boolean showLensSpinner = sharedPreferencesManager.getCameraSelection() == CameraType.BACK
-                && availableBackCameras.size() > 1; // Only show if more than one back camera detected
+        // 1. Determine visibility based on BACK camera selection
+        boolean isBackCameraSelected = sharedPreferencesManager.getCameraSelection() == CameraType.BACK;
 
-        backCameraLensLayout.setVisibility(showLensSpinner ? View.VISIBLE : View.GONE);
-        Log.d(TAG, "Back Lens Spinner Visibility: " + (showLensSpinner ? "VISIBLE" : "GONE"));
+        // 2. Set visibility for BOTH the layout and the divider
+        backCameraLensLayout.setVisibility(isBackCameraSelected ? View.VISIBLE : View.GONE);
+        backCameraLensDivider.setVisibility(isBackCameraSelected ? View.VISIBLE : View.GONE); // *** ADDED THIS LINE ***
+        Log.d(TAG, "Lens Section & Divider Visibility set to: " + (isBackCameraSelected ? "VISIBLE" : "GONE"));
 
-        // Re-populate if becoming visible and wasn't populated before, or needs refresh
-        if (showLensSpinner) {
-            populateBackCameraLensSpinner(); // Populate spinner if visible
+        // 3. If the section is visible, configure the Spinner
+        if (isBackCameraSelected) {
+            backCameraLensSpinner.setVisibility(View.VISIBLE); // Spinner always visible when section is
+
+            // Populate the spinner (already handles empty case)
+            populateBackCameraLensSpinner();
+
+            // Set Spinner enabled state based on lens count
+            if (availableBackCameras.size() > 1) {
+                backCameraLensSpinner.setEnabled(true);
+                backCameraLensSpinner.setClickable(true);
+                backCameraLensSpinner.setAlpha(1.0f);
+                Log.d(TAG,"Multiple back lenses found (" + availableBackCameras.size() + "). Spinner ENABLED.");
+            } else {
+                backCameraLensSpinner.setEnabled(false);
+                backCameraLensSpinner.setClickable(false);
+                backCameraLensSpinner.setAlpha(0.5f);
+                if (availableBackCameras.isEmpty()) {
+                    Log.e(TAG,"No back lenses detected. Spinner DISABLED.");
+                } else {
+                    Log.d(TAG,"Single back lens detected. Spinner DISABLED, showing lens name.");
+                }
+            }
+        } else {
+            // If section is hidden, spinner is irrelevant (but set GONE for robustness)
+            backCameraLensSpinner.setVisibility(View.GONE);
         }
     }
 
@@ -753,58 +806,85 @@ public class SettingsFragment extends Fragment {
         // Initial population will happen in updateBackLensSpinnerVisibility/populate...
     }
 
-    // --- New Method: Populate Back Camera Lens Spinner ---
+    // *** Method requested: populateBackCameraLensSpinner (Complete Revised Code) ***
+    /**
+     * Populates the back camera lens spinner with detected cameras.
+     * Handles cases for multiple cameras, a single camera, or no cameras detected.
+     */
     private void populateBackCameraLensSpinner() {
-        if (backCameraLensSpinner == null || getContext() == null || availableBackCameras.isEmpty()) {
-            Log.w(TAG, "Cannot populate back lens spinner (null view, context, or no cameras).");
-            if(backCameraLensLayout != null) backCameraLensLayout.setVisibility(View.GONE); // Ensure it's hidden
+        // Safety checks
+        if (backCameraLensSpinner == null || getContext() == null) {
+            Log.w(TAG, "Cannot populate back lens spinner (null view or context).");
             return;
         }
 
-        ArrayAdapter<CameraIdInfo> adapter = new ArrayAdapter<>(
+        List<CameraIdInfo> itemsToDisplay = new ArrayList<>();
+        ArrayAdapter<CameraIdInfo> adapter;
+
+        if (availableBackCameras.isEmpty()) {
+            // No cameras detected: Add a placeholder item
+            itemsToDisplay.add(new CameraIdInfo("-1", "No back lenses found")); // Use an invalid ID like "-1"
+            Log.w(TAG,"Populating spinner with 'No back lenses found'.");
+        } else {
+            // One or more cameras detected: Use the actual list
+            itemsToDisplay.addAll(availableBackCameras);
+            Log.d(TAG,"Populating spinner with " + itemsToDisplay.size() + " detected lenses.");
+        }
+
+        // Create and set adapter
+        adapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
-                availableBackCameras // Use the list of CameraIdInfo objects
+                itemsToDisplay
         );
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         backCameraLensSpinner.setAdapter(adapter);
 
-        // Set current selection based on preference
-        String savedId = sharedPreferencesManager.getSelectedBackCameraId();
-        int selectedIndex = -1;
-        for (int i = 0; i < availableBackCameras.size(); i++) {
-            if (availableBackCameras.get(i).id.equals(savedId)) {
-                selectedIndex = i;
-                break;
-            }
-        }
-
-        // If saved ID not found (e.g., camera removed), default to first back camera (usually ID "0")
-        if (selectedIndex == -1) {
-            Log.w(TAG,"Saved back camera ID '"+savedId+"' not found in available list. Defaulting.");
+        // Set current selection only if cameras were actually found
+        if (!availableBackCameras.isEmpty()) {
+            String savedId = sharedPreferencesManager.getSelectedBackCameraId();
+            int selectedIndex = -1;
             for (int i = 0; i < availableBackCameras.size(); i++) {
-                if (Constants.DEFAULT_BACK_CAMERA_ID.equals(availableBackCameras.get(i).id)) {
+                if (availableBackCameras.get(i).id.equals(savedId)) {
                     selectedIndex = i;
-                    sharedPreferencesManager.setSelectedBackCameraId(Constants.DEFAULT_BACK_CAMERA_ID); // Reset pref
                     break;
                 }
             }
-            // If even default "0" isn't found (unlikely), select the first available
-            if (selectedIndex == -1 && !availableBackCameras.isEmpty()) {
-                selectedIndex = 0;
-                sharedPreferencesManager.setSelectedBackCameraId(availableBackCameras.get(0).id); // Save the first valid one
-            }
-        }
 
-        if(selectedIndex != -1){
-            backCameraLensSpinner.setSelection(selectedIndex);
-            Log.d(TAG,"Back Lens Spinner populated. Count: "+availableBackCameras.size()+", Selected Index: "+selectedIndex);
+            // Fallback logic if saved ID not found (remains the same)
+            if (selectedIndex == -1) {
+                Log.w(TAG,"Saved back camera ID '"+savedId+"' not found. Applying fallback logic.");
+                for (int i = 0; i < availableBackCameras.size(); i++) {
+                    if (Constants.DEFAULT_BACK_CAMERA_ID.equals(availableBackCameras.get(i).id)) {
+                        selectedIndex = i;
+                        sharedPreferencesManager.setSelectedBackCameraId(Constants.DEFAULT_BACK_CAMERA_ID);
+                        Log.d(TAG,"Fallback applied: Selected default ID '" + Constants.DEFAULT_BACK_CAMERA_ID + "' at index " + selectedIndex);
+                        break;
+                    }
+                }
+                if (selectedIndex == -1) { // If default "0" wasn't found either
+                    selectedIndex = 0; // Select the first available one
+                    if(!availableBackCameras.isEmpty()){
+                        sharedPreferencesManager.setSelectedBackCameraId(availableBackCameras.get(0).id);
+                        Log.d(TAG,"Fallback applied: Selected first available camera ID '" + availableBackCameras.get(0).id + "' at index 0");
+                    } else {
+                        Log.e(TAG,"Cannot set selection index - no cameras available."); // Should be caught earlier, but belt-and-suspenders
+                    }
+                }
+            }
+
+            // Apply the determined selection
+            if(selectedIndex >= 0 && selectedIndex < itemsToDisplay.size()) { // Bounds check for safety
+                backCameraLensSpinner.setSelection(selectedIndex);
+                Log.d(TAG,"Spinner selection set to index: "+selectedIndex);
+            } else {
+                Log.e(TAG,"Final selected index " + selectedIndex + " is out of bounds for items list size " + itemsToDisplay.size());
+            }
         } else {
-            Log.e(TAG,"Could not set any selection for back lens spinner.");
-            backCameraLensSpinner.setEnabled(false);
+            // If no cameras, the adapter has the placeholder, just ensure selection is 0
+            backCameraLensSpinner.setSelection(0);
+            Log.d(TAG,"Spinner selection set to index 0 (placeholder).");
         }
-        // Spinner enabled state controlled by parent layout visibility
-        backCameraLensSpinner.setEnabled(true); // Keep spinner itself enabled if layout visible
     }
 
 
