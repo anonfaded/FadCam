@@ -614,60 +614,117 @@ public class SettingsFragment extends Fragment {
         updateFrameRateSpinner(); // Ensure framerate reflects resolution
     }
 
-    // --- UPDATE Method: Detect and LABEL Available Back Cameras ---
+// Replace this entire method in SettingsFragment.java
+
+    /**
+     * Detects all available physical back-facing cameras and assigns descriptive names.
+     * Populates the `availableBackCameras` list used by the spinner. Includes detailed logging
+     * and refined labelling logic.
+     */
     private void detectAvailableBackCameras() {
-        availableBackCameras.clear(); // Clear previous list
-        if (getContext() == null) return;
+        availableBackCameras.clear();
+        if (getContext() == null) {
+            Log.e(TAG, "detectAvailableBackCameras: Context is null.");
+            return;
+        }
         CameraManager manager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
         if (manager == null) {
-            Log.e(TAG, "CameraManager is null during back camera detection.");
+            Log.e(TAG, "detectAvailableBackCameras: CameraManager is null.");
             return;
         }
 
-        Log.d(TAG, "Detecting available back cameras...");
+        Log.i(TAG, "=== Starting Back Camera Detection ===");
         try {
             String[] cameraIds = manager.getCameraIdList();
+            Log.d(TAG, "System reported Camera IDs: " + Arrays.toString(cameraIds));
+
             for (String id : cameraIds) {
+                Log.d(TAG, "--- Checking ID: " + id + " ---");
                 try {
                     CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
+
+                    // 1. Check LENS_FACING - Primary Filter
                     Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-
-                    if (facing != null && facing == CameraMetadata.LENS_FACING_BACK) {
-                        String baseName = "Camera (" + id + ")"; // Default base name
-                        String lensTypeSuffix = "";
-
-                        // Attempt to classify based on focal length (if available)
-                        float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
-                        if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
-                            // Explicitly label ID "0" as Main
-                            baseName = "Main Camera (" + id + ")";
-                        } else if (focalLengths != null && focalLengths.length > 0) {
-                            float focal = focalLengths[0];
-                            // ** Refined Focal Length Guessing (Adjust thresholds as needed) **
-                            if (focal < 20f) lensTypeSuffix = " [Ultra Wide?]"; // Typically < 20mm
-                            else if (focal >= 20f && focal < 35f) lensTypeSuffix = " [Wide?]"; // ~24-35mm often main/wide
-                            else if (focal > 60f) lensTypeSuffix = " [Telephoto?]"; // Often > 60/70mm
-                            // Note: Mid-range (35-60mm) might be main or standard, left unlabeled for simplicity
-                        } else {
-                            // Keep baseName if no focal length info
-                            Log.d(TAG,"No focal length info for back camera ID: "+id);
-                        }
-
-                        String finalDisplayName = baseName + lensTypeSuffix;
-                        availableBackCameras.add(new CameraIdInfo(id, finalDisplayName));
-                        Log.d(TAG, "Found Back Camera: ID=" + id + ", Name=" + finalDisplayName);
+                    if (facing == null || facing != CameraMetadata.LENS_FACING_BACK) {
+                        String facingStr = (facing == null) ? "null" : (facing == CameraMetadata.LENS_FACING_FRONT ? "FRONT" : (facing == CameraMetadata.LENS_FACING_EXTERNAL ? "EXTERNAL" : "UNKNOWN(" + facing + ")"));
+                        Log.d(TAG,"ID " + id + ": Skipping - Not LENS_FACING_BACK. Actual: "+facingStr);
+                        continue;
                     }
-                } catch (CameraAccessException | IllegalArgumentException e) {
-                    Log.e(TAG, "Could not access characteristics for camera ID: " + id, e);
-                }
-            }
+                    Log.d(TAG, "ID " + id + ": Passed LENS_FACING_BACK check.");
 
-            // Sort cameras by ID string
+                    // 2. Check Physical vs Logical (Re-enabled - If you only want physical)
+                    boolean isLogical = false;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        Set<String> physicalIds = characteristics.getPhysicalCameraIds();
+                        if (physicalIds != null && !physicalIds.isEmpty()){
+                            Log.w(TAG,"ID " + id + " is a LOGICAL camera (contains physical IDs: " + physicalIds + "). Skipping physical-only listing.");
+                            isLogical = true;
+                            continue; // Skip LOGICAL cameras if only physical lenses are desired
+                        } else {
+                            Log.d(TAG,"ID " + id + ": Confirmed as physical (or pre-Android P).");
+                        }
+                    }
+
+                    // 3. Get Focal Length for HINTS
+                    float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                    Float focalLength = null;
+                    if (focalLengths != null && focalLengths.length > 0) {
+                        focalLength = focalLengths[0];
+                        Log.d(TAG,"ID " + id + ": Focal length reported: " + focalLength);
+                    } else {
+                        Log.w(TAG, "ID " + id + ": No focal length info available.");
+                    }
+
+                    // 4. Determine Display Name *** REFINED LABELLING ***
+                    String baseName;
+                    String lensHint = "";
+
+                    // Special Case: Default Main Camera
+                    if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                        baseName = "Main";
+                        // Optionally ADD a hint only if its focal length is *unusual* for a main cam
+                        // For example, if focalLength is very low (<22) or very high (>60), maybe hint it.
+                        // Otherwise, leave the "Main" label clean. Let's skip hints for "Main" for now.
+                        // if (focalLength != null){
+                        //     if(focalLength <= 22f) lensHint = "(Wide Focus?)";
+                        //     else if(focalLength >= 70f) lensHint = "(Zoom Focus?)";
+                        // }
+
+                    } else { // Other Back Cameras
+                        baseName = "Camera";
+                        // Apply hints more accurately
+                        if (focalLength != null) {
+                            if (focalLength <= 22f) lensHint = "(Ultra Wide)"; // More confident below 22
+                                // Skip "(Wide?)" as non-main lenses in 22-35 range are less common or might just be standard
+                            else if (focalLength >= 60f) lensHint = "(Telephoto)"; // More confident above 60/70
+                            else lensHint = "(Auxiliary)"; // Default hint if focal length present but not distinct
+                        } else {
+                            lensHint = "(Auxiliary)"; // Hint if no focal length data
+                        }
+                    }
+
+                    // Construct Final Name: e.g., "Main (0)", "Camera (2) (Ultra Wide)", "Camera (3) (Auxiliary)"
+                    String finalDisplayName = baseName + " (" + id + ") " + lensHint;
+
+                    // 5. Add to the list
+                    availableBackCameras.add(new CameraIdInfo(id, finalDisplayName.trim()));
+                    Log.i(TAG, ">>> ADDED Physical Back Camera: ID=" + id + ", Assigned Name=" + finalDisplayName.trim() + " <<<");
+
+
+                } catch (CameraAccessException | IllegalArgumentException e) {
+                    Log.e(TAG, "!!! Skipping ID " + id + ": Could not access characteristics.", e);
+                } catch (AssertionError e) {
+                    Log.e(TAG,"!!! Skipping ID " + id + ": AssertionError checking physical IDs?", e);
+                }
+                Log.d(TAG,"--- Finished checking ID: " + id + " ---");
+            } // End loop
+
             Collections.sort(availableBackCameras, Comparator.comparing(info -> info.id));
-            Log.i(TAG, "Finished detecting back cameras. Count: " + availableBackCameras.size());
+            Log.i(TAG, "=== Finished Detection. Final PHYSICAL Back Camera List Size: " + availableBackCameras.size() + " ===");
 
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Error getting camera ID list", e);
+            Log.e(TAG, "!!! CRITICAL ERROR getting camera ID list !!!", e);
+            availableBackCameras.clear();
         }
     }
 
