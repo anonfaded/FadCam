@@ -67,5 +67,5 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
 
-    implementation(libs.ffmpeg.kit.full)
+    // implementation(libs.ffmpeg.kit.full) // Removed FFmpeg dependency
 }
