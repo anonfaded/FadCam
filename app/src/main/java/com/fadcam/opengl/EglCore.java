@@ -332,4 +332,20 @@ public final class EglCore {
             throw new RuntimeException(msg + ": EGL error: 0x" + Integer.toHexString(error));
         }
     }
+    /**
+     * Returns the current EGL surface associated with the specified draw/read target.
+     * Common usage is EGL14.EGL_DRAW.
+     *
+     * @param which EGL14.EGL_DRAW or EGL14.EGL_READ
+     * @return The current EGLSurface, or EGL14.EGL_NO_SURFACE if none is current for that target.
+     */
+    public EGLSurface getCurrentSurface(int which) {
+        // Ensure the EGLDisplay is valid before querying
+        if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
+            Log.e(TAG, "getCurrentSurface called with no EGLDisplay!");
+            return EGL14.EGL_NO_SURFACE;
+        }
+        return EGL14.eglGetCurrentSurface(which); // <-- The actual EGL API call
+    }
+
 }

@@ -85,4 +85,5 @@ public abstract class Constants {
     public static final String PREF_SELECTED_BACK_CAMERA_ID = "selected_back_camera_id";
     public static final String DEFAULT_BACK_CAMERA_ID = "0"; // Default physical ID for back cameras is often "0"
 
+    public static final String RECORDING_TEMP_DIRECTORY_NAME = "recording_temp";
 }

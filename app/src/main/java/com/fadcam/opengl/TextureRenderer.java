@@ -56,6 +56,23 @@ public class TextureRenderer {
             "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
             "}\n";
 
+    // Fragment shader for YUV to RGB conversion.
+    private static final String FRAGMENT_SHADER_YUV =
+            "precision mediump float;\n" +
+            "varying vec2 vTextureCoord;\n" +
+            "uniform sampler2D yTexture;\n" +
+            "uniform sampler2D uTexture;\n" +
+            "uniform sampler2D vTexture;\n" +
+            "void main() {\n" +
+            "    float y = texture2D(yTexture, vTextureCoord).r;\n" +
+            "    float u = texture2D(uTexture, vTextureCoord).r - 0.5;\n" +
+            "    float v = texture2D(vTexture, vTextureCoord).r - 0.5;\n" +
+            "    float r = y + 1.402 * v;\n" +
+            "    float g = y - 0.344136 * u - 0.714136 * v;\n" +
+            "    float b = y + 1.772 * u;\n" +
+            "    gl_FragColor = vec4(r, g, b, 1.0);\n" +
+            "}\n";
+
     // Vertices for a simple quad covering the screen.
     private static final float[] TRIANGLE_VERTICES_DATA = {
             // X, Y, Z, U, V
@@ -69,6 +86,7 @@ public class TextureRenderer {
 
     private int mProgramOES; // Program for OES texture (camera)
     private int mProgram2D;  // Program for 2D texture (watermark)
+    private int mProgramYUV; // Program for YUV to RGB conversion
 
     private int muMVPMatrixHandleOES;
     private int muSTMatrixHandleOES;
@@ -81,6 +99,14 @@ public class TextureRenderer {
     private int maPositionHandle2D;
     private int maTextureHandle2D;
     private int muTextureSamplerHandle2D;
+
+    private int maPositionHandleYUV;
+    private int maTextureHandleYUV;
+    private int muMVPMatrixHandleYUV;
+    private int muSTMatrixHandleYUV;
+    private int muYTextureHandle;
+    private int muUTextureHandle;
+    private int muVTextureHandle;
 
     private int mTextureIdOES = -1; // Texture ID for the camera output
     private int mTextureId2D = -1;  // Texture ID for the watermark
@@ -164,6 +190,19 @@ public class TextureRenderer {
             throw new RuntimeException("Could not get uniform location for sTexture 2D");
         }
         Log.d(TAG, "2D program created.");
+
+        mProgramYUV = createProgram(VERTEX_SHADER, FRAGMENT_SHADER_YUV);
+        if (mProgramYUV == 0) {
+            throw new RuntimeException("failed creating YUV program");
+        }
+        maPositionHandleYUV = GLES20.glGetAttribLocation(mProgramYUV, "aPosition");
+        maTextureHandleYUV = GLES20.glGetAttribLocation(mProgramYUV, "aTextureCoord");
+        muMVPMatrixHandleYUV = GLES20.glGetUniformLocation(mProgramYUV, "uMVPMatrix");
+        muSTMatrixHandleYUV = GLES20.glGetUniformLocation(mProgramYUV, "uSTMatrix");
+        muYTextureHandle = GLES20.glGetUniformLocation(mProgramYUV, "yTexture");
+        muUTextureHandle = GLES20.glGetUniformLocation(mProgramYUV, "uTexture");
+        muVTextureHandle = GLES20.glGetUniformLocation(mProgramYUV, "vTexture");
+        Log.d(TAG, "YUV program created.");
     }
 
     /**
@@ -241,100 +280,6 @@ public class TextureRenderer {
     }
 
     /**
-     * Draws the camera frame and the watermark onto the current EGL surface.
-     * Must be called on the GL thread.
-     * @param cameraTextureId The ID of the camera texture (from createCameraTexture).
-     * @param watermarkTextureId The ID of the watermark texture (from updateWatermarkTexture).
-     * @param cameraTransform The transformation matrix for the camera texture (from SurfaceTexture.getTransformMatrix).
-     * @param watermarkMatrix The model-view-projection matrix for the watermark (to position and scale it).
-     */
-    public void drawFrame(int cameraTextureId, int watermarkTextureId, float[] cameraTransform, float[] watermarkMatrix) {
-        checkGlError("onDrawFrame start");
-
-        // Clear the screen (optional, but good practice)
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
-
-        // --- Draw Camera Frame ---
-        GLES20.glUseProgram(mProgramOES);
-        checkGlError("glUseProgram OES");
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTextureId);
-        GLES20.glUniform1i(muTextureSamplerHandleOES, 0);
-
-        mTriangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET);
-        GLES20.glVertexAttribPointer(maPositionHandleOES, 3, GLES20.GL_FLOAT, false,
-                TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
-        checkGlError("glVertexAttribPointer aPosition OES");
-        GLES20.glEnableVertexAttribArray(maPositionHandleOES);
-        checkGlError("glEnableVertexAttribArray aPosition OES");
-
-        mTriangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET);
-        GLES20.glVertexAttribPointer(maTextureHandleOES, 2, GLES20.GL_FLOAT, false,
-                TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
-        checkGlError("glVertexAttribPointer aTextureCoord OES");
-        GLES20.glEnableVertexAttribArray(maTextureHandleOES);
-        checkGlError("glEnableVertexAttribArray aTextureCoord OES");
-
-        android.opengl.Matrix.setIdentityM(mMVPMatrix, 0); // Use identity for camera frame (covers full screen)
-        GLES20.glUniformMatrix4fv(muMVPMatrixHandleOES, 1, false, mMVPMatrix, 0);
-        GLES20.glUniformMatrix4fv(muSTMatrixHandleOES, 1, false, cameraTransform, 0);
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        checkGlError("glDrawArrays OES");
-
-        GLES20.glDisableVertexAttribArray(maPositionHandleOES);
-        GLES20.glDisableVertexAttribArray(maTextureHandleOES);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0); // Unbind camera texture
-
-        // --- Draw Watermark ---
-        if (watermarkTextureId != -1) {
-            GLES20.glUseProgram(mProgram2D);
-            checkGlError("glUseProgram 2D");
-
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE1); // Use a different texture unit
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
-            GLES20.glUniform1i(muTextureSamplerHandle2D, 1); // Link to texture unit 1
-
-            mTriangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET);
-            GLES20.glVertexAttribPointer(maPositionHandle2D, 3, GLES20.GL_FLOAT, false,
-                    TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
-            checkGlError("glVertexAttribPointer aPosition 2D");
-            GLES20.glEnableVertexAttribArray(maPositionHandle2D);
-            checkGlError("glEnableVertexAttribArray aPosition 2D");
-
-            mTriangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET);
-            GLES20.glVertexAttribPointer(maTextureHandle2D, 2, GLES20.GL_FLOAT, false,
-                    TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
-            checkGlError("glVertexAttribPointer aTextureCoord 2D");
-            GLES20.glEnableVertexAttribArray(maTextureHandle2D);
-            checkGlError("glEnableVertexAttribArray aTextureCoord 2D");
-
-            // Use the provided watermark matrix for positioning and scaling
-            GLES20.glUniformMatrix4fv(muMVPMatrixHandle2D, 1, false, watermarkMatrix, 0);
-            android.opengl.Matrix.setIdentityM(mSTMatrix, 0); // Identity for 2D texture coords
-            GLES20.glUniformMatrix4fv(muSTMatrixHandle2D, 1, false, mSTMatrix, 0);
-
-
-            // Enable blending for transparency
-            GLES20.glEnable(GLES20.GL_BLEND);
-            GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA); // Standard alpha blending
-
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-            checkGlError("glDrawArrays 2D");
-
-            GLES20.glDisable(GLES20.GL_BLEND); // Disable blending after drawing watermark
-            GLES20.glDisableVertexAttribArray(maPositionHandle2D);
-            GLES20.glDisableVertexAttribArray(maTextureHandle2D);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0); // Unbind watermark texture
-        }
-
-        // Unbind program
-        GLES20.glUseProgram(0);
-    }
-
-    /**
      * Releases the OpenGL ES programs and textures.
      * Must be called on the GL thread.
      */
@@ -346,6 +291,10 @@ public class TextureRenderer {
         if (mProgram2D != 0) {
             GLES20.glDeleteProgram(mProgram2D);
             mProgram2D = 0;
+        }
+        if (mProgramYUV != 0) {
+            GLES20.glDeleteProgram(mProgramYUV);
+            mProgramYUV = 0;
         }
         if (mTextureIdOES != -1) {
             GLES20.glDeleteTextures(1, new int[]{mTextureIdOES}, 0);
@@ -412,11 +361,96 @@ public class TextureRenderer {
         return program;
     }
 
+    /**
+     * Placeholder/Simplified draw method for YUV frames.
+     * TODO: Needs full implementation with YUV->RGB shaders. Currently only draws watermark.
+     *
+     * @param yTextureId         ID of the Y plane texture.
+     * @param uTextureId         ID of the U plane texture.
+     * @param vTextureId         ID of the V plane texture.
+     * @param watermarkTextureId ID of the watermark texture (-1 if none).
+     * @param watermarkMatrix    Model-View-Projection matrix for the watermark.
+     */
+    public void drawFrameYUV(int yTextureId, int uTextureId, int vTextureId, int watermarkTextureId, float[] watermarkMatrix) {
+        checkGlError("onDrawFrameYUV start");
+        GLES20.glClearColor(0.1f, 0.0f, 0.1f, 1.0f);
+        GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
+
+        // --- Draw YUV frame ---
+        if (mProgramYUV != 0 && yTextureId != -1 && uTextureId != -1 && vTextureId != -1) {
+            GLES20.glUseProgram(mProgramYUV);
+            // Set up vertex attributes
+            mTriangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET);
+            GLES20.glVertexAttribPointer(maPositionHandleYUV, 3, GLES20.GL_FLOAT, false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
+            GLES20.glEnableVertexAttribArray(maPositionHandleYUV);
+            mTriangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET);
+            GLES20.glVertexAttribPointer(maTextureHandleYUV, 2, GLES20.GL_FLOAT, false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
+            GLES20.glEnableVertexAttribArray(maTextureHandleYUV);
+            // Set matrices
+            GLES20.glUniformMatrix4fv(muMVPMatrixHandleYUV, 1, false, mMVPMatrix, 0);
+            GLES20.glUniformMatrix4fv(muSTMatrixHandleYUV, 1, false, mSTMatrix, 0);
+            // Bind Y texture to unit 0
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yTextureId);
+            GLES20.glUniform1i(muYTextureHandle, 0);
+            // Bind U texture to unit 1
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, uTextureId);
+            GLES20.glUniform1i(muUTextureHandle, 1);
+            // Bind V texture to unit 2
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, vTextureId);
+            GLES20.glUniform1i(muVTextureHandle, 2);
+            // Draw
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+            checkGlError("glDrawArrays YUV");
+            // Disable attribs
+            GLES20.glDisableVertexAttribArray(maPositionHandleYUV);
+            GLES20.glDisableVertexAttribArray(maTextureHandleYUV);
+            // Unbind textures
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        } else {
+            Log.w(TAG, "drawFrameYUV: YUV program or textures not ready!");
+        }
+
+        // --- Draw Watermark (unchanged) ---
+        if (watermarkTextureId != -1 && mProgram2D != 0) {
+            GLES20.glUseProgram(mProgram2D);
+            checkGlError("glUseProgram 2D (YUV path)");
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE3);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
+            GLES20.glUniform1i(muTextureSamplerHandle2D, 3);
+            mTriangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET);
+            GLES20.glVertexAttribPointer(maPositionHandle2D, 3, GLES20.GL_FLOAT, false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
+            GLES20.glEnableVertexAttribArray(maPositionHandle2D);
+            mTriangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET);
+            GLES20.glVertexAttribPointer(maTextureHandle2D, 2, GLES20.GL_FLOAT, false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices);
+            GLES20.glEnableVertexAttribArray(maTextureHandle2D);
+            if (watermarkMatrix != null) {
+                GLES20.glUniformMatrix4fv(muMVPMatrixHandle2D, 1, false, watermarkMatrix, 0);
+            } else {
+                android.opengl.Matrix.setIdentityM(mMVPMatrix, 0);
+                GLES20.glUniformMatrix4fv(muMVPMatrixHandle2D, 1, false, mMVPMatrix, 0);
+            }
+            android.opengl.Matrix.setIdentityM(mSTMatrix, 0);
+            GLES20.glUniformMatrix4fv(muSTMatrixHandle2D, 1, false, mSTMatrix, 0);
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+            checkGlError("glDrawArrays 2D (Watermark YUV path)");
+            GLES20.glDisable(GLES20.GL_BLEND);
+            GLES20.glDisableVertexAttribArray(maPositionHandle2D);
+            GLES20.glDisableVertexAttribArray(maTextureHandle2D);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        }
+
+        GLES20.glUseProgram(0);
+    }
+
     private void checkGlError(String op) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
             Log.e(TAG, op + ": glError " + error);
-            //throw new RuntimeException(op + ": glError " + error); // uncomment to stop on error
         }
     }
 }
