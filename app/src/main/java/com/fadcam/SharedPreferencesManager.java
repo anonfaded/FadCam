@@ -200,6 +200,14 @@ public class SharedPreferencesManager {
     public void setRecordingInProgress(boolean isInProgress) {
         sharedPreferences.edit().putBoolean(Constants.PREF_IS_RECORDING_IN_PROGRESS, isInProgress).apply();
     }
+
+    public boolean isRecordAudioEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_RECORD_AUDIO, Constants.DEFAULT_RECORD_AUDIO);
+    }
+
+    public void setRecordAudioEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_RECORD_AUDIO, enabled).apply();
+    }
     // --- End Other methods ---
 
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists

@@ -110,6 +110,7 @@ public class SettingsFragment extends Fragment {
     private MaterialButtonToggleGroup cameraSelectionToggle;
     private MaterialSwitch locationSwitch; // Declare locationSwitch
     private MaterialSwitch debugSwitch; // Declare debugSwitch
+    private MaterialSwitch audioSwitch; // Declare audioSwitch
 
     private View view; // Make sure view is accessible
     private View backCameraLensDivider; // *** ADD FIELD FOR THE DIVIDER ***
@@ -244,6 +245,7 @@ public class SettingsFragment extends Fragment {
         watermarkSpinner = view.findViewById(R.id.watermark_spinner);
         locationSwitch = view.findViewById(R.id.location_toggle_group);
         debugSwitch = view.findViewById(R.id.debug_toggle_group);
+        audioSwitch = view.findViewById(R.id.audio_toggle_group); // Find audio switch
         MaterialButton reviewButton = view.findViewById(R.id.review_button);
         themeSpinner = view.findViewById(R.id.theme_spinner); // Initialize themeSpinner
 
@@ -280,6 +282,7 @@ public class SettingsFragment extends Fragment {
         setupWatermarkSpinner(view, watermarkSpinner);
         setupLocationSwitch(locationSwitch); // Use switch variable
         setupDebugSwitch(debugSwitch);     // Use switch variable
+        setupAudioSwitch(audioSwitch); // Setup audio switch
         reviewButton.setOnClickListener(v -> openInAppBrowser("https://forms.gle/DvUoc1v9kB2bkFiS6"));
         setupThemeSpinner(view);
         setupFrameRateNoteText();
@@ -1434,6 +1437,19 @@ public class SettingsFragment extends Fragment {
             // Log.setDebugEnabled(isChecked); // Remove if com.fadcam.Log is removed
             vibrateTouch();
             Log.d(TAG_SETTINGS,"Debug logging preference changed to: " + isChecked);
+        });
+    }
+
+    private void setupAudioSwitch(MaterialSwitch switchView) {
+        if(switchView == null) return;
+        boolean isAudioEnabled = sharedPreferencesManager.isRecordAudioEnabled();
+        switchView.setChecked(isAudioEnabled);
+        Log.d(TAG_SETTINGS,"Audio switch initialized. State: " + isAudioEnabled);
+
+        switchView.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferencesManager.setRecordAudioEnabled(isChecked);
+            vibrateTouch();
+            Log.d(TAG_SETTINGS,"Audio recording preference changed to: " + isChecked);
         });
     }
 

@@ -831,7 +831,10 @@ public class RecordingService extends Service {
         // 2. Create and Configure MediaRecorder instance
         mediaRecorder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? new MediaRecorder(this) : new MediaRecorder();
         try {
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            boolean recordAudio = sharedPreferencesManager.isRecordAudioEnabled();
+            if (recordAudio) {
+                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setOutputFile(currentInternalTempFile.getAbsolutePath()); // Use (external?) cache path
@@ -845,9 +848,11 @@ public class RecordingService extends Service {
             mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
             mediaRecorder.setVideoEncodingBitRate(bitRate);
             mediaRecorder.setVideoFrameRate(frameRate);
-            mediaRecorder.setAudioEncodingBitRate(384000);
-            mediaRecorder.setAudioSamplingRate(48000);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            if (recordAudio) {
+                mediaRecorder.setAudioEncodingBitRate(384000);
+                mediaRecorder.setAudioSamplingRate(48000);
+                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            }
             mediaRecorder.setVideoEncoder(codec.getEncoder());
             if (sharedPreferencesManager.getCameraSelection() == CameraType.FRONT) mediaRecorder.setOrientationHint(270); else mediaRecorder.setOrientationHint(90);
             // --- End configurations ---

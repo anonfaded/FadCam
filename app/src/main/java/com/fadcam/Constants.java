@@ -25,6 +25,7 @@ public abstract class Constants {
     public static final String PREF_VIDEO_CODEC = "video_codec";
     public static final String PREF_APP_THEME = "app_theme";
     public static final String PREF_IS_RECORDING_IN_PROGRESS = "is_recording_in_progress";
+    public static final String PREF_RECORD_AUDIO = "pref_record_audio";
 
     public static final String BROADCAST_ON_RECORDING_STARTED = "ON_RECORDING_STARTED";
     public static final String BROADCAST_ON_RECORDING_RESUMED = "ON_RECORDING_RESUMED";
@@ -59,6 +60,7 @@ public abstract class Constants {
 
     public static final String DEFAULT_WATERMARK_OPTION = "timestamp_fadcam";
     public static final boolean DEFAULT_PREVIEW_ENABLED = true;
+    public static final boolean DEFAULT_RECORD_AUDIO = true;
 
     public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH = "com.fadcam.TOGGLE_RECORDING_TORCH";
     // Broadcast action sent by RecordingService when video processing is done
