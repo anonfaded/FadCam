@@ -273,4 +273,20 @@
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
     <string name="remote_feature_description">Pair FadCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
+    <string name="setting_audio_title">Audio Recording</string>
+    <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
+    <string name="button_audio_settings">Audio Settings</string>
+    <string name="dialog_audio_settings_title">Audio Settings</string>
+    <string name="dialog_audio_bitrate_label">Audio Bitrate (bps)</string>
+    <string name="dialog_audio_sampling_rate_label">Sampling Rate (Hz)</string>
+    <string name="dialog_audio_reset">Reset to Default</string>
+    <string name="dialog_audio_save">Save</string>
+    <string name="dialog_audio_cancel">Cancel</string>
+    <string name="dialog_audio_invalid_bitrate">Invalid bitrate. Enter a value between 64000 and 384000.</string>
+    <string name="dialog_audio_invalid_sampling_rate">Invalid sampling rate. Enter 44100 or 48000.</string>
+    <string name="dialog_audio_settings_summary">Configure audio bitrate and sampling rate for best quality. Default: 192000 bps, 48000 Hz, Stereo.</string>
+    <string name="dialog_audio_info_text">• Bitrate (bps) controls audio quality and file size. Higher values mean better quality but larger files. 192000 is a good default for most uses.
+• Sampling Rate (Hz) is how many times per second audio is captured. 48000 Hz is standard for video, 44100 Hz is common for audio.
+
+Recommended: 192000 bps, 48000 Hz for most users.</string>
 </resources>
