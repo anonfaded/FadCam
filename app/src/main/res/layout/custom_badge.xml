@@ -7,9 +7,9 @@
     android:textColor="#FFF8F8F8"
     android:textStyle="bold"
     android:textSize="10sp"
-    android:padding="2dp"
+    android:padding="3dp"
     android:minWidth="16dp"
     android:gravity="center"
     android:layout_gravity="top|end"
-    android:layout_marginTop="10dp"
+    android:layout_marginTop="12dp"
     android:layout_marginEnd="6dp"/>
