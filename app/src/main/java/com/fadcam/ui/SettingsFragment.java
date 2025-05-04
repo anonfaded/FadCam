@@ -106,6 +106,7 @@ public class SettingsFragment extends Fragment {
     private Spinner watermarkSpinner;
     private Spinner themeSpinner;
     private Spinner languageSpinner; // Declare languageSpinner
+    private Spinner orientationSpinner; // Add field for orientation spinner
 
     private MaterialButtonToggleGroup cameraSelectionToggle;
     private MaterialSwitch locationSwitch; // Declare locationSwitch
@@ -264,7 +265,7 @@ public class SettingsFragment extends Fragment {
         backCameraLensSpinner = view.findViewById(R.id.back_camera_lens_spinner);
         backCameraLensLayout = view.findViewById(R.id.back_camera_lens_layout);
         backCameraLensDivider = view.findViewById(R.id.back_camera_lens_divider); // *** FIND THE DIVIDER ***
-
+        orientationSpinner = view.findViewById(R.id.orientation_spinner);
 
         // *** Safety check for the new view ***
         if (backCameraLensDivider == null) {
@@ -291,6 +292,7 @@ public class SettingsFragment extends Fragment {
         setupThemeSpinner(view);
         setupFrameRateNoteText();
         setupCodecNoteText();
+        setupOrientationSpinner();
 
         // Setup listeners for storage options
         setupStorageLocationOptions();
@@ -2190,5 +2192,34 @@ public class SettingsFragment extends Fragment {
             });
         });
         dialog.show();
+    }
+
+    private void setupOrientationSpinner() {
+        if (orientationSpinner == null) return;
+        String[] orientationOptions = new String[] {
+            getString(R.string.video_orientation_portrait),
+            getString(R.string.video_orientation_landscape)
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, orientationOptions);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        orientationSpinner.setAdapter(adapter);
+
+        // Set selection based on saved preference
+        String savedOrientation = sharedPreferencesManager.getVideoOrientation();
+        int selectedIndex = savedOrientation.equals(SharedPreferencesManager.ORIENTATION_LANDSCAPE) ? 1 : 0;
+        orientationSpinner.setSelection(selectedIndex);
+
+        orientationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String newOrientation = (position == 1) ? SharedPreferencesManager.ORIENTATION_LANDSCAPE : SharedPreferencesManager.ORIENTATION_PORTRAIT;
+                if (!sharedPreferencesManager.getVideoOrientation().equals(newOrientation)) {
+                    sharedPreferencesManager.setVideoOrientation(newOrientation);
+                    Log.d(TAG_SETTINGS, "Video orientation preference changed to: " + newOrientation);
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 }

@@ -806,30 +806,31 @@ public class RecordingService extends Service {
 
     // --- MediaRecorder & Camera Session Setup ---
     // Updated setupMediaRecorder to target EXTERNAL cache first
-    private void setupMediaRecorder() throws IOException { // Throw exception on failure
-        Log.d(TAG, "setupMediaRecorder: Configuring recorder to save to EXTERNAL cache.");
-        currentInternalTempFile = null; // Reset (though name is now slightly misleading)
+    private void setupMediaRecorder() throws IOException {
+        Log.d(TAG, "setupMediaRecorder: Configuring recorder.");
+        currentInternalTempFile = null; // Reset temporary file
 
-        // 1. Define EXTERNAL Cache Output Path
-        File cacheDir = getExternalCacheDir(); // <--- CHANGE HERE
-        if (cacheDir == null) { // Fallback if external cache is somehow unavailable
+        // Define output path
+        File cacheDir = getExternalCacheDir();
+        if (cacheDir == null) {
             Log.w(TAG, "External cache dir unavailable, falling back to internal cache.");
-            cacheDir = new File(getCacheDir(), "recording_temp"); // Use internal as fallback
+            cacheDir = new File(getCacheDir(), "recording_temp");
         } else {
-            cacheDir = new File(cacheDir, "recording_temp"); // Create subdir in external cache
+            cacheDir = new File(cacheDir, "recording_temp");
         }
 
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
             throw new IOException("Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
         }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String tempFilename = "temp_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;
-        // This variable now points to the external cache path
-        currentInternalTempFile = new File(cacheDir, tempFilename);
-        Log.d(TAG, "Temporary output path set to (external?) cache: " + currentInternalTempFile.getAbsolutePath());
 
-        // 2. Create and Configure MediaRecorder instance
-        mediaRecorder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? new MediaRecorder(this) : new MediaRecorder();
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String tempFilename = "temp_" + timestamp + ".mp4";
+        currentInternalTempFile = new File(cacheDir, tempFilename);
+        Log.d(TAG, "Temporary output path set to: " + currentInternalTempFile.getAbsolutePath());
+
+        mediaRecorder = new MediaRecorder();
+        VideoCodec codec = sharedPreferencesManager.getVideoCodec();
+
         try {
             boolean recordAudio = sharedPreferencesManager.isRecordAudioEnabled();
             if (recordAudio) {
@@ -838,12 +839,26 @@ public class RecordingService extends Service {
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setOutputFile(currentInternalTempFile.getAbsolutePath()); // Use (external?) cache path
+            mediaRecorder.setVideoEncoder(codec.getEncoder());
 
-            // --- Apply standard configurations ---
+            // Get resolution and swap if needed
             Size resolution = sharedPreferencesManager.getCameraResolution();
+            boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
+            int width = isLandscape ? resolution.getWidth() : resolution.getHeight();
+            int height = isLandscape ? resolution.getHeight() : resolution.getWidth();
+            mediaRecorder.setVideoSize(width, height);
+
+            // FadCam Rule: Only set orientation hint for portrait mode
+            // In landscape, do not set orientation hint (let it be 0)
+            if (!isLandscape) {
+                mediaRecorder.setOrientationHint(90);
+            } else {
+                mediaRecorder.setOrientationHint(0);
+            }
+
+            // Restore original logic for bitRate and frameRate
+            int bitRate = Utils.estimateBitrate(resolution, sharedPreferencesManager.getVideoFrameRate());
             int frameRate = sharedPreferencesManager.getVideoFrameRate();
-            VideoCodec codec = sharedPreferencesManager.getVideoCodec();
-            int bitRate = getVideoBitrate();
 
             mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
             mediaRecorder.setVideoEncodingBitRate(bitRate);
@@ -855,22 +870,25 @@ public class RecordingService extends Service {
                 mediaRecorder.setAudioEncodingBitRate(audioBitrate);
                 mediaRecorder.setAudioSamplingRate(audioSamplingRate);
                 mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-                Log.i(TAG, "Audio settings (set on MediaRecorder): bitrate=" + audioBitrate + ", samplingRate=" + audioSamplingRate);
             }
-            mediaRecorder.setVideoEncoder(codec.getEncoder());
-            if (sharedPreferencesManager.getCameraSelection() == CameraType.FRONT) mediaRecorder.setOrientationHint(270); else mediaRecorder.setOrientationHint(90);
-            // --- End configurations ---
 
             mediaRecorder.prepare();
-            Log.d(TAG, "setupMediaRecorder: MediaRecorder prepared successfully for cache file.");
+            Log.d(TAG, "setupMediaRecorder: MediaRecorder prepared successfully.");
 
         } catch (IOException | IllegalStateException e) {
             Log.e(TAG, "setupMediaRecorder: Failed", e);
-            // Do NOT call full releaseRecordingResources here to keep camera open
-            if(mediaRecorder != null) { try { mediaRecorder.release(); } catch (Exception ignored) {} mediaRecorder = null; }
-            if(currentInternalTempFile != null && currentInternalTempFile.exists()) currentInternalTempFile.delete();
+            if (mediaRecorder != null) {
+                try {
+                    mediaRecorder.release();
+                } catch (Exception ignored) {
+                }
+                mediaRecorder = null;
+            }
+            if (currentInternalTempFile != null && currentInternalTempFile.exists()) {
+                currentInternalTempFile.delete();
+            }
             currentInternalTempFile = null;
-            throw new IOException("MediaRecorder setup failed: " + e.getMessage(), e); // Propagate
+            throw new IOException("MediaRecorder setup failed: " + e.getMessage(), e);
         }
     }
 

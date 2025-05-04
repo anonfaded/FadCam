@@ -293,4 +293,8 @@
 • Sampling Rate (Hz) is how many times per second audio is captured. 48000 Hz is standard for video, 44100 Hz is common for audio.
 
 Recommended: 192000 bps, 48000 Hz for most users.</string>
+    <string name="setting_video_orientation_title">Video Orientation</string>
+    <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
+    <string name="video_orientation_portrait">Portrait (default)</string>
+    <string name="video_orientation_landscape">Landscape</string>
 </resources>

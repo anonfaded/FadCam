@@ -255,4 +255,27 @@ public class SharedPreferencesManager {
     }
     // --- End Audio Settings ---
 
+    // --- Video Orientation ---
+    public static final String PREF_VIDEO_ORIENTATION = "video_orientation";
+    public static final String ORIENTATION_PORTRAIT = "portrait";
+    public static final String ORIENTATION_LANDSCAPE = "landscape";
+    public static final String DEFAULT_VIDEO_ORIENTATION = ORIENTATION_PORTRAIT;
+
+    public String getVideoOrientation() {
+        return sharedPreferences.getString(PREF_VIDEO_ORIENTATION, DEFAULT_VIDEO_ORIENTATION);
+    }
+
+    public void setVideoOrientation(String orientation) {
+        sharedPreferences.edit().putString(PREF_VIDEO_ORIENTATION, orientation).apply();
+    }
+
+    /**
+     * Checks if the video orientation is set to landscape.
+     * @return true if the orientation is landscape, false otherwise.
+     */
+    public boolean isOrientationLandscape() {
+        return ORIENTATION_LANDSCAPE.equals(getVideoOrientation());
+    }
+    // --- End Video Orientation ---
+
 }
