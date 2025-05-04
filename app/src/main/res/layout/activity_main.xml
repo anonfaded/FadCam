@@ -20,4 +20,25 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 
+    <!-- Custom badge overlay for Remote tab -->
+    <TextView
+        android:id="@+id/remote_nav_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Soon"
+        android:textColor="@android:color/white"
+        android:textSize="10sp"
+        android:background="@drawable/new_badge_background"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
+        android:visibility="gone"
+        android:elevation="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintBottom_toBottomOf="@id/bottom_navigation"
+        app:layout_constraintStart_toStartOf="@id/bottom_navigation"
+        app:layout_constraintEnd_toEndOf="@id/bottom_navigation"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

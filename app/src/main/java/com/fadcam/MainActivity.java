@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -78,10 +79,12 @@ public class MainActivity extends AppCompatActivity {
                 viewPager.setCurrentItem(0);
             } else if (itemId == R.id.navigation_records) {
                 viewPager.setCurrentItem(1);
-            } else if (itemId == R.id.navigation_settings) {
+            } else if (itemId == R.id.navigation_remote) {
                 viewPager.setCurrentItem(2);
-            } else if (itemId == R.id.navigation_about) {
+            } else if (itemId == R.id.navigation_settings) {
                 viewPager.setCurrentItem(3);
+            } else if (itemId == R.id.navigation_about) {
+                viewPager.setCurrentItem(4);
             }
             return true;
         });
@@ -97,11 +100,30 @@ public class MainActivity extends AppCompatActivity {
                         bottomNavigationView.setSelectedItemId(R.id.navigation_records);
                         break;
                     case 2:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
                         break;
                     case 3:
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
+                        break;
+                    case 4:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_about);
                         break;
+                }
+            }
+        });
+
+        // Add custom badge to the Remote tab in BottomNavigationView
+        bottomNavigationView.post(() -> {
+            ViewGroup menuView = (ViewGroup) bottomNavigationView.getChildAt(0);
+            if (menuView != null && menuView.getChildCount() > 2) {
+                View remoteTab = menuView.getChildAt(2); // 0:home, 1:records, 2:remote
+                if (remoteTab instanceof ViewGroup) {
+                    // Prevent duplicate badge
+                    View existingBadge = ((ViewGroup) remoteTab).findViewById(R.id.badge_text);
+                    if (existingBadge == null) {
+                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) remoteTab, false);
+                        ((ViewGroup) remoteTab).addView(badge);
+                    }
                 }
             }
         });

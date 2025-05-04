@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- AppBarLayout (fixed, contains Toolbar) -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/gray"
+            app:title="@string/nav_remote"
+            app:titleCentered="true"
+            app:titleTextColor="@android:color/white"
+            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="center">
+
+        <ImageView
+            android:id="@+id/remote_icon"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/unknown_icon3"
+            android:contentDescription="@string/nav_remote"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/remote_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/remote_access_title"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:textColor="@color/amoled_text_primary" />
+
+        <TextView
+            android:id="@+id/remote_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/remote_coming_soon"
+            android:textSize="15sp"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/amoled_text_secondary" />
+
+        <TextView
+            android:id="@+id/remote_description"
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:text="@string/remote_feature_description"
+            android:textSize="14sp"
+            android:layout_marginTop="18dp"
+            android:textAlignment="center"
+            android:textColor="@color/amoled_text_secondary" />
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
