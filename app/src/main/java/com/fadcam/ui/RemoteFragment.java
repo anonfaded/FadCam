@@ -27,6 +27,6 @@ public class RemoteFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Toast.makeText(requireContext(), R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
-       
+
     }
 }

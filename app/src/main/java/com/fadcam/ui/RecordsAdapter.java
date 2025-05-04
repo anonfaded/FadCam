@@ -20,6 +20,12 @@ import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -376,6 +382,27 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
                 setForceIcons.invoke(menuPopupHelper, true);
 
+                // Add badge to 'Edit with FaditorX' menu item
+                MenuItem faditorXItem = popupMenu.getMenu().findItem(R.id.action_edit_faditorx);
+                if (faditorXItem != null) {
+                    String mainText = "Edit with FaditorX  ";
+                    String badgeText = "COMING SOON";
+                    SpannableString spannable = new SpannableString(mainText + badgeText);
+                    int badgeStart = mainText.length();
+                    int badgeEnd = badgeStart + badgeText.length();
+                    // Red background, white bold text, slightly smaller, rounded corners effect
+                    spannable.setSpan(new BackgroundColorSpan(0xFFE43C3C), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannable.setSpan(new ForegroundColorSpan(0xFFFFFFFF), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannable.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannable.setSpan(new RelativeSizeSpan(0.85f), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    // Dull the main text and icon
+                    spannable.setSpan(new ForegroundColorSpan(0xFFAAAAAA), 0, badgeStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    faditorXItem.setTitle(spannable);
+                    faditorXItem.setIcon(R.drawable.ic_edit_cut); // Ensure icon is set
+                    // Dull the icon by setting its tint to gray
+                    faditorXItem.setIconTintList(android.content.res.ColorStateList.valueOf(0xFFAAAAAA));
+                }
+
                 // *** Modify Info item title for temp files ***
                 boolean isTempFile = isTemporaryFile(videoItem);
                 if (infoItem != null) {
@@ -390,16 +417,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 try { popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu()); } catch (Exception e2) { return; }
             }
 
-            popupMenu.setOnMenuItemClickListener(item -> {
-                // ... (Existing delete, save, rename logic remains the same) ...
-                int itemId = item.getItemId();
-                if (itemId == R.id.action_rename) {
+            popupMenu.setOnMenuItemClickListener(menuItem -> {
+                int id = menuItem.getItemId();
+                if (id == R.id.action_edit_faditorx) {
+                    Toast.makeText(context, context.getString(R.string.remote_toast_coming_soon), Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                if (id == R.id.action_rename) {
                     showRenameDialog(videoItem); // Rename still allowed
                     return true;
-                } else if (itemId == R.id.action_delete) {
+                } else if (id == R.id.action_delete) {
                     confirmDelete(videoItem);
                     return true;
-                } else if (itemId == R.id.action_save) {
+                } else if (id == R.id.action_save) {
                     // *** START: Progress Handling for Save ***
                     final String filename = videoItem.displayName; // Get name for messages
                     final Uri uriToSave = videoItem.uri;
@@ -440,7 +470,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     });
                     // *** END: Progress Handling for Save ***
                     return true;
-                } else if (itemId == R.id.action_info) {
+                } else if (id == R.id.action_info) {
                     showVideoInfoDialog(videoItem);
                     return true;
                 }

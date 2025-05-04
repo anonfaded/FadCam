@@ -274,7 +274,7 @@
         <item>AMOLED Black</item>
     </string-array>
     <string name="remote_access_title">Remote Access/Control</string>
-    <string name="remote_toast_coming_soon">Coming soon!</string>
+    <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
     <string name="remote_feature_description">Pair FadCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
 </resources>
