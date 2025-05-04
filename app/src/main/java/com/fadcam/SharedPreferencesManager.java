@@ -236,4 +236,23 @@ public class SharedPreferencesManager {
         Log.d("SharedPrefs", "Saved selected back camera ID: " + cameraId);
     }
 
+    // --- Audio Settings ---
+    public int getAudioBitrate() {
+        return sharedPreferences.getInt(Constants.PREF_AUDIO_BITRATE, Constants.DEFAULT_AUDIO_BITRATE);
+    }
+    public void setAudioBitrate(int bitrate) {
+        sharedPreferences.edit().putInt(Constants.PREF_AUDIO_BITRATE, bitrate).apply();
+    }
+    public int getAudioSamplingRate() {
+        return sharedPreferences.getInt(Constants.PREF_AUDIO_SAMPLING_RATE, Constants.DEFAULT_AUDIO_SAMPLING_RATE);
+    }
+    public void setAudioSamplingRate(int samplingRate) {
+        sharedPreferences.edit().putInt(Constants.PREF_AUDIO_SAMPLING_RATE, samplingRate).apply();
+    }
+    public void resetAudioSettingsToDefault() {
+        setAudioBitrate(Constants.DEFAULT_AUDIO_BITRATE);
+        setAudioSamplingRate(Constants.DEFAULT_AUDIO_SAMPLING_RATE);
+    }
+    // --- End Audio Settings ---
+
 }

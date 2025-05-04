@@ -849,9 +849,13 @@ public class RecordingService extends Service {
             mediaRecorder.setVideoEncodingBitRate(bitRate);
             mediaRecorder.setVideoFrameRate(frameRate);
             if (recordAudio) {
-                mediaRecorder.setAudioEncodingBitRate(384000);
-                mediaRecorder.setAudioSamplingRate(48000);
+                int audioBitrate = sharedPreferencesManager.getAudioBitrate();
+                int audioSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
+                Log.i(TAG, "Audio settings (from prefs): bitrate=" + audioBitrate + ", samplingRate=" + audioSamplingRate);
+                mediaRecorder.setAudioEncodingBitRate(audioBitrate);
+                mediaRecorder.setAudioSamplingRate(audioSamplingRate);
                 mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                Log.i(TAG, "Audio settings (set on MediaRecorder): bitrate=" + audioBitrate + ", samplingRate=" + audioSamplingRate);
             }
             mediaRecorder.setVideoEncoder(codec.getEncoder());
             if (sharedPreferencesManager.getCameraSelection() == CameraType.FRONT) mediaRecorder.setOrientationHint(270); else mediaRecorder.setOrientationHint(90);

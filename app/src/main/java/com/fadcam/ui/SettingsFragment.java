@@ -248,6 +248,10 @@ public class SettingsFragment extends Fragment {
         audioSwitch = view.findViewById(R.id.audio_toggle_group); // Find audio switch
         MaterialButton reviewButton = view.findViewById(R.id.review_button);
         themeSpinner = view.findViewById(R.id.theme_spinner); // Initialize themeSpinner
+        MaterialButton audioSettingsButton = view.findViewById(R.id.audio_settings_button);
+        if (audioSettingsButton != null) {
+            audioSettingsButton.setOnClickListener(v -> showAudioSettingsDialog());
+        }
 
         // Initialize Storage UI elements
         storageLocationRadioGroup = view.findViewById(R.id.storage_location_radio_group);
@@ -2057,5 +2061,134 @@ public class SettingsFragment extends Fragment {
 
         Log.i(TAG_SETTINGS, "=== Final Supported FPS options for " + cameraType + " (ID: " + targetCameraId + "): " + finalSupportedRates + " ===");
         return finalSupportedRates;
+    }
+
+    // --- Audio Settings Dialog ---
+    private void showAudioSettingsDialog() {
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View dialogView = inflater.inflate(R.layout.dialog_audio_settings, null);
+        final TextView summaryText = dialogView.findViewById(R.id.audio_settings_summary);
+        final TextView bitrateLabel = dialogView.findViewById(R.id.audio_bitrate_label);
+        final TextView samplingRateLabel = dialogView.findViewById(R.id.audio_sampling_rate_label);
+        final android.widget.EditText bitrateInput = dialogView.findViewById(R.id.audio_bitrate_input);
+        final android.widget.EditText samplingRateInput = dialogView.findViewById(R.id.audio_sampling_rate_input);
+        final MaterialButton resetButton = dialogView.findViewById(R.id.audio_reset_button);
+        final TextView bitrateError = dialogView.findViewById(R.id.audio_bitrate_error);
+        final TextView samplingRateError = dialogView.findViewById(R.id.audio_sampling_rate_error);
+
+        int currentBitrate = sharedPreferencesManager.getAudioBitrate();
+        int currentSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
+        bitrateInput.setText(String.valueOf(currentBitrate));
+        samplingRateInput.setText(String.valueOf(currentSamplingRate));
+        summaryText.setText(getString(R.string.dialog_audio_settings_summary));
+        bitrateLabel.setText(getString(R.string.dialog_audio_bitrate_label));
+        samplingRateLabel.setText(getString(R.string.dialog_audio_sampling_rate_label));
+
+        // Helper for validation
+        class ValidationState {
+            boolean bitrateValid = true;
+            boolean samplingValid = true;
+        }
+        ValidationState validation = new ValidationState();
+
+        // Color helpers
+        int errorColor = ContextCompat.getColor(requireContext(), android.R.color.holo_red_light);
+        int validColor = ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark);
+        int normalColor = ContextCompat.getColor(requireContext(), android.R.color.transparent);
+
+        // Validation logic
+        Runnable validate = () -> {
+            String bitrateStr = bitrateInput.getText().toString().trim();
+            String samplingStr = samplingRateInput.getText().toString().trim();
+            validation.bitrateValid = false;
+            validation.samplingValid = false;
+
+            // Bitrate validation
+            try {
+                int bitrate = Integer.parseInt(bitrateStr);
+                if (bitrate >= 64000 && bitrate <= 384000) {
+                    bitrateError.setVisibility(View.GONE);
+                    bitrateInput.setBackgroundColor(validColor);
+                    validation.bitrateValid = true;
+                } else {
+                    bitrateError.setText(getString(R.string.dialog_audio_invalid_bitrate));
+                    bitrateError.setVisibility(View.VISIBLE);
+                    bitrateInput.setBackgroundColor(errorColor);
+                }
+            } catch (Exception e) {
+                bitrateError.setText(getString(R.string.dialog_audio_invalid_bitrate));
+                bitrateError.setVisibility(View.VISIBLE);
+                bitrateInput.setBackgroundColor(errorColor);
+            }
+
+            // Sampling rate validation
+            try {
+                int sampling = Integer.parseInt(samplingStr);
+                if (sampling == 44100 || sampling == 48000) {
+                    samplingRateError.setVisibility(View.GONE);
+                    samplingRateInput.setBackgroundColor(validColor);
+                    validation.samplingValid = true;
+                } else {
+                    samplingRateError.setText(getString(R.string.dialog_audio_invalid_sampling_rate));
+                    samplingRateError.setVisibility(View.VISIBLE);
+                    samplingRateInput.setBackgroundColor(errorColor);
+                }
+            } catch (Exception e) {
+                samplingRateError.setText(getString(R.string.dialog_audio_invalid_sampling_rate));
+                samplingRateError.setVisibility(View.VISIBLE);
+                samplingRateInput.setBackgroundColor(errorColor);
+            }
+        };
+
+        bitrateInput.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) { validate.run(); }
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+        samplingRateInput.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) { validate.run(); }
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+
+        resetButton.setOnClickListener(v -> {
+            bitrateInput.setText("192000");
+            samplingRateInput.setText("48000");
+        });
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        builder.setTitle(R.string.dialog_audio_settings_title);
+        builder.setView(dialogView);
+        builder.setPositiveButton(R.string.dialog_audio_save, null); // We'll override this
+        builder.setNegativeButton(R.string.dialog_audio_cancel, null);
+        final androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dlg -> {
+            final android.widget.Button saveBtn = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE);
+            validate.run();
+            saveBtn.setEnabled(validation.bitrateValid && validation.samplingValid);
+            // Live enable/disable
+            android.text.TextWatcher watcher = new android.text.TextWatcher() {
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    validate.run();
+                    saveBtn.setEnabled(validation.bitrateValid && validation.samplingValid);
+                }
+                public void afterTextChanged(android.text.Editable s) {}
+            };
+            bitrateInput.addTextChangedListener(watcher);
+            samplingRateInput.addTextChangedListener(watcher);
+            saveBtn.setOnClickListener(v -> {
+                validate.run();
+                if (validation.bitrateValid && validation.samplingValid) {
+                    int bitrate = Integer.parseInt(bitrateInput.getText().toString().trim());
+                    int sampling = Integer.parseInt(samplingRateInput.getText().toString().trim());
+                    sharedPreferencesManager.setAudioBitrate(bitrate);
+                    sharedPreferencesManager.setAudioSamplingRate(sampling);
+                    Log.i(TAG_SETTINGS, "Audio settings saved: bitrate=" + bitrate + ", samplingRate=" + sampling);
+                    dialog.dismiss();
+                }
+            });
+        });
+        dialog.show();
     }
 }

@@ -702,6 +702,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:minHeight="48dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/audio_settings_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_audio_settings"
+                    android:layout_marginStart="12dp"
+                    style="?attr/materialButtonOutlinedStyle"/>
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
