@@ -448,6 +448,68 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Video Bitrate Setting -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_bitrate"
+                    android:contentDescription="Bitrate Icon"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="2dp"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:text="@string/setting_video_bitrate_title" />
+                    <TextView
+                        android:id="@+id/bitrate_info_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"
+                        app:lineHeight="16sp"
+                        tools:text="Bitrate info and helper text here"/>
+                </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/video_bitrate_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_video_bitrate_settings"
+                    android:layout_marginStart="12dp"
+                    style="?attr/materialButtonOutlinedStyle"/>
+            </LinearLayout>
+            <TextView
+                android:id="@+id/bitrate_helper_textview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceCaption"
+                android:textColor="@color/colorPrimary"
+                android:paddingTop="2dp"
+                android:paddingBottom="8dp"
+                tools:text="Helper: Higher bitrate = better quality, larger file size. Too high/low may cause issues."/>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
             <!-- Video Orientation Setting -->
             <LinearLayout
                 android:layout_width="match_parent"

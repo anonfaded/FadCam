@@ -1462,8 +1462,14 @@ public class RecordingService extends Service {
 
 
     private int getVideoBitrate() {
-        int videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
-        Log.d(TAG, "Selected Video Bitrate: " + videoBitrate + " bps");
+        int videoBitrate;
+        if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
+            videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored as kbps, use bps
+            Log.d(TAG, "[DEBUG] Using custom video bitrate: " + videoBitrate + " bps");
+        } else {
+            videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+            Log.d(TAG, "[DEBUG] Using default video bitrate: " + videoBitrate + " bps");
+        }
         return videoBitrate;
     }
 

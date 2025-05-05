@@ -29,6 +29,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton; // Import RadioButton
 import android.widget.RadioGroup;  // Import RadioGroup
@@ -156,6 +158,9 @@ public class SettingsFragment extends Fragment {
         @Override public int hashCode() { return Objects.hash(id); }
     }
 
+    private TextView bitrateInfoTextView;
+    private TextView bitrateHelperTextView;
+
     // --- Activity Result Launcher Initialization & onCreate---
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -276,6 +281,9 @@ public class SettingsFragment extends Fragment {
             Log.e(TAG, "onCreateView: Critical - back_camera_lens_layout LinearLayout not found!");
         }
 
+        bitrateInfoTextView = view.findViewById(R.id.bitrate_info_textview);
+        bitrateHelperTextView = view.findViewById(R.id.bitrate_helper_textview);
+
         // Setup components
         setupLanguageSpinner(languageSpinner);
         readmeButton.setOnClickListener(v -> showReadmeDialog());
@@ -304,6 +312,11 @@ public class SettingsFragment extends Fragment {
         setupBackCameraLensSpinner();
         // Call initial UI update for the lens spinner based on current Front/Back selection
         updateBackLensSpinnerVisibility();
+
+        MaterialButton videoBitrateButton = view.findViewById(R.id.video_bitrate_button);
+        if (videoBitrateButton != null) {
+            videoBitrateButton.setOnClickListener(v -> showVideoBitrateDialog());
+        }
 
         return view;
     }
@@ -621,6 +634,7 @@ public class SettingsFragment extends Fragment {
         updateStorageLocationUI(); // Update storage UI on resume
         updateResolutionSpinner(); // Ensure spinner reflects current camera
         updateFrameRateSpinner(); // Ensure framerate reflects resolution
+        updateBitrateInfoAndHelper(); // Ensure bitrate info is updated
     }
 
 // Replace this entire method in SettingsFragment.java
@@ -788,6 +802,7 @@ public class SettingsFragment extends Fragment {
                     updateBackLensSpinnerVisibility(); // Show/Hide lens spinner
                     updateResolutionSpinner();         // Update resolutions for the new camera
                     updateFrameRateSpinner();          // Update framerates for the new camera
+                    updateBitrateInfoAndHelper();      // Update bitrate info for the new camera
                 } else {
                     Log.d(TAG, "Camera main selection didn't change.");
                     // Still need to update lens spinner visibility if fragment was just created
@@ -987,6 +1002,7 @@ public class SettingsFragment extends Fragment {
                         Log.i(TAG_SETTINGS, "Resolution preference saved: " + newWidth + "x" + newHeight);
                         // *** REMOVED call to updateFrameRateSpinner() ***
                         // The FPS spinner is now independent of resolution selection
+                        onResolutionOrFramerateChanged(); // Call the new method
                     }
                 } else {
                     Log.e(TAG_SETTINGS, "Error getting selected profile for resolution saving. Pos=" + position + ", Profiles size=" + (camcorderProfiles != null ? camcorderProfiles.size(): "null"));
@@ -1049,6 +1065,7 @@ public class SettingsFragment extends Fragment {
                         sharedPreferencesManager.setSpecificVideoFrameRate(currentSelectedCamera, newlySelectedRate);
                         Log.i(TAG, "FPS PREFERENCE SAVED for CameraType [" + currentSelectedCamera + "]: " + newlySelectedRate + "fps");
                         vibrateTouch(); // Add feedback on successful save
+                        onResolutionOrFramerateChanged(); // Call the new method
                     } else {
                         Log.d(TAG,"User selected same FPS as already saved for "+currentSelectedCamera+". No save needed.");
                     }
@@ -2222,4 +2239,163 @@ public class SettingsFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
+
+    // --- Video Bitrate Dialog ---
+    private void showVideoBitrateDialog() {
+        Context context = requireContext();
+        LayoutInflater inflater = LayoutInflater.from(context);
+        // Custom layout for dialog
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int padding = (int) (16 * context.getResources().getDisplayMetrics().density);
+        layout.setPadding(padding, padding, padding, padding);
+
+        final EditText input = new EditText(context);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint("1 - 200 Mbps");
+        int currentMbps = getBitrateCustomValue() / 1000;
+        input.setText(String.valueOf(currentMbps));
+        input.setSelection(input.getText().length());
+        // Limit input to max 200
+        input.setFilters(new android.text.InputFilter[]{
+            new android.text.InputFilter.LengthFilter(3),
+            (source, start, end, dest, dstart, dend) -> {
+                try {
+                    String result = dest.toString().substring(0, dstart) + source + dest.toString().substring(dend);
+                    if (result.isEmpty()) return null;
+                    int value = Integer.parseInt(result);
+                    if (value > 200) return "";
+                } catch (Exception ignored) {}
+                return null;
+            }
+        });
+
+        final TextView helper = new TextView(context);
+        helper.setTextSize(14);
+        helper.setPadding(0, padding / 2, 0, 0);
+        helper.setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray));
+        layout.addView(input);
+        layout.addView(helper);
+
+        // Helper update logic
+        Runnable updateHelper = () -> {
+            String text = input.getText().toString().trim();
+            int color = ContextCompat.getColor(context, android.R.color.darker_gray);
+            String msg = context.getString(R.string.bitrate_info_ok);
+            try {
+                int value = Integer.parseInt(text);
+                if (value < 3) {
+                    msg = context.getString(R.string.bitrate_info_warning_low);
+                    color = ContextCompat.getColor(context, android.R.color.holo_orange_light);
+                } else if (value > 100) {
+                    msg = context.getString(R.string.bitrate_info_warning_high);
+                    color = ContextCompat.getColor(context, android.R.color.holo_red_light);
+                } else {
+                    msg = context.getString(R.string.bitrate_info_ok);
+                    color = ContextCompat.getColor(context, android.R.color.holo_green_dark);
+                }
+            } catch (Exception e) {
+                msg = context.getString(R.string.bitrate_info_ok);
+            }
+            helper.setText(msg);
+            helper.setTextColor(color);
+        };
+        input.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) { updateHelper.run(); }
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+        updateHelper.run();
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                .setTitle(getString(R.string.setting_video_bitrate_title))
+                .setMessage(getString(R.string.bitrate_explanation_text))
+                .setView(layout)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    String text = input.getText().toString().trim();
+                    try {
+                        int value = Integer.parseInt(text);
+                        if (value < 1 || value > 200) {
+                            Toast.makeText(context, getString(R.string.bitrate_invalid, 1, 200), Toast.LENGTH_LONG).show();
+                        } else {
+                            setBitrateCustomValue(value * 1000); // Store as kbps
+                            setBitrateMode(true);
+                            updateBitrateInfoAndHelper();
+                            Toast.makeText(context, R.string.bitrate_save_success, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Toast.makeText(context, getString(R.string.bitrate_invalid, 1, 200), Toast.LENGTH_LONG).show();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.bitrate_reset_button, (dialog, which) -> {
+                    setBitrateMode(false);
+                    setBitrateCustomValue(getDefaultBitrate());
+                    updateBitrateInfoAndHelper();
+                    Toast.makeText(context, R.string.bitrate_reset_success, Toast.LENGTH_SHORT).show();
+                })
+                .show();
+    }
+
+    // --- Bitrate Preference Helpers ---
+    private boolean getBitrateMode() {
+        // false = default, true = custom
+        return sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false);
+    }
+    private void setBitrateMode(boolean custom) {
+        sharedPreferencesManager.sharedPreferences.edit().putBoolean("bitrate_mode_custom", custom).apply();
+    }
+    private int getBitrateCustomValue() {
+        return sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", getDefaultBitrate());
+    }
+    private String getBitrateCustomValueString() {
+        int v = getBitrateCustomValue();
+        return v > 0 ? String.valueOf(v) : "";
+    }
+    private void setBitrateCustomValue(int value) {
+        sharedPreferencesManager.sharedPreferences.edit().putInt("bitrate_custom_value", value).apply();
+    }
+    private int getDefaultBitrate() {
+        // Example: return based on resolution/framerate
+        CamcorderProfile profile = getCamcorderProfile(sharedPreferencesManager.getCameraSelection());
+        if (profile != null) return profile.videoBitRate / 1000; // Convert to kbps
+        return 16000; // Fallback 16 Mbps
+    }
+    private int getCurrentBitrate() {
+        return getBitrateMode() ? getBitrateCustomValue() : getDefaultBitrate();
+    }
+    // --- Call this in onCreateView and after resolution/framerate changes ---
+    // ...existing code...
+    private void onResolutionOrFramerateChanged() {
+        updateBitrateInfoAndHelper();
+    }
+    // In setupResolutionSpinner and setupFrameRateSpinner, after saving new value, call onResolutionOrFramerateChanged()
+    // ...existing code...
+    // Updates the bitrate info and helper text in the UI
+    private void updateBitrateInfoAndHelper() {
+        if (bitrateInfoTextView == null || bitrateHelperTextView == null) return;
+        int bitrate = getCurrentBitrate();
+        boolean isCustom = getBitrateMode();
+        String info;
+        int color = ContextCompat.getColor(requireContext(), android.R.color.darker_gray);
+        if (isCustom) {
+            info = getString(R.string.bitrate_info_custom, bitrate / 1000);
+            if (bitrate < 3000) {
+                bitrateHelperTextView.setText(getString(R.string.bitrate_info_warning_low));
+                color = ContextCompat.getColor(requireContext(), android.R.color.holo_orange_light);
+            } else if (bitrate > 100000) {
+                bitrateHelperTextView.setText(getString(R.string.bitrate_info_warning_high));
+                color = ContextCompat.getColor(requireContext(), android.R.color.holo_red_light);
+            } else {
+                bitrateHelperTextView.setText(getString(R.string.bitrate_info_ok));
+                color = ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark);
+            }
+        } else {
+            info = getString(R.string.bitrate_info_default, bitrate / 1000);
+            bitrateHelperTextView.setText(getString(R.string.bitrate_helper_text));
+        }
+        bitrateInfoTextView.setText(info);
+        bitrateHelperTextView.setTextColor(color);
+    }
+    // ...existing code...
 }

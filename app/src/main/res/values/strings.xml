@@ -297,4 +297,25 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
     <string name="video_orientation_landscape">Landscape</string>
+<!-- Video Bitrate Settings -->
+    <string name="setting_video_bitrate_title">Video Bitrate</string>
+    <string name="button_video_bitrate_settings">Set Bitrate</string>
+    <string name="bitrate_mode_default">Default</string>
+    <string name="bitrate_mode_custom">Custom</string>
+    <string name="bitrate_custom_label">Custom Bitrate:</string>
+    <string name="bitrate_custom_hint">e.g. 16,000</string>
+    <string name="bitrate_reset_button">Reset</string>
+    <string name="bitrate_helper_text">Bitrate controls video quality and file size. Higher = better quality, but larger files. Too high or too low may cause recording errors or poor quality. The recommended range depends on your device and selected resolution. The default value above is based on your current settings.</string>
+    <string name="bitrate_info_default">Default bitrate for this resolution and framerate: %1$s Mbps</string>
+    <string name="bitrate_info_custom">Custom bitrate: %1$s Mbps</string>
+    <string name="bitrate_info_warning_low">Warning: Bitrate is very low. Video quality may be poor.</string>
+    <string name="bitrate_info_warning_high">Warning: Bitrate is very high. Recording may fail or overheat device.</string>
+    <string name="bitrate_info_ok">Bitrate is in recommended range.</string>
+    <string name="bitrate_invalid">Invalid bitrate. Please enter a value between %1$s and %2$s Mbps.</string>
+    <string name="bitrate_save_success">Bitrate saved successfully.</string>
+    <string name="bitrate_reset_success">Bitrate reset to default.</string>
+    <string name="bitrate_current">Current: %1$s Mbps</string>
+    <string name="bitrate_unit">Mbps</string>
+    <string name="bitrate_explanation">What is bitrate?</string>
+    <string name="bitrate_explanation_text">Bitrate is the amount of data used per second of video. Higher bitrate means better quality but larger files. Too high or too low can cause problems. Default values are based on professional camera standards.</string>
 </resources>
