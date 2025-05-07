@@ -15,11 +15,6 @@ android {
         }
     }
 
-//    repositories {
-//        flatDir {
-//            dirs("libs")
-//        }
-//    }
 
     defaultConfig {
         applicationId = "com.fadcam"
