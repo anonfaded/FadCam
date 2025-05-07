@@ -15,6 +15,11 @@ android {
         }
     }
 
+//    repositories {
+//        flatDir {
+//            dirs("libs")
+//        }
+//    }
 
     defaultConfig {
         applicationId = "com.fadcam"
@@ -67,5 +72,10 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
 
-    implementation(libs.ffmpeg.kit.full)
+//    implementation(libs.ffmpeg.kit.full) // ffmpeg-kit got retired, now we need to use  a custom fork
+//    implementation("com.github.anonfaded:ffmpeg-kit:main-SNAPSHOT")
+    implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
+
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+
 }
