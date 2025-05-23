@@ -773,6 +773,7 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "onResume: Triggering stats update.");
         updateStats();
         updateTorchUI(isTorchOn);
+        updatePreviewVisibility(); // ADDED: Ensure preview visibility is correctly set on resume
     }
 
     // Inside HomeFragment.java
@@ -1477,9 +1478,6 @@ public class HomeFragment extends Fragment {
     private void updateRecordingSurface()
     {
         SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
-
-        tvPreviewPlaceholder.setVisibility(View.GONE);
-        textureView.setVisibility(View.VISIBLE);
 
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
         startIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
