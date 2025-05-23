@@ -832,13 +832,25 @@ public class HomeFragment extends Fragment {
                 @Override
                 public void onReceive(Context context, Intent i) {
                     if (!isAdded() || i == null) return;
-                    Log.d(TAG, "Received BROADCAST_ON_RECORDING_STARTED");
-                    // Get start time, call onRecordingStarted to update UI
+                    Log.d(TAG, "Received BROADCAST_ON_RECORDING_STARTED (New Handler)");
+                    
                     recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, SystemClock.elapsedRealtime());
-                    onRecordingStarted(true); // true for initial toast
+                    
+                    // Perform non-UI actions previously in onRecordingStarted(true)
+                    acquireWakeLock();
+                    setVideoBitrate();
+                    
+                    // Call the main UI state updater
+                    handleServiceStateUpdate(RecordingState.IN_PROGRESS); 
+
+                    // Handle the toast
+                    if(isAdded() && getContext() != null) { 
+                       vibrateTouch();
+                       Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
+                    }
                 }
             };
-            Log.d(TAG,"Initialized broadcastOnRecordingStarted receiver");
+            Log.d(TAG,"Initialized broadcastOnRecordingStarted receiver (New Handler)");
         }
         // Initialize Receiver for RESUME action
         if (broadcastOnRecordingResumed == null) {
@@ -1402,6 +1414,9 @@ public class HomeFragment extends Fragment {
             startIntent.removeExtra("SURFACE");
             Log.w(TAG,"Start: Surface not available now, sending intent without it.");
         }
+        // Add current torch state as an extra
+        startIntent.putExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, isTorchOn);
+        Log.d(TAG, "Start: Adding initial torch state to intent: " + isTorchOn);
 
         try {
             requireActivity().startService(startIntent);
@@ -1446,10 +1461,10 @@ public class HomeFragment extends Fragment {
                 Log.v(TAG,"Disabled: Camera Switch Button");
             } else Log.w(TAG,"buttonCamSwitch is null in disableInteractionButtons");
 
-            if (buttonTorchSwitch != null) {
-                buttonTorchSwitch.setEnabled(false); // Also disable torch during these states
-                Log.v(TAG,"Disabled: Torch Button");
-            } else Log.w(TAG,"buttonTorchSwitch is null in disableInteractionButtons");
+            // if (buttonTorchSwitch != null) {
+            //     buttonTorchSwitch.setEnabled(false); // Also disable torch during these states
+            //     Log.v(TAG,"Disabled: Torch Button");
+            // } else Log.w(TAG,"buttonTorchSwitch is null in disableInteractionButtons");
 
             Log.d(TAG,"Interaction buttons disabled.");
 
@@ -2344,13 +2359,19 @@ public class HomeFragment extends Fragment {
         if (isAdded() && getActivity() != null) {
             getActivity().runOnUiThread(() -> {
                 try {
+                    // Ensure buttonTorchSwitch is not null
+                    if (buttonTorchSwitch == null) {
+                        Log.w("TorchDebug", "updateTorchUI: buttonTorchSwitch is null, cannot update.");
+                        return;
+                    }
+
                     buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
                         requireContext(),
-                        R.drawable.ic_flashlight_on
+                        R.drawable.ic_flashlight_on // Icon itself might not need to change, selector handles tint
                     ));
-                    buttonTorchSwitch.setSelected(isOn);
-                    buttonTorchSwitch.setEnabled(true);
-                    Log.d("TorchDebug", "Torch UI updated, isOn: " + isOn);
+                    buttonTorchSwitch.setSelected(isOn); // This controls the visual feedback (e.g., tint)
+                    // DO NOT set enabled state here; it's handled by recording state UI methods.
+                    Log.d("TorchDebug", "Torch UI updated (selected state): " + isOn + ", Enabled: " + buttonTorchSwitch.isEnabled());
                 } catch (Exception e) {
                     Log.e("TorchDebug", "Error updating torch UI: " + e.getMessage());
                 }

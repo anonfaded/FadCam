@@ -155,6 +155,11 @@ public class RecordingService extends Service {
                 }
                 // Check for processing flag is NO LONGER DONE HERE. Allow start attempt.
                 Log.i(TAG,"Handling START_RECORDING intent. Service recording state is NONE.");
+
+                // Retrieve initial torch state from intent
+                isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
+                Log.d(TAG, "Initial torch state from intent: " + isRecordingTorchEnabled);
+
                 setupSurfaceTexture(intent);
                 setupRecordingInProgressNotification(); // Show notification immediately
                 startRecording(); // Attempt to start hardware recording

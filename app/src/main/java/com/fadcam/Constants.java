@@ -35,7 +35,7 @@ public abstract class Constants {
     public static final String BROADCAST_ON_RECORDING_STOPPED = "ON_RECORDING_STOPPED";
     public static final String BROADCAST_ON_RECORDING_STATE_REQUEST = "ON_RECORDING_STATE_REQUEST";
     public static final String BROADCAST_ON_RECORDING_STATE_CALLBACK = "ON_RECORDING_STATE_CALLBACK";
-    public static final String BROADCAST_ON_TORCH_STATE_CHANGED = "ON_TORCH_STATE_CHANGED";
+    public static final String BROADCAST_ON_TORCH_STATE_CHANGED = "com.fadcam.ON_TORCH_STATE_CHANGED";
     public static final String BROADCAST_ON_TORCH_STATE_REQUEST = "ON_TORCH_STATE_REQUEST";
     public static final String BROADCAST_CAMERA_ERROR = "CAMERA_ACCESS_ERROR";
 
@@ -48,8 +48,9 @@ public abstract class Constants {
 
     public static final String INTENT_EXTRA_RECORDING_STATE = "RECORDING_STATE";
     public static final String INTENT_EXTRA_RECORDING_START_TIME = "RECORDING_START_TIME";
-    public static final String INTENT_EXTRA_TORCH_STATE = "TORCH_STATE";
+    public static final String INTENT_EXTRA_TORCH_STATE = "com.fadcam.EXTRA_TORCH_STATE";
     public static final String INTENT_EXTRA_TORCH_STATE_CHANGED = "TORCH_STATE_CHANGED";
+    public static final String INTENT_EXTRA_INITIAL_TORCH_STATE = "com.fadcam.EXTRA_INITIAL_TORCH_STATE";
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
