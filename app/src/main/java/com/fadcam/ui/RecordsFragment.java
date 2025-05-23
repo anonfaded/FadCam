@@ -71,6 +71,7 @@ import android.content.IntentFilter;
 
 import java.util.Set; // Need Set import
 import java.util.HashSet; // Need HashSet import
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout; // ADD THIS IMPORT
 
 public class RecordsFragment extends Fragment implements
         RecordsAdapter.OnVideoClickListener,
@@ -87,6 +88,7 @@ public class RecordsFragment extends Fragment implements
     private static final String TAG = "RecordsFragment";
     private AlertDialog progressDialog; // Field to hold the dialog
     private RecyclerView recyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout; // ADD THIS FIELD
     private LinearLayout emptyStateContainer; // Add field for the empty state layout
     private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
@@ -285,40 +287,39 @@ public class RecordsFragment extends Fragment implements
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
 
-        // --- Perform ALL findViewById calls here ---
-        recyclerView = view.findViewById(R.id.recycler_view_records);
-        fabToggleView = view.findViewById(R.id.fab_toggle_view);
-        fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
-        emptyStateContainer = view.findViewById(R.id.empty_state_container);
-        loadingIndicator = view.findViewById(R.id.loading_indicator);
-        toolbar = view.findViewById(R.id.topAppBar);
-
-        // --- Basic safety checks ---
-        if (recyclerView == null || fabToggleView == null || fabDeleteSelected == null || toolbar == null) {
-            Log.e(TAG, "onViewCreated: CRITICAL - One or more essential views not found!");
-            // You might want to show an error message or prevent further setup
-            Toast.makeText(getContext(),"Layout Error", Toast.LENGTH_SHORT).show();
-            return;
+        // Initialize SharedPreferencesManager here if not done elsewhere or if specific to view lifecycle
+        if (sharedPreferencesManager == null && getContext() != null) {
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            Log.d(TAG, "SharedPreferencesManager initialized in onViewCreated.");
         }
 
-
-        // --- Setup Components using the found views ---
+        toolbar = view.findViewById(R.id.topAppBar);
         if (getActivity() instanceof AppCompatActivity) {
             ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
-            if (originalToolbarTitle == null) { originalToolbarTitle = toolbar.getTitle(); }
-            if (originalToolbarTitle == null || originalToolbarTitle.length() == 0){ originalToolbarTitle = getString(R.string.records_title); } // Use default/string res
-            // Initial toolbar state might need to be set depending on selection mode persistence logic
-            updateUiForSelectionMode(); // Set initial toolbar based on mode
         }
+        originalToolbarTitle = toolbar.getTitle(); // Store original title
 
-        // Initialize adapter and RecyclerView
-        setupRecyclerView(); // Safe to call now
+        loadingIndicator = view.findViewById(R.id.loading_indicator);
+        recyclerView = view.findViewById(R.id.recycler_view_records);
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); // INITIALIZE IT
+        emptyStateContainer = view.findViewById(R.id.empty_state_container);
+        fabToggleView = view.findViewById(R.id.fab_toggle_view);
+        fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
 
-        // Setup FAB listeners
-        setupFabListeners(); // Safe to call now
+        setupRecyclerView();
+        setupFabListeners();
+        updateFabIcons(); // Set initial FAB icon based on isGridView
 
-        // Set initial FAB icons
-        updateFabIcons();
+        // Setup SwipeRefreshLayout
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                Log.d(TAG, "Swipe to refresh triggered.");
+                loadRecordsList(); // Call your existing method to load/refresh records
+                // The setRefreshing(false) will be called at the end of loadRecordsList
+            });
+        } else {
+            Log.e(TAG, "SwipeRefreshLayout is null after findViewById!");
+        }
 
         // --- Initial Data Load ---
         // Load data *after* adapter is set up
@@ -337,24 +338,15 @@ public class RecordsFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: Fragment resumed. Forcing list reload.");
+        Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
 
         // Add null check for safety
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
 
-        loadRecordsList(); // Always reload the list when the fragment resumes
-
-        // Optional: Consider if a refresh is needed for other reasons on resume,
-        // e.g., if settings like sort order could have changed while away.
-        // For now, only refresh if flagged by completion.
-        // Log.d(TAG, "No refresh needed on resume based on flag.");
-        // **Crucial:** If no load happened, ensure the current view state is correct
-        // in case the adapter has data but the RecyclerView was hidden.
-        // if (getView() != null && recordsAdapter != null && recordsAdapter.getItemCount() > 0) {
-        // updateUiVisibility();
-        // }
+        Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume.");
+        loadRecordsList(); // RESTORED: Always reload the list when the fragment resumes
     }
 
     @Override
@@ -559,126 +551,135 @@ public class RecordsFragment extends Fragment implements
 
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
-        Log.d(TAG, "loadRecordsList: Starting.");
-        // 0. PREPARE UI FOR LOADING (Show spinner, hide content)
-        if (getView() == null) { // Extra safety check: ensure view is available
-            Log.e(TAG,"loadRecordsList called but fragment view is null.");
-            return;
+        Log.i(TAG, "LOG_LOAD_RECORDS: loadRecordsList START. Current sort: " + currentSortOption);
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisibility(View.VISIBLE);
+            Log.d(TAG, "LOG_LOAD_RECORDS: Loading indicator VISIBLE.");
+        }
+        if (recyclerView != null) {
+            recyclerView.setVisibility(View.GONE);
+            Log.d(TAG, "LOG_LOAD_RECORDS: RecyclerView GONE.");
+        }
+        if (emptyStateContainer != null) {
+            emptyStateContainer.setVisibility(View.GONE);
+            Log.d(TAG, "LOG_LOAD_RECORDS: Empty state GONE.");
         }
 
-        // Show loading, hide others - Perform UI updates immediately on the current thread
-        if (loadingIndicator != null) loadingIndicator.setVisibility(View.VISIBLE);
-        if (recyclerView != null) recyclerView.setVisibility(View.GONE);
-        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
-        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(View.GONE); // Hide delete fab during load
-        selectedVideosUris.clear(); // Clear any existing selection state
+        executorService.execute(() -> {
+            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Background execution START.");
+            final List<VideoItem> loadedItems = new ArrayList<>();
+            List<VideoItem> tempCacheVideos = getTempCacheRecordsList(); // Get temp videos first, as they might be relevant for both internal and SAF paths
+            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Fetched " + tempCacheVideos.size() + " temp cache videos.");
 
-        // Ensure executor service is ready
-        if (executorService == null || executorService.isShutdown()) {
-            Log.w(TAG, "loadRecordsList: ExecutorService was null or shutdown, re-initializing.");
-            executorService = Executors.newSingleThreadExecutor();
-        }
+            String safUriString = sharedPreferencesManager.getCustomStorageUri();
+            boolean loadedFromSaf = false;
 
-        executorService.submit(() -> {
-            Log.d(TAG, "loadRecordsList (Background Thread): Started loading files.");
-            // 1. Load from Primary Location (Internal or SAF)
-            List<VideoItem> primaryItems; // Declare list
-            String storageMode = sharedPreferencesManager.getStorageMode();
-            String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            Log.d(TAG, "loadRecordsList (Background Thread): Mode="+storageMode+", URI="+customUriString);
-
-            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
-                Uri treeUri = null;
-                boolean isValidUri = false;
+            if (safUriString != null) {
+                Log.d(TAG, "LOG_LOAD_RECORDS_BG: SAF URI configured: " + safUriString);
                 try {
-                    treeUri = Uri.parse(customUriString);
-                    isValidUri = true;
-                } catch (Exception e) { Log.e(TAG,"Error parsing custom storage URI string", e);}
-
-                if (isValidUri && hasSafPermission(treeUri)) {
-                    primaryItems = getSafRecordsList(treeUri);
-                } else {
-                    // Handle permission or invalid URI error (show toast/dialog later on UI thread if needed)
-                    if(isValidUri) Log.e(TAG, "Permission/Read error for custom SAF location: " + customUriString);
-                    else Log.e(TAG,"Invalid Custom URI string: " + customUriString);
-                    primaryItems = new ArrayList<>();
+                    Uri treeUri = Uri.parse(safUriString);
+                    if (hasSafPermission(treeUri)) {
+                        Log.i(TAG, "LOG_LOAD_RECORDS_BG: Valid SAF custom location. Loading ONLY from SAF.");
+                        List<VideoItem> safVideos = getSafRecordsList(treeUri);
+                        Log.d(TAG, "LOG_LOAD_RECORDS_BG: Fetched " + safVideos.size() + " SAF videos.");
+                        loadedItems.addAll(safVideos);
+                        loadedFromSaf = true;
+                    } else {
+                        Log.w(TAG, "LOG_LOAD_RECORDS_BG: No persistent permission for SAF URI: " + safUriString + ". Falling back to internal storage.");
+                        // Optionally, notify the user or clear the invalid preference here.
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "LOG_LOAD_RECORDS_BG: Error processing SAF URI: " + safUriString + ". Falling back to internal storage.", e);
                 }
-            } else { // Internal Storage mode or Custom mode with null URI
-                primaryItems = getInternalRecordsList();
+            } else {
+                Log.d(TAG, "LOG_LOAD_RECORDS_BG: No SAF URI configured. Using internal storage.");
             }
 
-            // 2. Load from Temp Cache Location
-            List<VideoItem> tempItems = getTempCacheRecordsList();
+            if (!loadedFromSaf) {
+                Log.i(TAG, "LOG_LOAD_RECORDS_BG: Loading from internal storage.");
+                List<VideoItem> internalVideos = getInternalRecordsList();
+                Log.d(TAG, "LOG_LOAD_RECORDS_BG: Fetched " + internalVideos.size() + " internal videos.");
+                loadedItems.addAll(internalVideos);
+            }
 
-            // 3. Combine Lists
-            List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
+            // Add temp cache videos to the primary list (SAF or Internal)
+            // Ensure no duplicates if a temp video somehow also got listed by primary storage methods (unlikely but good practice)
+            for(VideoItem tempVideo : tempCacheVideos){
+                if(!loadedItems.contains(tempVideo)){
+                    loadedItems.add(tempVideo);
+                    Log.d(TAG, "LOG_LOAD_RECORDS_BG: Added temp cache video " + tempVideo.displayName + " to final list.");
+                }
+            }
+            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Total items before sort (after potentially adding temp cache): " + loadedItems.size());
 
-            // 4. Sort the combined list
-            sortItems(combinedItems, currentSortOption);
+            sortItems(loadedItems, currentSortOption);
+            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Total items after sort: " + loadedItems.size());
 
-            // 5. Create final list copy for the UI thread
-            final List<VideoItem> finalItems = new ArrayList<>(combinedItems);
-            Log.d(TAG, "loadRecordsList (Background Thread): Loading complete. Total items: " + finalItems.size());
-
-
-            // 6. UPDATE UI ON COMPLETION (Post back to Main Thread)
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    Log.d(TAG, "loadRecordsList (UI Thread): Updating UI.");
-                    videoItems = finalItems; // Update the main list reference in the fragment
-
-                    // Update adapter data FIRST
+                    Log.i(TAG, "LOG_LOAD_RECORDS_UI: Updating UI on main thread. Item count to display: " + loadedItems.size());
+                    videoItems.clear();
+                    videoItems.addAll(loadedItems);
+                    Log.d(TAG, "LOG_LOAD_RECORDS_UI: videoItems list updated in fragment. Size: " + videoItems.size());
                     if (recordsAdapter != null) {
-                        // Clear adapter's processing state before feeding new data
-                        currentlyProcessingUris.clear(); // Also clear fragment's tracker on full reload
-                        recordsAdapter.updateProcessingUris(currentlyProcessingUris);
-                        recordsAdapter.updateRecords(videoItems);
-                        Log.d(TAG, "loadRecordsList (UI Thread): Adapter updated.");
+                        recordsAdapter.updateRecords(videoItems); // <--- Ensure this call happens
+                        // notifyDataSetChanged is called within updateRecords in the adapter, so not strictly needed here again if that's the case.
+                        // However, explicitly calling it here can be a safeguard or if adapter's updateRecords changes.
+                        // For now, let's assume updateRecords handles the notification.
+                        // recordsAdapter.notifyDataSetChanged(); // This might be redundant if updateRecords already does it.
+                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: Adapter updated with new records. Adapter item count: " + (recordsAdapter != null ? recordsAdapter.getItemCount() : "null adapter"));
                     } else {
-                        Log.e(TAG, "Adapter was null during UI update.");
-                        // Try to set it up again if it became null somehow
-                        setupRecyclerView();
-                        if (recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+                        Log.w(TAG, "LOG_LOAD_RECORDS_UI: recordsAdapter is NULL when trying to update and notify.");
                     }
-
-                    // Then update visibility based on the final data
                     updateUiVisibility();
-
-                    // Hide loading indicator LAST
-                    if (loadingIndicator != null) loadingIndicator.setVisibility(View.GONE);
-
-                    Log.i(TAG, "Records list updated. Total Count: " + videoItems.size());
+                    if (loadingIndicator != null) {
+                        loadingIndicator.setVisibility(View.GONE);
+                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: Loading indicator GONE.");
+                    }
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
+                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: SwipeRefreshLayout refreshing set to false.");
+                    }
                 });
             } else {
-                Log.e(TAG, "Activity was null when trying to update UI post-load.");
+                Log.w(TAG,"LOG_LOAD_RECORDS_BG: Activity is null, cannot update UI after loading records.");
             }
-        }); // End of submit lambda
-    } // End of loadRecordsList
+            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Background execution END.");
+        });
+        Log.d(TAG, "LOG_LOAD_RECORDS: loadRecordsList END (background task launched).");
+    }
 
 
     // Ensure updateUiVisibility is defined correctly:
     private void updateUiVisibility() {
-        if (getView() == null) return; // Check if fragment view exists
+        if (getView() == null) {
+            Log.w(TAG, "LOG_UI_VISIBILITY: getView() is null. Cannot update UI visibility.");
+            return;
+        }
 
-        // Get the current count directly from the adapter if possible, or fragment's list
-        boolean isEmpty = (recordsAdapter != null) ?
-                recordsAdapter.getItemCount() == 0 :
-                videoItems.isEmpty();
+        boolean isEmpty;
+        if (recordsAdapter != null) {
+            isEmpty = recordsAdapter.getItemCount() == 0;
+            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter found. Item count: " + recordsAdapter.getItemCount() + ". Is empty: " + isEmpty);
+        } else {
+            isEmpty = videoItems.isEmpty();
+            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter is NULL. videoItems list size: " + videoItems.size() + ". Is empty: " + isEmpty);
+        }
 
-        Log.d(TAG, "updateUiVisibility called. Is list empty? " + isEmpty);
+        Log.i(TAG, "LOG_UI_VISIBILITY: updateUiVisibility called. Final decision: isEmpty = " + isEmpty);
 
         if (isEmpty) {
             if (recyclerView != null) recyclerView.setVisibility(View.GONE);
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
-            Log.d(TAG,"Showing empty state.");
+            Log.d(TAG,"LOG_UI_VISIBILITY: Showing empty state (Recycler GONE, Empty VISIBLE).");
         } else {
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
             if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
-            Log.d(TAG,"Showing recycler view.");
+            Log.d(TAG,"LOG_UI_VISIBILITY: Showing recycler view (Empty GONE, Recycler VISIBLE).");
         }
-        // Ensure loading indicator is hidden
         if (loadingIndicator != null && loadingIndicator.getVisibility() == View.VISIBLE) {
             loadingIndicator.setVisibility(View.GONE);
+            Log.d(TAG,"LOG_UI_VISIBILITY: Loading indicator was visible, set to GONE.");
         }
     }
 
@@ -703,90 +704,92 @@ public class RecordsFragment extends Fragment implements
     }
 
     private List<VideoItem> getInternalRecordsList() {
+        Log.d(TAG, "LOG_GET_INTERNAL: getInternalRecordsList START.");
         List<VideoItem> items = new ArrayList<>();
         File recordsDir = getContext() != null ? getContext().getExternalFilesDir(null) : null;
         if (recordsDir == null) {
-            Log.e(TAG, "Could not get ExternalFilesDir for internal storage.");
-            return items; // Return empty list
+            Log.e(TAG, "LOG_GET_INTERNAL: Could not get ExternalFilesDir for internal storage.");
+            return items;
         }
         File fadCamDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
+        Log.d(TAG, "LOG_GET_INTERNAL: Checking directory: " + fadCamDir.getAbsolutePath());
 
         if (fadCamDir.exists() && fadCamDir.isDirectory()) {
+            Log.d(TAG, "LOG_GET_INTERNAL: Directory exists. Listing files.");
             File[] files = fadCamDir.listFiles();
             if (files != null) {
+                Log.d(TAG, "LOG_GET_INTERNAL: Found " + files.length + " files/dirs in internal storage.");
                 for (File file : files) {
-                    // Check for correct extension and ignore temp files if they somehow linger
                     if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) && !file.getName().startsWith("temp_")) {
                         long lastModifiedMeta = file.lastModified();
                         long timestampFromFile = Utils.parseTimestampFromFilename(file.getName());
-                        long finalTimestamp = lastModifiedMeta; // Default to metadata
+                        long finalTimestamp = lastModifiedMeta; 
 
-                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { // If metadata is bad, use filename timestamp
+                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { 
                             finalTimestamp = timestampFromFile;
-                            Log.d(TAG,"Internal: Used filename timestamp for " + file.getName());
                         } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
-                            Log.w(TAG,"Internal: Both metadata and filename parse failed for " + file.getName() + ", using current time as fallback.");
-                            finalTimestamp = System.currentTimeMillis(); // Fallback needed
-                        } else {
-                            // Use metadata by default if valid
-                            // Log.v(TAG,"Internal: Using metadata timestamp for " + file.getName());
+                            finalTimestamp = System.currentTimeMillis(); 
                         }
                         Uri uri = Uri.fromFile(file);
-                        Log.d(TAG, "Internal Added: " + file.getName() + " | Using Timestamp: " + finalTimestamp);
                         items.add(new VideoItem(uri, file.getName(), file.length(), finalTimestamp));
+                        Log.v(TAG, "LOG_GET_INTERNAL: Added internal item: " + file.getName());
+                    } else {
+                        Log.v(TAG, "LOG_GET_INTERNAL: Skipped item (not a valid video file or is temp): " + file.getName());
                     }
                 }
             } else {
-                Log.w(TAG, "Internal FadCam directory listFiles returned null.");
+                Log.w(TAG, "LOG_GET_INTERNAL: Internal FadCam directory listFiles returned null.");
             }
         } else {
-            Log.i(TAG, "Internal FadCam directory does not exist yet.");
+            Log.i(TAG, "LOG_GET_INTERNAL: Internal FadCam directory does not exist yet: " + fadCamDir.getAbsolutePath());
         }
-        Log.d(TAG, "Found " + items.size() + " internal records.");
+        Log.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " internal records. END.");
         return items;
     }
 
     private List<VideoItem> getSafRecordsList(Uri treeUri) {
+        Log.d(TAG, "LOG_GET_SAF: getSafRecordsList START for URI: " + treeUri);
         List<VideoItem> items = new ArrayList<>();
         Context context = getContext();
         if (context == null) {
-            Log.e(TAG,"Context is null in getSafRecordsList"); return items;
+            Log.e(TAG,"LOG_GET_SAF: Context is null."); return items;
         }
 
         DocumentFile dir = DocumentFile.fromTreeUri(context, treeUri);
 
         if (dir != null && dir.isDirectory() && dir.canRead()) {
+            Log.d(TAG, "LOG_GET_SAF: SAF Directory " + dir.getName() + " is accessible. Listing files.");
             try {
-                for (DocumentFile file : dir.listFiles()) {
-                    // Added checks for isFile and valid name
+                DocumentFile[] files = dir.listFiles();
+                Log.d(TAG, "LOG_GET_SAF: Found " + (files != null ? files.length : "null (listFiles failed?)") + " files/dirs in SAF location.");
+                for (DocumentFile file : files) {
                     if (file != null && file.isFile() && file.getName() != null &&
-                            (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || "video/mp4".equals(file.getType())) && // Check name or MIME
-                            !file.getName().startsWith("temp_")) // Ignore temporary files
+                            (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || "video/mp4".equals(file.getType())) && 
+                            !file.getName().startsWith("temp_")) 
                     {
                         long lastModifiedMeta = file.lastModified();
                         String name = file.getName();
                         long timestampFromFile = Utils.parseTimestampFromFilename(name);
-                        long finalTimestamp = lastModifiedMeta; // Default to metadata
+                        long finalTimestamp = lastModifiedMeta; 
 
-                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { // If metadata is bad (often 0 for SAF), use filename timestamp
+                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { 
                             finalTimestamp = timestampFromFile;
-                            Log.d(TAG,"SAF: Used filename timestamp for " + name);
                         } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
-                            Log.w(TAG,"SAF: Both metadata and filename parse failed for " + name + ", using current time as fallback.");
-                            finalTimestamp = System.currentTimeMillis(); // Fallback needed
-                        } else {
-                            // Use metadata by default if valid (it might be valid sometimes)
-                            // Log.v(TAG,"SAF: Using metadata timestamp for " + name);
+                            finalTimestamp = System.currentTimeMillis(); 
                         }
-
                         Uri uri = file.getUri();
-                        Log.d(TAG, "SAF Added: " + name + " | Using Timestamp: " + finalTimestamp);
                         items.add(new VideoItem(uri, name, file.length(), finalTimestamp));
+                        Log.v(TAG, "LOG_GET_SAF: Added SAF item: " + name);
+                    } else {
+                        if (file != null) {
+                             Log.v(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + file.getName() + " | isFile: " + file.isFile() + " | type: " + file.getType());
+                        } else {
+                             Log.v(TAG, "LOG_GET_SAF: Skipped a null DocumentFile entry in listFiles result.");
+                        }
                     }
                 }
-                Log.d(TAG, "Found " + items.size() + " SAF records in '" + dir.getName()+"'");
             } catch (Exception e) {
-                Log.e(TAG, "Error listing SAF files in " + treeUri, e);
+                Log.e(TAG, "LOG_GET_SAF: Error listing SAF files in " + treeUri, e);
                 if(getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         Toast.makeText(context, "Error reading custom location content.", Toast.LENGTH_SHORT).show();
@@ -794,11 +797,12 @@ public class RecordsFragment extends Fragment implements
                 }
             }
         } else {
-            Log.e(TAG, "Cannot read or access SAF directory: " + treeUri +
-                    ", Exists=" + (dir != null && dir.exists()) +
+            Log.e(TAG, "LOG_GET_SAF: Cannot read or access SAF directory: " + treeUri +
+                    ", Dir Exists=" + (dir != null && dir.exists()) +
                     ", IsDir=" + (dir != null && dir.isDirectory()) +
                     ", CanRead=" + (dir != null && dir.canRead()));
         }
+        Log.i(TAG, "LOG_GET_SAF: Found " + items.size() + " SAF records. END.");
         return items;
     }
 

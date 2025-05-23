@@ -64,14 +64,21 @@
 
 
     <!-- RecyclerView (scrolls under app bar) -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_records"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:clipToPadding="false"
-        android:paddingTop="8dp"
-        android:visibility="gone"/> <!-- Initially hidden -->
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_records"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="8dp"
+            android:visibility="gone"/> <!-- Initially hidden -->
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 
     <!-- FABs (remain the same) -->
