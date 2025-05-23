@@ -2029,27 +2029,21 @@ public class SettingsFragment extends Fragment {
         Log.d(TAG_SETTINGS, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": " + Arrays.toString(hardwareFpsRanges));
 
         // Filter the predefined options based on hardware ranges
+        Set<Integer> hardwareMaxFpsValues = new HashSet<>();
+        for (Range<Integer> range : hardwareFpsRanges) {
+            if (range != null && range.getUpper() != null) {
+                hardwareMaxFpsValues.add(range.getUpper());
+            }
+        }
+
         List<Integer> finalSupportedRates = new ArrayList<>();
         int[] predefinedOptions = getResources().getIntArray(R.array.video_framerate_options);
 
         for (int option : predefinedOptions) {
-            boolean supported = false;
-            for (Range<Integer> range : hardwareFpsRanges) {
-                // A predefined FPS option is supported if it's less than or equal to the MAX of *any* reported range.
-                // This is a common interpretation. Some might argue it needs to be >= min AND <= max.
-                // Let's stick to the simpler check first: Can the hardware potentially reach this rate?
-                if (range != null && range.getUpper() != null && option <= range.getUpper()) {
-                    // Optional stricter check: && option >= range.getLower()
-                    supported = true;
-                    Log.v(TAG_SETTINGS, "FPS Query: Option " + option + " IS potentially supported by range " + range);
-                    break; // No need to check other ranges for this option
-                }
-            }
-            if (supported) {
+            // An option is supported if it's one of the max values reported by hardware AND in our predefined list.
+            if (hardwareMaxFpsValues.contains(option)) {
                 finalSupportedRates.add(option);
-                Log.v(TAG_SETTINGS,"FPS Query: Adding option " + option + " to final list.");
-            } else {
-                Log.v(TAG_SETTINGS,"FPS Query: Option " + option + " is NOT supported by any hardware range upper bound.");
+                Log.v(TAG_SETTINGS,"FPS Query: Adding option " + option + " as it's a hardware max and predefined.");
             }
         }
 
