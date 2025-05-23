@@ -699,7 +699,9 @@ public class SettingsFragment extends Fragment {
 
                     // 4. Determine Display Name
                     StringBuilder displayNameBuilder = new StringBuilder();
-                    if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                    boolean isDefaultCamera = id.equals(Constants.DEFAULT_BACK_CAMERA_ID);
+
+                    if (isDefaultCamera) {
                         displayNameBuilder.append("Main");
                     } else {
                         displayNameBuilder.append("Camera");
@@ -710,21 +712,24 @@ public class SettingsFragment extends Fragment {
                         displayNameBuilder.append(" (Logical)");
                     }
 
-                    if (focalLength != null) {
-                        if (focalLength <= 22f) { // Example threshold for Ultra Wide
-                            displayNameBuilder.append(" (Ultra Wide)");
-                        } else if (focalLength >= 50f && focalLength <= 85f && !id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) { // Example for Portrait/Short Tele
-                             displayNameBuilder.append(" (Portrait/Zoom)");
-                        } else if (focalLength > 60f) { // Example threshold for Telephoto
-                            displayNameBuilder.append(" (Telephoto)");
-                        } else if (!id.equals(Constants.DEFAULT_BACK_CAMERA_ID) && !isLogicalCamera) {
-                            // Add a generic hint for non-main, physical cameras if no other hint matched
-                            // displayNameBuilder.append(" (Auxiliary)");
+                    // Only add focal length hints for non-default cameras
+                    if (!isDefaultCamera) {
+                        if (focalLength != null) {
+                            if (focalLength <= 22f) { // Example threshold for Ultra Wide
+                                displayNameBuilder.append(" (Ultra Wide)");
+                            } else if (focalLength >= 50f && focalLength <= 85f) { // Example for Portrait/Short Tele
+                                displayNameBuilder.append(" (Portrait/Zoom)");
+                            } else if (focalLength > 60f) { // Example threshold for Telephoto
+                                displayNameBuilder.append(" (Telephoto)");
+                            } else if (!isLogicalCamera) {
+                                // For non-default, non-logical, physical cameras without specific focal length match
+                                // displayNameBuilder.append(" (Auxiliary)"); // Kept commented as per previous logic
+                            }
+                        } else if (!isLogicalCamera) {
+                            // For non-default, non-logical, physical cameras with NO focal length
+                            // displayNameBuilder.append(" (Auxiliary)"); // Kept commented as per previous logic
                         }
-                    } else if (!isLogicalCamera && !id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
-                         //displayNameBuilder.append(" (Auxiliary)");
                     }
-
 
                     // 5. Add to the list
                     String finalDisplayName = displayNameBuilder.toString().trim().replaceAll("\\s+", " ");
