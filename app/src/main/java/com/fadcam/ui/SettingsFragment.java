@@ -1353,6 +1353,7 @@ public class SettingsFragment extends Fragment {
             case "tr": return 4;
             case "ps": return 5;
             case "in": return 6;
+            case "it": return 7; // Added for Italian
             default: return 0; // Default to English if unknown
         }
     }
@@ -1367,6 +1368,7 @@ public class SettingsFragment extends Fragment {
             case 4: return "tr";
             case 5: return "ps";
             case 6: return "in";
+            case 7: return "it"; // Added for Italian
             default: return "en"; // Default to English on error
         }
     }
