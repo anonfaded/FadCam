@@ -72,6 +72,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import androidx.cardview.widget.CardView; // *** ADD Import ***
 import com.fadcam.SharedPreferencesManager;
+import android.content.Intent;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.drawable.Drawable;
 
 
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -286,8 +290,20 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return allowGeneralInteractions;
         });
 
-        // Always set up the menu logic, but its trigger (menuButtonContainer) is enabled/disabled above
-        setupPopupMenu(holder, videoItem);
+        // INSTEAD, set a click listener on the menuButtonContainer
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setOnClickListener(v -> {
+                // Check allowMenuClick again inside the listener, as the state might have changed
+                // (though less likely if onBindViewHolder is efficient)
+                boolean isStillAllowMenuClick = !this.currentlyProcessingUris.contains(videoItem.uri) && !this.isSelectionModeActive;
+                if (isStillAllowMenuClick) {
+                    PopupMenu popup = setupPopupMenu(holder, videoItem);
+                    if (popup != null) {
+                        popup.show();
+                    }
+                }
+            });
+        }
 
     } // End onBindViewHolder
 
@@ -354,373 +370,100 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
 
     // --- Popup Menu and Actions (Major Updates Here) ---
-    private void setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
-        if (context == null || videoItem == null || videoItem.uri == null || holder.menuButtonContainer == null) {
-            // Disable click if invalid state
-            if (holder.menuButtonContainer != null) holder.menuButtonContainer.setOnClickListener(null);
-            if(holder.menuButton != null) holder.menuButton.setEnabled(false);
-            return;
+    private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
+        if (context == null) {
+            Log.e(TAG, "Context is null in setupPopupMenu. Cannot show menu.");
+            return null;
         }
-        if (holder.menuButton != null) holder.menuButton.setEnabled(true);
+        PopupMenu popup = new PopupMenu(context, holder.menuButtonContainer);
+        popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
 
-        // Use the container to handle clicks now, as it covers the button and dot
-        holder.menuButtonContainer.setOnClickListener(v -> {
-            PopupMenu popupMenu = new PopupMenu(context, holder.menuButtonContainer); // Anchor to container
-            MenuItem infoItem = null; // To store reference
-            String defaultInfoTitle = "Video Info"; // Store default
-
-            try {
-                popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu());
-                infoItem = popupMenu.getMenu().findItem(R.id.action_info); // Find the item
-                defaultInfoTitle = infoItem != null ? infoItem.getTitle().toString() : "Video Info"; // Get default title
-
-                // Force icons (keep existing try-catch)
-                Field field = PopupMenu.class.getDeclaredField("mPopup");
-                field.setAccessible(true);
-                Object menuPopupHelper = field.get(popupMenu);
-                Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-                Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-                setForceIcons.invoke(menuPopupHelper, true);
-
-                // Add badge to 'Edit with FaditorX' menu item
-                MenuItem faditorXItem = popupMenu.getMenu().findItem(R.id.action_edit_faditorx);
-                if (faditorXItem != null) {
-                    String mainText = "Edit with FaditorX  ";
-                    String badgeText = "COMING SOON";
-                    SpannableString spannable = new SpannableString(mainText + badgeText);
-                    int badgeStart = mainText.length();
-                    int badgeEnd = badgeStart + badgeText.length();
-                    // Red background, white bold text, slightly smaller, rounded corners effect
-                    spannable.setSpan(new BackgroundColorSpan(0xFFE43C3C), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    spannable.setSpan(new ForegroundColorSpan(0xFFFFFFFF), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    spannable.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    spannable.setSpan(new RelativeSizeSpan(0.85f), badgeStart, badgeEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    // Dull the main text and icon
-                    spannable.setSpan(new ForegroundColorSpan(0xFFAAAAAA), 0, badgeStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    faditorXItem.setTitle(spannable);
-                    faditorXItem.setIcon(R.drawable.ic_edit_cut); // Ensure icon is set
-                    // Dull the icon by setting its tint to gray
-                    faditorXItem.setIconTintList(android.content.res.ColorStateList.valueOf(0xFFAAAAAA));
+        // Attempt to force icons to be visible
+        try {
+            Field[] fields = popup.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                if ("mPopup".equals(field.getName())) {
+                    field.setAccessible(true);
+                    Object menuPopupHelper = field.get(popup);
+                    Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
+                    Method setForceShowIcon = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
+                    setForceShowIcon.invoke(menuPopupHelper, true);
+                    break;
                 }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error forcing menu icons to show.", e);
+        }
 
-                // *** Modify Info item title for temp files ***
-                boolean isTempFile = isTemporaryFile(videoItem);
-                if (infoItem != null) {
-                    infoItem.setTitle(isTempFile ? "⚠️ Video Info (Unprocessed)" : defaultInfoTitle);
-                } else {
-                    Log.w(TAG,"Could not find R.id.action_info menu item.");
-                }
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error setting up popup menu (inflation or reflection)", e);
-                // Fallback: Inflate without trying to modify/force icons
-                try { popupMenu.getMenuInflater().inflate(R.menu.menu_video_options, popupMenu.getMenu()); } catch (Exception e2) { return; }
+        // ----- Fix Start for this method(setupPopupMenu) (FaditorX styling) -----
+        MenuItem faditorXItem = popup.getMenu().findItem(R.id.action_edit_faditorx);
+        if (faditorXItem != null) {
+            // String baseTitle = context.getString(R.string.video_menu_edit_faditorx); // Assuming R.string.video_menu_edit_faditorx exists
+            // Let's get the title directly from the menu item, which might already have the base string from XML.
+            String baseTitle = faditorXItem.getTitle().toString();
+            if (baseTitle.endsWith(" ")) { // Remove trailing space if present from XML to avoid double spacing
+                baseTitle = baseTitle.substring(0, baseTitle.length() - 1);
             }
 
-            popupMenu.setOnMenuItemClickListener(menuItem -> {
-                int id = menuItem.getItemId();
-                if (id == R.id.action_edit_faditorx) {
-                    Toast.makeText(context, context.getString(R.string.remote_toast_coming_soon), Toast.LENGTH_SHORT).show();
-                    return true;
+            String comingSoonBadgeText = "(Coming Soon)";
+            String fullTitleText = baseTitle + " " + comingSoonBadgeText; // Add a space here for separation
+
+            SpannableString styledTitle = new SpannableString(fullTitleText);
+
+            // Style "Edit with FaditorX" part as gray
+            styledTitle.setSpan(new ForegroundColorSpan(Color.GRAY), 0, baseTitle.length(), SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            // Style "(Coming Soon)" badge part
+            int badgeStartIndex = baseTitle.length() + 1; // +1 for the space separator
+            int badgeEndIndex = fullTitleText.length();
+
+            styledTitle.setSpan(new BackgroundColorSpan(Color.RED), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            styledTitle.setSpan(new ForegroundColorSpan(Color.WHITE), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            // Optionally, make the badge text a bit smaller or bold
+            // styledTitle.setSpan(new RelativeSizeSpan(0.8f), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            // styledTitle.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            faditorXItem.setTitle(styledTitle);
+
+            // Gray out the icon
+            Drawable icon = faditorXItem.getIcon();
+            if (icon != null) {
+                Drawable mutedIcon = icon.mutate(); // Important to mutate before applying filter
+                mutedIcon.setColorFilter(new PorterDuffColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN));
+                faditorXItem.setIcon(mutedIcon);
+            }
+        }
+        // ----- Fix Ended for this method(setupPopupMenu) (FaditorX styling) -----
+
+        popup.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.action_delete) {
+                if (actionListener != null) {
+                    actionListener.onMoveToTrashStarted(videoItem.displayName);
+                    actionListener.onMoveToTrashRequested(videoItem);
                 }
-                if (id == R.id.action_rename) {
-                    showRenameDialog(videoItem); // Rename still allowed
                     return true;
-                } else if (id == R.id.action_delete) {
-                    confirmDelete(videoItem);
+            } else if (itemId == R.id.action_info) {
+                showVideoInfoDialog(videoItem);
                     return true;
-                } else if (id == R.id.action_save) {
-                    // *** START: Progress Handling for Save ***
-                    final String filename = videoItem.displayName; // Get name for messages
-                    final Uri uriToSave = videoItem.uri;
-
-                    // Notify fragment that save is starting
-                    actionListener.onSaveToGalleryStarted(filename);
-
-                    // Run actual save operation in the background
-                    executorService.submit(() -> {
-                        Uri resultUri = null; // To store the result URI
-
-                        if ("file".equals(uriToSave.getScheme())) {
-                            resultUri = saveFileUriToGallery(uriToSave);
-                        } else if ("content".equals(uriToSave.getScheme())) {
-                            resultUri = saveContentUriToGallery(uriToSave);
-                        } else {
-                            Log.w(TAG, "Unsupported URI scheme for saving to gallery: " + uriToSave.getScheme());
-                        }
-
-                        final boolean success = resultUri != null;
-                        final Uri finalResultUri = resultUri; // Effectively final for lambda
-
-                        // Notify fragment of completion on the main thread
-                        if(context instanceof Activity){ // Check context type
-                            ((Activity) context).runOnUiThread(() -> {
-                                String message = success ? context.getString(R.string.toast_video_saved) + " (Downloads/FadCam)"
-                                        : context.getString(R.string.toast_video_save_fail);
-                                actionListener.onSaveToGalleryFinished(success, message, finalResultUri);
-                            });
-                        } else {
-                            Log.e(TAG, "Context is not an Activity, cannot run on UI thread for save completion.");
-                            // Handle this case if necessary - maybe use a Handler with Looper.getMainLooper()
-                            new Handler(Looper.getMainLooper()).post(() -> {
-                                String message = success ? "Video Saved (Downloads/FadCam)" : "Save Failed";
-                                actionListener.onSaveToGalleryFinished(success, message, finalResultUri);
-                            });
-                        }
-                    });
-                    // *** END: Progress Handling for Save ***
+            } else if (itemId == R.id.action_rename) {
+                showRenameDialog(videoItem);
                     return true;
-                } else if (id == R.id.action_info) {
-                    showVideoInfoDialog(videoItem);
+            } else if (itemId == R.id.action_save) {
+                saveVideoToGalleryInternal(videoItem);
+                    return true;
+            } else if (itemId == R.id.action_edit_faditorx) {
+                Toast.makeText(context, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
                     return true;
                 }
                 return false;
             });
-
-            // Make sure to reset the title if the menu is dismissed without action,
-            // especially important if the viewholder might be recycled.
-            // (Though with unique menu instances per click, less critical here than in onBindViewHolder)
-            // popupMenu.setOnDismissListener(menu -> { /* Optional: Reset title if needed */ });
-
-            popupMenu.show();
-        });
+        // ----- Fix Ended for this method(setupPopupMenu) -----
+        return popup;
     }
 
-    // --- Action Implementations (Need URI Handling) ---
-
-    // Inside RecordsAdapter.java
-
-    /**
-     * Shows confirmation dialog and handles deletion for a single item.
-     * @param videoItem The item to potentially delete.
-     */
-    private void confirmDelete(VideoItem videoItem) {
-        if(context == null || videoItem == null || videoItem.uri == null) return;
-
-        new MaterialAlertDialogBuilder(context)
-                .setTitle(context.getString(R.string.dialog_del_title))
-                .setMessage(context.getString(R.string.dialog_del_notice) + "\n(" + videoItem.displayName + ")")
-                .setNegativeButton(context.getString(R.string.universal_cancel), null)
-                .setPositiveButton(context.getString(R.string.dialog_del_confirm), (dialog, which) -> {
-                    executorService.submit(() -> { // Perform deletion off the main thread
-                        boolean deleted = deleteVideoUri(videoItem.uri);
-
-                        // Update UI back on the main thread
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            if (deleted) {
-                                int position = findPositionByUri(videoItem.uri); // Find position *before* removing
-                                if (position != -1) {
-                                    if (position < records.size()){ // Bounds check before removing from adapter's list
-                                        Log.d(TAG, "confirmDelete: Removing item from adapter list at pos " + position);
-                                        records.remove(position);
-                                        notifyItemRemoved(position); // Notify adapter about the removal
-                                        // Maybe notify range changed if serial numbers matter, but can cause flicker
-                                        // notifyItemRangeChanged(position, getItemCount());
-                                    } else {
-                                        Log.e(TAG, "confirmDelete: Deletion OK, but pos "+position+" out of bounds. Size="+records.size());
-                                        notifyDataSetChanged(); // Fallback full refresh
-                                    }
-
-                                    // Remove from the fragment's selection list IF it was selected
-                                    selectedVideosUris.remove(videoItem.uri);
-                                    // *** REMOVE THIS LINE - Adapter doesn't control Fragment's FAB ***
-                                    // updateDeleteButtonVisibility();
-
-                                    // Signal fragment to check if the list became empty
-                                    if (actionListener != null) {
-                                        actionListener.onDeletionFinishedCheckEmptyState();
-                                        Log.d(TAG, "Called onDeletionFinishedCheckEmptyState listener.");
-                                    }
-
-                                } else {
-                                    // Item deleted but not found in list? List might have changed. Force refresh.
-                                    Log.w(TAG, "Item deleted from storage, but not found in adapter list (URI: " + videoItem.uri+"). Refreshing.");
-                                    notifyDataSetChanged();
-                                    if (actionListener != null) {
-                                        actionListener.onDeletionFinishedCheckEmptyState();
-                                    }
-                                }
-                            } else {
-                                // Deletion failed
-                                if(context!=null) Toast.makeText(context, "Failed to delete video.", Toast.LENGTH_SHORT).show();
-                            }
-                        }); // End runOnUiThread
-                    }); // End submit
-                })
-                .show();
-    } // End confirmDelete
-
-
-    private void saveToGallery(Uri videoUri) {
-        if (context == null) return;
-        Log.d(TAG, "Save to Gallery requested for URI: " + videoUri);
-
-        // Delegate based on URI scheme
-        if ("file".equals(videoUri.getScheme())) {
-            saveFileUriToGallery(videoUri);
-        } else if ("content".equals(videoUri.getScheme())) {
-            saveContentUriToGallery(videoUri);
-        } else {
-            Log.w(TAG, "Unsupported URI scheme for saving to gallery: " + videoUri.getScheme());
-            Toast.makeText(context, "Cannot save this type of file to gallery.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-
-    // Method for saving internal files (file:// URI) to gallery -> Downloads/FadCam
-// Changed return type to Uri (or null on failure)
-    private Uri saveFileUriToGallery(Uri fileUri) {
-        // ... (checks for context, fileUri, videoFile existence) ...
-        if (context == null || fileUri == null) return null;
-        File videoFile = new File(fileUri.getPath());
-        if (!videoFile.exists()){ return null; } // Return null if file doesn't exist
-
-        ContentResolver resolver = context.getContentResolver();
-        ContentValues values = new ContentValues();
-        // ... (set values for DISPLAY_NAME, MIME_TYPE, RELATIVE_PATH (to Downloads/FadCam)) ...
-        values.put(MediaStore.MediaColumns.DISPLAY_NAME, videoFile.getName());
-        values.put(MediaStore.MediaColumns.MIME_TYPE, "video/" + Constants.RECORDING_FILE_EXTENSION);
-
-        Uri collection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + File.separator + Constants.RECORDING_DIRECTORY);
-            collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        } else {
-            // Handle legacy - NOTE: This section NEEDS WRITE_EXTERNAL_STORAGE
-            File publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            if (publicDir == null) { Log.e(TAG, "Downloads directory null (pre-Q)"); return null; }
-            File fadCamPublicDir = new File(publicDir, Constants.RECORDING_DIRECTORY);
-            if (!fadCamPublicDir.exists() && !fadCamPublicDir.mkdirs()) { Log.e(TAG, "Failed create Downloads/FadCam (pre-Q)"); return null; }
-            File destFile = new File(fadCamPublicDir, videoFile.getName());
-            values.put(MediaStore.MediaColumns.DATA, destFile.getAbsolutePath()); // For MediaScanner
-            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-
-            try (InputStream in = new FileInputStream(videoFile); OutputStream out = new FileOutputStream(destFile)) {
-                byte[] buf = new byte[8192]; int len;
-                while ((len = in.read(buf)) > 0) { out.write(buf, 0, len); }
-                MediaScannerConnection.scanFile(context, new String[]{destFile.getAbsolutePath()}, new String[]{values.getAsString(MediaStore.MediaColumns.MIME_TYPE)}, null);
-                Log.i(TAG,"Saved legacy file to Downloads: " + destFile.getPath());
-                // Attempt metadata insert, ignore failure if direct write succeeded
-                try { resolver.insert(collection, values); } catch (Exception metaE){ Log.w(TAG,"Failed meta insert pre-Q", metaE);}
-                return Uri.fromFile(destFile); // Return the file URI of the saved copy
-            } catch (IOException e) {
-                Log.e(TAG,"Error during legacy file copy to Downloads", e);
-                if(destFile.exists()) destFile.delete(); // Clean up partial copy
-                return null; // Return null on failure
-            }
-        }
-
-        // --- Stream copy for API 29+ ---
-        Uri itemUri = null;
-        OutputStream out = null;
-        InputStream in = null;
-        try {
-            itemUri = resolver.insert(collection, values);
-            if (itemUri == null) throw new IOException("Failed to create MediaStore entry (Downloads API)");
-
-            out = resolver.openOutputStream(itemUri);
-            in = new FileInputStream(videoFile);
-
-            if (out == null || in == null) throw new IOException("Failed to open streams for MediaStore Downloads");
-
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = in.read(buf)) > 0) { out.write(buf, 0, len); }
-            // REMOVED Toast from here
-            Log.i(TAG, "Saved file:// URI to Downloads: " + itemUri);
-            return itemUri; // Return the new content URI on success
-
-        } catch (Exception e) {
-            // REMOVED Toast from here
-            Log.e(TAG, "Failed to save file URI to Downloads", e);
-            if (itemUri != null) { try { resolver.delete(itemUri, null, null); } catch (Exception ignored) {} }
-            return null; // Return null on failure
-        } finally {
-            // Close streams...
-            try { if (in != null) in.close(); } catch (IOException ignored) {}
-            try { if (out != null) out.close(); } catch (IOException ignored) {}
-        }
-    }
-
-
-    // Method for saving SAF files (content:// URI) to gallery -> Downloads/FadCam
-// Changed return type to Uri (or null on failure)
-    private Uri saveContentUriToGallery(Uri sourceUri) {
-        // ... (checks for context, sourceUri) ...
-        if (context == null || sourceUri == null) return null;
-        ContentResolver resolver = context.getContentResolver();
-        String displayName = getFileName(sourceUri);
-        // ... (fallback for displayName) ...
-        if (displayName == null) displayName = "FadCam_Video_" + System.currentTimeMillis() + "." + Constants.RECORDING_FILE_EXTENSION;
-
-        ContentValues values = new ContentValues();
-        // ... (set DISPLAY_NAME, MIME_TYPE) ...
-        values.put(MediaStore.MediaColumns.DISPLAY_NAME, displayName);
-        values.put(MediaStore.MediaColumns.MIME_TYPE, "video/" + Constants.RECORDING_FILE_EXTENSION);
-
-        Uri collection;
-        // API 29+ using Downloads collection
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + File.separator + Constants.RECORDING_DIRECTORY);
-            collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        }
-        // Pre-Q Handling (temp file copy)
-        else {
-            Log.w(TAG, "Using temp file strategy for pre-Q Content URI -> Public Downloads");
-            File tempInternalFile = new File(context.getCacheDir(), "temp_gallery_save_" + System.currentTimeMillis() + ".mp4");
-            try (InputStream inStream = resolver.openInputStream(sourceUri);
-                 OutputStream outStream = new FileOutputStream(tempInternalFile)) {
-                if(inStream == null) throw new IOException("Could not open input stream from source URI");
-                byte[] buf = new byte[8192]; int len;
-                while ((len = inStream.read(buf)) > 0) { outStream.write(buf, 0, len); }
-
-                // Call the file save method - its return value is what we need
-                Uri savedFileUri = saveFileUriToGallery(Uri.fromFile(tempInternalFile));
-                return savedFileUri; // Return result of the legacy save call
-
-            } catch (IOException e) {
-                Log.e(TAG,"Error copying content URI to temp file for legacy save", e);
-                return null; // Indicate failure
-            } finally {
-                if(tempInternalFile.exists()) tempInternalFile.delete();
-            }
-            // End pre-Q handling here
-        }
-
-        // --- Stream copy for API 29+ using MediaStore.Downloads ---
-        Uri itemUri = null;
-        OutputStream out = null;
-        InputStream in = null;
-        try {
-            itemUri = resolver.insert(collection, values);
-            if (itemUri == null) throw new IOException("Failed to create MediaStore entry (Downloads API) for content URI");
-
-            out = resolver.openOutputStream(itemUri);
-            in = resolver.openInputStream(sourceUri);
-
-            if (out == null || in == null) throw new IOException("Failed to open streams for content URI save to Downloads");
-
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = in.read(buf)) > 0) { out.write(buf, 0, len); }
-            // REMOVED Toast
-            Log.i(TAG, "Saved content:// URI to Downloads: " + itemUri);
-            return itemUri; // Return new URI on success
-
-        } catch (Exception e) {
-            // REMOVED Toast
-            Log.e(TAG, "Failed to save content URI to Downloads. URI: " + sourceUri, e);
-            if (itemUri != null) { try { resolver.delete(itemUri, null, null); } catch (Exception ignored) {} }
-            return null; // Return null on failure
-        } finally {
-            // Close streams...
-            try { if (in != null) in.close(); } catch (IOException ignored) {}
-            try { if (out != null) out.close(); } catch (IOException ignored) {}
-        }
-    }
-
-// In RecordsAdapter.java
-
+    // --- Restored Rename Logic ---
     private void showRenameDialog(VideoItem videoItem) {
         if (context == null) return;
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
@@ -733,23 +476,30 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         int dotIndex = currentName.lastIndexOf(".");
         String baseName = (dotIndex > 0) ? currentName.substring(0, dotIndex) : currentName;
         input.setText(baseName);
+        // Request focus and select all text for easy editing
+        if (input != null) {
         input.requestFocus();
-        input.selectAll();
+            // It's often better to post a delayed runnable for selectAll to ensure view is fully ready
+            input.post(() -> input.selectAll());
+        }
+
 
         builder.setView(dialogView);
-        builder.setPositiveButton("OK", (dialog, which) -> {
-            String newNameBase = input.getText().toString().trim();
+        builder.setPositiveButton(R.string.universal_ok, (dialog, which) -> { // Using R.string.universal_ok if it exists, otherwise "OK"
+            String newNameBase = "";
+            if (input != null && input.getText() != null) {
+                newNameBase = input.getText().toString().trim();
+            }
+
             if (!newNameBase.isEmpty()) {
-                String originalExtension = (dotIndex > 0) ? currentName.substring(dotIndex) : ("." + Constants.RECORDING_FILE_EXTENSION);
+                String originalExtension = (dotIndex > 0 && dotIndex < currentName.length() - 1) ? currentName.substring(dotIndex) : ("." + Constants.RECORDING_FILE_EXTENSION);
 
-                // Sanitize: Allow letters, numbers, hyphen, underscore. Replace others (including space).
                 String sanitizedBaseName = newNameBase
-                        .replaceAll("[^a-zA-Z0-9\\-_]", "_") // Replace disallowed chars with _
-                        .replaceAll("\\s+", "_")          // *** Replace one or more spaces with _ ***
-                        .replaceAll("_+", "_")            // Collapse multiple underscores
-                        .replaceAll("^_|_$", "");         // Trim leading/trailing underscores
+                        .replaceAll("[^a-zA-Z0-9\\-_]", "_")
+                        .replaceAll("\\s+", "_")
+                        .replaceAll("_+", "_")
+                        .replaceAll("^_|_$", "");
 
-                // Ensure it's not empty after sanitizing and trimming
                 if (sanitizedBaseName.isEmpty()) sanitizedBaseName = "renamed_video";
 
                 String newFullName = sanitizedBaseName + originalExtension;
@@ -757,7 +507,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 if (newFullName.equals(videoItem.displayName)) {
                     Toast.makeText(context, "Name hasn't changed", Toast.LENGTH_SHORT).show();
                 } else {
-                    renameVideo(videoItem, newFullName);
+                    // Perform rename on a background thread
+                    executorService.submit(() -> renameVideo(videoItem, newFullName));
                 }
             } else {
                 Toast.makeText(context, R.string.toast_rename_name_empty, Toast.LENGTH_SHORT).show();
@@ -767,94 +518,204 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         builder.show();
     }
 
-
     private void renameVideo(VideoItem videoItem, String newFullName) {
-        if(context == null) return;
+        if (context == null) return;
         Uri videoUri = videoItem.uri;
-        int position = findPositionByUri(videoUri); // Find current position
+        int position = findPositionByUri(videoUri);
 
         if (position == -1) {
             Log.e(TAG, "Cannot rename, item not found in adapter list: " + videoUri);
-            Toast.makeText(context, R.string.toast_rename_failed + " (Item not found)", Toast.LENGTH_SHORT).show();
+            if (context instanceof Activity) {
+                ((Activity) context).runOnUiThread(() -> Toast.makeText(context, context.getString(R.string.toast_rename_failed) + " (Item not found)", Toast.LENGTH_SHORT).show());
+            }
             return;
         }
 
         boolean renameSuccess = false;
-        Uri newUri = null; // Store the new URI after successful rename
+        Uri newUri = null;
 
         try {
             Log.d(TAG, "Attempting rename. URI: " + videoUri + ", Scheme: " + videoUri.getScheme() + ", New Name: " + newFullName);
 
-            if ("file".equals(videoUri.getScheme())) {
+            if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
                 File oldFile = new File(videoUri.getPath());
                 File parentDir = oldFile.getParentFile();
                 if (parentDir == null) throw new IOException("Cannot get parent directory for file URI");
                 File newFile = new File(parentDir, newFullName);
 
-                // Check if target file already exists (optional, renameTo might overwrite or fail)
-                if (newFile.exists() && !newFile.getAbsolutePath().equals(oldFile.getAbsolutePath())) {
-                    Log.w(TAG,"Rename target file exists: "+ newFile.getPath());
-                    // Decide: fail, allow overwrite, or auto-rename (e.g., add _1)? Let renameTo handle for now.
-                }
-
                 if (oldFile.renameTo(newFile)) {
                     renameSuccess = true;
-                    newUri = Uri.fromFile(newFile); // Get the new file URI
-                    Log.i(TAG,"Renamed file system file successfully.");
+                    newUri = Uri.fromFile(newFile);
+                    Log.i(TAG, "Renamed file system file successfully.");
                 } else {
-                    Log.e(TAG,"File.renameTo() failed for "+oldFile.getPath());
+                    Log.e(TAG, "File.renameTo() failed for " + oldFile.getPath());
                 }
             } else if ("content".equals(videoUri.getScheme())) {
                 newUri = DocumentsContract.renameDocument(context.getContentResolver(), videoUri, newFullName);
                 if (newUri != null) {
-                    renameSuccess = true; // renameDocument returns the *new* URI on success
-                    Log.i(TAG,"Renamed SAF document successfully. New URI: "+newUri);
+                    renameSuccess = true;
+                    Log.i(TAG, "Renamed SAF document successfully. New URI: " + newUri);
                 } else {
-                    Log.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + newFullName + "'. This might happen if the name already exists or other provider issues.");
-                    // Verify if rename actually happened (check if new name exists)
-                    DocumentFile checkDoc = DocumentFile.fromSingleUri(context, videoUri);
-                    if (checkDoc != null) {
-                        DocumentFile parent = checkDoc.getParentFile();
+                     Log.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + newFullName + "'.");
+                    // Check if rename actually happened (some providers might return null on success if name didn't change or already exists)
+                    DocumentFile checkDoc = DocumentFile.fromSingleUri(context, videoUri); // Check original URI, it might have been renamed in place
+                    if (checkDoc != null && newFullName.equals(checkDoc.getName())) {
+                        Log.w(TAG, "Rename check: File with new name exists under original URI. Assuming success.");
+                        newUri = checkDoc.getUri(); 
+                        renameSuccess = true;
+                    } else { // Check if a new file with the new name exists in the parent
+                        DocumentFile parent = checkDoc != null ? checkDoc.getParentFile() : null;
                         if (parent != null) {
                             DocumentFile renamedFile = parent.findFile(newFullName);
                             if (renamedFile != null && renamedFile.exists()) {
-                                Log.w(TAG, "Rename check: File with new name exists. Assuming success.");
-                                newUri = renamedFile.getUri(); // Get the URI of the (potentially pre-existing) file
+                                 Log.w(TAG, "Rename check: File with new name exists in parent. Assuming success.");
+                                 newUri = renamedFile.getUri();
                                 renameSuccess = true;
                             }
                         }
                     }
                 }
             } else {
-                Log.e(TAG,"Unsupported URI scheme for renaming: " + videoUri.getScheme());
+                Log.e(TAG, "Unsupported URI scheme for renaming: " + videoUri.getScheme());
             }
 
-            // --- Update Adapter Data if successful ---
             if (renameSuccess && newUri != null) {
-                // Create a *new* VideoItem with updated URI and name
-                // Size and LastModified might technically change slightly on some filesystems
-                // For simplicity, we'll update lastModified to now, keep size same unless re-queried.
+                final Uri finalNewUri = newUri; // Create an effectively final variable
                 VideoItem updatedItem = new VideoItem(
-                        newUri,
+                        finalNewUri,
                         newFullName,
-                        videoItem.size, // Re-query size for accuracy if needed: DocumentFile.fromSingleUri(context, newUri).length()
-                        System.currentTimeMillis() // Update timestamp to reflect rename time
+                        videoItem.size, // Ideally, re-query size from newUri if possible
+                        System.currentTimeMillis()
                 );
-
-                records.set(position, updatedItem); // Update item in the list
-                selectedVideosUris.remove(videoUri); // Remove old URI from selection if present
-                notifyItemChanged(position); // Notify adapter
+                if (context instanceof Activity) {
+                    ((Activity) context).runOnUiThread(() -> {
+                        if (position >= 0 && position < records.size()) {
+                           records.set(position, updatedItem);
+                            if (selectedVideosUris.contains(videoItem.uri)) { // If old URI was selected
+                                selectedVideosUris.remove(videoItem.uri);
+                                selectedVideosUris.add(finalNewUri); // Replace with new URI
+                            }
+                           notifyItemChanged(position);
                 Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
-            } else if (!renameSuccess){ // Only show failure toast if rename attempt actually failed
-                Log.e(TAG, "Failed to rename video: " + videoUri);
-                Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_SHORT).show();
+                        } else {
+                             Log.e(TAG, "Rename success but position " + position + " is invalid for records list size " + records.size());
+                             Toast.makeText(context, "Rename successful, but list update failed.", Toast.LENGTH_LONG).show();
+                             // Consider a full reload if this happens.
+                        }
+                    });
+                }
+            } else if (!renameSuccess) {
+                if (context instanceof Activity) {
+                    ((Activity) context).runOnUiThread(() -> Toast.makeText(context, R.string.toast_rename_failed, Toast.LENGTH_SHORT).show());
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Exception during rename for " + videoUri + " to " + newFullName, e);
-            Toast.makeText(context, R.string.toast_rename_failed + " (Error)", Toast.LENGTH_SHORT).show();
+            if (context instanceof Activity) {
+                ((Activity) context).runOnUiThread(() -> Toast.makeText(context, context.getString(R.string.toast_rename_failed) + " (Error)", Toast.LENGTH_SHORT).show());
+            }
         }
     }
 
+    // --- Restored Save to Gallery Logic (using actionListener for progress) ---
+    private void saveVideoToGalleryInternal(VideoItem videoItem) {
+        if (context == null || videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
+            if (actionListener != null) {
+                // Run on UI thread if context is available to show Toast
+                if (context instanceof Activity) {
+                     ((Activity)context).runOnUiThread(() -> actionListener.onSaveToGalleryFinished(false, "Invalid video data.", null));
+                } else { // No activity context, just log
+                     Log.e(TAG, "saveVideoToGalleryInternal: Invalid video data or context null before starting save.");
+                }
+            }
+            return;
+        }
+
+        final Uri sourceUri = videoItem.uri;
+        final String filename = videoItem.displayName;
+
+        if (actionListener != null) {
+            actionListener.onSaveToGalleryStarted(filename); // Notify fragment (UI thread)
+        }
+
+        executorService.submit(() -> {
+            boolean success = false;
+            Uri resultUri = null;
+            String message;
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File fadCamDir = new File(downloadsDir, Constants.RECORDING_DIRECTORY); // Use Constant
+            if (!fadCamDir.exists()) {
+                if (!fadCamDir.mkdirs()) {
+                    Log.e(TAG, "Failed to create FadCam directory in Downloads.");
+                    message = "Save Failed: Cannot create directory.";
+                    // ----- Fix Start for this method(saveVideoToGalleryInternal)-----
+                    final String finalMessageForLambda = message;
+                    // ----- Fix Ended for this method(saveVideoToGalleryInternal)-----
+                    // Notify listener on UI thread
+                    if (context instanceof Activity && actionListener != null) {
+                        ((Activity)context).runOnUiThread(() -> actionListener.onSaveToGalleryFinished(false, finalMessageForLambda, null));
+                    }
+                    return;
+                }
+            }
+            File destFile = new File(fadCamDir, filename);
+            int counter = 0;
+            // Handle potential name conflicts by appending (1), (2), etc.
+            while (destFile.exists()) {
+                counter++;
+                String nameWithoutExt = filename;
+                String extension = "";
+                int dotIndex = filename.lastIndexOf('.');
+                if (dotIndex > 0 && dotIndex < filename.length() - 1) {
+                    nameWithoutExt = filename.substring(0, dotIndex);
+                    extension = filename.substring(dotIndex);
+                }
+                destFile = new File(fadCamDir, nameWithoutExt + " (" + counter + ")" + extension);
+            }
+
+
+            try (InputStream in = context.getContentResolver().openInputStream(sourceUri);
+                 OutputStream out = new FileOutputStream(destFile)) {
+
+                if (in == null) throw new IOException("Failed to open input stream for " + sourceUri);
+
+                byte[] buf = new byte[8192]; // Increased buffer size
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                out.flush(); 
+                Utils.scanFileWithMediaStore(context, destFile.getAbsolutePath()); // Scan the new file
+                resultUri = Uri.fromFile(destFile); // Not entirely correct for MediaStore, but good for logs
+                success = true;
+                message = "Video saved to Downloads/FadCam";
+                Log.i(TAG, "Video saved successfully to: " + destFile.getAbsolutePath());
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving video to gallery", e);
+                message = "Save Failed: " + e.getMessage();
+                if (destFile.exists()) { // Clean up partial file
+                    destFile.delete();
+                }
+            }
+
+            final boolean finalSuccess = success;
+            final String finalMessage = message;
+            final Uri finalResultUri = success ? Uri.fromFile(destFile) : null; // Use actual destFile URI if successful for listener
+
+            if (context instanceof Activity && actionListener != null) {
+                 ((Activity)context).runOnUiThread(() -> actionListener.onSaveToGalleryFinished(finalSuccess, finalMessage, finalResultUri));
+            } else if (actionListener != null) { // Fallback if context not an activity (e.g. service context)
+                // This case is less likely for UI-triggered actions but good for robustness
+                // Directly call if Looper is available or handle differently
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                     actionListener.onSaveToGalleryFinished(finalSuccess, finalMessage, finalResultUri);
+                } else {
+                     new Handler(Looper.getMainLooper()).post(() -> actionListener.onSaveToGalleryFinished(finalSuccess, finalMessage, finalResultUri));
+                }
+            }
+        });
+    }
 
     // --- Updated showVideoInfoDialog ---
 
@@ -1184,29 +1045,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // --- Delete Helper (Must be accessible or copied here) ---
     // You need the `deleteVideoUri` method from RecordsFragment here or accessible
     // For simplicity, I'll include a copy here, ensure it's kept in sync or refactored to a Util class
+    /*
     private boolean deleteVideoUri(Uri uri) {
-        if(context == null || uri == null) return false;
-        Log.d(TAG, "Adapter attempting to delete URI: " + uri);
-        try {
-            if ("file".equals(uri.getScheme())) {
-                File file = new File(uri.getPath());
-                if (file.exists() && file.delete()) {
-                    Log.d(TAG, "Adapter deleted internal file: " + file.getName());
-                    return true;
-                } else { Log.e(TAG, "Adapter failed to delete internal file: " + uri.getPath()); return false; }
-            } else if ("content".equals(uri.getScheme())) {
-                if (DocumentsContract.deleteDocument(context.getContentResolver(), uri)) {
-                    Log.d(TAG, "Adapter deleted SAF document: " + uri); return true;
-                } else {
-                    DocumentFile doc = DocumentFile.fromSingleUri(context, uri);
-                    if(doc == null || !doc.exists()){
-                        Log.w(TAG,"Adapter: deleteDocument returned false, but file doesn't exist. Success. URI: "+ uri); return true;
-                    } else { Log.e(TAG, "Adapter failed to delete SAF document (deleteDocument returned false): " + uri); return false; }
-                }
-            } else { Log.w(TAG, "Adapter cannot delete URI with unknown scheme: " + uri.getScheme()); return false; }
-        } catch (SecurityException e) {
-            Log.e(TAG, "Adapter SecurityException deleting URI: " + uri, e);
-            Toast.makeText(context, "Permission denied deleting file.", Toast.LENGTH_SHORT).show(); return false;
-        } catch (Exception e) { Log.e(TAG, "Adapter Exception deleting URI: " + uri, e); return false; }
+        if (context == null || uri == null) return false;
+        Log.d(TAG, "Adapter attempting to delete URI: " + uri + " (This should be handled by Fragment now)");
+
+        // The actual file deletion logic (file vs content URI) was complex and is now centralized
+        // in RecordsFragment's moveToTrashVideoItem, which uses TrashManager.
+        // This method in the adapter is now redundant and potentially problematic if called.
+
+        // If for some reason this was called, it should delegate to the fragment or fail.
+        // For now, let's just log and return false to indicate it didn't handle it.
+        Log.e(TAG, "deleteVideoUri in adapter was called. This is deprecated. Deletion should be handled by the fragment.");
+        return false;
     }
+    */
 }

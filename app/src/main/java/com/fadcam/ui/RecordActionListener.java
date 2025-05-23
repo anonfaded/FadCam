@@ -26,5 +26,25 @@ public interface RecordActionListener {
      * listener (Fragment) to check if the list is now empty and update UI.
      */
     void onDeletionFinishedCheckEmptyState();
+
+    /**
+     * Called when a move to trash operation is requested.
+     * @param videoItem The video item being moved to trash.
+     */
+    void onMoveToTrashRequested(VideoItem videoItem);
+
+    /**
+     * Called when the "Move to Trash" operation starts.
+     * @param videoName The name of the video being moved to trash.
+     */
+    void onMoveToTrashStarted(String videoName);
+
+    /**
+     * Called when the "Move to Trash" operation finishes.
+     * @param success True if successful, false otherwise.
+     * @param message A message indicating the result.
+     */
+    void onMoveToTrashFinished(boolean success, String message);
+
     // Add more methods here for other actions if needed (e.g., onDeleteStarted/Finished)
 }

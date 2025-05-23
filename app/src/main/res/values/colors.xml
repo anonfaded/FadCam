@@ -11,9 +11,12 @@
     <color name="torch_off">#757575</color>
     <color name="torch_on">#FFB300</color>
     <color name="button_start">#4CAF50</color>
-    <color name="button_stop">#F44336</color>
+    <color name="button_stop">#FF0000</color>
+    <color name="button_pause">#FFA500</color>
+    <color name="button_record">#00FF00</color>
     <color name="danger_red">#D32F2F</color>
     <color name="danger_red_light">#F44336</color>
+    <color name="colorError">#D32F2F</color>
 
         <!-- AMOLED Theme Colors -->
     <color name="amoled_background">#000000</color>

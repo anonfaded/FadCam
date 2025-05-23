@@ -41,4 +41,20 @@
         app:layout_constraintStart_toStartOf="@id/bottom_navigation"
         app:layout_constraintEnd_toEndOf="@id/bottom_navigation"/>
 
+    <!-- ********************************************************** -->
+    <!-- *** ADD THIS FRAMELAYOUT FOR OVERLAY FRAGMENTS (like TrashFragment) *** -->
+    <!-- ********************************************************** -->
+    <FrameLayout
+        android:id="@+id/overlay_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:background="?android:colorBackground"
+        android:elevation="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+    <!-- ********************************************************** -->
+
 </androidx.constraintlayout.widget.ConstraintLayout>

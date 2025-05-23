@@ -94,6 +94,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import android.graphics.drawable.Drawable;
+import android.widget.ImageView; // <<< ADD IMPORT FOR ImageView
+import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
+import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 
 public class HomeFragment extends Fragment {
 
@@ -1197,6 +1200,24 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated: View hierarchy created. Initializing UI components.");
+
+        // Initialize SharedPreferencesManager
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+
+        // Initialize ExecutorService
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
+
+        initializeViews(view);
+        setupTextureView(view);
+        setupButtonListeners();
+        setupLongPressListener(); // For Easter eggs on title
+        setupClockLongPressListener(); // For display options on clock
+        setupAppLogoLongPressListener(view); // <<< CALL NEW METHOD
+
+        vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
         TorchService.setHomeFragment(this);
         
         // Add this debug code
@@ -1218,35 +1239,6 @@ public class HomeFragment extends Fragment {
         isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled(); // Initialize with saved state
         Log.d(TAG, "onViewCreated: Loaded isPreviewEnabled state = " + isPreviewEnabled);
         // --- END FIX ---
-
-        setupTextureView(view);
-
-        tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
-        tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
-
-        buttonStartStop = view.findViewById(R.id.buttonStartStop);
-        buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
-        buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
-
-        tvTip = view.findViewById(R.id.tvTip);
-        tvStats = view.findViewById(R.id.tvStats);
-
-        // Initialize views
-        cardClock = view.findViewById(R.id.cardClock);
-        tvClock = view.findViewById(R.id.tvClock);
-        tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
-        tvDateArabic = view.findViewById(R.id.tvDateArabic);
-
-        // Set up long press listener for clock widget
-        setupClockLongPressListener();
-
-
-
-
-        cardPreview = view.findViewById(R.id.cardPreview);
-        vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
-
-        isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
 
         resetTimers();
         copyFontToInternalStorage();
@@ -1509,11 +1501,13 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupClockLongPressListener() {
-        cardClock.setOnLongClickListener(v -> {
-            addWobbleAnimation(); // This will perform the wobble animation
-            showDisplayOptionsDialog(); // This will show the dialog to choose display options
-            return true; // Indicate the long press was handled
-        });
+        if (cardClock != null) {
+            cardClock.setOnLongClickListener(v -> {
+                addWobbleAnimation(); // This will perform the wobble animation
+                showDisplayOptionsDialog(); // This will show the dialog to choose display options
+                return true; // Indicate the long press was handled
+            });
+        }
     }
 
     private void addWobbleAnimation() {
@@ -2376,4 +2370,73 @@ public class HomeFragment extends Fragment {
             });
         }
     }
+
+    private void setupAppLogoLongPressListener(View view) {
+        ImageView appLogo = view.findViewById(R.id.ivAppTitle);
+        if (appLogo != null) {
+            appLogo.setOnLongClickListener(v -> {
+                performHapticFeedback();
+                Log.i(TAG, "App logo long-pressed. Navigating to TrashFragment manually.");
+                // ----- Fix Start for this method (setupAppLogoLongPressListener) -----
+                // Navigate to TrashFragment manually
+                try {
+                    TrashFragment trashFragment = new TrashFragment();
+                    FragmentManager fragmentManager = getParentFragmentManager(); // Use getParentFragmentManager
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                    // ----- Fix Start for this navigation block -----
+                    // Make the overlay container visible
+                    View overlayContainer = requireActivity().findViewById(R.id.overlay_fragment_container);
+                    if (overlayContainer != null) {
+                        overlayContainer.setVisibility(View.VISIBLE);
+                    } else {
+                        Log.e(TAG, "R.id.overlay_fragment_container not found in MainActivity! Cannot show TrashFragment.");
+                        Toast.makeText(getContext(), "Error opening trash (container not found).", Toast.LENGTH_SHORT).show();
+                        return true; // Consume click but don't proceed
+                    }
+
+                    fragmentTransaction.replace(R.id.overlay_fragment_container, trashFragment);
+                    // ----- Fix Ended for this navigation block -----
+                    fragmentTransaction.addToBackStack(null); 
+                    fragmentTransaction.commit();
+                } catch (Exception e) {
+                    Log.e(TAG, "Manual navigation to TrashFragment failed.", e);
+                    Toast.makeText(getContext(), "Error opening trash.", Toast.LENGTH_SHORT).show();
+                }
+                // ----- Fix Ended for this method (setupAppLogoLongPressListener) -----
+                return true; // Consume the long click
+            });
+        }
+    }
+
+    // ----- Fix Start for this class (HomeFragment) -----
+    private void initializeViews(View view) {
+        Log.d(TAG, "initializeViews: Finding UI elements.");
+        tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
+        tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
+        buttonStartStop = view.findViewById(R.id.buttonStartStop);
+        buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
+        buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
+        cardPreview = view.findViewById(R.id.cardPreview); // Assuming R.id.cardPreview exists
+        vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
+
+        // Clock related views
+        cardClock = view.findViewById(R.id.cardClock); // Corrected ID
+        tvClock = view.findViewById(R.id.tvClock);
+        tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
+        tvDateArabic = view.findViewById(R.id.tvDateArabic);
+
+        // Tip view
+        tvTip = view.findViewById(R.id.tvTip);
+
+        // Stats view
+        tvStats = view.findViewById(R.id.tvStats); // Assuming R.id.tvStats for video count/size
+
+        // Torch button (already initialized elsewhere, but good to have it consistently)
+        buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
+
+        // Initialize other views as needed here.
+        // textureView is handled by setupTextureView
+    }
+    // ----- Fix Ended for this class (HomeFragment) -----
 }

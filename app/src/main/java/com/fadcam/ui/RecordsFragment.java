@@ -44,6 +44,7 @@ import com.fadcam.SharedPreferencesManager; // Import your manager
 import com.fadcam.Utils;
 import com.fadcam.ui.VideoItem; // Import the new VideoItem class
 import com.fadcam.ui.RecordsAdapter; // Ensure adapter import is correct
+import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -86,7 +87,8 @@ public class RecordsFragment extends Fragment implements
     // ** NEW: Set to track URIs currently being processed **
     private Set<Uri> currentlyProcessingUris = new HashSet<>();
     private static final String TAG = "RecordsFragment";
-    private AlertDialog progressDialog; // Field to hold the dialog
+    private AlertDialog progressDialog; // Field to hold the dialog for Save to Gallery
+    private AlertDialog moveTrashProgressDialog; // Changed from ProgressDialog to AlertDialog
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout; // ADD THIS FIELD
     private LinearLayout emptyStateContainer; // Add field for the empty state layout
@@ -121,6 +123,99 @@ public class RecordsFragment extends Fragment implements
         } else {
             Log.w(TAG,"onDeletionFinishedCheckEmptyState called but view is null.");
         }
+    }
+
+    // *** NEW: Implement onMoveToTrashRequested from RecordActionListener ***
+    @Override
+    public void onMoveToTrashRequested(VideoItem videoItem) {
+        if (videoItem == null || videoItem.uri == null) {
+            Log.e(TAG, "onMoveToTrashRequested: Received null videoItem or URI.");
+            if (getContext() != null) {
+                Toast.makeText(getContext(), "Error: Cannot move null item to trash.", Toast.LENGTH_SHORT).show();
+            }
+            onMoveToTrashFinished(false, "Error: Null item provided.");
+            return;
+        }
+
+        Log.i(TAG, "Move to trash requested for: " + videoItem.displayName);
+
+        // Use a MaterialAlertDialogBuilder for confirmation
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Move to Trash?")
+                .setMessage("Move '" + videoItem.displayName + "' to the trash?" +
+                            "\n\nIt can be restored or permanently deleted from the trash later.")
+                .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
+                    onMoveToTrashFinished(false, "Move to trash cancelled.");
+                })
+                .setPositiveButton("Move to Trash", (dialog, which) -> {
+                    if (executorService == null || executorService.isShutdown()) {
+                        executorService = Executors.newSingleThreadExecutor();
+                    }
+                    executorService.submit(() -> {
+                        boolean success = moveToTrashVideoItem(videoItem);
+                        final String message = success ? "'" + videoItem.displayName + "' moved to trash." :
+                                                         "Failed to move '" + videoItem.displayName + "' to trash.";
+                        onMoveToTrashFinished(success, message);
+
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                if (success) {
+                                    loadRecordsList(); // Refresh the list
+                                }
+                                if (isInSelectionMode && selectedUris.contains(videoItem.uri)) {
+                                     selectedUris.remove(videoItem.uri);
+                                     if(selectedUris.isEmpty()) {
+                                         exitSelectionMode();
+                                     } else {
+                                         updateUiForSelectionMode();
+                                     }
+                                }
+                            });
+                        }
+                    });
+                })
+                .show();
+    }
+
+    @Override
+    public void onMoveToTrashStarted(String videoName) {
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            if (moveTrashProgressDialog != null && moveTrashProgressDialog.isShowing()) {
+                moveTrashProgressDialog.dismiss(); // Dismiss previous if any
+            }
+
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+            LayoutInflater inflater = LayoutInflater.from(getContext());
+            View dialogView = inflater.inflate(R.layout.dialog_progress, null); // Assuming R.layout.dialog_progress exists
+
+            TextView progressText = dialogView.findViewById(R.id.progress_text); // Assuming R.id.progress_text exists in dialog_progress.xml
+            if (progressText != null) {
+                progressText.setText("Moving '" + videoName + "' to trash...");
+            }
+
+            builder.setView(dialogView);
+            builder.setCancelable(false); // User cannot cancel this
+
+            moveTrashProgressDialog = builder.create();
+            if (!moveTrashProgressDialog.isShowing()) {
+                moveTrashProgressDialog.show();
+            }
+        });
+    }
+
+    @Override
+    public void onMoveToTrashFinished(boolean success, String message) {
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            if (moveTrashProgressDialog != null && moveTrashProgressDialog.isShowing()) {
+                moveTrashProgressDialog.dismiss();
+                moveTrashProgressDialog = null; // Clear reference
+            }
+            if (getContext() != null && message != null && !message.isEmpty()) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     // *** Register in onStart ***
@@ -1031,20 +1126,42 @@ public class RecordsFragment extends Fragment implements
     // --- deleteSelectedVideos (Corrected version from previous step) ---
     /** Handles deletion of selected videos */
     private void deleteSelectedVideos() {
-        final List<Uri> itemsToDelete = new ArrayList<>(selectedUris); // Use fragment's list
-        if(itemsToDelete.isEmpty()){ Log.d(TAG,"Deletion requested but selectedUris is empty."); exitSelectionMode(); return; }
+        final List<Uri> itemsToDeleteUris = new ArrayList<>(selectedUris); // Use fragment's list of URIs
+        if(itemsToDeleteUris.isEmpty()){ Log.d(TAG,"Deletion requested but selectedUris is empty."); exitSelectionMode(); return; }
 
-        Log.i(TAG,"Deleting "+itemsToDelete.size()+" selected videos...");
+        Log.i(TAG,"Moving "+itemsToDeleteUris.size()+" selected videos to trash...");
         exitSelectionMode(); // Exit selection mode UI first
 
         if (executorService == null || executorService.isShutdown()){ executorService = Executors.newSingleThreadExecutor(); }
-        executorService.submit(() -> { /* ... background deletion loop (calling deleteVideoUri) ... */
+        executorService.submit(() -> {
             int successCount = 0; int failCount = 0;
-            for(Uri uri: itemsToDelete) { if(deleteVideoUri(uri)) successCount++; else failCount++; }
-            Log.d(TAG,"BG Deletion Finished. Success: "+successCount+", Fail: "+failCount);
+            List<VideoItem> allCurrentItems = new ArrayList<>(videoItems); // Copy for safe iteration
+
+            for(Uri uri: itemsToDeleteUris) {
+                VideoItem itemToTrash = findVideoItemByUri(allCurrentItems, uri);
+                if (itemToTrash != null) {
+                    if (moveToTrashVideoItem(itemToTrash)) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } else {
+                    Log.w(TAG, "Could not find VideoItem for URI: " + uri + " to move to trash.");
+                    failCount++;
+                }
+            }
+            Log.d(TAG,"BG Trash Operation Finished. Success: "+successCount+", Fail: "+failCount);
             // Post results and UI refresh back to main thread
             final int finalSuccessCount = successCount; final int finalFailCount = failCount;
-            if(getActivity()!=null){ getActivity().runOnUiThread(()->{/* ... Show Toast ... */ loadRecordsList(); }); }
+            if(getActivity()!=null){
+                getActivity().runOnUiThread(()->{
+                    String message = (finalFailCount > 0) ?
+                             "Moved " + finalSuccessCount + " to trash, Failed " + finalFailCount :
+                             "Moved " + finalSuccessCount + " videos to trash.";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                    loadRecordsList(); // Refresh the list
+                });
+            }
         });
     }
     private void confirmDeleteAll() {
@@ -1063,23 +1180,37 @@ public class RecordsFragment extends Fragment implements
 
     // Inside RecordsFragment.java
     private void deleteAllVideos() {
-        List<VideoItem> itemsToDelete = new ArrayList<>(videoItems);
-        if (itemsToDelete.isEmpty()) { /* ... show toast, return ... */ return; }
+        List<VideoItem> itemsToTrash = new ArrayList<>(videoItems); // Get a copy of current items
+        if (itemsToTrash.isEmpty()) {
+             if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
+             return;
+        }
 
-        // Visually clear immediately (optimistic)
-        videoItems.clear();
-        if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
-        // *** FIX: Update visibility immediately after clearing for UI responsiveness ***
-        updateUiVisibility(); // Show empty state now
-        // --- End FIX ---
+        Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
+
+        // Optimistically update UI - this part might be removed if loadRecordsList is sufficient
+        // videoItems.clear();
+        // if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
+        // updateUiVisibility(); // Show empty state now
+
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
 
         executorService.submit(() -> {
             int successCount = 0;
             int failCount = 0;
-            for (VideoItem item : itemsToDelete) {
+            for (VideoItem item : itemsToTrash) {
                 if (item != null && item.uri != null) {
-                    if (deleteVideoUri(item.uri)) successCount++; else failCount++;
-                } else { failCount++; }
+                    if (moveToTrashVideoItem(item)) { // Pass the whole VideoItem
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } else {
+                    Log.w(TAG, "Encountered a null item or item with null URI in deleteAllVideos list.");
+                    failCount++;
+                }
             }
 
             // Final status update on main thread
@@ -1088,59 +1219,117 @@ public class RecordsFragment extends Fragment implements
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     String message = (finalFailCount > 0) ?
-                            "Deleted " + finalSuccessCount + ", Failed " + finalFailCount :
-                            "Deleted all " + finalSuccessCount + " videos.";
+                            "Moved " + finalSuccessCount + " to trash, Failed " + finalFailCount :
+                            "Moved all " + finalSuccessCount + " videos to trash.";
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-
-                    // *** Optional: Double-check UI visibility here, though should already be set ***
-                    // updateUiVisibility();
+                    loadRecordsList(); // Refresh the list from storage
                 });
             }
         });
     }
 
-    // Helper to delete a video via URI (Internal or SAF)
-    private boolean deleteVideoUri(Uri uri) {
-        Context context = getContext();
-        if(context == null || uri == null) return false;
+    // Helper to find VideoItem by URI from a list
+    private VideoItem findVideoItemByUri(List<VideoItem> items, Uri uri) {
+        if (uri == null || items == null) return null;
+        for (VideoItem item : items) {
+            if (item != null && uri.equals(item.uri)) {
+                return item;
+            }
+        }
+        return null;
+    }
 
-        Log.d(TAG, "Attempting to delete URI: " + uri);
-        try {
-            if ("file".equals(uri.getScheme())) {
-                File file = new File(uri.getPath());
-                if (file.exists() && file.delete()) {
-                    Log.d(TAG, "Deleted internal file: " + file.getName());
-                    return true;
-                } else {
-                    Log.e(TAG, "Failed to delete internal file: " + uri.getPath() + " Exists=" + file.exists());
-                    return false;
-                }
-            } else if ("content".equals(uri.getScheme())) {
-                if (DocumentsContract.deleteDocument(context.getContentResolver(), uri)) {
-                    Log.d(TAG, "Deleted SAF document: " + uri);
-                    return true;
-                } else {
-                    // Check if it was already deleted or if it's really an error
-                    DocumentFile doc = DocumentFile.fromSingleUri(context, uri);
-                    if(doc == null || !doc.exists()){
-                        Log.w(TAG,"deleteDocument returned false, but file doesn't exist. Treating as success. URI: "+ uri);
+    /**
+     * Moves a single VideoItem to the trash.
+     * This replaces the old deleteVideoUri functionality.
+     *
+     * @param videoItem The VideoItem to move to trash.
+     * @return true if the video was successfully moved to trash, false otherwise.
+     */
+    private boolean moveToTrashVideoItem(VideoItem videoItem) {
+        Context context = getContext();
+        if (context == null || videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
+            Log.e(TAG, "moveToTrashVideoItem: Invalid arguments (context, videoItem, URI, or displayName is null).");
+            return false;
+        }
+
+        Uri uri = videoItem.uri;
+        String originalDisplayName = videoItem.displayName;
+        // Determine if it's an SAF source. Content URIs are typically from SAF.
+        boolean isSafSource = "content".equals(uri.getScheme());
+
+        Log.i(TAG, "Attempting to move to trash: " + originalDisplayName + " (URI: " + uri + ", isSAF: " + isSafSource + ")");
+
+        if (TrashManager.moveToTrash(context, uri, originalDisplayName, isSafSource)) {
+            Log.i(TAG, "Successfully moved to trash: " + originalDisplayName);
+            return true;
+        } else {
+            Log.e(TAG, "Failed to move to trash: " + originalDisplayName);
+            // Optionally, show a specific toast for this failure if needed,
+            // but batch operations will show a summary.
+            // if(getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(context, "Failed to move '" + originalDisplayName + "' to trash.", Toast.LENGTH_SHORT).show());
+            return false;
+        }
+    }
+
+    // OLD deleteVideoUri - to be removed or commented out after confirming moveToTrashVideoItem is used everywhere
+    private boolean deleteVideoUri(Uri uri) {
+        // THIS METHOD IS NOW REPLACED BY moveToTrashVideoItem(VideoItem item)
+        // To use the new method, you need the VideoItem object, not just the URI,
+        // because we need the originalDisplayName and to determine if it's an SAF source.
+
+        // Find the VideoItem corresponding to this URI from your main list (videoItems)
+        VideoItem itemToTrash = null;
+        List<VideoItem> currentItems = new ArrayList<>(videoItems); // Use a copy to avoid issues if list is modified elsewhere
+        itemToTrash = findVideoItemByUri(currentItems, uri);
+
+        if (itemToTrash != null) {
+            Log.d(TAG, "Redirecting deleteVideoUri for " + uri + " to moveToTrashVideoItem.");
+            return moveToTrashVideoItem(itemToTrash);
+        } else {
+            Log.e(TAG, "deleteVideoUri called for URI not found in videoItems: " + uri + ". Attempting direct delete as fallback (SHOULD NOT HAPPEN).");
+             // Fallback to old deletion logic if item not found (should not happen ideally)
+            // This part should ideally be removed if moveToTrashVideoItem is robustly used.
+            Context context = getContext();
+            if(context == null) {
+                Log.e(TAG, "Fallback delete failed: context is null for URI: " + uri);
+                return false;
+            }
+            Log.w(TAG, "Fallback: Attempting direct delete for URI: " + uri + " (VideoItem not found)");
+            try {
+                if ("file".equals(uri.getScheme())) {
+                    File file = new File(uri.getPath());
+                    if (file.exists() && file.delete()) {
+                        Log.i(TAG, "Fallback: Deleted internal file: " + file.getName());
                         return true;
                     } else {
-                        Log.e(TAG, "Failed to delete SAF document (deleteDocument returned false): " + uri);
+                        Log.e(TAG, "Fallback: Failed to delete internal file: " + uri.getPath() + " Exists=" + file.exists());
+                        return false;
+                    }
+                } else if ("content".equals(uri.getScheme())) {
+                    if (DocumentsContract.deleteDocument(context.getContentResolver(), uri)) {
+                        Log.i(TAG, "Fallback: Deleted SAF document: " + uri);
+                        return true;
+                    } else {
+                        DocumentFile doc = DocumentFile.fromSingleUri(context, uri);
+                        if(doc == null || !doc.exists()){
+                            Log.w(TAG,"Fallback: deleteDocument returned false, but file doesn't exist or became null. Treating as success. URI: "+ uri);
+                            return true; // If it's gone, it's 'deleted'
+                        }
+                        Log.e(TAG, "Fallback: Failed to delete SAF document (deleteDocument returned false and file still exists): " + uri);
                         return false;
                     }
                 }
-            } else {
-                Log.w(TAG, "Cannot delete URI with unknown scheme: " + uri.getScheme());
+                 Log.w(TAG, "Fallback: Unknown URI scheme for direct delete: " + uri.getScheme());
+                return false;
+            } catch (SecurityException se) {
+                 Log.e(TAG, "Fallback: SecurityException deleting URI: " + uri, se);
+                if(getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(context, "Permission denied during fallback delete.", Toast.LENGTH_SHORT).show());
+                return false;
+            } catch (Exception e) {
+                Log.e(TAG, "Fallback: Exception deleting URI: " + uri, e);
                 return false;
             }
-        } catch (SecurityException e) {
-            Log.e(TAG, "SecurityException deleting URI: " + uri, e);
-            if(getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(context, "Permission denied deleting file.", Toast.LENGTH_SHORT).show());
-            return false;
-        } catch (Exception e) {
-            Log.e(TAG, "Exception deleting URI: " + uri, e);
-            return false;
         }
     }
 
