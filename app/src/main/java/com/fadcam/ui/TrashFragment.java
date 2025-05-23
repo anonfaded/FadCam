@@ -23,6 +23,9 @@ import java.util.List;
 import androidx.appcompat.app.AlertDialog;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.content.Intent;
+import android.net.Uri;
+import java.io.File;
 
 public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemInteractionListener {
 
@@ -35,6 +38,7 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     private Button buttonEmptyAllTrash;
     private MaterialToolbar toolbar;
     private TextView textViewEmptyTrash;
+    private View emptyTrashLayout;
     private AlertDialog restoreProgressDialog;
     private ExecutorService executorService;
 
@@ -65,6 +69,7 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         buttonDeleteSelectedPermanently = view.findViewById(R.id.button_delete_selected_permanently);
         buttonEmptyAllTrash = view.findViewById(R.id.button_empty_all_trash);
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
+        emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
 
         setupToolbar();
         setupRecyclerView();
@@ -220,10 +225,10 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     private void checkEmptyState() {
         if (trashItems.isEmpty()) {
             recyclerViewTrashItems.setVisibility(View.GONE);
-            textViewEmptyTrash.setVisibility(View.VISIBLE);
+            if (emptyTrashLayout != null) emptyTrashLayout.setVisibility(View.VISIBLE);
         } else {
             recyclerViewTrashItems.setVisibility(View.VISIBLE);
-            textViewEmptyTrash.setVisibility(View.GONE);
+            if (emptyTrashLayout != null) emptyTrashLayout.setVisibility(View.GONE);
         }
     }
 
@@ -231,6 +236,37 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     public void onItemSelectedStateChanged(boolean anySelected) {
         buttonRestoreSelected.setEnabled(anySelected);
         buttonDeleteSelectedPermanently.setEnabled(anySelected);
+    }
+
+    @Override
+    public void onPlayVideoRequested(TrashItem item) {
+        if (getContext() == null || item == null || item.getTrashFileName() == null) {
+            Toast.makeText(getContext(), "Cannot play video. Invalid item data.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        File trashDirectory = TrashManager.getTrashDirectory(getContext());
+        if (trashDirectory == null) {
+            Toast.makeText(getContext(), "Cannot access trash directory.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());
+
+        if (!trashedVideoFile.exists()) {
+            Log.e(TAG, "Trashed video file does not exist: " + trashedVideoFile.getAbsolutePath());
+            Toast.makeText(getContext(), "Video file not found in trash.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
+            intent.setData(Uri.fromFile(trashedVideoFile)); 
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting VideoPlayerActivity for trash item: " + trashedVideoFile.getAbsolutePath(), e);
+            Toast.makeText(getContext(), "Error playing video.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

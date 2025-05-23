@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,56 +9,83 @@
     android:layout_marginTop="4dp"
     android:layout_marginEnd="8dp"
     android:layout_marginBottom="4dp"
-    app:cardCornerRadius="4dp"
-    app:cardElevation="2dp">
+    app:cardBackgroundColor="@color/gray" 
+    app:cardElevation="2dp"
+    app:cardCornerRadius="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:paddingBottom="8dp">
+
+        <!-- Thumbnail (Could be a generic 'trashed file' icon or still attempt video thumb) -->
+        <ImageView
+            android:id="@+id/image_view_trash_thumbnail"
+            android:layout_width="100dp"
+            android:layout_height="75dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Trashed item thumbnail"
+            android:scaleType="centerCrop"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@drawable/ic_video_placeholder" /> <!-- Placeholder -->
 
         <CheckBox
             android:id="@+id/checkbox_trash_item_selected"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tv_trash_item_original_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-            tools:text="My Very Long Video Name That Might Get Cut Off.mp4"
-            app:layout_constraintStart_toEndOf="@+id/checkbox_trash_item_selected"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceListItem"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/image_view_trash_thumbnail"
+            app:layout_constraintTop_toTopOf="@id/image_view_trash_thumbnail"
+            app:layout_constraintEnd_toStartOf="@id/checkbox_trash_item_selected"
+            tools:text="Original Video File Name That Was Trashed.mp4" />
 
         <TextView
             android:id="@+id/tv_trash_item_date_trashed"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-            tools:text="Trashed: 2023-10-27 14:30"
-            app:layout_constraintStart_toStartOf="@+id/tv_trash_item_original_name"
-            app:layout_constraintEnd_toEndOf="@+id/tv_trash_item_original_name"
-            app:layout_constraintTop_toBottomOf="@+id/tv_trash_item_original_name" />
+            android:textAppearance="?attr/textAppearanceListItemSecondary"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@id/tv_trash_item_original_name"
+            app:layout_constraintTop_toBottomOf="@id/tv_trash_item_original_name"
+            app:layout_constraintEnd_toEndOf="@id/tv_trash_item_original_name"
+            tools:text="Trashed: 2023-10-27 10:30" />
 
         <TextView
             android:id="@+id/tv_trash_item_original_location"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-            tools:text="Original: Internal Storage"
-            app:layout_constraintStart_toStartOf="@+id/tv_trash_item_date_trashed"
-            app:layout_constraintEnd_toEndOf="@+id/tv_trash_item_date_trashed"
-            app:layout_constraintTop_toBottomOf="@+id/tv_trash_item_date_trashed" />
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@id/tv_trash_item_date_trashed"
+            app:layout_constraintTop_toBottomOf="@id/tv_trash_item_date_trashed"
+            app:layout_constraintEnd_toEndOf="@id/tv_trash_item_date_trashed"
+            tools:text="Original: Internal Storage" />
+
+        <!-- You can add a 3-dot menu button here if needed for individual item actions -->
+        <!-- For now, actions are handled by global buttons in TrashFragment -->
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView> 

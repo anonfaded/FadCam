@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -15,6 +16,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import com.bumptech.glide.Glide;
+import android.net.Uri;
+import java.io.File;
+import com.fadcam.utils.TrashManager;
+import android.util.Log;
+import android.widget.Toast;
 
 public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHolder> {
 
@@ -29,6 +36,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         void onItemSelectedStateChanged(boolean anySelected);
         void onRestoreStarted(int itemCount);
         void onRestoreFinished(boolean success, String message);
+        void onPlayVideoRequested(TrashItem item);
     }
 
     public interface OnTrashItemLongClickListener {
@@ -75,9 +83,11 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         TextView tvDateTrashed;
         TextView tvOriginalLocation;
         CheckBox checkBoxSelected;
+        ImageView imageViewThumbnail;
 
         TrashViewHolder(@NonNull View itemView) {
             super(itemView);
+            imageViewThumbnail = itemView.findViewById(R.id.image_view_trash_thumbnail);
             tvOriginalName = itemView.findViewById(R.id.tv_trash_item_original_name);
             tvDateTrashed = itemView.findViewById(R.id.tv_trash_item_date_trashed);
             tvOriginalLocation = itemView.findViewById(R.id.tv_trash_item_original_location);
@@ -90,11 +100,48 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             tvDateTrashed.setText("Trashed: " + sdf.format(new Date(item.getDateTrashed())));
             tvOriginalLocation.setText("Original: " + (item.isFromSaf() ? "SAF Storage" : "Internal Storage"));
 
+            if (imageViewThumbnail != null && context != null) {
+                File trashDirectory = TrashManager.getTrashDirectory(context);
+                if (trashDirectory != null && item.getTrashFileName() != null) {
+                    File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());
+                    if (trashedVideoFile.exists()) {
+                        Uri videoUri = Uri.fromFile(trashedVideoFile);
+                        Glide.with(context)
+                            .load(videoUri)
+                            .placeholder(R.drawable.ic_video_placeholder)
+                            .error(R.drawable.ic_error)
+                            .centerCrop()
+                            .into(imageViewThumbnail);
+                    } else {
+                        Log.w("TrashAdapter", "Trashed video file does not exist: " + trashedVideoFile.getAbsolutePath());
+                        Glide.with(context).load(R.drawable.ic_error).into(imageViewThumbnail); // Show error icon
+                    }
+                } else {
+                    Log.e("TrashAdapter", "Trash directory or trash file name is null.");
+                    Glide.with(context).load(R.drawable.ic_error).into(imageViewThumbnail); // Show error icon
+                }
+            }
+
             checkBoxSelected.setChecked(selectedItems.contains(item));
 
             itemView.setOnClickListener(v -> {
-                checkBoxSelected.toggle();
-                // Listener will be called by CheckBox's listener
+                if (selectedItems.isEmpty()) {
+                    if (interactionListener != null) {
+                        File trashDirectory = TrashManager.getTrashDirectory(context);
+                        if (trashDirectory != null && item.getTrashFileName() != null) {
+                            File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());
+                            if (trashedVideoFile.exists()) {
+                                interactionListener.onPlayVideoRequested(item); // item itself is fine, TrashFragment will reconstruct path
+                            } else {
+                                Toast.makeText(context, "Video file not found in trash.", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(context, "Cannot locate video file.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                } else {
+                    checkBoxSelected.toggle();
+                }
             });
 
             itemView.setOnLongClickListener(v -> {

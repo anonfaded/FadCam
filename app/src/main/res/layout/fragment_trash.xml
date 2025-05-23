@@ -10,7 +10,7 @@
         android:id="@+id/trash_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="@color/gray"
         app:titleTextColor="@android:color/white"
         app:navigationIconTint="@android:color/white"
         app:layout_constraintTop_toTopOf="parent" />
@@ -27,17 +27,37 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_trash" /> <!-- Placeholder for item layout -->
 
-    <TextView
-        android:id="@+id/empty_trash_text_view"
+    <!-- Empty State View (Centred) -->
+    <LinearLayout
+        android:id="@+id/empty_trash_layout" 
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Trash is empty."
-        android:textSize="18sp"
+        android:orientation="vertical"
+        android:gravity="center"
         android:visibility="gone" 
         app:layout_constraintTop_toBottomOf="@+id/trash_toolbar"
         app:layout_constraintBottom_toTopOf="@+id/trash_actions_layout"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/empty_trash_icon"
+            android:layout_width="72dp" 
+            android:layout_height="72dp"
+            android:src="@drawable/ic_no_videos"
+            app:tint="#80FFFFFF" 
+            android:contentDescription="Trash is empty icon"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/empty_trash_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trash is empty."
+            android:textSize="18sp"
+            android:textColor="#80FFFFFF" /> 
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/trash_actions_layout"
