@@ -92,6 +92,11 @@
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
     <string name="video_menu_rename">Rename</string>
+    <string name="video_menu_info">Info</string>
+    <string name="video_menu_copy_filename">Copy Filename</string>
+    <string name="video_menu_mark_viewed">Mark as Viewed</string>
+    <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
+    <string name="video_menu_edit_faditorx">Edit in FaditorX</string>
     <string name="records_title">Recordings</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>
@@ -111,7 +116,7 @@
     <string name="note_codec">Choose codec\n(Default: %1$s)</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
-    <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It’s worth the wait, just a little longer to process!</string>
+    <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It\'s worth the wait, just a little longer to process!</string>
     <string name="setting_location_title">Location Data</string>
     <string name="note_location">Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)</string>
     <string name="note_location_extra">Enable phone\'s GPS for adding latitude and longitude data to the watermark.</string>
@@ -123,7 +128,7 @@
     <string name="ui_preview_area">Preview Area</string>
     <string-array name="easter_eggs_array">
         <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You’ve found the secret button! It does nothing lol</item>
+        <item>You\'ve found the secret button! It does nothing lol</item>
         <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
         <item>Well, this is awkward now…</item>
         <item>What color is your Bugatti?</item>
@@ -193,6 +198,7 @@
     <string name="rename_video_title">Rename Video</string>
     <string name="rename_video_hint">Enter new name</string>
     <string name="universal_cancel">Cancel</string>
+    <string name="universal_ok">OK</string>
     <string name="toast_rename_name_empty">Name cannot be empty</string>
     <string name="toast_rename_failed">Failed to rename video</string>
     <string name="toast_rename_success">Video renamed successfully</string>
