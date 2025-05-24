@@ -48,7 +48,7 @@ public abstract class Constants {
 
     public static final String INTENT_EXTRA_RECORDING_STATE = "RECORDING_STATE";
     public static final String INTENT_EXTRA_RECORDING_START_TIME = "RECORDING_START_TIME";
-    public static final String INTENT_EXTRA_TORCH_STATE = "com.fadcam.EXTRA_TORCH_STATE";
+    public static final String INTENT_EXTRA_TORCH_STATE = "torch_state";
     public static final String INTENT_EXTRA_TORCH_STATE_CHANGED = "TORCH_STATE_CHANGED";
     public static final String INTENT_EXTRA_INITIAL_TORCH_STATE = "com.fadcam.EXTRA_INITIAL_TORCH_STATE";
 
@@ -95,5 +95,8 @@ public abstract class Constants {
     // Trash Feature Constants
     public static final String TRASH_DIRECTORY_NAME = "Trash";
     public static final String TRASH_METADATA_FILENAME = "trash_metadata.json";
+
+    // Request codes
+    public static final int REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF = 1001; // Added request code
 
 }

@@ -375,4 +375,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="deleted_item_thumbnail_description">Deleted item thumbnail</string>
     <string name="trash_empty_icon_description">Trash is empty icon</string>
     <string name="trash_empty_text">Trash is empty.</string>
+    <string name="essential_permissions_missing">Essential permissions are missing. Please grant them to proceed.</string>
+    <string name="records_search_hint">Search recordings…</string>
+    <string name="saf_permission_missing_dialog_instructions">SAF permission missing. Please grant access to the chosen folder.</string>
+    <string name="saf_permission_missing_dialog_title">SAF Permission Required</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">To save recordings to a custom location, FadCam needs permission to access the selected folder. Please grant access when prompted.</string>
+    <string name="grant_permission_button">Grant Permission</string>
 </resources>

@@ -100,11 +100,10 @@ public class RecordingService extends Service {
     private RecordingState recordingState = RecordingState.NONE;
     private boolean isProcessingWatermark = false; // Flag for FFmpeg processing
 
-    // Torch related (from previous implementations)
-    private CameraManager torchManager;
-    private String torchCameraId; // Might be used by torch logic
-    private boolean isTorchOn = false;
-    private boolean isRecordingTorchEnabled = false; // Tracks state of torch during recording
+    // ----- Fix Start for this class (RecordingService) -----
+    // Re-introduce isRecordingTorchEnabled to manage torch state *during an active recording session only*
+    private boolean isRecordingTorchEnabled = false;
+    // ----- Fix Ended for this class (RecordingService) -----
 
     private CameraManager cameraManager; // Primary camera manager
     private Handler backgroundHandler; // For camera operations
@@ -160,9 +159,11 @@ public class RecordingService extends Service {
                 recordingState = RecordingState.STARTING; // Set state to STARTING
                 // ----- Fix Ended for this method(onStartCommand)-----
 
-                // Retrieve initial torch state from intent
+                // ----- Fix Start for this method(onStartCommand)-----
+                // Re-introduce retrieval of initial torch state from intent
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
-                Log.d(TAG, "Initial torch state from intent: " + isRecordingTorchEnabled);
+                Log.d(TAG, "Initial torch state for recording session: " + isRecordingTorchEnabled);
+                // ----- Fix Ended for this method(onStartCommand)-----
 
                 setupSurfaceTexture(intent);
                 setupRecordingInProgressNotification(); // Show notification immediately
@@ -175,7 +176,10 @@ public class RecordingService extends Service {
             case Constants.INTENT_ACTION_CHANGE_SURFACE:       setupSurfaceTexture(intent); if (isRecording() || isPaused()) { createCameraPreviewSession(); } break;
             case Constants.INTENT_ACTION_STOP_RECORDING:       stopRecording(); break;
             case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST: Log.d(TAG,"Resp state request"); broadcastOnRecordingStateCallback(); if (!isWorkingInProgress()) { stopSelf(); } break;
+            // ----- Fix Start for this method(onStartCommand)-----
+            // Re-introduce handling of INTENT_ACTION_TOGGLE_RECORDING_TORCH
             case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH: toggleRecordingTorch(); break;
+            // ----- Fix Ended for this method(onStartCommand)-----
             default: Log.w(TAG, "Unknown action: " + action); break;
         }
         return START_STICKY;
@@ -1168,8 +1172,10 @@ public class RecordingService extends Service {
             try {
                 // Start the repeating request (includes preview and feeds recorder)
                 captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO); // Use auto mode
-                // Apply recording torch state IF it was toggled before session configured
+                // ----- Fix Start for this method(onConfigured)-----
+                // Re-introduce setting FLASH_MODE based on the session's torch state
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE, isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+                // ----- Fix Ended for this method(onConfigured)-----
 
                 session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
                 Log.d(TAG,"Repeating request started.");
@@ -1748,36 +1754,43 @@ public class RecordingService extends Service {
 
 
     // --- Torch Logic ---
+    // ----- Fix Start for this class (RecordingService) -----
+    // Re-introduce toggleRecordingTorch method
     private void toggleRecordingTorch() {
         if (captureRequestBuilder != null && captureSession != null && cameraDevice != null) {
-            try {
-                isRecordingTorchEnabled = !isRecordingTorchEnabled; // Toggle the state
-                Log.d(TAG,"Toggling recording torch. New state: "+ isRecordingTorchEnabled);
+            if (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED) {
+                try {
+                    isRecordingTorchEnabled = !isRecordingTorchEnabled; // Toggle the state for the session
+                    Log.d(TAG,"Toggling recording torch via CaptureRequest. New state: "+ isRecordingTorchEnabled);
 
-                captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
-                        isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+                    captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
+                            isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
 
-                // Apply the change by updating the repeating request
-                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
-                Log.d(TAG, "Recording torch repeating request updated.");
+                    // Apply the change by updating the repeating request
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                    Log.d(TAG, "Recording torch repeating request updated.");
 
-                // Broadcast state change TO THE UI if needed (though UI might request it directly?)
-                Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-                intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
-                sendBroadcast(intent);
+                    // Broadcast state change TO THE UI so it can update its torch button
+                    Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+                    intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
+                    sendBroadcast(intent);
 
-            } catch (CameraAccessException e) {
-                Log.e(TAG, "Could not toggle recording torch: " + e.getMessage());
-                isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
-            } catch(IllegalStateException e) {
-                Log.e(TAG,"Could not toggle recording torch - session/camera closed?", e);
-                isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
+                } catch (CameraAccessException e) {
+                    Log.e(TAG, "Could not toggle recording torch via CaptureRequest: " + e.getMessage());
+                    isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
+                } catch(IllegalStateException e) {
+                    Log.e(TAG,"Could not toggle recording torch via CaptureRequest - session/camera closed?", e);
+                    isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
+                }
+            } else {
+                Log.w(TAG, "Cannot toggle recording torch via CaptureRequest - not IN_PROGRESS or PAUSED. State: " + recordingState);
+                // If not recording, HomeFragment should handle torch directly via CameraManager.setTorchMode()
             }
         } else {
-            Log.w(TAG, "Cannot toggle recording torch - session, request builder, or camera device is null.");
+            Log.w(TAG, "Cannot toggle recording torch via CaptureRequest - session, request builder, or camera device is null.");
         }
     }
-    // --- End Torch Logic ---
+    // ----- Fix Ended for this class (RecordingService) -----
 
     // --- Status Check ---
     public boolean isRecording() {

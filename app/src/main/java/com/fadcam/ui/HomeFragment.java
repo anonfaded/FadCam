@@ -990,7 +990,9 @@ public class HomeFragment extends Fragment {
             buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)); // Show Play icon for RESUME
 
             buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
-            if(buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(false); // Disable TORCH when paused
+            // ----- Fix Start for this method(setUIForRecordingPaused_torchButton)-----
+            if(buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(getCameraWithFlashQuietly() != null); // Enable TORCH if available, even when paused
+            // ----- Fix Ended for this method(setUIForRecordingPaused_torchButton)-----
 
             // Manage preview and timers
             updatePreviewVisibility(); stopUpdatingInfo(); // Show placeholder/last frame, stop timers
@@ -1396,69 +1398,84 @@ public class HomeFragment extends Fragment {
     // --- Start Recording ---
     // Inside HomeFragment.java
     private void startRecording() {
-        if (!isAdded() || getActivity() == null) {
-            Log.w(TAG, "startRecording called but fragment/activity not attached.");
+        if (getContext() == null) {
+            Log.e(TAG, "Context is null, cannot start recording.");
+            return;
+        }
+        performHapticFeedback();
+
+        if (!areEssentialPermissionsGranted()) {
+            Log.w(TAG, "Essential permissions not granted. Cannot start recording.");
+            // ----- Fix Start for this method(startRecording_correctString)-----
+            Utils.showQuickToast(getContext(), getString(R.string.essential_permissions_missing));
+            // ----- Fix Ended for this method(startRecording_correctString)-----
+            requestEssentialPermissions(); // Re-trigger permission request
             return;
         }
 
-        // Prevent starting only if already actively recording/paused
-        if (recordingState != RecordingState.NONE) {
-            Log.w(TAG, "Start: Already recording/paused (State: " + recordingState + "). Ignoring request.");
-            Utils.showQuickToast(requireContext(), R.string.recording_already_active);
-            return;
-        }
-
-        Log.i(TAG, ">> startRecording user action");
-        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
-        Surface surfaceToSend = (surfaceTexture != null) ? new Surface(surfaceTexture) : null;
-
-        // *** FIX: Set initial preview visibility based on preference BEFORE sending intent ***
-        try {
-            if (isPreviewEnabled) { // Only show TextureView if preview IS enabled
-                if (textureView != null) textureView.setVisibility(View.VISIBLE);
-                if (tvPreviewPlaceholder != null) tvPreviewPlaceholder.setVisibility(View.GONE);
-                Log.d(TAG,"Start: Preview enabled, showing TextureView.");
-            } else { // Keep TextureView hidden if preview is DISABLED
-                if (textureView != null) textureView.setVisibility(View.INVISIBLE); // Or GONE
-                if (tvPreviewPlaceholder != null) {
-                    tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-                    // Optionally set text indicating recording started without preview
-                    // tvPreviewPlaceholder.setText("Recording starting...");
-                }
-                Log.d(TAG,"Start: Preview disabled, keeping TextureView hidden.");
+        // Check for SAF permission before starting recording if custom storage is selected
+        String storageMode = sharedPreferencesManager.getStorageMode();
+        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+            String customUriString = sharedPreferencesManager.getCustomStorageUri();
+            if (customUriString == null || !hasSafPermission(Uri.parse(customUriString))) {
+                // ----- Fix Start for this method(startRecording_safPermissionString)-----
+                Utils.showQuickToast(getContext(), getString(R.string.saf_permission_missing_dialog_instructions));
+                // ----- Fix Ended for this method(startRecording_safPermissionString)-----
+                // Guide user to grant permission via settings or a dedicated button
+                // Potentially open a dialog or navigate to settings fragment
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(getString(R.string.saf_permission_missing_dialog_title))
+                        .setMessage(getString(R.string.saf_permission_missing_dialog_message_for_start_recording))
+                        .setPositiveButton(getString(R.string.grant_permission_button), (dialog, which) -> {
+                            // Intent to open document tree, user selects directory
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                            // Optionally, you can suggest a starting URI
+                            // intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, someDefaultUri);
+                            startActivityForResult(intent, Constants.REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF);
+                        })
+                        .setNegativeButton(getString(R.string.universal_cancel), null)
+                        .show();
+                return;
             }
-            // --- END FIX ---
+        }
 
-            // Disable buttons temporarily while intent is processed
-            disableInteractionButtons();
-            Log.d(TAG, "Start: Buttons temporarily disabled.");
-        } catch(Exception e) { Log.e(TAG,"Err setting initial UI state for start",e);}
+        if (isMyServiceRunning(RecordingService.class)) {
+            Log.w(TAG, "Start requested, but service appears to be already running or starting. Current state: " + recordingState);
+            // Query the service for its actual state if unsure
+            Intent queryIntent = new Intent(getContext(), RecordingService.class);
+            queryIntent.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
+            ContextCompat.startForegroundService(getContext(), queryIntent);
+            // UI should update based on the broadcast from the service
+            return; // Don't try to start again if it might be running
+        }
 
+        Log.d(TAG, "startRecording: Starting RecordingService.");
+        Intent serviceIntent = new Intent(getContext(), RecordingService.class);
+        serviceIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
 
-        Intent startIntent = new Intent(getActivity(), RecordingService.class);
-        startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
-        if (surfaceToSend != null) {
-            startIntent.putExtra("SURFACE", surfaceToSend);
-            Log.d(TAG,"Start: Surface available, adding to intent.");
+        // ----- Fix Start for this method(startRecording_passTorchState)-----
+        // Pass current torch state (from HomeFragment's perspective) to the service
+        // The service will use this to set the initial FLASH_MODE in its CaptureRequest if it starts successfully.
+        Log.d(TAG, "Passing initial torch state to service: " + isTorchOn);
+        serviceIntent.putExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, isTorchOn);
+        // ----- Fix Ended for this method(startRecording_passTorchState)-----
+
+        // Pass the surface if preview is enabled and surface is valid
+        if (isPreviewEnabled && textureViewSurface != null && textureViewSurface.isValid()) {
+            Log.d(TAG, "Preview enabled, passing valid surface to service.");
+            serviceIntent.putExtra("SURFACE", textureViewSurface);
         } else {
-            startIntent.removeExtra("SURFACE");
-            Log.w(TAG,"Start: Surface not available now, sending intent without it.");
+            Log.w(TAG, "Preview disabled or surface invalid. Service will start without preview surface.");
+            serviceIntent.putExtra("SURFACE", (Surface) null); // Explicitly pass null
         }
-        // Add current torch state as an extra
-        startIntent.putExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, isTorchOn);
-        Log.d(TAG, "Start: Adding initial torch state to intent: " + isTorchOn);
 
-        try {
-            requireActivity().startService(startIntent);
-            Log.i(TAG, "Sent START_RECORDING intent. Waiting for service confirmation...");
-            // UI waits for BROADCAST_ON_RECORDING_STARTED
-        } catch (Exception e) {
-            Log.e(TAG, "Error sending START_RECORDING intent: ", e);
-            Toast.makeText(getContext(), "Error starting recording", Toast.LENGTH_SHORT).show();
-            // Reset UI immediately if intent sending fails
-            resetUIButtonsToIdleState();
-            Log.d(TAG, "startRecording intent failed: Reset UI.");
-        }
+        ContextCompat.startForegroundService(getContext(), serviceIntent);
+        // UI state changes will be handled by broadcast receivers
+        // setUIForRecordingActive(); // Move UI update to onRecordingStarted broadcast receiver
+        Log.d(TAG, "startRecording: RecordingService start initiated.");
     }
 
     // Inside HomeFragment.java
@@ -2159,93 +2176,144 @@ public class HomeFragment extends Fragment {
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void setupTorchButton() {
-        buttonTorchSwitch = requireView().findViewById(R.id.buttonTorchSwitch);
-
-        // Set default torch source if none selected
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        if (prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null) == null) {
-            try {
-                String defaultTorchId = getCameraWithFlash();
-                if (defaultTorchId != null) {
-                    prefs.edit()
-                            .putString(Constants.PREF_SELECTED_TORCH_SOURCE, defaultTorchId)
-                            .putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false)
-                            .apply();
-                }
-            } catch (CameraAccessException e) {
-                Log.e(TAG, "Error setting default torch source: " + e.getMessage());
-            }
+        if (buttonTorchSwitch == null) {
+            Log.e(TAG, "buttonTorchSwitch is null, cannot set up listener.");
+            return;
         }
 
-        // Setup click listener for torch toggle
+        // Initial state update
+        // updateTorchButtonState(isTorchOn); // This might be called too early, consider moving or ensuring isTorchOn is accurate
+
         buttonTorchSwitch.setOnClickListener(v -> {
-            SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-            
-            Intent intent;
-            if (sharedPreferencesManager.isRecordingInProgress()) {
-                // If recording, use RecordingService
-                intent = new Intent(requireContext(), RecordingService.class);
-                intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
-            } else {
-                // If not recording, use TorchService
-                intent = new Intent(requireContext(), TorchService.class);
-                intent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
+            // ----- Fix Start for this method(setupTorchButton_onClick)-----
+            if (!isAdded() || getContext() == null) {
+                Log.w(TAG, "Torch button clicked, but fragment not fully ready.");
+                return;
             }
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                requireContext().startForegroundService(intent);
+
+            if (isRecordingOrPaused()) {
+                Log.d(TAG, "Recording active. Sending toggle intent to RecordingService. Current isTorchOn (UI state): " + isTorchOn);
+                Intent serviceIntent = new Intent(getContext(), RecordingService.class);
+                serviceIntent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
+                try {
+                    ContextCompat.startForegroundService(getContext(), serviceIntent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error starting RecordingService for torch toggle", e);
+                }
             } else {
-                requireContext().startService(intent);
+                Log.d(TAG, "Not recording. Toggling torch directly. Current isTorchOn: " + isTorchOn);
+                // Assuming toggleTorch() correctly handles CameraManager.setTorchMode,
+                // updates isTorchOn field, and calls updateTorchUI().
+                toggleTorch();
             }
+            // ----- Fix Ended for this method(setupTorchButton_onClick)-----
         });
 
-        // Setup long press listener
-        buttonTorchSwitch.setOnLongClickListener(v -> {
-            showTorchOptionsDialog();
-            vibrateTouch();
-            return true;
-        });
+        // Initialize and register the broadcast receiver for torch state changes from the service
+        // This is important for when the service toggles the torch (e.g., during recording)
+        // and the UI needs to reflect that change.
+        if (torchReceiver == null) { // Ensure it's initialized only once
+            initializeTorchReceiver();
+        }
+        if (getContext() != null && !isTorchReceiverRegistered) { // Check context and registration status
+            ContextCompat.registerReceiver(
+                    requireContext(),
+                    torchReceiver,
+                    new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED),
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+            );
+            isTorchReceiverRegistered = true;
+            Log.d(TAG, "Torch state change receiver registered in setupTorchButton.");
+        }
+         // Fetch initial torch state and update UI (if not already handled by onResume/onStart)
+        // This part might need careful placement depending on overall lifecycle management
+        // For now, assuming 'isTorchOn' is correctly initialized elsewhere (e.g. initializeTorch())
+        // and 'updateTorchUI' correctly updates the button.
+        // updateTorchUI(isTorchOn); // This updates the button drawable
+    }
 
-        // Register torch state receiver
-        if (torchReceiver == null) {
-            try {
-                // First try to unregister any existing receiver
-                requireContext().unregisterReceiver(torchReceiver);
-            } catch (IllegalArgumentException e) {
-                // Ignore if not registered
+    // Ensure toggleTorch method exists and correctly uses CameraManager.setTorchMode
+    // and updates the local isTorchOn variable and calls updateTorchUI.
+    // Example (ensure your actual toggleTorch matches this logic):
+    private void toggleTorch() {
+        if (cameraManager == null) {
+            Log.e(TAG, "CameraManager not available to toggle torch.");
+            return;
+        }
+        String currentCameraId = getCameraIdForTorch(); // Helper to get current camera ID
+        if (currentCameraId == null) {
+            Log.e(TAG, "No valid camera ID found for torch.");
+            return;
+        }
+
+        try {
+            isTorchOn = !isTorchOn;
+            cameraManager.setTorchMode(currentCameraId, isTorchOn);
+            Log.d(TAG, "Torch toggled directly via CameraManager. New state: " + isTorchOn + " for camera " + currentCameraId);
+            updateTorchUI(isTorchOn); // Update button appearance and any other UI
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Failed to toggle torch directly", e);
+            isTorchOn = !isTorchOn; // Revert state on error
+            updateTorchUI(isTorchOn); // Update UI back
+            Utils.showQuickToast(getContext(), "Error toggling torch.");
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Failed to toggle torch: Camera device " + currentCameraId + " is no longer connected or available.",e);
+            // This can happen if the camera is closed or in use by another app.
+            // Reset torch state and UI.
+            isTorchOn = false;
+            updateTorchUI(false);
+            Utils.showQuickToast(getContext(), "Torch unavailable.");
+        }
+    }
+
+    private String getCameraIdForTorch() {
+        // This method should return the ID of the camera that HomeFragment
+        // is currently configured to use for its general operations (like preview if it had one, or torch).
+        // It might be based on SharedPreferencesManager.getCameraSelection() and SharedPreferencesManager.getSelectedBackCameraId()
+        // This is a simplified placeholder. You need to ensure this returns the correct, active camera ID.
+        if(this.cameraId != null) return this.cameraId; // If HomeFragment already has a determined primary camera ID
+
+        // Fallback or more complex logic to determine the appropriate camera ID:
+        try {
+            if (cameraManager == null && getContext() != null) {
+                 cameraManager = (CameraManager) getContext().getSystemService(Context.CAMERA_SERVICE);
             }
-            
-            torchReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
-                        boolean torchState = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
-                        isTorchOn = torchState;
-                        Log.d("TorchDebug", "Received broadcast - Torch state: " + torchState);
-                        
-                        requireActivity().runOnUiThread(() -> {
-                            try {
-                                buttonTorchSwitch.setIcon(AppCompatResources.getDrawable(
-                                    requireContext(),
-                                    R.drawable.ic_flashlight_on
-                                ));
-                                buttonTorchSwitch.setSelected(isTorchOn);
-                                buttonTorchSwitch.setEnabled(true);
-                            } catch (Exception e) {
-                                Log.e("TorchDebug", "Error updating torch icon: " + e.getMessage());
-                            }
-                        });
+            if (cameraManager == null) return null;
+
+            CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+            if (selectedType == CameraType.FRONT) {
+                for (String id : cameraManager.getCameraIdList()) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                    Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                    Boolean flashAvailable = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT && flashAvailable != null && flashAvailable) {
+                        return id;
                     }
                 }
-            };
-            
-            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                requireContext().registerReceiver(torchReceiver, filter);
+            } else { // BACK
+                String preferredBackId = sharedPreferencesManager.getSelectedBackCameraId();
+                if(preferredBackId != null){
+                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(preferredBackId);
+                     Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                     Boolean flashAvailable = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                     if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK && flashAvailable != null && flashAvailable) {
+                         return preferredBackId;
+                     }
+                }
+                // Fallback to default back camera if preferred is not suitable or not found
+                for (String id : cameraManager.getCameraIdList()) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                    Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                    Boolean flashAvailable = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK && flashAvailable != null && flashAvailable) {
+                        return id; // Return first available back camera with flash
+                    }
+                }
             }
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error accessing camera for torch ID", e);
         }
+        return null; // No suitable camera found
     }
 
     private void updateTorchButtonState(boolean isOn) {
@@ -2507,4 +2575,22 @@ public class HomeFragment extends Fragment {
         }
     }
     // ----- Fix Ended for this method(updateServiceWithCurrentSurface)-----
+
+    // ----- Fix Start for this class (HomeFragment) -----
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        if (getContext() == null) {
+            return false;
+        }
+        ActivityManager manager = (ActivityManager) getContext().getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager == null) {
+            return false;
+        }
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // ----- Fix Ended for this class (HomeFragment) -----
 }
