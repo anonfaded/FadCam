@@ -132,6 +132,19 @@ public class Utils {
     }
 
     /**
+     * Shows a toast message for 0.5 second duration (shorter than Android's default SHORT duration).
+     * Example usage:  Utils.showQuickToast(this, "Recording started");
+     * @param context The context in which to show the toast
+     * @param message The string message to display
+     */
+    public static void showQuickToast(Context context, String message) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_SHORT);
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(toast::cancel, 500); // 500ms = half second
+        toast.show();
+    }
+
+    /**
      * Scans a file using MediaScannerConnection to make it visible in the MediaStore (e.g., Gallery).
      * @param context The application context.
      * @param filePath The absolute path of the file to scan.

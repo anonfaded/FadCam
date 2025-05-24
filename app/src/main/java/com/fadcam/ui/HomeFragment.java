@@ -166,6 +166,9 @@ public class HomeFragment extends Fragment {
 
     private BroadcastReceiver torchReceiver;
 
+    // ----- Fix Start for this method(fields)-----
+    private Surface textureViewSurface; // To hold the Surface from TextureView
+    // ----- Fix Ended for this method(fields)-----
 
 
     // --- Fields Needed for Stats Update ---
@@ -283,66 +286,82 @@ public class HomeFragment extends Fragment {
 
     private void setupLongPressListener() {
         cardPreview.setOnLongClickListener(v -> {
-            if (isRecording()) {
-                // Start scaling down animation
-                cardPreview.animate()
-                        .scaleX(0.9f)
-                        .scaleY(0.9f)
-                        .setDuration(100) // Reduced duration for quicker scale-down
-                        .start();
+            // ----- Fix Start for this method(setupLongPressListener_SequentialAnimation)-----
+            // 1. Perform haptic feedback
+            performHapticFeedback();
 
-                // Perform haptic feedback
-                performHapticFeedback();
+            // 2. Unified Card Bounce Animation (Down then Up)
+            AnimatorSet cardBounceAnim = new AnimatorSet();
+            ObjectAnimator scaleDownX = ObjectAnimator.ofFloat(cardPreview, "scaleX", 0.9f);
+            ObjectAnimator scaleDownY = ObjectAnimator.ofFloat(cardPreview, "scaleY", 0.9f);
+            scaleDownX.setDuration(50); // Fast scale down
+            scaleDownY.setDuration(50);
 
-                // Execute the task immediately
-                isPreviewEnabled = !isPreviewEnabled;
-                updatePreviewVisibility();
-                savePreviewState();
-                String message = isPreviewEnabled ? "Preview enabled" : "Preview disabled";
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(cardPreview, "scaleX", 1.0f);
+            ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(cardPreview, "scaleY", 1.0f);
+            scaleUpX.setDuration(70); // Fast rebound
+            scaleUpY.setDuration(70);
 
-                // Scale back up quickly with a wobble effect
-                cardPreview.postDelayed(() -> {
-                    cardPreview.animate()
-                            .scaleX(1.0f)
-                            .scaleY(1.0f)
-                            .setDuration(50) // Shorter duration for quicker scale-up
-                            .start();
-                }, 60); // No Delay to ensure it happens after the initial scaling down
+            cardBounceAnim.play(scaleDownX).with(scaleDownY); // Play scale down
+            cardBounceAnim.play(scaleUpX).with(scaleUpY).after(scaleDownX); // Play scale up immediately after scale down completes
 
-            } else {
-                // Handling when recording is not active
+            cardBounceAnim.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
 
-                // Show random funny message
-                showRandomMessage();
+                    // 3. Core logic: toggle preview, update UI, save state (runs AFTER card bounce)
+                    isPreviewEnabled = !isPreviewEnabled;
+                    updatePreviewVisibility(); // This is the main visual change for enabling/disabling preview
+                    savePreviewState();
 
+                    // 4. Surface handling logic OR placeholder animations (also runs AFTER card bounce)
+                    if (isRecordingOrPaused()) { // Only update service if recording/paused
+                        if (isPreviewEnabled) {
+                            if (textureView != null && textureView.isAvailable() && textureViewSurface != null) {
+                                Log.d(TAG, "Preview enabled (post-anim): TextureView available, sending surface to service.");
+                                updateServiceWithCurrentSurface(textureViewSurface);
+                            } else {
+                                Log.d(TAG, "Preview enabled (post-anim): TextureView not yet available, will send surface on callback.");
+                            }
+                        } else {
+                            Log.d(TAG, "Preview disabled (post-anim): Sending null surface to service.");
+                            updateServiceWithCurrentSurface(null);
+                        }
+                    } else {
+                        // Logic for when NOT recording/paused: Show random message and animate placeholder
+                        Log.d(TAG, "Long press on preview (post-anim) while not recording/paused. Applying placeholder animations.");
+                        showRandomMessage(); // Show random message on the placeholder
 
-                // Ensure the placeholder is visible
-                tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-                tvPreviewPlaceholder.setPadding(16, tvPreviewPlaceholder.getPaddingTop(), 16, tvPreviewPlaceholder.getPaddingBottom());
-                performHapticFeedback();
+                        if (tvPreviewPlaceholder != null) {
+                            tvPreviewPlaceholder.setVisibility(View.VISIBLE); // Ensure placeholder is visible
 
-                // Trigger the red blinking animation
-                tvPreviewPlaceholder.setBackgroundColor(Color.RED);
-                tvPreviewPlaceholder.postDelayed(() -> {
-                    tvPreviewPlaceholder.setBackgroundColor(Color.TRANSPARENT);
-                }, 100); // Blinking duration
+                            // Red blinking animation for placeholder
+                            tvPreviewPlaceholder.setBackgroundColor(Color.RED);
+                            tvPreviewPlaceholder.postDelayed(() -> {
+                                if (tvPreviewPlaceholder != null) { // Check again in case fragment is destroyed
+                                   tvPreviewPlaceholder.setBackgroundColor(Color.TRANSPARENT);
+                                }
+                            }, 100); // Blink duration
 
-                // Wobble animation
-                ObjectAnimator scaleXUp = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.1f);
-                ObjectAnimator scaleYUp = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.1f);
-                ObjectAnimator scaleXDown = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.0f);
-                ObjectAnimator scaleYDown = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.0f);
-
-                scaleXUp.setDuration(50);
-                scaleYUp.setDuration(50);
-                scaleXDown.setDuration(50);
-                scaleYDown.setDuration(50);
-
-                AnimatorSet wobbleSet = new AnimatorSet();
-                wobbleSet.play(scaleXUp).with(scaleYUp).before(scaleXDown).before(scaleYDown);
-                wobbleSet.start();
-            }
+                            // Wobble animation for placeholder
+                            ObjectAnimator pScaleXUp = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.1f);
+                            ObjectAnimator pScaleYUp = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.1f);
+                            ObjectAnimator pScaleXDown = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.0f);
+                            ObjectAnimator pScaleYDown = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.0f);
+                            pScaleXUp.setDuration(50);
+                            pScaleYUp.setDuration(50);
+                            pScaleXDown.setDuration(50);
+                            pScaleYDown.setDuration(50);
+                            AnimatorSet wobbleSet = new AnimatorSet();
+                            wobbleSet.play(pScaleXUp).with(pScaleYUp).before(pScaleXDown).before(pScaleYDown);
+                            wobbleSet.start();
+                        }
+                    }
+                }
+            });
+            cardBounceAnim.start(); // Start the card bounce animation
+            // ----- Fix Ended for this method(setupLongPressListener_SequentialAnimation)-----
             return true;
         });
     }
@@ -1268,10 +1287,16 @@ public class HomeFragment extends Fragment {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
-                surfaceTexture.setDefaultBufferSize(720, 1080);
-                textureView.setVisibility(View.INVISIBLE);
-
-                fetchRecordingState();
+                Log.d(TAG, "onSurfaceTextureAvailable: SurfaceTexture is now available.");
+                // ----- Fix Start for this method(onSurfaceTextureAvailable)-----
+                textureViewSurface = new Surface(surfaceTexture);
+                if (isPreviewEnabled && isRecordingOrPaused()) {
+                    Log.d(TAG, "onSurfaceTextureAvailable: Preview enabled and recording active, sending surface to service.");
+                    updateServiceWithCurrentSurface(textureViewSurface);
+                } else {
+                    Log.d(TAG, "onSurfaceTextureAvailable: Preview not enabled or not recording/paused, not sending surface yet.");
+                }
+                // ----- Fix Ended for this method(onSurfaceTextureAvailable)-----
             }
 
             @Override
@@ -1279,7 +1304,19 @@ public class HomeFragment extends Fragment {
 
             @Override
             public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
-                return false;
+                Log.d(TAG, "onSurfaceTextureDestroyed: SurfaceTexture is being destroyed.");
+                // ----- Fix Start for this method(onSurfaceTextureDestroyed)-----
+                if (textureViewSurface != null) {
+                    if (isRecordingOrPaused()) {
+                        Log.d(TAG, "onSurfaceTextureDestroyed: Recording active, sending null surface to service.");
+                        updateServiceWithCurrentSurface(null);
+                    }
+                    textureViewSurface.release();
+                    textureViewSurface = null;
+                    Log.d(TAG, "onSurfaceTextureDestroyed: Released local textureViewSurface.");
+                }
+                // ----- Fix Ended for this method(onSurfaceTextureDestroyed)-----
+                return true; // Surface is released by the listener
             }
 
             @Override
@@ -2439,4 +2476,35 @@ public class HomeFragment extends Fragment {
         // textureView is handled by setupTextureView
     }
     // ----- Fix Ended for this class (HomeFragment) -----
+
+    // ----- Fix Start for this method(isRecordingOrPaused)-----
+    private boolean isRecordingOrPaused() {
+        return recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED;
+    }
+    // ----- Fix Ended for this method(isRecordingOrPaused)-----
+
+    // ----- Fix Start for this method(updateServiceWithCurrentSurface)-----
+    // This method replaces/refines the old updateRecordingSurface
+    private void updateServiceWithCurrentSurface(@Nullable Surface surfaceToUse) {
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "updateServiceWithCurrentSurface: Fragment not added or context is null, cannot send surface update.");
+            return;
+        }
+
+        Intent intent = new Intent(getContext(), RecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
+        if (surfaceToUse != null && surfaceToUse.isValid()) {
+            intent.putExtra("SURFACE", surfaceToUse);
+            Log.d(TAG, "updateServiceWithCurrentSurface: Sending new VALID surface to RecordingService.");
+        } else {
+            intent.putExtra("SURFACE", (Surface) null); 
+            Log.d(TAG, "updateServiceWithCurrentSurface: Sending NULL surface to RecordingService (preview disabled or surface invalid/destroyed).");
+        }
+        // Use requireContext() for starting service if preferred and appropriate for fragment version
+        Context context = getContext();
+        if (context != null) {
+            context.startService(intent);
+        }
+    }
+    // ----- Fix Ended for this method(updateServiceWithCurrentSurface)-----
 }
