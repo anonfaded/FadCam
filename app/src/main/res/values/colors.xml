@@ -18,6 +18,11 @@
     <color name="danger_red_light">#F44336</color>
     <color name="colorError">#D32F2F</color>
 
+    <!-- Added for Trash Item Remaining Time Display -->
+    <color name="colorWarning">#FFA726</color> <!-- Orange A400 -->
+    <color name="gray_text_light">#BDBDBD</color> <!-- Grey 400 -->
+    <color name="gray_text_very_light">#E0E0E0</color> <!-- Grey 300 -->
+
         <!-- AMOLED Theme Colors -->
     <color name="amoled_background">#000000</color>
     <color name="amoled_surface">#121212</color>

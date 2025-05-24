@@ -22,6 +22,8 @@ import java.io.File;
 import com.fadcam.utils.TrashManager;
 import android.util.Log;
 import android.widget.Toast;
+import com.fadcam.SharedPreferencesManager;
+import java.util.concurrent.TimeUnit;
 
 public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHolder> {
 
@@ -30,6 +32,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
     private final List<TrashItem> selectedItems = new ArrayList<>();
     private final OnTrashItemInteractionListener interactionListener;
     private final OnTrashItemLongClickListener longClickListener; // Optional
+    private final SharedPreferencesManager sharedPreferencesManager;
 
     public interface OnTrashItemInteractionListener {
         void onItemCheckChanged(TrashItem item, boolean isChecked);
@@ -50,6 +53,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         this.trashItems = trashItems;
         this.interactionListener = interactionListener;
         this.longClickListener = longClickListener;
+        this.sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
     }
 
     @NonNull
@@ -84,6 +88,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         TextView tvOriginalLocation;
         CheckBox checkBoxSelected;
         ImageView imageViewThumbnail;
+        TextView tvRemainingTime;
 
         TrashViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -92,6 +97,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             tvDateTrashed = itemView.findViewById(R.id.tv_trash_item_date_trashed);
             tvOriginalLocation = itemView.findViewById(R.id.tv_trash_item_original_location);
             checkBoxSelected = itemView.findViewById(R.id.checkbox_trash_item_selected);
+            tvRemainingTime = itemView.findViewById(R.id.tv_trash_item_remaining_time);
         }
 
         void bind(final TrashItem item) {
@@ -99,6 +105,47 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
             tvDateTrashed.setText("Trashed: " + sdf.format(new Date(item.getDateTrashed())));
             tvOriginalLocation.setText("Original: " + (item.isFromSaf() ? "SAF Storage" : "Internal Storage"));
+
+            if (tvRemainingTime != null && sharedPreferencesManager != null && context != null) {
+                int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+                if (autoDeleteMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
+                    tvRemainingTime.setText(context.getString(R.string.trash_auto_delete_info_manual));
+                    tvRemainingTime.setTextColor(context.getResources().getColor(R.color.gray_text_very_light));
+                } else {
+                    long timeSinceTrashedMillis = System.currentTimeMillis() - item.getDateTrashed();
+                    long autoDeleteTotalMillis = TimeUnit.MINUTES.toMillis(autoDeleteMinutes);
+                    long remainingMillis = autoDeleteTotalMillis - timeSinceTrashedMillis;
+
+                    if (remainingMillis <= 0) {
+                        tvRemainingTime.setText(context.getString(R.string.trash_item_remaining_soon));
+                        tvRemainingTime.setTextColor(context.getResources().getColor(R.color.colorError));
+                    } else {
+                        long remainingDays = TimeUnit.MILLISECONDS.toDays(remainingMillis);
+                        if (remainingDays > 0) {
+                            tvRemainingTime.setText(context.getResources().getQuantityString(R.plurals.trash_item_remaining_days, (int)remainingDays, (int)remainingDays));
+                        } else {
+                            long remainingHours = TimeUnit.MILLISECONDS.toHours(remainingMillis);
+                            if (remainingHours > 0) {
+                                tvRemainingTime.setText(context.getResources().getQuantityString(R.plurals.trash_item_remaining_hours, (int)remainingHours, (int)remainingHours));
+                            } else {
+                                tvRemainingTime.setText(context.getString(R.string.trash_item_remaining_soon));
+                            }
+                        }
+                        
+                        if (remainingDays == 0 && TimeUnit.MILLISECONDS.toHours(remainingMillis) < 1) {
+                            tvRemainingTime.setTextColor(context.getResources().getColor(R.color.colorError));
+                        } else if (remainingDays == 0 && TimeUnit.MILLISECONDS.toHours(remainingMillis) < 12) {
+                            tvRemainingTime.setTextColor(context.getResources().getColor(R.color.colorWarning));
+                        } else if (remainingDays < 3) {
+                            tvRemainingTime.setTextColor(context.getResources().getColor(R.color.colorWarning));
+                        } else {
+                            tvRemainingTime.setTextColor(context.getResources().getColor(R.color.gray_text_light));
+                        }
+                    }
+                }
+            } else {
+                if(tvRemainingTime != null) tvRemainingTime.setVisibility(View.GONE);
+            }
 
             if (imageViewThumbnail != null && context != null) {
                 File trashDirectory = TrashManager.getTrashDirectory(context);

@@ -3,6 +3,9 @@ package com.fadcam.ui;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -16,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fadcam.R;
 import com.fadcam.model.TrashItem;
 import com.fadcam.utils.TrashManager;
+import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayList;
@@ -26,6 +30,8 @@ import java.util.concurrent.Executors;
 import android.content.Intent;
 import android.net.Uri;
 import java.io.File;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.Locale;
 
 public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemInteractionListener {
 
@@ -41,6 +47,8 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     private View emptyTrashLayout;
     private AlertDialog restoreProgressDialog;
     private ExecutorService executorService;
+    private TextView tvAutoDeleteInfo;
+    private SharedPreferencesManager sharedPreferencesManager;
 
     public TrashFragment() {
         // Required empty public constructor
@@ -50,6 +58,8 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         executorService = Executors.newSingleThreadExecutor();
+        setHasOptionsMenu(true);
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
     }
 
     @Nullable
@@ -70,37 +80,37 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         buttonEmptyAllTrash = view.findViewById(R.id.button_empty_all_trash);
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
         emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
+        tvAutoDeleteInfo = view.findViewById(R.id.tvAutoDeleteInfo);
 
         setupToolbar();
         setupRecyclerView();
         setupButtonListeners();
+        updateAutoDeleteInfoText();
 
         // Auto-delete old items first, then load
         if (getContext() != null) {
-            int autoDeletedCount = TrashManager.autoDeleteOldTrashItems(getContext());
+            int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+            int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), autoDeleteMinutes);
             if (autoDeletedCount > 0) {
                 Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
-                // Metadata is already updated by autoDeleteOldTrashItems, loadTrashItems will get the fresh list.
             }
         }
         loadTrashItems();
     }
 
     private void setupToolbar() {
-        if (toolbar != null) {
+        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
+            AppCompatActivity activity = (AppCompatActivity) getActivity();
+            activity.setSupportActionBar(toolbar);
             toolbar.setTitle(getString(R.string.trash_fragment_title_text));
-            toolbar.setNavigationIcon(R.drawable.ic_close); // Ensure you have this drawable
+            toolbar.setNavigationIcon(R.drawable.ic_close);
             toolbar.setNavigationOnClickListener(v -> {
                 try {
-                    // Pop the back stack
                     if (getParentFragmentManager().getBackStackEntryCount() > 0) {
                         getParentFragmentManager().popBackStack();
                     } else {
-                        // If no back stack, directly try to remove/hide (though addToBackStack should prevent this)
                         if (getActivity() != null) getActivity().onBackPressed(); 
                     }
-
-                    // Hide the overlay container when TrashFragment is closed
                     View overlayContainer = requireActivity().findViewById(R.id.overlay_fragment_container);
                     if (overlayContainer != null) {
                         overlayContainer.setVisibility(View.GONE);
@@ -111,6 +121,8 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
                     android.util.Log.e(TAG, "Toolbar navigation up failed (manual popBackStack)", e);
                 }
             });
+        } else {
+            Log.e(TAG, "Toolbar is null or Activity is not AppCompatActivity, cannot set up toolbar as ActionBar.");
         }
     }
 
@@ -321,6 +333,112 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         super.onDestroy();
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.trash_options_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_trash_auto_delete_settings) {
+            showAutoDeleteSettingsDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showAutoDeleteSettingsDialog() {
+        if (getContext() == null || sharedPreferencesManager == null) {
+            Log.e(TAG, "Cannot show auto-delete settings dialog, context or prefs manager is null.");
+            return;
+        }
+
+        final String[] items = {
+                getString(R.string.auto_delete_1_hour),
+                getString(R.string.auto_delete_5_hours),
+                getString(R.string.auto_delete_10_hours),
+                getString(R.string.auto_delete_1_day),
+                getString(R.string.auto_delete_7_days),
+                getString(R.string.auto_delete_30_days),
+                getString(R.string.auto_delete_60_days),
+                getString(R.string.auto_delete_90_days),
+                getString(R.string.auto_delete_never)
+        };
+
+        final int[] valuesInMinutes = {
+                60,          // 1 Hour
+                5 * 60,      // 5 Hours
+                10 * 60,     // 10 Hours
+                1 * 24 * 60, // 1 Day
+                7 * 24 * 60, // 7 Days
+                30 * 24 * 60,// 30 Days
+                60 * 24 * 60,// 60 Days
+                90 * 24 * 60,// 90 Days
+                SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER
+        };
+
+        int currentSettingMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+        int checkedItem = -1;
+
+        for (int i = 0; i < valuesInMinutes.length; i++) {
+            if (valuesInMinutes[i] == currentSettingMinutes) {
+                checkedItem = i;
+                break;
+            }
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.auto_delete_dialog_title))
+                .setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+                    // Action on item selection (optional, could update a temporary variable)
+                })
+                .setPositiveButton(getString(R.string.auto_delete_save_setting), (dialog, which) -> {
+                    AlertDialog alertDialog = (AlertDialog) dialog;
+                    int selectedPosition = alertDialog.getListView().getCheckedItemPosition();
+                    if (selectedPosition != -1 && selectedPosition < valuesInMinutes.length) {
+                        int selectedMinutes = valuesInMinutes[selectedPosition];
+                        sharedPreferencesManager.setTrashAutoDeleteMinutes(selectedMinutes);
+                        updateAutoDeleteInfoText();
+                        Log.d(TAG, "Auto-delete setting updated to: " + selectedMinutes + " minutes.");
+                        
+                        boolean itemsWereAutoDeleted = false;
+                        if (getContext() != null) {
+                            int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), selectedMinutes);
+                            if (autoDeletedCount > 0) {
+                                Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
+                                itemsWereAutoDeleted = true;
+                            }
+                        }
+                        loadTrashItems(); 
+                        if (trashAdapter != null && !itemsWereAutoDeleted) { 
+                            trashAdapter.notifyDataSetChanged();
+                        }
+                    }
+                })
+                .setNegativeButton(getString(R.string.universal_cancel), null)
+                .show();
+    }
+
+    private void updateAutoDeleteInfoText() {
+        if (tvAutoDeleteInfo == null || sharedPreferencesManager == null || getContext() == null) return;
+
+        int totalMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+
+        if (totalMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
+            tvAutoDeleteInfo.setText(getString(R.string.trash_auto_delete_info_manual));
+        } else if (totalMinutes < 60) { // Less than an hour, show in minutes (though current options are >= 1 hour)
+             // This case isn't strictly needed with current options but good for future flexibility
+            tvAutoDeleteInfo.setText(String.format(Locale.getDefault(), "Items are automatically deleted after %d minutes.", totalMinutes));
+        } else if (totalMinutes < (24 * 60)) { // Less than a day, show in hours
+            int hours = totalMinutes / 60;
+            tvAutoDeleteInfo.setText(getResources().getQuantityString(R.plurals.trash_auto_delete_info_hours, hours, hours));
+        } else { // Show in days
+            int days = totalMinutes / (24 * 60);
+            tvAutoDeleteInfo.setText(getResources().getQuantityString(R.plurals.trash_auto_delete_info_days, days, days));
         }
     }
 

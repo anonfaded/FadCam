@@ -1,0 +1,9 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_trash_auto_delete_settings"
+        android:title="@string/trash_menu_auto_delete_settings"
+        android:icon="@drawable/ic_settings"
+        app:showAsAction="ifRoom"
+        app:iconTint="@android:color/white" />
+</menu> 

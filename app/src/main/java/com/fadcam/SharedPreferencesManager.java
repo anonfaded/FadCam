@@ -1,5 +1,7 @@
 package com.fadcam;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Size;
@@ -47,6 +49,15 @@ public class SharedPreferencesManager {
         Log.w("SharedPrefs","Cleared all opened video URIs.");
     }
     // --- End Opened Video Methods ---
+
+    private static final String PREF_KEY_VIDEO_ORIENTATION = "video_orientation";
+
+
+    // ----- Fix Start for this class (SharedPreferencesManager_trash_auto_delete) -----
+    private static final String PREF_KEY_TRASH_AUTO_DELETE_MINUTES = "trash_auto_delete_minutes";
+    public static final int DEFAULT_TRASH_AUTO_DELETE_MINUTES = 30 * 24 * 60; // 30 days in minutes
+    public static final int TRASH_AUTO_DELETE_NEVER = -1; // This constant can remain as is, representing manual delete
+    // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete) -----
 
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
@@ -277,5 +288,18 @@ public class SharedPreferencesManager {
         return ORIENTATION_LANDSCAPE.equals(getVideoOrientation());
     }
     // --- End Video Orientation ---
+
+    // ----- Fix Start for this class (SharedPreferencesManager_trash_auto_delete_methods) -----
+    public void setTrashAutoDeleteMinutes(int minutes) {
+        sharedPreferences.edit().putInt(PREF_KEY_TRASH_AUTO_DELETE_MINUTES, minutes).apply();
+        Log.d("SharedPrefsManager", "Trash auto-delete duration set to: " + minutes + " minutes.");
+    }
+
+    public int getTrashAutoDeleteMinutes() {
+        int minutes = sharedPreferences.getInt(PREF_KEY_TRASH_AUTO_DELETE_MINUTES, DEFAULT_TRASH_AUTO_DELETE_MINUTES);
+        Log.d("SharedPrefsManager", "Retrieved trash auto-delete duration: " + minutes + " minutes.");
+        return minutes;
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete_methods) -----
 
 }

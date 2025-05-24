@@ -26,11 +26,17 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import com.fadcam.SharedPreferencesManager;
 
 public class TrashManager {
 
     private static final String TAG = "TrashManager";
+    private static final String METADATA_FILE_NAME = "trash_metadata.json";
 
     /**
      * Gets the File object for the trash directory within the app's external files directory.
@@ -543,84 +549,117 @@ public class TrashManager {
     }
 
     /**
-     * Automatically deletes items from the trash that are older than a specified duration (e.g., 30 days).
+     * Automatically deletes items from trash that are older than the specified number of minutes.
+     * If autoDeleteMinutes is TRASH_AUTO_DELETE_NEVER, no items are deleted.
      *
-     * @param context The application context.
-     * @return The number of items that were auto-deleted.
+     * @param context Context
+     * @param autoDeleteMinutes The maximum age in minutes for items to keep. Items older than this will be deleted.
+     *                     Use SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER to disable auto-deletion.
+     * @return The number of items deleted.
      */
-    public static int autoDeleteOldTrashItems(Context context) {
+    public static synchronized int autoDeleteExpiredItems(Context context, int autoDeleteMinutes) {
         if (context == null) {
-            Log.e(TAG, "autoDeleteOldTrashItems: Context is null.");
+            Log.e(TAG, "autoDeleteExpiredItems: Context is null.");
+            return 0;
+        }
+        if (autoDeleteMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
+            Log.i(TAG, "autoDeleteExpiredItems: Auto-deletion is set to NEVER. No items will be deleted.");
             return 0;
         }
 
-        List<TrashItem> currentMetadata = loadTrashMetadata(context);
-        if (currentMetadata.isEmpty()) {
-            Log.d(TAG, "autoDeleteOldTrashItems: No trash metadata found. Nothing to auto-delete.");
+        Log.i(TAG, "autoDeleteExpiredItems: Checking for items older than " + autoDeleteMinutes + " minutes.");
+        List<TrashItem> allTrashItems = loadTrashMetadata(context); // Load all current items
+        if (allTrashItems.isEmpty()) {
             return 0;
         }
 
-        List<TrashItem> itemsToKeep = new ArrayList<>();
-        List<TrashItem> itemsActuallyDeleted = new ArrayList<>();
-        long thirtyDaysInMillis = 30L * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-        long currentTime = System.currentTimeMillis();
+        List<TrashItem> itemsToExpire = new ArrayList<>();
+        long currentTimeMillis = System.currentTimeMillis();
+        long expiryMillis = TimeUnit.MINUTES.toMillis(autoDeleteMinutes);
 
+        for (TrashItem item : allTrashItems) {
+            if ((currentTimeMillis - item.getDateTrashed()) > expiryMillis) {
+                itemsToExpire.add(item);
+            }
+        }
+
+        if (itemsToExpire.isEmpty()) {
+            Log.d(TAG, "autoDeleteExpiredItems: No items found older than " + autoDeleteMinutes + " minutes.");
+            return 0;
+        }
+
+        Log.d(TAG, "autoDeleteExpiredItems: Found " + itemsToExpire.size() + " items to auto-delete.");
+        boolean success = permanentlyDeleteItemsInternal(context, itemsToExpire, allTrashItems);
+        return success ? itemsToExpire.size() : 0;
+    }
+
+    /**
+     * Internal helper to delete item files and remove them from the provided list of all trash items.
+     * Saves the modified list to metadata if changes were made.
+     * @param context Context.
+     * @param itemsToDelete List of TrashItem objects to delete.
+     * @param allTrashItems The complete list of current trash items. This list WILL BE MODIFIED.
+     * @return true if all specified items were successfully deleted (or didn't exist on disk) and metadata was updated, false otherwise.
+     */
+    private static synchronized boolean permanentlyDeleteItemsInternal(Context context, List<TrashItem> itemsToDelete, List<TrashItem> allTrashItems) {
+        if (context == null || itemsToDelete == null || itemsToDelete.isEmpty() || allTrashItems == null) {
+            Log.w(TAG, "permanentlyDeleteItemsInternal: Invalid arguments.");
+            return false;
+        }
         File trashDir = getTrashDirectory(context);
         if (trashDir == null) {
-            Log.e(TAG, "autoDeleteOldTrashItems: Failed to get trash directory. Cannot delete files.");
-            // We should still clean up metadata for expired items even if files can't be confirmed deleted.
+            Log.e(TAG, "permanentlyDeleteItemsInternal: Failed to get trash directory.");
+            return false;
         }
 
-        for (TrashItem item : currentMetadata) {
-            if (item == null || item.getDateTrashed() <= 0) { // Skip invalid items
-                itemsToKeep.add(item); // Keep invalid items for now, or decide to filter them here.
-                Log.w(TAG, "autoDeleteOldTrashItems: Skipping invalid trash item: " + item);
-                continue;
-            }
+        int successfullyDeletedCount = 0;
 
-            if ((currentTime - item.getDateTrashed()) > thirtyDaysInMillis) {
-                Log.i(TAG, "autoDeleteOldTrashItems: Item '" + item.getOriginalDisplayName() + "' is older than 30 days. Marking for deletion.");
-                if (trashDir != null && item.getTrashFileName() != null) {
-                    File fileToDelete = new File(trashDir, item.getTrashFileName());
-                    if (fileToDelete.exists()) {
-                        if (fileToDelete.delete()) {
-                            Log.d(TAG, "autoDeleteOldTrashItems: Successfully deleted file: " + fileToDelete.getAbsolutePath());
-                            itemsActuallyDeleted.add(item);
-                        } else {
-                            Log.e(TAG, "autoDeleteOldTrashItems: Failed to delete old file: " + fileToDelete.getAbsolutePath() + ". It will be removed from metadata.");
-                            // Even if file deletion fails, we remove it from metadata to prevent re-attempts / UI display.
-                            itemsActuallyDeleted.add(item); // Count as deleted for metadata purposes
-                        }
-                    } else {
-                        Log.w(TAG, "autoDeleteOldTrashItems: Old file not found in trash, removing from metadata: " + item.getTrashFileName());
-                        itemsActuallyDeleted.add(item); // File doesn't exist, so effectively deleted from trash system
-                    }
+        for (TrashItem item : new ArrayList<>(itemsToDelete)) { // Iterate over a copy of itemsToDelete
+            File fileToDelete = new File(trashDir, item.getTrashFileName());
+            boolean fileExistedAndDeleted = false; // Track if physical file was handled
+            boolean metadataRemoved = false;
+
+            if (fileToDelete.exists()) {
+                if (fileToDelete.delete()) {
+                    Log.d(TAG, "Permanently deleted file: " + item.getTrashFileName());
+                    fileExistedAndDeleted = true;
                 } else {
-                     // Trash directory is null or trashFileName is null, but item expired. Remove from metadata.
-                    Log.w(TAG, "autoDeleteOldTrashItems: Trash directory inaccessible or item has no filename, but item '" + item.getOriginalDisplayName() + "' expired. Removing from metadata.");
-                    itemsActuallyDeleted.add(item); // Add to deleted list to ensure it's removed from metadata
+                    Log.e(TAG, "Failed to permanently delete file: " + item.getTrashFileName());
+                    // If file deletion fails, we might choose not to remove from metadata
+                    // to allow another attempt or manual intervention. For now, continue to remove from metadata.
                 }
-                // Do not add to itemsToKeep, it's being deleted
             } else {
-                itemsToKeep.add(item); // Item is not old enough, keep it
+                Log.w(TAG, "File to delete not found on disk: " + item.getTrashFileName() + ". It will be removed from metadata.");
+                fileExistedAndDeleted = true; // Consider it handled from disk perspective as it's not there
+            }
+
+            // Attempt to remove from the allTrashItems list passed in
+            if (allTrashItems.remove(item)) { // Relies on TrashItem.equals() for proper removal
+                metadataRemoved = true;
+                Log.d(TAG, "Removed item from metadata list: " + item.getOriginalDisplayName());
+            } else {
+                Log.w(TAG, "Item " + item.getOriginalDisplayName() + " (file: " + item.getTrashFileName() + ") not found in the provided allTrashItems list for metadata removal.");
+            }
+            
+            if (fileExistedAndDeleted && metadataRemoved) {
+                successfullyDeletedCount++;
             }
         }
 
-        if (itemsActuallyDeleted.isEmpty()) {
-            Log.d(TAG, "autoDeleteOldTrashItems: No items were old enough to be auto-deleted.");
-            return 0;
+        // Save the modified allTrashItems list if any items were actually removed from it
+        if (successfullyDeletedCount > 0 || itemsToDelete.stream().anyMatch(allTrashItems::contains)) {
+             // The second condition handles cases where items were meant to be deleted 
+             // but perhaps file deletion failed, yet we still want to update metadata if they were removed from the list.
+             // More accurately, only save if the list passed (allTrashItems) has actually changed.
+             // A simple way is to compare sizes or check if any item in itemsToDelete is still in allTrashItems.
+             // However, since allTrashItems is modified directly, if successfullyDeletedCount > 0, changes were made.
+            if (!saveTrashMetadata(context, allTrashItems)) {
+                Log.e(TAG, "permanentlyDeleteItemsInternal: Failed to save updated metadata after deleting items.");
+                return false; // Metadata save failure is critical
+            }
         }
-
-        // Save the updated metadata (only itemsToKeep)
-        if (saveTrashMetadata(context, itemsToKeep)) {
-            Log.i(TAG, "autoDeleteOldTrashItems: Successfully auto-deleted " + itemsActuallyDeleted.size() + " old items and updated metadata.");
-            return itemsActuallyDeleted.size();
-        } else {
-            Log.e(TAG, "autoDeleteOldTrashItems: Deleted " + itemsActuallyDeleted.size() + " old files (or marked for metadata removal), but FAILED to save updated trash metadata.");
-            // This is a problematic state. Files might be deleted but still in metadata if app restarts before next save.
-            // Or metadata reflects deletions that weren't persisted.
-            return 0; // Indicate failure or incomplete operation by returning 0 deletions persisted.
-        }
+        // Return true if the number of items successfully handled (file deleted/not found AND metadata removed) matches the number we intended to delete.
+        return successfullyDeletedCount == itemsToDelete.size();
     }
 
     // More methods will be added here for restore, deletePermanently, autoDeleteOldItems etc.

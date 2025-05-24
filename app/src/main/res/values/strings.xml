@@ -381,4 +381,39 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="saf_permission_missing_dialog_title">SAF Permission Required</string>
     <string name="saf_permission_missing_dialog_message_for_start_recording">To save recordings to a custom location, FadCam needs permission to access the selected folder. Please grant access when prompted.</string>
     <string name="grant_permission_button">Grant Permission</string>
+
+    <!-- Strings for Trash Auto-Delete Feature -->
+    <plurals name="trash_auto_delete_info_days">
+        <item quantity="one">Items are automatically deleted after %1$d day.</item>
+        <item quantity="other">Items are automatically deleted after %1$d days.</item>
+    </plurals>
+    <plurals name="trash_auto_delete_info_hours">
+        <item quantity="one">Items are automatically deleted after %1$d hour.</item>
+        <item quantity="other">Items are automatically deleted after %1$d hours.</item>
+    </plurals>
+    <string name="trash_auto_delete_info_manual">Items in trash are never deleted, delete the 
+    videos manually.</string>
+    <plurals name="trash_item_remaining_days">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <plurals name="trash_item_remaining_hours">
+        <item quantity="one">%1$d hour left</item>
+        <item quantity="other">%1$d hours left</item>
+    </plurals>
+    <string name="trash_item_remaining_soon">Deletes very soon</string>
+    <string name="trash_menu_auto_delete_settings">Auto-Delete Settings</string>
+    <string name="auto_delete_dialog_title">Set Auto-Delete Duration</string>
+    <string name="auto_delete_1_hour">After 1 Hour</string>
+    <string name="auto_delete_5_hours">After 5 Hours</string>
+    <string name="auto_delete_10_hours">After 10 Hours</string>
+    <string name="auto_delete_1_day">After 1 Day</string>
+    <string name="auto_delete_7_days">After 7 Days</string>
+    <string name="auto_delete_30_days">After 30 Days (Default)</string>
+    <string name="auto_delete_60_days">After 60 Days</string>
+    <string name="auto_delete_90_days">After 90 Days</string>
+    <string name="auto_delete_never">Never (Manual Deletion)</string>
+    <string name="auto_delete_save_setting">Save</string>
+    <!-- End Strings for Trash Auto-Delete Feature -->
+
 </resources>

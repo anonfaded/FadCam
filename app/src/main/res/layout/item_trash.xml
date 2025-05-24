@@ -77,12 +77,25 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textAppearance="?attr/textAppearanceCaption"
-            android:textSize="12sp"
-            app:layout_constraintStart_toStartOf="@id/tv_trash_item_date_trashed"
-            app:layout_constraintTop_toBottomOf="@id/tv_trash_item_date_trashed"
-            app:layout_constraintEnd_toEndOf="@id/tv_trash_item_date_trashed"
-            tools:text="Original: Internal Storage" />
+            android:text="Original: Internal Storage"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            app:layout_constraintStart_toEndOf="@+id/image_view_trash_thumbnail"
+            app:layout_constraintEnd_toStartOf="@+id/checkbox_trash_item_selected"
+            app:layout_constraintTop_toBottomOf="@+id/tv_trash_item_date_trashed"
+            android:layout_marginStart="8dp" />
+
+        <TextView
+            android:id="@+id/tv_trash_item_remaining_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Remaining: 30 days"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            android:textColor="@color/colorWarning"
+            app:layout_constraintStart_toEndOf="@+id/image_view_trash_thumbnail"
+            app:layout_constraintEnd_toStartOf="@+id/checkbox_trash_item_selected"
+            app:layout_constraintTop_toBottomOf="@+id/tv_trash_item_original_location"
+            android:layout_marginStart="8dp" />
 
         <!-- You can add a 3-dot menu button here if needed for individual item actions -->
         <!-- For now, actions are handled by global buttons in TrashFragment -->
