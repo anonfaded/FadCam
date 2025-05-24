@@ -380,21 +380,21 @@ public class RecordsFragment extends Fragment implements
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
 
-        // Initialize SharedPreferencesManager here if not done elsewhere or if specific to view lifecycle
-        if (sharedPreferencesManager == null && getContext() != null) {
-            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-            Log.d(TAG, "SharedPreferencesManager initialized in onViewCreated.");
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        toolbar = view.findViewById(R.id.topAppBar); 
+        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
+            AppCompatActivity activity = (AppCompatActivity) getActivity();
+            activity.setSupportActionBar(toolbar);
+            originalToolbarTitle = getString(R.string.records_title); 
+            toolbar.setTitle(originalToolbarTitle);
+        } else {
+            Log.e(TAG, "Toolbar is null or activity is not AppCompatActivity in RecordsFragment.");
         }
+        setHasOptionsMenu(true); 
 
-        toolbar = view.findViewById(R.id.topAppBar);
-        if (getActivity() instanceof AppCompatActivity) {
-            ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
-        }
-        originalToolbarTitle = toolbar.getTitle(); // Store original title
-
-        loadingIndicator = view.findViewById(R.id.loading_indicator);
+        loadingIndicator = view.findViewById(R.id.loading_indicator); 
         recyclerView = view.findViewById(R.id.recycler_view_records);
-        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); // INITIALIZE IT
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); 
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
         fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
@@ -432,6 +432,19 @@ public class RecordsFragment extends Fragment implements
     public void onResume() {
         super.onResume();
         Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
+
+        // ----- Fix Start for this method (onResume_toolbar_and_menu_refresh) -----
+        // Re-assert toolbar and invalidate options menu
+        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
+            AppCompatActivity activity = (AppCompatActivity) getActivity();
+            activity.setSupportActionBar(toolbar); // Re-set the support action bar
+            toolbar.setTitle(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+            activity.invalidateOptionsMenu(); // Tell the activity to redraw the options menu
+            Log.d(TAG, "Toolbar re-set and options menu invalidated in onResume.");
+        } else {
+            Log.w(TAG, "Could not re-set toolbar in onResume - toolbar or activity null/invalid.");
+        }
+        // ----- Fix Ended for this method (onResume_toolbar_and_menu_refresh) -----
 
         // Add null check for safety
         if (sharedPreferencesManager == null && getContext() != null) {
