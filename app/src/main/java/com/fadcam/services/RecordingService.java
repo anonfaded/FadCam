@@ -1006,17 +1006,21 @@ public class RecordingService extends Service {
         VideoCodec codec = sharedPreferencesManager.getVideoCodec();
         mediaRecorder.setVideoEncoder(codec.getEncoder());
 
+        // ----- Fix Start for this method(setupMediaRecorder_direct_resolution_use)-----
         Size resolution = sharedPreferencesManager.getCameraResolution();
         boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
-        int width = isLandscape ? resolution.getWidth() : resolution.getHeight();
-        int height = isLandscape ? resolution.getHeight() : resolution.getWidth();
-        mediaRecorder.setVideoSize(width, height);
+
+        // Directly use the resolution width and height, assuming SharedPreferencesManager.getCameraResolution()
+        // returns dimensions appropriate for the selected orientation (e.g., 1080x1920 for portrait).
+        Log.d(TAG, "Setting video size directly from resolution: " + resolution.getWidth() + "x" + resolution.getHeight() + " for isLandscape=" + isLandscape);
+        mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
 
         if (!isLandscape) {
-            mediaRecorder.setOrientationHint(90);
+            mediaRecorder.setOrientationHint(90); // Portrait
         } else {
-            mediaRecorder.setOrientationHint(0); // Default is 0, but explicit for clarity
+            mediaRecorder.setOrientationHint(0);  // Landscape (Default is 0, but explicit for clarity)
         }
+        // ----- Fix Ended for this method(setupMediaRecorder_direct_resolution_use)-----
 
         int bitRate = getVideoBitrate(); // Uses your existing helper
         int frameRate = sharedPreferencesManager.getVideoFrameRate(); // Assuming getVideoFrameRate() is correct
