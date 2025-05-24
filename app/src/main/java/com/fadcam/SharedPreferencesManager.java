@@ -59,6 +59,11 @@ public class SharedPreferencesManager {
     public static final int TRASH_AUTO_DELETE_NEVER = -1; // This constant can remain as is, representing manual delete
     // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete) -----
 
+    // ----- Fix Start for this class (SharedPreferencesManager_clock_color) -----
+    private static final String PREF_KEY_CLOCK_CARD_COLOR = "clock_card_color";
+    public static final String DEFAULT_CLOCK_CARD_COLOR = "#673AB7"; // Default Purple
+    // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
+
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
         this.sharedPreferences = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -301,5 +306,15 @@ public class SharedPreferencesManager {
         return minutes;
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete_methods) -----
+
+    // ----- Fix Start for this class (SharedPreferencesManager_clock_color) -----
+    public void setClockCardColor(String colorHex) {
+        sharedPreferences.edit().putString(PREF_KEY_CLOCK_CARD_COLOR, colorHex).apply();
+    }
+
+    public String getClockCardColor() {
+        return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
 }

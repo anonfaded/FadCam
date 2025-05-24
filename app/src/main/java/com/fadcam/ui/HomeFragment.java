@@ -103,6 +103,11 @@ public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
 
+    // ----- Fix Start for this method(fields)-----
+    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark"};
+    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745"};
+    // ----- Fix Ended for this method(fields)-----
+
     private long recordingStartTime;
     private long videoBitrate;
 
@@ -1221,7 +1226,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "onViewCreated: View hierarchy created. Initializing UI components.");
+        Log.d(TAG, "onViewCreated: View created.");
 
         // Initialize SharedPreferencesManager
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
@@ -1282,6 +1287,30 @@ public class HomeFragment extends Fragment {
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
         initializeTorch();
         setupTorchButton();
+
+        // ----- Fix Start for this method(onViewCreated)-----
+        // Apply saved clock card color
+        applyClockCardColor(sharedPreferencesManager.getClockCardColor());
+        // ----- Fix Ended for this method(onViewCreated)-----
+
+        // Attempt to find camera with flash
+        try {
+            cameraId = getCameraWithFlash();
+            if (cameraId == null) {
+                Log.d(TAG, "No camera with flash found");
+                buttonTorchSwitch.setEnabled(false);
+                buttonTorchSwitch.setVisibility(View.GONE);
+            } else {
+                Log.d(TAG, "Flash available on camera: " + cameraId);
+                buttonTorchSwitch.setEnabled(true);
+                buttonTorchSwitch.setVisibility(View.VISIBLE);
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Camera access error: " + e.getMessage());
+            e.printStackTrace();
+            buttonTorchSwitch.setEnabled(false);
+            buttonTorchSwitch.setVisibility(View.GONE);
+        }
     }
 
     private void setupTextureView(@NonNull View view) {
@@ -1557,9 +1586,12 @@ public class HomeFragment extends Fragment {
     private void setupClockLongPressListener() {
         if (cardClock != null) {
             cardClock.setOnLongClickListener(v -> {
-                addWobbleAnimation(); // This will perform the wobble animation
-                showDisplayOptionsDialog(); // This will show the dialog to choose display options
-                return true; // Indicate the long press was handled
+                performHapticFeedback();
+                // ----- Fix Start for this method(setupClockLongPressListener)-----
+                // Show existing display options and new color chooser
+                showClockAppearanceDialog();
+                // ----- Fix Ended for this method(setupClockLongPressListener)-----
+                return true;
             });
         }
     }
@@ -1614,19 +1646,28 @@ public class HomeFragment extends Fragment {
     }
 
     private void showDisplayOptionsDialog() {
+        // ----- Fix Start for this method(showDisplayOptionsDialog_revert)-----
+        final String[] items = {
+                getString(R.string.dialog_clock_timeonly),
+                getString(R.string.dialog_clock_englishtime),
+                getString(R.string.dialog_clock_Islamic_calendar) // This was likely intended to be the "Everything" option
+        };
+        // The mapping of options to array indices for `setSingleChoiceItems` is:
+        // 0 -> Time Only
+        // 1 -> Time and English Date (Day/Month)
+        // 2 -> Time, English Date, and Hijri Date (Everything)
+        int currentOption = getCurrentDisplayOption(); // This returns 0, 1, or 2
+
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.dialog_clock_title))
-                .setSingleChoiceItems(new String[]{
-                        getString(R.string.dialog_clock_timeonly),
-                        getString(R.string.dialog_clock_englishtime),
-                        getString(R.string.dialog_clock_Islamic_calendar)
-                }, getCurrentDisplayOption(), (dialog, which) -> {
-                    saveDisplayOption(which);
+                .setSingleChoiceItems(items, currentOption, (dialog, which) -> {
+                    saveDisplayOption(which); // Save the selected index (0, 1, or 2)
                     updateClock(); // Update the widget based on the selected option
                     dialog.dismiss();
                 })
-                .setPositiveButton("OK", null)
+                .setNegativeButton(R.string.universal_cancel, null) // Changed from OK to Cancel, and removed positive button action
                 .show();
+        // ----- Fix Ended for this method(showDisplayOptionsDialog_revert)-----
     }
 
     private int getCurrentDisplayOption() {
@@ -2593,4 +2634,57 @@ public class HomeFragment extends Fragment {
         return false;
     }
     // ----- Fix Ended for this class (HomeFragment) -----
+
+    // ----- Fix Start for this class (HomeFragment_clock_color_picker) -----
+    private void applyClockCardColor(String colorHex) {
+        if (cardClock != null && colorHex != null) {
+            try {
+                cardClock.setCardBackgroundColor(Color.parseColor(colorHex));
+                Log.d(TAG, "Applied clock card color: " + colorHex);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Invalid color hex for clock card: " + colorHex, e);
+                // Optionally apply default color if parse fails
+                cardClock.setCardBackgroundColor(Color.parseColor(SharedPreferencesManager.DEFAULT_CLOCK_CARD_COLOR));
+            }
+        }
+    }
+
+    private void showClockAppearanceDialog() {
+        final String[] appearanceOptions = {"Change Clock Display", "Change Clock Color"};
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Clock Appearance")
+                .setItems(appearanceOptions, (dialog, which) -> {
+                    if (which == 0) { // Change Clock Display
+                        showDisplayOptionsDialog();
+                    } else if (which == 1) { // Change Clock Color
+                        showClockColorChooserDialog();
+                    }
+                })
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
+    }
+
+    private void showClockColorChooserDialog() {
+        String currentSelectedColorHex = sharedPreferencesManager.getClockCardColor();
+        int currentSelectedColorIndex = -1;
+        for (int i = 0; i < CLOCK_COLOR_HEX_VALUES.length; i++) {
+            if (CLOCK_COLOR_HEX_VALUES[i].equalsIgnoreCase(currentSelectedColorHex)) {
+                currentSelectedColorIndex = i;
+                break;
+            }
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Choose Clock Background Color")
+                .setSingleChoiceItems(CLOCK_COLOR_NAMES, currentSelectedColorIndex, (dialog, which) -> {
+                    String selectedColorHex = CLOCK_COLOR_HEX_VALUES[which];
+                    sharedPreferencesManager.setClockCardColor(selectedColorHex);
+                    applyClockCardColor(selectedColorHex);
+                    Log.d(TAG, "User selected clock color: " + CLOCK_COLOR_NAMES[which] + " (" + selectedColorHex + ")");
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
+    }
+    // ----- Fix Ended for this class (HomeFragment_clock_color_picker) -----
 }
