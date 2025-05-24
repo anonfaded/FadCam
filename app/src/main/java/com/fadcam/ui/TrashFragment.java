@@ -79,7 +79,7 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         if (getContext() != null) {
             int autoDeletedCount = TrashManager.autoDeleteOldTrashItems(getContext());
             if (autoDeletedCount > 0) {
-                Toast.makeText(getContext(), autoDeletedCount + " old item(s) auto-deleted from trash.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
                 // Metadata is already updated by autoDeleteOldTrashItems, loadTrashItems will get the fresh list.
             }
         }
@@ -88,7 +88,7 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
 
     private void setupToolbar() {
         if (toolbar != null) {
-            toolbar.setTitle("Trash");
+            toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             toolbar.setNavigationIcon(R.drawable.ic_close); // Ensure you have this drawable
             toolbar.setNavigationOnClickListener(v -> {
                 try {
@@ -125,24 +125,24 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         buttonRestoreSelected.setOnClickListener(v -> {
             List<TrashItem> selectedItems = trashAdapter.getSelectedItems();
             if (selectedItems.isEmpty()) {
-                Toast.makeText(getContext(), "No items selected.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.trash_no_items_selected_toast), Toast.LENGTH_SHORT).show();
                 return;
             }
             new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Restore Selected?")
-                    .setMessage("Restore " + selectedItems.size() + " item(s) to the public Downloads/FadCam/ folder?")
-                    .setNegativeButton("Cancel", (dialog, which) -> {
-                        onRestoreFinished(false, "Restore cancelled.");
+                    .setTitle(getString(R.string.trash_dialog_restore_title))
+                    .setMessage(getString(R.string.trash_dialog_restore_message, selectedItems.size()))
+                    .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
+                        onRestoreFinished(false, getString(R.string.trash_restore_cancelled_toast));
                     })
-                    .setPositiveButton("Restore", (dialog, which) -> {
+                    .setPositiveButton(getString(R.string.universal_restore), (dialog, which) -> {
                         onRestoreStarted(selectedItems.size());
                         if (executorService == null || executorService.isShutdown()) {
                             executorService = Executors.newSingleThreadExecutor(); // Re-initialize if shutdown
                         }
                         executorService.submit(() -> {
                             boolean success = TrashManager.restoreItemsFromTrash(getContext(), selectedItems);
-                            String message = success ? selectedItems.size() + " item(s) restored."
-                                                     : "Error restoring items. Some files might not have been restored or gallery might not be updated. Check app permissions for storage.";
+                            String message = success ? getString(R.string.trash_restore_success_toast, selectedItems.size())
+                                                     : getString(R.string.trash_restore_fail_toast);
                             
                             // Post result back to main thread
                             if (getActivity() != null) {
@@ -161,20 +161,20 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         buttonDeleteSelectedPermanently.setOnClickListener(v -> {
             List<TrashItem> selectedItems = trashAdapter.getSelectedItems();
             if (selectedItems.isEmpty()) {
-                Toast.makeText(getContext(), "No items selected.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.trash_empty_toast_message), Toast.LENGTH_SHORT).show();
                 return;
             }
 
             new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Delete Permanently?")
-                    .setMessage("Are you sure you want to permanently delete " + selectedItems.size() + " selected item(s)? This action cannot be undone.")
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Delete", (dialog, which) -> {
+                    .setTitle(getString(R.string.dialog_permanently_delete_title))
+                    .setMessage(getString(R.string.dialog_permanently_delete_message, selectedItems.size()))
+                    .setNegativeButton(getString(R.string.universal_cancel), null)
+                    .setPositiveButton(getString(R.string.universal_delete), (dialog, which) -> {
                         if (TrashManager.permanentlyDeleteItems(getContext(), selectedItems)) {
-                            Toast.makeText(getContext(), selectedItems.size() + " item(s) deleted permanently.", Toast.LENGTH_SHORT).show();
-                            loadTrashItems(); // Refresh the list
+                            Toast.makeText(getContext(), getString(R.string.trash_items_deleted_toast, selectedItems.size()), Toast.LENGTH_SHORT).show();
+                            loadTrashItems();
                         } else {
-                            Toast.makeText(getContext(), "Error deleting items.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast), Toast.LENGTH_SHORT).show();
                         }
                     })
                     .show();
@@ -182,19 +182,19 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
 
         buttonEmptyAllTrash.setOnClickListener(v -> {
             if (trashItems.isEmpty()) {
-                Toast.makeText(getContext(), "Trash is already empty.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.trash_empty_toast_message), Toast.LENGTH_SHORT).show();
                 return;
             }
             new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Empty All Trash?")
-                    .setMessage("Are you sure you want to permanently delete all items in the trash? This action cannot be undone.")
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Empty Trash", (dialog, which) -> {
+                    .setTitle(getString(R.string.trash_dialog_empty_all_title))
+                    .setMessage(getString(R.string.dialog_empty_all_trash_message))
+                    .setNegativeButton(getString(R.string.universal_cancel), null)
+                    .setPositiveButton(getString(R.string.trash_button_empty_all_action), (dialog, which) -> {
                         if (TrashManager.emptyAllTrash(getContext())) {
-                            Toast.makeText(getContext(), "Trash emptied.", Toast.LENGTH_SHORT).show();
-                            loadTrashItems(); // Refresh the list
+                            Toast.makeText(getContext(), getString(R.string.trash_emptied_toast), Toast.LENGTH_SHORT).show();
+                            loadTrashItems();
                         } else {
-                            Toast.makeText(getContext(), "Error emptying trash.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast), Toast.LENGTH_SHORT).show();
                         }
                     })
                     .show();

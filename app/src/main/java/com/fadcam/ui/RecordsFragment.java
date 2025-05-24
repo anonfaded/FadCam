@@ -131,30 +131,28 @@ public class RecordsFragment extends Fragment implements
         if (videoItem == null || videoItem.uri == null) {
             Log.e(TAG, "onMoveToTrashRequested: Received null videoItem or URI.");
             if (getContext() != null) {
-                Toast.makeText(getContext(), "Error: Cannot move null item to trash.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.delete_video_error_null_toast), Toast.LENGTH_SHORT).show();
             }
             onMoveToTrashFinished(false, "Error: Null item provided.");
             return;
         }
 
-        Log.i(TAG, "Move to trash requested for: " + videoItem.displayName);
+        Log.i(TAG, "Delete requested for: " + videoItem.displayName);
 
-        // Use a MaterialAlertDialogBuilder for confirmation
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Move to Trash?")
-                .setMessage("Move '" + videoItem.displayName + "' to the trash?" +
-                            "\n\nIt can be restored or permanently deleted from the trash later.")
+                .setTitle(getString(R.string.delete_video_dialog_title))
+                .setMessage(getString(R.string.delete_video_dialog_message, videoItem.displayName))
                 .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
-                    onMoveToTrashFinished(false, "Move to trash cancelled.");
+                    onMoveToTrashFinished(false, getString(R.string.delete_video_cancelled_toast));
                 })
-                .setPositiveButton("Move to Trash", (dialog, which) -> {
+                .setPositiveButton(getString(R.string.video_menu_del), (dialog, which) -> {
                     if (executorService == null || executorService.isShutdown()) {
                         executorService = Executors.newSingleThreadExecutor();
                     }
                     executorService.submit(() -> {
                         boolean success = moveToTrashVideoItem(videoItem);
-                        final String message = success ? "'" + videoItem.displayName + "' moved to trash." :
-                                                         "Failed to move '" + videoItem.displayName + "' to trash.";
+                        final String message = success ? getString(R.string.delete_video_success_toast, videoItem.displayName) :
+                                getString(R.string.delete_video_fail_toast, videoItem.displayName);
                         onMoveToTrashFinished(success, message);
 
                         if (getActivity() != null) {
@@ -191,7 +189,7 @@ public class RecordsFragment extends Fragment implements
 
             TextView progressText = dialogView.findViewById(R.id.progress_text); // Assuming R.id.progress_text exists in dialog_progress.xml
             if (progressText != null) {
-                progressText.setText("Moving '" + videoName + "' to trash...");
+                progressText.setText(getString(R.string.delete_video_progress, videoName));
             }
 
             builder.setView(dialogView);
@@ -1126,11 +1124,11 @@ public class RecordsFragment extends Fragment implements
     // --- deleteSelectedVideos (Corrected version from previous step) ---
     /** Handles deletion of selected videos */
     private void deleteSelectedVideos() {
-        final List<Uri> itemsToDeleteUris = new ArrayList<>(selectedUris); // Use fragment's list of URIs
+        final List<Uri> itemsToDeleteUris = new ArrayList<>(selectedUris);
         if(itemsToDeleteUris.isEmpty()){ Log.d(TAG,"Deletion requested but selectedUris is empty."); exitSelectionMode(); return; }
 
-        Log.i(TAG,"Moving "+itemsToDeleteUris.size()+" selected videos to trash...");
-        exitSelectionMode(); // Exit selection mode UI first
+        Log.i(TAG, getString(R.string.delete_videos_log, itemsToDeleteUris.size()));
+        exitSelectionMode();
 
         if (executorService == null || executorService.isShutdown()){ executorService = Executors.newSingleThreadExecutor(); }
         executorService.submit(() -> {
@@ -1156,10 +1154,10 @@ public class RecordsFragment extends Fragment implements
             if(getActivity()!=null){
                 getActivity().runOnUiThread(()->{
                     String message = (finalFailCount > 0) ?
-                             "Moved " + finalSuccessCount + " to trash, Failed " + finalFailCount :
-                             "Moved " + finalSuccessCount + " videos to trash.";
+                             getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
+                             getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    loadRecordsList(); // Refresh the list
+                    loadRecordsList();
                 });
             }
         });
@@ -1180,18 +1178,13 @@ public class RecordsFragment extends Fragment implements
 
     // Inside RecordsFragment.java
     private void deleteAllVideos() {
-        List<VideoItem> itemsToTrash = new ArrayList<>(videoItems); // Get a copy of current items
+        List<VideoItem> itemsToTrash = new ArrayList<>(videoItems);
         if (itemsToTrash.isEmpty()) {
              if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
              return;
         }
 
         Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
-
-        // Optimistically update UI - this part might be removed if loadRecordsList is sufficient
-        // videoItems.clear();
-        // if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems);
-        // updateUiVisibility(); // Show empty state now
 
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
@@ -1219,8 +1212,8 @@ public class RecordsFragment extends Fragment implements
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     String message = (finalFailCount > 0) ?
-                            "Moved " + finalSuccessCount + " to trash, Failed " + finalFailCount :
-                            "Moved all " + finalSuccessCount + " videos to trash.";
+                            getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
+                            getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                     loadRecordsList(); // Refresh the list from storage
                 });

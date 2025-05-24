@@ -21,41 +21,41 @@
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/trash_toolbar"
-        app:layout_constraintBottom_toTopOf="@+id/trash_actions_layout"
+        app:layout_constraintTop_toBottomOf="@id/trash_toolbar"
+        app:layout_constraintBottom_toTopOf="@id/trash_actions_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_trash" /> <!-- Placeholder for item layout -->
+        tools:listitem="@layout/item_trash" />
 
     <!-- Empty State View (Centred) -->
     <LinearLayout
-        android:id="@+id/empty_trash_layout" 
+        android:id="@+id/empty_trash_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center"
-        android:visibility="gone" 
-        app:layout_constraintTop_toBottomOf="@+id/trash_toolbar"
-        app:layout_constraintBottom_toTopOf="@+id/trash_actions_layout"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/trash_toolbar"
+        app:layout_constraintBottom_toTopOf="@id/trash_actions_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
             android:id="@+id/empty_trash_icon"
-            android:layout_width="72dp" 
+            android:layout_width="72dp"
             android:layout_height="72dp"
             android:src="@drawable/ic_no_videos"
-            app:tint="#80FFFFFF" 
-            android:contentDescription="Trash is empty icon"
+            app:tint="#80FFFFFF"
+            android:contentDescription="@string/trash_empty_icon_description"
             android:layout_marginBottom="12dp"/>
 
         <TextView
             android:id="@+id/empty_trash_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trash is empty."
+            android:text="@string/trash_empty_text"
             android:textSize="18sp"
-            android:textColor="#80FFFFFF" /> 
+            android:textColor="#80FFFFFF" />
 
     </LinearLayout>
 
@@ -65,7 +65,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:background="?android:attr/windowBackground" 
+        android:background="?android:attr/windowBackground"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -76,7 +76,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Restore"
+            android:text="@string/universal_restore"
             android:layout_marginEnd="4dp"/>
 
         <Button
@@ -85,7 +85,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Delete"
+            android:text="@string/universal_delete"
             android:textColor="@color/colorError"
             app:strokeColor="@color/colorError"
             android:layout_marginStart="4dp"
@@ -97,7 +97,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Empty All"
+            android:text="@string/trash_button_empty_all_action"
             android:textColor="@color/colorError"
             android:layout_marginStart="4dp"/>
     </LinearLayout>
