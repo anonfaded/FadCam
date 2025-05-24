@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.DocumentsContract;
+import android.text.InputType;
 import android.util.Log; // Make sure Log is imported
 import android.util.Size;
 import android.view.LayoutInflater;
@@ -42,6 +43,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -145,7 +147,7 @@ public class SettingsFragment extends Fragment {
     // ----- Fix Start for this class (SettingsFragment_video_splitting_fields) -----
     private MaterialSwitch videoSplittingSwitch;
     private LinearLayout videoSplitSizeLayout;
-    private EditText videoSplitSizeEditText;
+    private MaterialTextView videoSplitSizeValueTextView; // New TextView
     // ----- Fix Ended for this class (SettingsFragment_video_splitting_fields) -----
 
     // Simple class to hold camera ID and its display name
@@ -285,7 +287,7 @@ public class SettingsFragment extends Fragment {
         // ----- Fix Start for this class (SettingsFragment_video_splitting_view_finding) -----
         videoSplittingSwitch = view.findViewById(R.id.video_splitting_switch);
         videoSplitSizeLayout = view.findViewById(R.id.video_split_size_layout);
-        videoSplitSizeEditText = view.findViewById(R.id.video_split_size_edittext);
+        videoSplitSizeValueTextView = view.findViewById(R.id.video_split_size_value_textview); // New TextView
         // ----- Fix Ended for this class (SettingsFragment_video_splitting_view_finding) -----
 
         // *** Safety check for the new view ***
@@ -2419,61 +2421,195 @@ public class SettingsFragment extends Fragment {
 
     // ----- Fix Start for this class (SettingsFragment_video_splitting_methods) -----
     private void setupVideoSplittingSection() {
-        if (videoSplittingSwitch == null || videoSplitSizeLayout == null || videoSplitSizeEditText == null || sharedPreferencesManager == null) {
+        if (videoSplittingSwitch == null || videoSplitSizeLayout == null || videoSplitSizeValueTextView == null || sharedPreferencesManager == null) {
             Log.e(TAG_SETTINGS, "Video splitting UI elements or SharedPreferencesManager not initialized.");
             return;
         }
 
-        // Load initial states
         boolean isSplittingEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
-        int currentSplitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
-
         videoSplittingSwitch.setChecked(isSplittingEnabled);
-        videoSplitSizeEditText.setText(String.valueOf(currentSplitSizeMb));
         videoSplitSizeLayout.setVisibility(isSplittingEnabled ? View.VISIBLE : View.GONE);
+        updateVideoSplitSizeSummary(); // Update summary TextView
 
         videoSplittingSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             vibrateTouch();
             sharedPreferencesManager.setVideoSplittingEnabled(isChecked);
             videoSplitSizeLayout.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             Log.d(TAG_SETTINGS, "Video splitting enabled: " + isChecked);
-            if (!isChecked) {
-                // Optionally reset size to default when disabling, or leave it as is
-                // videoSplitSizeEditText.setText(String.valueOf(SharedPreferencesManager.DEFAULT_VIDEO_SPLIT_SIZE_MB));
-                // sharedPreferencesManager.setVideoSplitSizeMb(SharedPreferencesManager.DEFAULT_VIDEO_SPLIT_SIZE_MB);
-            }
+            // When disabling, the summary will naturally be hidden by the layout's visibility change.
         });
 
-        videoSplitSizeEditText.addTextChangedListener(new TextWatcher() {
+        videoSplitSizeLayout.setOnClickListener(v -> {
+            vibrateTouch();
+            showVideoSplitSizeDialog();
+        });
+    }
+
+    private void updateVideoSplitSizeSummary() {
+        if (sharedPreferencesManager == null || videoSplitSizeValueTextView == null) return;
+
+        boolean isEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
+        if (isEnabled) {
+            int splitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
+            String summaryText;
+            if (splitSizeMb == 500) summaryText = "Current: 500 MB";
+            else if (splitSizeMb == 1024) summaryText = "Current: 1 GB";
+            else if (splitSizeMb == 2048) summaryText = "Current: 2 GB (Recommended)";
+            else if (splitSizeMb == 4096) summaryText = "Current: 4 GB";
+            else if (splitSizeMb > 0) { // Custom value
+                summaryText = String.format(Locale.getDefault(), "Current: Custom (%d MB)", splitSizeMb);
+            }
+            else summaryText = "Current: 2 GB (Recommended)"; // Default if somehow invalid but enabled
+            videoSplitSizeValueTextView.setText(summaryText);
+        } else {
+            videoSplitSizeValueTextView.setText("Disabled"); // Or some other placeholder
+        }
+    }
+
+    private void showVideoSplitSizeDialog() {
+        if (getContext() == null || sharedPreferencesManager == null) return;
+
+        final String[] items = {"500 MB", "1 GB", "2 GB (Recommended)", "4 GB", "Custom Size..."};
+        final int[] valuesMb = {500, 1024, 2048, 4096, -1}; // -1 for custom
+
+        int currentSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
+        int checkedItem = -1;
+        for (int i = 0; i < valuesMb.length -1; i++) { // Exclude "Custom Size..."
+            if (valuesMb[i] == currentSizeMb) {
+                checkedItem = i;
+                break;
+            }
+        }
+        // If no preset matches, and it's not one of the standard values, it's custom
+        if (checkedItem == -1 && currentSizeMb > 0 &&
+            currentSizeMb != 500 && currentSizeMb != 1024 &&
+            currentSizeMb != 2048 && currentSizeMb != 4096) {
+            // No direct preset matches, if a custom value is set, don't pre-select a preset.
+            // Or, could select the "Custom Size..." item if we wanted to be more explicit.
+        }
+
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Set Video Split Size")
+                // .setMessage("Videos will be split into segments once the selected size is reached. New segments are automatically started (e.g., video_001.mp4, video_002.mp4).") // Temporarily commented out
+                .setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+                    if (which == items.length - 1) { // "Custom Size..."
+                        dialog.dismiss();
+                        showCustomSplitSizeDialog();
+                    } else {
+                        sharedPreferencesManager.setVideoSplitSizeMb(valuesMb[which]);
+                        updateVideoSplitSizeSummary();
+                        dialog.dismiss();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showCustomSplitSizeDialog() {
+        if (getContext() == null || sharedPreferencesManager == null) return;
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        builder.setTitle("Custom Split Size (MB)");
+
+        // Inflate custom layout
+        LayoutInflater inflater = requireActivity().getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_custom_split_size, null); // You'll need to create this layout
+        builder.setView(dialogView);
+
+        final com.google.android.material.textfield.TextInputEditText inputEditText = dialogView.findViewById(R.id.custom_split_size_edittext); // ID in your dialog_custom_split_size.xml
+        final com.google.android.material.textview.MaterialTextView errorTextView = dialogView.findViewById(R.id.custom_split_size_error_textview); // ID in your dialog_custom_split_size.xml
+
+        int currentCustomSize = sharedPreferencesManager.getVideoSplitSizeMb();
+        // If current value is one of the presets, default to 2048 for custom, otherwise use current custom.
+        if (currentCustomSize == 500 || currentCustomSize == 1024 || currentCustomSize == 2048 || currentCustomSize == 4096) {
+            inputEditText.setText(String.valueOf(2048));
+        } else if (currentCustomSize > 0) {
+            inputEditText.setText(String.valueOf(currentCustomSize));
+        } else {
+            inputEditText.setText(String.valueOf(2048)); // Default if no valid custom size previously
+        }
+        inputEditText.requestFocus(); // Show keyboard
+
+
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            // This listener will be overridden to prevent closing on invalid input
+        });
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog alertDialog = builder.create();
+
+        inputEditText.addTextChangedListener(new android.text.TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
             @Override
-            public void afterTextChanged(Editable s) {
-                try {
-                    String input = s.toString().trim();
-                    if (input.isEmpty()) {
-                        // Allow empty for user to clear, but don't save yet, maybe show hint
-                        videoSplitSizeEditText.setError("Size cannot be empty");
-                        return;
-                    }
-                    int sizeMb = Integer.parseInt(input);
-                    if (sizeMb >= 100 && sizeMb <= 4000) { // Example validation: 100MB to 4GB
-                        sharedPreferencesManager.setVideoSplitSizeMb(sizeMb);
-                        Log.d(TAG_SETTINGS, "Video split size set to: " + sizeMb + " MB");
-                        videoSplitSizeEditText.setError(null); // Clear error
-                    } else {
-                        videoSplitSizeEditText.setError("Min 100, Max 4000 MB");
-                    }
-                } catch (NumberFormatException e) {
-                    videoSplitSizeEditText.setError("Invalid number");
-                    Log.w(TAG_SETTINGS, "Invalid number format for split size: " + s.toString());
-                }
+            public void afterTextChanged(android.text.Editable s) {
+                validateCustomSplitSizeInput(s.toString(), errorTextView, alertDialog.getButton(AlertDialog.BUTTON_POSITIVE));
             }
         });
+
+
+        alertDialog.setOnShowListener(dialogInterface -> {
+            Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            // Initial validation
+            validateCustomSplitSizeInput(inputEditText.getText().toString(), errorTextView, positiveButton);
+
+            positiveButton.setOnClickListener(view -> {
+                String inputText = inputEditText.getText().toString();
+                if (validateCustomSplitSizeInput(inputText, errorTextView, positiveButton)) {
+                    try {
+                        int sizeMb = Integer.parseInt(inputText);
+                        sharedPreferencesManager.setVideoSplitSizeMb(sizeMb);
+                        updateVideoSplitSizeSummary();
+                        alertDialog.dismiss();
+                    } catch (NumberFormatException e) {
+                        // Should be caught by validation, but as a safeguard
+                        errorTextView.setText("Invalid number format.");
+                        errorTextView.setVisibility(View.VISIBLE);
+                        positiveButton.setEnabled(false);
+                    }
+                }
+            });
+        });
+
+        alertDialog.show();
+    }
+
+    private boolean validateCustomSplitSizeInput(String input, MaterialTextView errorTextView, Button positiveButton) {
+        final int MIN_SIZE_MB = 10; // Min 10 MB
+        final int MAX_SIZE_MB = 1024 * 100; // Max 100 GB (102400 MB)
+
+        if (input.isEmpty()) {
+            errorTextView.setText("Value cannot be empty.");
+            errorTextView.setVisibility(View.VISIBLE);
+            if (positiveButton != null) positiveButton.setEnabled(false);
+            return false;
+        }
+
+        try {
+            int value = Integer.parseInt(input);
+            if (value < MIN_SIZE_MB) {
+                errorTextView.setText(String.format(Locale.US, "Minimum size is %d MB.", MIN_SIZE_MB));
+                errorTextView.setVisibility(View.VISIBLE);
+                if (positiveButton != null) positiveButton.setEnabled(false);
+                return false;
+            } else if (value > MAX_SIZE_MB) {
+                errorTextView.setText(String.format(Locale.US, "Maximum size is %d MB (100 GB).", MAX_SIZE_MB));
+                errorTextView.setVisibility(View.VISIBLE);
+                if (positiveButton != null) positiveButton.setEnabled(false);
+                return false;
+            }
+            errorTextView.setVisibility(View.GONE);
+            if (positiveButton != null) positiveButton.setEnabled(true);
+            return true;
+        } catch (NumberFormatException e) {
+            errorTextView.setText("Invalid number format.");
+            errorTextView.setVisibility(View.VISIBLE);
+            if (positiveButton != null) positiveButton.setEnabled(false);
+            return false;
+        }
     }
     // ----- Fix Ended for this class (SettingsFragment_video_splitting_methods) -----
 }

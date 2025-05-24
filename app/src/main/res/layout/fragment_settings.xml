@@ -575,7 +575,7 @@
                     android:layout_marginEnd="16dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_split_file" 
-                    app:tint="@color/white"
+                    app:tint="?attr/colorOnSurface"
                     android:contentDescription="Video Splitting Icon"/>
                 <LinearLayout
                     android:layout_width="0dp"
@@ -587,17 +587,18 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
                         android:textSize="16sp"
+                        android:textColor="@color/colorPrimary"
                         android:textStyle="bold"
                         android:text="Enable Video Splitting"/> 
                     <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/video_splitting_description_textview"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceCaption"
                         android:textColor="?android:attr/textColorSecondary"
                         app:lineHeight="16sp"
-                        android:text="Automatically split recordings into smaller files."/>
+                        android:text="Automatically split recordings into smaller files (Disabled by default). Recommended: 2 GB for balance. Presets up to 4 GB and custom sizes are available. This helps manage large recordings and avoids device file size limits."/>
                 </LinearLayout>
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/video_splitting_switch"
@@ -610,29 +611,45 @@
                 android:id="@+id/video_split_size_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal" 
+                android:gravity="center_vertical" 
                 android:paddingStart="40dp" 
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:paddingEnd="8dp" 
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
                 android:visibility="gone" 
                 tools:visibility="visible">
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceSubtitle2"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:text="Split File Size (MB)"/>
-                <EditText
-                    android:id="@+id/video_split_size_edittext"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:hint="e.g., 2048 for 2GB"
-                    android:minHeight="48dp"/>
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceCaption"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:text="Min: 100 MB, Max: 4000 MB (approx. 4GB). Default: 2048 MB."/>
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceSubtitle2"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:text="Split File Size"/>
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/video_split_size_value_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"
+                        tools:text="Current: 2 GB"/>
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right" 
+                    app:tint="?android:attr/textColorSecondary"
+                    android:contentDescription="Select split size"/>
             </LinearLayout>
 
             <View

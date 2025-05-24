@@ -416,4 +416,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="auto_delete_save_setting">Save</string>
     <!-- End Strings for Trash Auto-Delete Feature -->
 
+    <string name="video_split_size_summary_mb">Current: %1$d MB</string>
+    <string name="video_split_size_summary_gb">Current: %1$s GB</string>
+
 </resources>
