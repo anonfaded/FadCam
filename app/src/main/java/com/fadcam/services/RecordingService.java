@@ -312,7 +312,6 @@ public class RecordingService extends Service {
      */
     private void stopRecording() {
         Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
-        // ----- Fix Start for this method(stopRecording)-----
         // ----- Fix Start for this method(stopRecording_check_ffmpeg_counter)-----
         if (recordingState == RecordingState.NONE && ffmpegProcessingTaskCount.get() == 0) { // Already stopped (or never started) AND not processing
             Log.w(TAG, "stopRecording called but state is already NONE and no ffmpeg tasks are active.");
@@ -326,6 +325,9 @@ public class RecordingService extends Service {
 
         // --- Stage 1: Stop MediaRecorder & Update Internal State ---
         File tempFileToProcess = this.currentInternalTempFile; // Grab reference for processing later
+        Uri safUriToProcess = this.currentRecordingSafUri; // Grab SAF URI if it was used
+        DocumentFile docFileToProcess = this.currentRecordingDocFile; // And its DocumentFile
+
         final RecordingState previousState = recordingState;
         recordingState = RecordingState.NONE; // Set service state to NONE immediately
         sharedPreferencesManager.setRecordingInProgress(false); // Update persistent state
@@ -364,21 +366,49 @@ public class RecordingService extends Service {
 
 
         // --- Stage 5: Decide and Initiate Background Processing (if needed) ---
-        boolean tempFileIsValid = tempFileToProcess != null && tempFileToProcess.exists() && tempFileToProcess.length() > 0;
-        boolean needsProcessing = (previousState != RecordingState.NONE) && stoppedCleanly && tempFileIsValid;
+        boolean needsProcessing = (previousState != RecordingState.NONE) && stoppedCleanly;
+        File actualFileToProcessForFFmpeg = null; // This will be the file in internal cache
+        Uri originalSafUriForThisSegment = null; // This will be the original temp SAF URI if applicable
 
         if (needsProcessing) {
-            Log.i(TAG, "Proceeding to background video processing for: " + tempFileToProcess.getName());
-            // ----- Fix Start for this method(stopRecording_increment_ffmpeg_counter)-----
-            // isProcessingWatermark = true; // Set flag ONLY if processing starts
-            // ffmpegProcessingTaskCount.incrementAndGet(); // This will be incremented in processAndMoveVideo
-            // ----- Fix Ended for this method(stopRecording_increment_ffmpeg_counter)-----
-            this.currentInternalTempFile = tempFileToProcess; // Keep reference for processing
-            processAndMoveVideo(tempFileToProcess); // Starts async FFmpeg
+            if (tempFileToProcess != null && tempFileToProcess.exists() && tempFileToProcess.length() > 0) {
+                Log.d(TAG, "stopRecording: Last segment was internal temp file: " + tempFileToProcess.getAbsolutePath());
+                actualFileToProcessForFFmpeg = tempFileToProcess;
+                // originalSafUriForThisSegment remains null
+            } else if (safUriToProcess != null && docFileToProcess != null && docFileToProcess.exists() && docFileToProcess.length() > 0) {
+                Log.d(TAG, "stopRecording: Last segment was SAF URI: " + safUriToProcess + ". Copying to cache for processing.");
+                actualFileToProcessForFFmpeg = copySafUriToTempCacheForProcessing(getApplicationContext(), safUriToProcess, docFileToProcess.getName());
+                if (actualFileToProcessForFFmpeg != null && actualFileToProcessForFFmpeg.exists()) {
+                    originalSafUriForThisSegment = safUriToProcess; // This is the original temp SAF URI
+                    // The original temp SAF DocumentFile (docFileToProcess) will be deleted by executeFFmpegAndMoveToSAF after successful processing and move.
+                } else {
+                    Log.e(TAG, "stopRecording: Failed to copy last SAF segment to cache. Cannot process: " + docFileToProcess.getName());
+                    needsProcessing = false; // Can't process if copy failed
+                }
+            } else {
+                Log.w(TAG, "stopRecording: No valid last segment file/URI found for processing.");
+                needsProcessing = false;
+            }
+        }
+
+        if (needsProcessing && actualFileToProcessForFFmpeg != null) {
+            Log.i(TAG, "Proceeding to background video processing for: " + actualFileToProcessForFFmpeg.getName() + (originalSafUriForThisSegment != null ? " (Original SAF: "+originalSafUriForThisSegment+")" : ""));
+            this.currentInternalTempFile = actualFileToProcessForFFmpeg; // For cleanup if internal, or for other refs (though primary processing uses arg)
+            this.currentRecordingSafUri = null; // Clear these as they've been handled or copied
+            this.currentRecordingDocFile = null;
+            this.currentParcelFileDescriptor = null; // Ensure PFD is cleared
+            
+            processAndMoveVideo(actualFileToProcessForFFmpeg, originalSafUriForThisSegment); // Starts async FFmpeg
         } else {
-            Log.w(TAG, "Skipping processing. PrevState:" + previousState + " CleanStop:" + stoppedCleanly + " TempValid:" + tempFileIsValid);
-            cleanupTemporaryFile(); // Cleanup temp file if not processing
-            sendRecordingCompleteBroadcast(stoppedCleanly, tempFileToProcess != null ? Uri.fromFile(tempFileToProcess) : null); // Signal immediate completion
+            Log.w(TAG, "Skipping processing. PrevState:" + previousState + " CleanStop:" + stoppedCleanly + " (needsProcessing evaluated to: "+needsProcessing+")");
+            cleanupTemporaryFile(); // Cleanup currentInternalTempFile if it was set and not processed
+            // If SAF was used but copy failed or something went wrong, the temp SAF file might still be there.
+            // The broadcast URI should reflect what was *attempted* or the original if nothing else.
+            Uri broadcastUri = null;
+            if (tempFileToProcess != null && tempFileToProcess.exists()) broadcastUri = Uri.fromFile(tempFileToProcess);
+            else if (safUriToProcess != null) broadcastUri = safUriToProcess; // If internal temp was null, use the original SAF URI
+
+            sendRecordingCompleteBroadcast(stoppedCleanly, broadcastUri, originalSafUriForThisSegment); // originalSafUriForThisSegment would be null if internal or if SAF copy failed before this branch
             checkIfServiceCanStop(); // Check if idle now
         }
 
@@ -515,8 +545,8 @@ public class RecordingService extends Service {
     }
     // --- End Core Recording Logic ---
 
-    private void processAndMoveVideo(@NonNull File internalTempFileToProcess) { // Arg is now in external cache
-        Log.d(TAG,"processAndMoveVideo starting for (ext cache): " + internalTempFileToProcess.getName());
+    private void processAndMoveVideo(@NonNull File internalTempFileToProcess, @Nullable Uri originalSafTempUri) { // Arg is now in external cache
+        Log.d(TAG,"processAndMoveVideo starting for (ext cache): " + internalTempFileToProcess.getName() + (originalSafTempUri != null ? ", Original SAF Temp: " + originalSafTempUri : ""));
         if (!internalTempFileToProcess.exists() || internalTempFileToProcess.length() == 0) {
             Log.e(TAG,"Temp file invalid/empty: " + internalTempFileToProcess.getAbsolutePath());
             // ----- Fix Start for this method(processAndMoveVideo_ensure_ffmpeg_counter_not_incremented_on_early_exit)-----
@@ -568,7 +598,7 @@ public class RecordingService extends Service {
                 return; 
             }
             // ----- Fix Ended for this method(processAndMoveVideo_handle_error_decrement_counter)-----
-            executeFFmpegAndMoveToSAF(ffmpegCommand, internalTempFileToProcess, internalProcessedOutputFile, customUriString); // Pass correct files
+            executeFFmpegAndMoveToSAF(ffmpegCommand, internalTempFileToProcess, internalProcessedOutputFile, customUriString, originalSafTempUri); // Pass correct files and original SAF temp URI
 
         } else {
             Log.d(TAG, "Target is Internal App Storage");
@@ -680,6 +710,7 @@ public class RecordingService extends Service {
                         Log.w(TAG, "Failed to delete internal temp after successful processing: " + internalTempInput.getName());
                     }
                     // Optional: Media Scan if needed for finalInternalOutput
+                    sendRecordingCompleteBroadcast(true, Uri.fromFile(finalInternalOutput), null); // originalTempSafUri is null for internal
                 },
                 () -> { // Failure Runnable
                     Log.e(TAG, "FFmpeg internal process failed for: " + internalTempInput.getName());
@@ -688,6 +719,7 @@ public class RecordingService extends Service {
                         Log.w(TAG, "Failed to delete failed internal output: " + finalInternalOutput.getName());
                     }
                     // Do NOT delete the input temp file on failure
+                    sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), null); // originalTempSafUri is null for internal
                 }
         ); // ** End of executeFFmpegAsync call **
     }
@@ -770,13 +802,17 @@ public class RecordingService extends Service {
     }
 
     // --- NEW: Helper to send the completion broadcast ---
-    private void sendRecordingCompleteBroadcast(boolean success, @Nullable Uri resultUri) {
+    private void sendRecordingCompleteBroadcast(boolean success, @Nullable Uri resultUri, @Nullable Uri originalTempSafUriForReplacement) {
         Intent completeIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
         completeIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, success);
         if (resultUri != null) {
             completeIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, resultUri.toString());
         } else {
             Log.w(TAG,"Sending RECORDING_COMPLETE broadcast without a result URI (Success="+success+").");
+        }
+        if (originalTempSafUriForReplacement != null) {
+            completeIntent.putExtra(Constants.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING, originalTempSafUriForReplacement.toString());
+            Log.d(TAG, "Included original temp SAF URI for replacement in complete broadcast: " + originalTempSafUriForReplacement.toString());
         }
         // Optional: Include package name if you want to restrict the broadcast
         // completeIntent.setPackage(getPackageName());
@@ -825,8 +861,8 @@ public class RecordingService extends Service {
 // In RecordingService.java
 
     // Execute FFmpeg saving to temp internal cache, then move result to SAF
-    private void executeFFmpegAndMoveToSAF(String command, File internalTempInput, File tempInternalProcessedOutput, String targetSafDirUriString) {
-        Log.d(TAG, "executeFFmpegAndMoveToSAF: Processing " + internalTempInput.getName() + " -> " + tempInternalProcessedOutput.getName() + " -> SAF");
+    private void executeFFmpegAndMoveToSAF(String command, File internalTempInput, File tempInternalProcessedOutput, String targetSafDirUriString, @Nullable Uri originalSafTempUri) {
+        Log.d(TAG, "executeFFmpegAndMoveToSAF: Processing " + internalTempInput.getName() + " -> " + tempInternalProcessedOutput.getName() + " -> SAF" + (originalSafTempUri != null ? ", OriginalSAF: " + originalSafTempUri : ""));
 
         // ** FIX: Add inputFile and finalOutputUriIfKnown (which is null here) arguments **
         executeFFmpegAsync(
@@ -836,22 +872,36 @@ public class RecordingService extends Service {
                 () -> { // FFmpeg Success Runnable (FFmpeg wrote successfully to tempInternalProcessedOutput)
                     Log.d(TAG, "FFmpeg successful (intermediate cache file created): " + tempInternalProcessedOutput.getAbsolutePath());
                     // Now move the processed file from cache to SAF
-                    boolean moveSuccess = moveInternalFileToSAF(tempInternalProcessedOutput, targetSafDirUriString);
-                    if (moveSuccess) {
-                        Log.d(TAG, "Successfully moved processed cache file to SAF: " + targetSafDirUriString);
+                    Uri finalSafUri = moveInternalFileToSAF(tempInternalProcessedOutput, targetSafDirUriString);
+                    if (finalSafUri != null) {
+                        Log.d(TAG, "Successfully moved processed cache file to SAF: " + finalSafUri);
                         // Delete BOTH internal temp files (original input and processed cache) on success
                         if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG, "Failed to delete initial temp: " + internalTempInput.getName()); }
                         if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) { Log.w(TAG, "Failed to delete processed cache temp: " + tempInternalProcessedOutput.getName()); }
-                        // Optional: Determine the final SAF URI here if needed for broadcasting success status of the *final* file
-                        // Uri finalSafUri = getFinalSafUri(targetSafDirUriString, tempInternalProcessedOutput.getName()); // Helper needed
-                        // sendRecordingCompleteBroadcast(true, finalSafUri); // Send specific success broadcast?
+
+                        // If there was an original temporary SAF URI, delete it now
+                        if (originalSafTempUri != null) {
+                            try {
+                                DocumentFile originalTempSafDoc = DocumentFile.fromSingleUri(this, originalSafTempUri);
+                                if (originalTempSafDoc != null && originalTempSafDoc.exists()) {
+                                    if (originalTempSafDoc.delete()) {
+                                        Log.d(TAG, "Successfully deleted original temporary SAF file: " + originalSafTempUri);
+                                    } else {
+                                        Log.w(TAG, "Failed to delete original temporary SAF file: " + originalSafTempUri);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error deleting original temporary SAF file: " + originalSafTempUri, e);
+                            }
+                        }
+                        sendRecordingCompleteBroadcast(true, finalSafUri, originalSafTempUri);
                     } else {
                         Log.e(TAG, "Failed to move processed cache file to SAF!");
                         Toast.makeText(this, "Failed to save to custom location", Toast.LENGTH_LONG).show();
                         // Leave the *processed* temp cache file as backup.
                         // Delete the *original* input temp file if FFmpeg succeeded but move failed.
                         if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG, "Failed to delete initial temp after move failure: " + internalTempInput.getName()); }
-                        // sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput)); // Send failure for original?
+                        sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), originalSafTempUri); // Send failure for original, include original SAF temp
                     }
                 },
                 () -> { // FFmpeg Failure Runnable (FFmpeg failed to write to tempInternalProcessedOutput)
@@ -861,20 +911,21 @@ public class RecordingService extends Service {
                         Log.w(TAG, "Failed to delete failed processed cache output: " + tempInternalProcessedOutput.getName());
                     }
                     // Do NOT delete the original input temp file on FFmpeg failure
-                    // sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput)); // Send failure
+                    sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), originalSafTempUri); // Send failure, include original SAF temp
                 }
         ); // ** End of executeFFmpegAsync call **
     }
 
     // Helper to move an internal file to a SAF directory URI
-    private boolean moveInternalFileToSAF(File internalSourceFile, String targetDirUriString) {
+    @Nullable
+    private Uri moveInternalFileToSAF(File internalSourceFile, String targetDirUriString) {
         if (!internalSourceFile.exists()) {
             Log.e(TAG,"moveInternalFileToSAF: Source file does not exist: " + internalSourceFile.getAbsolutePath());
-            return false;
+            return null;
         }
         if (targetDirUriString == null) {
             Log.e(TAG,"moveInternalFileToSAF: Target SAF directory URI is null.");
-            return false;
+            return null;
         }
 
         ContentResolver resolver = getContentResolver();
@@ -883,7 +934,7 @@ public class RecordingService extends Service {
 
         if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
             Log.e(TAG, "moveInternalFileToSAF: Target SAF directory is invalid or not writable: " + targetDirUriString);
-            return false;
+            return null;
         }
 
         String mimeType = "video/" + Constants.RECORDING_FILE_EXTENSION; // Adjust if needed
@@ -893,13 +944,13 @@ public class RecordingService extends Service {
         DocumentFile existingFile = targetDir.findFile(displayName);
         if(existingFile != null){
             Log.w(TAG,"SAF Move: Destination file already exists. Deleting first.");
-            if(!existingFile.delete()) { Log.e(TAG,"SAF Move: Failed to delete existing file."); return false; }
+            if(!existingFile.delete()) { Log.e(TAG,"SAF Move: Failed to delete existing file."); return null; }
         }
 
         DocumentFile newSafFile = targetDir.createFile(mimeType, displayName);
         if (newSafFile == null || !newSafFile.exists()) {
             Log.e(TAG, "moveInternalFileToSAF: Failed to create destination file in SAF: " + displayName);
-            return false;
+            return null;
         }
         Log.d(TAG,"moveInternalFileToSAF: Created destination SAF file: " + newSafFile.getUri());
 
@@ -922,7 +973,7 @@ public class RecordingService extends Service {
                 totalBytesCopied += bytesRead;
             }
             Log.d(TAG,"moveInternalFileToSAF: Copied " + totalBytesCopied + " bytes to " + newSafFile.getName());
-            return true; // Copy successful
+            return newSafFile.getUri(); // Copy successful, return the URI of the new file
 
         } catch (IOException e) {
             Log.e(TAG, "moveInternalFileToSAF: Error during file copy to SAF", e);
@@ -930,7 +981,7 @@ public class RecordingService extends Service {
             if (newSafFile.exists() && !newSafFile.delete()) {
                 Log.w(TAG, "Could not delete partially written SAF file: "+newSafFile.getName());
             }
-            return false; // Copy failed
+            return null; // Copy failed
         } finally {
             // Close streams safely
             try { if (inputStream != null) inputStream.close(); } catch (IOException e) { /* Ignore */ }
@@ -2154,23 +2205,23 @@ public class RecordingService extends Service {
         // 4.b. Initiate FFmpeg processing for the completed segment
         if (completedTempFile != null && completedTempFile.exists()) {
             Log.d(TAG, "Rollover: Initiating FFmpeg for internal temp segment: " + completedTempFile.getAbsolutePath());
-            processAndMoveVideo(completedTempFile); // Process the temp file from internal cache
+            processAndMoveVideo(completedTempFile, null); // Process the temp file from internal cache, no original SAF URI
         } else if (completedSafUri != null && completedDocFile != null && completedDocFile.exists()) {
             Log.d(TAG, "Rollover: SAF segment recorded. Copying to temp cache for FFmpeg processing: " + completedDocFile.getName());
             // Copy the SAF URI content to a new temp file in cache first
             File tempCacheFileForSafSegment = copySafUriToTempCacheForProcessing(getApplicationContext(), completedSafUri, completedDocFile.getName());
             if (tempCacheFileForSafSegment != null && tempCacheFileForSafSegment.exists()) {
                 Log.d(TAG, "Rollover: Copied SAF segment to cache: " + tempCacheFileForSafSegment.getAbsolutePath() + ". Initiating FFmpeg.");
-                processAndMoveVideo(tempCacheFileForSafSegment);
+                processAndMoveVideo(tempCacheFileForSafSegment, completedSafUri); // Pass cached file and ORIGINAL temp SAF URI
 
-                // After initiating processing for the *copy*, we can delete the original SAF temp file
-                // because its content is now in tempCacheFileForSafSegment and will be processed from there.
+                // DO NOT DELETE original temporary SAF segment here.
+                // Deletion will be handled by executeFFmpegAndMoveToSAF after successful processing & move.
                 // The PFD for completedSafUri was already closed by createOutputFile() when the new segment started.
-                if (completedDocFile.exists()) {
-                    if (completedDocFile.delete()) {
-                        Log.d(TAG, "Rollover: Deleted original temporary SAF segment after copying to cache: " + completedDocFile.getName());
-                    }
-                }
+                // if (completedDocFile.exists()) {
+                //     if (completedDocFile.delete()) {
+                //         Log.d(TAG, "Rollover: Deleted original temporary SAF segment after copying to cache: " + completedDocFile.getName());
+                //     }
+                // }
             } else {
                 Log.e(TAG, "Rollover: Failed to copy SAF segment to temp cache. Cannot process: " + (completedDocFile != null ? completedDocFile.getName() : completedSafUri.toString()));
                 // If copy fails, we might have an unprocessed segment in SAF. Handle as error or leave it?

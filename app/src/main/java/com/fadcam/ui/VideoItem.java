@@ -13,6 +13,10 @@ public class VideoItem {
     public final long size; // Size in bytes
     public final long lastModified; // Timestamp
 
+    public boolean isTemporary = false;
+    public boolean isNew = false;
+    public boolean isProcessingUri = false;
+
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
         this.uri = uri;
         this.displayName = displayName;

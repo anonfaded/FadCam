@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.Constants;
+import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager; // Import your manager
 import com.fadcam.Utils;
@@ -282,39 +283,89 @@ public class RecordsFragment extends Fragment implements
 
     // --- Method to register the new receiver ---
     private void registerRecordingCompleteReceiver() {
-        // Prevent double registration
-        if (isReceiverRegistered || getContext() == null) return;
-
-        if (recordingCompleteReceiver == null) {
-            recordingCompleteReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    // Ensure we are attached and context is valid
-                    if (intent == null || !isAdded() || getContext() == null) {
-                        return;
-                    }
-
-                    if (Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+        if (!isReceiverRegistered && getContext() != null) {
+            if (recordingCompleteReceiver == null) {
+                recordingCompleteReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (intent == null || !Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+                            return;
+                        }
+                        Log.d(TAG, "Received ACTION_RECORDING_COMPLETE broadcast. Current items: " + videoItems.size());
                         boolean success = intent.getBooleanExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
-                        String uriString = intent.getStringExtra(Constants.EXTRA_RECORDING_URI_STRING);
-                        Log.i(TAG, "Received ACTION_RECORDING_COMPLETE broadcast. Success: " + success + ", URI: " + uriString);
+                        String finalUriString = intent.getStringExtra(Constants.EXTRA_RECORDING_URI_STRING);
+                        String originalTempSafUriString = intent.getStringExtra(Constants.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING);
 
-                        // ** Refresh the list **
-                        // The received URI could be used for highlighting, but reload is simpler/safer.
-                        Log.d(TAG,"Refreshing records list due to broadcast.");
-                        loadRecordsList();
+                        Log.d(TAG, "  Success: " + success + ", Final URI: " + finalUriString + ", OriginalTempSAF: " + originalTempSafUriString);
+
+                        if (originalTempSafUriString != null) {
+                            Uri originalTempSafUri = Uri.parse(originalTempSafUriString);
+                            boolean foundAndRemoved = false;
+                            for (int i = videoItems.size() - 1; i >= 0; i--) {
+                                if (videoItems.get(i).uri.equals(originalTempSafUri)) {
+                                    videoItems.remove(i);
+                                    foundAndRemoved = true;
+                                    Log.d(TAG, "Removed temporary SAF VideoItem: " + originalTempSafUri);
+                                    break; 
+                                }
+                            }
+
+                            if (success && finalUriString != null) {
+                                Uri finalUri = Uri.parse(finalUriString);
+                                DocumentFile finalDocFile = DocumentFile.fromSingleUri(context, finalUri);
+                                if (finalDocFile != null && finalDocFile.exists()) {
+                                    VideoItem newItem = new VideoItem(
+                                            finalUri,
+                                            finalDocFile.getName(),
+                                            finalDocFile.length(),
+                                            finalDocFile.lastModified()
+                                    );
+                                    newItem.isTemporary = false;
+                                    newItem.isNew = true;
+                                    videoItems.add(0, newItem); // Add to top, assuming latest
+                                    Log.d(TAG, "Added final SAF VideoItem: " + finalUriString);
+                                } else {
+                                    Log.w(TAG, "Final SAF DocumentFile does not exist or is null: " + finalUriString);
+                                }
+                            } else if (!success) {
+                                Log.w(TAG, "Processing failed for original temp SAF URI: " + originalTempSafUriString + ". It was removed from list if present.");
+                                // If processing failed, the temp SAF item (if it was ever added) is removed.
+                                // The actual temp file on disk might still be there if deletion in service failed.
+                            }
+
+                            if (foundAndRemoved || (success && finalUriString != null)) {
+                                // Sort and update UI only if changes were made
+                                performVideoSort(); // Re-sort the list
+                                if (recordsAdapter != null) {
+                                    recordsAdapter.notifyDataSetChanged(); // Consider more specific notifications
+                                }
+                                updateUiVisibility();
+                            }
+                            return; // Handled SAF replacement case
+                        }
+
+                        // Existing logic for non-SAF replacement (mostly internal storage)
+                        if (success && finalUriString != null) {
+                            Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString + ". Refreshing list.");
+                            // For non-SAF or if originalTempSafUriString was null, a full refresh is often simplest
+                            // as the new item should be discoverable by loadRecordsList.
+                            loadRecordsList(); // This will re-scan and update everything.
+                        } else if (!success) {
+                            Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString + ". Refreshing list.");
+                            // Still refresh, as a temp file might need its processing state cleared
+                            loadRecordsList();
+                        }
                     }
-                }
-            };
+                };
+            }
+            // LocalBroadcastManager.getInstance(getContext()).registerReceiver(recordingCompleteReceiver, new IntentFilter(Constants.ACTION_RECORDING_COMPLETE));
+            ContextCompat.registerReceiver(getContext(), recordingCompleteReceiver, new IntentFilter(Constants.ACTION_RECORDING_COMPLETE), ContextCompat.RECEIVER_NOT_EXPORTED);
+
+            isReceiverRegistered = true;
+            Log.d(TAG, "RecordingCompleteReceiver registered.");
         }
-        IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
-        // Register using ContextCompat for modern Android (ensures correct flags)
-        ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
-        isReceiverRegistered = true; // Mark as registered
-        Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
     }
 
-    // --- Method to unregister the new receiver ---
     private void unregisterRecordingCompleteReceiver() {
         if (isReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
             try {
@@ -840,7 +891,10 @@ public class RecordsFragment extends Fragment implements
                             finalTimestamp = System.currentTimeMillis(); 
                         }
                         Uri uri = Uri.fromFile(file);
-                        items.add(new VideoItem(uri, file.getName(), file.length(), finalTimestamp));
+                        VideoItem newItem = new VideoItem(uri, file.getName(), file.length(), finalTimestamp);
+                        newItem.isTemporary = false;
+                        newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
+                        items.add(newItem);
                         Log.v(TAG, "LOG_GET_INTERNAL: Added internal item: " + file.getName());
                     } else {
                         Log.v(TAG, "LOG_GET_INTERNAL: Skipped item (not a valid video file or is temp): " + file.getName());
@@ -858,61 +912,85 @@ public class RecordsFragment extends Fragment implements
 
     private List<VideoItem> getSafRecordsList(Uri treeUri) {
         Log.d(TAG, "LOG_GET_SAF: getSafRecordsList START for URI: " + treeUri);
-        List<VideoItem> items = new ArrayList<>();
-        Context context = getContext();
-        if (context == null) {
-            Log.e(TAG,"LOG_GET_SAF: Context is null."); return items;
+        List<VideoItem> safVideoItems = new ArrayList<>();
+        if (getContext() == null || treeUri == null) {
+            Log.w(TAG, "LOG_GET_SAF: Context or Tree URI is null, returning empty list.");
+            return safVideoItems;
         }
 
-        DocumentFile dir = DocumentFile.fromTreeUri(context, treeUri);
+        DocumentFile targetDir = DocumentFile.fromTreeUri(getContext(), treeUri);
+        if (targetDir == null || !targetDir.isDirectory() || !targetDir.canRead()) {
+            Log.e(TAG, "LOG_GET_SAF: Cannot access or read from SAF directory: " + treeUri);
+            // Optionally, revoke permission if it seems persistently invalid
+            // getContext().getContentResolver().releasePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            // sharedPreferencesManager.setCustomStorageUri(null);
+            return safVideoItems;
+        }
+        Log.d(TAG, "LOG_GET_SAF: SAF Directory " + targetDir.getName() + " is accessible. Listing files.");
 
-        if (dir != null && dir.isDirectory() && dir.canRead()) {
-            Log.d(TAG, "LOG_GET_SAF: SAF Directory " + dir.getName() + " is accessible. Listing files.");
-            try {
-                DocumentFile[] files = dir.listFiles();
-                Log.d(TAG, "LOG_GET_SAF: Found " + (files != null ? files.length : "null (listFiles failed?)") + " files/dirs in SAF location.");
-                for (DocumentFile file : files) {
-                    if (file != null && file.isFile() && file.getName() != null &&
-                            (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || "video/mp4".equals(file.getType())) && 
-                            !file.getName().startsWith("temp_")) 
-                    {
-                        long lastModifiedMeta = file.lastModified();
-                        String name = file.getName();
-                        long timestampFromFile = Utils.parseTimestampFromFilename(name);
-                        long finalTimestamp = lastModifiedMeta; 
+        DocumentFile[] files = targetDir.listFiles();
+        Log.d(TAG, "LOG_GET_SAF: Found " + files.length + " files/dirs in SAF location.");
 
-                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { 
-                            finalTimestamp = timestampFromFile;
-                        } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
-                            finalTimestamp = System.currentTimeMillis(); 
-                        }
-                        Uri uri = file.getUri();
-                        items.add(new VideoItem(uri, name, file.length(), finalTimestamp));
-                        Log.v(TAG, "LOG_GET_SAF: Added SAF item: " + name);
-                    } else {
-                        if (file != null) {
-                             Log.v(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + file.getName() + " | isFile: " + file.isFile() + " | type: " + file.getType());
-                        } else {
-                             Log.v(TAG, "LOG_GET_SAF: Skipped a null DocumentFile entry in listFiles result.");
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "LOG_GET_SAF: Error listing SAF files in " + treeUri, e);
-                if(getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        Toast.makeText(context, "Error reading custom location content.", Toast.LENGTH_SHORT).show();
-                    });
-                }
+        for (DocumentFile docFile : files) {
+            if (docFile == null || !docFile.isFile()) {
+                Log.d(TAG, "LOG_GET_SAF: Skipped item (not a file or null): " + (docFile != null ? docFile.getName() : "null"));
+                continue;
             }
-        } else {
-            Log.e(TAG, "LOG_GET_SAF: Cannot read or access SAF directory: " + treeUri +
-                    ", Dir Exists=" + (dir != null && dir.exists()) +
-                    ", IsDir=" + (dir != null && dir.isDirectory()) +
-                    ", CanRead=" + (dir != null && dir.canRead()));
+
+            String fileName = docFile.getName();
+            String mimeType = docFile.getType();
+
+            if (fileName != null && mimeType != null && mimeType.startsWith("video/")) {
+                if (fileName.endsWith(Constants.RECORDING_FILE_EXTENSION)) {
+                    if (fileName.startsWith("temp_")) {
+                        Log.d(TAG, "LOG_GET_SAF: Found temporary SAF video: " + fileName);
+                        VideoItem tempVideoItem = new VideoItem(
+                                docFile.getUri(),
+                                fileName,
+                                docFile.length(),
+                                docFile.lastModified()
+                        );
+                        tempVideoItem.isTemporary = true;
+                        tempVideoItem.isNew = false;
+                        // Check if this temp file is currently being processed
+                        if (currentlyProcessingUris.contains(docFile.getUri())) {
+                            tempVideoItem.isProcessingUri = true;
+                            Log.d(TAG, "LOG_GET_SAF: Temporary SAF video " + fileName + " is marked as processing.");
+                        }
+                        safVideoItems.add(tempVideoItem);
+                    } else if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) {
+                        Log.d(TAG, "LOG_GET_SAF: Added SAF item: " + fileName);
+                        VideoItem newItem = new VideoItem(
+                                docFile.getUri(),
+                                fileName,
+                                docFile.length(),
+                                docFile.lastModified()
+                        );
+                        newItem.isTemporary = false;
+                        newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
+                        safVideoItems.add(newItem);
+                    } else {
+                        // Log other video files that don't match temp or standard FadCam prefix but are video type
+                        Log.d(TAG, "LOG_GET_SAF: Added OTHER video item (non-FadCam, non-temp): " + fileName);
+                        VideoItem newItem = new VideoItem(
+                                docFile.getUri(),
+                                fileName,
+                                docFile.length(),
+                                docFile.lastModified()
+                        );
+                        newItem.isTemporary = false;
+                        newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
+                        safVideoItems.add(newItem);
+                    }
+                } else {
+                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a video file with correct extension): " + fileName + " | type: " + mimeType);
+                }
+            } else {
+                Log.d(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + fileName + " | isFile: " + docFile.isFile() + " | type: " + mimeType);
+            }
         }
-        Log.i(TAG, "LOG_GET_SAF: Found " + items.size() + " SAF records. END.");
-        return items;
+        Log.d(TAG, "LOG_GET_SAF: Found " + safVideoItems.size() + " SAF records. END.");
+        return safVideoItems;
     }
 
     // --- Permission Check ---
@@ -1541,12 +1619,15 @@ public class RecordsFragment extends Fragment implements
                         // Basic check if file has content
                         if (file.length() > 0) {
                             Log.d(TAG, "Found temp video: " + file.getName());
-                            items.add(new VideoItem(
+                            VideoItem tempItem = new VideoItem(
                                     Uri.fromFile(file), // Cache files are standard files
                                     file.getName(),
                                     file.length(),
                                     file.lastModified()
-                            ));
+                            );
+                            tempItem.isTemporary = true;
+                            tempItem.isNew = false; // Temp files from cache are not 'new'
+                            items.add(tempItem);
                         } else {
                             Log.w(TAG,"Skipping empty temp file: "+file.getName());
                         }

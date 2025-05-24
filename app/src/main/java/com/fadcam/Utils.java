@@ -68,6 +68,21 @@ public class Utils {
     }
 
     /**
+     * Checks if a video is considered "new" based on its timestamp.
+     * A video is considered new if it was modified within the last 24 hours.
+     * @param timestampMillis The last modified timestamp in milliseconds.
+     * @return True if the video is considered new, false otherwise.
+     */
+    public static boolean isVideoConsideredNew(long timestampMillis) {
+        if (timestampMillis <= 0) {
+            return false; // Invalid timestamp
+        }
+        long currentTime = System.currentTimeMillis();
+        long twentyFourHoursInMillis = 24 * 60 * 60 * 1000;
+        return (currentTime - timestampMillis) < twentyFourHoursInMillis;
+    }
+
+    /**
      * Tries to parse the timestamp from a FadCam filename.
      * Expects format like "FadCam_yyyyMMdd_HHmmss.mp4".
      * @param filename The filename string.
