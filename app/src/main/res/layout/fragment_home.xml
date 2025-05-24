@@ -88,7 +88,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#009688"
+                app:cardBackgroundColor="#673AB7"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 app:strokeColor="#4CAF50"
@@ -147,7 +147,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#1C9A55"
+                app:cardBackgroundColor="#302745"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 app:strokeColor="#4CAF50"
@@ -172,6 +172,7 @@
                         android:layout_gravity="center"
                         android:layout_marginStart="5dp"
                         android:layout_marginTop="0dp"
+                        android:textColor="#FFFFFF"
                         android:text="Stats" />
 
                 </LinearLayout>
