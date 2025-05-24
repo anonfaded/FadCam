@@ -126,6 +126,8 @@
     <string name="dialog_clock_englishtime">English Date with time</string>
     <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
     <string name="ui_preview_area">Preview Area</string>
+    <string name="preview_enabled">Preview enabled</string>
+    <string name="preview_disabled">Preview disabled</string>
     <string-array name="easter_eggs_array">
         <item>Alert! This is a restricted area. Start recording to gain access.</item>
         <item>You\'ve found the secret button! It does nothing lol</item>
