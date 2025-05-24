@@ -199,7 +199,6 @@
     <string name="toast_video_save_fail">Failed to save video</string>
     <string name="rename_video_title">Rename Video</string>
     <string name="rename_video_hint">Enter new name</string>
-    <string name="universal_cancel">Cancel</string>
     <string name="universal_ok">OK</string>
     <string name="toast_rename_name_empty">Name cannot be empty</string>
     <string name="toast_rename_failed">Failed to rename video</string>
@@ -322,4 +321,103 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="bitrate_unit">Mbps</string>
     <string name="bitrate_explanation">What is bitrate?</string>
     <string name="bitrate_explanation_text">Bitrate is the amount of data used per second of video. Higher bitrate means better quality but larger files. Too high or too low can cause problems. Default values are based on professional camera standards.</string>
+    <!-- Strings for RecordsFragment - Delete Action -->
+    <string name="delete_video_dialog_title">Delete Video?</string>
+    <string name="delete_video_dialog_message">Are you sure you want to delete %1$s?</string>
+    <string name="delete_video_progress">Deleting %1$s...</string>
+    <string name="delete_video_success_toast">\'%1$s\' deleted.</string>
+    <string name="delete_video_fail_toast">Failed to delete \'%1$s\'.</string>
+    <string name="delete_video_cancelled_toast">Deletion cancelled.</string>
+    <string name="delete_video_error_null_toast">Error: Cannot delete null item.</string>
+    <!-- Strings for RecordsFragment - Batch Delete Action -->
+    <string name="delete_videos_success_toast">All %1$d videos deleted.</string>
+    <string name="delete_videos_partial_success_toast">%1$d video(s) deleted. Failed to delete %2$d.</string>
+    <string name="delete_videos_log">Deleting %1$d selected videos…</string>
+    <!-- Strings for TrashFragment -->
+    <string name="trash_auto_deleted_toast">%1$d old item(s) auto-deleted.</string>
+    <string name="trash_empty_toast_message">No items to delete.</string>
+    <string name="trash_emptied_toast">All items deleted.</string>
+    <string name="trash_items_deleted_toast">%1$d item(s) deleted permanently.</string>
+    <string name="trash_error_deleting_items_toast">Error deleting items.</string>
+    <string name="trash_dialog_empty_all_title">Delete All Items?</string>
+    <string name="trash_button_empty_all_action">Delete All</string>
+    <!-- General -->
+    <string name="universal_deleted">Deleted</string>
+    <string name="universal_delete_failed">Delete failed</string>
+    <!-- Fix Start for this file (strings.xml) -->
+    <!-- For TrashFragment Dialogs -->
+    <string name="dialog_permanently_delete_title">Delete Permanently?</string>
+    <string name="dialog_permanently_delete_message">Are you sure you want to permanently delete %1$d selected item(s)? This action cannot be undone.</string>
+    <string name="dialog_empty_all_trash_message">Are you sure you want to permanently delete all items? This action cannot be undone.</string>
+    <!-- Universal button texts -->
+    <string name="universal_cancel">Cancel</string>
+    <string name="universal_delete">Delete</string>
+    <!-- Fix Ended for this file (strings.xml)  -->
+    <!-- For TrashFragment - Restore Action -->
+    <string name="trash_no_items_selected_toast">No items selected.</string>
+    <string name="trash_dialog_restore_title">Restore Selected?</string>
+    <string name="trash_dialog_restore_message">Restore %1$d item(s) to the public Downloads/FadCam/ folder?</string>
+    <string name="trash_restore_success_toast">%1$d item(s) restored.</string>
+    <string name="trash_restore_fail_toast">Error restoring items. Some files might not have been restored or gallery might not be updated. Check app permissions for storage.</string>
+    <string name="trash_restore_cancelled_toast">Restore cancelled.</string>
+    <string name="trash_fragment_title_text">Recently Deleted</string>
+    <string name="universal_restore">Restore</string>
+    <string name="deleted_item_thumbnail_description">Deleted item thumbnail</string>
+    <string name="trash_empty_icon_description">Trash is empty icon</string>
+    <string name="trash_empty_text">Trash is empty.</string>
+    <string name="essential_permissions_missing">Essential permissions are missing. Please grant them to proceed.</string>
+    <string name="records_search_hint">Search recordings…</string>
+    <string name="saf_permission_missing_dialog_instructions">SAF permission missing. Please grant access to the chosen folder.</string>
+    <string name="saf_permission_missing_dialog_title">SAF Permission Required</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">To save recordings to a custom location, FadCam needs permission to access the selected folder. Please grant access when prompted.</string>
+    <string name="grant_permission_button">Grant Permission</string>
+    <!-- Strings for Trash Auto-Delete Feature -->
+    <plurals name="trash_auto_delete_info_days">
+        <item quantity="zero">Items are automatically deleted after %1$d days.</item>
+        <item quantity="one">Items are automatically deleted after %1$d day.</item>
+        <item quantity="two">Items are automatically deleted after %1$d days.</item>
+        <item quantity="few">Items are automatically deleted after %1$d days.</item>
+        <item quantity="many">Items are automatically deleted after %1$d days.</item>
+        <item quantity="other">Items are automatically deleted after %1$d days.</item>
+    </plurals>
+    <plurals name="trash_auto_delete_info_hours">
+        <item quantity="zero">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="one">Items are automatically deleted after %1$d hour.</item>
+        <item quantity="two">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="few">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="many">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="other">Items are automatically deleted after %1$d hours.</item>
+    </plurals>
+    <string name="trash_auto_delete_info_manual">Items in trash are never deleted, delete the 
+    videos manually.</string>
+    <plurals name="trash_item_remaining_days">
+        <item quantity="zero">%1$d days left</item>
+        <item quantity="one">%1$d day left</item>
+        <item quantity="two">%1$d days left</item>
+        <item quantity="few">%1$d days left</item>
+        <item quantity="many">%1$d days left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <plurals name="trash_item_remaining_hours">
+        <item quantity="zero">%1$d hours left</item>
+        <item quantity="one">%1$d hour left</item>
+        <item quantity="two">%1$d hours left</item>
+        <item quantity="few">%1$d hours left</item>
+        <item quantity="many">%1$d hours left</item>
+        <item quantity="other">%1$d hours left</item>
+    </plurals>
+    <string name="trash_item_remaining_soon">Deletes very soon</string>
+    <string name="trash_menu_auto_delete_settings">Auto-Delete Settings</string>
+    <string name="auto_delete_dialog_title">Set Auto-Delete Duration</string>
+    <string name="auto_delete_1_hour">After 1 Hour</string>
+    <string name="auto_delete_5_hours">After 5 Hours</string>
+    <string name="auto_delete_10_hours">After 10 Hours</string>
+    <string name="auto_delete_1_day">After 1 Day</string>
+    <string name="auto_delete_7_days">After 7 Days</string>
+    <string name="auto_delete_30_days">After 30 Days (Default)</string>
+    <string name="auto_delete_60_days">After 60 Days</string>
+    <string name="auto_delete_90_days">After 90 Days</string>
+    <string name="auto_delete_never">Never (Manual Deletion)</string>
+    <string name="auto_delete_save_setting">Save</string>
+    <!-- End Strings for Trash Auto-Delete Feature -->
 </resources>
