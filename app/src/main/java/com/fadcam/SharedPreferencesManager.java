@@ -64,6 +64,13 @@ public class SharedPreferencesManager {
     public static final String DEFAULT_CLOCK_CARD_COLOR = "#673AB7"; // Default Purple
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
+    // ----- Fix Start for this class (SharedPreferencesManager_video_splitting) -----
+    public static final String PREF_VIDEO_SPLITTING_ENABLED = "video_splitting_enabled";
+    public static final boolean DEFAULT_VIDEO_SPLITTING_ENABLED = false;
+    public static final String PREF_VIDEO_SPLIT_SIZE_MB = "video_split_size_mb";
+    public static final int DEFAULT_VIDEO_SPLIT_SIZE_MB = 2048; // 2GB
+    // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting) -----
+
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
         this.sharedPreferences = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -316,5 +323,23 @@ public class SharedPreferencesManager {
         return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
+
+    // ----- Fix Start for this class (SharedPreferencesManager_video_splitting_methods) -----
+    public boolean isVideoSplittingEnabled() {
+        return sharedPreferences.getBoolean(PREF_VIDEO_SPLITTING_ENABLED, DEFAULT_VIDEO_SPLITTING_ENABLED);
+    }
+
+    public void setVideoSplittingEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_VIDEO_SPLITTING_ENABLED, enabled).apply();
+    }
+
+    public int getVideoSplitSizeMb() {
+        return sharedPreferences.getInt(PREF_VIDEO_SPLIT_SIZE_MB, DEFAULT_VIDEO_SPLIT_SIZE_MB);
+    }
+
+    public void setVideoSplitSizeMb(int sizeMb) {
+        sharedPreferences.edit().putInt(PREF_VIDEO_SPLIT_SIZE_MB, sizeMb).apply();
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting_methods) -----
 
 }

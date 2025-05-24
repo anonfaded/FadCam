@@ -561,6 +561,88 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- START Video Splitting Settings -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_split_file" 
+                    app:tint="@color/white"
+                    android:contentDescription="Video Splitting Icon"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="2dp"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:text="Enable Video Splitting"/> 
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceCaption"
+                        android:textColor="?android:attr/textColorSecondary"
+                        app:lineHeight="16sp"
+                        android:text="Automatically split recordings into smaller files."/>
+                </LinearLayout>
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/video_splitting_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/video_split_size_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="40dp" 
+                android:visibility="gone" 
+                tools:visibility="visible">
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceSubtitle2"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:text="Split File Size (MB)"/>
+                <EditText
+                    android:id="@+id/video_split_size_edittext"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:hint="e.g., 2048 for 2GB"
+                    android:minHeight="48dp"/>
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:text="Min: 100 MB, Max: 4000 MB (approx. 4GB). Default: 2048 MB."/>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+            <!-- END Video Splitting Settings -->
+
             <!-- Watermark -->
             <LinearLayout
                 android:layout_width="match_parent"

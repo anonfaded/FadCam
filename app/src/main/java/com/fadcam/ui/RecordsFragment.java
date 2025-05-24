@@ -214,24 +214,27 @@ public class RecordsFragment extends Fragment implements
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             }
         });
+        Log.d(TAG, "onMoveToTrashFinished. Success: " + success + ", Msg: " + message);
     }
 
     // *** Register in onStart ***
     @Override
     public void onStart() {
         super.onStart();
-        registerRecordingCompleteReceiver(); // Call registration helper
-        registerStorageLocationChangedReceiver(); // ** ADD registration for new receiver **
-        registerProcessingStateReceivers(); // ** ADD **
+        registerRecordingCompleteReceiver();
+        registerStorageLocationChangedReceiver();
+        registerProcessingStateReceivers();
+        registerSegmentCompleteReceiver();
     }
 
     // *** Unregister in onStop ***
     @Override
     public void onStop() {
         super.onStop();
-        unregisterRecordingCompleteReceiver(); // Call unregistration helper
-        unregisterStorageLocationChangedReceiver(); // ** ADD unregistration for new receiver **
-        unregisterProcessingStateReceivers(); // ** ADD **
+        unregisterRecordingCompleteReceiver();
+        unregisterStorageLocationChangedReceiver();
+        unregisterProcessingStateReceivers();
+        unregisterSegmentCompleteReceiver();
     }
 
     // ** NEW: Method to register the storage location change receiver **
@@ -1556,4 +1559,65 @@ public class RecordsFragment extends Fragment implements
             Log.d(TAG, "Cache directory does not exist or is not a directory: "+directory.getPath());
         }
     }
+
+    // ----- Fix Start for this class (RecordsFragment_segment_receiver_fields) -----
+    private BroadcastReceiver segmentCompleteReceiver;
+    private boolean isSegmentReceiverRegistered = false;
+    // ----- Fix Ended for this class (RecordsFragment_segment_receiver_fields) -----
+
+    // ----- Fix Start for this class (RecordsFragment_segment_receiver_methods) -----
+    private void registerSegmentCompleteReceiver() {
+        if (getContext() == null || isSegmentReceiverRegistered) {
+            return;
+        }
+        segmentCompleteReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent != null && Constants.ACTION_RECORDING_SEGMENT_COMPLETE.equals(intent.getAction())) {
+                    String fileUriString = intent.getStringExtra(Constants.INTENT_EXTRA_FILE_URI);
+                    String filePath = intent.getStringExtra(Constants.INTENT_EXTRA_FILE_PATH);
+                    int segmentNumber = intent.getIntExtra(Constants.INTENT_EXTRA_SEGMENT_NUMBER, -1);
+
+                    Log.i(TAG, "Received ACTION_RECORDING_SEGMENT_COMPLETE for segment " + segmentNumber);
+                    if (fileUriString != null) {
+                        Log.d(TAG, "Segment URI: " + fileUriString);
+                    } else if (filePath != null) {
+                        Log.d(TAG, "Segment Path: " + filePath);
+                    }
+
+                    // Refresh the list of recordings to show the new segment
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            Log.d(TAG, "Segment complete, reloading records list...");
+                            loadRecordsList();
+                            // Optionally, you could scroll to the new item if identifiable
+                        });
+                    }
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
+        // Use ContextCompat.registerReceiver for broader compatibility if not using LocalBroadcastManager
+        // For system-wide broadcasts (like from a Service), regular context registration is needed.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(segmentCompleteReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            requireContext().registerReceiver(segmentCompleteReceiver, filter);
+        }
+        isSegmentReceiverRegistered = true;
+        Log.d(TAG, "SegmentCompleteReceiver registered.");
+    }
+
+    private void unregisterSegmentCompleteReceiver() {
+        if (getContext() != null && isSegmentReceiverRegistered && segmentCompleteReceiver != null) {
+            try {
+                requireContext().unregisterReceiver(segmentCompleteReceiver);
+                isSegmentReceiverRegistered = false;
+                Log.d(TAG, "SegmentCompleteReceiver unregistered.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering SegmentCompleteReceiver: " + e.getMessage());
+            }
+        }
+    }
+    // ----- Fix Ended for this class (RecordsFragment_segment_receiver_methods) -----
 }

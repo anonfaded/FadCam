@@ -70,12 +70,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import android.content.Intent; // Add Intent import
 import android.net.Uri;       // Add Uri import
 import com.fadcam.Constants; // Import your Constants class
 import java.util.Set; // Add if needed
 import java.util.HashSet; // Add if needed
+
+// ----- Fix Start for this class (RecordingService_video_splitting_imports_and_fields) -----
+import android.media.MediaRecorder.OnInfoListener;
+// ----- Fix Ended for this class (RecordingService_video_splitting_imports_and_fields) -----
 
 public class RecordingService extends Service {
 
@@ -98,7 +103,13 @@ public class RecordingService extends Service {
     private ParcelFileDescriptor currentParcelFileDescriptor; // Track PFD if custom
 
     private RecordingState recordingState = RecordingState.NONE;
-    private boolean isProcessingWatermark = false; // Flag for FFmpeg processing
+    private AtomicInteger ffmpegProcessingTaskCount = new AtomicInteger(0);
+
+    // ----- Fix Start for this class (RecordingService_video_splitting_imports_and_fields) -----
+    private boolean isVideoSplittingEnabled = false;
+    private long videoSplitSizeBytes = -1L; // -1L means no limit by default, stored in bytes
+    private int currentSegmentNumber = 1; // Start with segment 1
+    // ----- Fix Ended for this class (RecordingService_video_splitting_imports_and_fields) -----
 
     // ----- Fix Start for this class (RecordingService) -----
     // Re-introduce isRecordingTorchEnabled to manage torch state *during an active recording session only*
@@ -138,52 +149,87 @@ public class RecordingService extends Service {
     }
 
     // --- onStartCommand (Ensure START action ignores processing state) ---
+    // ----- Fix Start for this method(onStartCommand_video_splitting) -----
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand received: Action=" + (intent != null ? intent.getAction() : "null"));
-        if (intent == null || intent.getAction() == null) { /* ... handle null ... */ return START_NOT_STICKY; }
+        if (intent == null || intent.getAction() == null) { 
+            Log.w(TAG, "onStartCommand: Intent or action is null.");
+            if (!isWorkingInProgress()) stopSelf(); // Stop if idle and bad intent
+            return START_NOT_STICKY; 
+        }
 
         String action = intent.getAction();
         switch (action) {
             case Constants.INTENT_ACTION_START_RECORDING:
-                // ----- Fix Start for this method(onStartCommand)-----
                 if (recordingState != RecordingState.NONE) {
                     Log.w(TAG,"Start requested, but already RECORDING/PAUSED/STARTING. State: " + recordingState + ". Ignoring.");
-                // ----- Fix Ended for this method(onStartCommand)-----
                     broadcastOnRecordingStateCallback(); // Notify UI of current state
                     return START_STICKY; // Remain active
                 }
-                // Check for processing flag is NO LONGER DONE HERE. Allow start attempt.
+                
                 Log.i(TAG,"Handling START_RECORDING intent. Service recording state is NONE.");
-                // ----- Fix Start for this method(onStartCommand)-----
                 recordingState = RecordingState.STARTING; // Set state to STARTING
-                // ----- Fix Ended for this method(onStartCommand)-----
 
-                // ----- Fix Start for this method(onStartCommand)-----
-                // Re-introduce retrieval of initial torch state from intent
+                // Load video splitting preferences
+                if (sharedPreferencesManager != null) {
+                    isVideoSplittingEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
+                    int splitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
+                    if (isVideoSplittingEnabled && splitSizeMb > 0) {
+                        videoSplitSizeBytes = (long) splitSizeMb * 1024 * 1024; // Convert MB to Bytes
+                        Log.d(TAG, "Video splitting enabled. Size: " + splitSizeMb + "MB (" + videoSplitSizeBytes + " Bytes)");
+                    } else {
+                        videoSplitSizeBytes = -1L; // Disable splitting if not enabled or invalid size
+                        Log.d(TAG, "Video splitting disabled or size invalid.");
+                    }
+                } else {
+                    Log.w(TAG, "SharedPreferencesManager is null in onStartCommand, cannot load splitting prefs. Defaults assumed.");
+                    isVideoSplittingEnabled = false;
+                    videoSplitSizeBytes = -1L;
+                }
+                currentSegmentNumber = 1; // Always reset segment number on new recording start
+
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
                 Log.d(TAG, "Initial torch state for recording session: " + isRecordingTorchEnabled);
-                // ----- Fix Ended for this method(onStartCommand)-----
 
                 setupSurfaceTexture(intent);
                 setupRecordingInProgressNotification(); // Show notification immediately
                 startRecording(); // Attempt to start hardware recording
                 break;
 
-            // ... other cases remain the same ...
-            case Constants.INTENT_ACTION_PAUSE_RECORDING:      pauseRecording(); break;
-            case Constants.INTENT_ACTION_RESUME_RECORDING:     setupSurfaceTexture(intent); resumeRecording(); break;
-            case Constants.INTENT_ACTION_CHANGE_SURFACE:       setupSurfaceTexture(intent); if (isRecording() || isPaused()) { createCameraPreviewSession(); } break;
-            case Constants.INTENT_ACTION_STOP_RECORDING:       stopRecording(); break;
-            case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST: Log.d(TAG,"Resp state request"); broadcastOnRecordingStateCallback(); if (!isWorkingInProgress()) { stopSelf(); } break;
-            // ----- Fix Start for this method(onStartCommand)-----
-            // Re-introduce handling of INTENT_ACTION_TOGGLE_RECORDING_TORCH
-            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH: toggleRecordingTorch(); break;
-            // ----- Fix Ended for this method(onStartCommand)-----
-            default: Log.w(TAG, "Unknown action: " + action); break;
+            case Constants.INTENT_ACTION_PAUSE_RECORDING:      
+                pauseRecording(); 
+                break;
+            case Constants.INTENT_ACTION_RESUME_RECORDING:     
+                setupSurfaceTexture(intent); 
+                resumeRecording(); 
+                break;
+            case Constants.INTENT_ACTION_CHANGE_SURFACE:       
+                setupSurfaceTexture(intent); 
+                if (isRecording() || isPaused()) { 
+                    createCameraPreviewSession(); 
+                } 
+                break;
+            case Constants.INTENT_ACTION_STOP_RECORDING:       
+                stopRecording(); 
+                break;
+            case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST: 
+                Log.d(TAG,"Resp state request"); 
+                broadcastOnRecordingStateCallback(); 
+                if (!isWorkingInProgress()) { 
+                    stopSelf(); 
+                } 
+                break;
+            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH: 
+                toggleRecordingTorch(); 
+                break;
+            default: 
+                Log.w(TAG, "Unknown action: " + action); 
+                break;
         }
         return START_STICKY;
     }
+    // ----- Fix Ended for this method(onStartCommand_video_splitting) -----
 
     /** Helper method to fully release MediaRecorder instance safely */
     private void releaseMediaRecorderSafely() {
@@ -267,8 +313,10 @@ public class RecordingService extends Service {
     private void stopRecording() {
         Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
         // ----- Fix Start for this method(stopRecording)-----
-        if (recordingState == RecordingState.NONE && !isProcessingWatermark) { // Already stopped (or never started) AND not processing
-            Log.w(TAG, "stopRecording called but state is already NONE and not processing.");
+        // ----- Fix Start for this method(stopRecording_check_ffmpeg_counter)-----
+        if (recordingState == RecordingState.NONE && ffmpegProcessingTaskCount.get() == 0) { // Already stopped (or never started) AND not processing
+            Log.w(TAG, "stopRecording called but state is already NONE and no ffmpeg tasks are active.");
+        // ----- Fix Ended for this method(stopRecording_check_ffmpeg_counter)-----
         // ----- Fix Ended for this method(stopRecording)-----
             // Ensure pref is consistent and check if service should stop
             sharedPreferencesManager.setRecordingInProgress(false);
@@ -321,7 +369,10 @@ public class RecordingService extends Service {
 
         if (needsProcessing) {
             Log.i(TAG, "Proceeding to background video processing for: " + tempFileToProcess.getName());
-            isProcessingWatermark = true; // Set flag ONLY if processing starts
+            // ----- Fix Start for this method(stopRecording_increment_ffmpeg_counter)-----
+            // isProcessingWatermark = true; // Set flag ONLY if processing starts
+            // ffmpegProcessingTaskCount.incrementAndGet(); // This will be incremented in processAndMoveVideo
+            // ----- Fix Ended for this method(stopRecording_increment_ffmpeg_counter)-----
             this.currentInternalTempFile = tempFileToProcess; // Keep reference for processing
             processAndMoveVideo(tempFileToProcess); // Starts async FFmpeg
         } else {
@@ -348,14 +399,19 @@ public class RecordingService extends Service {
      */
     private void checkIfServiceCanStop() {
         // Read volatile flag and check state atomically as best as possible
-        boolean isProcessing = isProcessingWatermark;
+        // ----- Fix Start for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
+        // boolean isProcessing = isProcessingWatermark;
+        int currentProcessingTasks = ffmpegProcessingTaskCount.get();
+        // ----- Fix Ended for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
         // ----- Fix Start for this method(checkIfServiceCanStop)-----
         boolean isRecordingActiveOrStarting = (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED || recordingState == RecordingState.STARTING);
 
-        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", isProcessing=" + isProcessing);
+        // ----- Fix Start for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
+        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks=" + currentProcessingTasks);
 
         // If NOT currently recording/paused/starting AND NOT currently processing...
-        if (!isRecordingActiveOrStarting && !isProcessing) {
+        if (!isRecordingActiveOrStarting && currentProcessingTasks == 0) {
+        // ----- Fix Ended for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
         // ----- Fix Ended for this method(checkIfServiceCanStop)-----
             Log.i(TAG, "No active recording or background processing detected. Stopping service.");
             // Add a slight delay before stopping? Optional, might help ensure broadcasts are fully handled.
@@ -447,12 +503,14 @@ public class RecordingService extends Service {
             sharedPreferencesManager.setRecordingInProgress(false);
         }
 
+        // ----- Fix Start for this method(releaseRecordingResources_check_ffmpeg_counter)-----
         // Cleanup temp file only if processing isn't active
-        if (!isProcessingWatermark) {
+        if (ffmpegProcessingTaskCount.get() == 0) {
             cleanupTemporaryFile();
         } else {
-            Log.d(TAG,"Release: Keeping temp file reference for ongoing processing.");
+            Log.d(TAG,"Release: Keeping temp file reference for ongoing processing (ffmpeg tasks > 0).");
         }
+        // ----- Fix Ended for this method(releaseRecordingResources_check_ffmpeg_counter)-----
         Log.d(TAG, "Finished releasing recording resources.");
     }
     // --- End Core Recording Logic ---
@@ -461,9 +519,23 @@ public class RecordingService extends Service {
         Log.d(TAG,"processAndMoveVideo starting for (ext cache): " + internalTempFileToProcess.getName());
         if (!internalTempFileToProcess.exists() || internalTempFileToProcess.length() == 0) {
             Log.e(TAG,"Temp file invalid/empty: " + internalTempFileToProcess.getAbsolutePath());
-            isProcessingWatermark = false; if(internalTempFileToProcess.exists()&&!internalTempFileToProcess.delete()) Log.w(TAG,"Failed del invalid temp"); return;
+            // ----- Fix Start for this method(processAndMoveVideo_ensure_ffmpeg_counter_not_incremented_on_early_exit)-----
+            // isProcessingWatermark = false; // No longer used directly here for this check
+            // ----- Fix Ended for this method(processAndMoveVideo_ensure_ffmpeg_counter_not_incremented_on_early_exit)-----
+            if(internalTempFileToProcess.exists()&&!internalTempFileToProcess.delete()) Log.w(TAG,"Failed del invalid temp"); 
+            // ----- Fix Start for this method(processAndMoveVideo_decrement_on_early_error)-----
+            // If we return here, the task was never really started, so no need to adjust counter if it wasn't incremented.
+            // However, the increment is now at the beginning. So if we exit here, we MUST decrement.
+            // This scenario (invalid input file) should ideally not increment the counter.
+            // Let's move the increment after this initial check.
+            // ----- Fix Ended for this method(processAndMoveVideo_decrement_on_early_error)-----
+            return;
         }
-        isProcessingWatermark = true;
+        // ----- Fix Start for this method(processAndMoveVideo_increment_ffmpeg_counter)-----
+        // isProcessingWatermark = true;
+        ffmpegProcessingTaskCount.incrementAndGet();
+        Log.d(TAG, "FFmpeg task count incremented to: " + ffmpegProcessingTaskCount.get() + " for file: " + internalTempFileToProcess.getName());
+        // ----- Fix Ended for this method(processAndMoveVideo_increment_ffmpeg_counter)-----
         String storageMode = sharedPreferencesManager.getStorageMode();
         String customUriString = sharedPreferencesManager.getCustomStorageUri();
         String tempFileName = internalTempFileToProcess.getName();
@@ -476,27 +548,51 @@ public class RecordingService extends Service {
             // Define intermediate output path also in EXTERNAL CACHE
             File cacheDir = getExternalCacheDir(); // <--- CHANGE HERE
             if (cacheDir == null) { cacheDir = new File(getCacheDir(), "processed_temp"); Log.w(TAG,"Ext Cache null, using int cache for processed temp"); } else { cacheDir = new File(cacheDir, "processed_temp"); } // Create subdir in external cache
-            if (!cacheDir.exists() && !cacheDir.mkdirs()) { handleProcessingError("Cannot create processed cache dir", internalTempInputPath); return; }
+            // ----- Fix Start for this method(processAndMoveVideo_handle_error_decrement_counter)-----
+            if (!cacheDir.exists() && !cacheDir.mkdirs()) { 
+                handleProcessingError("Cannot create processed cache dir", internalTempInputPath);
+                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
+                Log.d(TAG, "FFmpeg task count decremented due to processed cache dir error. Count: " + ffmpegProcessingTaskCount.get());
+                return; 
+            }
             File internalProcessedOutputFile = new File(cacheDir, finalBaseName);
             String internalProcessedOutputPath = internalProcessedOutputFile.getAbsolutePath(); // Path is in ext cache now
 
             Log.d(TAG, "Intermediate processed path (ext cache): " + internalProcessedOutputPath);
 
             String ffmpegCommand = buildFFmpegCommand(internalTempInputPath, internalProcessedOutputPath);
-            if (ffmpegCommand == null) { handleProcessingError("Failed build FFmpeg command", internalTempInputPath); return; }
+            if (ffmpegCommand == null) { 
+                handleProcessingError("Failed build FFmpeg command", internalTempInputPath);
+                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
+                Log.d(TAG, "FFmpeg task count decremented due to command build error. Count: " + ffmpegProcessingTaskCount.get());
+                return; 
+            }
+            // ----- Fix Ended for this method(processAndMoveVideo_handle_error_decrement_counter)-----
             executeFFmpegAndMoveToSAF(ffmpegCommand, internalTempFileToProcess, internalProcessedOutputFile, customUriString); // Pass correct files
 
         } else {
             Log.d(TAG, "Target is Internal App Storage");
             // Process from external cache -> final internal directory
             File finalInternalDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY); // Standard final location
-            if (!finalInternalDir.exists() && !finalInternalDir.mkdirs()) { handleProcessingError("Cannot create final internal dir", internalTempInputPath); return; }
+            // ----- Fix Start for this method(processAndMoveVideo_handle_error_decrement_counter)-----
+            if (!finalInternalDir.exists() && !finalInternalDir.mkdirs()) { 
+                handleProcessingError("Cannot create final internal dir", internalTempInputPath);
+                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
+                Log.d(TAG, "FFmpeg task count decremented due to final internal dir error. Count: " + ffmpegProcessingTaskCount.get());
+                return; 
+            }
             File finalInternalOutputFile = new File(finalInternalDir, finalBaseName);
             String finalInternalOutputPath = finalInternalOutputFile.getAbsolutePath();
             Log.d(TAG, "Final internal path: " + finalInternalOutputPath);
 
             String ffmpegCommand = buildFFmpegCommand(internalTempInputPath, finalInternalOutputPath);
-            if (ffmpegCommand == null) { handleProcessingError("Failed build FFmpeg command", internalTempInputPath); return; }
+            if (ffmpegCommand == null) { 
+                handleProcessingError("Failed build FFmpeg command", internalTempInputPath); 
+                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
+                Log.d(TAG, "FFmpeg task count decremented due to command build error. Count: " + ffmpegProcessingTaskCount.get());
+                return; 
+            }
+            // ----- Fix Ended for this method(processAndMoveVideo_handle_error_decrement_counter)-----
             executeFFmpegInternalOnly(ffmpegCommand, internalTempFileToProcess, finalInternalOutputFile); // Pass correct temp input file
         }
     }
@@ -615,7 +711,9 @@ public class RecordingService extends Service {
         // ** 1. Broadcast PROCESSING_STARTED **
         sendProcessingStateBroadcast(true, processingUri);
 
-        isProcessingWatermark = true; // Set processing flag
+        // ----- Fix Start for this method(executeFFmpegAsync_remove_redundant_flag_set)-----
+        // isProcessingWatermark = true; // Set processing flag // This is now managed by ffmpegProcessingTaskCount in caller
+        // ----- Fix Ended for this method(executeFFmpegAsync_remove_redundant_flag_set)-----
         Log.d(TAG, "Executing FFmpeg Async for " + inputFile.getName() + ": " + ffmpegCommand);
 
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
@@ -645,8 +743,11 @@ public class RecordingService extends Service {
             // Optionally send the generic ACTION_RECORDING_COMPLETE as well, or consolidate logic
             // sendRecordingCompleteBroadcast(success, resultUri); // If this is still needed
 
-
-            isProcessingWatermark = false; // Reset flag
+            // ----- Fix Start for this method(executeFFmpegAsync_decrement_ffmpeg_counter)-----
+            // isProcessingWatermark = false; // Reset flag
+            int tasksLeft = ffmpegProcessingTaskCount.decrementAndGet();
+            Log.d(TAG, "FFmpeg task finished. Count decremented to: " + tasksLeft);
+            // ----- Fix Ended for this method(executeFFmpegAsync_decrement_ffmpeg_counter)-----
 
             // Check if service should stop
             if (!isWorkingInProgress()) {
@@ -840,91 +941,123 @@ public class RecordingService extends Service {
 
     // --- MediaRecorder & Camera Session Setup ---
     // Updated setupMediaRecorder to target EXTERNAL cache first
+
+    // ----- Fix Start for this method(setupMediaRecorder_video_splitting) -----
     private void setupMediaRecorder() throws IOException {
-        Log.d(TAG, "setupMediaRecorder: Configuring recorder.");
-        currentInternalTempFile = null; // Reset temporary file
-
-        // Define output path
-        File cacheDir = getExternalCacheDir();
-        if (cacheDir == null) {
-            Log.w(TAG, "External cache dir unavailable, falling back to internal cache.");
-            cacheDir = new File(getCacheDir(), "recording_temp");
+        Log.d(TAG, "Setting up MediaRecorder for segment " + currentSegmentNumber + "...");
+        if (mediaRecorder == null) {
+            mediaRecorder = new MediaRecorder();
         } else {
-            cacheDir = new File(cacheDir, "recording_temp");
+            mediaRecorder.reset(); // Reset existing recorder for reuse
         }
 
-        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            throw new IOException("Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
+        // Set OnInfoListener to handle max filesize/duration
+        mediaRecorder.setOnInfoListener(mediaRecorderInfoListener);
+
+        // 1. Configure Sources
+        if (sharedPreferencesManager.isRecordAudioEnabled()) {
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         }
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE); // From camera preview
 
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String tempFilename = "temp_" + timestamp + ".mp4";
-        currentInternalTempFile = new File(cacheDir, tempFilename);
-        Log.d(TAG, "Temporary output path set to: " + currentInternalTempFile.getAbsolutePath());
+        // 2. Configure Format
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
-        mediaRecorder = new MediaRecorder();
-        VideoCodec codec = sharedPreferencesManager.getVideoCodec();
+        // 3. Configure Output File/URI (Handled by createOutputFile and PFD logic below)
+        File tempOutputFileForInternal = createOutputFile(); // This updates currentRecordingSafUri or currentInternalTempFile
 
-        try {
-            boolean recordAudio = sharedPreferencesManager.isRecordAudioEnabled();
-            if (recordAudio) {
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            }
-            mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mediaRecorder.setOutputFile(currentInternalTempFile.getAbsolutePath()); // Use (external?) cache path
-            mediaRecorder.setVideoEncoder(codec.getEncoder());
-
-            // Get resolution and swap if needed
-            Size resolution = sharedPreferencesManager.getCameraResolution();
-            boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
-            int width = isLandscape ? resolution.getWidth() : resolution.getHeight();
-            int height = isLandscape ? resolution.getHeight() : resolution.getWidth();
-            mediaRecorder.setVideoSize(width, height);
-
-            // FadCam Rule: Only set orientation hint for portrait mode
-            // In landscape, do not set orientation hint (let it be 0)
-            if (!isLandscape) {
-                mediaRecorder.setOrientationHint(90);
-            } else {
-                mediaRecorder.setOrientationHint(0);
-            }
-
-            // Restore original logic for bitRate and frameRate
-            int bitRate = Utils.estimateBitrate(resolution, sharedPreferencesManager.getVideoFrameRate());
-            int frameRate = sharedPreferencesManager.getVideoFrameRate();
-
-            mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
-            mediaRecorder.setVideoEncodingBitRate(bitRate);
-            mediaRecorder.setVideoFrameRate(frameRate);
-            if (recordAudio) {
-                int audioBitrate = sharedPreferencesManager.getAudioBitrate();
-                int audioSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
-                Log.i(TAG, "Audio settings (from prefs): bitrate=" + audioBitrate + ", samplingRate=" + audioSamplingRate);
-                mediaRecorder.setAudioEncodingBitRate(audioBitrate);
-                mediaRecorder.setAudioSamplingRate(audioSamplingRate);
-                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            }
-
-            mediaRecorder.prepare();
-            Log.d(TAG, "setupMediaRecorder: MediaRecorder prepared successfully.");
-
-        } catch (IOException | IllegalStateException e) {
-            Log.e(TAG, "setupMediaRecorder: Failed", e);
-            if (mediaRecorder != null) {
-                try {
-                    mediaRecorder.release();
-                } catch (Exception ignored) {
+        if (currentRecordingSafUri != null) { // SAF Storage selected
+            Log.d(TAG, "Configuring MediaRecorder output for SAF URI: " + currentRecordingSafUri);
+            currentParcelFileDescriptor = null; // Ensure it's null before try
+            try {
+                currentParcelFileDescriptor = getContentResolver().openFileDescriptor(currentRecordingSafUri, "rw");
+                if (currentParcelFileDescriptor != null) {
+                    mediaRecorder.setOutputFile(currentParcelFileDescriptor.getFileDescriptor());
+                    Log.d(TAG, "MediaRecorder output successfully set to SAF URI: " + currentRecordingSafUri);
+                } else {
+                    throw new IOException("Failed to open ParcelFileDescriptor for SAF URI: " + currentRecordingSafUri);
                 }
-                mediaRecorder = null;
-            }
-            if (currentInternalTempFile != null && currentInternalTempFile.exists()) {
+            } catch (IOException e) {
+                Log.e(TAG, "IOException setting output for SAF URI: " + currentRecordingSafUri, e);
+                closeCurrentPfd(); // Close PFD if open
+                // Attempt to delete the failed SAF DocumentFile if it was created
+                if (currentRecordingDocFile != null && currentRecordingDocFile.exists()) {
+                    if (currentRecordingDocFile.delete()) {
+                        Log.d(TAG, "Deleted partially created/failed SAF DocumentFile: " + currentRecordingDocFile.getName());
+                    }
+                }
+                currentRecordingSafUri = null; // Nullify on error
+                currentRecordingDocFile = null;
+                throw e; // Re-throw to be caught by caller
+            } 
+            // Note: The PFD is NOT closed here. It's closed in closeCurrentPfd(), 
+            // which is called when stopping, or when createOutputFile is called again for a new segment/recording.
+
+        } else if (tempOutputFileForInternal != null) { // Internal Storage selected
+            Log.d(TAG, "Configuring MediaRecorder output for Internal temp file: " + tempOutputFileForInternal.getAbsolutePath());
+            mediaRecorder.setOutputFile(tempOutputFileForInternal.getAbsolutePath());
+            // currentInternalTempFile is already set by createOutputFile()
+        } else {
+            // This case should ideally be prevented by createOutputFile returning null on critical errors
+            throw new IOException("createOutputFile() did not configure any valid output (neither SAF URI nor Internal temp file).");
+        }
+
+        // 4. Configure Encoders & Parameters
+        VideoCodec codec = sharedPreferencesManager.getVideoCodec();
+        mediaRecorder.setVideoEncoder(codec.getEncoder());
+
+        Size resolution = sharedPreferencesManager.getCameraResolution();
+        boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
+        int width = isLandscape ? resolution.getWidth() : resolution.getHeight();
+        int height = isLandscape ? resolution.getHeight() : resolution.getWidth();
+        mediaRecorder.setVideoSize(width, height);
+
+        if (!isLandscape) {
+            mediaRecorder.setOrientationHint(90);
+        } else {
+            mediaRecorder.setOrientationHint(0); // Default is 0, but explicit for clarity
+        }
+
+        int bitRate = getVideoBitrate(); // Uses your existing helper
+        int frameRate = sharedPreferencesManager.getVideoFrameRate(); // Assuming getVideoFrameRate() is correct
+        mediaRecorder.setVideoEncodingBitRate(bitRate);
+        mediaRecorder.setVideoFrameRate(frameRate);
+
+        if (sharedPreferencesManager.isRecordAudioEnabled()) {
+            int audioBitrate = sharedPreferencesManager.getAudioBitrate();
+            int audioSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
+            mediaRecorder.setAudioEncodingBitRate(audioBitrate);
+            mediaRecorder.setAudioSamplingRate(audioSamplingRate);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        }
+
+        // 5. Configure Max File Size for Splitting (if enabled)
+        if (isVideoSplittingEnabled && videoSplitSizeBytes > 0) {
+            Log.d(TAG, "Setting MediaRecorder max file size to: " + videoSplitSizeBytes + " bytes for segment " + currentSegmentNumber);
+            mediaRecorder.setMaxFileSize(videoSplitSizeBytes);
+        } else {
+            mediaRecorder.setMaxFileSize(0); // 0 means no limit by size, rely on manual stop or other limits
+            Log.d(TAG, "Video splitting not enabled or size invalid, setting max file size to 0 (no limit).");
+        }
+
+        // 6. Prepare MediaRecorder
+        try {
+            mediaRecorder.prepare();
+            Log.d(TAG, "MediaRecorder prepared successfully for segment " + currentSegmentNumber);
+        } catch (IOException e) {
+            Log.e(TAG, "IOException preparing MediaRecorder for segment " + currentSegmentNumber, e);
+            releaseMediaRecorderSafely(); // Release recorder on prepare failure
+            closeCurrentPfd(); // Ensure PFD is closed if SAF was used
+            // Cleanup the file that was being prepared for (temp internal or SAF doc)
+            if (currentRecordingSafUri != null && currentRecordingDocFile != null && currentRecordingDocFile.exists()) {
+                currentRecordingDocFile.delete();
+            } else if (currentInternalTempFile != null && currentInternalTempFile.exists()) {
                 currentInternalTempFile.delete();
             }
-            currentInternalTempFile = null;
-            throw new IOException("MediaRecorder setup failed: " + e.getMessage(), e);
+            throw e; // Re-throw to be handled by caller (startRecording)
         }
     }
+    // ----- Fix Ended for this method(setupMediaRecorder_video_splitting) -----
 
 // Replace the ENTIRE existing openCamera method in RecordingService.java with this corrected version:
 
@@ -1181,31 +1314,39 @@ public class RecordingService extends Service {
                 Log.d(TAG,"Repeating request started.");
 
 
-                // Now that the session is configured and request running, handle recording state
-                // ----- Fix Start for this method(onConfigured)-----
-                if (recordingState == RecordingState.STARTING) { // This is the initial start
-                // ----- Fix Ended for this method(onConfigured)-----
+                // ----- Fix Start for this method(onConfigured_prevent_restart_on_surface_change)-----
+                // If we are in a state where recording should be active
+                if (recordingState == RecordingState.STARTING) {
+                    // This is the initial start of the very first segment
                     recordingStartTime = SystemClock.elapsedRealtime();
-                    mediaRecorder.start(); // START RECORDING
-                    recordingState = RecordingState.IN_PROGRESS;
-                    sharedPreferencesManager.setRecordingInProgress(true);
-                    Log.d(TAG, "MediaRecorder started! Recording IN_PROGRESS.");
-                    setupRecordingInProgressNotification();
-                    broadcastOnRecordingStarted();
-                } else if (recordingState == RecordingState.PAUSED) { // This is resuming
-                    // The mediaRecorder.resume() was likely called before session recreated
-                    Log.w(TAG,"Session reconfigured while paused, now resuming state (MediaRecorder already resumed)");
-                    recordingState = RecordingState.IN_PROGRESS;
+                    Log.d(TAG, "MediaRecorder starting for the first segment (state was STARTING).");
+                    mediaRecorder.start(); // START RECORDING for the first segment
+                    
+                    recordingState = RecordingState.IN_PROGRESS; // Transition from STARTING to IN_PROGRESS
                     sharedPreferencesManager.setRecordingInProgress(true);
                     setupRecordingInProgressNotification();
-                    broadcastOnRecordingResumed(); // Notify UI resumed
+                    broadcastOnRecordingStarted(); 
+                    Log.d(TAG, "Initial MediaRecorder started! Recording now IN_PROGRESS.");
+
+                } else if (recordingState == RecordingState.IN_PROGRESS) {
+                    // This typically means the session was reconfigured (e.g., due to surface change)
+                    // WHILE a recording (either initial or a subsequent segment) was already in progress.
+                    // DO NOT call mediaRecorder.start() again if it's already started for the current segment.
+                    // The existing MediaRecorder instance continues with the new session.
+                    Log.d(TAG, "Capture session reconfigured while IN_PROGRESS (e.g. surface change). MediaRecorder for segment " + currentSegmentNumber + " should already be running. Ensuring notification is current.");
+                    setupRecordingInProgressNotification(); // Ensure notification is correct
+                
+                } else if (recordingState == RecordingState.PAUSED) { 
+                    Log.w(TAG,"Session reconfigured while PAUSED. MediaRecorder was resumed prior. State remains PAUSED until explicit resume.");
+                    setupRecordingResumeNotification(); // Show PAUSED notification
                 }
+                // ----- Fix Ended for this method(onConfigured_prevent_restart_on_surface_change)-----
 
             } catch (CameraAccessException e) {
-                Log.e(TAG, "onConfigured: Error starting repeating request", e);
+                Log.e(TAG, "onConfigured: Error starting repeating request or MediaRecorder", e);
                 stopRecording(); // Stop if cannot set repeating request
             } catch (IllegalStateException e) {
-                Log.e(TAG, "onConfigured: IllegalStateException (Session or Camera closed?)", e);
+                Log.e(TAG, "onConfigured: IllegalStateException (Session, Camera, or MediaRecorder closed/in wrong state?)", e);
                 stopRecording();
             }
         }
@@ -1230,6 +1371,11 @@ public class RecordingService extends Service {
     // --- End MediaRecorder & Camera Session Setup ---
 
     // --- Watermarking & Processing ---
+    // ----- Fix Start for this method(processLatestVideoFileWithWatermark_comment_out_isProcessingWatermark_references)-----
+    // FIXME: This method (processLatestVideoFileWithWatermark) appears to be DEPRECATED/UNUSED.
+    // It still references the old 'isProcessingWatermark' flag instead of the new 'ffmpegProcessingTaskCount'.
+    // The primary video processing path for segments is now handleSegmentRollover -> processAndMoveVideo.
+    // This method should be reviewed and likely REMOVED or REFACTORED if still needed for a different purpose.
     private void processLatestVideoFileWithWatermark() {
         Log.d(TAG,"processLatestVideoFileWithWatermark starting...");
         String inputUriOrPath;
@@ -1239,7 +1385,7 @@ public class RecordingService extends Service {
         File inputFile = null;
         Uri outputDirectoryUri = null; // Only for SAF output directory
 
-        isProcessingWatermark = true; // Set flag immediately
+        // isProcessingWatermark = true; // OLD FLAG - DO NOT USE - Handled by ffmpegProcessingTaskCount in other methods
 
         // Identify the source file/URI that was just recorded
         if (currentRecordingFile != null) {
@@ -1262,15 +1408,16 @@ public class RecordingService extends Service {
             Log.d(TAG,"Processing SAF URI: " + inputUriOrPath +", Temp Name: "+tempFileName);
         } else {
             Log.e(TAG, "processLatest: No valid recording file/URI tracked!");
-            isProcessingWatermark = false; // Reset flag
+            // isProcessingWatermark = false; // OLD FLAG - DO NOT USE at line ~1410
             return;
         }
         if(tempFileName == null) {
             Log.e(TAG, "Could not determine temporary filename, aborting processing.");
-            isProcessingWatermark = false; // Reset flag
+            // isProcessingWatermark = false; // OLD FLAG - DO NOT USE
             cleanupTemporaryFile(); // Attempt cleanup
             return;
         }
+    // ----- Fix Ended for this method(processLatestVideoFileWithWatermark_comment_out_isProcessingWatermark_references)-----
 
 
         // Construct final output filename (always prefixed)
@@ -1364,7 +1511,7 @@ public class RecordingService extends Service {
      * the temporary input file associated with the failed process.
      *
      * @param errorMessage A description of the error that occurred.
-     * @param inputUriOrPathToDelete The URI (as String) or absolute path of the temporary input file
+     * @param internalTempInputPath The URI (as String) or absolute path of the temporary input file
      *                               that should be cleaned up because its processing failed. Can be null.
      */
     // Helper to handle storage setup errors consistently
@@ -1372,7 +1519,39 @@ public class RecordingService extends Service {
         Log.e(TAG, "Processing Error: " + errorMessage);
         Toast.makeText(this, "Error processing video recording", Toast.LENGTH_LONG).show();
 
-        isProcessingWatermark = false; // Reset the processing flag IMPORTANTLY
+        // ----- Fix Start for this method(handleProcessingError_decrement_ffmpeg_counter)-----
+        // isProcessingWatermark = false; // Reset the processing flag IMPORTANTLY
+        // This error handler is called if FFmpeg command build fails OR if executeFFmpegAndMoveToSAF/InternalOnly
+        // itself has an issue *before* FFmpegKit.executeAsync is successfully launched.
+        // If ffmpegProcessingTaskCount was incremented in processAndMoveVideo, it needs to be decremented here
+        // if the async task won't run to decrement it.
+        // This is tricky, as this method might be called from places that didn't increment.
+        // A safer approach is for the caller (e.g., processAndMoveVideo) to handle decrementing
+        // if it calls handleProcessingError *after* incrementing but *before* executeFFmpegAsync.
+        // For now, we assume that if this is called, an async task that would decrement won't run.
+        // However, the increment happens in processAndMoveVideo. If that method calls this, then returns,
+        // the decrement in executeFFmpegAsync's callback won't happen for that task.
+        // Let's ensure processAndMoveVideo decrements if it calls handleProcessingError *after* incrementing.
+        // For now, to avoid double decrement, do not decrement here directly.
+        // The primary decrement point is in executeFFmpegAsync's callback.
+        // If processAndMoveVideo increments then fails *before* executeFFmpegAsync, it should decrement.
+
+        // If processAndMoveVideo calls this method and returns, the task count might be off.
+        // The increment is at the start of processAndMoveVideo.
+        // If it errors out and calls handleProcessingError, and then returns, the count is too high.
+        // So, processAndMoveVideo should indeed decrement if it errors out after incrementing.
+
+        // The responsibility for decrementing on PRE-FFMPEG failure lies with the method that INCREMENTED.
+        // processAndMoveVideo increments. If it fails before executeFFmpegAsync is called, it should decrement.
+        // The executeFFmpegAsync callback handles decrementing for actual FFmpeg execution completion/failure.
+        // Let's assume processAndMoveVideo will be modified to handle this.
+        // No direct decrement here to avoid race conditions or double decrements.
+        // ----- Fix Start for this method(handleProcessingError_remove_direct_decrement)-----
+        // The caller (processAndMoveVideo) is now responsible for decrementing the counter 
+        // if it calls handleProcessingError after incrementing but before FFmpegKit.executeAsync is launched.
+        // So, no decrement here.
+        // ----- Fix Ended for this method(handleProcessingError_remove_direct_decrement)-----
+        // ----- Fix Ended for this method(handleProcessingError_decrement_ffmpeg_counter)-----
 
         // If an input path/URI was provided, log attempt to clean it
         if (internalTempInputPath != null) {
@@ -1408,57 +1587,71 @@ public class RecordingService extends Service {
         }
     }
 
+    // ----- Fix Start for this method(executeFFmpegCommand_full_rewrite)-----
     private void executeFFmpegCommand(String ffmpegCommand, final String inputUriOrPath, final String outputUriOrPath) {
         Log.d(TAG, "Executing FFmpeg: " + ffmpegCommand);
+        // This method appears to be part of an older/alternative processing flow.
+        // It is NOT the primary path for segment processing, which uses executeFFmpegAsync.
+        // If this method were to be activated and manage an FFmpeg task,
+        // it would need to increment ffmpegProcessingTaskCount before calling FFmpegKit.executeAsync,
+        // and decrement it in the callback, similar to how executeFFmpegAsync works.
+
+        // Example structure if it were to manage a task:
+        // ffmpegProcessingTaskCount.incrementAndGet();
+        // Log.d(TAG, "FFmpeg task count incremented via executeFFmpegCommand for: " + inputUriOrPath);
 
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
             boolean success = ReturnCode.isSuccess(session.getReturnCode());
-            Log.d(TAG, "FFmpeg session finished - Success: " + success + ", RC: " + session.getReturnCode());
+            Log.d(TAG, "FFmpeg session (via executeFFmpegCommand) finished - Success: " + success + ", RC: " + session.getReturnCode());
 
             if (success) {
-                Log.d(TAG, "FFmpeg process successful. Output: " + outputUriOrPath);
+                Log.d(TAG, "FFmpeg process successful (via executeFFmpegCommand). Output: " + outputUriOrPath);
                 cleanupTemporaryFile(); // Delete the temp file (inputUriOrPath)
 
-                // Optional: Update records UI / Media Scanner if needed (more complex for SAF)
-
+                // Optional: Update records UI / Media Scanner if needed
             } else {
-                Log.e(TAG, "FFmpeg failed! Logs:");
+                Log.e(TAG, "FFmpeg (via executeFFmpegCommand) failed! Logs:");
                 Log.e(TAG, session.getAllLogsAsString());
                 Log.e(TAG, "Command was: "+ffmpegCommand);
-                Toast.makeText(this, "Error processing video", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Error processing video (via executeFFmpegCommand)", Toast.LENGTH_LONG).show();
 
                 // Try to cleanup the FAILED output file if it was created via SAF
                 if (outputUriOrPath != null && outputUriOrPath.startsWith("content://")) {
                     try {
                         DocumentFile failedOutput = DocumentFile.fromSingleUri(this, Uri.parse(outputUriOrPath));
                         if(failedOutput != null && failedOutput.exists() && failedOutput.delete()){
-                            Log.d(TAG,"Deleted failed SAF output file: "+ outputUriOrPath);
+                            Log.d(TAG,"Deleted failed SAF output file (via executeFFmpegCommand): "+ outputUriOrPath);
                         } else {
-                            Log.w(TAG, "Could not delete failed SAF output file: "+outputUriOrPath);
+                            Log.w(TAG, "Could not delete failed SAF output file (via executeFFmpegCommand): "+outputUriOrPath);
                         }
                     } catch (Exception e) {
-                        Log.e(TAG,"Error deleting failed SAF output", e);
+                        // ----- Fix Start for this method(executeFFmpegCommand_fix_string_literal)-----
+                        Log.e(TAG,"Error deleting failed SAF output (via executeFFmpegCommand)", e);
+                        // ----- Fix Ended for this method(executeFFmpegCommand_fix_string_literal)-----
                     }
                 }
                 // IMPORTANT: DO NOT delete the input temp file if processing failed.
-                currentRecordingFile = null; // Clear tracking refs so subsequent cleanup doesn't try again
+                currentRecordingFile = null;
                 currentRecordingSafUri = null;
                 currentRecordingDocFile = null;
             }
 
-            isProcessingWatermark = false; // Reset flag *after* cleanup/logging
+            // If this method (executeFFmpegCommand) were managing an FFmpeg task lifecycle:
+            // int tasksLeft = ffmpegProcessingTaskCount.decrementAndGet();
+            // Log.d(TAG, "FFmpeg task (via executeFFmpegCommand) finished. Count decremented to: " + tasksLeft);
+
             // Check if service can stop now
             if (!isWorkingInProgress()) {
-                Log.d(TAG,"FFmpeg finished and no other work pending, stopping service.");
+                Log.d(TAG,"FFmpeg (via executeFFmpegCommand) finished and no other work pending, stopping service.");
                 stopSelf();
             } else {
-                Log.d(TAG,"FFmpeg finished, but service might still be recording/working.");
+                Log.d(TAG,"FFmpeg (via executeFFmpegCommand) finished, but service might still be recording/working.");
             }
         });
     }
+    // ----- Fix Ended for this method(executeFFmpegCommand_full_rewrite)-----
 
 
-    // Centralized Temp File Cleanup
     // Centralized Temp File Cleanup
     private void cleanupTemporaryFile() {
         Log.d(TAG,"cleanupTemporaryFile: Attempting cleanup of temporary recording file...");
@@ -1804,8 +1997,294 @@ public class RecordingService extends Service {
     // Combined status check
     public boolean isWorkingInProgress() {
         // ----- Fix Start for this method(isWorkingInProgress)-----
-        return isProcessingWatermark || recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED || recordingState == RecordingState.STARTING;
+        // ----- Fix Start for this method(isWorkingInProgress_use_ffmpeg_counter)-----
+        return ffmpegProcessingTaskCount.get() > 0 || recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED || recordingState == RecordingState.STARTING;
+        // ----- Fix Ended for this method(isWorkingInProgress_use_ffmpeg_counter)-----
         // ----- Fix Ended for this method(isWorkingInProgress)-----
     }
     // --- End Status Check ---
+
+    // ----- Fix Start for this class (RecordingService_video_splitting_listener_and_rollover) -----
+    private final MediaRecorder.OnInfoListener mediaRecorderInfoListener = new MediaRecorder.OnInfoListener() {
+        @Override
+        public void onInfo(MediaRecorder mr, int what, int extra) {
+            Log.d(TAG, "MediaRecorder.onInfo: what=" + what + ", extra=" + extra);
+            if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+                Log.i(TAG, "Max filesize reached! Handling segment rollover.");
+                if (isVideoSplittingEnabled && videoSplitSizeBytes > 0) {
+                    handleSegmentRollover();
+                } else {
+                    Log.w(TAG, "Max filesize reached, but splitting not enabled/configured. Stopping recording.");
+                    stopRecording(); // Fallback to normal stop if splitting is off
+                }
+            }
+        }
+    };
+
+    // ----- Fix Start for this method(RecordingService_add_copySafToCache_helper)-----
+    /**
+     * Copies the content of a SAF URI to a new temporary file in the app's external cache.
+     * This is useful when FFmpeg processing needs a direct file path for an input that was originally a SAF URI.
+     *
+     * @param context The application context.
+     * @param safUri The SAF URI of the file to copy.
+     * @param originalFilename The desired filename for the temporary cached file (e.g., "temp_segment_001.mp4").
+     * @return The File object of the created temporary cache file, or null if copying failed.
+     */
+    @Nullable
+    private File copySafUriToTempCacheForProcessing(@NonNull Context context, @NonNull Uri safUri, @NonNull String originalFilename) {
+        Log.d(TAG, "copySafUriToTempCacheForProcessing: Attempting to copy SAF URI " + safUri + " to cache with name " + originalFilename);
+        File cacheDir = context.getExternalCacheDir();
+        if (cacheDir == null) {
+            Log.w(TAG, "copySafUriToTempCacheForProcessing: External cache dir null, using internal cache.");
+            cacheDir = new File(context.getCacheDir(), "ffmpeg_saf_temp");
+        } else {
+            cacheDir = new File(cacheDir, "ffmpeg_saf_temp"); // Subdir in external cache
+        }
+
+        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+            Log.e(TAG, "copySafUriToTempCacheForProcessing: Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
+            return null;
+        }
+
+        File tempCachedFile = new File(cacheDir, originalFilename);
+
+        try (InputStream inputStream = context.getContentResolver().openInputStream(safUri);
+             OutputStream outputStream = new FileOutputStream(tempCachedFile)) {
+
+            if (inputStream == null) {
+                Log.e(TAG, "copySafUriToTempCacheForProcessing: Failed to open InputStream for SAF URI: " + safUri);
+                return null;
+            }
+
+            byte[] buffer = new byte[8192]; // 8KB buffer
+            int bytesRead;
+            long totalBytesCopied = 0;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+                totalBytesCopied += bytesRead;
+            }
+            Log.i(TAG, "copySafUriToTempCacheForProcessing: Successfully copied " + totalBytesCopied + " bytes from SAF URI to temp cache file: " + tempCachedFile.getAbsolutePath());
+            return tempCachedFile;
+
+        } catch (IOException e) {
+            Log.e(TAG, "copySafUriToTempCacheForProcessing: IOException while copying SAF URI to temp cache", e);
+            if (tempCachedFile.exists() && !tempCachedFile.delete()) {
+                Log.w(TAG, "copySafUriToTempCacheForProcessing: Failed to delete partially copied temp file: " + tempCachedFile.getName());
+            }
+            return null;
+        } catch (SecurityException se) {
+            Log.e(TAG, "copySafUriToTempCacheForProcessing: SecurityException, likely no permission for SAF URI: " + safUri, se);
+            return null;
+        }
+    }
+    // ----- Fix Ended for this method(RecordingService_add_copySafToCache_helper)-----
+
+    private void handleSegmentRollover() {
+        Log.i(TAG, "Handling segment rollover for segment " + currentSegmentNumber);
+
+        // ----- Fix Start for this method(handleSegmentRollover_broadcast_correct_file)-----
+        // 1. Temporarily store current file/URI for broadcast (use the TEMP file MediaRecorder just wrote)
+        File completedTempFile = currentInternalTempFile; // if internal (this is what MR wrote to)
+        Uri completedSafUri = currentRecordingSafUri;    // if SAF (this is what MR wrote to via PFD)
+        DocumentFile completedDocFile = currentRecordingDocFile; // To get the name if SAF
+        // ----- Fix Ended for this method(handleSegmentRollover_broadcast_correct_file)-----
+
+        // 2. Stop the current MediaRecorder and release camera resources (partially)
+        if (mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+                Log.d(TAG, "Rollover: MediaRecorder stopped for segment " + currentSegmentNumber);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Rollover: RuntimeException stopping MediaRecorder for segment " + currentSegmentNumber, e);
+                // Critical error, attempt full stop
+                stopRecording();
+                return;
+            }
+            mediaRecorder.reset(); // Reset for reuse, don't release yet
+        }
+        // Do NOT fully close cameraDevice or captureSession here, as we need to restart them.
+        // Only close the capture session if it's essential for creating a new one reliably.
+        // For now, we assume createCameraPreviewSession can handle reconfiguring.
+
+        // 3. Increment segment number
+        currentSegmentNumber++;
+        Log.d(TAG, "Rollover: New segment number: " + currentSegmentNumber);
+
+        // ----- Fix Start for this method(handleSegmentRollover_broadcast_correct_file)-----
+        // 4. Broadcast that a segment is complete using the URI/Path of the *actual recorded file*
+        Intent segmentIntent = new Intent(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
+        String completedFileUriString = null;
+        String completedFilePath = null;
+
+        if (completedSafUri != null && completedDocFile != null) { // Check completedDocFile for SAF
+            completedFileUriString = completedSafUri.toString();
+            // For SAF, a direct file path isn't usually available or reliable for other apps
+            // The URI is the primary identifier. We can also pass the display name.
+            // ----- Fix Start for this method(handleSegmentRollover_remove_filename_extra)-----
+            // segmentIntent.putExtra(Constants.INTENT_EXTRA_FILE_NAME, completedDocFile.getName()); // This constant doesn't exist yet
+            Log.d(TAG, "Rollover: Broadcasting segment complete for SAF URI: " + completedFileUriString + " (Name: " + (completedDocFile != null ? completedDocFile.getName() : "N/A") + ")");
+            // ----- Fix Ended for this method(handleSegmentRollover_remove_filename_extra)-----
+        } else if (completedTempFile != null) { // Internal storage, use the temp file path
+            Uri tempFileUri = Uri.fromFile(completedTempFile);
+            completedFileUriString = tempFileUri.toString();
+            completedFilePath = completedTempFile.getAbsolutePath();
+            // ----- Fix Start for this method(handleSegmentRollover_remove_filename_extra)-----
+            // segmentIntent.putExtra(Constants.INTENT_EXTRA_FILE_NAME, completedTempFile.getName()); // This constant doesn't exist yet
+            Log.d(TAG, "Rollover: Broadcasting segment complete for internal temp file: " + completedFilePath + " (Name: " + completedTempFile.getName() + ")");
+            // ----- Fix Ended for this method(handleSegmentRollover_remove_filename_extra)-----
+        } else {
+            Log.w(TAG, "Rollover: No completed file URI or path to broadcast for segment completion.");
+        }
+
+        if (completedFileUriString != null) {
+            segmentIntent.putExtra(Constants.INTENT_EXTRA_FILE_URI, completedFileUriString);
+            if (completedFilePath != null) { // Only add if it's an actual file path
+                segmentIntent.putExtra(Constants.INTENT_EXTRA_FILE_PATH, completedFilePath);
+            }
+            sendBroadcast(segmentIntent);
+        }
+        // ----- Fix Ended for this method(handleSegmentRollover_broadcast_correct_file)-----
+
+        // ----- Fix Start for this method(handleSegmentRollover_trigger_ffmpeg_for_segment)-----
+        // 4.b. Initiate FFmpeg processing for the completed segment
+        if (completedTempFile != null && completedTempFile.exists()) {
+            Log.d(TAG, "Rollover: Initiating FFmpeg for internal temp segment: " + completedTempFile.getAbsolutePath());
+            processAndMoveVideo(completedTempFile); // Process the temp file from internal cache
+        } else if (completedSafUri != null && completedDocFile != null && completedDocFile.exists()) {
+            Log.d(TAG, "Rollover: SAF segment recorded. Copying to temp cache for FFmpeg processing: " + completedDocFile.getName());
+            // Copy the SAF URI content to a new temp file in cache first
+            File tempCacheFileForSafSegment = copySafUriToTempCacheForProcessing(getApplicationContext(), completedSafUri, completedDocFile.getName());
+            if (tempCacheFileForSafSegment != null && tempCacheFileForSafSegment.exists()) {
+                Log.d(TAG, "Rollover: Copied SAF segment to cache: " + tempCacheFileForSafSegment.getAbsolutePath() + ". Initiating FFmpeg.");
+                processAndMoveVideo(tempCacheFileForSafSegment);
+
+                // After initiating processing for the *copy*, we can delete the original SAF temp file
+                // because its content is now in tempCacheFileForSafSegment and will be processed from there.
+                // The PFD for completedSafUri was already closed by createOutputFile() when the new segment started.
+                if (completedDocFile.exists()) {
+                    if (completedDocFile.delete()) {
+                        Log.d(TAG, "Rollover: Deleted original temporary SAF segment after copying to cache: " + completedDocFile.getName());
+                    }
+                }
+            } else {
+                Log.e(TAG, "Rollover: Failed to copy SAF segment to temp cache. Cannot process: " + (completedDocFile != null ? completedDocFile.getName() : completedSafUri.toString()));
+                // If copy fails, we might have an unprocessed segment in SAF. Handle as error or leave it?
+                // For now, log and continue to next segment recording.
+            }
+        } else {
+            Log.w(TAG, "Rollover: No valid completed segment file/URI found to process with FFmpeg.");
+        }
+        // ----- Fix Ended for this method(handleSegmentRollover_trigger_ffmpeg_for_segment)-----
+
+        // 5. Re-setup MediaRecorder for the NEW segment (new file name)
+        try {
+            // The createOutputFile() call will now use the incremented currentSegmentNumber
+            // And setupMediaRecorder will use the new file from createOutputFile()
+            setupMediaRecorder(); // This will set up MediaRecorder with the new segment's file.
+            Log.d(TAG, "Rollover: MediaRecorder re-setup for segment " + currentSegmentNumber);
+        } catch (IOException e) {
+            Log.e(TAG, "Rollover: IOException re-setting up MediaRecorder for segment " + currentSegmentNumber, e);
+            stopRecording(); // Critical error, stop entirely
+            return;
+        }
+
+        // 6. Restart camera capture session and MediaRecorder
+        // The existing cameraDevice should still be open. We need a new session.
+        if (cameraDevice != null) {
+            Log.d(TAG, "Rollover: Re-creating camera preview session for new segment.");
+            // ----- Fix Start for this method(handleSegmentRollover_set_state_for_restart)-----
+            // Set state to STARTING so that onConfigured knows to start the new MediaRecorder instance
+            recordingState = RecordingState.STARTING; 
+            // ----- Fix Ended for this method(handleSegmentRollover_set_state_for_restart)-----
+            createCameraPreviewSession(); // This should configure and start the new MediaRecorder
+        } else {
+            Log.e(TAG, "Rollover: CameraDevice is null, cannot restart session. Stopping.");
+            stopRecording();
+        }
+        Log.i(TAG, "Segment rollover process complete for segment " + (currentSegmentNumber -1));
+    }
+    // ----- Fix Ended for this class (RecordingService_video_splitting_listener_and_rollover) -----
+
+    // ----- Fix Start for this method(createOutputFile_segmented_naming) -----
+    /**
+     * Creates and returns the output file or configures the SAF URI for MediaRecorder.
+     * Handles segmented naming based on currentSegmentNumber.
+     * Updates currentRecordingFile or currentRecordingSafUri and currentRecordingDocFile.
+     *
+     * @return The File object for internal storage, or null if using SAF (currentRecordingSafUri will be set).
+     *         Returns null on critical failure to create any output.
+     */
+    private File createOutputFile() {
+        String storageMode = sharedPreferencesManager.getStorageMode();
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        // Format segment number with leading zeros (e.g., _001, _002)
+        String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber);
+
+        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+        String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+
+        Log.d(TAG, "createOutputFile called for segment " + currentSegmentNumber + ". Base: " + baseFilename + ", Temp: " + tempBaseFilename);
+
+        // Reset previous PFD and URIs
+        closeCurrentPfd();
+        currentRecordingFile = null;
+        currentRecordingSafUri = null;
+        currentRecordingDocFile = null;
+        currentInternalTempFile = null; // Important to reset this too
+
+        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+            String customUriString = sharedPreferencesManager.getCustomStorageUri();
+            if (customUriString == null) {
+                handleStorageError("Custom storage selected but URI is null");
+                return null; // Critical error, cannot proceed with SAF
+            }
+            Uri treeUri = Uri.parse(customUriString);
+            DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
+            if (pickedDir == null || !pickedDir.canWrite()) {
+                handleStorageError("Cannot write to selected custom directory");
+                return null; // Critical error
+            }
+
+            // Use the TEMP filename for SAF creation as well initially
+            currentRecordingDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
+            if (currentRecordingDocFile == null || !currentRecordingDocFile.exists()) {
+                Log.e(TAG, "Failed to create DocumentFile in SAF: " + tempBaseFilename);
+                handleStorageError("Failed to create file in custom directory");
+                return null; // Critical error
+            }
+            currentRecordingSafUri = currentRecordingDocFile.getUri();
+            Log.i(TAG, "Output configured for SAF: " + currentRecordingSafUri.toString());
+            // No internal temp file needed if directly writing to SAF PFD
+            return null; // Signify SAF is being used
+
+        } else { // Internal Storage
+            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+            if (!videoDir.exists() && !videoDir.mkdirs()) {
+                Log.e(TAG, "Cannot create internal recording directory: " + videoDir.getAbsolutePath());
+                Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
+                return null; // Critical error
+            }
+            // For internal storage, we record to a temp file first, then process to final name.
+            // The temp file should also be in a cache location, not the final directory.
+            File cacheDir = getExternalCacheDir();
+            if (cacheDir == null) {
+                Log.w(TAG, "External cache dir null, using internal cache for temp file.");
+                cacheDir = new File(getCacheDir(), "recording_temp"); // Fallback to internal app cache
+            } else {
+                cacheDir = new File(cacheDir, "recording_temp"); // Subdir in external cache
+            }
+            if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                Log.e(TAG, "Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
+                Toast.makeText(this, "Error creating temp cache directory", Toast.LENGTH_LONG).show();
+                return null; // Critical error
+            }
+
+            currentInternalTempFile = new File(cacheDir, tempBaseFilename);
+            Log.i(TAG, "Output (temp) configured for Internal: " + currentInternalTempFile.getAbsolutePath());
+            currentRecordingFile = new File(videoDir, baseFilename); // This is the *final* intended path after processing
+            return currentInternalTempFile; // Return the temp file to be written to by MediaRecorder
+        }
+    }
+    // ----- Fix Ended for this method(createOutputFile_segmented_naming) -----
 }

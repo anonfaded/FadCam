@@ -85,9 +85,19 @@ public abstract class Constants {
     // Extra key for the URI of the file being processed (usually the temp file)
     public static final String EXTRA_PROCESSING_URI_STRING = "com.fadcam.EXTRA_PROCESSING_URI_STRING";
 
+    // ----- Fix Start for this class (Constants_video_splitting_broadcast) -----
+    // Broadcast action sent by RecordingService when a video segment is complete (due to splitting)
+    public static final String ACTION_RECORDING_SEGMENT_COMPLETE = "com.fadcam.RECORDING_SEGMENT_COMPLETE";
+    // Extra key for the URI of the completed segment file (as String) - can be content:// or file://
+    public static final String INTENT_EXTRA_FILE_URI = "com.fadcam.EXTRA_FILE_URI";
+    // Extra key for the absolute path of the completed segment file (if internal storage) - use with caution
+    public static final String INTENT_EXTRA_FILE_PATH = "com.fadcam.EXTRA_FILE_PATH";
+    // Extra key for the segment number that just completed
+    public static final String INTENT_EXTRA_SEGMENT_NUMBER = "com.fadcam.EXTRA_SEGMENT_NUMBER";
+    // ----- Fix Ended for this class (Constants_video_splitting_broadcast) -----
+
     // SharedPreferences key for opened videos
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris";
-
 
     public static final String PREF_SELECTED_BACK_CAMERA_ID = "selected_back_camera_id";
     public static final String DEFAULT_BACK_CAMERA_ID = "0"; // Default physical ID for back cameras is often "0"

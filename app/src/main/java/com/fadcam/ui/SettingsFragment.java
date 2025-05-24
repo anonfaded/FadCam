@@ -87,6 +87,10 @@ import android.content.Intent; // Add Intent import
 import androidx.localbroadcastmanager.content.LocalBroadcastManager; // OR use ContextCompat if not using LocalBroadcastManager
 import androidx.core.content.ContextCompat; // If using standard broadcast
 
+// ----- Fix Start for this class (SettingsFragment_video_splitting_imports) -----
+import android.text.Editable;
+import android.text.TextWatcher;
+// ----- Fix Ended for this class (SettingsFragment_video_splitting_imports) -----
 
 
 public class SettingsFragment extends Fragment {
@@ -137,6 +141,12 @@ public class SettingsFragment extends Fragment {
     private LinearLayout backCameraLensLayout;
     private ExecutorService executorService; // <-- *** ADD THIS DECLARATION ***
     private List<CameraIdInfo> availableBackCameras = new ArrayList<>(); // Store detected back cameras
+
+    // ----- Fix Start for this class (SettingsFragment_video_splitting_fields) -----
+    private MaterialSwitch videoSplittingSwitch;
+    private LinearLayout videoSplitSizeLayout;
+    private EditText videoSplitSizeEditText;
+    // ----- Fix Ended for this class (SettingsFragment_video_splitting_fields) -----
 
     // Simple class to hold camera ID and its display name
     private static class CameraIdInfo {
@@ -272,6 +282,12 @@ public class SettingsFragment extends Fragment {
         backCameraLensDivider = view.findViewById(R.id.back_camera_lens_divider); // *** FIND THE DIVIDER ***
         orientationSpinner = view.findViewById(R.id.orientation_spinner);
 
+        // ----- Fix Start for this class (SettingsFragment_video_splitting_view_finding) -----
+        videoSplittingSwitch = view.findViewById(R.id.video_splitting_switch);
+        videoSplitSizeLayout = view.findViewById(R.id.video_split_size_layout);
+        videoSplitSizeEditText = view.findViewById(R.id.video_split_size_edittext);
+        // ----- Fix Ended for this class (SettingsFragment_video_splitting_view_finding) -----
+
         // *** Safety check for the new view ***
         if (backCameraLensDivider == null) {
             Log.e(TAG, "onCreateView: Critical - back_camera_lens_divider View not found!");
@@ -301,6 +317,10 @@ public class SettingsFragment extends Fragment {
         setupFrameRateNoteText();
         setupCodecNoteText();
         setupOrientationSpinner();
+
+        // ----- Fix Start for this class (SettingsFragment_video_splitting_setup_call) -----
+        setupVideoSplittingSection();
+        // ----- Fix Ended for this class (SettingsFragment_video_splitting_setup_call) -----
 
         // Setup listeners for storage options
         setupStorageLocationOptions();
@@ -2396,4 +2416,64 @@ public class SettingsFragment extends Fragment {
         bitrateHelperTextView.setTextColor(color);
     }
     // ...existing code...
+
+    // ----- Fix Start for this class (SettingsFragment_video_splitting_methods) -----
+    private void setupVideoSplittingSection() {
+        if (videoSplittingSwitch == null || videoSplitSizeLayout == null || videoSplitSizeEditText == null || sharedPreferencesManager == null) {
+            Log.e(TAG_SETTINGS, "Video splitting UI elements or SharedPreferencesManager not initialized.");
+            return;
+        }
+
+        // Load initial states
+        boolean isSplittingEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
+        int currentSplitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
+
+        videoSplittingSwitch.setChecked(isSplittingEnabled);
+        videoSplitSizeEditText.setText(String.valueOf(currentSplitSizeMb));
+        videoSplitSizeLayout.setVisibility(isSplittingEnabled ? View.VISIBLE : View.GONE);
+
+        videoSplittingSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            vibrateTouch();
+            sharedPreferencesManager.setVideoSplittingEnabled(isChecked);
+            videoSplitSizeLayout.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            Log.d(TAG_SETTINGS, "Video splitting enabled: " + isChecked);
+            if (!isChecked) {
+                // Optionally reset size to default when disabling, or leave it as is
+                // videoSplitSizeEditText.setText(String.valueOf(SharedPreferencesManager.DEFAULT_VIDEO_SPLIT_SIZE_MB));
+                // sharedPreferencesManager.setVideoSplitSizeMb(SharedPreferencesManager.DEFAULT_VIDEO_SPLIT_SIZE_MB);
+            }
+        });
+
+        videoSplitSizeEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    String input = s.toString().trim();
+                    if (input.isEmpty()) {
+                        // Allow empty for user to clear, but don't save yet, maybe show hint
+                        videoSplitSizeEditText.setError("Size cannot be empty");
+                        return;
+                    }
+                    int sizeMb = Integer.parseInt(input);
+                    if (sizeMb >= 100 && sizeMb <= 4000) { // Example validation: 100MB to 4GB
+                        sharedPreferencesManager.setVideoSplitSizeMb(sizeMb);
+                        Log.d(TAG_SETTINGS, "Video split size set to: " + sizeMb + " MB");
+                        videoSplitSizeEditText.setError(null); // Clear error
+                    } else {
+                        videoSplitSizeEditText.setError("Min 100, Max 4000 MB");
+                    }
+                } catch (NumberFormatException e) {
+                    videoSplitSizeEditText.setError("Invalid number");
+                    Log.w(TAG_SETTINGS, "Invalid number format for split size: " + s.toString());
+                }
+            }
+        });
+    }
+    // ----- Fix Ended for this class (SettingsFragment_video_splitting_methods) -----
 }
