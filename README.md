@@ -160,6 +160,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [brandulox on TikTok](https://www.tiktok.com/@brandulox/video/7481545146144673030)
 - [El Androide Feliz on YouTube](https://youtu.be/H02x9pnJh_g?si=dXCmNLaDm9Hrra2C&t=669)
 - [ODORIZZI on YouTube](https://www.youtube.com/watch?v=e2IFJJgjKRg)
+- [Tech OverWatch on TikTok](https://www.tiktok.com/@tech_overwatch/video/7506821012655181062)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
