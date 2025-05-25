@@ -49,6 +49,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView; // Add this
 
 import androidx.annotation.NonNull;
@@ -162,6 +163,9 @@ public class HomeFragment extends Fragment {
     private BroadcastReceiver broadcastOnRecordingPaused;
     private BroadcastReceiver broadcastOnRecordingStopped;
     private BroadcastReceiver broadcastOnRecordingStateCallback;
+    // ----- Fix Start for this class (HomeFragment) -----
+    private BroadcastReceiver segmentCompleteStatsReceiver; // For segment completion to update stats
+    // ----- Fix Ended for this class (HomeFragment) -----
 
     private MaterialButton buttonTorchSwitch;
 
@@ -180,7 +184,10 @@ public class HomeFragment extends Fragment {
     private SharedPreferencesManager sharedPreferencesManager;
     private ExecutorService executorService;
     private BroadcastReceiver recordingCompleteReceiver;
-    private boolean isStatsReceiverRegistered = false;
+    // ----- Fix Start for this class (HomeFragment) -----
+    // private boolean isStatsReceiverRegistered = false; // This seemed to be for the general recordingCompleteReceiver
+    private boolean isSegmentCompleteStatsReceiverRegistered = false;
+    // ----- Fix Ended for this class (HomeFragment) -----
 
     // important
     private void requestEssentialPermissions() {
@@ -421,51 +428,36 @@ public class HomeFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        registerStatsReceiver(); // Register receiver when fragment starts
+        Log.d(TAG, "onStart: HomeFragment");
+        // Moved receiver registration here from onResume for consistency
+        // and to ensure they are ready before any onResume logic might need them.
+        registerBroadcastReceivers(); // Centralized registration
 
-        if(!textureView.isAvailable()) {
-            textureView.setVisibility(View.VISIBLE);
+        // Initialize SharedPreferencesManager if null
+        if (sharedPreferencesManager == null) {
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        }
+        // Initialize ExecutorService if null or shutdown
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
         }
 
-        registerBroadcastOnRecordingStarted();
-        registerBroadcastOnRecordingResumed();
-        registerBroadcastOnRecordingPaused();
-        registerBrodcastOnRecordingStopped();
-        registerBroadcastOnRecordingStateCallback();
+        // Fetch initial state and update UI
+        fetchRecordingState(); // Get current service state
+        updateStats();         // Update file count/size stats
+        updateStorageInfo();   // Update available storage info
+        updateClock();         // Update clock display
+        startUpdatingClock();  // Start periodic clock updates
+        startUpdatingInfo();   // Start periodic storage/estimate updates
+        showCurrentCameraSelection(); // Show selected camera
+        // Restore preview state
+        isPreviewEnabled = sharedPreferencesManager.sharedPreferences.getBoolean("preview_enabled", true);
+        updatePreviewVisibility();
 
-        IntentFilter[] filters = {
-                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED),
-                new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED),
-                new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED),
-                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED),
-                new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK)
-        };
+        // ----- Fix Start for this method(onStart) -----
+        registerSegmentCompleteStatsReceiver(requireContext());
+        // ----- Fix Ended for this method(onStart) -----
 
-        BroadcastReceiver[] receivers = {
-                broadcastOnRecordingStarted,
-                broadcastOnRecordingResumed,
-                broadcastOnRecordingPaused,
-                broadcastOnRecordingStopped,
-                broadcastOnRecordingStateCallback
-        };
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 and above
-            for (int i = 0; i < receivers.length; i++) {
-                requireContext().registerReceiver(
-                        receivers[i],
-                        filters[i],
-                        Context.RECEIVER_EXPORTED
-                );
-            }
-        } else {
-            // Android 12 and earlier
-            for (int i = 0; i < receivers.length; i++) {
-                requireContext().registerReceiver(receivers[i], filters[i]);
-            }
-        }
-
-        showCurrentCameraSelection();
     }
 
     /**
@@ -571,26 +563,14 @@ public class HomeFragment extends Fragment {
     }
 
     private void onRecordingStarted(boolean toast) {
+        Log.d(TAG,"onRecordingStarted. Toast: " + toast);
         recordingState = RecordingState.IN_PROGRESS;
-        
-        acquireWakeLock();
-        setVideoBitrate();
-        
-        buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.button_stop)));
-        buttonStartStop.setText(getString(R.string.button_stop));
-        buttonStartStop.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop));
-        buttonStartStop.setEnabled(true);
-        
-        buttonPauseResume.setEnabled(true);
-        buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
-        buttonCamSwitch.setEnabled(false);
-
-        startUpdatingInfo();
-
-        if(toast) {
-            vibrateTouch();
-            Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
-        }
+        setUIForRecordingActive();
+        if(toast) Utils.showQuickToast(requireContext(), R.string.video_recording_started);
+        acquireWakeLock(); // Acquire wake lock
+        // ----- Fix Start for this method(onRecordingStarted) -----
+        updateStats(); // Update stats when recording starts
+        // ----- Fix Ended for this method(onRecordingStarted) -----
     }
 
     private void onRecordingResumed() {
@@ -766,21 +746,25 @@ public class HomeFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        unregisterStatsReceiver(); // Unregister receiver when fragment stops
+        // unregisterStatsReceiver(); // Unregister receiver when fragment stops
 
         Log.e(TAG, "HomeFragment stopped");
 
-        if(isRecording()) {
+        // ----- Fix Start for this method(onStop)-----
+        // Call the centralized unregister method
+        unregisterBroadcastReceivers(); 
+
+        // The following lines for sending surface update on stop if recording
+        // should remain, as they are not related to receiver unregistration.
+        if(isRecording()) { // isRecording() checks recordingState
             Intent recordingIntent = new Intent(getActivity(), RecordingService.class);
             recordingIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
-            requireActivity().startService(recordingIntent);
+            // Check if activity is still available before starting service
+            if (getActivity() != null) {
+                requireActivity().startService(recordingIntent);
+            }
         }
-
-        requireActivity().unregisterReceiver(broadcastOnRecordingStarted);
-        requireActivity().unregisterReceiver(broadcastOnRecordingResumed);
-        requireActivity().unregisterReceiver(broadcastOnRecordingPaused);
-        requireActivity().unregisterReceiver(broadcastOnRecordingStopped);
-        requireActivity().unregisterReceiver(broadcastOnRecordingStateCallback);
+        // ----- Fix Ended for this method(onStop)-----
     }
 
     // --- `onResume()` Method (Simplified - focuses on fetch state) ---
@@ -828,26 +812,41 @@ public class HomeFragment extends Fragment {
      */
     @SuppressLint("UnspecifiedRegisterReceiverFlag") // Suppress only if targeting older SDKs AND necessary
     private void registerBroadcastReceivers() {
-        if (!isAdded() || getContext() == null) {
-            Log.e(TAG,"Cannot register receivers, fragment not attached or context null.");
+        Context context = requireContext();
+        if (context == null) {
+            Log.e(TAG, "registerBroadcastReceivers: Context is null, cannot register.");
             return;
         }
-        Context safeContext = requireContext();
-        Log.i(TAG, "Registering ALL Broadcast Receivers...");
+        Log.d(TAG,"Registering all HomeFragment broadcast receivers...");
 
-        // --- 1. Initialize ALL receiver instances ---
-        initializeRecordingStateReceivers();   // Defines state receivers if null
-        initializeRecordingCompleteReceiver(); // Defines completion receiver if null
-        initializeTorchReceiver();             // Defines torch receiver if null
-        // NOTE: No initialize for ResourcesReleased receiver as it's removed in this logic path
+        // Initialize if they are null (first time or after unregistration)
+        initializeRecordingStateReceivers(); // Initializes all state-related receivers
+        initializeRecordingCompleteReceiver();
+        initializeTorchReceiver();
+        // ----- Fix Start for this method(registerBroadcastReceivers) -----
+        initializeSegmentCompleteStatsReceiver();
+        // ----- Fix Ended for this method(registerBroadcastReceivers) -----
 
+        // Register them
+        // ----- Fix Start for this method(registerBroadcastReceivers_update_isStateReceiversRegistered_flag_logic)-----
+        // registerRecordingStateReceivers now returns a boolean indicating success
+        isStateReceiversRegistered = registerRecordingStateReceivers(context); 
+        // ----- Fix Ended for this method(registerBroadcastReceivers_update_isStateReceiversRegistered_flag_logic)-----
 
-        // --- 2. Register the Receivers ---
-        registerRecordingStateReceivers(safeContext);      // Registers: START, RESUME, PAUSE, STOPPED, STATE_CALLBACK
-        registerRecordingCompleteReceiver(safeContext);    // Registers: ACTION_RECORDING_COMPLETE
-        registerTorchReceiver(safeContext);            // Registers: BROADCAST_ON_TORCH_STATE_CHANGED
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerRecordingCompleteReceiver(context);
+        }
+        registerTorchReceiver(context);
+        // ----- Fix Start for this method(registerBroadcastReceivers) -----
+        registerSegmentCompleteStatsReceiver(context); // Register the new one
+        // ----- Fix Ended for this method(registerBroadcastReceivers) -----
 
-        Log.i(TAG, "Finished registering receivers.");
+        // ----- Fix Start for this method(registerBroadcastReceivers_update_isStateReceiversRegistered_flag_logic)-----
+        // isStateReceiversRegistered = true; // Assuming registerRecordingStateReceivers sets this -> Moved up and tied to actual success
+        // ----- Fix Ended for this method(registerBroadcastReceivers_update_isStateReceiversRegistered_flag_logic)-----
+        // isCompletionReceiverRegistered is managed by registerRecordingCompleteReceiver
+        // isTorchReceiverRegistered is managed by registerTorchReceiver
+        Log.i(TAG,"All HomeFragment broadcast receivers registration attempt finished.");
     }
 
     // --- Initialization Helper Methods ---
@@ -1045,51 +1044,92 @@ public class HomeFragment extends Fragment {
 
     /** Helper to register all recording state change receivers */
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    private void registerRecordingStateReceivers(Context context){
-        if(isStateReceiversRegistered) return; // Prevent double registration
-        try {
-            IntentFilter startedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED);
-            IntentFilter resumedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED);
-            IntentFilter pausedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED);
-            IntentFilter stoppedFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED);
-            IntentFilter callbackFilter = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
-
-            // Ensure receiver instances exist before registering
-            if (broadcastOnRecordingStarted == null) initializeRecordingStateReceivers(); // Check individual receivers too...
-            if (broadcastOnRecordingResumed == null) initializeRecordingStateReceivers();
-            if (broadcastOnRecordingPaused == null) initializeRecordingStateReceivers();
-            if (broadcastOnRecordingStopped == null) initializeRecordingStateReceivers();
-            if (broadcastOnRecordingStateCallback == null) initializeRecordingStateReceivers();
-
-            // Perform registration only if instances are valid
-            if(broadcastOnRecordingStarted!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingStarted, startedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
-            if(broadcastOnRecordingResumed!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingResumed, resumedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
-            if(broadcastOnRecordingPaused!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingPaused, pausedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
-            if(broadcastOnRecordingStopped!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingStopped, stoppedFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
-            if(broadcastOnRecordingStateCallback!=null) ContextCompat.registerReceiver(context, broadcastOnRecordingStateCallback, callbackFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
-
-            isStateReceiversRegistered = true; // Mark as registered
-            Log.d(TAG,"Registered ALL recording state receivers.");
-        } catch(Exception e) {
-            Log.e(TAG,"Error registering recording state receivers", e);
-            isStateReceiversRegistered = false; // Reset flag on error
+    // ----- Fix Start for this method(registerRecordingStateReceivers_correct_signature_and_logic)-----
+    private boolean registerRecordingStateReceivers(Context context){ // Ensure boolean return type
+    // ----- Fix Ended for this method(registerRecordingStateReceivers_correct_signature_and_logic)-----
+        Log.d(TAG, "Registering recording state receivers...");
+        if (context == null) {
+            Log.e(TAG, "Context is null in registerRecordingStateReceivers");
+            // ----- Fix Start for this method(registerRecordingStateReceivers_return_boolean_and_check_receivers)-----
+            isStateReceiversRegistered = false;
+            return false;
+            // ----- Fix Ended for this method(registerRecordingStateReceivers_return_boolean_and_check_receivers)-----
         }
+
+        // Ensure receivers are initialized
+        initializeRecordingStateReceivers();
+
+        // ----- Fix Start for this method(registerRecordingStateReceivers_return_boolean_and_check_receivers)-----
+        boolean allRegisteredSuccessfully = true;
+        IntentFilter intentFilterStarted = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STARTED);
+        if (broadcastOnRecordingStarted != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(broadcastOnRecordingStarted, intentFilterStarted, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(broadcastOnRecordingStarted, intentFilterStarted);
+            }
+            Log.d(TAG,"Registered broadcastOnRecordingStarted");
+        } else { allRegisteredSuccessfully = false; Log.e(TAG, "broadcastOnRecordingStarted is null, not registering"); }
+
+        IntentFilter intentFilterResumed = new IntentFilter(Constants.BROADCAST_ON_RECORDING_RESUMED);
+        if (broadcastOnRecordingResumed != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(broadcastOnRecordingResumed, intentFilterResumed, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(broadcastOnRecordingResumed, intentFilterResumed);
+            }
+            Log.d(TAG,"Registered broadcastOnRecordingResumed");
+        } else { allRegisteredSuccessfully = false; Log.e(TAG, "broadcastOnRecordingResumed is null, not registering"); }
+
+        IntentFilter intentFilterPaused = new IntentFilter(Constants.BROADCAST_ON_RECORDING_PAUSED);
+        if (broadcastOnRecordingPaused != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(broadcastOnRecordingPaused, intentFilterPaused, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(broadcastOnRecordingPaused, intentFilterPaused);
+            }
+            Log.d(TAG,"Registered broadcastOnRecordingPaused");
+        } else { allRegisteredSuccessfully = false; Log.e(TAG, "broadcastOnRecordingPaused is null, not registering"); }
+
+        IntentFilter intentFilterStopped = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STOPPED);
+        if (broadcastOnRecordingStopped != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(broadcastOnRecordingStopped, intentFilterStopped, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(broadcastOnRecordingStopped, intentFilterStopped);
+            }
+            Log.d(TAG,"Registered broadcastOnRecordingStopped");
+        } else { allRegisteredSuccessfully = false; Log.e(TAG, "broadcastOnRecordingStopped is null, not registering"); }
+
+        IntentFilter intentFilterStateCallback = new IntentFilter(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+        if (broadcastOnRecordingStateCallback != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(broadcastOnRecordingStateCallback, intentFilterStateCallback, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(broadcastOnRecordingStateCallback, intentFilterStateCallback);
+            }
+            Log.d(TAG,"Registered broadcastOnRecordingStateCallback");
+        } else { allRegisteredSuccessfully = false; Log.e(TAG, "broadcastOnRecordingStateCallback is null, not registering"); }
+
+        isStateReceiversRegistered = allRegisteredSuccessfully;
+        if(allRegisteredSuccessfully){
+            Log.i(TAG, "All recording state receivers registered successfully.");
+        } else {
+            Log.w(TAG, "One or more recording state receivers failed to register because they were null.");
+        }
+        return allRegisteredSuccessfully;
+        // ----- Fix Ended for this method(registerRecordingStateReceivers_return_boolean_and_check_receivers)-----
     }
 
     /** Helper to register the ACTION_RECORDING_COMPLETE receiver */
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void registerRecordingCompleteReceiver(Context context) {
-        if (isCompletionReceiverRegistered) return;
-        if (recordingCompleteReceiver == null) {
-            initializeRecordingCompleteReceiver();
-            if (recordingCompleteReceiver == null) {Log.e(TAG,"Cannot register: Failed to initialize completion receiver!"); return;}
-        }
-        IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
-        try {
-            ContextCompat.registerReceiver(context, recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
-            isCompletionReceiverRegistered = true; // Use specific flag
+        if (!isCompletionReceiverRegistered && context != null && recordingCompleteReceiver != null) {
+            context.registerReceiver(recordingCompleteReceiver, new IntentFilter(Constants.ACTION_RECORDING_COMPLETE), Context.RECEIVER_EXPORTED);
+            isCompletionReceiverRegistered = true; // isCompletionReceiverRegistered is the correct flag here
             Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
-        } catch (Exception e) { Log.e(TAG, "Error registering ACTION_RECORDING_COMPLETE receiver", e); isCompletionReceiverRegistered = false; }
+        }
     }
 
     /** Helper to register the Torch receiver */
@@ -1102,7 +1142,14 @@ public class HomeFragment extends Fragment {
         }
         IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
         try{
-            ContextCompat.registerReceiver(context, torchReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            // ----- Fix Start for this method(registerTorchReceiver_add_export_flag_for_Tiramisu)-----
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(torchReceiver, filter, Context.RECEIVER_EXPORTED); // Or RECEIVER_NOT_EXPORTED if purely internal
+            } else {
+                context.registerReceiver(torchReceiver, filter);
+            }
+            // ContextCompat.registerReceiver(context, torchReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            // ----- Fix Ended for this method(registerTorchReceiver_add_export_flag_for_Tiramisu)-----
             isTorchReceiverRegistered = true; // Use specific flag
             Log.d(TAG,"Torch receiver registered.");
         } catch (Exception e) { Log.e(TAG, "Error registering Torch Receiver", e); isTorchReceiverRegistered = false;}
@@ -1111,32 +1158,61 @@ public class HomeFragment extends Fragment {
     // --- Ensure Unregistration Logic ---
     // Place this method in HomeFragment.java and call it from onStop()
     private void unregisterBroadcastReceivers() {
-        if (getContext() == null) { Log.w(TAG,"Cannot unregister, context null."); return; }
-        Context safeContext = requireContext();
-        Log.i(TAG, "Unregistering ALL Broadcast Receivers...");
+        Context context = getContext(); // Use getContext() for fragment lifecycle safety
+        if (context == null) {
+            Log.w(TAG, "unregisterBroadcastReceivers: Context is null, cannot unregister.");
+            return;
+        }
+        Log.d(TAG,"Unregistering all HomeFragment broadcast receivers if registered...");
 
-        // Unregister State Receivers
-        if (isStateReceiversRegistered) { // Check flag before trying
-            BroadcastReceiver[] stateReceivers = { broadcastOnRecordingStarted, broadcastOnRecordingResumed, broadcastOnRecordingPaused, broadcastOnRecordingStopped, broadcastOnRecordingStateCallback };
-            for (BroadcastReceiver receiver : stateReceivers) { if (receiver != null) try { safeContext.unregisterReceiver(receiver); } catch (IllegalArgumentException e) { /* Ignore */ } }
-            isStateReceiversRegistered = false; // Reset flag
-            Log.d(TAG,"Unregistered recording state receivers.");
-        } else Log.d(TAG,"State receivers already unregistered.");
-
-
-        // Unregister Completion Receiver
-        if (isCompletionReceiverRegistered && recordingCompleteReceiver != null) {
-            try { safeContext.unregisterReceiver(recordingCompleteReceiver); Log.d(TAG,"Unregistered Completion receiver."); } catch (IllegalArgumentException e) { /* Ignore */ }
-            isCompletionReceiverRegistered = false; // Reset flag
+        // ----- Fix Start for this method(unregisterBroadcastReceivers_check_flags)-----
+        if (isStateReceiversRegistered) {
+            try {
+                if (broadcastOnRecordingStarted != null) context.unregisterReceiver(broadcastOnRecordingStarted);
+                if (broadcastOnRecordingResumed != null) context.unregisterReceiver(broadcastOnRecordingResumed);
+                if (broadcastOnRecordingPaused != null) context.unregisterReceiver(broadcastOnRecordingPaused);
+                if (broadcastOnRecordingStopped != null) context.unregisterReceiver(broadcastOnRecordingStopped);
+                if (broadcastOnRecordingStateCallback != null) context.unregisterReceiver(broadcastOnRecordingStateCallback);
+                Log.i(TAG, "Unregistered recording state receivers.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering state receivers (already unregistered?): " + e.getMessage());
+            }
+            isStateReceiversRegistered = false;
+        } else {
+            Log.d(TAG, "Recording state receivers were not registered, skipping unregistration.");
         }
 
-        // Unregister Torch Receiver
-        if (isTorchReceiverRegistered && torchReceiver != null) {
-            try { safeContext.unregisterReceiver(torchReceiver); Log.d(TAG,"Unregistered Torch receiver."); } catch (IllegalArgumentException e) { /* Ignore */ }
-            isTorchReceiverRegistered = false; // Reset flag
-            torchReceiver = null; // Nullify to ensure re-initialization in onResume
+        if (isCompletionReceiverRegistered) {
+            try {
+                if (recordingCompleteReceiver != null) context.unregisterReceiver(recordingCompleteReceiver);
+                Log.i(TAG, "Unregistered recordingCompleteReceiver.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering recordingCompleteReceiver: " + e.getMessage());
+            }
+            isCompletionReceiverRegistered = false;
         }
-        Log.i(TAG, "Finished unregistering receivers.");
+
+        if (isTorchReceiverRegistered) {
+            try {
+                if (torchReceiver != null) context.unregisterReceiver(torchReceiver);
+                Log.i(TAG, "Unregistered torchReceiver.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering torchReceiver: " + e.getMessage());
+            }
+            isTorchReceiverRegistered = false;
+        }
+
+        if (isSegmentCompleteStatsReceiverRegistered) {
+            try {
+                if (segmentCompleteStatsReceiver != null) context.unregisterReceiver(segmentCompleteStatsReceiver);
+                Log.i(TAG, "Unregistered segmentCompleteStatsReceiver.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering segmentCompleteStatsReceiver: " + e.getMessage());
+            }
+            isSegmentCompleteStatsReceiverRegistered = false;
+        }
+        // ----- Fix Ended for this method(unregisterBroadcastReceivers_check_flags)-----
+        Log.i(TAG,"All HomeFragment broadcast receivers unregistration attempt finished.");
     }
 
     @Override
@@ -1840,38 +1916,38 @@ public class HomeFragment extends Fragment {
 
     // --- BroadcastReceiver Implementation ---
 
-    private void registerStatsReceiver() {
-        if (!isStatsReceiverRegistered && getContext() != null) {
-            if (recordingCompleteReceiver == null) {
-                recordingCompleteReceiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        if (intent != null && Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
-                            android.util.Log.i(TAG, "Received ACTION_RECORDING_COMPLETE in HomeFragment, updating stats...");
-                            updateStats(); // Trigger stats recalculation
-                        }
-                    }
-                };
-            }
-            IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
-            ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
-            isStatsReceiverRegistered = true;
-            Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver registered.");
-        }
-    }
+    // private void registerStatsReceiver() {
+    //     if (!isStatsReceiverRegistered && getContext() != null) {
+    //         if (recordingCompleteReceiver == null) {
+    //             recordingCompleteReceiver = new BroadcastReceiver() {
+    //                 @Override
+    //                 public void onReceive(Context context, Intent intent) {
+    //                     if (intent != null && Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
+    //                         android.util.Log.i(TAG, "Received ACTION_RECORDING_COMPLETE in HomeFragment, updating stats...");
+    //                         updateStats(); // Trigger stats recalculation
+    //                     }
+    //                 }
+    //             };
+    //         }
+    //         IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
+    //         ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+    //         isStatsReceiverRegistered = true;
+    //         Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver registered.");
+    //     }
+    // }
 
-    private void unregisterStatsReceiver() {
-        if (isStatsReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
-            try {
-                requireContext().unregisterReceiver(recordingCompleteReceiver);
-                isStatsReceiverRegistered = false;
-                Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver unregistered.");
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG,"Attempted to unregister stats receiver but it wasn't registered?");
-                isStatsReceiverRegistered = false; // Ensure flag is reset
-            }
-        }
-    }
+//    private void unregisterStatsReceiver() {
+//        if (isStatsReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
+//            try {
+//                requireContext().unregisterReceiver(recordingCompleteReceiver);
+//                isStatsReceiverRegistered = false;
+//                Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver unregistered.");
+//            } catch (IllegalArgumentException e) {
+//                Log.w(TAG,"Attempted to unregister stats receiver but it wasn't registered?");
+//                isStatsReceiverRegistered = false; // Ensure flag is reset
+//            }
+//        }
+//    }
 
     // --- Updated updateStats Method ---
 
@@ -2257,12 +2333,20 @@ public class HomeFragment extends Fragment {
             initializeTorchReceiver();
         }
         if (getContext() != null && !isTorchReceiverRegistered) { // Check context and registration status
-            ContextCompat.registerReceiver(
-                    requireContext(),
-                    torchReceiver,
-                    new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED),
-                    ContextCompat.RECEIVER_NOT_EXPORTED
-            );
+            // ----- Fix Start for this method(setupTorchButton_correct_torch_receiver_registration)-----
+            IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(torchReceiver, filter, Context.RECEIVER_EXPORTED); // Or RECEIVER_NOT_EXPORTED if strictly internal
+            } else {
+                requireContext().registerReceiver(torchReceiver, filter);
+            }
+            // ContextCompat.registerReceiver(
+            //         requireContext(),
+            //         torchReceiver,
+            //         new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED),
+            //         ContextCompat.RECEIVER_NOT_EXPORTED
+            // );
+            // ----- Fix Ended for this method(setupTorchButton_correct_torch_receiver_registration)-----
             isTorchReceiverRegistered = true;
             Log.d(TAG, "Torch state change receiver registered in setupTorchButton.");
         }
@@ -2687,4 +2771,53 @@ public class HomeFragment extends Fragment {
                 .show();
     }
     // ----- Fix Ended for this class (HomeFragment_clock_color_picker) -----
+
+    // ----- Fix Start for this class (HomeFragment) -----
+    private void initializeSegmentCompleteStatsReceiver() {
+        if (segmentCompleteStatsReceiver == null) {
+            segmentCompleteStatsReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent != null && Constants.ACTION_RECORDING_SEGMENT_COMPLETE.equals(intent.getAction())) {
+                        Log.d(TAG, "Segment complete, updating stats from HomeFragment.");
+                        if (isAdded()) { // Ensure fragment is still attached
+                            updateStats();
+                        }
+                    }
+                }
+            };
+        }
+    }
+    // ----- Fix Ended for this class (HomeFragment) -----
+
+    // ----- Fix Start for this class (HomeFragment) -----
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerSegmentCompleteStatsReceiver(Context context) {
+        if (context == null) {
+            Log.e(TAG, "Context is null, cannot register segmentCompleteStatsReceiver");
+            // ----- Fix Start for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
+            isSegmentCompleteStatsReceiverRegistered = false;
+            return;
+            // ----- Fix Ended for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
+        }
+        initializeSegmentCompleteStatsReceiver(); // Ensure it's initialized
+
+        // ----- Fix Start for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
+        if (segmentCompleteStatsReceiver != null) {
+            IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
+            // Add receiver export flag for Android 13+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(segmentCompleteStatsReceiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(segmentCompleteStatsReceiver, filter);
+            }
+            isSegmentCompleteStatsReceiverRegistered = true;
+            Log.d(TAG, "Registered segmentCompleteStatsReceiver.");
+        } else {
+            isSegmentCompleteStatsReceiverRegistered = false;
+            Log.e(TAG, "segmentCompleteStatsReceiver is null, not registering.");
+        }
+        // ----- Fix Ended for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
+    }
+    // ----- Fix Ended for this class (HomeFragment) -----
 }
