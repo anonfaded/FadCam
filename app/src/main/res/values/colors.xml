@@ -30,4 +30,6 @@
     <color name="amoled_text_secondary">#B3FFFFFF</color>
     <color name="amoled_border">#1AFFFFFF</color>
 
+    <color name="gold">#FFD700</color>
+
 </resources>

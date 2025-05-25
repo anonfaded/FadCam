@@ -1178,11 +1178,11 @@ public class RecordingService extends Service {
             if (currentRecordingSafUri != null) {
                 throw new IOException("setNextOutputFile: SAF/DocumentFile not supported in this mode");
             } else if (tempOutputFileForInternal != null) {
-                Log.d(TAG, "Configuring MediaRecorder output for Internal temp file: " + tempOutputFileForInternal.getAbsolutePath());
-                mediaRecorder.setOutputFile(tempOutputFileForInternal.getAbsolutePath());
-            } else {
-                throw new IOException("createOutputFile() did not configure any valid output (neither SAF URI nor Internal temp file).");
-            }
+            Log.d(TAG, "Configuring MediaRecorder output for Internal temp file: " + tempOutputFileForInternal.getAbsolutePath());
+            mediaRecorder.setOutputFile(tempOutputFileForInternal.getAbsolutePath());
+        } else {
+            throw new IOException("createOutputFile() did not configure any valid output (neither SAF URI nor Internal temp file).");
+        }
         }
         VideoCodec codec = sharedPreferencesManager.getVideoCodec();
         mediaRecorder.setVideoEncoder(codec.getEncoder());
@@ -1316,7 +1316,7 @@ public class RecordingService extends Service {
                             cameraToOpenId = null;
                             Log.e(TAG, "Could not find any back-facing camera.");
                         }
-                    }
+                }
                 }
             }
 
@@ -1332,7 +1332,7 @@ public class RecordingService extends Service {
             if(cameraDevice != null) {
                 Log.w(TAG,"openCamera: Closing existing cameraDevice instance first.");
                 try {
-                    cameraDevice.close();
+                cameraDevice.close();
                 } catch (Exception e) {
                     Log.e(TAG, "Error explicitly closing existing cameraDevice prior to opening new one", e);
                 }
@@ -1349,7 +1349,7 @@ public class RecordingService extends Service {
                     Log.i(TAG, "Opening camera " + finalCameraToOpenId + ", attempt " + (attempt + 1));
                     cameraManager.openCamera(finalCameraToOpenId, cameraStateCallback, backgroundHandler);
                     return;
-                } catch (CameraAccessException e) {
+        } catch (CameraAccessException e) {
                     Log.e(TAG, "openCamera: Camera Access Exception on attempt " + (attempt + 1) + " for ID " + finalCameraToOpenId, e);
                     // Use direct integer values for error codes for broader compatibility
                     int reason = e.getReason();
@@ -1474,7 +1474,7 @@ public class RecordingService extends Service {
                 Log.w(TAG, "CameraDevice.onClosed received for camera " + closedCameraId +
                            " but RecordingService.this.cameraDevice is " + RecordingService.this.cameraDevice.getId() +
                            ". Not nulling the field based on this specific event.");
-            } else {
+                } else {
                  Log.d(TAG, "CameraDevice.onClosed received for camera " + closedCameraId +
                            " but RecordingService.this.cameraDevice was already null.");
             }
@@ -2303,7 +2303,7 @@ public class RecordingService extends Service {
                                     nextOutputFilePending = true;
                                     Log.d(TAG, "[OnInfoListener] setNextOutputFile (APPROACHING) called for SAF PFD.");
                                 }
-                            } else {
+                } else {
                                 Log.e(TAG, "[OnInfoListener] Failed to open nextSegmentPfd for SAF. Stopping recording.");
                                 new Handler(Looper.getMainLooper()).post(() -> stopRecording());
                             }

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent">
+
+    <com.fadcam.ui.CoffeeRainView
+        android:id="@+id/coffeeRainView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:alpha="0.18"
+        android:translationZ="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ScrollView
+        android:id="@+id/kofiContentScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/footerGroup">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingTop="36dp"
+            android:paddingBottom="32dp"
+            android:gravity="center_horizontal"
+            android:background="@android:color/transparent">
+
+            <TextView
+                android:id="@+id/tvArabicGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="السَّلَامُ عَلَيْكُمْ"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="#E43C3C"
+                android:layout_marginBottom="8dp"
+                android:gravity="center" />
+
+            <View
+                android:layout_width="60dp"
+                android:layout_height="2dp"
+                android:background="#FFD700"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/tvKoFiDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/kofi_description"
+                android:textSize="15sp"
+                android:gravity="start"
+                android:textAlignment="viewStart"
+                android:layout_marginBottom="18dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="#222222"
+                android:lineSpacingMultiplier="1.2"
+                android:autoLink="web"
+                android:linksClickable="true" />
+
+            <ImageView
+                android:id="@+id/ivArrowDown"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_arrow_down"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="6dp"
+                android:tint="#FFFFFF" />
+
+            <LinearLayout
+                android:id="@+id/layoutKoFiButtonRow"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:background="@drawable/kofi_button_bg"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_gravity="center_horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/ivKoFiCup"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/coffee_cup"
+                    android:contentDescription="@string/support_ko_fi"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:scaleType="centerInside" />
+
+                <TextView
+                    android:id="@+id/tvKoFiText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/kofi_button_text"
+                    android:textColor="#222222"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:gravity="center_vertical"
+                    android:singleLine="true"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/footerGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/ivFadSecLabLogo"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:src="@drawable/fadseclab"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="0dp"
+            android:scaleType="centerInside"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
+            android:layout_gravity="center_horizontal" />
+        <TextView
+            android:id="@+id/tvKoFiFooterFull"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp"
+            android:textSize="15sp"
+            android:textColor="#222222"
+            android:textStyle="normal"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:importantForAccessibility="auto"
+            android:text="@string/kofi_footer_text" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

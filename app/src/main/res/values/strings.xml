@@ -418,5 +418,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <string name="video_split_size_summary_mb">Current: %1$d MB</string>
     <string name="video_split_size_summary_gb">Current: %1$s GB</string>
+    <string name="support_ko_fi">Support us on Ko-fi</string>
+    <string name="kofi_description">Description will be set in code.</string>
+    <string name="kofi_button_text">Buy me a Ko-fi</string>
+    <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 
 </resources>

@@ -48,6 +48,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageButton;
 
 import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView; // Add this
@@ -1387,6 +1388,62 @@ public class HomeFragment extends Fragment {
             buttonTorchSwitch.setEnabled(false);
             buttonTorchSwitch.setVisibility(View.GONE);
         }
+
+        // ----- Fix Start for this method(onViewCreated_kofi_support_icon) -----
+        ImageButton ivKoFiSupport = view.findViewById(R.id.ivKoFiSupport);
+        if (ivKoFiSupport != null) {
+            ivKoFiSupport.setOnClickListener(v -> {
+                // Show Ko-fi support bottom sheet
+                KoFiSupportBottomSheet bottomSheet = new KoFiSupportBottomSheet();
+                bottomSheet.show(getParentFragmentManager(), "KoFiSupportBottomSheet");
+            });
+
+            // Enhanced animation: left-right wiggle + slight rotation, with longer pause
+            float moveDistance = 10f; // pixels to move left/right
+            float rotateAngle = 15f;  // degrees to rotate left/right
+            long moveDuration = 160;  // ms for each move
+            long pauseDuration = 1500; // ms pause at center
+
+            final Runnable[] startWiggle = new Runnable[1];
+            startWiggle[0] = new Runnable() {
+                @Override
+                public void run() {
+                    // Move right + rotate right
+                    ObjectAnimator moveRight = ObjectAnimator.ofFloat(ivKoFiSupport, "translationX", 0f, moveDistance);
+                    ObjectAnimator rotateRight = ObjectAnimator.ofFloat(ivKoFiSupport, "rotation", 0f, rotateAngle);
+                    AnimatorSet rightSet = new AnimatorSet();
+                    rightSet.playTogether(moveRight, rotateRight);
+                    rightSet.setDuration(moveDuration);
+
+                    // Move left + rotate left
+                    ObjectAnimator moveLeft = ObjectAnimator.ofFloat(ivKoFiSupport, "translationX", moveDistance, -moveDistance);
+                    ObjectAnimator rotateLeft = ObjectAnimator.ofFloat(ivKoFiSupport, "rotation", rotateAngle, -rotateAngle);
+                    AnimatorSet leftSet = new AnimatorSet();
+                    leftSet.playTogether(moveLeft, rotateLeft);
+                    leftSet.setDuration(moveDuration * 2);
+
+                    // Move center + rotate back to 0
+                    ObjectAnimator moveCenter = ObjectAnimator.ofFloat(ivKoFiSupport, "translationX", -moveDistance, 0f);
+                    ObjectAnimator rotateCenter = ObjectAnimator.ofFloat(ivKoFiSupport, "rotation", -rotateAngle, 0f);
+                    AnimatorSet centerSet = new AnimatorSet();
+                    centerSet.playTogether(moveCenter, rotateCenter);
+                    centerSet.setDuration(moveDuration);
+
+                    AnimatorSet wiggleSet = new AnimatorSet();
+                    wiggleSet.playSequentially(rightSet, leftSet, centerSet);
+                    wiggleSet.addListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            ivKoFiSupport.postDelayed(startWiggle[0], pauseDuration);
+                        }
+                    });
+                    wiggleSet.start();
+                }
+            };
+            // Start the animation loop
+            ivKoFiSupport.post(startWiggle[0]);
+        }
+        // ----- Fix Ended for this method(onViewCreated_kofi_support_icon) -----
     }
 
     private void setupTextureView(@NonNull View view) {
@@ -2340,12 +2397,7 @@ public class HomeFragment extends Fragment {
             } else {
                 requireContext().registerReceiver(torchReceiver, filter);
             }
-            // ContextCompat.registerReceiver(
-            //         requireContext(),
-            //         torchReceiver,
-            //         new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED),
-            //         ContextCompat.RECEIVER_NOT_EXPORTED
-            // );
+            // ContextCompat.registerReceiver(context, torchReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
             // ----- Fix Ended for this method(setupTorchButton_correct_torch_receiver_registration)-----
             isTorchReceiverRegistered = true;
             Log.d(TAG, "Torch state change receiver registered in setupTorchButton.");
