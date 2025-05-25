@@ -16,6 +16,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.media.CamcorderProfile;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -150,6 +152,9 @@ public class SettingsFragment extends Fragment {
     private MaterialTextView videoSplitSizeValueTextView; // New TextView
     // ----- Fix Ended for this class (SettingsFragment_video_splitting_fields) -----
 
+    private TextView audioInputSourceStatus;
+    private BroadcastReceiver headsetPlugReceiver;
+
     // Simple class to hold camera ID and its display name
     private static class CameraIdInfo {
         final String id;
@@ -172,6 +177,174 @@ public class SettingsFragment extends Fragment {
 
     private TextView bitrateInfoTextView;
     private TextView bitrateHelperTextView;
+
+    // Holds all detected input mics
+    private List<AudioDeviceInfo> availableInputMics = new ArrayList<>();
+    // Holds the selected mic (null = default/phone mic)
+    private AudioDeviceInfo selectedMic = null;
+    // Holds the list of labels for dialog
+    private List<String> availableMicLabels = new ArrayList<>();
+
+    // ----- Fix Start for this class(SettingsFragment_isWiredMicConnected_field)-----
+    private boolean isWiredMicConnected = false;
+    // ----- Fix Ended for this class(SettingsFragment_isWiredMicConnected_field)-----
+
+    // ----- Fix Start: Add micPlugReceiver field to SettingsFragment -----
+    private BroadcastReceiver micPlugReceiver;
+    // ----- Fix End: Add micPlugReceiver field to SettingsFragment -----
+
+    /**
+     * Scans for all available input microphones (wired, USB, Bluetooth, etc), logs them,
+     * and updates the availableInputMics and availableMicLabels lists.
+     */
+    private void scanAvailableInputMics() {
+        availableInputMics.clear();
+        availableMicLabels.clear();
+        AudioManager audioManager = (AudioManager) requireContext().getSystemService(Context.AUDIO_SERVICE);
+        boolean headphonesNoMicDetected = false;
+        boolean wiredMicDetected = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+            StringBuilder logBuilder = new StringBuilder("Detected input devices: ");
+            for (AudioDeviceInfo device : devices) {
+                int type = device.getType();
+                String typeStr = getAudioDeviceTypeString(type);
+                String name = device.getProductName() != null ? device.getProductName().toString() : "Unknown";
+                logBuilder.append("[Type: ").append(typeStr).append(", Name: ").append(name).append("] ");
+                if (device.isSource()) {
+                    switch (type) {
+                        case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                            availableInputMics.add(device);
+                            availableMicLabels.add(name + " (" + typeStr + ")");
+                            wiredMicDetected = true;
+                            break;
+                        case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                            // Only add to list if no headset (with mic) detected
+                            headphonesNoMicDetected = true;
+                            break;
+                        case AudioDeviceInfo.TYPE_USB_DEVICE:
+                        case AudioDeviceInfo.TYPE_USB_HEADSET:
+                        case AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
+                        case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+                        case AudioDeviceInfo.TYPE_BLE_HEADSET:
+                        case AudioDeviceInfo.TYPE_BLE_BROADCAST:
+                        case AudioDeviceInfo.TYPE_BLE_SPEAKER:
+                            availableInputMics.add(device);
+                            availableMicLabels.add(name + " (" + typeStr + ")");
+                            break;
+                        default:
+                            // Not a supported external mic, but log it
+                            break;
+                    }
+                }
+            }
+            android.util.Log.i(TAG_SETTINGS, logBuilder.toString());
+        } else {
+            // Fallback for older devices: use legacy intent sticky
+            Intent intent = requireContext().registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+            boolean legacyWired = intent != null && intent.getIntExtra("state", 0) == 1;
+            if (legacyWired) {
+                availableMicLabels.add("Wired Headset (Legacy)");
+                availableInputMics.add(null); // No AudioDeviceInfo, but we can still show
+                wiredMicDetected = true;
+            }
+            android.util.Log.i(TAG_SETTINGS, "Legacy headset plug state: " + legacyWired);
+        }
+        // Add special label if only headphones (no mic) detected
+        if (!wiredMicDetected && headphonesNoMicDetected) {
+            availableMicLabels.add(getString(R.string.audio_input_source_headphones_no_mic));
+            availableInputMics.add(null); // No mic, just for display
+        }
+        // Always add the default phone mic as the first option
+        availableMicLabels.add(0, getString(R.string.audio_input_source_phone));
+        availableInputMics.add(0, null); // null means default/phone mic
+    }
+
+    /**
+     * Returns a human-readable string for AudioDeviceInfo type.
+     */
+    private String getAudioDeviceTypeString(int type) {
+        switch (type) {
+            case AudioDeviceInfo.TYPE_WIRED_HEADSET: return "Wired Headset";
+            case AudioDeviceInfo.TYPE_WIRED_HEADPHONES: return "Wired Headphones";
+            case AudioDeviceInfo.TYPE_USB_DEVICE: return "USB Device";
+            case AudioDeviceInfo.TYPE_USB_HEADSET: return "USB Headset";
+            case AudioDeviceInfo.TYPE_BLUETOOTH_SCO: return "Bluetooth SCO";
+            case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP: return "Bluetooth A2DP";
+            case AudioDeviceInfo.TYPE_BUILTIN_MIC: return "Built-in Mic";
+            case AudioDeviceInfo.TYPE_BLE_HEADSET: return "BLE Headset";
+            case AudioDeviceInfo.TYPE_BLE_BROADCAST: return "BLE Broadcast";
+            case AudioDeviceInfo.TYPE_BLE_SPEAKER: return "BLE Speaker";
+            default: return "Other (" + type + ")";
+        }
+    }
+
+    /**
+     * Shows a Material dialog listing all detected mics for user selection.
+     * Updates selectedMic and selectedMicLabel, and updates the status TextView.
+     */
+    private void showMicSelectionDialog() {
+        scanAvailableInputMics();
+        int checkedItem = 0;
+        if (selectedMic != null) {
+            for (int i = 0; i < availableInputMics.size(); i++) {
+                if (availableInputMics.get(i) != null && selectedMic != null &&
+                        availableInputMics.get(i).getId() == selectedMic.getId()) {
+                    checkedItem = i;
+                    break;
+                }
+            }
+        }
+        if (availableInputMics.size() == 1 && availableInputMics.get(0) == null) {
+            // Only phone mic available
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(getString(R.string.setting_audio_input_source_title))
+                    .setMessage(getString(R.string.audio_input_source_wired_not_available))
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+            return;
+        }
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.setting_audio_input_source_title))
+                .setSingleChoiceItems(availableMicLabels.toArray(new String[0]), checkedItem, (dialog, which) -> {
+                    selectedMic = availableInputMics.get(which);
+                    updateAudioInputSourceStatusUI();
+                    // Save selection in SharedPreferences if needed
+                    sharedPreferencesManager.setAudioInputSource(selectedMic == null ? SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE : SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
+    }
+
+    /**
+     * Updates the status TextView to show the selected mic.
+     */
+    private void updateAudioInputSourceStatusUI() {
+        String status;
+        boolean headphonesNoMicDetected = false;
+        for (String label : availableMicLabels) {
+            if (label.equals(getString(R.string.audio_input_source_headphones_no_mic))) {
+                headphonesNoMicDetected = true;
+                break;
+            }
+        }
+        if (selectedMic == null) {
+            if (headphonesNoMicDetected) {
+                status = getString(R.string.setting_audio_input_source_status_default) +
+                        "\n" + getString(R.string.audio_input_source_headphones_no_mic);
+            } else {
+                status = getString(R.string.setting_audio_input_source_status_default);
+                if (availableInputMics.size() == 1) {
+                    status += "\n" + getString(R.string.audio_input_source_wired_not_available);
+                }
+            }
+        } else {
+            status = getString(R.string.setting_audio_input_source_status_wired) + ":\n" + selectedMic.getProductName();
+        }
+        audioInputSourceStatus.setText(status);
+        android.util.Log.i(TAG_SETTINGS, "Audio input source status updated. Selected: " + selectedMic);
+    }
 
     // --- Activity Result Launcher Initialization & onCreate---
     @Override
@@ -290,6 +463,9 @@ public class SettingsFragment extends Fragment {
         videoSplitSizeValueTextView = view.findViewById(R.id.video_split_size_value_textview); // New TextView
         // ----- Fix Ended for this class (SettingsFragment_video_splitting_view_finding) -----
 
+        audioInputSourceStatus = view.findViewById(R.id.audio_input_source_status);
+        setupAudioInputSourceSection();
+
         // *** Safety check for the new view ***
         if (backCameraLensDivider == null) {
             Log.e(TAG, "onCreateView: Critical - back_camera_lens_divider View not found!");
@@ -340,6 +516,15 @@ public class SettingsFragment extends Fragment {
             videoBitrateButton.setOnClickListener(v -> showVideoBitrateDialog());
         }
 
+        // ----- Fix Start for onCreateView: Setup Choose Button for mic selection -----
+        MaterialButton audioInputSourceButton = view.findViewById(R.id.audio_input_source_button);
+        if (audioInputSourceButton != null) {
+            audioInputSourceButton.setOnClickListener(v -> showMicSelectionDialog());
+        }
+        // Remove row click logic for audio_input_source_layout
+        // ... existing code ...
+        // ----- Fix End for onCreateView: Setup Choose Button for mic selection -----
+
         return view;
     }
 
@@ -362,6 +547,20 @@ public class SettingsFragment extends Fragment {
         }
         // Call sync camera switch AFTER views are inflated and listeners possibly set
         syncCameraSwitch(view, cameraSelectionToggle);
+        // Register micPlugReceiver for real-time mic feedback
+        if (micPlugReceiver == null) {
+            micPlugReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    updateAudioInputSourceUI();
+                }
+            };
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("android.hardware.usb.action.USB_DEVICE_ATTACHED");
+            filter.addAction("android.hardware.usb.action.USB_DEVICE_DETACHED");
+            filter.addAction(Intent.ACTION_HEADSET_PLUG);
+            requireContext().registerReceiver(micPlugReceiver, filter);
+        }
     }
 
 
@@ -590,6 +789,11 @@ public class SettingsFragment extends Fragment {
         }
         broadcastOnRecordingStarted = null; // Nullify to prevent leaks
         broadcastOnRecordingStopped = null;
+        // Unregister micPlugReceiver for real-time mic feedback
+        if (micPlugReceiver != null) {
+            requireContext().unregisterReceiver(micPlugReceiver);
+            micPlugReceiver = null;
+        }
     }
 
 
@@ -657,9 +861,97 @@ public class SettingsFragment extends Fragment {
         updateResolutionSpinner(); // Ensure spinner reflects current camera
         updateFrameRateSpinner(); // Ensure framerate reflects resolution
         updateBitrateInfoAndHelper(); // Ensure bitrate info is updated
+        registerHeadsetPlugReceiver();
+        updateAudioInputSourceUI();
     }
 
-// Replace this entire method in SettingsFragment.java
+    @Override
+    public void onPause() {
+        super.onPause();
+        unregisterHeadsetPlugReceiver();
+    }
+
+    private void registerHeadsetPlugReceiver() {
+        if (headsetPlugReceiver != null) return;
+        headsetPlugReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent == null) return;
+                if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
+                    updateAudioInputSourceUI();
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+        requireContext().registerReceiver(headsetPlugReceiver, filter);
+    }
+
+    private void unregisterHeadsetPlugReceiver() {
+        if (headsetPlugReceiver != null) {
+            requireContext().unregisterReceiver(headsetPlugReceiver);
+            headsetPlugReceiver = null;
+        }
+    }
+
+    private void setupAudioInputSourceSection() {
+        updateAudioInputSourceStatusUI();
+        View audioInputSourceLayout = view.findViewById(R.id.audio_input_source_layout);
+        if (audioInputSourceLayout != null) {
+            audioInputSourceLayout.setOnClickListener(v -> showMicSelectionDialog());
+        }
+    }
+
+    private void updateAudioInputSourceUI() {
+        scanAvailableInputMics();
+        updateAudioInputSourceStatusUI();
+    }
+
+    private void updateWiredMicStatus() {
+        AudioManager audioManager = (AudioManager) requireContext().getSystemService(Context.AUDIO_SERVICE);
+        selectedMic = null;
+        isWiredMicConnected = false; // Reset at the start
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+            StringBuilder logBuilder = new StringBuilder("Detected input devices: ");
+            for (AudioDeviceInfo device : devices) {
+                String typeStr = getAudioDeviceTypeString(device.getType());
+                String name = device.getProductName() != null ? device.getProductName().toString() : "Unknown";
+                logBuilder.append("[Type: ").append(typeStr).append(", Name: ").append(name).append("] ");
+                // Prioritize wired/USB/Bluetooth mics
+                if (device.isSource()) {
+                    switch (device.getType()) {
+                        case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                        case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                        case AudioDeviceInfo.TYPE_USB_DEVICE:
+                        case AudioDeviceInfo.TYPE_USB_HEADSET:
+                        case AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
+                        case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+                        case AudioDeviceInfo.TYPE_BLE_HEADSET:
+                        case AudioDeviceInfo.TYPE_BLE_BROADCAST:
+                        case AudioDeviceInfo.TYPE_BLE_SPEAKER:
+                            if (!isWiredMicConnected) { // Only set first found
+                                isWiredMicConnected = true;
+                                selectedMic = device;
+                            }
+                            break;
+                        default:
+                            // For completeness, log all input devices
+                            break;
+                    }
+                }
+            }
+            android.util.Log.i(TAG_SETTINGS, logBuilder.toString());
+        } else {
+            // Fallback for older devices: use legacy intent sticky
+            Intent intent = requireContext().registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+            isWiredMicConnected = intent != null && intent.getIntExtra("state", 0) == 1;
+            selectedMic = null; // No AudioDeviceInfo available on legacy
+            android.util.Log.i(TAG_SETTINGS, "Legacy headset plug state: " + isWiredMicConnected);
+        }
+    }
+
+
+    // Replace this entire method in SettingsFragment.java
 
     /**
      * Detects all available physical back-facing cameras and assigns descriptive names.
@@ -2612,4 +2904,7 @@ public class SettingsFragment extends Fragment {
         }
     }
     // ----- Fix Ended for this class (SettingsFragment_video_splitting_methods) -----
+
+
+
 }

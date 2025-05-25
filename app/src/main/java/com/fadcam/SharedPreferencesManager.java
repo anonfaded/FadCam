@@ -71,6 +71,12 @@ public class SharedPreferencesManager {
     public static final int DEFAULT_VIDEO_SPLIT_SIZE_MB = 2048; // 2GB
     // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting) -----
 
+    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source) -----
+    private static final String PREF_KEY_AUDIO_INPUT_SOURCE = "audio_input_source";
+    public static final String AUDIO_INPUT_SOURCE_PHONE = "phone_mic";
+    public static final String AUDIO_INPUT_SOURCE_WIRED = "wired_mic";
+    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source) -----
+
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
         this.sharedPreferences = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -341,5 +347,15 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putInt(PREF_VIDEO_SPLIT_SIZE_MB, sizeMb).apply();
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting_methods) -----
+
+    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source) -----
+    public void setAudioInputSource(String source) {
+        sharedPreferences.edit().putString(PREF_KEY_AUDIO_INPUT_SOURCE, source).apply();
+    }
+
+    public String getAudioInputSource() {
+        return sharedPreferences.getString(PREF_KEY_AUDIO_INPUT_SOURCE, AUDIO_INPUT_SOURCE_PHONE);
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source) -----
 
 }
