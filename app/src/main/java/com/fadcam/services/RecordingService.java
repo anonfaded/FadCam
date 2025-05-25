@@ -85,6 +85,8 @@ import java.util.HashSet; // Add if needed
 import android.media.MediaRecorder.OnInfoListener;
 // ----- Fix Ended for this class (RecordingService_video_splitting_imports_and_fields) -----
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
@@ -452,6 +454,14 @@ public class RecordingService extends Service {
             Log.d(TAG, "Recording WakeLock released.");
         }
         // ----- Fix Ended for this method(stopRecording_release_wakelock)-----
+
+        // After releasing MediaRecorder and before processing, queue the last segment if needed
+        if (currentInternalTempFile != null && currentInternalTempFile.exists() && currentInternalTempFile.length() > 0) {
+            Log.d(TAG, "stopRecording: Queuing last segment for FFmpeg: " + currentInternalTempFile.getAbsolutePath());
+            segmentProcessingQueue.add(currentInternalTempFile);
+            processNextSegmentInQueue();
+            currentInternalTempFile = null; // Prevent double-processing
+        }
     }
 
     // Inside RecordingService.java
@@ -822,6 +832,17 @@ public class RecordingService extends Service {
                 Log.d(TAG, "FFmpeg Async finished, no other work, stopping service.");
                 stopSelf();
             }
+
+            // ----- Fix Start for this method(executeFFmpegAsync_segment_queue_chain)-----
+            // After decrementing ffmpegProcessingTaskCount:
+
+            Log.d(TAG, "FFmpeg task finished. Count decremented to: " + tasksLeft);
+            // Chain next segment processing if in queue mode
+            if (isSegmentProcessingActive) {
+                isSegmentProcessingActive = false;
+                processNextSegmentInQueue();
+            }
+            // ----- Fix Ended for this method(executeFFmpegAsync_segment_queue_chain)-----
         });
     }
 
@@ -2252,6 +2273,16 @@ public class RecordingService extends Service {
                     }
                 } else if (what == 803 /* MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED */) {
                     Log.i(TAG, "[OnInfoListener] Next output file started. Advancing segment number and updating file tracking.");
+                    // ----- Fix Start for this method(mediaRecorderInfoListener_segment_queue)-----
+                    // The previous segment file is now complete and ready for processing
+                    if (currentInternalTempFile != null && currentInternalTempFile.exists() && currentInternalTempFile.length() > 0) {
+                        Log.d(TAG, "[OnInfoListener] Queuing completed segment for FFmpeg: " + currentInternalTempFile.getAbsolutePath());
+                        segmentProcessingQueue.add(currentInternalTempFile);
+                        processNextSegmentInQueue();
+                    } else {
+                        Log.w(TAG, "[OnInfoListener] Previous segment file missing or empty, skipping FFmpeg queue.");
+                    }
+                    // ----- Fix Ended for this method(mediaRecorderInfoListener_segment_queue)-----
                     currentSegmentNumber++;
                     currentInternalTempFile = nextSegmentTempFile;
                     nextSegmentTempFile = null;
@@ -2451,4 +2482,33 @@ public class RecordingService extends Service {
         return nextTempFile;
     }
     // ----- Fix Ended for this method(createNextSegmentOutputFile)-----
+
+    // ----- Fix Start for this class (RecordingService_segment_processing_queue) -----
+    // Queue to hold completed segment files for FFmpeg processing
+    private final ConcurrentLinkedQueue<File> segmentProcessingQueue = new ConcurrentLinkedQueue<>();
+    private boolean isSegmentProcessingActive = false;
+    // ----- Fix Ended for this class (RecordingService_segment_processing_queue) -----
+
+    // ----- Fix Start for this method(processNextSegmentInQueue)-----
+    /**
+     * Processes the next segment in the queue through FFmpeg, if not already processing.
+     */
+    private synchronized void processNextSegmentInQueue() {
+        if (isSegmentProcessingActive) {
+            Log.d(TAG, "processNextSegmentInQueue: Already processing a segment, will process next after current.");
+            return;
+        }
+        File nextSegment = segmentProcessingQueue.poll();
+        if (nextSegment == null) {
+            Log.d(TAG, "processNextSegmentInQueue: No segment in queue to process.");
+            return;
+        }
+        isSegmentProcessingActive = true;
+        Log.i(TAG, "processNextSegmentInQueue: Starting FFmpeg processing for: " + nextSegment.getAbsolutePath());
+        processAndMoveVideo(nextSegment, null);
+    }
+    // ----- Fix Ended for this method(processNextSegmentInQueue)-----
+
+
+
 }
