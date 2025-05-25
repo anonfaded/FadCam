@@ -426,4 +426,15 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="kofi_description">Description will be set in code.</string>
     <string name="kofi_button_text">Buy me a Ko-fi</string>
     <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
+    <string name="setting_audio_input_source_title">Audio Input Source</string>
+    <string name="setting_audio_input_source_status_default">Currently using: Phone Microphone</string>
+    <string name="setting_audio_input_source_status_wired">Currently using: Wired Microphone</string>
+    <string name="setting_audio_input_source_status_nowired">No wired mic detected</string>
+    <string name="audio_input_source_phone">Phone Microphone (Default)</string>
+    <string name="audio_input_source_wired">Wired Microphone (if connected)</string>
+    <string name="audio_input_source_wired_not_available">Wired Microphone (not detected)</string>
+    <string name="audio_input_source_note">Select which microphone to use for audio recording. If a wired mic is not connected, the phone mic will be used automatically.</string>
+    <string name="audio_input_source_wired_not_connected">No wired mic detected. Using phone mic.</string>
+    <string name="choose">Choose</string>
+    <string name="audio_input_source_headphones_no_mic">Headphones detected (no mic)</string>
 </resources>
