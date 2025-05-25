@@ -79,7 +79,10 @@ public class AboutFragment extends Fragment {
         appDescription.setText(formattedDescription);
 
         sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/"));
-        donateButton.setOnClickListener(v -> openUrl("https://ko-fi.com/fadedx"));
+        donateButton.setOnClickListener(v -> {
+            KoFiSupportBottomSheet bottomSheet = new KoFiSupportBottomSheet();
+            bottomSheet.show(getParentFragmentManager(), "KoFiSupportBottomSheet");
+        });
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());
         discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
@@ -192,6 +195,7 @@ public class AboutFragment extends Fragment {
         intent.putExtra(Intent.EXTRA_SUBJECT, "FadCam Feedback");
         startActivity(intent);
     }
+
 
 
 
