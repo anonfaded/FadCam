@@ -16,7 +16,7 @@
     <string name="send_email">E-posta gönder</string>
     <string name="join_community">Yardım, fikir paylaşımı ve gelecek uygulama güncellemeleri için topluluğa katıl</string>
     <string name="privacy_information">Gizlilik Bilgileri</string>
-    <string name="copyright_info"> 2024 fadedhood.com\nGPL-3.0 lisansı altında</string>
+    <string name="copyright_info"> 2024 https://fadedhood.github.io/fadcam\nGPL-3.0 lisansı altında</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item> <!-- 8K -->
         <item>3840x2160</item> <!-- 4K -->

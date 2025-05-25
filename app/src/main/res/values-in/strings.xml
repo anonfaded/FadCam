@@ -20,7 +20,7 @@
     <string name="send_email">Kirim email</string>
     <string name="join_community">Bergabunglah dengan komunitas untuk mendapatkan bantuan, berbagi ide, dan pembaruan aplikasi di masa mendatang</string>
     <string name="privacy_information">Informasi Privasi</string>
-    <string name="copyright_info">© 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://fadedhood.github.io/fadcam\nLicensed under GPL-3.0</string>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>

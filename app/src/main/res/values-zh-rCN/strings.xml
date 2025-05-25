@@ -13,7 +13,7 @@
     <string name="send_email">发送邮件</string>
     <string name="join_community">加入社区获得帮助，分享点子以及获得软件更新</string>
     <string name="privacy_information">隐私须知</string>
-    <string name="copyright_info">© 2024 fadedhood.com\n特许 根据 GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://fadedhood.github.io/fadcam\n特许 根据 GPL-3.0</string>
     <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>可用空间:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>

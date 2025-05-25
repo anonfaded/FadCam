@@ -1820,6 +1820,7 @@ public class HomeFragment extends Fragment {
 
     // Method to update the clock and dates
     private void updateClock() {
+        if (!isAdded()) return; // Prevent crash if fragment is not attached
         SharedPreferences prefs = requireActivity().getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
         int displayOption = prefs.getInt("display_option", 2); // Default to "Everything"
 
