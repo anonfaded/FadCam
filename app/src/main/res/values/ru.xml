@@ -12,7 +12,7 @@
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="privacy_information">Privacy Information</string>
-    <string name="copyright_info"> 2024 fadedhood.com\nLicensed under GPL-3.0</string>
+    <string name="copyright_info"> 2024-2025 fadedhood.github.io/fadcam\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>
         <!-- 8K -->
@@ -414,4 +414,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- End Strings for Trash Auto-Delete Feature -->
     <string name="video_split_size_summary_mb">Current: %1$d MB</string>
     <string name="video_split_size_summary_gb">Current: %1$s GB</string>
+    <string name="support_ko_fi">Support us on Ko-fi</string>
+    <string name="kofi_description">Description will be set in code.</string>
+    <string name="kofi_button_text">Buy me a Ko-fi</string>
+    <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 </resources>
