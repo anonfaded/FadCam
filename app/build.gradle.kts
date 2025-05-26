@@ -79,4 +79,6 @@ dependencies {
 
     implementation(libs.appintro.v631)
 
+    implementation(libs.lottie)
+
 }
