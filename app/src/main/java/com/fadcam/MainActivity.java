@@ -62,6 +62,16 @@ public class MainActivity extends AppCompatActivity {
             getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
 
+        // ----- Fix Start: Launch onboarding if enabled in onCreate -----
+        boolean showOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean("PREF_SHOW_ONBOARDING", false);
+        if (showOnboarding) {
+            Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        // ----- Fix End: Launch onboarding if enabled in onCreate -----
+
         setContentView(R.layout.activity_main);
 
         viewPager = findViewById(R.id.view_pager);

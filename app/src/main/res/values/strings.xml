@@ -435,4 +435,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="choose">Choose</string>
     <string name="audio_input_source_headphones_no_mic">Headphones detected (no mic)</string>
 
+    <!-- Fix Start: Add onboarding toggle strings -->
+    <string name="setting_onboarding_title">Show Onboarding on Next Launch</string>
+    <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open FadCam.</string>
+    <!-- Fix End: Add onboarding toggle strings -->
+
 </resources>

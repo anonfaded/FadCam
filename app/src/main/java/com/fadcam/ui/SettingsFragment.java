@@ -525,6 +525,17 @@ public class SettingsFragment extends Fragment {
         // ... existing code ...
         // ----- Fix End for onCreateView: Setup Choose Button for mic selection -----
 
+        // ----- Fix Start for onboarding toggle logic in onCreateView -----
+        MaterialSwitch onboardingToggle = view.findViewById(R.id.onboarding_toggle);
+        if (onboardingToggle != null) {
+            boolean showOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean("PREF_SHOW_ONBOARDING", false);
+            onboardingToggle.setChecked(showOnboarding);
+            onboardingToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                sharedPreferencesManager.sharedPreferences.edit().putBoolean("PREF_SHOW_ONBOARDING", isChecked).apply();
+            });
+        }
+        // ----- Fix Ended for onboarding toggle logic in onCreateView -----
+
         return view;
     }
 

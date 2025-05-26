@@ -127,6 +127,10 @@
             android:windowSoftInputMode="stateAlwaysHidden"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".ui.OnboardingActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
+
         <!-- Services and receivers remain unchanged -->
         <service
             android:name=".services.RecordingService"
