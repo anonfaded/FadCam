@@ -440,4 +440,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open FadCam.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
+    <string name="choose_language">Choose Language</string>
+    <string name="language_change_later_note">You can change this later in Settings.</string>
+
 </resources>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/amoled_surface">
+
+    <LinearLayout
+        android:id="@+id/languageSelectContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="32dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.35">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieLanguage"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center_horizontal"
+            app:lottie_fileName="language.json"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/languageTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/setting_language_title"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:fontWeight="900"
+            android:textColor="@color/redPastel"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
+
+        <TextView
+            android:id="@+id/languageNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select your preferred app language."
+            android:textSize="15sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="18dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/language_choose_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/choose_language"
+            style="@style/Widget.MaterialComponents.Button"
+            app:icon="@drawable/ic_language"
+            app:iconPadding="8dp"
+            app:iconGravity="textStart"
+            android:fontFamily="monospace"
+            android:textSize="16sp"
+            android:layout_marginBottom="18dp"
+            android:backgroundTint="@color/redPastel"
+            android:textColor="@color/white"/>
+
+        <TextView
+            android:id="@+id/languageChangeLaterNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/language_change_later_note"
+            android:textSize="13sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:fontFamily="monospace"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

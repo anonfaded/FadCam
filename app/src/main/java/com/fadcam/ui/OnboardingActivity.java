@@ -6,6 +6,8 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import android.os.Handler;
 import android.widget.TextView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 
 import com.fadcam.SharedPreferencesManager;
 import com.github.appintro.AppIntro;
@@ -17,6 +19,8 @@ import android.content.SharedPreferences;
 import com.github.appintro.AppIntroCustomLayoutFragment;
 import android.animation.ValueAnimator;
 import com.airbnb.lottie.LottieAnimationView;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * OnboardingActivity shows the app intro slides using AppIntro.
@@ -26,6 +30,7 @@ public class OnboardingActivity extends AppIntro {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
+        addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_language_slide));
         getSupportFragmentManager().registerFragmentLifecycleCallbacks(new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
             @Override
             public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm, @NonNull androidx.fragment.app.Fragment f, @NonNull View v, @Nullable Bundle savedInstanceState) {
@@ -151,8 +156,88 @@ public class OnboardingActivity extends AppIntro {
                     handler.postDelayed(rowAnimator::start, startDelay);
                     // ----- Fix End: Robust row-by-row fade-in for onboarding description -----
                 }
+                // Slide 2 logic (language selection)
+                MaterialButton languageChooseButton = v.findViewById(R.id.language_choose_button);
+                if (languageChooseButton != null) {
+                    setupOnboardingLanguageDialog(languageChooseButton);
+                }
             }
         }, false);
+    }
+
+    /**
+     * Sets up the language choose button for onboarding, using a Material dialog for selection.
+     * @param chooseButton The MaterialButton to setup.
+     */
+    private void setupOnboardingLanguageDialog(MaterialButton chooseButton) {
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        String[] languages = getResources().getStringArray(R.array.languages_array);
+        String savedLanguageCode = sharedPreferencesManager.getLanguage();
+        int selectedIndex = getLanguageIndex(savedLanguageCode);
+        chooseButton.setText(languages[selectedIndex]);
+        chooseButton.setOnClickListener(v -> {
+            new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.setting_language_title)
+                .setSingleChoiceItems(languages, selectedIndex, (dialog, which) -> {
+                    String newLangCode = getLanguageCode(which);
+                    if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
+                        sharedPreferencesManager.sharedPreferences.edit().putString(com.fadcam.Constants.LANGUAGE_KEY, newLangCode).apply();
+                        applyLanguage(newLangCode);
+                    }
+                    chooseButton.setText(languages[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
+        });
+    }
+
+    /**
+     * Helper to map language code to spinner index (must match SettingsFragment).
+     */
+    private int getLanguageIndex(String languageCode) {
+        switch (languageCode) {
+            case "en": return 0;
+            case "zh": return 1;
+            case "ar": return 2;
+            case "fr": return 3;
+            case "tr": return 4;
+            case "ps": return 5;
+            case "in": return 6;
+            case "it": return 7;
+            default: return 0;
+        }
+    }
+    /**
+     * Helper to map spinner index to language code (must match SettingsFragment).
+     */
+    private String getLanguageCode(int position) {
+        switch (position) {
+            case 0: return "en";
+            case 1: return "zh";
+            case 2: return "ar";
+            case 3: return "fr";
+            case 4: return "tr";
+            case 5: return "ps";
+            case 6: return "in";
+            case 7: return "it";
+            default: return "en";
+        }
+    }
+    /**
+     * Applies the selected language immediately (same as MainActivity).
+     */
+    private void applyLanguage(String languageCode) {
+        String currentLanguage = getResources().getConfiguration().locale.getLanguage();
+        if (!languageCode.equals(currentLanguage)) {
+            java.util.Locale locale = new java.util.Locale(languageCode);
+            java.util.Locale.setDefault(locale);
+            android.content.res.Configuration config = new android.content.res.Configuration();
+            config.setLocale(locale);
+            getApplicationContext().createConfigurationContext(config);
+            getResources().updateConfiguration(config, getResources().getDisplayMetrics());
+            recreate();
+        }
     }
 
     @Override

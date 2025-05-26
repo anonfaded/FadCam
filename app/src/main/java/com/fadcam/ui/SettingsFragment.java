@@ -115,7 +115,6 @@ public class SettingsFragment extends Fragment {
     private Spinner codecSpinner;
     private Spinner watermarkSpinner;
     private Spinner themeSpinner;
-    private Spinner languageSpinner; // Declare languageSpinner
     private Spinner orientationSpinner; // Add field for orientation spinner
 
     private MaterialButtonToggleGroup cameraSelectionToggle;
@@ -209,8 +208,8 @@ public class SettingsFragment extends Fragment {
             for (AudioDeviceInfo device : devices) {
                 int type = device.getType();
                 String typeStr = getAudioDeviceTypeString(type);
-                String name = device.getProductName() != null ? device.getProductName().toString() : "Unknown";
-                logBuilder.append("[Type: ").append(typeStr).append(", Name: ").append(name).append("] ");
+                    String name = device.getProductName() != null ? device.getProductName().toString() : "Unknown";
+                    logBuilder.append("[Type: ").append(typeStr).append(", Name: ").append(name).append("] ");
                 if (device.isSource()) {
                     switch (type) {
                         case AudioDeviceInfo.TYPE_WIRED_HEADSET:
@@ -333,11 +332,11 @@ public class SettingsFragment extends Fragment {
             if (headphonesNoMicDetected) {
                 status = getString(R.string.setting_audio_input_source_status_default) +
                         "\n" + getString(R.string.audio_input_source_headphones_no_mic);
-            } else {
+        } else {
                 status = getString(R.string.setting_audio_input_source_status_default);
                 if (availableInputMics.size() == 1) {
                     status += "\n" + getString(R.string.audio_input_source_wired_not_available);
-                }
+        }
             }
         } else {
             status = getString(R.string.setting_audio_input_source_status_wired) + ":\n" + selectedMic.getProductName();
@@ -426,7 +425,6 @@ public class SettingsFragment extends Fragment {
         android.util.Log.d(TAG_SETTINGS,"onCreateView: Inflating layout and setting up views.");
 
         // Find views by ID
-        languageSpinner = view.findViewById(R.id.language_spinner);
         MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
         MaterialButton readmeButton = view.findViewById(R.id.readme_button);
         cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
@@ -479,7 +477,7 @@ public class SettingsFragment extends Fragment {
         bitrateHelperTextView = view.findViewById(R.id.bitrate_helper_textview);
 
         // Setup components
-        setupLanguageSpinner(languageSpinner);
+
         readmeButton.setOnClickListener(v -> showReadmeDialog());
         setupCameraSelectionToggle(view, cameraSelectionToggle);
         setupBackCameraLensSpinner();                             // Setup spinner listener
@@ -535,6 +533,11 @@ public class SettingsFragment extends Fragment {
             });
         }
         // ----- Fix Ended for onboarding toggle logic in onCreateView -----
+
+        MaterialButton languageChooseButton = view.findViewById(R.id.language_choose_button);
+        if (languageChooseButton != null) {
+            setupSettingsLanguageDialog(languageChooseButton);
+        }
 
         return view;
     }
@@ -1628,42 +1631,29 @@ public class SettingsFragment extends Fragment {
     }
 
 
-    private void setupLanguageSpinner(Spinner spinner) {
-        if(spinner == null) return;
-        // Setup language adapter using array resource
-        ArrayAdapter<CharSequence> languageAdapter  = ArrayAdapter.createFromResource(
-                requireContext(), R.array.languages_array, android.R.layout.simple_spinner_item);
-        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(languageAdapter);
-
-
+    private void setupSettingsLanguageDialog(MaterialButton chooseButton) {
+        String[] languages = getResources().getStringArray(R.array.languages_array);
         String savedLanguageCode = sharedPreferencesManager.getLanguage();
         int selectedIndex = getLanguageIndex(savedLanguageCode);
-        spinner.setSelection(selectedIndex);
-        Log.d(TAG_SETTINGS, "Language spinner set to index: " + selectedIndex + " (Code: "+savedLanguageCode+")");
-
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String currentSavedLanguageCode = sharedPreferencesManager.getLanguage();
-                String newlySelectedLanguageCode = getLanguageCode(position);
-                Log.d(TAG_SETTINGS, "Language selected: " + newlySelectedLanguageCode + " (Position: "+position+")");
-
-                // Only apply if language actually changed
-                if (!newlySelectedLanguageCode.equals(currentSavedLanguageCode)) {
-                    saveLanguagePreference(newlySelectedLanguageCode);
-                    // Apply the language change (recreates activity)
-                    if(getActivity() instanceof MainActivity){
-                        ((MainActivity) requireActivity()).applyLanguage(newlySelectedLanguageCode);
-                    } else {
-                        Log.e(TAG_SETTINGS, "Cannot apply language, activity is not MainActivity instance.");
-                        // Maybe just recreate fragment or show toast to restart app?
-                        Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
+        chooseButton.setText(languages[selectedIndex]);
+        chooseButton.setOnClickListener(v -> {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.setting_language_title)
+                .setSingleChoiceItems(languages, selectedIndex, (dialog, which) -> {
+                    String newLangCode = getLanguageCode(which);
+                    if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
+                        saveLanguagePreference(newLangCode);
+                        if(getActivity() instanceof MainActivity){
+                            ((MainActivity) requireActivity()).applyLanguage(newLangCode);
+                        } else {
+                            Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
+                        }
                     }
-                }
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+                    chooseButton.setText(languages[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
         });
     }
 

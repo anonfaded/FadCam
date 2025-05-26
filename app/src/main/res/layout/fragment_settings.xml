@@ -139,12 +139,15 @@
                         app:lineHeight="16sp"
                         android:text="@string/note_language" />
                 </LinearLayout>
-                <Spinner
-                    android:id="@+id/language_spinner"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/language_choose_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:gravity="end"/>
+                    android:text="@string/choose_language"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:fontFamily="monospace"
+                    android:textSize="15sp"
+                    android:layout_marginStart="8dp"/>
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
@@ -574,7 +577,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_split_file"
+                    android:src="@drawable/ic_split_file" 
                     app:tint="@color/white"
                     android:contentDescription="Video Splitting Icon"/>
                 <LinearLayout
