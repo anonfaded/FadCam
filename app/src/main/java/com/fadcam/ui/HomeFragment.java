@@ -410,7 +410,7 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "HomeFragment created.");
 
         // Request essential permissions on every launch
-        requestEssentialPermissions();
+        // requestEssentialPermissions(); // <-- Disabled, handled in onboarding only
 
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
@@ -1488,57 +1488,13 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private boolean areEssentialPermissionsGranted() {
-        boolean cameraGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
-        boolean recordAudioGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
-
-        boolean storageGranted;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11 and above
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // Android 13 and above
-                storageGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
-                        ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-            } else {
-                // Below Android 13
-                storageGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-            }
-        } else { // Below Android 11
-            storageGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-        }
-
-        return cameraGranted && recordAudioGranted && storageGranted;
-    }
-
-    private void showPermissionsInfoDialog() {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Permissions Required")
-                .setMessage("This app needs camera, microphone, and storage permissions to function properly. Please enable these permissions from the app settings.")
-                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
-                .show();
-    }
-
-    private void debugPermissionsStatus() {
-        Log.d(TAG, "Camera permission: " +
-                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
-        Log.d(TAG, "Record Audio permission: " +
-                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
-        Log.d(TAG, "Write External Storage permission: " +
-                (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ? "Granted" : "Denied"));
-    }
-
     private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
-            debugPermissionsStatus();
-            if (!areEssentialPermissionsGranted()) {
-                debugPermissionsStatus();
-                showPermissionsInfoDialog();
+            if (recordingState.equals(RecordingState.NONE)) {
+                startRecording();
             } else {
-                if (recordingState.equals(RecordingState.NONE)) {
-                    startRecording();
-                } else {
-                    stopRecording();
-                    updateStats();
-                }
+                stopRecording();
+                updateStats();
             }
         });
 
@@ -1565,44 +1521,7 @@ public class HomeFragment extends Fragment {
             return;
         }
         performHapticFeedback();
-
-        if (!areEssentialPermissionsGranted()) {
-            Log.w(TAG, "Essential permissions not granted. Cannot start recording.");
-            // ----- Fix Start for this method(startRecording_correctString)-----
-            Utils.showQuickToast(getContext(), getString(R.string.essential_permissions_missing));
-            // ----- Fix Ended for this method(startRecording_correctString)-----
-            requestEssentialPermissions(); // Re-trigger permission request
-            return;
-        }
-
-        // Check for SAF permission before starting recording if custom storage is selected
-        String storageMode = sharedPreferencesManager.getStorageMode();
-        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
-            String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            if (customUriString == null || !hasSafPermission(Uri.parse(customUriString))) {
-                // ----- Fix Start for this method(startRecording_safPermissionString)-----
-                Utils.showQuickToast(getContext(), getString(R.string.saf_permission_missing_dialog_instructions));
-                // ----- Fix Ended for this method(startRecording_safPermissionString)-----
-                // Guide user to grant permission via settings or a dedicated button
-                // Potentially open a dialog or navigate to settings fragment
-                new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(getString(R.string.saf_permission_missing_dialog_title))
-                        .setMessage(getString(R.string.saf_permission_missing_dialog_message_for_start_recording))
-                        .setPositiveButton(getString(R.string.grant_permission_button), (dialog, which) -> {
-                            // Intent to open document tree, user selects directory
-                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
-                                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-                            // Optionally, you can suggest a starting URI
-                            // intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, someDefaultUri);
-                            startActivityForResult(intent, Constants.REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF);
-                        })
-                        .setNegativeButton(getString(R.string.universal_cancel), null)
-                        .show();
-                return;
-            }
-        }
+        // Permission checks removed; handled by onboarding
 
         if (isMyServiceRunning(RecordingService.class)) {
             Log.w(TAG, "Start requested, but service appears to be already running or starting. Current state: " + recordingState);

@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/amoled_surface">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottiePermissions"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            app:lottie_fileName="document_stamp_green_checkmark.json"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            app:layout_constraintVertical_bias="0.12" />
+
+        <TextView
+            android:id="@+id/permissionsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Permissions Required"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:fontWeight="900"
+            android:fontFamily="monospace"
+            android:textColor="@color/redPastel"
+            app:layout_constraintTop_toBottomOf="@id/lottiePermissions"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="@dimen/onboarding_margin" />
+
+        <TextView
+            android:id="@+id/permissionsDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FadCam needs access to your camera, microphone, and storage to record and save videos."
+            android:textSize="@dimen/onboarding_desc_size"
+            android:fontFamily="monospace"
+            android:textColor="?android:attr/textColorSecondary"
+            android:gravity="center"
+            android:paddingLeft="@dimen/onboarding_margin"
+            android:paddingRight="@dimen/onboarding_margin"
+            app:layout_constraintTop_toBottomOf="@id/permissionsTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            android:layout_marginBottom="@dimen/onboarding_margin" />
+
+        <LinearLayout
+            android:id="@+id/permissionsListContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/permissionsDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            android:layout_marginBottom="@dimen/onboarding_margin">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginEnd="@dimen/onboarding_margin">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_camera"
+                    android:contentDescription="Camera" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Camera"
+                    android:textSize="@dimen/onboarding_small_text_size"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginEnd="@dimen/onboarding_margin">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_mic"
+                    android:contentDescription="Microphone" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Microphone"
+                    android:textSize="@dimen/onboarding_small_text_size"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_save2"
+                    android:contentDescription="Storage" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Storage"
+                    android:textSize="@dimen/onboarding_small_text_size"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/permissions_grant_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Grant Permissions"
+            android:fontFamily="monospace"
+            android:textSize="@dimen/onboarding_button_text_size"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/redPastel"
+            app:cornerRadius="12dp"
+            app:layout_constraintTop_toBottomOf="@id/permissionsListContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            android:layout_marginLeft="@dimen/onboarding_margin"
+            android:layout_marginRight="@dimen/onboarding_margin" />
+
+        <TextView
+            android:id="@+id/or_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OR"
+            android:textColor="@color/white"
+            android:textSize="@dimen/onboarding_small_text_size"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            app:layout_constraintTop_toBottomOf="@id/permissions_grant_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/open_settings_link"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/open_settings"
+            android:textColor="@color/redPastel"
+            android:textSize="@dimen/onboarding_small_text_size"
+            android:fontFamily="monospace"
+            android:paddingTop="@dimen/onboarding_margin"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/or_text"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/and_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AND"
+            android:textColor="@color/white"
+            android:textSize="@dimen/onboarding_small_text_size"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            app:layout_constraintTop_toBottomOf="@id/open_settings_link"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/disable_battery_optimization_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/disable_battery_optimization"
+            android:backgroundTint="@color/gray"
+            android:textColor="@color/white"
+            android:textSize="@dimen/onboarding_button_text_size"
+            app:cornerRadius="12dp"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            app:layout_constraintTop_toBottomOf="@id/and_text"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/permissionsNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You must grant all permissions to continue."
+            android:textSize="@dimen/onboarding_small_text_size"
+            android:fontFamily="monospace"
+            android:textColor="?android:attr/textColorSecondary"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            android:layout_marginBottom="@dimen/onboarding_nav_margin"
+            app:layout_constraintTop_toBottomOf="@id/disable_battery_optimization_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView> 

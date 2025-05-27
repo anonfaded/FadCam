@@ -1,110 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
+<ScrollView android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/amoled_surface">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fillViewport="true"
+    android:background="@color/amoled_surface"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <com.fadcam.ui.IconRainView
-        android:id="@+id/iconRainView"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:alpha="0.35"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_height="wrap_content">
 
-    <ImageView
-        android:id="@+id/onboardingWelcomeImage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/welcome_to_fadcam_png"
-        android:contentDescription="@string/app_name"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="32dp"
-        android:visibility="invisible"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <com.fadcam.ui.IconRainView
+            android:id="@+id/iconRainView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.35"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottieCamera"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
-        android:layout_gravity="center_horizontal"
-        app:lottie_fileName="camera.json"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:layout_constraintTop_toBottomOf="@id/onboardingWelcomeImage"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="8dp" />
+        <ImageView
+            android:id="@+id/onboardingWelcomeImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/welcome_to_fadcam_png"
+            android:contentDescription="@string/app_name"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/onboarding_margin"
+            android:visibility="invisible"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <LinearLayout
-        android:id="@+id/onboardingTextContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp"
-        android:paddingTop="64dp"
-        android:paddingBottom="64dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieCamera"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            app:lottie_fileName="camera.json"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:layout_constraintTop_toBottomOf="@id/onboardingWelcomeImage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="4dp" />
 
         <TextView
             android:id="@+id/tvOnboardingDescription"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Your privacy-first dashcam app. Swipe to continue."
-            android:textSize="16sp"
+            android:textSize="@dimen/onboarding_desc_size"
             android:gravity="center"
             android:textColor="#FFFFFF"
             android:lineSpacingExtra="3dp"
-            android:layout_marginBottom="18dp" />
+            android:layout_marginTop="12dp"
+            android:paddingLeft="@dimen/onboarding_margin"
+            android:paddingRight="@dimen/onboarding_margin"
+            app:layout_constraintTop_toBottomOf="@id/lottieCamera"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    </LinearLayout>
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guidelineArrowBottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.80" />
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guidelineArrowBottom"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.80" />
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieArrow"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:visibility="invisible"
+            app:lottie_fileName="right_arrow_red.json"
+            app:lottie_autoPlay="false"
+            app:lottie_loop="false"
+            app:layout_constraintTop_toBottomOf="@id/tvOnboardingDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/tvSwipeInstruction"
+            android:layout_marginTop="0dp" />
 
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottieArrow"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:visibility="invisible"
-        app:lottie_fileName="right_arrow_red.json"
-        app:lottie_autoPlay="false"
-        app:lottie_loop="false"
-        app:layout_constraintTop_toBottomOf="@id/onboardingTextContainer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/guidelineArrowBottom"
-        android:layout_marginTop="0dp"
-        />
+        <TextView
+            android:id="@+id/tvSwipeInstruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Swipe right to continue"
+            android:textSize="@dimen/onboarding_title_size"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:visibility="invisible"
+            app:layout_constraintTop_toBottomOf="@id/lottieArrow"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="48dp" />
 
-    <TextView
-        android:id="@+id/tvSwipeInstruction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Swipe right to continue"
-        android:textSize="18sp"
-        android:textColor="#FFFFFF"
-        android:gravity="center"
-        android:visibility="invisible"
-        app:layout_constraintTop_toBottomOf="@id/lottieArrow"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="4dp"
-        />
-
-</androidx.constraintlayout.widget.ConstraintLayout> 
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView> 

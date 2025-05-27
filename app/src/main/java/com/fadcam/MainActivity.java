@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // ----- Fix Start: Launch onboarding if enabled in onCreate -----
-        boolean showOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean("PREF_SHOW_ONBOARDING", false);
+        boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
         if (showOnboarding) {
             Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
             startActivity(intent);

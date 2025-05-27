@@ -1,0 +1,10 @@
+<resources>
+    <dimen name="onboarding_title_size">26sp</dimen>
+    <dimen name="onboarding_desc_size">15sp</dimen>
+    <dimen name="onboarding_icon_size">120dp</dimen>
+    <dimen name="onboarding_margin">16dp</dimen>
+    <dimen name="onboarding_nav_margin">32dp</dimen>
+    <dimen name="onboarding_arrow_size">200dp</dimen>
+    <dimen name="onboarding_button_text_size">16sp</dimen>
+    <dimen name="onboarding_small_text_size">14sp</dimen>
+</resources> 

@@ -21,6 +21,14 @@ import android.animation.ValueAnimator;
 import com.airbnb.lottie.LottieAnimationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * OnboardingActivity shows the app intro slides using AppIntro.
@@ -31,130 +39,125 @@ public class OnboardingActivity extends AppIntro {
         super.onCreate(savedInstanceState);
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_language_slide));
+        addSlide(new OnboardingPermissionsFragment());
         getSupportFragmentManager().registerFragmentLifecycleCallbacks(new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
             @Override
-            public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm, @NonNull androidx.fragment.app.Fragment f, @NonNull View v, @Nullable Bundle savedInstanceState) {
+            public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm, @NonNull Fragment f, @Nullable View v, @Nullable Bundle savedInstanceState) {
+                super.onFragmentViewCreated(fm, f, v, savedInstanceState);
+                if (v == null) return;
                 View imageView = v.findViewById(R.id.onboardingWelcomeImage);
-                if (imageView != null) {
-                    imageView.setAlpha(0f);
-                    imageView.setVisibility(View.VISIBLE);
-                    imageView.animate().alpha(1f).setDuration(1200).start();
-                }
                 final TextView descView = v.findViewById(R.id.tvOnboardingDescription);
                 final LottieAnimationView lottieArrow = v.findViewById(R.id.lottieArrow);
                 final TextView swipeInstruction = v.findViewById(R.id.tvSwipeInstruction);
-                if (descView != null) {
-                    descView.setTypeface(android.graphics.Typeface.MONOSPACE);
-                    descView.setGravity(android.view.Gravity.START);
-                    descView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                    // ----- Fix Start: Robust row-by-row fade-in for onboarding description -----
-                    final String[] lines = {
-                        "Open source,",
-                        "ad-free,",
-                        "and built for you—not for advertisers."
-                    };
-                    final String cursorChar = "▌";
-                    final int rowFadeDuration = 220;
-                    final int rowPauseDelay = 1200;
-                    final int blinkFrameDelay = 32;
-                    final int blinkDuration = 900;
-                    final int startDelay = 900;
-                    final Handler handler = new Handler();
-                    final Runnable[] blinkRunnable = new Runnable[1];
-                    final float[] cursorAlpha = {1f};
-                    final boolean[] fadingOut = {true};
-                    final int cursorColor = 0xFFE43C3C;
-
-                    descView.setText("");
-
-                    // Define startBlinkingCursor before RowFadeAnimator so it is in scope
-                    final Runnable startBlinkingCursor = new Runnable() {
-                        @Override
-                        public void run() {
-                            blinkRunnable[0] = new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (fadingOut[0]) {
-                                        cursorAlpha[0] -= (float) blinkFrameDelay / (blinkDuration / 2f);
-                                        if (cursorAlpha[0] <= 0f) {
-                                            cursorAlpha[0] = 0f;
-                                            fadingOut[0] = false;
+                if (imageView != null && descView != null) {
+                    imageView.setAlpha(0f);
+                    imageView.setVisibility(View.VISIBLE);
+                    // ----- Fix Start for onboarding intro step-by-step animation flow -----
+                    imageView.animate().alpha(1f).setDuration(1200).withEndAction(() -> {
+                        // Only start text animation after image fade-in completes
+                        descView.setTypeface(android.graphics.Typeface.MONOSPACE);
+                        descView.setGravity(android.view.Gravity.START);
+                        descView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                        final String[] lines = {
+                            "Open source,",
+                            "ad-free,",
+                            "and built for you—not for advertisers."
+                        };
+                        final String cursorChar = "▌";
+                        final int rowFadeDuration = 220;
+                        final int rowPauseDelay = 1200;
+                        final int blinkFrameDelay = 32;
+                        final int blinkDuration = 900;
+                        final Handler handler = new Handler();
+                        final Runnable[] blinkRunnable = new Runnable[1];
+                        final float[] cursorAlpha = {1f};
+                        final boolean[] fadingOut = {true};
+                        final int cursorColor = 0xFFE43C3C;
+                        descView.setText("");
+                        // Define startBlinkingCursor before RowFadeAnimator so it is in scope
+                        final Runnable startBlinkingCursor = new Runnable() {
+                            @Override
+                            public void run() {
+                                blinkRunnable[0] = new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (fadingOut[0]) {
+                                            cursorAlpha[0] -= (float) blinkFrameDelay / (blinkDuration / 2f);
+                                            if (cursorAlpha[0] <= 0f) {
+                                                cursorAlpha[0] = 0f;
+                                                fadingOut[0] = false;
+                                            }
+                                        } else {
+                                            cursorAlpha[0] += (float) blinkFrameDelay / (blinkDuration / 2f);
+                                            if (cursorAlpha[0] >= 1f) {
+                                                cursorAlpha[0] = 1f;
+                                                fadingOut[0] = true;
+                                            }
                                         }
-                                    } else {
-                                        cursorAlpha[0] += (float) blinkFrameDelay / (blinkDuration / 2f);
-                                        if (cursorAlpha[0] >= 1f) {
-                                            cursorAlpha[0] = 1f;
-                                            fadingOut[0] = true;
-                                        }
+                                        String finalText = String.join("\n", lines);
+                                        android.text.SpannableString span = new android.text.SpannableString(finalText + cursorChar);
+                                        span.setSpan(new AlphaSpan(1f), 0, finalText.length(), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                        span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor), finalText.length(), finalText.length() + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                        span.setSpan(new AlphaSpan(cursorAlpha[0]), finalText.length(), finalText.length() + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                        descView.setText(span);
+                                        handler.postDelayed(this, blinkFrameDelay);
                                     }
-                                    // Cursor at end of all text (no extra newline)
-                                    String finalText = String.join("\n", lines);
-                                    android.text.SpannableString span = new android.text.SpannableString(finalText + cursorChar);
-                                    span.setSpan(new AlphaSpan(1f), 0, finalText.length(), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor), finalText.length(), finalText.length() + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    span.setSpan(new AlphaSpan(cursorAlpha[0]), finalText.length(), finalText.length() + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    descView.setText(span);
-                                    handler.postDelayed(this, blinkFrameDelay);
-                                }
-                            };
-                            handler.post(blinkRunnable[0]);
-                            // Show the swipe instruction and Lottie arrow almost immediately after blinking cursor starts
-                            if (lottieArrow != null && swipeInstruction != null) {
-                                handler.postDelayed(() -> {
-                                    // Fade in swipe instruction
-                                    swipeInstruction.setAlpha(0f);
-                                    swipeInstruction.setVisibility(View.VISIBLE);
-                                    swipeInstruction.animate().alpha(1f).setDuration(600).start();
-                                    // Show arrow after swipe text is visible
-                                    handler.postDelayed(() -> {
-                                        lottieArrow.setVisibility(View.VISIBLE);
-                                        lottieArrow.setSpeed(0.5f); // Slightly faster
-                                        lottieArrow.setRepeatCount(0); // Animate only once
-                                        lottieArrow.playAnimation();
-                                    }, 300); // Arrow appears sooner after swipe text fade-in
-                                }, 0); // No delay after text animation completes
+                                };
+                                handler.post(blinkRunnable[0]);
                             }
-                        }
-                    };
-
-                    class RowFadeAnimator {
-                        private final Runnable startBlinkingCursor;
-                        int rowIdx = 0;
-                        StringBuilder shownText = new StringBuilder();
-                        RowFadeAnimator(Runnable startBlinkingCursor) {
-                            this.startBlinkingCursor = startBlinkingCursor;
-                        }
-                        void start() {
-                            // Show the first row immediately
-                            shownText.append(lines[0]);
-                            updateTextWithCursor();
-                            rowIdx = 1;
-                            handler.postDelayed(this::animateNextRow, rowPauseDelay);
-                        }
-                        void animateNextRow() {
-                            if (rowIdx >= lines.length) {
-                                startBlinkingCursor.run();
-                                return;
+                        };
+                        class RowFadeAnimator {
+                            private final Runnable startBlinkingCursor;
+                            int rowIdx = 0;
+                            StringBuilder shownText = new StringBuilder();
+                            RowFadeAnimator(Runnable startBlinkingCursor) {
+                                this.startBlinkingCursor = startBlinkingCursor;
                             }
-                            shownText.append("\n").append(lines[rowIdx]);
-                            // Fade in the whole TextView for this row
-                            descView.setAlpha(0f);
-                            updateTextWithCursor();
-                            descView.animate().alpha(1f).setDuration(rowFadeDuration).withEndAction(() -> {
-                                rowIdx++;
+                            void start() {
+                                shownText.append(lines[0]);
+                                updateTextWithCursor();
+                                rowIdx = 1;
                                 handler.postDelayed(this::animateNextRow, rowPauseDelay);
-                            }).start();
+                            }
+                            void animateNextRow() {
+                                if (rowIdx >= lines.length) {
+                                    // Start blinking cursor after all lines
+                                    startBlinkingCursor.run();
+                                    return;
+                                }
+                                shownText.append("\n").append(lines[rowIdx]);
+                                descView.setAlpha(0f);
+                                updateTextWithCursor();
+                                descView.animate().alpha(1f).setDuration(rowFadeDuration).withEndAction(() -> {
+                                    // As the last line animates in, fade in swipe instruction and arrow
+                                    if (rowIdx == lines.length - 1 && swipeInstruction != null && lottieArrow != null) {
+                                        // Show arrow first
+                                        lottieArrow.setVisibility(View.VISIBLE);
+                                        lottieArrow.setSpeed(0.5f);
+                                        lottieArrow.setRepeatCount(0);
+                                        lottieArrow.playAnimation();
+                                        // Fade in swipe instruction after a delay (arrow animates for a moment)
+                                        handler.postDelayed(() -> {
+                                            swipeInstruction.setAlpha(0f);
+                                            swipeInstruction.setVisibility(View.VISIBLE);
+                                            swipeInstruction.animate().alpha(1f).setDuration(600).start();
+                                        }, 700); // Delay in ms before swipe text appears
+                                    }
+                                    rowIdx++;
+                                    handler.postDelayed(this::animateNextRow, rowPauseDelay);
+                                }).start();
+                            }
+                            void updateTextWithCursor() {
+                                String text = shownText.toString() + cursorChar;
+                                android.text.SpannableString span = new android.text.SpannableString(text);
+                                span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor), text.length() - 1, text.length(), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                descView.setText(span);
+                            }
                         }
-                        void updateTextWithCursor() {
-                            String text = shownText.toString() + cursorChar;
-                            android.text.SpannableString span = new android.text.SpannableString(text);
-                            span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor), text.length() - 1, text.length(), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            descView.setText(span);
-                        }
-                    }
-                    final RowFadeAnimator rowAnimator = new RowFadeAnimator(startBlinkingCursor);
-                    handler.postDelayed(rowAnimator::start, startDelay);
-                    // ----- Fix End: Robust row-by-row fade-in for onboarding description -----
+                        final RowFadeAnimator rowAnimator = new RowFadeAnimator(startBlinkingCursor);
+                        handler.postDelayed(rowAnimator::start, 200); // Short pause after image fade-in
+                    });
+                    // ----- Fix End for onboarding intro step-by-step animation flow -----
                 }
                 // Slide 2 logic (language selection)
                 MaterialButton languageChooseButton = v.findViewById(R.id.language_choose_button);
@@ -162,7 +165,7 @@ public class OnboardingActivity extends AppIntro {
                     setupOnboardingLanguageDialog(languageChooseButton);
                 }
             }
-        }, false);
+        }, true);
     }
 
     /**

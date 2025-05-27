@@ -526,10 +526,10 @@ public class SettingsFragment extends Fragment {
         // ----- Fix Start for onboarding toggle logic in onCreateView -----
         MaterialSwitch onboardingToggle = view.findViewById(R.id.onboarding_toggle);
         if (onboardingToggle != null) {
-            boolean showOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean("PREF_SHOW_ONBOARDING", false);
+            boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
             onboardingToggle.setChecked(showOnboarding);
             onboardingToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean("PREF_SHOW_ONBOARDING", isChecked).apply();
+                sharedPreferencesManager.setShowOnboarding(isChecked);
             });
         }
         // ----- Fix Ended for onboarding toggle logic in onCreateView -----
