@@ -1033,7 +1033,13 @@
                     android:layout_height="wrap_content"
                     android:minHeight="48dp"/>
             </LinearLayout>
-
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+                
             <!-- Onboarding Toggle -->
             <LinearLayout
                 android:layout_width="match_parent"
