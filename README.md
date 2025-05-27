@@ -164,6 +164,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
+<!-- [Police recording with FadCam](https://www.facebook.com/joseph.anthony.emaikwu/videos/fadcam/3206531569486276/) -->
 
 ### Articles and Listings
 - [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
