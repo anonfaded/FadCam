@@ -15,7 +15,7 @@ import androidx.fragment.app.Fragment;
 import com.fadcam.R;
 import com.fadcam.Utils;
 
-public class RemoteFragment extends Fragment {
+public class RemoteFragment extends BaseFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

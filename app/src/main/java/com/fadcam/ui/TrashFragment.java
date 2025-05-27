@@ -16,6 +16,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.model.TrashItem;
 import com.fadcam.utils.TrashManager;
@@ -32,8 +34,10 @@ import android.net.Uri;
 import java.io.File;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.Locale;
+import androidx.fragment.app.Fragment;
+import androidx.activity.OnBackPressedCallback;
 
-public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemInteractionListener {
+public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashItemInteractionListener {
 
     private static final String TAG = "TrashFragment";
     private RecyclerView recyclerViewTrashItems;
@@ -49,6 +53,7 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     private ExecutorService executorService;
     private TextView tvAutoDeleteInfo;
     private SharedPreferencesManager sharedPreferencesManager;
+    private boolean isInSelectionMode = false;
 
     public TrashFragment() {
         // Required empty public constructor
@@ -60,6 +65,11 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         executorService = Executors.newSingleThreadExecutor();
         setHasOptionsMenu(true);
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        
+        // ----- Fix Start: Remove custom back press handler -----
+        // We no longer need our own back handler since MainActivity now detects
+        // and handles TrashFragment visibility directly
+        // ----- Fix End: Remove custom back press handler -----
     }
 
     @Nullable
@@ -105,21 +115,13 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
             toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             toolbar.setNavigationIcon(R.drawable.ic_close);
             toolbar.setNavigationOnClickListener(v -> {
-                try {
-                    if (getParentFragmentManager().getBackStackEntryCount() > 0) {
-                        getParentFragmentManager().popBackStack();
-                    } else {
-                        if (getActivity() != null) getActivity().onBackPressed(); 
-                    }
-                    View overlayContainer = requireActivity().findViewById(R.id.overlay_fragment_container);
-                    if (overlayContainer != null) {
-                        overlayContainer.setVisibility(View.GONE);
-                    } else {
-                        Log.w(TAG, "Could not find R.id.overlay_fragment_container to hide it.");
-                    }
-                } catch (Exception e) {
-                    android.util.Log.e(TAG, "Toolbar navigation up failed (manual popBackStack)", e);
+                // ----- Fix Start: Simply let MainActivity handle back press -----
+                // Just trigger the regular back press, MainActivity will detect
+                // that TrashFragment is visible and handle it correctly
+                if (getActivity() != null) {
+                    getActivity().onBackPressed();
                 }
+                // ----- Fix End: Simply let MainActivity handle back press -----
             });
         } else {
             Log.e(TAG, "Toolbar is null or Activity is not AppCompatActivity, cannot set up toolbar as ActionBar.");
@@ -246,8 +248,21 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
 
     @Override
     public void onItemSelectedStateChanged(boolean anySelected) {
+        isInSelectionMode = anySelected;
+        
+        // Update button states
         buttonRestoreSelected.setEnabled(anySelected);
         buttonDeleteSelectedPermanently.setEnabled(anySelected);
+        
+        // Update toolbar title
+        if (toolbar != null) {
+            if (isInSelectionMode && trashAdapter != null) {
+                int selectedCount = trashAdapter.getSelectedItemsCount();
+                toolbar.setTitle(selectedCount + " selected");
+            } else {
+                toolbar.setTitle(getString(R.string.trash_fragment_title_text));
+            }
+        }
     }
 
     @Override
@@ -322,9 +337,21 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
     @Override
     public void onItemCheckChanged(TrashItem item, boolean isChecked) {
         // This method is called by the adapter when a checkbox state changes.
-        // The main purpose is to update the enabled state of action buttons.
         if (getView() != null) { // Ensure fragment is still active
+            // Update selection mode based on whether any items are selected
+            boolean hasSelectedItems = trashAdapter != null && trashAdapter.getSelectedItemsCount() > 0;
+            isInSelectionMode = hasSelectedItems;
+            
+            // Update UI based on selection state
             updateActionButtonsState();
+            
+            // Update toolbar title if in selection mode
+            if (toolbar != null && isInSelectionMode) {
+                int selectedCount = trashAdapter.getSelectedItemsCount();
+                toolbar.setTitle(selectedCount + " selected");
+            } else if (toolbar != null) {
+                toolbar.setTitle(getString(R.string.trash_fragment_title_text));
+            }
         }
     }
 
@@ -439,6 +466,44 @@ public class TrashFragment extends Fragment implements TrashAdapter.OnTrashItemI
         } else { // Show in days
             int days = totalMinutes / (24 * 60);
             tvAutoDeleteInfo.setText(getResources().getQuantityString(R.plurals.trash_auto_delete_info_days, days, days));
+        }
+    }
+
+    @Override
+    protected boolean onBackPressed() {
+        // If in selection mode, exit selection mode
+        if (isInSelectionMode()) {
+            exitSelectionMode();
+            return true;
+        }
+        
+        // ----- Fix Start: Let MainActivity handle the back press -----
+        // For normal cases, let MainActivity handle it - it will detect that
+        // TrashFragment is visible and close it properly
+        return false;
+        // ----- Fix End: Let MainActivity handle the back press -----
+    }
+
+    /**
+     * Checks if the fragment is currently in selection mode
+     * @return true if in selection mode, false otherwise
+     */
+    private boolean isInSelectionMode() {
+        return isInSelectionMode;
+    }
+
+    /**
+     * Exits selection mode and updates the UI accordingly
+     */
+    private void exitSelectionMode() {
+        if (isInSelectionMode && trashAdapter != null) {
+            isInSelectionMode = false;
+            trashAdapter.clearSelections();
+            updateActionButtonsState();
+            // Reset any UI elements that change in selection mode
+            if (toolbar != null) {
+                toolbar.setTitle(getString(R.string.trash_fragment_title_text));
+            }
         }
     }
 

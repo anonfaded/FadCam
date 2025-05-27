@@ -100,7 +100,7 @@ import android.widget.ImageView; // <<< ADD IMPORT FOR ImageView
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 
-public class HomeFragment extends Fragment {
+public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
@@ -2792,4 +2792,29 @@ public class HomeFragment extends Fragment {
         // ----- Fix Ended for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
     }
     // ----- Fix Ended for this class (HomeFragment) -----
+
+    /**
+     * Override the onBackPressed method from BaseFragment
+     */
+    @Override
+    protected boolean onBackPressed() {
+        // Handle any special cases for the HomeFragment's back button
+        if (isRecordingOrPaused()) {
+            // If recording is in progress, show a confirmation dialog
+            new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Recording in Progress")
+                .setMessage("Do you want to stop recording and exit?")
+                .setPositiveButton("Stop and Exit", (dialog, which) -> {
+                    stopRecording();
+                    // Allow normal back behavior after stopping recording
+                    requireActivity().onBackPressed();
+                })
+                .setNegativeButton("Continue Recording", null)
+                .show();
+            return true; // We handled the back press
+        }
+        
+        // For normal cases, let the base implementation handle it
+        return false;
+    }
 }

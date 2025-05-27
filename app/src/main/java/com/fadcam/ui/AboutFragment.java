@@ -39,7 +39,7 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class AboutFragment extends Fragment {
+public class AboutFragment extends BaseFragment {
 
     private View view;
     private ExecutorService executorService;

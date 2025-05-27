@@ -8,15 +8,21 @@ import android.content.pm.ShortcutManager;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.fadcam.ui.RecordsFragment;
+import com.fadcam.ui.TrashFragment;
 import com.fadcam.ui.ViewPagerAdapter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -29,6 +35,48 @@ public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
     private BottomNavigationView bottomNavigationView;
+
+    // ----- Fix Start: Add fields for double-back to exit -----
+    private boolean doubleBackToExitPressedOnce = false;
+    private boolean skipNextBackHandling = false; // New flag to skip toast on next back press
+    private Handler backPressHandler = new Handler();
+    private static final int BACK_PRESS_DELAY = 2000; // 2 seconds
+
+    private final Runnable backPressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            doubleBackToExitPressedOnce = false;
+        }
+    };
+    // ----- Fix End: Add fields for double-back to exit -----
+
+    // ----- Fix Start: Add method to disable back toast temporarily -----
+    /**
+     * Public method to be called from fragments that need to disable the double-back toast temporarily
+     * This will prevent the "Press back again to exit" toast from showing on the next back press
+     */
+    public void skipNextBackExitHandling() {
+        skipNextBackHandling = true;
+        // Reset automatically after a delay
+        backPressHandler.postDelayed(() -> skipNextBackHandling = false, 1000);
+    }
+    // ----- Fix End: Add method to disable back toast temporarily -----
+
+    // ----- Fix Start: Add method to check if trash fragment is visible -----
+    /**
+     * Checks if the TrashFragment is currently visible in the overlay container
+     * @return true if TrashFragment is visible, false otherwise
+     */
+    private boolean isTrashFragmentVisible() {
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        if (overlayContainer != null && overlayContainer.getVisibility() == View.VISIBLE) {
+            Fragment fragment = getSupportFragmentManager()
+                    .findFragmentById(R.id.overlay_fragment_container);
+            return fragment instanceof TrashFragment;
+        }
+        return false;
+    }
+    // ----- Fix End: Add method to check if trash fragment is visible -----
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -228,4 +276,129 @@ private void createDynamicShortcuts() {
     protected void onStop() {
         super.onStop();
     }
+    
+    // ----- Fix Start: Proper back button handling with double-press to exit -----
+    @Override
+    public void onBackPressed() {
+        // Check if trash fragment is visible - handle separately
+        if (isTrashFragmentVisible()) {
+            View overlayContainer = findViewById(R.id.overlay_fragment_container);
+            if (overlayContainer != null) {
+                overlayContainer.setVisibility(View.GONE);
+            }
+            
+            // Pop any fragments in the back stack
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                getSupportFragmentManager().popBackStack();
+            }
+            
+            // Refresh the records fragment if needed
+            Fragment recordsFragment = getSupportFragmentManager()
+                    .findFragmentByTag("RecordsFragment");
+            if (recordsFragment instanceof RecordsFragment) {
+                ((RecordsFragment) recordsFragment).refreshList();
+            }
+            
+            return; // Exit early without showing toast
+        }
+
+        // If we're not on the home tab, go to home tab first before exiting
+        if (viewPager.getCurrentItem() != 0) {
+            viewPager.setCurrentItem(0, true);
+        } else {
+            // Check if we should skip this back handling
+            if (skipNextBackHandling) {
+                skipNextBackHandling = false;
+                super.onBackPressed();
+                return;
+            }
+            
+            // We're on the home tab, implement double back press to exit
+            if (doubleBackToExitPressedOnce) {
+                // Remove the callback to prevent it from executing after app close
+                backPressHandler.removeCallbacks(backPressRunnable);
+                super.onBackPressed();
+                return;
+            }
+
+            // First back press - show toast and set flag
+            this.doubleBackToExitPressedOnce = true;
+            Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
+
+            // Reset the flag after a delay
+            backPressHandler.postDelayed(backPressRunnable, BACK_PRESS_DELAY);
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Set up the back press behavior with the newer API
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    // Check if trash fragment is visible - handle separately
+                    if (isTrashFragmentVisible()) {
+                        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+                        if (overlayContainer != null) {
+                            overlayContainer.setVisibility(View.GONE);
+                        }
+                        
+                        // Pop any fragments in the back stack
+                        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                            getSupportFragmentManager().popBackStack();
+                        }
+                        
+                        // Refresh the records fragment if needed
+                        Fragment recordsFragment = getSupportFragmentManager()
+                                .findFragmentByTag("RecordsFragment");
+                        if (recordsFragment instanceof RecordsFragment) {
+                            ((RecordsFragment) recordsFragment).refreshList();
+                        }
+                        
+                        return; // Exit early without showing toast
+                    }
+                    
+                    // If we're not on the home tab, go to home tab first
+                    if (viewPager.getCurrentItem() != 0) {
+                        viewPager.setCurrentItem(0, true);
+                    } else {
+                        // Check if we should skip this back handling
+                        if (skipNextBackHandling) {
+                            skipNextBackHandling = false;
+                            setEnabled(false);
+                            getOnBackPressedDispatcher().onBackPressed();
+                            return;
+                        }
+                        
+                        // We're on the home tab, implement double back press to exit
+                        if (doubleBackToExitPressedOnce) {
+                            // Remove the callback to prevent it from executing after app close
+                            backPressHandler.removeCallbacks(backPressRunnable);
+                            setEnabled(false);
+                            getOnBackPressedDispatcher().onBackPressed();
+                            return;
+                        }
+
+                        // First back press - show toast and set flag
+                        doubleBackToExitPressedOnce = true;
+                        Toast.makeText(MainActivity.this, "Press back again to exit", Toast.LENGTH_SHORT).show();
+
+                        // Reset the flag after a delay
+                        backPressHandler.postDelayed(backPressRunnable, BACK_PRESS_DELAY);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Clean up handler callbacks to prevent memory leaks
+        backPressHandler.removeCallbacks(backPressRunnable);
+    }
+    // ----- Fix End: Proper back button handling with double-press to exit -----
 }

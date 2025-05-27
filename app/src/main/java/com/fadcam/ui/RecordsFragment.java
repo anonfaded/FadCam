@@ -75,7 +75,9 @@ import java.util.Set; // Need Set import
 import java.util.HashSet; // Need HashSet import
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout; // ADD THIS IMPORT
 
-public class RecordsFragment extends Fragment implements
+import androidx.appcompat.widget.SearchView;
+
+public class RecordsFragment extends BaseFragment implements
         RecordsAdapter.OnVideoClickListener,
         RecordsAdapter.OnVideoLongClickListener,
         RecordActionListener {
@@ -1644,7 +1646,7 @@ public class RecordsFragment extends Fragment implements
     // ----- Fix Start for this class (RecordsFragment_segment_receiver_fields) -----
     private BroadcastReceiver segmentCompleteReceiver;
     private boolean isSegmentReceiverRegistered = false;
-    // ----- Fix Ended for this class (RecordsFragment_segment_receiver_fields) -----
+    // ----- Fix End: Add search-related fields at class level -----
 
     // ----- Fix Start for this class (RecordsFragment_segment_receiver_methods) -----
     private void registerSegmentCompleteReceiver() {
@@ -1701,4 +1703,75 @@ public class RecordsFragment extends Fragment implements
         }
     }
     // ----- Fix Ended for this class (RecordsFragment_segment_receiver_methods) -----
+
+    // ----- Fix Start: Add search-related fields at class level -----
+    private SearchView searchView;
+    private boolean isSearchViewActive = false;
+    // ----- Fix End: Add search-related fields at class level -----
+
+    // ----- Fix Start: Add search-related methods -----
+    /**
+     * Checks if search functionality is currently active
+     * @return true if search is active, false otherwise
+     */
+    private boolean isSearchActive() {
+        return isSearchViewActive && searchView != null && !searchView.isIconified();
+    }
+
+    /**
+     * Clears the current search and resets the search view
+     */
+    private void clearSearch() {
+        if (searchView != null) {
+            searchView.setQuery("", false);
+            searchView.setIconified(true);
+            isSearchViewActive = false;
+            // Reload original data without filter
+            loadRecordsList();
+        }
+    }
+    // ----- Fix End: Add search-related methods -----
+
+    // ----- Fix Start: Add isInSelectionMode() method -----
+    /**
+     * Checks if the fragment is currently in selection mode
+     * @return true if in selection mode, false otherwise
+     */
+    private boolean isInSelectionMode() {
+        return isInSelectionMode;
+    }
+    // ----- Fix End: Add isInSelectionMode() method -----
+
+    // Override the onBackPressed method from BaseFragment
+    @Override
+    protected boolean onBackPressed() {
+        // If search is active, clear it instead of navigating back
+        if (isSearchActive()) {
+            clearSearch();
+            return true;
+        }
+        
+        // If in selection mode, exit selection mode instead of navigating back
+        if (isInSelectionMode()) {
+            exitSelectionMode();
+            return true;
+        }
+        
+        // Handle any other specific cases here
+        
+        // For normal cases, let the default implementation handle it
+        return false;
+    }
+
+    // ----- Fix Start: Add refreshList method -----
+    /**
+     * Public method to refresh the records list
+     * Can be called from other fragments when they need to update this fragment
+     */
+    public void refreshList() {
+        if (isAdded()) {
+            loadRecordsList();
+        }
+    }
+    // ----- Fix End: Add refreshList method -----
 }

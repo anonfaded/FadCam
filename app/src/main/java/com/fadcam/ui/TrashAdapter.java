@@ -82,6 +82,19 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         return selectedItems.size();
     }
 
+    /**
+     * Clears all selected items and updates the UI accordingly
+     */
+    public void clearSelections() {
+        if (!selectedItems.isEmpty()) {
+            selectedItems.clear();
+            notifyDataSetChanged();
+            if (interactionListener != null) {
+                interactionListener.onItemSelectedStateChanged(false);
+            }
+        }
+    }
+
     class TrashViewHolder extends RecyclerView.ViewHolder {
         TextView tvOriginalName;
         TextView tvDateTrashed;

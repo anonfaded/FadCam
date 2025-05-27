@@ -97,7 +97,7 @@ import android.text.TextWatcher;
 // ----- Fix Ended for this class (SettingsFragment_video_splitting_imports) -----
 
 
-public class SettingsFragment extends Fragment {
+public class SettingsFragment extends BaseFragment {
 
     private LocationHelper locationHelper;
 
@@ -2906,6 +2906,27 @@ public class SettingsFragment extends Fragment {
     }
     // ----- Fix Ended for this class (SettingsFragment_video_splitting_methods) -----
 
-
+    @Override
+    protected boolean onBackPressed() {
+        // Check if we have any dialogs open that should be closed first
+        if (isAnyDialogShowing()) {
+            dismissOpenDialogs();
+            return true;
+        }
+        
+        // Let the default implementation handle it
+        return false;
+    }
+    
+    // Helper method to check if any dialogs are showing
+    private boolean isAnyDialogShowing() {
+        // Implement this based on your dialog management
+        return false;
+    }
+    
+    // Helper method to dismiss open dialogs
+    private void dismissOpenDialogs() {
+        // Implement this based on your dialog management
+    }
 
 }
