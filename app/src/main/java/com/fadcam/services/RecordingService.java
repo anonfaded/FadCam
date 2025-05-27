@@ -1219,11 +1219,32 @@ public class RecordingService extends Service {
         boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
         Log.d(TAG, "Setting video size directly from resolution: " + resolution.getWidth() + "x" + resolution.getHeight() + " for isLandscape=" + isLandscape);
         mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
-        if (!isLandscape) {
-            mediaRecorder.setOrientationHint(90);
+        
+        // ----- Fix Start for this method(setupMediaRecorder)-----
+        // Determine if this is a front camera
+        CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+        boolean isFrontCamera = (cameraType == CameraType.FRONT);
+        
+        // Set orientation hint based on camera type and device orientation
+        if (isFrontCamera) {
+            // Front camera needs different orientation hint to avoid upside-down recording
+            if (!isLandscape) {
+                mediaRecorder.setOrientationHint(270); // 270 degrees for portrait front camera
+            } else {
+                mediaRecorder.setOrientationHint(180); // 180 degrees for landscape front camera
+            }
+            Log.d(TAG, "Front camera: Setting orientation hint to " + (isLandscape ? "180" : "270") + " degrees");
         } else {
-            mediaRecorder.setOrientationHint(0);
+            // Back camera uses normal orientation
+            if (!isLandscape) {
+                mediaRecorder.setOrientationHint(90); // 90 degrees for portrait back camera
+            } else {
+                mediaRecorder.setOrientationHint(0); // 0 degrees for landscape back camera
+            }
+            Log.d(TAG, "Back camera: Setting orientation hint to " + (isLandscape ? "0" : "90") + " degrees");
         }
+        // ----- Fix End for this method(setupMediaRecorder)-----
+        
         int bitRate = getVideoBitrate();
         int frameRate = sharedPreferencesManager.getVideoFrameRate();
         mediaRecorder.setVideoEncodingBitRate(bitRate);
