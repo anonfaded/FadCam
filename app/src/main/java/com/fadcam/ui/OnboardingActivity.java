@@ -212,12 +212,31 @@ public class OnboardingActivity extends AppIntro {
                                         lottieArrow.setSpeed(0.5f);
                                         lottieArrow.setRepeatCount(0);
                                         lottieArrow.playAnimation();
-                                        // Fade in swipe instruction after a delay (arrow animates for a moment)
+                                        
+                                        // Create a center-outward fade effect for the text
                                         handler.postDelayed(() -> {
-                                            swipeInstruction.setAlpha(0f);
+                                            // Check if the view is still attached before proceeding
+                                            if (swipeInstruction == null || !swipeInstruction.isAttachedToWindow()) {
+                                                return; // Skip animation if view is detached
+                                            }
+                                            
+                                            // Simple fade-in without reveal animation (which was causing the crash)
                                             swipeInstruction.setVisibility(View.VISIBLE);
-                                            swipeInstruction.animate().alpha(1f).setDuration(600).start();
-                                        }, 700); // Delay in ms before swipe text appears
+                                            swipeInstruction.setAlpha(0f);
+                                            
+                                            // First fade in the entire text (base layer)
+                                            swipeInstruction.animate()
+                                                .alpha(1f)
+                                                .setDuration(1200)
+                                                .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                                                .withEndAction(() -> {
+                                                    // Start the shimmer effect after fade-in completes
+                                                    if (swipeInstruction.isAttachedToWindow()) {
+                                                        startShimmerEffect(swipeInstruction);
+                                                    }
+                                                })
+                                                .start();
+                                        }, 700); // Delay before animation
                                     }
                                     rowIdx++;
                                     handler.postDelayed(this::animateNextRow, rowPauseDelay);
@@ -380,6 +399,120 @@ public class OnboardingActivity extends AppIntro {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    /**
+     * Creates a continuous white shimmer effect on a TextView.
+     * @param textView The TextView to apply the shimmer effect to.
+     */
+    private void startShimmerEffect(final TextView textView) {
+        if (textView == null || !textView.isAttachedToWindow()) return;
+        
+        // Make the text significantly darker to increase contrast with the shimmer
+        final int originalTextColor = textView.getCurrentTextColor();
+        // Darken the text color more for better shimmer contrast (0.5f makes it 50% darker)
+        int darkerTextColor = darkenColor(originalTextColor, 0.5f);
+        textView.setTextColor(darkerTextColor);
+        
+        // Create a new ValueAnimator for the shimmer effect
+        final ValueAnimator shimmerAnimator = ValueAnimator.ofFloat(0f, 2 * (float)Math.PI); // Full sine wave cycle
+        shimmerAnimator.setDuration(4000); // Slower shimmer - 4 seconds per cycle
+        shimmerAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        shimmerAnimator.setRepeatMode(ValueAnimator.RESTART);
+        
+        // Use a smoother interpolator for a more continuous shimmer
+        shimmerAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
+        
+        shimmerAnimator.addUpdateListener(animation -> {
+            // Safety check - make sure the textView is still attached
+            if (textView == null || !textView.isAttachedToWindow()) {
+                animation.cancel();
+                return;
+            }
+            
+            float animatedValue = (float) animation.getAnimatedValue();
+            
+            // Create a shimmer effect using SpannableString
+            String text = textView.getText().toString();
+            if (text.isEmpty()) return; // Skip if no text
+            
+            android.text.SpannableString spannableString = new android.text.SpannableString(text);
+            
+            // Create a very bright white for shimmer highlight - pure white
+            int brightWhite = android.graphics.Color.argb(255, 255, 255, 255);
+            
+            // Use sine function for smooth, continuous shimmer position
+            // This creates a wave-like effect that smoothly moves across the text
+            // and naturally loops without visible jumps
+            float shimmerCenter = (float)(Math.sin(animatedValue) + 1) / 2; // Convert sine (-1 to 1) to 0-1 range
+            float shimmerWidth = 0.3f; // Wider shimmer for more visibility
+            
+            // Apply the shimmer to all characters
+            for (int i = 0; i < text.length(); i++) {
+                // Calculate character position as percentage of total width
+                float charPosition = (float) i / text.length();
+                
+                // Calculate distance from the "shimmer center" - with wraparound handling
+                // This creates a circular distance calculation for smoother loop transitions
+                float distanceFromShimmer;
+                if (Math.abs(charPosition - shimmerCenter) <= 0.5f) {
+                    distanceFromShimmer = Math.abs(charPosition - shimmerCenter);
+                } else {
+                    distanceFromShimmer = 1.0f - Math.abs(charPosition - shimmerCenter);
+                }
+                
+                // If the character is within the shimmer width, apply the effect
+                if (distanceFromShimmer < shimmerWidth) {
+                    // Calculate a brightness factor - closer to center = brighter
+                    float brightnessFactor = 1.0f - (distanceFromShimmer / shimmerWidth);
+                    
+                    // Apply a smooth curve to the brightness using sine for a more natural shimmer
+                    brightnessFactor = (float) Math.sin(brightnessFactor * Math.PI / 2);
+                    
+                    // Mix the darkened text color with white based on brightness factor
+                    int shimmerColor = blendColors(darkerTextColor, brightWhite, brightnessFactor);
+                    
+                    spannableString.setSpan(
+                        new android.text.style.ForegroundColorSpan(shimmerColor),
+                        i, i + 1,
+                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                }
+                // Characters outside the shimmer width remain the darker text color
+            }
+            
+            textView.setText(spannableString);
+        });
+        
+        // Start the shimmer animation
+        shimmerAnimator.start();
+        
+        // Store the animator in a tag to cancel it if needed
+        textView.setTag(R.id.shimmer_animator_tag, shimmerAnimator);
+    }
+    
+    /**
+     * Darkens a color by the given factor.
+     * Factor should be between 0 and 1, where 0 makes the color black and 1 keeps it unchanged.
+     */
+    private int darkenColor(int color, float factor) {
+        int a = android.graphics.Color.alpha(color);
+        int r = Math.round(android.graphics.Color.red(color) * factor);
+        int g = Math.round(android.graphics.Color.green(color) * factor);
+        int b = Math.round(android.graphics.Color.blue(color) * factor);
+        return android.graphics.Color.argb(a, r, g, b);
+    }
+    
+    /**
+     * Blends two colors based on the given ratio.
+     * Ratio should be between 0 and 1, where 0 returns color1 and 1 returns color2.
+     */
+    private int blendColors(int color1, int color2, float ratio) {
+        float inverseRatio = 1f - ratio;
+        int r = Math.round(android.graphics.Color.red(color1) * inverseRatio + android.graphics.Color.red(color2) * ratio);
+        int g = Math.round(android.graphics.Color.green(color1) * inverseRatio + android.graphics.Color.green(color2) * ratio);
+        int b = Math.round(android.graphics.Color.blue(color1) * inverseRatio + android.graphics.Color.blue(color2) * ratio);
+        return android.graphics.Color.rgb(r, g, b);
     }
 }
 
