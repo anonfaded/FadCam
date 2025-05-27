@@ -3,6 +3,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="gray">#1f1e23</color>
+    <color name="gray500">#9E9E9E</color>
     <color name="redPastel">#E43C3C</color>
     <color name="greenPastel">#77DD77</color>
     <color name="colorPrimary">#cfbafd</color>
@@ -17,6 +18,7 @@
     <color name="danger_red">#D32F2F</color>
     <color name="danger_red_light">#F44336</color>
     <color name="colorError">#D32F2F</color>
+    <color name="green">#4CAF50</color>
 
     <!-- Added for Trash Item Remaining Time Display -->
     <color name="colorWarning">#FFA726</color> <!-- Orange A400 -->

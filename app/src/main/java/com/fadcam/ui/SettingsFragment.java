@@ -1643,12 +1643,12 @@ public class SettingsFragment extends Fragment {
                     String newLangCode = getLanguageCode(which);
                     if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
                         saveLanguagePreference(newLangCode);
-                        if(getActivity() instanceof MainActivity){
+                    if(getActivity() instanceof MainActivity){
                             ((MainActivity) requireActivity()).applyLanguage(newLangCode);
-                        } else {
-                            Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
-                        }
+                    } else {
+                        Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
                     }
+                }
                     chooseButton.setText(languages[which]);
                     dialog.dismiss();
                 })

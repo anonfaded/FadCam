@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/amoled_surface"
+    android:fillViewport="true">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.fadcam.ui.PalestineRainView
+            android:id="@+id/palestineRainView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.35" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="120dp"
+            android:paddingTop="@dimen/onboarding_nav_margin"
+            android:paddingBottom="@dimen/onboarding_nav_margin">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottieHuman"
+                android:layout_width="180dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                app:lottie_fileName="document_rules_green_checkmark.json"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true" />
+
+            <TextView
+                android:id="@+id/tvHumanTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/onboarding_human_title"
+                android:textSize="@dimen/onboarding_title_size"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:textColor="@color/redPastel"
+                android:gravity="center"
+                android:layout_marginLeft="@dimen/onboarding_margin"
+                android:layout_marginRight="@dimen/onboarding_margin"/>
+
+            <TextView
+                android:id="@+id/tvHumanDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/onboarding_human_desc"
+                android:textSize="@dimen/onboarding_desc_size"
+                android:fontFamily="monospace"
+                android:textColor="?android:attr/textColorSecondary"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/onboarding_margin"
+                android:layout_marginLeft="@dimen/onboarding_margin"
+                android:layout_marginRight="@dimen/onboarding_margin"/>
+
+            <!-- Custom Checkbox Row 1 -->
+            <LinearLayout
+                android:id="@+id/checkbox_row_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="@dimen/onboarding_margin"
+                android:layout_marginLeft="@dimen/onboarding_margin"
+                android:layout_marginRight="@dimen/onboarding_margin"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/checkbox_icon_1"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:contentDescription="@string/onboarding_human_checkbox1"
+                    android:layout_marginRight="12dp"
+                    android:padding="2dp"/>
+
+                <TextView
+                    android:id="@+id/checkbox_label_1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/onboarding_human_checkbox1"
+                    android:textColor="@color/white"
+                    android:fontFamily="monospace"
+                    android:textSize="@dimen/onboarding_desc_size"/>
+            </LinearLayout>
+
+            <!-- Custom Checkbox Row 2 -->
+            <LinearLayout
+                android:id="@+id/checkbox_row_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp"
+                android:layout_marginLeft="@dimen/onboarding_margin"
+                android:layout_marginRight="@dimen/onboarding_margin"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/checkbox_icon_2"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:contentDescription="@string/onboarding_human_checkbox2"
+                    android:layout_marginRight="12dp"
+                    android:padding="2dp"/>
+
+                <TextView
+                    android:id="@+id/checkbox_label_2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/onboarding_human_checkbox2"
+                    android:textColor="@color/white"
+                    android:fontFamily="monospace"
+                    android:textSize="@dimen/onboarding_desc_size"/>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_human_continue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/onboarding_human_button"
+                android:fontFamily="monospace"
+                android:textSize="@dimen/onboarding_button_text_size"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/redPastel"
+                app:cornerRadius="12dp"
+                android:layout_marginTop="@dimen/onboarding_margin"
+                android:layout_marginLeft="@dimen/onboarding_nav_margin"
+                android:layout_marginRight="@dimen/onboarding_nav_margin"/>
+        </LinearLayout>
+    </RelativeLayout>
+</ScrollView> 

@@ -1490,11 +1490,11 @@ public class HomeFragment extends Fragment {
 
     private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
-            if (recordingState.equals(RecordingState.NONE)) {
-                startRecording();
-            } else {
-                stopRecording();
-                updateStats();
+                if (recordingState.equals(RecordingState.NONE)) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                    updateStats();
             }
         });
 

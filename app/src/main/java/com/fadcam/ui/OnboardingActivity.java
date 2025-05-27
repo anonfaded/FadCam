@@ -9,6 +9,7 @@ import android.widget.TextView;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 
+import com.fadcam.MainActivity;
 import com.fadcam.SharedPreferencesManager;
 import com.github.appintro.AppIntro;
 import com.github.appintro.AppIntroFragment;
@@ -26,6 +27,8 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.viewpager.widget.ViewPager;
+import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,12 +37,85 @@ import java.util.List;
  * OnboardingActivity shows the app intro slides using AppIntro.
  */
 public class OnboardingActivity extends AppIntro {
+    private boolean isLastSlide = false;
+    private boolean isFirstSlide = true; // Track if we're on the first slide
+    // Use View instead of Button to avoid class cast exceptions
+    private View backButton;
+    private View nextButton;
+    
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_language_slide));
         addSlide(new OnboardingPermissionsFragment());
+        addSlide(new OnboardingHumanFragment());
+
+        // Hide only the Done button while keeping navigation buttons
+        setSkipButtonEnabled(false); // No skip button needed
+        setNextPageSwipeLock(false);
+        setIndicatorEnabled(true);
+        
+        // Use wizard mode to replace Skip with Back button
+        setWizardMode(true);
+        
+        // Fix for indicator dots - use custom colors
+        setIndicatorColor(
+            ContextCompat.getColor(this, R.color.white), // Selected dot
+            ContextCompat.getColor(this, R.color.gray500) // Unselected dot
+        );
+        
+        // Disable color transitions as our slides don't implement SlideBackgroundColorHolder
+        setColorTransitionsEnabled(false);
+        
+        // Set fade transition effect between slides
+        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
+        if (viewPager != null) {
+            viewPager.setPageTransformer(true, new FadePageTransformer());
+            
+            // Listen for page changes to update navigation buttons
+            viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                @Override
+                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
+    
+                @Override
+                public void onPageSelected(int position) {
+                    updateNavigationButtons(position);
+                }
+    
+                @Override
+                public void onPageScrollStateChanged(int state) {}
+            });
+        }
+        
+        // Initialize navigation button references
+        backButton = findViewById(com.github.appintro.R.id.back);
+        nextButton = findViewById(com.github.appintro.R.id.next);
+        
+        // Completely remove the Done button
+        View doneButton = findViewById(com.github.appintro.R.id.done);
+        if (doneButton != null) {
+            // First make it invisible
+            doneButton.setVisibility(View.GONE);
+            
+            // Zero out its dimensions
+            ViewGroup.LayoutParams params = doneButton.getLayoutParams();
+            if (params != null) {
+                params.width = 0;
+                params.height = 0;
+                doneButton.setLayoutParams(params);
+            }
+            
+            // Also try to remove it from its parent
+            ViewGroup parent = (ViewGroup) doneButton.getParent();
+            if (parent != null) {
+                parent.removeView(doneButton);
+            }
+        }
+        
+        // Update navigation buttons initially
+        updateNavigationButtons(0);
+        
         getSupportFragmentManager().registerFragmentLifecycleCallbacks(new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
             @Override
             public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm, @NonNull Fragment f, @Nullable View v, @Nullable Bundle savedInstanceState) {
@@ -168,6 +244,48 @@ public class OnboardingActivity extends AppIntro {
         }, true);
     }
 
+    // Method to update navigation buttons based on current position
+    private void updateNavigationButtons(int position) {
+        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
+        if (viewPager == null || viewPager.getAdapter() == null) return;
+        
+        int slideCount = viewPager.getAdapter().getCount();
+        isFirstSlide = position == 0;
+        isLastSlide = position == slideCount - 1;
+        
+        if (backButton != null) {
+            backButton.setVisibility(isFirstSlide ? View.INVISIBLE : View.VISIBLE);
+        }
+        
+        if (nextButton != null) {
+            nextButton.setVisibility(isLastSlide ? View.INVISIBLE : View.VISIBLE);
+        }
+    }
+    
+    // Implement a custom page transformer for fade transitions
+    private static class FadePageTransformer implements ViewPager.PageTransformer {
+        private static final float MIN_ALPHA = 0.0f;
+        private static final float MAX_ALPHA = 1.0f;
+        
+        @Override
+        public void transformPage(@NonNull View page, float position) {
+            if (position < -1) { // Page is way off-screen to the left
+                page.setAlpha(MIN_ALPHA);
+            } else if (position <= 1) { // Page is visible or entering
+                // Calculate alpha based on position
+                float alphaFactor = Math.max(MIN_ALPHA, 1 - Math.abs(position));
+                page.setAlpha(alphaFactor);
+                
+                // Apply a slight scale effect
+                float scaleFactor = Math.max(0.85f, 1 - Math.abs(position * 0.15f));
+                page.setScaleX(scaleFactor);
+                page.setScaleY(scaleFactor);
+            } else { // Page is way off-screen to the right
+                page.setAlpha(MIN_ALPHA);
+            }
+        }
+    }
+
     /**
      * Sets up the language choose button for onboarding, using a Material dialog for selection.
      * @param chooseButton The MaterialButton to setup.
@@ -243,18 +361,24 @@ public class OnboardingActivity extends AppIntro {
         }
     }
 
+    /**
+     * This method is still overridden to handle any case where the done action might be triggered,
+     * even though we've hidden the done button and are using our custom Start button.
+     */
     @Override
-    public void onDonePressed(@Nullable androidx.fragment.app.Fragment currentFragment) {
-        // Mark onboarding as completed
-        SharedPreferencesManager.getInstance(this)
-            .sharedPreferences.edit().putBoolean("PREF_SHOW_ONBOARDING", false).apply();
-
-        // Launch MainActivity
-        Intent intent = new Intent(this, com.fadcam.MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-
+    protected void onDonePressed(Fragment currentFragment) {
         super.onDonePressed(currentFragment);
+        finishOnboarding();
+    }
+    
+    public void finishOnboarding() {
+        // Mark onboarding as completed
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        sharedPreferencesManager.sharedPreferences.edit().putBoolean(com.fadcam.Constants.COMPLETED_ONBOARDING_KEY, true).apply();
+        
+        // Return to MainActivity or just finish
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
         finish();
     }
 }

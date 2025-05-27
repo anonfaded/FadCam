@@ -57,13 +57,30 @@
             android:layout_marginTop="@dimen/onboarding_margin"
             android:layout_marginBottom="@dimen/onboarding_margin" />
 
+        <TextView
+            android:id="@+id/permission_status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/permissions_granted"
+            android:textSize="@dimen/onboarding_desc_size"
+            android:fontFamily="monospace"
+            android:textColor="@color/green"
+            android:gravity="center"
+            android:visibility="gone"
+            android:paddingLeft="@dimen/onboarding_margin"
+            android:paddingRight="@dimen/onboarding_margin"
+            app:layout_constraintTop_toBottomOf="@id/permissionsDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp" />
+
         <LinearLayout
             android:id="@+id/permissionsListContainer"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
             android:orientation="horizontal"
             android:gravity="center"
-            app:layout_constraintTop_toBottomOf="@id/permissionsDescription"
+            app:layout_constraintTop_toBottomOf="@id/permission_status_text"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="@dimen/onboarding_margin"

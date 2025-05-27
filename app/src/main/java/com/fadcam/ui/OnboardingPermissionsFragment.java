@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,41 +35,42 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
     private MaterialButton grantButton;
     private int permissionRequestCount = 0; // Track how many times requested
     private boolean permanentlyDenied = false;
+    private TextView permissionStatusText; // Text view to show status instead of toasts
+    private boolean statusToastShown = false; // Flag to prevent multiple toasts
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.onboarding_permissions_slide, container, false);
         grantButton = view.findViewById(R.id.permissions_grant_button);
+        permissionStatusText = view.findViewById(R.id.permission_status_text);
+        if (permissionStatusText != null) {
+            permissionStatusText.setVisibility(View.GONE); // Hide initially
+        }
         grantButton.setEnabled(true);
         grantButton.setAlpha(1f);
         grantButton.setOnClickListener(v -> {
             if (permissionsGranted) {
                 // Do nothing, or optionally show a toast
-                Toast.makeText(requireContext(), R.string.permissions_granted, Toast.LENGTH_SHORT).show();
+                showPermissionStatus(R.string.permissions_granted, true);
             } else {
                 // Always show the runtime permission dialog, even if permanently denied
                 requestAllPermissionsAlways();
             }
         });
         checkPermissionsAndUpdateUI();
-        // ----- Fix Start: Always show runtime dialog if needed on first load -----
         if (!permissionsGranted && !permanentlyDenied) {
             requestAllPermissionsAlways();
         }
-        // ----- Fix End: Always show runtime dialog if needed on first load -----
 
-        // ----- Fix Start: Add Open Settings link logic -----
         View openSettingsLink = view.findViewById(R.id.open_settings_link);
         if (openSettingsLink != null) {
             openSettingsLink.setOnClickListener(v2 -> {
                 showManualPermissionDialog();
-                Toast.makeText(requireContext(), R.string.open_settings, Toast.LENGTH_SHORT).show();
+                showPermissionStatus(R.string.open_settings, false);
             });
         }
-        // ----- Fix End: Add Open Settings link logic -----
 
-        // ----- Fix Start: Add Disable Battery Optimization button logic -----
         MaterialButton batteryOptButton = view.findViewById(R.id.disable_battery_optimization_button);
         if (batteryOptButton != null) {
             android.os.PowerManager pm = (android.os.PowerManager) requireContext().getSystemService(android.content.Context.POWER_SERVICE);
@@ -84,8 +86,19 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
                 startActivity(intent);
             });
         }
-        // ----- Fix End: Add Disable Battery Optimization button logic -----
         return view;
+    }
+
+    private void showPermissionStatus(int stringResId, boolean success) {
+        if (permissionStatusText != null) {
+            permissionStatusText.setText(stringResId);
+            permissionStatusText.setTextColor(ContextCompat.getColor(requireContext(), 
+                success ? R.color.green : R.color.redPastel));
+            permissionStatusText.setVisibility(View.VISIBLE);
+        } else if (!statusToastShown) {
+            Toast.makeText(requireContext(), stringResId, Toast.LENGTH_SHORT).show();
+            statusToastShown = true;
+        }
     }
 
     private void requestAllPermissionsAlways() {
@@ -155,20 +168,17 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
             grantButton.setEnabled(false);
             grantButton.setAlpha(0.5f);
             grantButton.setText(R.string.permissions_granted);
+            showPermissionStatus(R.string.permissions_granted, true);
         } else {
             grantButton.setEnabled(true);
             grantButton.setAlpha(1f);
             grantButton.setText(R.string.grant_permissions);
-        }
-        if (permissionsGranted) {
-            Toast.makeText(requireContext(), R.string.permissions_granted, Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Always re-check permission state when returning to this fragment
         checkPermissionsAndUpdateUI();
     }
 
@@ -188,9 +198,7 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
 
     @Override
     public void onUserIllegallyRequestedNextPage() {
-        // Show toast and block navigation if permissions not granted
-        Toast.makeText(requireContext(), R.string.permissions_note, Toast.LENGTH_SHORT).show();
-        // Optionally, trigger permission dialog again
+        showPermissionStatus(R.string.permissions_note, false);
         if (grantButton != null) {
             grantButton.performClick();
         }

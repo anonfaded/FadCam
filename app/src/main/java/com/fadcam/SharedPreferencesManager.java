@@ -358,24 +358,19 @@ public class SharedPreferencesManager {
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source) -----
 
-    // ----- Fix Start: Add onboarding preference methods -----
-    private static final String PREF_SHOW_ONBOARDING = "PREF_SHOW_ONBOARDING";
-    private static final boolean DEFAULT_SHOW_ONBOARDING = true;
-
-    /**
-     * Returns true if onboarding should be shown (default: true).
-     */
+    // ----- Fix Start for method(onboarding) -----
+    // Using the proper constant from Constants class
     public boolean isShowOnboarding() {
-        return sharedPreferences.getBoolean(PREF_SHOW_ONBOARDING, DEFAULT_SHOW_ONBOARDING);
+        // Return true if onboarding hasn't been completed
+        return !sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
     }
 
-    /**
-     * Sets whether onboarding should be shown.
-     * @param show true to show onboarding, false to skip
-     */
     public void setShowOnboarding(boolean show) {
-        sharedPreferences.edit().putBoolean(PREF_SHOW_ONBOARDING, show).apply();
+        // Store the opposite value in COMPLETED_ONBOARDING_KEY
+        // If show is true, it means onboarding is not completed
+        // If show is false, it means onboarding is completed
+        sharedPreferences.edit().putBoolean(Constants.COMPLETED_ONBOARDING_KEY, !show).apply();
     }
-    // ----- Fix End: Add onboarding preference methods -----
+    // ----- Fix End for method(onboarding) -----
 
 }
