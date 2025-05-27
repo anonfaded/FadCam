@@ -421,4 +421,17 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="audio_input_source_wired_not_connected">No wired mic detected. Using phone mic.</string>
     <string name="choose">Choose</string>
     <string name="audio_input_source_headphones_no_mic">Headphones detected (no mic)</string>
+    <!-- Fix Start: Add onboarding toggle strings -->
+    <string name="setting_onboarding_title">Show Onboarding on Next Launch</string>
+    <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open FadCam.</string>
+    <!-- Fix End: Add onboarding toggle strings -->
+    <string name="choose_language">Choose Language</string>
+    <string name="language_change_later_note">You can change this later in Settings.</string>
+    <string name="permissions_required">Permissions Required</string>
+    <string name="permissions_description">FadCam needs access to your camera, microphone, and storage to record and save videos.</string>
+    <string name="grant_permissions">Grant Permissions</string>
+    <string name="permissions_note">You must grant all permissions to continue.</string>
+    <string name="permissions_granted">All permissions granted!</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="disable_battery_optimization">Disable Battery Optimization</string>
 </resources>
