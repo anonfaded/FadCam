@@ -12,6 +12,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
 import android.media.AudioDeviceInfo;
@@ -50,6 +51,7 @@ import android.app.Service;
 import android.content.pm.ServiceInfo;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.Level;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
@@ -169,6 +171,12 @@ public class RecordingService extends Service {
     private ParcelFileDescriptor nextSegmentPfd = null;
     // ----- Fix Ended for this class (RecordingService_saf_pfd_fields) -----
 
+    // ----- Fix Start for camera resource availability -----
+    // A flag to track if camera resources are being released
+    private static volatile boolean isCameraResourceReleasing = false;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    // ----- Fix End for camera resource availability -----
+
     // --- Lifecycle Methods ---
     @Override
     public void onCreate() {
@@ -196,6 +204,13 @@ public class RecordingService extends Service {
         if (powerManager != null) {
             recordingWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FadCam::RecordingLock");
         }
+        
+        // ----- Fix Start: Broadcast camera availability on service start -----
+        // Initially, camera resources are available
+        isCameraResourceReleasing = false;
+        broadcastCameraResourceAvailability(true);
+        Log.d(TAG, "Broadcasting initial camera resource availability: true");
+        // ----- Fix End: Broadcast camera availability on service start -----
     }
 
     // --- onStartCommand (Ensure START action ignores processing state) ---
@@ -212,6 +227,21 @@ public class RecordingService extends Service {
         String action = intent.getAction();
         switch (action) {
             case Constants.INTENT_ACTION_START_RECORDING:
+                // ----- Fix Start for camera resource check -----
+                // Check if camera resources are still being released
+                if (isCameraResourceReleasing) {
+                    Log.w(TAG, "START_RECORDING rejected - camera resources still being released");
+                    // Show toast on UI thread
+                    mainHandler.post(() -> {
+                        Toast.makeText(getApplicationContext(), 
+                            R.string.camera_resources_cooldown, 
+                            Toast.LENGTH_LONG).show();
+                    });
+                    // Don't stop the service yet as FFmpeg might still be running
+                    return START_STICKY;
+                }
+                // ----- Fix End for camera resource check -----
+                
                 if (recordingState != RecordingState.NONE) {
                     Log.w(TAG,"Start requested, but already RECORDING/PAUSED/STARTING. State: " + recordingState + ". Ignoring.");
                     broadcastOnRecordingStateCallback(); // Notify UI of current state
@@ -412,6 +442,11 @@ public class RecordingService extends Service {
         try { if (cameraDevice != null) { cameraDevice.close(); Log.d(TAG,"CameraDevice closed."); } } catch (Exception e) { Log.w(TAG,"Error closing cameraDevice",e); } finally { cameraDevice = null; }
         Log.i(TAG, "CameraDevice and CaptureSession close initiated.");
 
+        // ----- Fix Start for camera resource cooldown -----
+        // Set the flag to block new recordings for a short period
+        setCameraResourcesReleasing(true);
+        // ----- Fix End for camera resource cooldown -----
+
         broadcastOnRecordingStopped();
         Log.d(TAG, "Sent BROADCAST_ON_RECORDING_STOPPED.");
 
@@ -497,27 +532,19 @@ public class RecordingService extends Service {
      */
     private void checkIfServiceCanStop() {
         // Read volatile flag and check state atomically as best as possible
-        // ----- Fix Start for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
-        // boolean isProcessing = isProcessingWatermark;
-        int currentProcessingTasks = ffmpegProcessingTaskCount.get();
-        // ----- Fix Ended for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
         // ----- Fix Start for this method(checkIfServiceCanStop)-----
-        boolean isRecordingActiveOrStarting = (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED || recordingState == RecordingState.STARTING);
+        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks=" + ffmpegProcessingTaskCount.get());
 
-        // ----- Fix Start for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
-        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks=" + currentProcessingTasks);
-
-        // If NOT currently recording/paused/starting AND NOT currently processing...
-        if (!isRecordingActiveOrStarting && currentProcessingTasks == 0) {
-        // ----- Fix Ended for this method(checkIfServiceCanStop_use_ffmpeg_counter)-----
-        // ----- Fix Ended for this method(checkIfServiceCanStop)-----
+        // Use the new shouldServiceStayAlive method to determine if service should continue running
+        if (!shouldServiceStayAlive()) {
             Log.i(TAG, "No active recording or background processing detected. Stopping service.");
-            // Add a slight delay before stopping? Optional, might help ensure broadcasts are fully handled.
-            // new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
+            // Remove from foreground first to avoid ANR if stopSelf takes time
+            stopForeground(true);
             stopSelf(); // Stop the service as its work is done.
         } else {
-            Log.d(TAG, "Service continues running (Task active).");
+            Log.d(TAG, "Service continues running (Tasks active).");
         }
+        // ----- Fix Ended for this method(checkIfServiceCanStop)-----
     }
 
     private void pauseRecording() {
@@ -804,69 +831,120 @@ public class RecordingService extends Service {
     // Updated helper to run FFmpeg and broadcast completion
     // Updated helper to run FFmpeg and broadcast START/END processing states
     private void executeFFmpegAsync(String ffmpegCommand, File inputFile, Uri finalOutputUriIfKnown, Runnable onSuccess, Runnable onFailure) {
-        // ** Get URI of the file ABOUT to be processed **
-        Uri processingUri = Uri.fromFile(inputFile); // Temp file URI
-        Log.d(TAG, "Preparing to process URI: " + processingUri.toString());
+        Log.d(TAG, "executeFFmpegAsync: Starting FFmpeg processing for: " + inputFile.getName());
+        // Make the service foreground again if it's not already in the foreground
+        
+        // ----- Fix Start for fixing FFmpeg foreground service crash -----
+        // Show processing notification to keep the service in foreground state during FFmpeg tasks
+        NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                .setContentTitle("Processing Video")
+                .setContentText("Processing " + inputFile.getName())
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setProgress(0, 0, true); // Indeterminate progress bar
+                
+        // Start or update foreground service notification
+        startForeground(NOTIFICATION_ID, builder.build());
+        Log.d(TAG, "Started foreground service for FFmpeg processing");
+        // ----- Fix End for fixing FFmpeg foreground service crash -----
+        
+        // Send broadcast to UI that processing started
+        if (finalOutputUriIfKnown != null) {
+            sendProcessingStateBroadcast(true, finalOutputUriIfKnown);
+        } else {
+            sendProcessingStateBroadcast(true, Uri.fromFile(inputFile));
+        }
 
-        // ** 1. Broadcast PROCESSING_STARTED **
-        sendProcessingStateBroadcast(true, processingUri);
+        String tempInputPath = inputFile.getAbsolutePath();
+        if (!inputFile.exists()) {
+            Log.e(TAG, "executeFFmpegAsync: Input file doesn't exist: " + tempInputPath);
+            if (onFailure != null) onFailure.run();
+            return;
+        }
 
-        // ----- Fix Start for this method(executeFFmpegAsync_remove_redundant_flag_set)-----
-        // isProcessingWatermark = true; // Set processing flag // This is now managed by ffmpegProcessingTaskCount in caller
-        // ----- Fix Ended for this method(executeFFmpegAsync_remove_redundant_flag_set)-----
-        Log.d(TAG, "Executing FFmpeg Async for " + inputFile.getName() + ": " + ffmpegCommand);
+        // Remove Config.enableLogCallback and Config.enableStatisticsCallback calls
+        // as they don't exist in this version of the FFmpegKit library
 
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            // This lambda runs AFTER FFmpeg finishes
-            boolean success = ReturnCode.isSuccess(session.getReturnCode());
-            Uri resultUri = null; // The final resulting URI (temp or processed)
-            String logTag = "FFmpegAsync Result";
-
-            Log.d(logTag, "FFmpeg finished. Success: " + success + ", RC: " + session.getReturnCode());
-
-            if (success) {
-                // ... existing onSuccess logic ...
-                try { if (onSuccess != null) onSuccess.run(); } catch (Exception e) { success = false; /*...*/ }
-                // ----- Fix Start for this method(executeFFmpegAsync_pass_input_filename_to_determineSuccessUri)-----
-                resultUri = finalOutputUriIfKnown != null ? finalOutputUriIfKnown : determineSuccessUri(inputFile.getName()); // Pass specific input file name
-                // ----- Fix Ended for this method(executeFFmpegAsync_pass_input_filename_to_determineSuccessUri)-----
-                Log.i(logTag, "Processing SUCCESS. Result URI determined: " + resultUri);
-            } else {
-                // ... existing onFailure logic ...
-                Log.e(logTag, "FFmpeg process FAILED! Logs: " + session.getAllLogsAsString());
-                if (onFailure != null) { try { onFailure.run(); } catch (Exception e){/*...*/} }
-                // On failure, the relevant file IS the input temp file
-                resultUri = processingUri; // Use the original input URI for the broadcast
-            }
-
-            // ** 2. Broadcast PROCESSING_FINISHED **
-            // Use the input URI here, as that's what the fragment currently shows and needs to update
-            sendProcessingStateBroadcast(false, processingUri); // Signal end for the INPUT file URI
-            // Optionally send the generic ACTION_RECORDING_COMPLETE as well, or consolidate logic
-            // sendRecordingCompleteBroadcast(success, resultUri); // If this is still needed
-
-            // ----- Fix Start for this method(executeFFmpegAsync_decrement_ffmpeg_counter)-----
-            // isProcessingWatermark = false; // Reset flag
-            int tasksLeft = ffmpegProcessingTaskCount.decrementAndGet();
-            Log.d(TAG, "FFmpeg task finished. Count decremented to: " + tasksLeft);
-            // ----- Fix Ended for this method(executeFFmpegAsync_decrement_ffmpeg_counter)-----
-
-            // Check if service should stop
-            if (!isWorkingInProgress()) {
-                Log.d(TAG, "FFmpeg Async finished, no other work, stopping service.");
-                stopSelf();
-            }
-
-            // ----- Fix Start for this method(executeFFmpegAsync_segment_queue_chain)-----
-            // After decrementing ffmpegProcessingTaskCount:
-
-            Log.d(TAG, "FFmpeg task finished. Count decremented to: " + tasksLeft);
-            // Chain next segment processing if in queue mode
-            if (isSegmentProcessingActive) {
+            ReturnCode returnCode = session.getReturnCode();
+            try {
+                // ----- Fix Start for fixing FFmpeg foreground service crash -----
+                // Update notification to show completion
+                NotificationCompat.Builder completeBuilder = createBaseNotificationBuilder()
+                        .setContentTitle("Processing Complete")
+                        .setContentText(ReturnCode.isSuccess(returnCode) ? "Video processing completed" : "Video processing failed")
+                        .setPriority(NotificationCompat.PRIORITY_LOW);
+                        
+                // Keep showing notification until we check if service can stop
+                startForeground(NOTIFICATION_ID, completeBuilder.build());
+                // ----- Fix End for fixing FFmpeg foreground service crash -----
+                
+                if (ReturnCode.isSuccess(returnCode)) {
+                    Log.i(TAG, "FFmpeg execution completed successfully for " + inputFile.getName());
+                    // isProcessingWatermark = false; // Old field no longer used
+                    if (onSuccess != null) onSuccess.run();
+                    isSegmentProcessingActive = false;
+                    // Process next in queue
+                    processNextSegmentInQueue();
+                    
+                    // Update notification to show completion and remove foreground state
+                    if (finalOutputUriIfKnown != null) {
+                        sendProcessingStateBroadcast(false, finalOutputUriIfKnown);
+                    } else {
+                        sendProcessingStateBroadcast(false, Uri.fromFile(inputFile));
+                    }
+                    
+                } else if (ReturnCode.isCancel(returnCode)) {
+                    Log.w(TAG, "FFmpeg execution canceled for " + inputFile.getName());
+                    if (onFailure != null) onFailure.run();
+                    isSegmentProcessingActive = false;
+                    processNextSegmentInQueue();
+                } else {
+                    Log.e(TAG, "FFmpeg execution failed for " + inputFile.getName() + " with state: " + session.getState() + " and return code: " + returnCode);
+                    if (onFailure != null) onFailure.run();
+                    isSegmentProcessingActive = false;
+                    processNextSegmentInQueue();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Exception in FFmpeg completion callback", e);
+                if (onFailure != null) onFailure.run();
                 isSegmentProcessingActive = false;
                 processNextSegmentInQueue();
+            } finally {
+                // ----- Fix Start for FFmpeg counter decrement -----
+                int remainingTasks = ffmpegProcessingTaskCount.decrementAndGet();
+                Log.d(TAG, "FFmpeg task count decremented to: " + remainingTasks);
+                
+                // Only check if service can stop once the remaining tasks counter reaches 0 
+                if (remainingTasks == 0) {
+                    // Only consider stopping the service when all FFmpeg tasks are done
+                    checkIfServiceCanStop();
+                }
+                // ----- Fix End for FFmpeg counter decrement -----
             }
-            // ----- Fix Ended for this method(executeFFmpegAsync_segment_queue_chain)-----
+        }, log -> {
+            // Log handler - just log the message
+            if (log != null && log.getMessage() != null) {
+                String message = log.getMessage();
+                // Truncate any long lines for log readability
+                if (message.length() > 1000) {
+                    message = message.substring(0, 997) + "...";
+                }
+                Log.d(TAG, "[FFmpeg] " + message);
+            }
+        }, statistics -> {
+            // Statistics handler - log periodically
+            if (statistics != null && statistics.getTime() % 5000 < 500) { // Every 5s approx
+                try {
+                    Log.d(TAG, String.format(Locale.US, 
+                        "[FFmpeg Stats] Time: %d ms, size: %d KB, speed: %.2f, bitrate: %.2f kbits/s",
+                        statistics.getTime(), 
+                        statistics.getSize() / 1024, 
+                        statistics.getSpeed(), 
+                        statistics.getBitrate()));
+                } catch (Exception e) {
+                    Log.w(TAG, "Error formatting FFmpeg statistics: " + e.getMessage());
+                }
+            }
         });
     }
 
@@ -2328,10 +2406,23 @@ public class RecordingService extends Service {
     // Combined status check
     public boolean isWorkingInProgress() {
         // ----- Fix Start for this method(isWorkingInProgress)-----
-        // ----- Fix Start for this method(isWorkingInProgress_use_ffmpeg_counter)-----
-        return ffmpegProcessingTaskCount.get() > 0 || recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED || recordingState == RecordingState.STARTING;
-        // ----- Fix Ended for this method(isWorkingInProgress_use_ffmpeg_counter)-----
+        // Only consider recording states (not FFmpeg processing) for determining if camera is busy
+        // This allows new recordings to start while FFmpeg is still processing in the background
+        return recordingState == RecordingState.IN_PROGRESS || 
+               recordingState == RecordingState.PAUSED || 
+               recordingState == RecordingState.STARTING;
         // ----- Fix Ended for this method(isWorkingInProgress)-----
+    }
+    
+    /**
+     * Check if the service should stay alive (either recording is in progress or FFmpeg is processing)
+     * This is different from isWorkingInProgress() which only checks if recording is active
+     */
+    private boolean shouldServiceStayAlive() {
+        return ffmpegProcessingTaskCount.get() > 0 || 
+               recordingState == RecordingState.IN_PROGRESS || 
+               recordingState == RecordingState.PAUSED || 
+               recordingState == RecordingState.STARTING;
     }
     // --- End Status Check ---
 
@@ -2746,5 +2837,44 @@ public class RecordingService extends Service {
         }
         return false;
     }
+
+    // ----- Fix Start for camera resource management methods -----
+    /**
+     * Sets the camera resource releasing state and schedules it to be available again after a cooldown period.
+     * Also broadcasts the availability state change to the UI components.
+     * 
+     * @param releasing True if camera resources are being released, false otherwise
+     */
+    private void setCameraResourcesReleasing(boolean releasing) {
+        isCameraResourceReleasing = releasing;
+        Log.d(TAG, "Camera resources releasing state set to: " + releasing);
+        
+        // Broadcast the current availability state
+        broadcastCameraResourceAvailability(!releasing);
+        
+        // If we're releasing resources, schedule them to become available after a cooldown
+        if (releasing) {
+            mainHandler.postDelayed(() -> {
+                isCameraResourceReleasing = false;
+                Log.d(TAG, "Camera resource cooldown ended, resources available now");
+                
+                // Broadcast that camera resources are available again
+                broadcastCameraResourceAvailability(true);
+            }, Constants.CAMERA_RESOURCE_COOLDOWN_MS);
+        }
+    }
+    
+    /**
+     * Broadcasts the camera resource availability state to UI components
+     * 
+     * @param available True if camera resources are available for a new recording
+     */
+    private void broadcastCameraResourceAvailability(boolean available) {
+        Intent availabilityIntent = new Intent(Constants.ACTION_CAMERA_RESOURCE_AVAILABILITY);
+        availabilityIntent.putExtra(Constants.EXTRA_CAMERA_RESOURCES_AVAILABLE, available);
+        sendBroadcast(availabilityIntent);
+        Log.d(TAG, "Broadcasted camera resource availability: " + available);
+    }
+    // ----- Fix End for camera resource management methods -----
 
 }

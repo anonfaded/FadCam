@@ -459,4 +459,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_human_checkbox2">I already love FadCam before even using it. (Not optional)</string>
     <string name="onboarding_human_button">Let me in!</string>
 
+    <!-- Fix Start: Add camera cooldown message -->
+    <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
+    <!-- Fix End: Add camera cooldown message -->
+
 </resources>
