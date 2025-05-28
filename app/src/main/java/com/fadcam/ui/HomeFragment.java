@@ -330,17 +330,25 @@ public class HomeFragment extends BaseFragment {
                     super.onAnimationEnd(animation);
 
                     // 3. Core logic: toggle preview, update UI, save state (runs AFTER card bounce)
+                    boolean wasEnabled = isPreviewEnabled;
                     isPreviewEnabled = !isPreviewEnabled;
                     updatePreviewVisibility(); // This is the main visual change for enabling/disabling preview
                     savePreviewState();
+                    
+                    // If we're enabling the preview (it was disabled before), reset the TextureView
+                    // to ensure we don't see any stale frames
+                    if (!wasEnabled && isPreviewEnabled) {
+                        resetTextureView();
+                    }
 
                     // 4. Surface handling logic OR placeholder animations (also runs AFTER card bounce)
                     if (isRecordingOrPaused()) { // Only update service if recording/paused
-                        if (textureView != null && textureView.isAvailable() && textureViewSurface != null) {
+                        if (isPreviewEnabled && textureView != null && textureView.isAvailable() && textureViewSurface != null) {
                             Log.d(TAG, "Preview enabled (post-anim): TextureView available, sending surface to service.");
                             updateServiceWithCurrentSurface(textureViewSurface);
                         } else {
                             Log.d(TAG, "Preview enabled (post-anim): TextureView not yet available, will send surface on callback.");
+                            updateServiceWithCurrentSurface(null);
                         }
                     } else {
                         Log.d(TAG, "Preview disabled (post-anim): Sending null surface to service.");
@@ -774,11 +782,30 @@ public class HomeFragment extends BaseFragment {
         fetchRecordingState(); // Let service callback handle UI sync
 
         registerBroadcastReceivers(); // Centralized registration
+        
+        // ----- Fix Start for this method(onResume)-----
+        // Re-load preview state from SharedPreferences to ensure consistency
+        isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
+        Log.d(TAG, "onResume: Loaded isPreviewEnabled state = " + isPreviewEnabled);
+        
+        // Update the preview visibility based on current state
+        updatePreviewVisibility();
+        
+        // Critical: When resuming, send the appropriate surface to the service
+        // This ensures preview shows correctly after app is minimized/restored
+        if (isPreviewEnabled && isRecordingOrPaused() && textureViewSurface != null && textureViewSurface.isValid()) {
+            Log.d(TAG, "onResume: Preview enabled, sending valid surface to service");
+            updateServiceWithCurrentSurface(textureViewSurface);
+        } else if (!isPreviewEnabled || !isRecordingOrPaused()) {
+            // If preview is disabled or not recording, send null surface
+            Log.d(TAG, "onResume: Preview disabled or not recording, sending null surface");
+            updateServiceWithCurrentSurface(null);
+        }
+        // ----- Fix Ended for this method(onResume)-----
 
         Log.d(TAG, "onResume: Triggering stats update.");
         updateStats();
         updateTorchUI(isTorchOn);
-        updatePreviewVisibility(); // ADDED: Ensure preview visibility is correctly set on resume
     }
 
     // Inside HomeFragment.java
@@ -1223,6 +1250,14 @@ public class HomeFragment extends BaseFragment {
         //locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
 
+        // ----- Fix Start for this method(onPause)-----
+        // When pausing, explicitly release the surface reference to avoid stale frames on resume
+        if (textureViewSurface != null) {
+            Log.d(TAG, "onPause: Explicitly sending null surface to service");
+            updateServiceWithCurrentSurface(null);
+        }
+        // ----- Fix Ended for this method(onPause)-----
+        
         // Only unregister if receiver exists
         if (torchReceiver != null) {
             try {
@@ -1232,6 +1267,45 @@ public class HomeFragment extends BaseFragment {
             }
         }
     }
+
+    // ----- Fix Start for this method(resetTextureView)-----
+    /**
+     * Helper method to reset the TextureView when needed to avoid showing stale frames
+     * This should be called when the preview state changes, especially from disabled to enabled
+     */
+    private void resetTextureView() {
+        if (textureView == null) {
+            Log.w(TAG, "resetTextureView: TextureView is null, can't reset");
+            return;
+        }
+        
+        Log.d(TAG, "resetTextureView: Attempting to reset TextureView");
+        
+        // First release any existing surface
+        if (textureViewSurface != null) {
+            textureViewSurface.release();
+            textureViewSurface = null;
+            Log.d(TAG, "resetTextureView: Released existing surface");
+        }
+        
+        // If the TextureView is available, recreate the surface
+        if (textureView.isAvailable()) {
+            SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+            if (surfaceTexture != null) {
+                textureViewSurface = new Surface(surfaceTexture);
+                Log.d(TAG, "resetTextureView: Created new surface from existing SurfaceTexture");
+                
+                // If recording and preview enabled, update service with new surface
+                if (isPreviewEnabled && isRecordingOrPaused()) {
+                    updateServiceWithCurrentSurface(textureViewSurface);
+                    Log.d(TAG, "resetTextureView: Updated service with new surface");
+                }
+            }
+        } else {
+            Log.d(TAG, "resetTextureView: TextureView not available, can't create surface yet");
+        }
+    }
+    // ----- Fix Ended for this method(resetTextureView)-----
 
 //    @Override
 //    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -1281,9 +1355,11 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void savePreviewState() {
-        SharedPreferences.Editor editor = sharedPreferencesManager.sharedPreferences.edit();
-        editor.putBoolean("isPreviewEnabled", isPreviewEnabled);
-        editor.apply();
+        // ----- Fix Start for this method(savePreviewState)-----
+        // Use the SharedPreferencesManager's method which uses the correct constant
+        sharedPreferencesManager.setPreviewEnabled(isPreviewEnabled);
+        Log.d(TAG, "Preview state saved: " + isPreviewEnabled);
+        // ----- Fix Ended for this method(savePreviewState)-----
     }
 
     //    function to use haptic feedbacks
@@ -1343,6 +1419,14 @@ public class HomeFragment extends BaseFragment {
         isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled(); // Initialize with saved state
         Log.d(TAG, "onViewCreated: Loaded isPreviewEnabled state = " + isPreviewEnabled);
         // --- END FIX ---
+
+        // ----- Fix Start for this method(onViewCreated_resetTextureView)-----
+        // If TextureView is already available, reset it to ensure clean state
+        if (textureView != null && textureView.isAvailable()) {
+            resetTextureView();
+            Log.d(TAG, "onViewCreated: Reset TextureView to ensure clean startup state");
+        }
+        // ----- Fix Ended for this method(onViewCreated_resetTextureView)-----
 
         resetTimers();
         copyFontToInternalStorage();
@@ -2891,4 +2975,43 @@ public class HomeFragment extends BaseFragment {
         // ----- Fix Ended for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
     }
     // ----- Fix Ended for this class (HomeFragment) -----
+
+    // ----- Fix Start for this method(onHiddenChanged)-----
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        Log.d(TAG, "onHiddenChanged: Fragment " + (hidden ? "hidden" : "shown"));
+        
+        // If fragment is becoming visible (not hidden)
+        if (!hidden) {
+            // Same logic as in onResume to ensure preview state is correctly applied
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            
+            // Re-load preview state from SharedPreferences
+            isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
+            Log.d(TAG, "onHiddenChanged: Loaded isPreviewEnabled state = " + isPreviewEnabled);
+            
+            // Update UI based on loaded state
+            updatePreviewVisibility();
+            
+            // Update the surface accordingly
+            if (isPreviewEnabled && isRecordingOrPaused() && textureViewSurface != null && textureViewSurface.isValid()) {
+                Log.d(TAG, "onHiddenChanged: Preview enabled, sending valid surface to service");
+                updateServiceWithCurrentSurface(textureViewSurface);
+            } else if (!isPreviewEnabled || !isRecordingOrPaused()) {
+                Log.d(TAG, "onHiddenChanged: Preview disabled or not recording, sending null surface");
+                updateServiceWithCurrentSurface(null);
+            }
+        } else {
+            // If fragment is being hidden, we should release the surface from the service
+            // to prevent any lingering frames when coming back
+            if (isRecordingOrPaused()) {
+                Log.d(TAG, "onHiddenChanged: Fragment hidden while recording, sending null surface");
+                updateServiceWithCurrentSurface(null);
+            }
+        }
+    }
+    // ----- Fix Ended for this method(onHiddenChanged)-----
 }
