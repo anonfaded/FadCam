@@ -833,7 +833,7 @@ public class RecordingService extends Service {
     private void executeFFmpegAsync(String ffmpegCommand, File inputFile, Uri finalOutputUriIfKnown, Runnable onSuccess, Runnable onFailure) {
         Log.d(TAG, "executeFFmpegAsync: Starting FFmpeg processing for: " + inputFile.getName());
         // Make the service foreground again if it's not already in the foreground
-        
+
         // ----- Fix Start for fixing FFmpeg foreground service crash -----
         // Show processing notification to keep the service in foreground state during FFmpeg tasks
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
@@ -850,7 +850,7 @@ public class RecordingService extends Service {
         // Send broadcast to UI that processing started
         if (finalOutputUriIfKnown != null) {
             sendProcessingStateBroadcast(true, finalOutputUriIfKnown);
-        } else {
+            } else {
             sendProcessingStateBroadcast(true, Uri.fromFile(inputFile));
         }
 
@@ -882,9 +882,9 @@ public class RecordingService extends Service {
                     Log.i(TAG, "FFmpeg execution completed successfully for " + inputFile.getName());
                     // isProcessingWatermark = false; // Old field no longer used
                     if (onSuccess != null) onSuccess.run();
-                    isSegmentProcessingActive = false;
+                isSegmentProcessingActive = false;
                     // Process next in queue
-                    processNextSegmentInQueue();
+                processNextSegmentInQueue();
                     
                     // Update notification to show completion and remove foreground state
                     if (finalOutputUriIfKnown != null) {
@@ -1306,11 +1306,11 @@ public class RecordingService extends Service {
         // Set orientation hint based on camera type and device orientation
         if (isFrontCamera) {
             // Front camera needs different orientation hint to avoid upside-down recording
-            if (!isLandscape) {
+        if (!isLandscape) {
                 mediaRecorder.setOrientationHint(270); // 270 degrees for portrait front camera
-            } else {
+        } else {
                 mediaRecorder.setOrientationHint(180); // 180 degrees for landscape front camera
-            }
+        }
             Log.d(TAG, "Front camera: Setting orientation hint to " + (isLandscape ? "180" : "270") + " degrees");
         } else {
             // Back camera uses normal orientation

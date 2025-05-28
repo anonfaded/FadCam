@@ -111,7 +111,7 @@ public abstract class Constants {
     public static final int REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF = 1001; // Added request code
 
     public static final String EXTRA_ORIGINAL_TEMP_SAF_URI_STRING = "com.fadcam.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING"; // For SAF processing replacement tracking
-    
+
     // ----- Fix Start for camera resource availability -----
     // Broadcast for camera resource availability status
     public static final String ACTION_CAMERA_RESOURCE_AVAILABILITY = "com.fadcam.ACTION_CAMERA_RESOURCE_AVAILABILITY";

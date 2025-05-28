@@ -120,7 +120,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 // that TrashFragment is visible and handle it correctly
                 if (getActivity() != null) {
                     getActivity().onBackPressed();
-                }
+                    }
                 // ----- Fix End: Simply let MainActivity handle back press -----
             });
         } else {

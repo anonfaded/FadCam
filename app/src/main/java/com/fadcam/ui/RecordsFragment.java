@@ -164,7 +164,12 @@ public class RecordsFragment extends BaseFragment implements
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
                                 if (success) {
-                                    loadRecordsList(); // Refresh the list
+                                    // Perform a complete refresh to ensure serial numbers are updated
+                                    Log.d(TAG, "Single video deleted, performing full refresh to update serial numbers");
+                                    if (recordsAdapter != null) {
+                                        recordsAdapter.clearCaches(); // Clear any cached data
+                                    }
+                                    loadRecordsList(); // Complete refresh
                                 }
                                 if (isInSelectionMode && selectedUris.contains(videoItem.uri)) {
                                      selectedUris.remove(videoItem.uri);
@@ -466,8 +471,21 @@ public class RecordsFragment extends BaseFragment implements
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "Swipe to refresh triggered.");
-                loadRecordsList(); // Call your existing method to load/refresh records
-                // The setRefreshing(false) will be called at the end of loadRecordsList
+                
+                // Clear adapter caches before refresh to ensure clean reload
+                if (recordsAdapter != null) {
+                    Log.d(TAG, "Swipe refresh: Clearing adapter caches for hard refresh");
+                    recordsAdapter.clearCaches();
+                }
+                
+                // Reset pagination and state variables
+                currentPage = 0;
+                allLoadedItems.clear();
+                hasMoreItems = true;
+                videoItemPositionCache.clear();
+                
+                // Load records will handle the full refresh including setting swipeRefreshLayout.setRefreshing(false)
+                loadRecordsList(); 
             });
         } else {
             Log.e(TAG, "SwipeRefreshLayout is null after findViewById!");
@@ -569,7 +587,7 @@ public class RecordsFragment extends BaseFragment implements
         
         if (recordsAdapter == null) {
             // Create new adapter if needed
-            recordsAdapter = new RecordsAdapter(
+        recordsAdapter = new RecordsAdapter(
                     requireContext(),
                     videoItems,
                     executorService,
@@ -617,9 +635,9 @@ public class RecordsFragment extends BaseFragment implements
                 } else if (recordsAdapter != null) {
                     recordsAdapter.setScrolling(true);
                 }
-            }
-            
-            @Override
+        }
+
+        @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 
@@ -729,6 +747,11 @@ public class RecordsFragment extends BaseFragment implements
         allLoadedItems.clear();
         hasMoreItems = true;
         videoItemPositionCache.clear();
+        
+        // Clear the adapter's cache to ensure fresh rendering of all items
+        if (recordsAdapter != null) {
+            recordsAdapter.clearCaches();
+        }
 
         executorService.execute(() -> {
             Log.d(TAG, "LOG_LOAD_RECORDS_BG: Background execution START.");
@@ -753,7 +776,7 @@ public class RecordsFragment extends BaseFragment implements
 
             // Continue loading other videos
             List<VideoItem> combinedItems = new ArrayList<>(tempCacheVideos);
-            
+
             String safUriString = sharedPreferencesManager.getCustomStorageUri();
             boolean loadedFromSaf = false;
 
@@ -805,12 +828,19 @@ public class RecordsFragment extends BaseFragment implements
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     Log.i(TAG, "LOG_LOAD_RECORDS_UI: Updating UI on main thread. First page item count: " + firstPageItems.size() + ", Total available: " + allLoadedItems.size());
+                    
+                    // Completely clear the existing items
                     videoItems.clear();
+                    
+                    // Add the new items
                     videoItems.addAll(firstPageItems);
                     
+                    // Update the adapter with the new list and force a complete refresh
                     if (recordsAdapter != null) {
+                        // Use notifyDataSetChanged to force a complete redraw with correct serial numbers
                         recordsAdapter.updateRecords(videoItems);
-                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: Adapter updated with first page. Adapter item count: " + recordsAdapter.getItemCount());
+                        recordsAdapter.notifyDataSetChanged();
+                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: Adapter fully refreshed with first page. Adapter item count: " + recordsAdapter.getItemCount());
                     }
                     
                     updateUiVisibility();
@@ -1137,10 +1167,32 @@ public class RecordsFragment extends BaseFragment implements
                         } else if (Constants.ACTION_PROCESSING_FINISHED.equals(intent.getAction())) {
                             Log.i(TAG, "Processing finished for: " + fileUri);
                             changed = currentlyProcessingUris.remove(fileUri);
-                            // Trigger a full list reload AFTER processing finishes to show the result
-                            // (as the file state on disk has changed).
+                            
+                            // Clear our current cache and force a complete refresh of the view
+                            if (recordsAdapter != null) {
+                                recordsAdapter.clearCaches();
+                            }
+                            
+                            // Force a full refresh of the data
+                            currentPage = 0;
+                            allLoadedItems.clear();
+                            videoItems.clear();
+                            
+                            // Perform complete data reload from scratch
                             loadRecordsList();
-                            return; // Exit here, loadRecordsList handles the final UI update
+                            
+                            // Also update the adapter to ensure the processing indicator is gone
+                            if (recordsAdapter != null) {
+                                recordsAdapter.updateProcessingUris(currentlyProcessingUris);
+                                recordsAdapter.notifyDataSetChanged();
+                            }
+                            
+                            // If using SwipeRefreshLayout, ensure it's not showing refresh state
+                            if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                            
+                            return; // Exit early, we've handled everything
                         }
 
                         // If processing started/stopped and the set changed, update adapter state
@@ -1314,7 +1366,13 @@ public class RecordsFragment extends BaseFragment implements
                              getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
                              getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    loadRecordsList();
+                    
+                    // Perform a complete refresh of the data to ensure proper serial numbers
+                    Log.d(TAG, "Performing full refresh after deletion to update serial numbers");
+                    if (recordsAdapter != null) {
+                        recordsAdapter.clearCaches(); // Clear any cached data
+                    }
+                    loadRecordsList(); // This will completely rebuild the list with proper serial numbers
                 });
             }
         });
@@ -1372,7 +1430,13 @@ public class RecordsFragment extends BaseFragment implements
                             getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
                             getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    loadRecordsList(); // Refresh the list from storage
+                    
+                    // Perform a complete refresh of the data to ensure proper serial numbers
+                    Log.d(TAG, "Performing full refresh after deletion to update serial numbers");
+                    if (recordsAdapter != null) {
+                        recordsAdapter.clearCaches(); // Clear any cached data
+                    }
+                    loadRecordsList(); // This will completely rebuild the list with proper serial numbers
                 });
             }
         });

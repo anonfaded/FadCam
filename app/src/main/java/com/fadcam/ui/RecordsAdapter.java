@@ -246,7 +246,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         
         if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setText(Utils.formatTimeAgo(videoItem.lastModified));
-        
+
         // Only set the thumbnail if holder view is visible (important optimization)
         if (holder.imageViewThumbnail != null && holder.itemView.getVisibility() == View.VISIBLE) {
             setThumbnail(holder, videoUri);
@@ -374,10 +374,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         
         // Implement loading with scroll-aware options
         Glide.with(context)
-            .load(videoUri)
+                .load(videoUri)
             .apply(options)
             .thumbnail(0.1f) // Use a small thumbnail first for faster initial loading
-            .into(holder.imageViewThumbnail);
+                .into(holder.imageViewThumbnail);
     }
 
     // Override onViewRecycled to cancel thumbnail loading for recycled views

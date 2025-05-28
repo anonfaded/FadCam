@@ -663,7 +663,7 @@ public class HomeFragment extends BaseFragment {
                 buttonPauseResume.setAlpha(0.5f);    // Visually show it's disabled
                 // Reset icon to be ready for next recording
                 buttonPauseResume.setIcon(AppCompatResources.getDrawable(getContext(), R.drawable.ic_pause));
-                buttonPauseResume.setText(getString(R.string.button_pause));
+                // buttonPauseResume.setText(getString(R.string.button_pause));
             }
             // ----- Fix End: Update button handling -----
             
@@ -999,6 +999,8 @@ public class HomeFragment extends BaseFragment {
 
             buttonPauseResume.setEnabled(true); // Enable PAUSE
             buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
+            buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
+            buttonPauseResume.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.button_pause));
 
             buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
             if(buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(getCameraWithFlashQuietly() != null); // Enable TORCH if available
@@ -1021,6 +1023,8 @@ public class HomeFragment extends BaseFragment {
 
             buttonPauseResume.setEnabled(true); // Enable RESUME
             buttonPauseResume.setIcon(AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)); // Show Play icon for RESUME
+            buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
+            buttonPauseResume.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.button_pause));
 
             buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
             // ----- Fix Start for this method(setUIForRecordingPaused_torchButton)-----
@@ -2706,6 +2710,12 @@ public class HomeFragment extends BaseFragment {
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         cardPreview = view.findViewById(R.id.cardPreview); // Assuming R.id.cardPreview exists
         vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
+
+        // Initialize pause button to be visibly disabled from the start
+        if (buttonPauseResume != null) {
+            buttonPauseResume.setEnabled(false);
+            buttonPauseResume.setAlpha(0.5f);
+        }
 
         // Clock related views
         cardClock = view.findViewById(R.id.cardClock); // Corrected ID
