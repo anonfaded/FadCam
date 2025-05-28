@@ -46,6 +46,7 @@ import androidx.core.text.HtmlCompat;
 import androidx.core.content.res.ResourcesCompat; // For getting drawables
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.ui.VideoItem; // Ensure VideoItem import is correct
@@ -76,6 +77,7 @@ import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import androidx.recyclerview.widget.DiffUtil;
 
 
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -314,16 +316,21 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // --- Thumbnail Loading ---
     private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
-        // Use default drawable if context is somehow null
-        int placeholder = (context != null) ? R.drawable.ic_video_placeholder : android.R.drawable.ic_menu_gallery;
-        int errorPlaceholder = (context != null) ? R.drawable.ic_error : android.R.drawable.ic_menu_close_clear_cancel;
-        if(context == null) { Log.e(TAG,"Context is null during Glide load!"); return; }
+        if (videoUri == null || holder.imageViewThumbnail == null || context == null) {
+            return;
+        }
+
+        // Use Glide with optimized settings
         Glide.with(context)
-                .load(videoUri)
-                .placeholder(placeholder)
-                .error(errorPlaceholder) // Show if loading fails
-                .centerCrop() // Or fitCenter depending on desired look
-                .into(holder.imageViewThumbnail);
+            .load(videoUri)
+            .override(300, 300) // Limit image size in memory
+            .centerCrop()
+            .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache thumbnails
+            .dontAnimate() // Skip animations for smoother scrolling
+            .thumbnail(0.1f) // Use a smaller thumbnail while loading
+            .placeholder(R.drawable.ic_video_placeholder) // Show placeholder while loading
+            .error(R.drawable.ic_error) // Show error image if loading fails
+            .into(holder.imageViewThumbnail);
     }
 
     // --- Selection Handling ---
@@ -873,15 +880,53 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // --- Update and Utility Methods ---
 
     // Updates the adapter's list
-    @SuppressLint("NotifyDataSetChanged") // Use this if DiffUtil isn't implemented yet
+    @SuppressLint("NotifyDataSetChanged") // Suppress only for fallback case
     public void updateRecords(List<VideoItem> newRecords) {
-        Log.d(TAG,"Updating adapter records. Old size: " + (this.records != null ? this.records.size() : 0) + ", New size: " + (newRecords != null ? newRecords.size() : 0));
-        this.records.clear();
-        if (newRecords != null) {
-            this.records.addAll(newRecords);
+        if (newRecords == null) {
+            Log.w(TAG, "updateRecords called with null list");
+            return;
         }
-        this.selectedVideosUris.clear(); // Clear selection when the list changes
-        notifyDataSetChanged(); // Consider DiffUtil for performance later
+        
+        // Use DiffUtil to calculate the differences and dispatch updates efficiently
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return records.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newRecords.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldPosition, int newPosition) {
+                // Check if URIs match to determine if items are the same
+                Uri oldUri = records.get(oldPosition).uri;
+                Uri newUri = newRecords.get(newPosition).uri;
+                return oldUri != null && newUri != null && oldUri.equals(newUri);
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldPosition, int newPosition) {
+                VideoItem oldItem = records.get(oldPosition);
+                VideoItem newItem = newRecords.get(newPosition);
+                
+                // Compare fields that affect the display
+                return oldItem.displayName.equals(newItem.displayName) &&
+                       oldItem.size == newItem.size &&
+                       oldItem.lastModified == newItem.lastModified &&
+                       oldItem.isTemporary == newItem.isTemporary;
+            }
+        });
+        
+        // Update the records list with a copy of the new list
+        this.records = new ArrayList<>(newRecords);
+        
+        // Dispatch updates to the adapter
+        diffResult.dispatchUpdatesTo(this);
+        
+        Log.d(TAG, "Updated records using DiffUtil. New size: " + records.size());
     }
 
     // Format file size helper
