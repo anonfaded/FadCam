@@ -2814,7 +2814,7 @@ public class HomeFragment extends BaseFragment {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 requireContext().registerReceiver(
-                    cameraResourceAvailabilityReceiver, filter, Context.RECEIVER_EXPORTED);
+                    cameraResourceAvailabilityReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             } else {
                 requireContext().registerReceiver(cameraResourceAvailabilityReceiver, filter);
             }
@@ -2878,7 +2878,7 @@ public class HomeFragment extends BaseFragment {
             IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
             // Add receiver export flag for Android 13+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(segmentCompleteStatsReceiver, filter, Context.RECEIVER_EXPORTED);
+                context.registerReceiver(segmentCompleteStatsReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             } else {
                 context.registerReceiver(segmentCompleteStatsReceiver, filter);
             }

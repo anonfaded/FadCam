@@ -27,6 +27,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -38,6 +39,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
@@ -47,6 +49,7 @@ import androidx.core.content.res.ResourcesCompat; // For getting drawables
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.ui.VideoItem; // Ensure VideoItem import is correct
@@ -64,6 +67,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -79,9 +83,12 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import androidx.recyclerview.widget.DiffUtil;
 
-
+// Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
 
+    // Keep the cache for thumbnails but optimize it
+    private final SparseArray<String> loadedThumbnailCache = new SparseArray<>();
+    private static final int THUMBNAIL_SIZE = 200; // Standard size for all thumbnails
     private Set<Uri> currentlyProcessingUris = new HashSet<>(); // Track processing URIs within adapter instance (passed from fragment)
 
     private static final String TAG = "RecordsAdapter";
@@ -97,6 +104,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private List<Uri> currentSelectedUris = new ArrayList<>(); // Keep track of selected items for binding
     // *** NEW: Store the path to the specific cache directory ***
     private final String tempCacheDirectoryPath;
+    // Add field to track scrolling state
+    private boolean isScrolling = false;
     // --- Interfaces Updated ---
     public interface OnVideoClickListener {
         void onVideoClick(VideoItem videoItem); // Pass VideoItem
@@ -176,15 +185,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
-    // Inside RecordsAdapter.java
-
+    // Optimize onBindViewHolder to reduce work on the UI thread
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
         // --- 1. Basic Checks & Get Data ---
         if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) {
             Log.e(TAG,"onBindViewHolder: Invalid item/data at position " + position);
             // Optionally clear the views in the holder to avoid displaying stale data
-            // holder.textViewRecord.setText(""); etc.
             return;
         }
         final VideoItem videoItem = records.get(position);
@@ -192,27 +199,58 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         final String displayName = videoItem.displayName != null ? videoItem.displayName : "Unnamed Video";
         final String uriString = videoUri.toString();
 
-
         // --- 2. Determine Item States ---
-        final boolean isCurrentlySelected = this.currentSelectedUris.contains(videoUri); // Selection state from Adapter
-        final boolean isProcessing = this.currentlyProcessingUris.contains(videoUri);   // Processing state from Adapter
-        final boolean isTemp = isTemporaryFile(videoItem);                               // Check if it's a temp file
-        final boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString); // Check if viewed before
-        final boolean showNewBadge = !isTemp && !isOpened && !isProcessing;               // Logic for "NEW" badge visibility
-        final boolean allowGeneralInteractions = !isProcessing;                             // Can user interact at all?
-        final boolean allowMenuClick = allowGeneralInteractions && !this.isSelectionModeActive; // Can user open the item menu?
+        final boolean isCurrentlySelected = this.currentSelectedUris.contains(videoUri);
+        final boolean isProcessing = this.currentlyProcessingUris.contains(videoUri);
+        final boolean isTemp = isTemporaryFile(videoItem);
+        final boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString);
+        final boolean showNewBadge = !isTemp && !isOpened && !isProcessing;
+        final boolean allowGeneralInteractions = !isProcessing;
+        final boolean allowMenuClick = allowGeneralInteractions && !this.isSelectionModeActive;
 
-        Log.v(TAG,"onBindViewHolder Pos "+position+": Name="+displayName+ " Sel="+isCurrentlySelected+", Mode="+isSelectionModeActive+", Proc="+isProcessing+", Temp="+isTemp+", New="+showNewBadge+", AllowGen="+allowGeneralInteractions+", AllowMenu="+allowMenuClick);
+        // Only log for debugging specific positions to reduce spam
+        if (position < 3 || position % 20 == 0) {
+            Log.v(TAG,"onBindViewHolder Pos "+position+": Name="+displayName);
+        }
 
-
-        // --- 3. Bind Standard Data ---
+        // --- 3. Bind Standard Data, optimized for fewer UI operations ---
         if (holder.textViewSerialNumber != null) holder.textViewSerialNumber.setText(String.valueOf(position + 1));
         if (holder.textViewRecord != null) holder.textViewRecord.setText(displayName);
         if (holder.textViewFileSize != null) holder.textViewFileSize.setText(formatFileSize(videoItem.size));
-        if (holder.textViewFileTime != null) holder.textViewFileTime.setText(formatVideoDuration(getVideoDuration(videoUri)));
+        
+        // Optimize time-consuming operations using lightweight caching
+        if (holder.textViewFileTime != null) {
+            // Check if we already have the duration cached
+            String cachedDuration = loadedThumbnailCache.get(position);
+            if (cachedDuration != null) {
+                holder.textViewFileTime.setText(cachedDuration);
+            } else {
+                // Show a placeholder while loading
+                holder.textViewFileTime.setText("--:--");
+                
+                // Calculate duration on background thread - this is one of the main causes of lag
+                executorService.execute(() -> {
+                    long duration = getVideoDuration(videoUri);
+                    String formattedDuration = formatVideoDuration(duration);
+                    loadedThumbnailCache.put(position, formattedDuration);
+                    
+                    // Update UI on main thread
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        // Make sure the view holder is still showing the same item before updating
+                        if (holder.getAdapterPosition() == position && holder.textViewFileTime != null) {
+                            holder.textViewFileTime.setText(formattedDuration);
+                        }
+                    });
+                });
+            }
+        }
+        
         if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setText(Utils.formatTimeAgo(videoItem.lastModified));
-        if (holder.imageViewThumbnail != null) setThumbnail(holder, videoUri);
-
+        
+        // Only set the thumbnail if holder view is visible (important optimization)
+        if (holder.imageViewThumbnail != null && holder.itemView.getVisibility() == View.VISIBLE) {
+            setThumbnail(holder, videoUri);
+        }
 
         // --- 4. Visibility Logic for Overlays/Badges ---
 
@@ -314,23 +352,62 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         return records == null ? 0 : records.size();
     }
 
-    // --- Thumbnail Loading ---
+    // Update the setThumbnail method to consider scrolling state
     private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
-        if (videoUri == null || holder.imageViewThumbnail == null || context == null) {
-            return;
+        if (holder.imageViewThumbnail == null || context == null) return;
+        
+        // Lower resolution during scrolling for performance
+        int thumbnailSize = isScrolling ? 100 : THUMBNAIL_SIZE;
+        
+        // Create optimized request options with different strategies based on scrolling
+        RequestOptions options = new RequestOptions()
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .skipMemoryCache(false)
+            .centerCrop()
+            .override(thumbnailSize, thumbnailSize)
+            .placeholder(R.drawable.ic_video_placeholder);
+        
+        if (isScrolling) {
+            // During scrolling, use low-quality thumbnails for speed
+            options = options.dontAnimate();
         }
-
-        // Use Glide with optimized settings
+        
+        // Implement loading with scroll-aware options
         Glide.with(context)
             .load(videoUri)
-            .override(300, 300) // Limit image size in memory
-            .centerCrop()
-            .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache thumbnails
-            .dontAnimate() // Skip animations for smoother scrolling
-            .thumbnail(0.1f) // Use a smaller thumbnail while loading
-            .placeholder(R.drawable.ic_video_placeholder) // Show placeholder while loading
-            .error(R.drawable.ic_error) // Show error image if loading fails
+            .apply(options)
+            .thumbnail(0.1f) // Use a small thumbnail first for faster initial loading
             .into(holder.imageViewThumbnail);
+    }
+
+    // Override onViewRecycled to cancel thumbnail loading for recycled views
+    @Override
+    public void onViewRecycled(@NonNull RecordViewHolder holder) {
+        super.onViewRecycled(holder);
+        
+        // Cancel any pending image loads when view is recycled
+        if (holder.imageViewThumbnail != null && context != null) {
+            Glide.with(context).clear(holder.imageViewThumbnail);
+        }
+    }
+
+    // Override onBindViewHolder to handle payload for quality changes
+    @Override
+    public void onBindViewHolder(@NonNull RecordViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty()) {
+            if (payloads.contains("QUALITY_CHANGE")) {
+                // Only update thumbnail when scrolling stops
+                if (holder.imageViewThumbnail != null && position < records.size()) {
+                    VideoItem videoItem = records.get(position);
+                    if (videoItem != null && videoItem.uri != null) {
+                        setThumbnail(holder, videoItem.uri);
+                    }
+                }
+                return;
+            }
+        }
+        // If no specific payload, do a full bind
+        onBindViewHolder(holder, position);
     }
 
     // --- Selection Handling ---
@@ -1086,6 +1163,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    /**
+     * Sets the scrolling state to optimize thumbnail loading
+     * @param scrolling true if the list is currently scrolling, false otherwise
+     */
+    public void setScrolling(boolean scrolling) {
+        this.isScrolling = scrolling;
+    }
 
     // --- Delete Helper (Must be accessible or copied here) ---
     // You need the `deleteVideoUri` method from RecordsFragment here or accessible
@@ -1105,4 +1189,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         return false;
     }
     */
+
+    /**
+     * Clears all internal caches to reduce memory footprint
+     * Should be called on low memory conditions
+     */
+    public void clearCaches() {
+        loadedThumbnailCache.clear();
+    }
 }
