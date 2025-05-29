@@ -46,11 +46,13 @@ public abstract class BaseFragment extends Fragment {
                             // If we're already on the home tab or viewPager not found, 
                             // disable this callback and let the system handle it
                             setEnabled(false);
+                            // Use the dispatcher directly instead of the deprecated method
                             requireActivity().getOnBackPressedDispatcher().onBackPressed();
                         }
                     } catch (Exception e) {
                         // If anything goes wrong, disable this callback and let the system handle it
                         setEnabled(false);
+                        // Use the dispatcher directly instead of the deprecated method
                         requireActivity().getOnBackPressedDispatcher().onBackPressed();
                     }
                 }

@@ -120,13 +120,12 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             toolbar.setNavigationIcon(R.drawable.ic_close);
             toolbar.setNavigationOnClickListener(v -> {
-                // ----- Fix Start: Simply let MainActivity handle back press -----
-                // Just trigger the regular back press, MainActivity will detect
-                // that TrashFragment is visible and handle it correctly
+                // ----- Fix Start: Use OnBackPressedDispatcher for back press -----
+                // Use OnBackPressedDispatcher for compatibility with Android 13+
                 if (getActivity() != null) {
-                    getActivity().onBackPressed();
-                    }
-                // ----- Fix End: Simply let MainActivity handle back press -----
+                    getActivity().getOnBackPressedDispatcher().onBackPressed();
+                }
+                // ----- Fix End: Use OnBackPressedDispatcher for back press -----
             });
         } else {
             Log.e(TAG, "Toolbar is null or Activity is not AppCompatActivity, cannot set up toolbar as ActionBar.");

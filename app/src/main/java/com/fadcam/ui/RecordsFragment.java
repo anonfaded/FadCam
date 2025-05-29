@@ -420,7 +420,12 @@ public class RecordsFragment extends BaseFragment implements
         requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {
                 if (isInSelectionMode) exitSelectionMode();
-                else { if (isEnabled()) { setEnabled(false); requireActivity().onBackPressed(); }}
+                else { 
+                    if (isEnabled()) { 
+                        setEnabled(false); 
+                        requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                    }
+                }
             }
         });
         // *** Other initialization code specific to the fragment's creation ***

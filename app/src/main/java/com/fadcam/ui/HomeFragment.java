@@ -2937,7 +2937,7 @@ public class HomeFragment extends BaseFragment {
                 .setPositiveButton("Stop and Exit", (dialog, which) -> {
                     stopRecording();
                     // Allow normal back behavior after stopping recording
-                    requireActivity().onBackPressed();
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
                 })
                 .setNegativeButton("Continue Recording", null)
                 .show();
