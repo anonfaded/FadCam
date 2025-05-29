@@ -2741,18 +2741,32 @@ public class HomeFragment extends BaseFragment {
             appLogo.setOnLongClickListener(v -> {
                 performHapticFeedback();
                 Log.i(TAG, "App logo long-pressed. Navigating to TrashFragment manually.");
-                // ----- Fix Start for this method (setupAppLogoLongPressListener) -----
                 // Navigate to TrashFragment manually
                 try {
                     TrashFragment trashFragment = new TrashFragment();
                     FragmentManager fragmentManager = getParentFragmentManager(); // Use getParentFragmentManager
                     FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-                    // ----- Fix Start for this navigation block -----
-                    // Make the overlay container visible
+                    // Add fade in animation
+                    fragmentTransaction.setCustomAnimations(
+                        android.R.animator.fade_in,
+                        android.R.animator.fade_out,
+                        android.R.animator.fade_in,
+                        android.R.animator.fade_out
+                    );
+
+                    // Make the overlay container visible with a fade effect
                     View overlayContainer = requireActivity().findViewById(R.id.overlay_fragment_container);
                     if (overlayContainer != null) {
+                        // First make it visible but transparent
                         overlayContainer.setVisibility(View.VISIBLE);
+                        overlayContainer.setAlpha(0f);
+                        
+                        // Then animate to fully visible
+                        overlayContainer.animate()
+                            .alpha(1f)
+                            .setDuration(250)
+                            .setListener(null);
                     } else {
                         Log.e(TAG, "R.id.overlay_fragment_container not found in MainActivity! Cannot show TrashFragment.");
                         Toast.makeText(getContext(), "Error opening trash (container not found).", Toast.LENGTH_SHORT).show();
@@ -2760,14 +2774,12 @@ public class HomeFragment extends BaseFragment {
                     }
 
                     fragmentTransaction.replace(R.id.overlay_fragment_container, trashFragment);
-                    // ----- Fix Ended for this navigation block -----
                     fragmentTransaction.addToBackStack(null); 
                     fragmentTransaction.commit();
                 } catch (Exception e) {
                     Log.e(TAG, "Manual navigation to TrashFragment failed.", e);
                     Toast.makeText(getContext(), "Error opening trash.", Toast.LENGTH_SHORT).show();
                 }
-                // ----- Fix Ended for this method (setupAppLogoLongPressListener) -----
                 return true; // Consume the long click
             });
         }

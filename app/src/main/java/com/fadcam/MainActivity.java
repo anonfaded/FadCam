@@ -31,6 +31,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+
 public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
@@ -284,6 +287,35 @@ private void createDynamicShortcuts() {
         if (isTrashFragmentVisible()) {
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
             if (overlayContainer != null) {
+                // Animate fading out
+                overlayContainer.animate()
+                    .alpha(0f)
+                    .setDuration(250)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            // Set visibility to GONE after animation completes
+                            overlayContainer.setVisibility(View.GONE);
+                            overlayContainer.setAlpha(1f); // Reset alpha for next time
+                            
+                            // Pop any fragments in the back stack
+                            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                                getSupportFragmentManager().popBackStack();
+                            }
+                            
+                            // Refresh the records fragment if needed
+                            Fragment recordsFragment = getSupportFragmentManager()
+                                    .findFragmentByTag("RecordsFragment");
+                            if (recordsFragment instanceof RecordsFragment) {
+                                ((RecordsFragment) recordsFragment).refreshList();
+                            }
+                        }
+                    });
+                return; // Exit early without showing toast
+            }
+            
+            // If for some reason we couldn't animate, fallback to immediate hide
+            if (overlayContainer != null) {
                 overlayContainer.setVisibility(View.GONE);
             }
             
@@ -343,25 +375,35 @@ private void createDynamicShortcuts() {
                     if (isTrashFragmentVisible()) {
                         View overlayContainer = findViewById(R.id.overlay_fragment_container);
                         if (overlayContainer != null) {
-                            overlayContainer.setVisibility(View.GONE);
+                            // Animate fading out
+                            overlayContainer.animate()
+                                .alpha(0f)
+                                .setDuration(250)
+                                .setListener(new AnimatorListenerAdapter() {
+                                    @Override
+                                    public void onAnimationEnd(Animator animation) {
+                                        // Set visibility to GONE after animation completes
+                                        overlayContainer.setVisibility(View.GONE);
+                                        overlayContainer.setAlpha(1f); // Reset alpha for next time
+                                        
+                                        // Pop any fragments in the back stack
+                                        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                                            getSupportFragmentManager().popBackStack();
+                                        }
+                                        
+                                        // Refresh the records fragment if needed
+                                        Fragment recordsFragment = getSupportFragmentManager()
+                                                .findFragmentByTag("RecordsFragment");
+                                        if (recordsFragment instanceof RecordsFragment) {
+                                            ((RecordsFragment) recordsFragment).refreshList();
+                                        }
+                                    }
+                                });
+                            return; // Exit early without showing toast
                         }
-                        
-                        // Pop any fragments in the back stack
-                        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                            getSupportFragmentManager().popBackStack();
-                        }
-                        
-                        // Refresh the records fragment if needed
-                        Fragment recordsFragment = getSupportFragmentManager()
-                                .findFragmentByTag("RecordsFragment");
-                        if (recordsFragment instanceof RecordsFragment) {
-                            ((RecordsFragment) recordsFragment).refreshList();
-                        }
-                        
-                        return; // Exit early without showing toast
                     }
                     
-                    // If we're not on the home tab, go to home tab first
+                    // If we're not on the home tab, go to home tab first before exiting
                     if (viewPager.getCurrentItem() != 0) {
                         viewPager.setCurrentItem(0, true);
                     } else {
