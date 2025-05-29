@@ -118,6 +118,9 @@
     <string name="setting_location_title">Location Data</string>
     <string name="note_location">Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)</string>
     <string name="note_location_extra">Enable phone\'s GPS for adding latitude and longitude data to the watermark.</string>
+    <string name="setting_location_embed_title">Embed Location in Videos</string>
+    <string name="note_location_embed">Add GPS coordinates to video metadata (geotags). \nRequires GPS enabled \n(Default: Disabled)</string>
+    <string name="note_location_embed_extra">Adds location data directly to video files, which can be used by gallery/map apps to show where videos were taken.</string>
     <string name="button_setting_review">Write a Review 🌟</string>
     <string name="dialog_clock_title">Choose Clock Display</string>
     <string name="dialog_clock_timeonly">Time Only</string>
@@ -216,6 +219,7 @@
     <string name="note_language">Select from dropdown.\n(Default: English)</string>
     <string name="location_permission_title">Location Permission</string>
     <string name="location_permission_description">This app needs location permission to add location data to videos. Please grant the permission.</string>
+    <string name="location_permission_denied">Location permission denied. Location features will be disabled.</string>
     <string name="up_to_date">Up To Date</string>
     <string name="up_to_date_description">You are already using the latest version.</string>
     <string name="up_to_date_loading">Checking for updates…</string>
@@ -318,7 +322,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="bitrate_info_warning_low">Warning: Bitrate is very low. Video quality may be poor.</string>
     <string name="bitrate_info_warning_high">Warning: Bitrate is very high. Recording may fail or overheat device.</string>
     <string name="bitrate_info_ok">Bitrate is in recommended range.</string>
-    <string name="bitrate_invalid">Invalid bitrate. Please enter a value between %1$s and %2$s Mbps.</string>
+    <string name="bitrate_invalid">Invalid bitrate. Please enter a value between %1$d and %2$d Mbps.</string>
     <string name="bitrate_save_success">Bitrate saved successfully.</string>
     <string name="bitrate_reset_success">Bitrate reset to default.</string>
     <string name="bitrate_current">Current: %1$s Mbps</string>
@@ -464,5 +468,21 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Fix End: Add camera cooldown message -->
 
     <string name="trash_select_all">Select All</string>
+
+    <!-- Fix Start: Update location permission message -->
+    <string name="location_permission_granted_manual_toggle">Permission granted! You can now enable location features in settings.</string>
+    <!-- Fix End: Update location permission message -->
+
+    <!-- Fix Start: Add location embedding enabled message -->
+    <string name="location_embedding_enabled">Location embedding enabled</string>
+    <!-- Fix End: Add location embedding enabled message -->
+
+    <!-- Fix Start: Add allow_location_access string -->
+    <string name="allow_location_access">Grant Permission</string>
+    <!-- Fix End: Add allow_location_access string -->
+
+    <!-- Fix Start: Add location_permission_message string -->
+    <string name="location_permission_message">Location permission is needed to add GPS coordinates to your videos. Please grant permission to use this feature.</string>
+    <!-- Fix End: Add location_permission_message string -->
 
 </resources>

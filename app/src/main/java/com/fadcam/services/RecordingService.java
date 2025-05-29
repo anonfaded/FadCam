@@ -63,6 +63,7 @@ import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.RecordsAdapter;
+import com.fadcam.ui.GeotagHelper;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -90,7 +91,12 @@ import java.util.HashSet; // Add if needed
 import android.media.MediaRecorder.OnInfoListener;
 // ----- Fix Ended for this class (RecordingService_video_splitting_imports_and_fields) -----
 
+import org.osmdroid.util.GeoPoint;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+// Add to the beginning of the file
+import android.media.MediaMetadataRetriever;
 
 public class RecordingService extends Service {
 
@@ -105,6 +111,7 @@ public class RecordingService extends Service {
     private Surface previewSurface; // Surface from UI if preview enabled
 
     private LocationHelper locationHelper;
+    private GeotagHelper geotagHelper;
 
     // File / URI tracking
     private File currentRecordingFile; // Track file path if internal
@@ -184,7 +191,27 @@ public class RecordingService extends Service {
         Log.d(TAG, "onCreate: Service creating...");
         // Initialize essential components first
         sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
-        locationHelper = new LocationHelper(getApplicationContext()); // Assuming needed
+        
+        // Only initialize LocationHelper if location is explicitly enabled
+        if (sharedPreferencesManager != null && sharedPreferencesManager.isLocalisationEnabled()) {
+            locationHelper = new LocationHelper(this); // For watermark text
+        } else {
+            Log.d(TAG, "Location feature disabled, skipping LocationHelper initialization");
+        }
+        
+        // Initialize GeotagHelper only if location embedding is enabled
+        if (sharedPreferencesManager != null && sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            try {
+                geotagHelper = new GeotagHelper(this); // For metadata embedding
+                boolean started = geotagHelper.startUpdates();
+                Log.d(TAG, "Started geotagging updates for metadata embedding: " + started);
+            } catch (Exception e) {
+                Log.e(TAG, "Error initializing GeotagHelper", e);
+            }
+        } else {
+            Log.d(TAG, "Location embedding disabled, skipping GeotagHelper initialization");
+        }
+        
         createNotificationChannel(); // Setup notifications early
 
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -200,114 +227,168 @@ public class RecordingService extends Service {
 
         Log.d(TAG, "Service created successfully.");
 
-        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        if (powerManager != null) {
-            recordingWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FadCam::RecordingLock");
-        }
-        
-        // ----- Fix Start: Broadcast camera availability on service start -----
-        // Initially, camera resources are available
-        isCameraResourceReleasing = false;
+        // Broadcast initial camera resource availability
         broadcastCameraResourceAvailability(true);
         Log.d(TAG, "Broadcasting initial camera resource availability: true");
-        // ----- Fix End: Broadcast camera availability on service start -----
     }
 
     // --- onStartCommand (Ensure START action ignores processing state) ---
     // ----- Fix Start for this method(onStartCommand_video_splitting) -----
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand received: Action=" + (intent != null ? intent.getAction() : "null"));
-        if (intent == null || intent.getAction() == null) { 
-            Log.w(TAG, "onStartCommand: Intent or action is null.");
-            if (!isWorkingInProgress()) stopSelf(); // Stop if idle and bad intent
-            return START_NOT_STICKY; 
+        if (intent == null) {
+            Log.d(TAG, "onStartCommand received null intent. Ensuring service stays alive.");
+            return START_STICKY;
+        }
+        Log.d(TAG, "onStartCommand received: Action=" + intent.getAction());
+        
+        String action = intent.getAction();
+        if (action == null) {
+            Log.w(TAG, "onStartCommand: Action is null.");
+            if (!isWorkingInProgress()) stopSelf();
+            return START_NOT_STICKY;
         }
 
-        String action = intent.getAction();
-        switch (action) {
-            case Constants.INTENT_ACTION_START_RECORDING:
-                // ----- Fix Start for camera resource check -----
-                // Check if camera resources are still being released
-                if (isCameraResourceReleasing) {
-                    Log.w(TAG, "START_RECORDING rejected - camera resources still being released");
-                    // Show toast on UI thread
-                    mainHandler.post(() -> {
-                        Toast.makeText(getApplicationContext(), 
-                            R.string.camera_resources_cooldown, 
-                            Toast.LENGTH_LONG).show();
-                    });
-                    // Don't stop the service yet as FFmpeg might still be running
-                    return START_STICKY;
-                }
-                // ----- Fix End for camera resource check -----
+        if (Constants.INTENT_ACTION_START_RECORDING.equals(action)) {
+            // ----- Check for camera resource cooldown -----
+            // Check if camera resources are still being released
+            if (isCameraResourceReleasing) {
+                Log.w(TAG, "START_RECORDING rejected - camera resources still being released");
+                // Show toast on UI thread
+                mainHandler.post(() -> {
+                    Toast.makeText(getApplicationContext(), 
+                        R.string.camera_resources_cooldown, 
+                        Toast.LENGTH_LONG).show();
+                });
+                // Don't stop the service yet as FFmpeg might still be running
+                return START_STICKY;
+            }
+            
+            Log.i(TAG, "Handling START_RECORDING intent. Service recording state is " + recordingState);
+            
+            // Reset recording state if it's somehow corrupted
+            if (recordingState != RecordingState.NONE && mediaRecorder == null && cameraDevice == null) {
+                Log.w(TAG, "Recording state inconsistency detected. Resetting state from " + recordingState + " to NONE.");
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+            }
+            
+            // Only proceed if we're in NONE state 
+            if (recordingState == RecordingState.NONE) {
+                // Update the UI and Service state atomically
+                recordingState = RecordingState.STARTING;
+                sharedPreferencesManager.setRecordingInProgress(true);
                 
-                if (recordingState != RecordingState.NONE) {
-                    Log.w(TAG,"Start requested, but already RECORDING/PAUSED/STARTING. State: " + recordingState + ". Ignoring.");
-                    broadcastOnRecordingStateCallback(); // Notify UI of current state
-                    return START_STICKY; // Remain active
-                }
-                
-                Log.i(TAG,"Handling START_RECORDING intent. Service recording state is NONE.");
-                recordingState = RecordingState.STARTING; // Set state to STARTING
-
                 // Load video splitting preferences
-                if (sharedPreferencesManager != null) {
-                    isVideoSplittingEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
-                    int splitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
-                    if (isVideoSplittingEnabled && splitSizeMb > 0) {
-                        videoSplitSizeBytes = (long) splitSizeMb * 1024 * 1024; // Convert MB to Bytes
-                        Log.d(TAG, "Video splitting enabled. Size: " + splitSizeMb + "MB (" + videoSplitSizeBytes + " Bytes)");
-                    } else {
-                        videoSplitSizeBytes = -1L; // Disable splitting if not enabled or invalid size
-                        Log.d(TAG, "Video splitting disabled or size invalid.");
-                    }
+                isVideoSplittingEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
+                int splitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
+                if (isVideoSplittingEnabled && splitSizeMb > 0) {
+                    videoSplitSizeBytes = (long) splitSizeMb * 1024 * 1024; // Convert MB to Bytes
+                    Log.d(TAG, "Video splitting enabled. Size: " + splitSizeMb + "MB (" + videoSplitSizeBytes + " Bytes)");
                 } else {
-                    Log.w(TAG, "SharedPreferencesManager is null in onStartCommand, cannot load splitting prefs. Defaults assumed.");
-                    isVideoSplittingEnabled = false;
-                    videoSplitSizeBytes = -1L;
+                    videoSplitSizeBytes = -1L; // Disable splitting if not enabled or invalid size
+                    Log.d(TAG, "Video splitting disabled or size invalid.");
                 }
                 currentSegmentNumber = 1; // Always reset segment number on new recording start
-
+                
+                // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
                 Log.d(TAG, "Initial torch state for recording session: " + isRecordingTorchEnabled);
-
+                
+                // Set up preview surface if provided
                 setupSurfaceTexture(intent);
-                setupRecordingInProgressNotification(); // Show notification immediately
-                startRecording(); // Attempt to start hardware recording
-                break;
-
-            case Constants.INTENT_ACTION_PAUSE_RECORDING:      
-                pauseRecording(); 
-                break;
-            case Constants.INTENT_ACTION_RESUME_RECORDING:     
-                setupSurfaceTexture(intent); 
-                resumeRecording(); 
-                break;
-            case Constants.INTENT_ACTION_CHANGE_SURFACE:       
-                setupSurfaceTexture(intent); 
-                if (isRecording() || isPaused()) { 
-                    createCameraPreviewSession(); 
-                } 
-                break;
-            case Constants.INTENT_ACTION_STOP_RECORDING:       
-                stopRecording(); 
-                break;
-            case Constants.BROADCAST_ON_RECORDING_STATE_REQUEST: 
-                Log.d(TAG,"Resp state request"); 
-                broadcastOnRecordingStateCallback(); 
-                if (!isWorkingInProgress()) { 
-                    stopSelf(); 
-                } 
-                break;
-            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH: 
-                toggleRecordingTorch(); 
-                break;
-            default: 
-                Log.w(TAG, "Unknown action: " + action); 
-                break;
+                
+                // Start foreground service
+                setupRecordingInProgressNotification();
+                
+                // Begin camera/recording setup
+                startRecording();
+                
+                // Notify UI that we're starting
+                broadcastOnRecordingStarted();
+                
+                return START_STICKY;
+            } else {
+                // If we're not in NONE state, log a warning and notify the user
+                Log.w(TAG, "Cannot start recording, already in state: " + recordingState);
+                Toast.makeText(this, getString(R.string.recording_already_active), Toast.LENGTH_SHORT).show();
+                return START_STICKY;
+            }
+        } else if (Constants.INTENT_ACTION_STOP_RECORDING.equals(action)) {
+            stopRecording();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_PAUSE_RECORDING.equals(action)) {
+            pauseRecording();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_RESUME_RECORDING.equals(action)) {
+            // Set up preview surface if provided (important when resuming)
+            setupSurfaceTexture(intent);
+            resumeRecording();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_CHANGE_SURFACE.equals(action)) {
+            // Handle surface changes for preview
+            setupSurfaceTexture(intent);
+            if (isRecording() || isPaused()) {
+                createCameraPreviewSession();
+            }
+            return START_STICKY;
+        } else if (Constants.BROADCAST_ON_RECORDING_STATE_REQUEST.equals(action)) {
+            // Handle UI state sync requests
+            Log.d(TAG, "Responding to state request");
+            broadcastOnRecordingStateCallback();
+            if (!isWorkingInProgress()) {
+                stopSelf();
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH.equals(action)) {
+            // Handle torch toggle requests
+            toggleRecordingTorch();
+            return START_STICKY;
+        } 
+        // ----- Fix Start for this method(onStartCommand) -----
+        else if (Constants.INTENT_ACTION_REINITIALIZE_LOCATION.equals(action)) {
+            // Handle request to reinitialize location helpers after settings change
+            Log.d(TAG, "Handling REINITIALIZE_LOCATION intent");
+            
+            // Extract the embedding preference directly from intent if available
+            boolean forceInit = intent.getBooleanExtra("force_init", false);
+            boolean embedLocationFromIntent = intent.getBooleanExtra("embed_location", false);
+            boolean hasLocationPermission = intent.getBooleanExtra("has_permission", false);
+            
+            // Log the values for debugging
+            Log.d(TAG, "Location intent extras:");
+            Log.d(TAG, "  - force_init: " + forceInit);
+            Log.d(TAG, "  - embed_location: " + embedLocationFromIntent);
+            Log.d(TAG, "  - has_permission: " + hasLocationPermission);
+            
+            // If embed_location is true but permission is not granted, log warning
+            if (embedLocationFromIntent && !hasLocationPermission) {
+                Log.w(TAG, "Warning: Location embedding requested but permission is not granted");
+                // Don't override preference in this case - let the UI control it
+            }
+            // If intent explicitly specifies the embed_location value, use it to force override the preference
+            else if (intent.hasExtra("embed_location")) {
+                Log.d(TAG, "Intent explicitly specifies embed_location=" + embedLocationFromIntent);
+                
+                // Force the preference to match what was sent in the intent
+                if (sharedPreferencesManager.isLocationEmbeddingEnabled() != embedLocationFromIntent) {
+                    Log.d(TAG, "Updating preferences to match intent value");
+                    sharedPreferencesManager.sharedPreferences.edit()
+                        .putBoolean(Constants.PREF_EMBED_LOCATION_DATA, embedLocationFromIntent)
+                        .apply();
+                }
+            }
+            
+            // Now reinitialize with potential updated preferences
+            reinitializeLocationHelpers(forceInit);
+            return START_STICKY;
+        } 
+        // ----- Fix Ended for this method(onStartCommand) -----
+        else {
+            Log.w(TAG, "Unknown action received: " + action);
+            if (!isWorkingInProgress()) stopSelf();
+            return START_NOT_STICKY;
         }
-        return START_STICKY;
     }
     // ----- Fix Ended for this method(onStartCommand_video_splitting) -----
 
@@ -330,21 +411,56 @@ public class RecordingService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "onDestroy: Service destroying...");
-        // Cleanup resources aggressively
-        releaseRecordingResources(); // Centralized cleanup
-        if (backgroundHandler != null) {
-            backgroundHandler.getLooper().quitSafely(); // Stop background thread
-            backgroundHandler = null;
+        Log.d(TAG, "onDestroy: Service being destroyed...");
+        
+        // Ensure all location services are properly stopped
+        if (geotagHelper != null) {
+            try {
+                geotagHelper.stopUpdates();
+                Log.d(TAG, "GeotagHelper: Stopped location updates");
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping GeotagHelper updates", e);
+            }
         }
-        cancelNotification(); // Ensure notification is removed
-        // ----- Fix Start for this method(onDestroy_release_wakelock)-----
+        
+        if (locationHelper != null) {
+            try {
+                locationHelper.stopLocationUpdates();
+                Log.d(TAG, "LocationHelper: Stopped location updates for watermarking");
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping LocationHelper updates", e);
+            }
+        }
+        
+        // Force recording to stop if somehow it's still active
+        if (recordingState != RecordingState.NONE) {
+            Log.w(TAG, "Service being destroyed while recording is active. Forcing stop.");
+            try {
+                stopRecording();
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping recording during service destruction", e);
+            }
+        }
+        
+        // Clean up camera resources
+        try {
+            releaseRecordingResources();
+        } catch (Exception e) {
+            Log.e(TAG, "Error releasing resources during service destruction", e);
+        }
+        
+        // Release wake lock if still held
         if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
-            recordingWakeLock.release();
-            Log.d(TAG, "Recording WakeLock released in onDestroy.");
+            try {
+                recordingWakeLock.release();
+                Log.d(TAG, "Recording WakeLock released during service destruction.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing wake lock", e);
+            }
         }
-        // ----- Fix Ended for this method(onDestroy_release_wakelock)-----
+        
         Log.d(TAG, "Service destroyed.");
+        // Clean up GeotagHelper when service is destroyed
         super.onDestroy();
     }
     // --- End Lifecycle Methods ---
@@ -352,40 +468,83 @@ public class RecordingService extends Service {
 
     // --- Core Recording Logic ---
     private void startRecording() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG,"Permissions missing, cannot start recording.");
-            Toast.makeText(this,"Permissions required for recording", Toast.LENGTH_LONG).show();
-            if (recordingState == RecordingState.STARTING) {
-                recordingState = RecordingState.NONE;
-            }
-            stopSelf();
+        Log.d(TAG, "startRecording: beginning recording setup");
+        
+        // Add additional state checking at the top of the method
+        if (recordingState != RecordingState.STARTING) {
+            Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
             return;
         }
-        Log.d(TAG,"startRecording: Attempting to start.");
-        // ----- Fix Start for this method(startRecording_acquire_wakelock)-----
-        if (recordingWakeLock != null && !recordingWakeLock.isHeld()) {
-            recordingWakeLock.acquire();
-            Log.d(TAG, "Recording WakeLock acquired.");
-        }
-        // ----- Fix Ended for this method(startRecording_acquire_wakelock)-----
-        try {
-            setupMediaRecorder();
-            if (mediaRecorder == null) {
-                Log.e(TAG, "startRecording: MediaRecorder setup failed.");
-                if (recordingState == RecordingState.STARTING) {
-                    recordingState = RecordingState.NONE;
+        
+        // Create notification channel early to ensure notifications work properly
+        createNotificationChannel();
+
+        // Reset segment number (first segment = 1)
+        currentSegmentNumber = 1;
+        
+        // Initialize GeotagHelper early if location embedding is enabled, but do it asynchronously
+        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            // Create in background thread to avoid ANR
+            new Thread(() -> {
+                try {
+                    if (geotagHelper == null) {
+                        Log.d(TAG, "GeotagHelper: Creating GeotagHelper at recording start");
+                        geotagHelper = new GeotagHelper(this);
+                    }
+                    
+                    // Start updates in background
+                    boolean started = geotagHelper.startUpdates();
+                    Log.d(TAG, "GeotagHelper: Location updates started: " + started);
+                    
+                    // Small delay before continuing, but in background thread
+                    Thread.sleep(800);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error initializing GeotagHelper", e);
                 }
+            }).start();
+        }
+        
+        // Use try/catch for entire recording setup to ensure we reset state on failure
+        try {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Log.e(TAG,"Permissions missing, cannot start recording.");
+                Toast.makeText(this,"Permissions required for recording", Toast.LENGTH_LONG).show();
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+                stopSelf();
                 return;
             }
-            openCamera();
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting recording process", e);
-            if (recordingState == RecordingState.STARTING) {
-                recordingState = RecordingState.NONE;
+            
+            Log.d(TAG,"startRecording: Attempting to start.");
+            
+            // Acquire wake lock if needed
+            if (recordingWakeLock != null && !recordingWakeLock.isHeld()) {
+                recordingWakeLock.acquire();
+                Log.d(TAG, "Recording WakeLock acquired.");
             }
-            releaseRecordingResources();
-            Toast.makeText(this,"Error starting recording", Toast.LENGTH_LONG).show();
+            
+            try {
+                setupMediaRecorder();
+                if (mediaRecorder == null) {
+                    Log.e(TAG, "startRecording: MediaRecorder setup failed.");
+                    recordingState = RecordingState.NONE;
+                    sharedPreferencesManager.setRecordingInProgress(false);
+                    return;
+                }
+                openCamera();
+            } catch (Exception e) {
+                Log.e(TAG, "Error starting recording process", e);
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+                releaseRecordingResources();
+                Toast.makeText(this,"Error starting recording", Toast.LENGTH_LONG).show();
+                stopSelf();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in startRecording", e);
+            recordingState = RecordingState.NONE;
+            sharedPreferencesManager.setRecordingInProgress(false);
             stopSelf();
         }
     }
@@ -734,7 +893,9 @@ public class RecordingService extends Service {
         if ("no_watermark".equals(watermarkOption)) {
             Log.d(TAG,"Building FFmpeg copy command (no watermark).");
             // When copying, no re-encoding happens, codec and pixel format don't matter.
-            return String.format(Locale.US, "-i %s -codec copy -y %s", escapeFFmpegPath(inputPath), escapeFFmpegPath(outputPath));
+            // Add -map_metadata 0 to preserve all metadata from the input file
+            return String.format(Locale.US, "-i %s -codec copy -map_metadata 0 -y %s", 
+                escapeFFmpegPath(inputPath), escapeFFmpegPath(outputPath));
         } else {
             Log.d(TAG,"Building FFmpeg watermark command.");
 
@@ -770,8 +931,9 @@ public class RecordingService extends Service {
 
                 // Build the command using the forced H.264 codec AND forced pixel format
                 // Order: Input -> Filters -> Output Codec -> Output Bitrate -> Pixel Format -> Audio Codec -> Output Path
+                // Added -map_metadata 0 to preserve all metadata from the input file
                 return String.format(Locale.US,
-                        "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d %s -codec:a copy -y %s",
+                        "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d %s -map_metadata 0 -codec:a copy -y %s",
                         escapeFFmpegPath(inputPath),
                         frameRates,
                         escapedWatermarkText,
@@ -880,11 +1042,21 @@ public class RecordingService extends Service {
                 
                 if (ReturnCode.isSuccess(returnCode)) {
                     Log.i(TAG, "FFmpeg execution completed successfully for " + inputFile.getName());
-                    // isProcessingWatermark = false; // Old field no longer used
+                    
+                    // Check if the output file has location metadata (only for files, not SAF URIs)
+                    if (finalOutputUriIfKnown != null && finalOutputUriIfKnown.getScheme() != null && 
+                        finalOutputUriIfKnown.getScheme().equals("file") && 
+                        sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+                        String outputPath = finalOutputUriIfKnown.getPath();
+                        if (outputPath != null) {
+                            verifyLocationMetadata(outputPath);
+                        }
+                    }
+                    
                     if (onSuccess != null) onSuccess.run();
-                isSegmentProcessingActive = false;
+                    isSegmentProcessingActive = false;
                     // Process next in queue
-                processNextSegmentInQueue();
+                    processNextSegmentInQueue();
                     
                     // Update notification to show completion and remove foreground state
                     if (finalOutputUriIfKnown != null) {
@@ -1093,6 +1265,11 @@ public class RecordingService extends Service {
         if (targetDirUriString == null) {
             Log.e(TAG,"moveInternalFileToSAF: Target SAF directory URI is null.");
             return null;
+        }
+
+        // Verify location metadata in the source file before copying (for debugging)
+        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            verifyLocationMetadata(internalSourceFile.getAbsolutePath());
         }
 
         ContentResolver resolver = getContentResolver();
@@ -1334,6 +1511,73 @@ public class RecordingService extends Service {
             mediaRecorder.setAudioSamplingRate(audioSamplingRate);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         }
+        
+        // ----- Fix Start for this method(setupMediaRecorder_location_embedding) -----
+        // Add location metadata to video if enabled
+        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            boolean locationApplied = false;
+            
+            // First attempt: Use existing geotagHelper if available
+            if (geotagHelper != null) {
+                boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
+                if (success) {
+                    Log.d(TAG, "GeotagHelper: Successfully applied location to MediaRecorder");
+                    locationApplied = true;
+                } else {
+                    Log.w(TAG, "GeotagHelper: Failed to apply location to MediaRecorder on first attempt");
+                }
+            } else {
+                Log.d(TAG, "GeotagHelper is null, will create new instance");
+            }
+            
+            // Second attempt: If first attempt failed or geotagHelper was null, create and try again
+            if (!locationApplied) {
+                try {
+                    // Force creation of a new GeotagHelper
+                    Log.d(TAG, "GeotagHelper: Creating new instance and starting updates");
+                    geotagHelper = new GeotagHelper(this);
+                    boolean started = geotagHelper.startUpdates();
+                    Log.d(TAG, "GeotagHelper: Updates started: " + started);
+                    
+                    // Try to apply location immediately
+                    boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
+                    if (success) {
+                        Log.d(TAG, "GeotagHelper: Successfully applied location on second attempt");
+                        locationApplied = true;
+                    } else {
+                        Log.w(TAG, "GeotagHelper: Failed to apply location on second attempt");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "GeotagHelper: Error during initialization", e);
+                }
+            }
+            
+            // Third attempt: Background thread with delay if previous attempts failed
+            if (!locationApplied) {
+                Log.d(TAG, "GeotagHelper: Scheduling delayed attempt to apply location");
+                new Thread(() -> {
+                    try {
+                        // Give more time for location to become available
+                        Thread.sleep(2000);
+                        if (mediaRecorder != null && geotagHelper != null) {
+                            boolean retrySuccess = geotagHelper.applyLocationToRecorder(mediaRecorder);
+                            Log.d(TAG, "GeotagHelper: Delayed retry applying location was " + 
+                                (retrySuccess ? "successful" : "unsuccessful"));
+                        } else {
+                            Log.w(TAG, "GeotagHelper: Delayed retry aborted - resources no longer available");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error during delayed location retry", e);
+                    }
+                }).start();
+            }
+            
+            Log.d(TAG, "GeotagHelper: Location embedding setup completed, immediate success: " + locationApplied);
+        } else {
+            Log.d(TAG, "GeotagHelper: Location embedding disabled in preferences");
+        }
+        // ----- Fix Ended for this method(setupMediaRecorder_location_embedding) -----
+        
         if (isVideoSplittingEnabled && videoSplitSizeBytes > 0) {
             Log.d(TAG, "Setting MediaRecorder max file size to: " + videoSplitSizeBytes + " bytes for segment " + currentSegmentNumber);
             mediaRecorder.setMaxFileSize(videoSplitSizeBytes);
@@ -1404,7 +1648,7 @@ public class RecordingService extends Service {
                         if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
                             isValidAndAvailable = true;
                             break;
-                        } else {
+            } else {
                             Log.w(TAG,"Preferred back ID "+preferredBackId+" exists but is not LENS_FACING_BACK!");
                         }
                     }
@@ -2877,4 +3121,163 @@ public class RecordingService extends Service {
     }
     // ----- Fix End for camera resource management methods -----
 
+    /**
+     * Helper method to verify if location metadata was successfully embedded in a video file
+     * This method will add logs that you can filter for "METADATA_CHECK" to trace the issue
+     * @param videoFilePath Path to the final processed video file
+     */
+    private void verifyLocationMetadata(String videoFilePath) {
+        if (videoFilePath == null) {
+            Log.e(TAG, "METADATA_CHECK: Video file path is null");
+            return;
+        }
+        
+        Log.d(TAG, "METADATA_CHECK: Checking for location metadata in " + videoFilePath);
+        
+        try {
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            retriever.setDataSource(videoFilePath);
+            
+            // Get location data
+            String locationString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION);
+            
+            if (locationString != null && !locationString.isEmpty()) {
+                Log.d(TAG, "METADATA_CHECK: Found location data in video: " + locationString);
+            } else {
+                Log.e(TAG, "METADATA_CHECK: No location metadata found in processed video!");
+                Log.e(TAG, "METADATA_CHECK: This suggests the metadata was lost during processing");
+            }
+            
+            // Check a few other metadata fields to see if any metadata is preserved
+            String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            
+            Log.d(TAG, "METADATA_CHECK: Other metadata - Duration: " + duration + 
+                  ", Resolution: " + width + "x" + height);
+            
+            retriever.release();
+        } catch (Exception e) {
+            Log.e(TAG, "METADATA_CHECK: Error checking metadata", e);
+        }
+    }
+
+    // ----- Fix Start for this class(RecordingService) -----
+    /**
+     * Reinitializes location helpers based on current preference settings
+     * Called when location settings are changed while the service is running
+     */
+    private void reinitializeLocationHelpers() {
+        reinitializeLocationHelpers(false);
+    }
+
+    /**
+     * Reinitializes location helpers based on current preference settings
+     * @param forceInit Force reinitialization even if settings haven't changed
+     */
+    private void reinitializeLocationHelpers(boolean forceInit) {
+        Log.d(TAG, "==== Reinitializing Location Helpers ====");
+        Log.d(TAG, "Current preferences: location=" + sharedPreferencesManager.isLocalisationEnabled() + 
+               ", embedding=" + sharedPreferencesManager.isLocationEmbeddingEnabled());
+        
+        // Handle LocationHelper for watermark
+        boolean locationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+        if (locationEnabled) {
+            if (locationHelper == null || forceInit) {
+                try {
+                    // Clean up existing helper if needed
+                    if (locationHelper != null) {
+                        locationHelper.stopLocationUpdates();
+                    }
+                    
+                    locationHelper = new LocationHelper(this);
+                    Log.d(TAG, "Created new LocationHelper for watermark");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error initializing LocationHelper", e);
+                }
+            } else {
+                Log.d(TAG, "LocationHelper already exists, no need to recreate");
+            }
+        } else {
+            if (locationHelper != null) {
+                try {
+                    locationHelper.stopLocationUpdates();
+                    Log.d(TAG, "Stopped existing LocationHelper");
+                    locationHelper = null;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error stopping LocationHelper", e);
+                }
+            }
+        }
+        
+        // Handle GeotagHelper for metadata embedding
+        boolean embeddingEnabled = sharedPreferencesManager.isLocationEmbeddingEnabled();
+        if (embeddingEnabled) {
+            boolean needsNewHelper = geotagHelper == null || forceInit;
+            
+            if (needsNewHelper) {
+                try {
+                    // Clean up existing helper if needed
+                    if (geotagHelper != null) {
+                        geotagHelper.stopUpdates();
+                    }
+                    
+                    // Create new helper
+                    geotagHelper = new GeotagHelper(this);
+                    boolean started = geotagHelper.startUpdates();
+                    Log.d(TAG, "Created new GeotagHelper for metadata embedding. Updates started: " + started);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error initializing GeotagHelper", e);
+                }
+            } else {
+                Log.d(TAG, "GeotagHelper already exists, ensuring updates are started");
+                // Make sure updates are started even if helper exists
+                try {
+                    boolean started = geotagHelper.startUpdates();
+                    Log.d(TAG, "Ensured GeotagHelper updates are active: " + started);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error starting GeotagHelper updates", e);
+                }
+            }
+            
+            // If currently recording, try to apply location to current mediaRecorder
+            if (mediaRecorder != null && geotagHelper != null && 
+                (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED)) {
+                try {
+                    // Try immediately
+                    boolean immediateSuccess = geotagHelper.applyLocationToRecorder(mediaRecorder);
+                    Log.d(TAG, "Applied location to active MediaRecorder: " + immediateSuccess);
+                    
+                    // Also schedule a delayed attempt for higher chance of success
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(1500);
+                            if (mediaRecorder != null && geotagHelper != null &&
+                                (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED)) {
+                                boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
+                                Log.d(TAG, "Applied location to active MediaRecorder (delayed): " + success);
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error in delayed location application", e);
+                        }
+                    }).start();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error applying location after reinitialization", e);
+                }
+            }
+        } else {
+            if (geotagHelper != null) {
+                try {
+                    geotagHelper.stopUpdates();
+                    Log.d(TAG, "Stopped existing GeotagHelper");
+                    geotagHelper = null;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error stopping GeotagHelper", e);
+                }
+            }
+        }
+        
+        Log.d(TAG, "==== Location Helpers Reinitialization Complete ====");
+    }
+    // ----- Fix Ended for this class(RecordingService) -----
 }

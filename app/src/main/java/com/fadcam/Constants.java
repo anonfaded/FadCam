@@ -21,6 +21,7 @@ public abstract class Constants {
     public static final String PREF_SELECTED_TORCH_SOURCE = "pref_selected_torch_source";
     public static final String PREF_TORCH_STATE = "pref_torch_state";
     public static final String PREF_LOCATION_DATA = "location_data";
+    public static final String PREF_EMBED_LOCATION_DATA = "embed_location_data";
     public static final String PREF_DEBUG_DATA = "debug_data";
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
     public static final String PREF_VIDEO_CODEC = "video_codec";
@@ -118,4 +119,7 @@ public abstract class Constants {
     public static final String EXTRA_CAMERA_RESOURCES_AVAILABLE = "com.fadcam.EXTRA_CAMERA_RESOURCES_AVAILABLE";
     public static final int CAMERA_RESOURCE_COOLDOWN_MS = 1500; // 1.5 seconds cooldown for camera resources
     // ----- Fix End for camera resource availability -----
+
+    // Add the location reinitialize intent action
+    public static final String INTENT_ACTION_REINITIALIZE_LOCATION = "com.fadcam.INTENT_ACTION_REINITIALIZE_LOCATION";
 }

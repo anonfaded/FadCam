@@ -305,7 +305,7 @@
     <string name="bitrate_info_warning_low">Uyarı: Bit hızı çok düşük. Video kalitesi kötü olabilir.</string>
     <string name="bitrate_info_warning_high">Uyarı: Bit hızı çok yüksek. Kayıt başarısız olabilir veya cihaz aşırı ısınabilir.</string>
     <string name="bitrate_info_ok">Bit hızı önerilen aralıkta.</string>
-    <string name="bitrate_invalid">Geçersiz bit hızı. Lütfen %1$s ile %2$s Mbps arasında bir değer girin.</string>
+    <string name="bitrate_invalid">Geçersiz bit hızı. Lütfen %1$d ile %2$d Mbps arasında bir değer girin.</string>
     <string name="bitrate_save_success">Bit hızı başarıyla kaydedildi.</string>
     <string name="bitrate_reset_success">Bit hızı varsayılana sıfırlandı.</string>
     <string name="bitrate_current">Mevcut: %1$s Mbps</string>

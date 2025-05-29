@@ -201,6 +201,10 @@ public class SharedPreferencesManager {
         return sharedPreferences.getBoolean(Constants.PREF_LOCATION_DATA, false);
     }
 
+    public boolean isLocationEmbeddingEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_EMBED_LOCATION_DATA, false);
+    }
+
     public boolean isDebugLoggingEnabled() {
         return sharedPreferences.getBoolean(Constants.PREF_DEBUG_DATA, false);
     }
@@ -372,5 +376,23 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(Constants.COMPLETED_ONBOARDING_KEY, !show).apply();
     }
     // ----- Fix End for method(onboarding) -----
+
+    // ----- Fix Start for this class(SharedPreferencesManager_location_methods) -----
+    /**
+     * Sets whether location embedding is enabled
+     * @param enabled True to enable location embedding, false to disable
+     */
+    public void setLocationEmbeddingEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_EMBED_LOCATION_DATA, enabled).apply();
+    }
+
+    /**
+     * Sets whether location watermark is enabled
+     * @param enabled True to enable location watermark, false to disable
+     */
+    public void setLocationEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, enabled).apply();
+    }
+    // ----- Fix Ended for this class(SharedPreferencesManager_location_methods) -----
 
 }

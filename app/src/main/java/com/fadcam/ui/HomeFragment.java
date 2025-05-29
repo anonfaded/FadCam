@@ -433,20 +433,41 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void updatePreviewVisibility() {
+        // ----- Fix Start for this method(updatePreviewVisibility)-----
+        if (!isAdded() || textureView == null || tvPreviewPlaceholder == null) {
+            Log.e(TAG, "updatePreviewVisibility: Fragment not attached or views null");
+            return;
+        }
+        
         if (isRecording()) {
             if (isPreviewEnabled) {
+                // Show preview
                 textureView.setVisibility(View.VISIBLE);
                 tvPreviewPlaceholder.setVisibility(View.GONE);
+                Log.d(TAG, "Preview enabled and recording - showing preview");
+                
+                // Ensure surface is sent to service
+                if (textureViewSurface != null && textureViewSurface.isValid() && isRecordingOrPaused()) {
+                    updateServiceWithCurrentSurface(textureViewSurface);
+                }
             } else {
+                // Hide preview
                 textureView.setVisibility(View.INVISIBLE);
                 tvPreviewPlaceholder.setVisibility(View.VISIBLE);
                 tvPreviewPlaceholder.setText("Long press to enable preview");
+                Log.d(TAG, "Preview disabled but recording - showing placeholder");
+                
+                // Send null surface to service
+                updateServiceWithCurrentSurface(null);
             }
         } else {
+            // Not recording, show placeholder
             textureView.setVisibility(View.INVISIBLE);
             tvPreviewPlaceholder.setVisibility(View.VISIBLE);
             tvPreviewPlaceholder.setText(getString(R.string.ui_preview_area));
+            Log.d(TAG, "Not recording - showing placeholder text");
         }
+        // ----- Fix Ended for this method(updatePreviewVisibility)-----
     }
 
     private void resetTimers() {
@@ -584,15 +605,43 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void onReceive(Context context, Intent i) {
                 recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, 0);
-                // Call the existing onRecordingStarted method FIRST
-                // This updates internal state and button UI
-                onRecordingStarted(true); // Pass true for the toast as before
-
-                // *** ADDED FIX: Explicitly update surface and preview state AFTER confirming start ***
-                updateRecordingSurface();   // Send the current surface to the service
-                updatePreviewVisibility();  // Update visibility based on isPreviewEnabled flag
-                Log.d(TAG, "BROADCAST_ON_RECORDING_STARTED received: Sent surface update and refreshed preview visibility.");
-                // --- END FIX ---
+                
+                // ----- Fix Start for this method(registerBroadcastOnRecordingStarted) -----
+                // Update our internal state first
+                onRecordingStarted(true);
+                
+                // Force a clean surface reset when recording starts to ensure preview works
+                if (textureView != null) {
+                    // Try to create a new surface immediately if possible
+                    if (textureView.getSurfaceTexture() != null) {
+                        if (textureViewSurface != null) {
+                            textureViewSurface.release();
+                        }
+                        textureViewSurface = new Surface(textureView.getSurfaceTexture());
+                        Log.d(TAG, "BROADCAST_ON_RECORDING_STARTED: Created new surface");
+                        updateServiceWithCurrentSurface(textureViewSurface);
+                    }
+                    
+                    // Schedule a secondary attempt with a slight delay as backup
+                    handlerClock.postDelayed(() -> {
+                        if (isRecording() && isPreviewEnabled) {
+                            if (textureView.getSurfaceTexture() != null) {
+                                // Only recreate if needed
+                                if (textureViewSurface == null || !textureViewSurface.isValid()) {
+                                    if (textureViewSurface != null) {
+                                        textureViewSurface.release();
+                                    }
+                                    textureViewSurface = new Surface(textureView.getSurfaceTexture());
+                                }
+                                updateServiceWithCurrentSurface(textureViewSurface);
+                                Log.d(TAG, "BROADCAST_ON_RECORDING_STARTED: Delayed surface creation");
+                            } else {
+                                Log.d(TAG, "BROADCAST_ON_RECORDING_STARTED: SurfaceTexture still not available after delay");
+                            }
+                        }
+                    }, 200); // Slightly longer delay as a final attempt
+                }
+                // ----- Fix Ended for this method(registerBroadcastOnRecordingStarted) -----
             }
         };
     }
@@ -609,11 +658,7 @@ public class HomeFragment extends BaseFragment {
 
     private void registerBroadcastOnRecordingPaused() {
         broadcastOnRecordingPaused = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i)
-            {
-                onRecordingPaused();
-            }
+            @Override public void onReceive(Context c, Intent i) { if(isAdded()) onRecordingPaused(); }
         };
     }
 
@@ -633,8 +678,44 @@ public class HomeFragment extends BaseFragment {
         setUIForRecordingActive();
         if(toast) Utils.showQuickToast(requireContext(), R.string.video_recording_started);
         acquireWakeLock(); // Acquire wake lock
-        // ----- Fix Start for this method(onRecordingStarted) -----
         updateStats(); // Update stats when recording starts
+        
+        // ----- Fix Start for this method(onRecordingStarted) -----
+        // Always force preview enabled on first recording start
+        isPreviewEnabled = true;
+        savePreviewState();
+        updatePreviewVisibility();
+        
+        // When recording starts, ensure we have a valid surface
+        if (textureView != null) {
+            // If TextureView has a valid SurfaceTexture, create a Surface from it
+            if (textureView.isAvailable() && textureView.getSurfaceTexture() != null) {
+                // Release any existing surface to avoid leaks
+                if (textureViewSurface != null) {
+                    textureViewSurface.release();
+                }
+                
+                // Create a new Surface from the SurfaceTexture
+                textureViewSurface = new Surface(textureView.getSurfaceTexture());
+                Log.d(TAG, "onRecordingStarted: Created new surface from available TextureView");
+                
+                // Send the surface to the service
+                updateServiceWithCurrentSurface(textureViewSurface);
+            } else {
+                // If no SurfaceTexture is available, reset the TextureView to trigger creation
+                Log.d(TAG, "onRecordingStarted: TextureView not available, forcing a reset");
+                resetTextureView();
+                
+                // Add a delayed retry to create and send the surface
+                handlerClock.postDelayed(() -> {
+                    if (textureView.getSurfaceTexture() != null) {
+                        textureViewSurface = new Surface(textureView.getSurfaceTexture());
+                        updateServiceWithCurrentSurface(textureViewSurface);
+                        Log.d(TAG, "onRecordingStarted: Created surface after delay");
+                    }
+                }, 100);
+            }
+        }
         // ----- Fix Ended for this method(onRecordingStarted) -----
     }
 
@@ -1614,13 +1695,23 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
                 Log.d(TAG, "onSurfaceTextureAvailable: SurfaceTexture is now available.");
+                
                 // ----- Fix Start for this method(onSurfaceTextureAvailable)-----
+                // Clean up any existing surface
+                if (textureViewSurface != null) {
+                    textureViewSurface.release();
+                }
+                
+                // Create a new surface from the available texture
                 textureViewSurface = new Surface(surfaceTexture);
+                Log.d(TAG, "onSurfaceTextureAvailable: Created new surface from texture");
+                
+                // If we're currently recording and preview is enabled, send the surface to service
                 if (isPreviewEnabled && isRecordingOrPaused()) {
-                    Log.d(TAG, "onSurfaceTextureAvailable: Preview enabled and recording active, sending surface to service.");
+                    Log.d(TAG, "onSurfaceTextureAvailable: Recording in progress, sending surface to service");
                     updateServiceWithCurrentSurface(textureViewSurface);
                 } else {
-                    Log.d(TAG, "onSurfaceTextureAvailable: Preview not enabled or not recording/paused, not sending surface yet.");
+                    Log.d(TAG, "onSurfaceTextureAvailable: Not recording or preview disabled, surface ready for later use");
                 }
                 // ----- Fix Ended for this method(onSurfaceTextureAvailable)-----
             }

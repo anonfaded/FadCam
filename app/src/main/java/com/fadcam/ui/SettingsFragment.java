@@ -4,6 +4,8 @@ import static android.content.ContentValues.TAG;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -119,6 +121,7 @@ public class SettingsFragment extends BaseFragment {
 
     private MaterialButtonToggleGroup cameraSelectionToggle;
     private MaterialSwitch locationSwitch; // Declare locationSwitch
+    private MaterialSwitch locationEmbedSwitch; // Declare location embedding switch
     private MaterialSwitch debugSwitch; // Declare debugSwitch
     private MaterialSwitch audioSwitch; // Declare audioSwitch
 
@@ -433,6 +436,7 @@ public class SettingsFragment extends BaseFragment {
         codecSpinner = view.findViewById(R.id.codec_spinner);
         watermarkSpinner = view.findViewById(R.id.watermark_spinner);
         locationSwitch = view.findViewById(R.id.location_toggle_group);
+        locationEmbedSwitch = view.findViewById(R.id.location_embed_toggle_group);
         debugSwitch = view.findViewById(R.id.debug_toggle_group);
         audioSwitch = view.findViewById(R.id.audio_toggle_group); // Find audio switch
         MaterialButton reviewButton = view.findViewById(R.id.review_button);
@@ -539,9 +543,30 @@ public class SettingsFragment extends BaseFragment {
             setupSettingsLanguageDialog(languageChooseButton);
         }
 
+        setupUI();
+
         return view;
     }
 
+    private void setupUI() {
+        // Set up the UI with saved preferences
+        setupCameraSelectionToggle(view, cameraSelectionToggle);
+        setupResolutionSpinner();
+        setupFrameRateSpinner();
+        setupCodecSpinner();
+        setupWatermarkSpinner(view, watermarkSpinner);
+        setupLocationSwitch(locationSwitch);
+        setupLocationEmbedSwitch(locationEmbedSwitch);
+        setupDebugSwitch(debugSwitch);
+        setupAudioSwitch(audioSwitch);
+        setupThemeSpinner(view);
+        setupOrientationSpinner();
+        setupVideoSplittingSection();
+
+        locationHelper = new LocationHelper(getContext());
+        
+        setupStorageLocationOptions();
+    }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
@@ -1689,41 +1714,89 @@ public class SettingsFragment extends BaseFragment {
     }
 
 
+    // ----- Fix Start for this method(setupLocationSwitch_independent)-----
     private void setupLocationSwitch(MaterialSwitch switchView) {
         if(switchView == null) return;
+        
+        // Store reference to the switch for use in permission callback
+        locationSwitch = switchView;
+        
         boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
         switchView.setChecked(isLocationEnabled);
         Log.d(TAG_SETTINGS,"Location switch initialized. State: " + isLocationEnabled);
 
         switchView.setOnCheckedChangeListener((buttonView, isChecked) -> {
             vibrateTouch();
+            
+            Log.d(TAG_SETTINGS, "Location watermark switch toggled by user to: " + isChecked);
+            
             if (isChecked) {
                 if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
                     showLocationPermissionDialog(switchView); // Pass the switch to handle denial
                 } else {
-                    sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, true).apply();
-                    Log.d(TAG_SETTINGS,"Location permission granted, setting enabled.");
+                    // Update only the watermark preference, not the embedding preference
+                    sharedPreferencesManager.setLocationEnabled(true);
+                    Log.d(TAG_SETTINGS,"Location permission granted, setting watermark enabled.");
+                    
+                    // Notify service about the change
+                    initializeLocationHelpersInService();
                 }
             } else {
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, false).apply();
-                Log.d(TAG_SETTINGS,"Location setting disabled.");
-                if(locationHelper != null) locationHelper.stopLocationUpdates(); // Stop updates when disabled
+                // Update only the watermark preference, not the embedding preference
+                sharedPreferencesManager.setLocationEnabled(false);
+                Log.d(TAG_SETTINGS,"Location watermark disabled.");
+                
+                // Stop location updates for watermark if needed
+                if(locationHelper != null) {
+                    locationHelper.stopLocationUpdates();
+                }
+                
+                // Notify service about the change
+                initializeLocationHelpersInService();
             }
         });
     }
+    // ----- Fix Ended for this method(setupLocationSwitch_independent)-----
 
 
     private void showLocationPermissionDialog(MaterialSwitch switchView) {
+        // ----- Fix Start for this method(showLocationPermissionDialog) -----
+        // Check which switch initiated this dialog to handle properly
+        boolean isLocationEmbedSwitch = (switchView == locationEmbedSwitch);
+        String dialogTitle = getString(R.string.location_permission_title);
+        String dialogMessage = getString(isLocationEmbedSwitch ? 
+                R.string.note_location_embed_extra : 
+                R.string.location_permission_description);
+        
+        Log.d(TAG_SETTINGS, "Showing location permission dialog initiated by " + 
+                (isLocationEmbedSwitch ? "location embedding switch" : "location watermark switch"));
+        // ----- Fix Ended for this method(showLocationPermissionDialog) -----
+
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.location_permission_title))
-                .setMessage(getString(R.string.location_permission_description))
+                .setTitle(dialogTitle)
+                .setMessage(dialogMessage)
                 .setPositiveButton("Grant", (dialog, which) -> requestLocationPermission())
                 .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
                     // User denied permission via dialog, uncheck the switch and save pref
                     if (switchView != null) switchView.setChecked(false);
-                    sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, false).apply();
-                    Log.d(TAG_SETTINGS,"User cancelled location permission request.");
+                    
+                    // ----- Fix Start for this method(showLocationPermissionDialog_save_appropriate_pref) -----
+                    if (isLocationEmbedSwitch) {
+                        // If this was the embedding switch, update that preference
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putBoolean(Constants.PREF_EMBED_LOCATION_DATA, false)
+                                .apply();
+                        Log.d(TAG_SETTINGS,"User cancelled location embedding permission request.");
+                    } else {
+                        // Otherwise update the watermark preference
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putBoolean(Constants.PREF_LOCATION_DATA, false)
+                                .apply();
+                        Log.d(TAG_SETTINGS,"User cancelled location watermark permission request.");
+                    }
+                    // ----- Fix Ended for this method(showLocationPermissionDialog_save_appropriate_pref) -----
+                    
                     dialog.dismiss();
                 })
                 .setCancelable(false) // Prevent dismissing without choice
@@ -1731,17 +1804,20 @@ public class SettingsFragment extends BaseFragment {
     }
 
 
+    // ----- Fix Start for this method(requestLocationPermission)-----
     private void requestLocationPermission() {
-        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
-            Log.w(TAG_SETTINGS,"Location permission previously denied, showing rationale dialog first.");
-            // Optionally show a rationale again before requesting
-            // For simplicity now, just re-request:
-            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
-        } else {
-            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
-            Log.d(TAG_SETTINGS,"Requesting location permission.");
-        }
+        Log.d(TAG_SETTINGS, "Requesting location permission from system");
+        
+        // Request the permission
+        ActivityCompat.requestPermissions(
+                requireActivity(),
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                REQUEST_LOCATION_PERMISSION
+        );
+        
+        // Note: Result will be handled in onRequestPermissionsResult
     }
+    // ----- Fix Ended for this method(requestLocationPermission)-----
 
 
     @Override
@@ -1749,18 +1825,37 @@ public class SettingsFragment extends BaseFragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, true).apply();
+                // Permission was granted
                 Log.d(TAG_SETTINGS, "Location permission granted via system dialog.");
-                // Re-check the switch (should already be checked if dialog was triggered by toggle)
-                if (locationSwitch != null && !locationSwitch.isChecked()) locationSwitch.setChecked(true);
-                if(locationHelper != null) locationHelper.startLocationUpdates(); // Start updates now
+                
+                // We don't automatically enable either feature
+                // Just show a toast advising the user that they can now use the feature
+                Toast.makeText(requireContext(), 
+                    R.string.location_permission_granted_manual_toggle, 
+                    Toast.LENGTH_LONG).show();
+                    
+                // Update any service that might be running
+                initializeLocationHelpersInService();
+                
             } else {
-                // User denied permission via system dialog
-                sharedPreferencesManager.sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, false).apply();
-                // Ensure the switch is unchecked
-                if (locationSwitch != null) locationSwitch.setChecked(false);
-                Log.w(TAG_SETTINGS,"Location permission denied via system dialog.");
-                Toast.makeText(getContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+                // Permission was denied
+                Log.d(TAG_SETTINGS, "Location permission DENIED via system dialog");
+                
+                // Disable both location features when permission is denied
+                sharedPreferencesManager.setLocationEnabled(false);
+                sharedPreferencesManager.setLocationEmbeddingEnabled(false);
+                
+                // Update UI to match
+                if (locationSwitch != null) {
+                    locationSwitch.setChecked(false);
+                }
+                if (locationEmbedSwitch != null) {
+                    locationEmbedSwitch.setChecked(false);
+                }
+                
+                Toast.makeText(requireContext(), 
+                    R.string.location_permission_denied, 
+                    Toast.LENGTH_SHORT).show();
             }
         }
         // Handle other permission results if necessary
@@ -2553,6 +2648,84 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
+    // ----- Fix Start for this method(setupLocationEmbedSwitch_independent)-----
+    private void setupLocationEmbedSwitch(MaterialSwitch switchView) {
+        if (switchView == null) return;
+        
+        // Store reference to the switch for use in permission callback
+        locationEmbedSwitch = switchView;
+        
+        // Get current preference value
+        boolean isLocationEmbeddingEnabled = sharedPreferencesManager.isLocationEmbeddingEnabled();
+        Log.d(TAG_SETTINGS, "Setting up location embedding switch. Current preference: " + isLocationEmbeddingEnabled);
+        
+        // Set UI state to match preference
+        switchView.setChecked(isLocationEmbeddingEnabled);
+        
+        switchView.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            vibrateTouch();
+            
+            Log.d(TAG_SETTINGS, "Location embedding switch toggled by user to: " + isChecked);
+            
+            if (isChecked) {
+                // Check if location permission is granted
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    
+                    // Permission not granted, show dialog and turn off switch
+                    Log.d(TAG_SETTINGS, "Location permission not granted, showing permission dialog");
+                    switchView.setChecked(false);
+                    showLocationEmbedPermissionDialog(switchView);
+                    
+                } else {
+                    // Permission granted, update preference and notify service
+                    Log.d(TAG_SETTINGS, "Location permission already granted, enabling embedding");
+                    
+                    // Update preference to match user selection (ON)
+                    sharedPreferencesManager.setLocationEmbeddingEnabled(true);
+                    
+                    // Show confirmation toast
+                    Toast.makeText(requireContext(), R.string.location_embedding_enabled, Toast.LENGTH_SHORT).show();
+                    
+                    // Notify service about the change
+                    initializeLocationHelpersInService();
+                }
+            } else {
+                // User turned embedding OFF
+                Log.d(TAG_SETTINGS, "User disabled location embedding");
+                
+                // Update preference to match user selection (OFF)
+                sharedPreferencesManager.setLocationEmbeddingEnabled(false);
+                
+                // Notify service about the change
+                initializeLocationHelpersInService();
+            }
+        });
+    }
+    // ----- Fix Ended for this method(setupLocationEmbedSwitch_independent)-----
+
+    // ----- Fix Start for this method(showLocationEmbedPermissionDialog)-----
+    private void showLocationEmbedPermissionDialog(MaterialSwitch switchView) {
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.location_permission_title)
+            .setMessage(R.string.location_permission_message)
+            .setPositiveButton(R.string.allow_location_access, (dialog, which) -> {
+                // Request permission but DON'T enable the switch yet
+                // The switch will stay OFF until user manually toggles it after permission granted
+                Log.d(TAG_SETTINGS, "User clicked Allow in location permission dialog");
+                requestLocationPermission();
+            })
+            .setNegativeButton(R.string.universal_cancel, (dialog, which) -> {
+                // Ensure switch is OFF since permission was denied
+                Log.d(TAG_SETTINGS, "User clicked Cancel in location permission dialog");
+                switchView.setChecked(false);
+                sharedPreferencesManager.setLocationEmbeddingEnabled(false);
+            })
+            .setCancelable(false)
+            .show();
+    }
+    // ----- Fix Ended for this method(showLocationEmbedPermissionDialog)-----
+
     // --- Video Bitrate Dialog ---
     private void showVideoBitrateDialog() {
         Context context = requireContext();
@@ -2928,5 +3101,41 @@ public class SettingsFragment extends BaseFragment {
     private void dismissOpenDialogs() {
         // Implement this based on your dialog management
     }
+
+    // ----- Fix Start for this class(SettingsFragment) -----
+    /**
+     * Helper method to initialize location helpers in the active RecordingService if it's running
+     */
+    private void initializeLocationHelpersInService() {
+        Context context = getContext();
+        if (context == null) return;
+        
+        // Get the current preference states
+        boolean locationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+        boolean embedLocationEnabled = sharedPreferencesManager.isLocationEmbeddingEnabled();
+        boolean hasLocationPermission = ContextCompat.checkSelfPermission(context, 
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        
+        Log.d(TAG_SETTINGS, "=== Initializing location helpers in service ===");
+        Log.d(TAG_SETTINGS, "Location watermark enabled: " + locationEnabled);
+        Log.d(TAG_SETTINGS, "Location embedding enabled: " + embedLocationEnabled);
+        Log.d(TAG_SETTINGS, "Has location permission: " + hasLocationPermission);
+        
+        // Send broadcast to notify service about location preference changes
+        Intent intent = new Intent(Constants.INTENT_ACTION_REINITIALIZE_LOCATION);
+        
+        // Add important flags to ensure delivery
+        intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        
+        // Add extra data to the intent
+        intent.putExtra("force_init", true);
+        intent.putExtra("embed_location", embedLocationEnabled);
+        intent.putExtra("has_permission", hasLocationPermission);
+        
+        // Send the broadcast
+        Log.d(TAG_SETTINGS, "Sending location helpers broadcast to service");
+        context.sendBroadcast(intent);
+    }
+    // ----- Fix Ended for this class(SettingsFragment) -----
 
 }
