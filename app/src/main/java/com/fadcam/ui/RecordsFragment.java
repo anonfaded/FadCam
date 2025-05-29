@@ -1339,6 +1339,9 @@ public class RecordsFragment extends BaseFragment implements
         Log.i(TAG, getString(R.string.delete_videos_log, itemsToDeleteUris.size()));
         exitSelectionMode();
 
+        // Show progress dialog for batch deletion with count information
+        onMoveToTrashStarted(itemsToDeleteUris.size() + " videos");
+
         if (executorService == null || executorService.isShutdown()){ executorService = Executors.newSingleThreadExecutor(); }
         executorService.submit(() -> {
             int successCount = 0; int failCount = 0;
@@ -1362,6 +1365,9 @@ public class RecordsFragment extends BaseFragment implements
             final int finalSuccessCount = successCount; final int finalFailCount = failCount;
             if(getActivity()!=null){
                 getActivity().runOnUiThread(()->{
+                    // Hide the progress dialog
+                    onMoveToTrashFinished(finalSuccessCount > 0, null);
+                    
                     String message = (finalFailCount > 0) ?
                              getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
                              getString(R.string.delete_videos_success_toast, finalSuccessCount);
@@ -1379,13 +1385,17 @@ public class RecordsFragment extends BaseFragment implements
     }
     private void confirmDeleteAll() {
         vibrate();
-        if (videoItems.isEmpty()){
+        
+        // Use allLoadedItems instead of videoItems to get the actual total count
+        int totalVideoCount = allLoadedItems.size();
+        
+        if (totalVideoCount == 0){
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
         }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.delete_all_videos_title))
-                .setMessage(getString(R.string.delete_all_videos_description) + "\n(" + videoItems.size() + " videos will be removed)")
+                .setMessage(getString(R.string.delete_all_videos_description) + "\n(" + totalVideoCount + " videos will be removed)")
                 .setPositiveButton(getString(R.string.dialog_del_confirm), (dialog, which) -> deleteAllVideos())
                 .setNegativeButton(getString(R.string.universal_cancel), null)
                 .show();
@@ -1393,13 +1403,17 @@ public class RecordsFragment extends BaseFragment implements
 
     // Inside RecordsFragment.java
     private void deleteAllVideos() {
-        List<VideoItem> itemsToTrash = new ArrayList<>(videoItems);
+        // Use allLoadedItems instead of videoItems to delete ALL videos, not just the current page
+        List<VideoItem> itemsToTrash = new ArrayList<>(allLoadedItems);
         if (itemsToTrash.isEmpty()) {
              if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
              return;
         }
 
         Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
+        
+        // Show progress dialog for deleting all videos with count information
+        onMoveToTrashStarted("all " + itemsToTrash.size() + " videos");
 
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
@@ -1426,6 +1440,9 @@ public class RecordsFragment extends BaseFragment implements
             final int finalFailCount = failCount;
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
+                    // Hide the progress dialog
+                    onMoveToTrashFinished(finalSuccessCount > 0, null);
+                    
                     String message = (finalFailCount > 0) ?
                             getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
                             getString(R.string.delete_videos_success_toast, finalSuccessCount);
