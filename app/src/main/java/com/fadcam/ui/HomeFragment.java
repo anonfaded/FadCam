@@ -6,6 +6,8 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.animation.ArgbEvaluator;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
@@ -287,7 +289,71 @@ public class HomeFragment extends BaseFragment {
         // Ensure there are still messages to choose from
         if (!messageQueue.isEmpty()) {
             String randomMessage = messageQueue.remove(random.nextInt(messageQueue.size()));
+            
+            // Set text with padding
+            tvPreviewPlaceholder.setPadding(40, tvPreviewPlaceholder.getPaddingTop(), 40, tvPreviewPlaceholder.getPaddingBottom());
             tvPreviewPlaceholder.setText(randomMessage);
+
+            // Create a bounce/wobble animation
+            AnimatorSet animatorSet = new AnimatorSet();
+            
+            // Scale down then up animation (bounce effect)
+            ObjectAnimator scaleDownX = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 0.7f);
+            ObjectAnimator scaleDownY = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 0.7f);
+            scaleDownX.setDuration(150);
+            scaleDownY.setDuration(150);
+            
+            ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.0f);
+            ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.0f);
+            scaleUpX.setDuration(150);
+            scaleUpY.setDuration(150);
+            
+            // Wobble animation (rotate slightly left then right)
+            ObjectAnimator rotateLeft = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "rotation", 0f, -3f);
+            rotateLeft.setDuration(80);
+            ObjectAnimator rotateRight = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "rotation", -3f, 3f);
+            rotateRight.setDuration(80);
+            ObjectAnimator rotateCenter = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "rotation", 3f, 0f);
+            rotateCenter.setDuration(80);
+            
+            // Red flash animation for the background of cardPreview
+            // Store the original background drawable
+            final Drawable originalBackground = cardPreview.getBackground();
+            
+            // Create a ValueAnimator for color transition
+            ValueAnimator colorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), 
+                    Color.parseColor("#302745"), // Use the app's dark purple color
+                    Color.RED, 
+                    Color.parseColor("#302745"));
+            colorAnim.setDuration(300);
+            colorAnim.addUpdateListener(animator -> {
+                int color = (int) animator.getAnimatedValue();
+                cardPreview.setBackgroundColor(color);
+            });
+            // Make sure to restore the original background when animation ends
+            colorAnim.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    cardPreview.setBackground(originalBackground);
+                }
+            });
+            
+            // Sequence the animations
+            AnimatorSet bounceSet = new AnimatorSet();
+            bounceSet.playTogether(scaleDownX, scaleDownY);
+            
+            AnimatorSet expandSet = new AnimatorSet();
+            expandSet.playTogether(scaleUpX, scaleUpY);
+            
+            AnimatorSet wobbleSet = new AnimatorSet();
+            wobbleSet.playSequentially(rotateLeft, rotateRight, rotateCenter);
+            
+            // Play bounce then wobble animations
+            animatorSet.playSequentially(bounceSet, expandSet, wobbleSet);
+            animatorSet.start();
+            
+            // Play the background flash animation
+            colorAnim.start();
 
             // Track recently shown messages
             recentlyShownMessages.add(randomMessage);
@@ -305,11 +371,16 @@ public class HomeFragment extends BaseFragment {
 
     private void setupLongPressListener() {
         cardPreview.setOnLongClickListener(v -> {
-            // ----- Fix Start for this method(setupLongPressListener_SequentialAnimation)-----
             // 1. Perform haptic feedback
             performHapticFeedback();
 
-            // 2. Unified Card Bounce Animation (Down then Up)
+            // When not recording, show a random funny message
+            if (!isRecordingOrPaused()) {
+                showRandomMessage();
+                return true;
+            }
+
+            // 2. Unified Card Bounce Animation (Down then Up) - only for recording mode
             AnimatorSet cardBounceAnim = new AnimatorSet();
             ObjectAnimator scaleDownX = ObjectAnimator.ofFloat(cardPreview, "scaleX", 0.9f);
             ObjectAnimator scaleDownY = ObjectAnimator.ofFloat(cardPreview, "scaleY", 0.9f);
@@ -357,7 +428,6 @@ public class HomeFragment extends BaseFragment {
                 }
             });
             cardBounceAnim.start(); // Start the card bounce animation
-            // ----- Fix Ended for this method(setupLongPressListener_SequentialAnimation)-----
             return true;
         });
     }
@@ -1400,6 +1470,9 @@ public class HomeFragment extends BaseFragment {
         setupLongPressListener(); // For Easter eggs on title
         setupClockLongPressListener(); // For display options on clock
         setupAppLogoLongPressListener(view); // <<< CALL NEW METHOD
+        
+        // Initialize easter egg messages and setup listener for preview placeholder
+        initializeMessages();
 
         vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
         TorchService.setHomeFragment(this);
