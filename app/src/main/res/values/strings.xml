@@ -463,4 +463,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
     <!-- Fix End: Add camera cooldown message -->
 
+    <string name="trash_select_all">Select All</string>
+
 </resources>

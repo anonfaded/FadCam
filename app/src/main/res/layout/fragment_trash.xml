@@ -15,13 +15,29 @@
         app:navigationIconTint="@android:color/white"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Select All Checkbox -->
+    <CheckBox
+        android:id="@+id/checkbox_select_all"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/trash_select_all"
+        android:textColor="@color/white"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/trash_toolbar"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_trash_items"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@id/trash_toolbar"
+        app:layout_constraintTop_toBottomOf="@id/checkbox_select_all"
         app:layout_constraintBottom_toTopOf="@id/trash_actions_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -59,62 +75,66 @@
 
     </LinearLayout>
 
-    <!-- Auto-delete information text -->
-    <TextView
-        android:id="@+id/tvAutoDeleteInfo"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="8dp"
-        android:gravity="center_horizontal"
-        android:text="Items are automatically deleted after 30 days."
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-        app:layout_constraintBottom_toTopOf="@id/trash_actions_layout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
     <LinearLayout
         android:id="@+id/trash_actions_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
+        android:orientation="vertical"
         android:background="?android:attr/windowBackground"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
-            android:id="@+id/button_restore_selected"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
+        <!-- Auto-delete information text -->
+        <TextView
+            android:id="@+id/tvAutoDeleteInfo"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/universal_restore"
-            android:layout_marginEnd="4dp"/>
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_horizontal"
+            android:text="Items are automatically deleted after 30 days."
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption" />
 
-        <Button
-            android:id="@+id/button_delete_selected_permanently"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/universal_delete"
-            android:textColor="@color/colorError"
-            app:strokeColor="@color/colorError"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"/>
+            android:orientation="horizontal"
+            android:padding="8dp">
 
-        <Button
-            android:id="@+id/button_empty_all_trash"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/trash_button_empty_all_action"
-            android:textColor="@color/colorError"
-            android:layout_marginStart="4dp"/>
+            <Button
+                android:id="@+id/button_restore_selected"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/universal_restore"
+                android:layout_marginEnd="4dp"/>
+
+            <Button
+                android:id="@+id/button_delete_selected_permanently"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/universal_delete"
+                android:textColor="@color/colorError"
+                app:strokeColor="@color/colorError"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"/>
+
+            <Button
+                android:id="@+id/button_empty_all_trash"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/trash_button_empty_all_action"
+                android:textColor="@color/colorError"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

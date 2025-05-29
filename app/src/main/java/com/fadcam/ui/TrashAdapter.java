@@ -83,6 +83,18 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
     }
 
     /**
+     * Selects all items in the list
+     */
+    public void selectAll() {
+        selectedItems.clear();
+        selectedItems.addAll(trashItems);
+        notifyDataSetChanged();
+        if (interactionListener != null) {
+            interactionListener.onItemSelectedStateChanged(true);
+        }
+    }
+
+    /**
      * Clears all selected items and updates the UI accordingly
      */
     public void clearSelections() {
@@ -93,6 +105,14 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                 interactionListener.onItemSelectedStateChanged(false);
             }
         }
+    }
+
+    /**
+     * Checks if all items are currently selected
+     * @return true if all items are selected, false otherwise
+     */
+    public boolean isAllSelected() {
+        return !trashItems.isEmpty() && selectedItems.size() == trashItems.size();
     }
 
     class TrashViewHolder extends RecyclerView.ViewHolder {
@@ -182,8 +202,11 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                 }
             }
 
+            // Set the checkbox state without triggering onCheckedChangeListener
+            checkBoxSelected.setOnCheckedChangeListener(null);
             checkBoxSelected.setChecked(selectedItems.contains(item));
-
+            
+            // Set up click listeners
             itemView.setOnClickListener(v -> {
                 if (selectedItems.isEmpty()) {
                     if (interactionListener != null) {
@@ -200,7 +223,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                         }
                     }
                 } else {
-                    checkBoxSelected.toggle();
+                    toggleSelection(item);
                 }
             });
 
@@ -209,21 +232,46 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                     longClickListener.onItemLongClicked(item);
                     return true;
                 }
-                return false;
+                toggleSelection(item);
+                return true;
             });
 
+            // Re-add the listener after setting the initial state
             checkBoxSelected.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (isChecked) {
-                    if (!selectedItems.contains(item)) {
-                        selectedItems.add(item);
+                if (isChecked && !selectedItems.contains(item)) {
+                    selectedItems.add(item);
+                    if (interactionListener != null) {
+                        interactionListener.onItemCheckChanged(item, true);
                     }
-                } else {
+                } else if (!isChecked && selectedItems.contains(item)) {
                     selectedItems.remove(item);
-                }
-                if (interactionListener != null) {
-                    interactionListener.onItemCheckChanged(item, isChecked);
+                    if (interactionListener != null) {
+                        interactionListener.onItemCheckChanged(item, false);
+                    }
                 }
             });
+        }
+    }
+    
+    /**
+     * Toggle selection state of an item
+     */
+    private void toggleSelection(TrashItem item) {
+        boolean newState = !selectedItems.contains(item);
+        if (newState) {
+            selectedItems.add(item);
+        } else {
+            selectedItems.remove(item);
+        }
+        
+        // Find the position of the item and notify the adapter
+        int position = trashItems.indexOf(item);
+        if (position != -1) {
+            notifyItemChanged(position);
+        }
+        
+        if (interactionListener != null) {
+            interactionListener.onItemCheckChanged(item, newState);
         }
     }
 } 

@@ -36,6 +36,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.Locale;
 import androidx.fragment.app.Fragment;
 import androidx.activity.OnBackPressedCallback;
+import android.widget.CheckBox;
+import android.widget.ImageView;
 
 public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashItemInteractionListener {
 
@@ -54,6 +56,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private TextView tvAutoDeleteInfo;
     private SharedPreferencesManager sharedPreferencesManager;
     private boolean isInSelectionMode = false;
+    private CheckBox checkboxSelectAll;
 
     public TrashFragment() {
         // Required empty public constructor
@@ -91,10 +94,12 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
         emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
         tvAutoDeleteInfo = view.findViewById(R.id.tvAutoDeleteInfo);
+        checkboxSelectAll = view.findViewById(R.id.checkbox_select_all);
 
         setupToolbar();
         setupRecyclerView();
         setupButtonListeners();
+        setupSelectAllCheckbox();
         updateAutoDeleteInfoText();
 
         // Auto-delete old items first, then load
@@ -133,6 +138,18 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         trashAdapter = new TrashAdapter(getContext(), trashItems, this, null);
         recyclerViewTrashItems.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewTrashItems.setAdapter(trashAdapter);
+        
+        // Add scroll state change listener to maintain selection during scrolling
+        recyclerViewTrashItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    // Update select all checkbox state when scrolling stops
+                    updateSelectAllCheckboxState();
+                }
+            }
+        });
     }
 
     private void setupButtonListeners() {
@@ -263,6 +280,13 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             }
         }
+        
+        // Show/hide select all checkbox
+        if (checkboxSelectAll != null) {
+            checkboxSelectAll.setVisibility((isInSelectionMode && !trashItems.isEmpty()) ? View.VISIBLE : View.GONE);
+        }
+        
+        updateSelectAllCheckboxState();
     }
 
     @Override
@@ -351,6 +375,14 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 toolbar.setTitle(selectedCount + " selected");
             } else if (toolbar != null) {
                 toolbar.setTitle(getString(R.string.trash_fragment_title_text));
+            }
+            
+            // Update select all checkbox state
+            updateSelectAllCheckboxState();
+            
+            // Show/hide select all checkbox
+            if (checkboxSelectAll != null) {
+                checkboxSelectAll.setVisibility(isInSelectionMode ? View.VISIBLE : View.GONE);
             }
         }
     }
@@ -504,7 +536,41 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             if (toolbar != null) {
                 toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             }
+            
+            // Hide select all checkbox
+            if (checkboxSelectAll != null) {
+                checkboxSelectAll.setVisibility(View.GONE);
+            }
         }
+    }
+
+    private void setupSelectAllCheckbox() {
+        if (checkboxSelectAll == null) return;
+        
+        checkboxSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                if (!trashAdapter.isAllSelected() && !trashItems.isEmpty()) {
+                    trashAdapter.selectAll();
+                }
+            } else {
+                if (trashAdapter.getSelectedItemsCount() > 0) {
+                    trashAdapter.clearSelections();
+                }
+            }
+            updateActionButtonsState();
+        });
+    }
+    
+    private void updateSelectAllCheckboxState() {
+        if (checkboxSelectAll == null || trashAdapter == null) return;
+        
+        // Update checkbox without triggering listener
+        checkboxSelectAll.setOnCheckedChangeListener(null);
+        boolean shouldBeChecked = trashAdapter.isAllSelected() && !trashItems.isEmpty();
+        checkboxSelectAll.setChecked(shouldBeChecked);
+        
+        // Re-add the listener
+        setupSelectAllCheckbox();
     }
 
     // TODO: Create TrashAdapter class
