@@ -120,12 +120,70 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             toolbar.setNavigationIcon(R.drawable.ic_close);
             toolbar.setNavigationOnClickListener(v -> {
-                // ----- Fix Start: Use OnBackPressedDispatcher for back press -----
-                // Use OnBackPressedDispatcher for compatibility with Android 13+
-                if (getActivity() != null) {
-                    getActivity().getOnBackPressedDispatcher().onBackPressed();
+                // ----- Fix Start for this method(setupToolbar) -----
+                // Handle the fade-out animation manually instead of relying on dispatcher
+                if (getActivity() instanceof MainActivity) {
+                    MainActivity mainActivity = (MainActivity) getActivity();
+                    View overlayContainer = mainActivity.findViewById(R.id.overlay_fragment_container);
+                    
+                    if (overlayContainer != null) {
+                        // Animate fading out - identical to the animation in MainActivity
+                        overlayContainer.animate()
+                            .alpha(0f)
+                            .setDuration(250)
+                            .withEndAction(() -> {
+                                // Set visibility to GONE after animation completes
+                                overlayContainer.setVisibility(View.GONE);
+                                overlayContainer.setAlpha(1f); // Reset alpha for next time
+                                
+                                // Get reference to viewPager and adapter
+                                androidx.viewpager2.widget.ViewPager2 viewPager = 
+                                    mainActivity.findViewById(R.id.view_pager);
+                                com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
+                                    mainActivity.findViewById(R.id.bottom_navigation);
+                                
+                                if (viewPager != null && bottomNav != null) {
+                                    // Force a complete reset of the ViewPager and its fragments
+                                    final int currentPosition = viewPager.getCurrentItem();
+                                    
+                                    // Completely recreate the adapter
+                                    ViewPagerAdapter newAdapter = new ViewPagerAdapter(mainActivity);
+                                    viewPager.setAdapter(newAdapter);
+                                    
+                                    // Reset page transformer to ensure animations work
+                                    viewPager.setPageTransformer(new FadePageTransformer());
+                                    
+                                    // Restore position without animation
+                                    viewPager.setCurrentItem(currentPosition, false);
+                                    
+                                    // Make sure the correct tab is selected
+                                    switch (currentPosition) {
+                                        case 0:
+                                            bottomNav.setSelectedItemId(R.id.navigation_home);
+                                            break;
+                                        case 1:
+                                            bottomNav.setSelectedItemId(R.id.navigation_records);
+                                            break;
+                                        case 2:
+                                            bottomNav.setSelectedItemId(R.id.navigation_remote);
+                                            break;
+                                        case 3:
+                                            bottomNav.setSelectedItemId(R.id.navigation_settings);
+                                            break;
+                                        case 4:
+                                            bottomNav.setSelectedItemId(R.id.navigation_about);
+                                            break;
+                                    }
+                                }
+                                
+                                // Pop any fragments in the back stack
+                                if (mainActivity.getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                                    mainActivity.getSupportFragmentManager().popBackStack();
+                                }
+                            });
+                    }
                 }
-                // ----- Fix End: Use OnBackPressedDispatcher for back press -----
+                // ----- Fix Ended for this method(setupToolbar) -----
             });
         } else {
             Log.e(TAG, "Toolbar is null or Activity is not AppCompatActivity, cannot set up toolbar as ActionBar.");
