@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import com.fadcam.R;
 import com.guardanis.applock.activities.UnlockActivity;
 import com.guardanis.applock.services.FingerprintLockService;
 import com.guardanis.applock.services.LockService;
@@ -181,13 +182,8 @@ public class AppLock {
     }
 
     protected void handleUnlockFailure(String message, UnlockDelegate eventListener) {
-        this.unlockAttemptsCount++;
-
         if (eventListener != null)
             eventListener.onFailureLimitExceeded(message);
-
-        if(context.getResources().getInteger(R.integer.applock__max_retry_count) < unlockAttemptsCount)
-            onFailureExceedsLimit();
     }
 
     public SharedPreferences getPreferences(){
@@ -202,8 +198,7 @@ public class AppLock {
     }
 
     public boolean isUnlockFailureBlockEnabled() {
-        return context.getResources().getInteger(R.integer.applock__max_retry_count) < unlockAttemptsCount
-                || System.currentTimeMillis() - getUnlockFailureBlockStart() < getFailureDelayMs();
+        return false;
     }
 
     protected long getUnlockFailureBlockStart() {

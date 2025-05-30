@@ -5,13 +5,16 @@ import android.app.Dialog;
 import android.view.View;
 
 import com.guardanis.applock.AppLock;
-import com.guardanis.applock.R;
+import com.fadcam.R;
 import com.guardanis.applock.views.UnlockViewController;
+import androidx.appcompat.app.AppCompatDialog;
+import java.lang.ref.WeakReference;
 
 public class UnlockDialogBuilder extends AppLockDialogBuilder<UnlockViewController> implements UnlockViewController.Delegate {
 
     protected Runnable unlockCallback;
     protected Runnable canceledCallback;
+    private WeakReference<Dialog> dialog;
 
     public UnlockDialogBuilder(Activity activity) {
         super(activity, R.layout.applock__unlock);
@@ -103,5 +106,18 @@ public class UnlockDialogBuilder extends AppLockDialogBuilder<UnlockViewControll
         }
 
         return show();
+    }
+
+    @Override
+    public Dialog show() {
+        Dialog dialog = super.show();
+
+        if (dialog != null && dialog.getWindow() != null) {
+            dialog.getWindow().setDimAmount(1.0f);
+        }
+
+        this.dialog = new WeakReference<Dialog>(dialog);
+
+        return dialog;
     }
 }

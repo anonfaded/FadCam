@@ -7,7 +7,7 @@ import android.content.pm.PackageManager;
 import android.view.View;
 
 import com.guardanis.applock.AppLock;
-import com.guardanis.applock.R;
+import com.fadcam.R;
 import com.guardanis.applock.pin.PINInputController;
 import com.guardanis.applock.services.FingerprintLockService;
 import com.guardanis.applock.services.PINLockService;

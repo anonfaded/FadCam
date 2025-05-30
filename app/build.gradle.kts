@@ -35,6 +35,7 @@ android {
             )
         }
     }
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -44,6 +45,21 @@ android {
         includeInApk = false
         // Disables dependency metadata when building Android App Bundles.
         includeInBundle = false
+    }
+    
+    // Proper resource handling
+    android.aaptOptions.noCompress += listOf("xml")
+    
+    // Generate R class for the AppLock library
+    android.namespace = "com.fadcam"
+    
+    // Add the sourceSets for the AppLockLibrary
+    sourceSets {
+        getByName("main") {
+            java.srcDir("libs/AppLockLibrary/src/main/java")
+            // Include all resources
+            res.srcDir("libs/AppLockLibrary/src/main/res")
+        }
     }
 }
 
@@ -84,10 +100,11 @@ dependencies {
     implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
 
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
 
     implementation(libs.appintro.v631)
 
     implementation(libs.lottie)
-    implementation("com.guardanis:applock:3.0.2")
-
+    // Removing AppLockLibrary as a project dependency
+    // implementation(project(":app:libs:AppLockLibrary"))
 }

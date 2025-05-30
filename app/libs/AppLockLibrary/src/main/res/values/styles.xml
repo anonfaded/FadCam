@@ -8,9 +8,9 @@
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowActionBar">false</item>
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/applock__colorPrimary</item>
+        <item name="colorPrimaryDark">@color/applock__colorPrimaryDark</item>
+        <item name="colorAccent">@color/applock__colorAccent</item>
     </style>
 
     <!-- Base AppLock content. -->

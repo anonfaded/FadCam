@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Override AppLock's default retry limit with an extremely high value -->
+    <!-- Both old and new resource names to ensure compatibility -->
+    <integer name="applock__default_max_retry_count">999999</integer>
+    <integer name="pin__default_max_retry_count">999999</integer>
+    
+    <!-- Set the failure retry delay to zero -->
+    <integer name="applock__default_failure_retry_delay">0</integer>
+    <integer name="pin__default_failure_retry_delay">0</integer>
+    
+    <!-- Set the activity lock reenable minutes to a high value -->
+    <integer name="applock__default_activity_lock_reenable_minutes">99999</integer>
+    <integer name="pin__default_activity_lock_reenable_minutes">99999</integer>
+    
+    <!-- Additional retry-related values just to be thorough -->
+    <integer name="pin__input_view_count">4</integer>
+    <integer name="applock__input_view_count">4</integer>
+</resources> 

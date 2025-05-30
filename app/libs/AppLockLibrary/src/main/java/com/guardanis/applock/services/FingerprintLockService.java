@@ -7,7 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 
 import com.guardanis.applock.AppLock;
-import com.guardanis.applock.R;
+import com.fadcam.R;
 import com.guardanis.applock.utils.CipherGenerator;
 
 import javax.crypto.Cipher;

@@ -5,7 +5,8 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
-import com.guardanis.applock.R;
+import com.fadcam.R;
+import com.guardanis.applock.AppLock;
 import com.guardanis.applock.views.UnlockViewController;
 
 import androidx.appcompat.app.AppCompatActivity;

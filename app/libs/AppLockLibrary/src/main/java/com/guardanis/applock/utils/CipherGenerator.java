@@ -6,7 +6,7 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
 
-import com.guardanis.applock.R;
+import com.fadcam.R;
 
 import java.security.KeyStore;
 import java.security.UnrecoverableKeyException;
