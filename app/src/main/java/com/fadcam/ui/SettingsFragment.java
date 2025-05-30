@@ -49,6 +49,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
@@ -2474,8 +2475,35 @@ public class SettingsFragment extends BaseFragment {
      * @param cameraType The camera type (FRONT or BACK) to query.
      * @return A sorted List<Integer> of all supported frame rates. Returns default [30] on critical errors.
      */
+    @ExperimentalCamera2Interop
     private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
-        Log.i(TAG_SETTINGS, "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " ===");
+        // ----- Fix Start for this method(getHardwareSupportedFrameRates)-----
+        if (getContext() == null) {
+            Log.e(TAG_SETTINGS, "FPS Query: Context is null.");
+            return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        }
+        
+        // Use the new CameraX utility for framerate detection
+        try {
+            Log.i(TAG_SETTINGS, "Using CameraX API for framerate detection");
+            return com.fadcam.utils.CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(), cameraType);
+        } catch (Exception e) {
+            Log.e(TAG_SETTINGS, "Error using CameraX for framerate detection, falling back to Camera2", e);
+            // Fallback to Camera2 API implementation - retain original logic
+            return getHardwareSupportedFrameRatesUsingCamera2(cameraType);
+        }
+        // ----- Fix Ended for this method(getHardwareSupportedFrameRates)-----
+    }
+    
+    /**
+     * Original Camera2 API implementation for getting supported framerates.
+     * Kept as a fallback method in case CameraX implementation fails.
+     * 
+     * @param cameraType The camera type (FRONT or BACK) to query.
+     * @return A sorted List<Integer> of all supported frame rates.
+     */
+    private List<Integer> getHardwareSupportedFrameRatesUsingCamera2(CameraType cameraType) {
+        Log.i(TAG_SETTINGS, "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " using Camera2 API ===");
         final List<Integer> defaultRateList = Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
 
         if (getContext() == null) {
@@ -2719,7 +2747,6 @@ public class SettingsFragment extends BaseFragment {
             Log.d(TAG_SETTINGS, "FPS Query: Filtered to " + finalSupportedRates.size() + " useful framerates");
         }
         
-        Log.i(TAG_SETTINGS, "=== Final Supported FPS options for " + cameraType + " (ID: " + targetCameraId + "): " + finalSupportedRates + " ===");
         return finalSupportedRates;
     }
 

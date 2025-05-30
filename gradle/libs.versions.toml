@@ -1,8 +1,9 @@
 [versions]
-agp = "8.9.1"
+agp = "8.9.3"
 androidPathview = "1.0.8"
-appintro = "6.3.0"
+appintro = "6.3.1"
 appintroVersion = "6.3.1"
+camerax = "1.4.2"
 coreKtx = "1.16.0"
 exoplayerCore = "2.19.1"
 ffmpegKitFull = "6.0-2"
@@ -25,6 +26,11 @@ viewpager2 = "1.1.0"
 android-pathview = { module = "com.eftimoff:android-pathview", version.ref = "androidPathview" }
 appintro = { module = "com.github.AppIntro:AppIntro", version.ref = "appintro" }
 appintro-v631 = { module = "com.github.AppIntro:AppIntro", version.ref = "appintroVersion" }
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
+camerax-extensions = { module = "androidx.camera:camera-extensions", version.ref = "camerax" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 exoplayer-core = { module = "com.google.android.exoplayer:exoplayer-core", version.ref = "exoplayerCore" }
