@@ -1010,99 +1010,208 @@ public class SettingsFragment extends BaseFragment {
         }
 
         Log.i(TAG, "=== Starting Back Camera Detection (Including Logical) ===");
+        
+        // Define common focal lengths for lens classification
+        final float ULTRA_WIDE_MAX = 15.0f;       // Ultra-wide typically around 13-15mm
+        final float WIDE_MAX = 28.0f;             // Standard wide typically 24-28mm
+        final float PORTRAIT_MIN = 45.0f;         // Portrait/telephoto starts around 45-50mm
+        final float TELEPHOTO_MIN = 70.0f;        // Longer telephoto typically 70mm+
+        
         try {
             String[] cameraIds = manager.getCameraIdList();
             Log.d(TAG, "System reported Camera IDs: " + Arrays.toString(cameraIds));
-
+            
+            // Create a map to store all detected cameras and their characteristics
+            Map<String, CameraCharacteristics> allCameras = new HashMap<>();
+            Set<String> backCameraIds = new HashSet<>();
+            Set<String> logicalCameraIds = new HashSet<>();
+            
+            // First pass: identify all cameras, both logical and physical
             for (String id : cameraIds) {
-                Log.d(TAG, "--- Checking ID: " + id + " ---");
                 try {
                     CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
-
-                    // 1. Check LENS_FACING - Primary Filter
+                    allCameras.put(id, characteristics);
+                    
+                    // Check if it's a back camera
                     Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                    if (facing == null || facing != CameraMetadata.LENS_FACING_BACK) {
-                        String facingStr = (facing == null) ? "null" : (facing == CameraMetadata.LENS_FACING_FRONT ? "FRONT" : (facing == CameraMetadata.LENS_FACING_EXTERNAL ? "EXTERNAL" : "UNKNOWN(" + facing + ")"));
-                        Log.d(TAG,"ID " + id + ": Skipping - Not LENS_FACING_BACK. Actual: "+facingStr);
-                        continue;
-                    }
-                    Log.d(TAG, "ID " + id + ": Passed LENS_FACING_BACK check.");
-
-                    // 2. Determine if it's a Logical Camera
-                    boolean isLogicalCamera = false;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        Set<String> physicalIds = characteristics.getPhysicalCameraIds();
-                        if (physicalIds != null && !physicalIds.isEmpty()){
-                            isLogicalCamera = true;
-                            Log.d(TAG,"ID " + id + " is a LOGICAL camera (contains physical IDs: " + physicalIds + "). Will be included.");
-                        } else {
-                            Log.d(TAG,"ID " + id + ": Confirmed as physical (or pre-Android P).");
+                    if (facing != null && facing == CameraMetadata.LENS_FACING_BACK) {
+                        backCameraIds.add(id);
+                        Log.d(TAG, "ID " + id + ": Confirmed as back-facing camera");
+                        
+                        // Check if it's a logical camera (on API 28+)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            try {
+                                Set<String> physicalIds = characteristics.getPhysicalCameraIds();
+                                if (physicalIds != null && !physicalIds.isEmpty()) {
+                                    logicalCameraIds.add(id);
+                                    Log.d(TAG, "ID " + id + " is a LOGICAL camera with physical IDs: " + physicalIds);
+                                }
+                            } catch (Exception e) {
+                                Log.w(TAG, "Error checking physical IDs for " + id, e);
+                            }
                         }
                     }
-
-                    // 3. Get Focal Length for HINTS
+                } catch (CameraAccessException e) {
+                    Log.e(TAG, "Couldn't access camera " + id, e);
+                }
+            }
+            
+            // On Android P and above, find all physical cameras including those not directly exposed
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                for (String logicalId : logicalCameraIds) {
+                    CameraCharacteristics chars = allCameras.get(logicalId);
+                    if (chars != null) {
+                        try {
+                            Set<String> physicalIds = chars.getPhysicalCameraIds();
+                            Log.d(TAG, "Checking physical cameras in logical camera " + logicalId + ": " + physicalIds);
+                            
+                            // Add all physical IDs to our map if they're not already there
+                            for (String physicalId : physicalIds) {
+                                if (!allCameras.containsKey(physicalId)) {
+                                    try {
+                                        CameraCharacteristics physicalChars = manager.getCameraCharacteristics(physicalId);
+                                        allCameras.put(physicalId, physicalChars);
+                                        backCameraIds.add(physicalId); // These are all back cameras since the logical camera was
+                                        Log.d(TAG, "Added physical camera ID " + physicalId + " from logical camera " + logicalId);
+                                    } catch (Exception e) {
+                                        Log.w(TAG, "Couldn't get characteristics for physical camera " + physicalId, e);
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error processing physical IDs for logical camera " + logicalId, e);
+                        }
+                    }
+                }
+            }
+            
+            // Process each back camera
+            for (String id : backCameraIds) {
+                CameraCharacteristics characteristics = allCameras.get(id);
+                if (characteristics == null) continue;
+                
+                try {
+                    // 1. Get Focal Length - Key for lens type identification
                     float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
                     Float focalLength = null;
                     if (focalLengths != null && focalLengths.length > 0) {
                         focalLength = focalLengths[0]; // Use the first reported focal length
-                        Log.d(TAG,"ID " + id + ": Focal length reported: " + focalLength);
+                        Log.d(TAG, "ID " + id + ": Focal length reported: " + focalLength + "mm");
                     } else {
                         Log.w(TAG, "ID " + id + ": No focal length info available.");
                     }
-
-                    // 4. Determine Display Name
+                    
+                    // 2. Check if it's a logical multi-camera
+                    boolean isLogicalCamera = false;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && logicalCameraIds.contains(id)) {
+                        isLogicalCamera = true;
+                    }
+                    
+                    // 3. Determine Display Name
                     StringBuilder displayNameBuilder = new StringBuilder();
                     boolean isDefaultCamera = id.equals(Constants.DEFAULT_BACK_CAMERA_ID);
-
+                    
+                    // Basic camera role description
                     if (isDefaultCamera) {
                         displayNameBuilder.append("Main");
+                    } else if (focalLength != null) {
+                        // Lens type based on focal length
+                        if (focalLength <= ULTRA_WIDE_MAX) {
+                            displayNameBuilder.append("Ultra-Wide");
+                        } else if (focalLength <= WIDE_MAX) {
+                            if (!isDefaultCamera) {
+                                displayNameBuilder.append("Wide-Angle");
+                            } else {
+                                displayNameBuilder.append("Main");
+                            }
+                        } else if (focalLength >= TELEPHOTO_MIN) {
+                            displayNameBuilder.append("Telephoto");
+                        } else if (focalLength >= PORTRAIT_MIN) {
+                            displayNameBuilder.append("Portrait");
+                        } else {
+                            displayNameBuilder.append("Camera");
+                        }
                     } else {
                         displayNameBuilder.append("Camera");
                     }
+                    
+                    // Always add ID for clear identification
                     displayNameBuilder.append(" (").append(id).append(")");
-
+                    
+                    // Add focal length if available for more detail
+                    if (focalLength != null) {
+                        displayNameBuilder.append(" ").append(Math.round(focalLength)).append("mm");
+                    }
+                    
+                    // Add logical tag if applicable
                     if (isLogicalCamera) {
                         displayNameBuilder.append(" (Logical)");
                     }
-
-                    // Only add focal length hints for non-default cameras
-                    if (!isDefaultCamera) {
-                        if (focalLength != null) {
-                            if (focalLength <= 22f) { // Example threshold for Ultra Wide
-                                displayNameBuilder.append(" (Ultra Wide)");
-                            } else if (focalLength >= 50f && focalLength <= 85f) { // Example for Portrait/Short Tele
-                                displayNameBuilder.append(" (Portrait/Zoom)");
-                            } else if (focalLength > 60f) { // Example threshold for Telephoto
-                                displayNameBuilder.append(" (Telephoto)");
-                            } else if (!isLogicalCamera) {
-                                // For non-default, non-logical, physical cameras without specific focal length match
-                                // displayNameBuilder.append(" (Auxiliary)"); // Kept commented as per previous logic
-                            }
-                        } else if (!isLogicalCamera) {
-                            // For non-default, non-logical, physical cameras with NO focal length
-                            // displayNameBuilder.append(" (Auxiliary)"); // Kept commented as per previous logic
-                        }
-                    }
-
-                    // 5. Add to the list
-                    String finalDisplayName = displayNameBuilder.toString().trim().replaceAll("\\s+", " ");
+                    
+                    // 4. Add to the list
+                    String finalDisplayName = displayNameBuilder.toString().trim();
                     availableBackCameras.add(new CameraIdInfo(id, finalDisplayName));
                     Log.i(TAG, ">>> ADDED Back Camera: ID=" + id + ", Assigned Name=" + finalDisplayName + " <<<");
-
-                } catch (CameraAccessException | IllegalArgumentException e) {
-                    Log.e(TAG, "!!! Skipping ID " + id + ": Could not access characteristics.", e);
-                } catch (AssertionError e) { // Catch assertion errors from getPhysicalCameraIds on some devices
-                    Log.e(TAG,"!!! Skipping ID " + id + ": AssertionError checking physical IDs for " + id, e);
+                    
+                } catch (Exception e) {
+                    Log.e(TAG, "Error processing camera " + id, e);
                 }
-                Log.d(TAG,"--- Finished checking ID: " + id + " ---");
-            } // End loop
-
-            Collections.sort(availableBackCameras, Comparator.comparing(info -> info.id));
-            Log.i(TAG, "=== Finished Detection. Final Back Camera List (includes logical cameras if present) Size: " + availableBackCameras.size() + " ===");
-
+            }
+            
+            // Sort cameras: Main (ID 0) first, then by ID number 
+            Collections.sort(availableBackCameras, (a, b) -> {
+                // Always put the main camera (usually ID "0") first
+                if (a.id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) return -1;
+                if (b.id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) return 1;
+                
+                // Then try to sort numerically if the IDs are numbers
+                try {
+                    return Integer.parseInt(a.id) - Integer.parseInt(b.id);
+                } catch (NumberFormatException e) {
+                    // If not numbers, sort by string
+                    return a.id.compareTo(b.id);
+                }
+            });
+            
+            Log.i(TAG, "=== Finished Detection. Final Back Camera List Size: " + availableBackCameras.size() + " ===");
+            
         } catch (CameraAccessException e) {
             Log.e(TAG, "!!! CRITICAL ERROR getting camera ID list !!!", e);
             availableBackCameras.clear(); // Clear list on critical error
+            
+            // Add a fallback camera to prevent crashes
+            availableBackCameras.add(new CameraIdInfo(
+                Constants.DEFAULT_BACK_CAMERA_ID, "Default Camera"));
+            Log.w(TAG, "Added fallback Default Camera with ID " + Constants.DEFAULT_BACK_CAMERA_ID);
+        }
+    }
+
+    // Helper class to store camera information during detection
+    private static class CameraInfo {
+        final String id;
+        final Float focalLength;
+        final boolean isLogicalCamera;
+        final Set<String> physicalIds;
+        final float sensorSize;
+        final String hardwareLevel;
+
+        CameraInfo(String id, Float focalLength, boolean isLogicalCamera, 
+                   Set<String> physicalIds, float sensorSize, String hardwareLevel) {
+            this.id = id;
+            this.focalLength = focalLength;
+            this.isLogicalCamera = isLogicalCamera;
+            this.physicalIds = physicalIds;
+            this.sensorSize = sensorSize;
+            this.hardwareLevel = hardwareLevel;
+        }
+
+        @Override
+        public String toString() {
+            return "Camera{id='" + id + "', focal=" + focalLength + 
+                   "mm, logical=" + isLogicalCamera + 
+                   ", physicalIds=" + physicalIds.size() + 
+                   ", sensorSize=" + sensorSize + 
+                   ", hwLevel=" + hardwareLevel + "}";
         }
     }
 
@@ -1173,46 +1282,65 @@ public class SettingsFragment extends BaseFragment {
      * Configures the spinner's enabled state based on detected lenses.
      */
     private void updateBackLensSpinnerVisibility() {
-        // Safety check view readiness (include divider)
-        if (backCameraLensLayout == null || backCameraLensSpinner == null || backCameraLensDivider == null || cameraSelectionToggle == null || getContext() == null) {
+        // Safety check view readiness
+        if (backCameraLensLayout == null || backCameraLensSpinner == null || 
+            backCameraLensDivider == null || cameraSelectionToggle == null || getContext() == null) {
             Log.w(TAG,"updateBackLensSpinnerVisibility: Views or context not ready, skipping update.");
             return;
         }
 
         // 1. Determine visibility based on BACK camera selection
         boolean isBackCameraSelected = sharedPreferencesManager.getCameraSelection() == CameraType.BACK;
+        
+        // This method will re-scan for cameras if needed
+        if (isBackCameraSelected && availableBackCameras.isEmpty()) {
+            Log.d(TAG, "Back camera is selected but no lenses detected. Re-running detection.");
+            detectAvailableBackCameras();
+        }
 
         // 2. Set visibility for BOTH the layout and the divider
-        backCameraLensLayout.setVisibility(isBackCameraSelected ? View.VISIBLE : View.GONE);
-        backCameraLensDivider.setVisibility(isBackCameraSelected ? View.VISIBLE : View.GONE); // *** ADDED THIS LINE ***
-        Log.d(TAG, "Lens Section & Divider Visibility set to: " + (isBackCameraSelected ? "VISIBLE" : "GONE"));
+        boolean shouldShowLensSelector = isBackCameraSelected && availableBackCameras.size() > 1;
+        int visibility = shouldShowLensSelector ? View.VISIBLE : View.GONE;
+        
+        backCameraLensLayout.setVisibility(visibility);
+        backCameraLensDivider.setVisibility(visibility);
+        
+        Log.d(TAG, "Lens selector visibility: " + (shouldShowLensSelector ? "VISIBLE" : "GONE") + 
+                  " (Back selected: " + isBackCameraSelected + ", Lens count: " + availableBackCameras.size() + ")");
 
-        // 3. If the section is visible, configure the Spinner
-        if (isBackCameraSelected) {
-            backCameraLensSpinner.setVisibility(View.VISIBLE); // Spinner always visible when section is
-
-            // Populate the spinner (already handles empty case)
+        // 3. Configure the spinner if section is visible
+        if (shouldShowLensSelector) {
+            backCameraLensSpinner.setVisibility(View.VISIBLE);
+            
+            // Populate the spinner with available options
             populateBackCameraLensSpinner();
-
-            // Set Spinner enabled state based on lens count
-            if (availableBackCameras.size() > 1) {
-                backCameraLensSpinner.setEnabled(true);
-                backCameraLensSpinner.setClickable(true);
-                backCameraLensSpinner.setAlpha(1.0f);
-                Log.d(TAG,"Multiple back lenses found (" + availableBackCameras.size() + "). Spinner ENABLED.");
-            } else {
-                backCameraLensSpinner.setEnabled(false);
-                backCameraLensSpinner.setClickable(false);
-                backCameraLensSpinner.setAlpha(0.5f);
-                if (availableBackCameras.isEmpty()) {
-                    Log.e(TAG,"No back lenses detected. Spinner DISABLED.");
-                } else {
-                    Log.d(TAG,"Single back lens detected. Spinner DISABLED, showing lens name.");
-                }
-            }
+            
+            // Enable the spinner and show it at full opacity
+            backCameraLensSpinner.setEnabled(true);
+            backCameraLensSpinner.setClickable(true);
+            backCameraLensSpinner.setAlpha(1.0f);
+            
+            Log.d(TAG, "Lens selector enabled with " + availableBackCameras.size() + " options");
+        } else if (isBackCameraSelected && availableBackCameras.size() == 1) {
+            // Special case: Show a disabled spinner with the single camera name
+            backCameraLensLayout.setVisibility(View.VISIBLE);
+            backCameraLensDivider.setVisibility(View.VISIBLE);
+            backCameraLensSpinner.setVisibility(View.VISIBLE);
+            
+            // Populate with the single camera
+            populateBackCameraLensSpinner();
+            
+            // Make it look disabled but still visible
+            backCameraLensSpinner.setEnabled(false);
+            backCameraLensSpinner.setClickable(false);
+            backCameraLensSpinner.setAlpha(0.7f);
+            
+            Log.d(TAG, "Single lens detected. Showing disabled spinner with name: " + 
+                      (availableBackCameras.size() > 0 ? availableBackCameras.get(0).displayName : "Unknown"));
         } else {
-            // If section is hidden, spinner is irrelevant (but set GONE for robustness)
+            // Front camera selected or no back cameras - hide everything
             backCameraLensSpinner.setVisibility(View.GONE);
+            Log.d(TAG, "Lens selector completely hidden");
         }
     }
 
@@ -1255,81 +1383,76 @@ public class SettingsFragment extends BaseFragment {
     // *** Method requested: populateBackCameraLensSpinner (Complete Revised Code) ***
     /**
      * Populates the back camera lens spinner with detected cameras.
-     * Handles cases for multiple cameras, a single camera, or no cameras detected.
+     * Handles all cases including multiple cameras, a single camera, or no cameras.
+     * Ensures a valid selection is always made.
      */
     private void populateBackCameraLensSpinner() {
-        // Safety checks
         if (backCameraLensSpinner == null || getContext() == null) {
             Log.w(TAG, "Cannot populate back lens spinner (null view or context).");
             return;
         }
 
-        List<CameraIdInfo> itemsToDisplay = new ArrayList<>();
+        // Create adapter for spinner
         ArrayAdapter<CameraIdInfo> adapter;
-
+        
         if (availableBackCameras.isEmpty()) {
-            // No cameras detected: Add a placeholder item
-            itemsToDisplay.add(new CameraIdInfo("-1", "No back lenses found")); // Use an invalid ID like "-1"
-            Log.w(TAG,"Populating spinner with 'No back lenses found'.");
-        } else {
-            // One or more cameras detected: Use the actual list
-            itemsToDisplay.addAll(availableBackCameras);
-            Log.d(TAG,"Populating spinner with " + itemsToDisplay.size() + " detected lenses.");
+            // No cameras detected: Add a placeholder item with an invalid ID
+            availableBackCameras.add(new CameraIdInfo("-1", "No back cameras found"));
+            Log.w(TAG, "No back cameras found, using placeholder text in spinner.");
         }
 
-        // Create and set adapter
+        // Create adapter with the available cameras list
         adapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
-                itemsToDisplay
+                availableBackCameras
         );
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         backCameraLensSpinner.setAdapter(adapter);
 
-        // Set current selection only if cameras were actually found
-        if (!availableBackCameras.isEmpty()) {
-            String savedId = sharedPreferencesManager.getSelectedBackCameraId();
-            int selectedIndex = -1;
+        // Determine which camera should be selected
+        String savedId = sharedPreferencesManager.getSelectedBackCameraId();
+        Log.d(TAG, "Selecting camera from saved ID: " + savedId + " among " + availableBackCameras.size() + " options");
+        
+        // Try to find the saved ID
+        int selectedIndex = -1;
+        for (int i = 0; i < availableBackCameras.size(); i++) {
+            if (availableBackCameras.get(i).id.equals(savedId)) {
+                selectedIndex = i;
+                Log.d(TAG, "Found saved camera ID at index " + i);
+                break;
+            }
+        }
+
+        // If saved ID not found, try the default "0" or just use the first available
+        if (selectedIndex == -1) {
+            Log.w(TAG, "Saved camera ID '" + savedId + "' not found in available list.");
+            
+            // Try to find the default camera (ID "0")
             for (int i = 0; i < availableBackCameras.size(); i++) {
-                if (availableBackCameras.get(i).id.equals(savedId)) {
+                if (Constants.DEFAULT_BACK_CAMERA_ID.equals(availableBackCameras.get(i).id)) {
                     selectedIndex = i;
+                    sharedPreferencesManager.setSelectedBackCameraId(Constants.DEFAULT_BACK_CAMERA_ID);
+                    Log.d(TAG, "Selected default camera ID '0' at index " + i);
                     break;
                 }
             }
-
-            // Fallback logic if saved ID not found (remains the same)
-            if (selectedIndex == -1) {
-                Log.w(TAG,"Saved back camera ID '"+savedId+"' not found. Applying fallback logic.");
-                for (int i = 0; i < availableBackCameras.size(); i++) {
-                    if (Constants.DEFAULT_BACK_CAMERA_ID.equals(availableBackCameras.get(i).id)) {
-                        selectedIndex = i;
-                        sharedPreferencesManager.setSelectedBackCameraId(Constants.DEFAULT_BACK_CAMERA_ID);
-                        Log.d(TAG,"Fallback applied: Selected default ID '" + Constants.DEFAULT_BACK_CAMERA_ID + "' at index " + selectedIndex);
-                        break;
-                    }
-                }
-                if (selectedIndex == -1) { // If default "0" wasn't found either
-                    selectedIndex = 0; // Select the first available one
-                    if(!availableBackCameras.isEmpty()){
-                        sharedPreferencesManager.setSelectedBackCameraId(availableBackCameras.get(0).id);
-                        Log.d(TAG,"Fallback applied: Selected first available camera ID '" + availableBackCameras.get(0).id + "' at index 0");
-                    } else {
-                        Log.e(TAG,"Cannot set selection index - no cameras available."); // Should be caught earlier, but belt-and-suspenders
-                    }
-                }
+            
+            // If still not found, use the first one (this will happen if DEFAULT_BACK_CAMERA_ID isn't in the list)
+            if (selectedIndex == -1 && !availableBackCameras.isEmpty()) {
+                selectedIndex = 0;
+                sharedPreferencesManager.setSelectedBackCameraId(availableBackCameras.get(0).id);
+                Log.d(TAG, "Selected first available camera ID '" + availableBackCameras.get(0).id + "' at index 0");
             }
+        }
 
-            // Apply the determined selection
-            if(selectedIndex >= 0 && selectedIndex < itemsToDisplay.size()) { // Bounds check for safety
-                backCameraLensSpinner.setSelection(selectedIndex);
-                Log.d(TAG,"Spinner selection set to index: "+selectedIndex);
-            } else {
-                Log.e(TAG,"Final selected index " + selectedIndex + " is out of bounds for items list size " + itemsToDisplay.size());
-            }
+        // Apply the selection if we have a valid index
+        if (selectedIndex >= 0 && selectedIndex < availableBackCameras.size()) {
+            backCameraLensSpinner.setSelection(selectedIndex);
+            Log.d(TAG, "Set camera spinner selection to index " + selectedIndex + 
+                      ": " + availableBackCameras.get(selectedIndex).displayName);
         } else {
-            // If no cameras, the adapter has the placeholder, just ensure selection is 0
-            backCameraLensSpinner.setSelection(0);
-            Log.d(TAG,"Spinner selection set to index 0 (placeholder).");
+            Log.e(TAG, "Could not determine a valid camera selection index");
         }
     }
 
@@ -2345,18 +2468,11 @@ public class SettingsFragment extends BaseFragment {
 
 
     /**
-     * Queries the Camera2 API to get supported standard FPS ranges for a given camera TYPE (FRONT/BACK)
-     * and returns a filtered list of common, usable frame rates defined in arrays.xml.
-     *
-     * @param cameraType The camera TYPE (FRONT or BACK) to query. Queries the primary ID for that type.
-     * @return A sorted List<Integer> of supported frame rates from R.array.video_framerate_options. Returns default [30] on error.
-     */
-    /**
      * Queries the Camera2 API for supported FPS ranges for the primary camera of the specified type
-     * and returns a filtered list of frame rates from R.array.video_framerate_options that are supported.
+     * and returns a list of all unique framerates supported by the hardware.
      *
      * @param cameraType The camera type (FRONT or BACK) to query.
-     * @return A sorted List<Integer> of supported frame rates. Returns default [30] on critical errors.
+     * @return A sorted List<Integer> of all supported frame rates. Returns default [30] on critical errors.
      */
     private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
         Log.i(TAG_SETTINGS, "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " ===");
@@ -2427,65 +2543,182 @@ public class SettingsFragment extends BaseFragment {
             return defaultRateList;
         }
 
-        if (hardwareFpsRanges == null || hardwareFpsRanges.length == 0) {
-            Log.w(TAG_SETTINGS, "FPS Query: No AE FPS ranges reported by hardware for camera " + targetCameraId + ". Checking profile.");
-            // Fallback: Use the rate from the CamcorderProfile for the *current* resolution setting
-            CamcorderProfile profile = getCamcorderProfile(cameraType); // Make sure this returns a valid profile or fallback
-            if (profile != null) {
-                Log.d(TAG_SETTINGS, "FPS Query: Using fallback rate from CamcorderProfile: " + profile.videoFrameRate);
-                return Collections.singletonList(profile.videoFrameRate); // Return only the profile rate
-            } else {
-                Log.e(TAG_SETTINGS, "FPS Query: Both AE Ranges and CamcorderProfile failed. Returning default [30].");
-                return defaultRateList; // Ultimate fallback
-            }
-        }
-
-        Log.d(TAG_SETTINGS, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": " + Arrays.toString(hardwareFpsRanges));
-
-        // Filter the predefined options based on hardware ranges
-        Set<Integer> hardwareMaxFpsValues = new HashSet<>();
-        for (Range<Integer> range : hardwareFpsRanges) {
-            if (range != null && range.getUpper() != null) {
-                hardwareMaxFpsValues.add(range.getUpper());
-            }
-        }
-
-        List<Integer> finalSupportedRates = new ArrayList<>();
-        int[] predefinedOptions = getResources().getIntArray(R.array.video_framerate_options);
-
-        for (int option : predefinedOptions) {
-            // An option is supported if it's one of the max values reported by hardware AND in our predefined list.
-            if (hardwareMaxFpsValues.contains(option)) {
-                finalSupportedRates.add(option);
-                Log.v(TAG_SETTINGS,"FPS Query: Adding option " + option + " as it's a hardware max and predefined.");
-            }
-        }
-
-
-        // Ensure default rate is present if possible, even if not in predefined options exactly
-        if (!finalSupportedRates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE)) {
-            boolean defaultSupportedByHardware = false;
-            for (Range<Integer> range : hardwareFpsRanges) {
-                if(range != null && range.getUpper() != null && Constants.DEFAULT_VIDEO_FRAME_RATE <= range.getUpper()) {
-                    defaultSupportedByHardware = true; break;
+        // Create a set to store all possible framerates from the ranges
+        Set<Integer> framerates = new TreeSet<>(); // TreeSet automatically sorts
+        
+        // First check for higher framerates in CamcorderProfiles
+        // This is important because some devices don't report high FPS in Camera2 AE ranges
+        // but do support them in CamcorderProfile
+        int maxProfileFps = 30; // Default assumption
+        
+        try {
+            // Check all quality levels for max framerates
+            int cameraId = Integer.parseInt(targetCameraId);
+            int[] qualities = {
+                CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_2160P,
+                CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P
+            };
+            
+            for (int quality : qualities) {
+                if (CamcorderProfile.hasProfile(cameraId, quality)) {
+                    CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
+                    if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                        maxProfileFps = profile.videoFrameRate;
+                        Log.d(TAG_SETTINGS, "FPS Query: Found higher framerate " + maxProfileFps + 
+                              " in CamcorderProfile quality " + quality);
+                    }
                 }
             }
-            if(defaultSupportedByHardware) {
-                Log.d(TAG_SETTINGS, "FPS Query: Adding default rate " + Constants.DEFAULT_VIDEO_FRAME_RATE + " because it's supported by hardware but wasn't in final list.");
-                finalSupportedRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+            
+            // Check for specific high-framerate profiles if they exist
+            if (Build.VERSION.SDK_INT >= 29) { // Android 10+
+                try {
+                    // Some devices have specific high-FPS profiles for 60fps/120fps
+                    if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_HIGH)) {
+                        CamcorderProfile profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_HIGH);
+                        if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                            maxProfileFps = profile.videoFrameRate;
+                            Log.d(TAG_SETTINGS, "FPS Query: Found high-speed framerate " + 
+                                  maxProfileFps + " in QUALITY_HIGH_SPEED_HIGH");
+                        }
+                    }
+                    
+                    if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_1080P)) {
+                        CamcorderProfile profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
+                        if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                            maxProfileFps = profile.videoFrameRate;
+                            Log.d(TAG_SETTINGS, "FPS Query: Found high-speed framerate " + 
+                                  maxProfileFps + " in QUALITY_HIGH_SPEED_1080P");
+                        }
+                    }
+                    
+                    if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_720P)) {
+                        CamcorderProfile profile = CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_720P);
+                        if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                            maxProfileFps = profile.videoFrameRate;
+                            Log.d(TAG_SETTINGS, "FPS Query: Found high-speed framerate " + 
+                                  maxProfileFps + " in QUALITY_HIGH_SPEED_720P");
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG_SETTINGS, "FPS Query: Error checking high-speed profiles: " + e.getMessage());
+                }
+            }
+            
+            Log.d(TAG_SETTINGS, "FPS Query: Maximum framerate found in CamcorderProfiles: " + maxProfileFps);
+            
+        } catch (NumberFormatException e) {
+            Log.w(TAG_SETTINGS, "FPS Query: Could not parse camera ID as integer: " + targetCameraId);
+            // Continue with Camera2 API method only
+        } catch (Exception e) {
+            Log.w(TAG_SETTINGS, "FPS Query: Error checking CamcorderProfiles: " + e.getMessage());
+            // Continue with Camera2 API method only
+        }
+
+        if (hardwareFpsRanges == null || hardwareFpsRanges.length == 0) {
+            Log.w(TAG_SETTINGS, "FPS Query: No AE FPS ranges reported by hardware for camera " + targetCameraId + ". Using CamcorderProfile.");
+            // Create some basic framerates based on CamcorderProfile information
+            for (int fps = 10; fps <= maxProfileFps; fps += 5) {
+                if (fps <= 30 || fps % 30 == 0) { // Include all multiples of 30 over 30fps
+                    framerates.add(fps);
+                }
+            }
+            
+            // Add standard framerates
+            int[] standardRates = {24, 25, 30, 60, 90, 120};
+            for (int rate : standardRates) {
+                if (rate <= maxProfileFps) {
+                    framerates.add(rate);
+                }
+            }
+            
+            if (framerates.isEmpty()) {
+                framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE); // Default fallback
+            }
+        } else {
+            Log.d(TAG_SETTINGS, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": " + Arrays.toString(hardwareFpsRanges));
+
+            // Process each range to get ALL supported framerates
+            for (Range<Integer> range : hardwareFpsRanges) {
+                if (range != null) {
+                    int lower = range.getLower();
+                    int upper = range.getUpper();
+                    
+                    Log.d(TAG_SETTINGS, "FPS Query: Processing range " + lower + "-" + upper);
+                    
+                    // For most devices, framerates are available at discrete steps (usually 1fps)
+                    // Add ALL integer values within the range to ensure we catch values like 59fps
+                    for (int fps = lower; fps <= upper; fps++) {
+                        framerates.add(fps);
+                    }
+                }
+            }
+            
+            // If CamcorderProfile reported higher framerates than Camera2 API, add those too
+            if (maxProfileFps > 30) {
+                Log.d(TAG_SETTINGS, "FPS Query: Adding higher framerates from CamcorderProfile");
+                
+                // Add standard high framerates if they're supported by the profile
+                int[] highRates = {60, 90, 120, 240};
+                for (int rate : highRates) {
+                    if (rate <= maxProfileFps) {
+                        framerates.add(rate);
+                        Log.d(TAG_SETTINGS, "FPS Query: Added " + rate + "fps from CamcorderProfile");
+                    }
+                }
             }
         }
 
-
-        // If the list is STILL empty after filtering, add the default 30fps as a last resort
-        if (finalSupportedRates.isEmpty()) {
-            Log.e(TAG_SETTINGS, "FPS Query: No predefined rates found matching hardware ranges! Adding default: " + Constants.DEFAULT_VIDEO_FRAME_RATE);
-            finalSupportedRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        // Ensure we have at least one value (the default)
+        if (framerates.isEmpty()) {
+            Log.e(TAG_SETTINGS, "FPS Query: No valid framerates found from hardware ranges. Adding default: " + Constants.DEFAULT_VIDEO_FRAME_RATE);
+            framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
         }
 
-        // Ensure the final list is sorted numerically
-        Collections.sort(finalSupportedRates);
-
+        // Convert to list and ensure the list is sorted (which TreeSet already does)
+        List<Integer> finalSupportedRates = new ArrayList<>(framerates);
+        
+        // If the list is too large (some devices might report hundreds of values),
+        // we could optionally filter to keep just common/useful values or step at 5-10fps intervals
+        if (finalSupportedRates.size() > 20) {
+            Log.w(TAG_SETTINGS, "FPS Query: Large number of framerates detected (" + finalSupportedRates.size() + 
+                  "), keeping only useful values for UI");
+            
+            // Filter to keep standard values + any higher FPS values
+            Set<Integer> filteredRates = new TreeSet<>();
+            
+            // Important standard rates to always include if supported
+            int[] standardRates = {24, 25, 30, 50, 60, 90, 120, 240};
+            for (int rate : standardRates) {
+                if (framerates.contains(rate)) {
+                    filteredRates.add(rate);
+                }
+            }
+            
+            // Also include significant non-standard rates 
+            // This handles cases like 59.94fps (which is often rounded to 59 or 60)
+            for (int fps : framerates) {
+                // Include rates divisible by 5 (e.g., 5, 10, 15, 20, 25...)
+                if (fps % 5 == 0 && fps <= 60) {
+                    filteredRates.add(fps);
+                }
+                // Include all higher framerates (e.g., 72, 90, 120, etc.)
+                else if (fps > 60) {
+                    filteredRates.add(fps);
+                }
+            }
+            
+            // If we've excluded the default rate by accident, add it back
+            if (!filteredRates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE) && 
+                framerates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE)) {
+                filteredRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+            }
+            
+            // Replace the full list with our filtered list
+            finalSupportedRates = new ArrayList<>(filteredRates);
+            Log.d(TAG_SETTINGS, "FPS Query: Filtered to " + finalSupportedRates.size() + " useful framerates");
+        }
+        
         Log.i(TAG_SETTINGS, "=== Final Supported FPS options for " + cameraType + " (ID: " + targetCameraId + "): " + finalSupportedRates + " ===");
         return finalSupportedRates;
     }
