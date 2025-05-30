@@ -1,0 +1,119 @@
+Properties localProperties = new Properties()
+localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+if (localProperties.getProperty("release_mode", "false") != "true") {
+    return
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+ext {
+    mavPublishGroupId = "com.guardanis"
+    mavProjectName = "applock"
+    mavLibraryDescription = 'A simple library for locking and unlocking Activities (e.g. child lock) with a PIN code or Fingerprint.'
+    mavLibraryVersion = "3.0.2"
+
+    mavLicenseName = "The Apache License, Version 2.0"
+    mavLicenseUrl = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+
+    mavDeveloperId = "mattsilber"
+    mavDeveloperName = "Matt Silber"
+    mavDeveloperEmail = "matt@guardanis.com"
+    mavDeveloperOrg = "Guardanis"
+    mavDeveloperOrgUrl = "https://guardanis.com"
+
+    mavSiteUrl = "https://github.com/mattsilber/applock"
+    mavGitUrl = "https://github.com/mattsilber/applock.git"
+    mavScmConnection = "scm:git:git://github.com:mattsilber/applock.git"
+    mavScmDeveloperConnection = "scm:git:ssh://github.com:mattsilber/applock.git"
+
+    mavDeploymentRepo = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+
+    mavenCentralUsername = localProperties.getProperty("mavenCentralUsername")
+    mavenCentralPassword = localProperties.getProperty("mavenCentralPassword")
+}
+
+ext["signing.keyId"] = localProperties.getProperty("signing.keyId")
+ext["signing.password"] = localProperties.getProperty("signing.password")
+ext["signing.secretKeyRingFile"] = localProperties.getProperty("signing.secretKeyRingFile")
+
+task sourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+
+                artifact sourcesJar
+                artifact javadocJar
+
+                groupId = mavPublishGroupId
+                artifactId = mavProjectName
+                version = mavLibraryVersion
+
+                pom {
+                    name = mavProjectName
+                    description = mavLibraryDescription
+                    url = mavSiteUrl
+                    licenses {
+                        license {
+                            name = mavLicenseName
+                            url = mavLicenseUrl
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = mavDeveloperId
+                            name = mavDeveloperName
+                            email = mavDeveloperEmail
+                            organization = mavDeveloperOrg
+                            organizationUrl = mavDeveloperOrgUrl
+                        }
+                    }
+                    scm {
+                        connection = mavScmConnection
+                        developerConnection = mavScmDeveloperConnection
+                        url = mavGitUrl
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = 'mavenCentral'
+                url = mavDeploymentRepo
+
+                credentials {
+                    username mavenCentralUsername
+                    password mavenCentralPassword
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications
+    }
+}

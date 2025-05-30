@@ -1,0 +1,25 @@
+<resources>
+
+    <dimen name="applock__activity_padding">24dip</dimen>
+
+    <dimen name="applock__content_padding_horizontal">24dip</dimen>
+    <dimen name="applock__content_padding_vertical">36dip</dimen>
+
+    <dimen name="applock__item_margin_top">20dip</dimen>
+    <dimen name="applock__item_size">50dip</dimen>
+
+    <dimen name="applock__fingerprint_scan_image_margin_top">35dip</dimen>
+    <dimen name="applock__fingerprint_scan_image_size">65dip</dimen>
+
+    <dimen name="applock__chooser_image_size">50dip</dimen>
+    <dimen name="applock__chooser_parent_padding_vertical">24dip</dimen>
+    <dimen name="applock__chooser_text_padding_top">12dip</dimen>
+
+    <dimen name="applock__description_text">18dip</dimen>
+    <dimen name="applock__description_padding_bottom">20dip</dimen>
+
+    <dimen name="applock__action_settings">14dip</dimen>
+    <dimen name="applock__action_settings_padding">12dip</dimen>
+    <dimen name="applock__action_settings_margin_top">24dip</dimen>
+
+</resources>

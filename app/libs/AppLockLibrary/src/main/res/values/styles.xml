@@ -1,0 +1,93 @@
+<resources>
+
+    <!-- Base activity theme. -->
+    <style name="applock__theme_activity" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowTitleSize">0dp</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowBackground">@color/applock__activity_background</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!-- Base AppLock content. -->
+    <style name="applock__content_parent">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/applock__activity_background</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingLeft">@dimen/applock__content_padding_horizontal</item>
+        <item name="android:paddingTop">@dimen/applock__content_padding_vertical</item>
+        <item name="android:paddingRight">@dimen/applock__content_padding_horizontal</item>
+        <item name="android:paddingBottom">@dimen/applock__content_padding_vertical</item>
+    </style>
+
+    <style name="applock__description">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:text">These is some kind of instructions you should follow.</item>
+        <item name="android:textColor">@color/applock__description_text</item>
+        <item name="android:textSize">@dimen/applock__description_text</item>
+    </style>
+
+    <style name="applock__input_pin_view">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/applock__item_size</item>
+        <item name="android:layout_marginTop">@dimen/applock__item_margin_top</item>
+    </style>
+
+    <style name="applock__input_fingerprint_view">
+        <item name="android:layout_width">@dimen/applock__fingerprint_scan_image_size</item>
+        <item name="android:layout_height">@dimen/applock__fingerprint_scan_image_size</item>
+        <item name="android:layout_marginTop">@dimen/applock__fingerprint_scan_image_margin_top</item>
+    </style>
+
+    <style name="applock__action_chooser_parent">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="applock__action_chooser_item_group">
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/applock__chooser_option_bg</item>
+        <item name="android:gravity">bottom|center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingBottom">@dimen/applock__chooser_parent_padding_vertical</item>
+        <item name="android:paddingTop">@dimen/applock__chooser_parent_padding_vertical</item>
+    </style>
+
+    <style name="applock__action_chooser_item_image">
+        <item name="android:layout_width">@dimen/applock__chooser_image_size</item>
+        <item name="android:layout_height">@dimen/applock__chooser_image_size</item>
+    </style>
+
+    <style name="applock__action_chooser_item_text">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">@dimen/applock__chooser_text_padding_top</item>
+        <item name="android:textColor">@color/applock__description_text</item>
+        <item name="android:textSize">@dimen/applock__description_text</item>
+    </style>
+
+    <style name="applock__action_settings">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/applock__action_settings_margin_top</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">@dimen/applock__action_settings_padding</item>
+        <item name="android:text">@string/applock__action_settings</item>
+        <item name="android:textColor">@color/applock__action_settings</item>
+        <item name="android:textSize">@dimen/applock__action_settings</item>
+    </style>
+
+</resources>

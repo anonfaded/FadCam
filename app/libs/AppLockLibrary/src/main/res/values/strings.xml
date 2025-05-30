@@ -1,0 +1,41 @@
+<resources>
+
+    <string name="app_name">App Lock</string>
+
+    <string name="applock__description_chooser">Secure this application with a PIN or your fingerprints?</string>
+    <string name="applock__description_create_pin">Create a PIN to secure this application.</string>
+    <string name="applock__description_create_pin_reattempt">PINs didn\'t match. Try again.</string>
+    <string name="applock__description_create_fingerprint">Scan your fingerprint to secure this application.</string>
+    <string name="applock__description_create_fingerprint_paused">Fingerprint authentication canceled. Reload this content to restart.</string>
+    <string name="applock__description_confirm">Re-enter your PIN to confirm.</string>
+    <string name="applock__description_unlock_pin">Enter your PIN to unlock.</string>
+    <string name="applock__description_unlock_fingerprint">Scan your fingerprint to unlock.</string>
+    <string name="applock__description_unlock_fingerprint_help">We\'re having trouble recognizing your fingerprint: %1$s</string>
+
+    <string name="applock__create_chooser_option_pin">PIN</string>
+    <string name="applock__create_chooser_option_fingerprint">Fingerprint</string>
+
+    <string name="applock__unlock_error_no_matching_pin_found">There is no saved PIN to unlock.</string>
+    <string name="applock__unlock_error_match_failed">The PINs don\'t match!</string>
+    <string name="applock__unlock_error_insufficient_selection">Wrong number of digits! Please try again</string>
+    <string name="applock__unlock_error_retry_limit_exceeded">You failed too many times. You may try again in %1$s.</string>
+
+    <string name="applock__toast_unlock_required">You can\'t do that</string>
+
+    <string name="applock__password_char">*</string>
+
+    <string name="applock__action_settings">Open System Settings</string>
+
+    <string name="applock__fingerprint_alias">AppLock</string>
+
+    <string name="applock__fingerprint_error_not_enrolled">You haven\'t setup fingerprint unlocking.</string>
+    <string name="applock__fingerprint_error_unrecognized">Your fingerprint wasn\'t recognized.</string>
+    <string name="applock__fingerprint_error_unknown">Something weird happened.</string>
+    <string name="applock__fingerprint_error_none">No fingerprints found! Enable them in your system settings.</string>
+    <string name="applock__fingerprint_error_hardware">Missing fingerprint hardware?</string>
+    <string name="applock__fingerprint_error_permission">Fingerprint permission required.</string>
+    <string name="applock__fingerprint_error_permission_multiple">Fingerprint permission denied. Please enable fingerprint support in your system settings.</string>
+
+    <item name="applock__empty_item_min_size_percent" format="float" type="string">0.2</item>
+
+</resources>

@@ -1,0 +1,9 @@
+<resources>
+
+    <bool name="applock__unlock_activity_return_allowed">false</bool>
+
+    <bool name="applock__item_password_chars_enabled">true</bool>
+
+    <bool name="applock__fingerprint_service_enabled">true</bool>
+
+</resources>

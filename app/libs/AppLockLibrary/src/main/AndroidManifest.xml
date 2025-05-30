@@ -1,0 +1,27 @@
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardanis.applock">
+
+    <uses-permission
+        android:name="android.permission.USE_FINGERPRINT" />
+
+    <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
+
+    <application>
+        <activity
+            android:name="com.guardanis.applock.activities.LockCreationActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/applock__theme_activity" />
+
+        <activity
+            android:name="com.guardanis.applock.activities.UnlockActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/applock__theme_activity" />
+    </application>
+</manifest>

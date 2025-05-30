@@ -1,0 +1,9 @@
+<resources>
+
+    <integer name="applock__input_pin_item_count">4</integer>
+    <integer name="applock__max_retry_count">5</integer>
+    <integer name="applock__failure_retry_delay">5</integer>
+
+    <integer name="applock__activity_lock_reenable_minutes">15</integer>
+
+</resources>

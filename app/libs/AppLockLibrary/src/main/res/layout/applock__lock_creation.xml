@@ -1,0 +1,61 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:applock="http://schemas.android.com/apk/res-auto"
+    style="@style/applock__content_parent"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true">
+
+    <TextView
+        android:id="@+id/pin__description"
+        style="@style/applock__description" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/pin__fingerprint_image"
+        style="@style/applock__input_fingerprint_view"
+        applock:srcCompat="@drawable/applock__fingerprint"
+        applock:tint="@color/applock__item_background" />
+
+    <com.guardanis.applock.pin.PINInputView
+        android:id="@+id/pin__input_view"
+        style="@style/applock__input_pin_view"/>
+
+    <LinearLayout
+        android:id="@+id/pin__create_chooser_items"
+        style="@style/applock__action_chooser_parent">
+
+        <LinearLayout
+            android:id="@+id/pin__create_option_pin"
+            style="@style/applock__action_chooser_item_group">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                style="@style/applock__action_chooser_item_image"
+                applock:srcCompat="@drawable/applock__pin"
+                applock:tint="@color/applock__item_background"/>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                style="@style/applock__action_chooser_item_text"
+                android:text="@string/applock__create_chooser_option_pin"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/pin__create_option_fingerprint"
+            style="@style/applock__action_chooser_item_group" >
+
+            <androidx.appcompat.widget.AppCompatImageView
+                style="@style/applock__action_chooser_item_image"
+                applock:srcCompat="@drawable/applock__fingerprint"
+                applock:tint="@color/applock__item_background"/>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                style="@style/applock__action_chooser_item_text"
+                android:text="@string/applock__create_chooser_option_fingerprint"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/pin__action_settings"
+        style="@style/applock__action_settings"/>
+
+</LinearLayout>
