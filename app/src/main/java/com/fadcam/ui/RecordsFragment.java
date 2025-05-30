@@ -37,6 +37,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.Constants;
+import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager; // Import your manager
 import com.fadcam.Utils;
@@ -48,6 +49,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+// Add AppLock imports
+import com.guardanis.applock.AppLock;
+import com.guardanis.applock.dialogs.UnlockDialogBuilder;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +60,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.graphics.Rect;
 
@@ -535,6 +541,18 @@ public class RecordsFragment extends BaseFragment implements
 
         Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume.");
         loadRecordsList(); // RESTORED: Always reload the list when the fragment resumes
+
+        // Check if app lock is enabled and show unlock dialog if needed
+        checkAppLock();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Reset unlock state when leaving the fragment
+        isUnlocked = false;
+        
+        // ... existing code ...
     }
 
     @Override
@@ -2057,6 +2075,46 @@ public class RecordsFragment extends BaseFragment implements
         // Clear adapter cache
         if (recordsAdapter != null) {
             recordsAdapter.clearCaches();
+        }
+    }
+
+    private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
+    private boolean isUnlocked = false;
+
+    /**
+     * Checks if app lock is enabled and shows the unlock dialog if needed
+     */
+    private void checkAppLock() {
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
+        
+        if (isAppLockEnabled && !isUnlocked && AppLock.isEnrolled(requireContext())) {
+            // Hide the content until unlocked
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.INVISIBLE);
+            }
+            
+            new UnlockDialogBuilder(requireActivity())
+                .onUnlocked(() -> {
+                    // Show content when unlocked
+                    isUnlocked = true;
+                    if (recyclerView != null) {
+                        recyclerView.setVisibility(View.VISIBLE);
+                    }
+                })
+                .onCanceled(() -> {
+                    // Go back to home tab if canceled
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).skipNextBackExitHandling();
+                        requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                    }
+                })
+                .show();
+        } else {
+            // Make sure content is visible
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

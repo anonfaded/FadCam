@@ -77,6 +77,9 @@ public class SharedPreferencesManager {
     public static final String AUDIO_INPUT_SOURCE_WIRED = "wired_mic";
     // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source) -----
 
+    // App Lock preferences
+    private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
+
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
         this.sharedPreferences = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -394,5 +397,23 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, enabled).apply();
     }
     // ----- Fix Ended for this class(SharedPreferencesManager_location_methods) -----
+
+    // ----- Fix Start for this class (SharedPreferencesManager_applock) -----
+    /**
+     * Checks if app lock is enabled
+     * @return true if app lock is enabled, false otherwise
+     */
+    public boolean isAppLockEnabled() {
+        return sharedPreferences.getBoolean(PREF_APP_LOCK_ENABLED, false);
+    }
+    
+    /**
+     * Enables or disables app lock
+     * @param enabled true to enable app lock, false to disable
+     */
+    public void setAppLockEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_APP_LOCK_ENABLED, enabled).apply();
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_applock) -----
 
 }

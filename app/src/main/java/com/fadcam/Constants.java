@@ -77,6 +77,9 @@ public abstract class Constants {
     // Extra key indicating if processing was successful
     public static final String EXTRA_RECORDING_SUCCESS = "com.fadcam.EXTRA_RECORDING_SUCCESS";
 
+    // Action to navigate to Records tab from external sources
+    public static final String ACTION_SHOW_RECORDS = "com.fadcam.ACTION_SHOW_RECORDS";
+
     // Broadcast action sent by SettingsFragment when storage location pref changes
     public static final String ACTION_STORAGE_LOCATION_CHANGED = "com.fadcam.STORAGE_LOCATION_CHANGED";
 

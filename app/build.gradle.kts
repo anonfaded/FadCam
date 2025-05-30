@@ -88,5 +88,6 @@ dependencies {
     implementation(libs.appintro.v631)
 
     implementation(libs.lottie)
+    implementation("com.guardanis:applock:3.0.2")
 
 }

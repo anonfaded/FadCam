@@ -47,6 +47,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
@@ -71,6 +72,11 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textview.MaterialTextView;
 
+// Add AppLock imports
+import com.guardanis.applock.AppLock;
+import com.guardanis.applock.dialogs.LockCreationDialogBuilder;
+import com.guardanis.applock.dialogs.UnlockDialogBuilder;
+import com.guardanis.applock.services.PINLockService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +95,7 @@ import java.util.stream.IntStream; // For easy array conversion
 import java.util.Comparator; // For sorting camera IDs
 import java.util.concurrent.ExecutorService; // Make sure this import exists
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.content.Intent; // Add Intent import
 import androidx.localbroadcastmanager.content.LocalBroadcastManager; // OR use ContextCompat if not using LocalBroadcastManager
@@ -125,6 +132,10 @@ public class SettingsFragment extends BaseFragment {
     private MaterialSwitch locationEmbedSwitch; // Declare location embedding switch
     private MaterialSwitch debugSwitch; // Declare debugSwitch
     private MaterialSwitch audioSwitch; // Declare audioSwitch
+    
+    // App Lock
+    private MaterialButton appLockConfigureButton;
+    private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
 
     private View view; // Make sure view is accessible
     private View backCameraLensDivider; // *** ADD FIELD FOR THE DIVIDER ***
@@ -1526,6 +1537,7 @@ public class SettingsFragment extends BaseFragment {
         updateFrameRateSpinner(); // Populate initially based on current camera type
 
         frameRateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @OptIn(markerClass = ExperimentalCamera2Interop.class)
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if(getContext() == null) return;
@@ -1563,6 +1575,7 @@ public class SettingsFragment extends BaseFragment {
      * Updates the frame rate spinner's adapter and selection based on hardware capabilities
      * and the SAVED PREFERENCE FOR THE CURRENTLY SELECTED CAMERA TYPE.
      */
+    @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private void updateFrameRateSpinner() {
         // Safety checks
         if (frameRateSpinner == null || getContext() == null || sharedPreferencesManager == null) {
@@ -3398,4 +3411,166 @@ public class SettingsFragment extends BaseFragment {
     }
     // ----- Fix Ended for this class(SettingsFragment) -----
 
+    // Add the AppLock setup method
+    private void setupAppLockButton() {
+        if (appLockConfigureButton == null) return;
+        
+        appLockConfigureButton.setOnClickListener(v -> {
+            showAppLockConfigDialog();
+        });
+    }
+    
+    // Method to show the AppLock configuration dialog
+    private void showAppLockConfigDialog() {
+        boolean isEnrolled = AppLock.isEnrolled(requireContext());
+        boolean isEnabled = sharedPreferencesManager.isAppLockEnabled();
+        
+        // Create options list based on current state
+        List<String> options = new ArrayList<>();
+        
+        if (isEnabled) {
+            options.add(getString(R.string.applock_disable));
+        } else {
+            options.add(getString(R.string.applock_enable));
+        }
+        
+        if (!isEnrolled) {
+            options.add(getString(R.string.applock_set_pin));
+        } else {
+            options.add(getString(R.string.applock_change_pin));
+            options.add(getString(R.string.applock_remove_pin));
+        }
+        
+        // Show dialog with options
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.applock_dialog_title)
+            .setItems(options.toArray(new String[0]), (dialog, which) -> {
+                String selectedOption = options.get(which);
+                
+                if (selectedOption.equals(getString(R.string.applock_enable))) {
+                    if (isEnrolled) {
+                        // Verify PIN before enabling
+                        verifyPinThenExecute(() -> setAppLockEnabled(true), 
+                            R.string.applock_verify_to_enable);
+                    } else {
+                        // Need to create PIN first
+                        showPinCreationDialog(true);
+                    }
+                } else if (selectedOption.equals(getString(R.string.applock_disable))) {
+                    // Verify PIN before disabling
+                    verifyPinThenExecute(() -> setAppLockEnabled(false), 
+                        R.string.applock_verify_to_disable);
+                } else if (selectedOption.equals(getString(R.string.applock_set_pin)) || 
+                          selectedOption.equals(getString(R.string.applock_change_pin))) {
+                    if (isEnrolled) {
+                        // Verify PIN before changing
+                        verifyPinThenExecute(() -> showPinCreationDialog(isEnabled), 
+                            R.string.applock_verify_to_change);
+                    } else {
+                        // New PIN - no verification needed
+                        showPinCreationDialog(isEnabled);
+                    }
+                } else if (selectedOption.equals(getString(R.string.applock_remove_pin))) {
+                    // Verify PIN before removing
+                    verifyPinThenExecute(() -> {
+                        // Remove PIN
+                        AppLock appLock = AppLock.getInstance(requireContext());
+                        appLock.invalidateEnrollments();
+                        setAppLockEnabled(false);
+                        Toast.makeText(requireContext(), R.string.applock_pin_removed, Toast.LENGTH_SHORT).show();
+                    }, R.string.applock_verify_to_remove);
+                }
+            })
+            .show();
+    }
+    
+    /**
+     * Verifies the current PIN and executes the action if successful.
+     * @param action The action to execute after successful verification
+     * @param titleResId Resource ID for the verification dialog title
+     */
+    private void verifyPinThenExecute(Runnable action, int titleResId) {
+        // Show a toast message indicating what we're verifying for
+        Toast.makeText(requireContext(), getString(titleResId), Toast.LENGTH_SHORT).show();
+        
+        new UnlockDialogBuilder(requireActivity())
+            .onUnlocked(() -> {
+                // Successfully verified PIN, execute the action
+                if (action != null) {
+                    action.run();
+                }
+            })
+            .onCanceled(() -> {
+                // User canceled verification, do nothing
+                Toast.makeText(requireContext(), R.string.applock_verification_canceled, Toast.LENGTH_SHORT).show();
+            })
+            .show();
+    }
+
+    // Method to handle PIN creation/change using the dialog
+    private void showPinCreationDialog(boolean enableAfterCreation) {
+        new LockCreationDialogBuilder(requireActivity())
+            .onCanceled(() -> {
+                // PIN creation canceled
+            })
+            .onLockCreated(() -> {
+                // PIN successfully created
+                if (enableAfterCreation) {
+                    setAppLockEnabled(true);
+                }
+                Toast.makeText(requireContext(), R.string.applock_pin_created, Toast.LENGTH_SHORT).show();
+            })
+            .show();
+    }
+
+    // Method to enable/disable AppLock
+    private void setAppLockEnabled(boolean enabled) {
+        sharedPreferencesManager.setAppLockEnabled(enabled);
+        
+        String message = enabled ? 
+            getString(R.string.applock_enable) + " " + getString(R.string.universal_ok) : 
+            getString(R.string.applock_disable) + " " + getString(R.string.universal_ok);
+        
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        
+        // Initialize UI components
+        resolutionSpinner = view.findViewById(R.id.resolution_spinner);
+        frameRateSpinner = view.findViewById(R.id.framerate_spinner);
+        codecSpinner = view.findViewById(R.id.codec_spinner);
+        watermarkSpinner = view.findViewById(R.id.watermark_spinner);
+        MaterialButton readmeButton = view.findViewById(R.id.readme_button);
+        MaterialButton languageChooseButton = view.findViewById(R.id.language_choose_button);
+        
+        // Initialize themeSpinner
+        themeSpinner = view.findViewById(R.id.theme_spinner); // Initialize themeSpinner
+
+        cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
+        
+        // Initialize and setup the lens section
+        backCameraLensSpinner = view.findViewById(R.id.back_camera_lens_spinner);
+        backCameraLensLayout = view.findViewById(R.id.back_camera_lens_layout);
+        backCameraLensDivider = view.findViewById(R.id.back_camera_lens_divider);
+        
+        // Initialize orientation spinner
+        orientationSpinner = view.findViewById(R.id.orientation_spinner);
+        
+        // Initialize App Lock button
+        appLockConfigureButton = view.findViewById(R.id.app_lock_configure_button);
+        
+        // ... existing code ...
+        
+        setupSettingsLanguageDialog(languageChooseButton);
+        setupThemeSpinner(view);
+        setupOrientationSpinner();
+        setupAppLockButton();
+        
+        // ... existing code ...
+    }
 }

@@ -397,6 +397,22 @@ private void createDynamicShortcuts() {
     protected void onResume() {
         super.onResume();
         
+        // Restore language settings
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        String savedLanguageCode = sharedPreferencesManager.sharedPreferences.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
+        applyLanguage(savedLanguageCode);
+        
+        // Create shortcuts if needed (Android 7.1+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            createDynamicShortcuts();
+        }
+        
+        // Handle any pending intents
+        Intent intent = getIntent();
+        if (intent != null && Constants.ACTION_SHOW_RECORDS.equals(intent.getAction())) {
+            viewPager.setCurrentItem(1, false); // Navigate to Records tab
+        }
+        
         // Set up the back press behavior with the newer API
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {

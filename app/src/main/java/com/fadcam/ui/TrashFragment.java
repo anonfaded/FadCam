@@ -39,6 +39,10 @@ import androidx.activity.OnBackPressedCallback;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 
+// Add AppLock imports
+import com.guardanis.applock.AppLock;
+import com.guardanis.applock.dialogs.UnlockDialogBuilder;
+
 public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashItemInteractionListener {
 
     private static final String TAG = "TrashFragment";
@@ -57,6 +61,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private SharedPreferencesManager sharedPreferencesManager;
     private boolean isInSelectionMode = false;
     private CheckBox checkboxSelectAll;
+    
+    private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
+    private boolean isUnlocked = false;
 
     public TrashFragment() {
         // Required empty public constructor
@@ -85,6 +92,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        
+        // Check if app lock is enabled and show unlock dialog if needed
+        checkAppLock();
 
         toolbar = view.findViewById(R.id.trash_toolbar);
         recyclerViewTrashItems = view.findViewById(R.id.recycler_view_trash_items);
@@ -628,6 +638,75 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         
         // Re-add the listener
         setupSelectAllCheckbox();
+    }
+
+    /**
+     * Checks if app lock is enabled and shows the unlock dialog if needed
+     */
+    private void checkAppLock() {
+        if (getContext() == null) return;
+        
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
+        
+        if (isAppLockEnabled && !isUnlocked && AppLock.isEnrolled(requireContext())) {
+            // We'll show unlock dialog and handle visibility in callbacks
+            new UnlockDialogBuilder(requireActivity())
+                .onUnlocked(() -> {
+                    // Show content when unlocked
+                    isUnlocked = true;
+                    setupTrashFragment();
+                })
+                .onCanceled(() -> {
+                    // Close the trash fragment if unlock is canceled
+                    if (getActivity() instanceof MainActivity) {
+                        MainActivity mainActivity = (MainActivity) getActivity();
+                        View overlayContainer = mainActivity.findViewById(R.id.overlay_fragment_container);
+                        
+                        if (overlayContainer != null) {
+                            // Animate fading out
+                            overlayContainer.animate()
+                                .alpha(0f)
+                                .setDuration(250)
+                                .withEndAction(() -> {
+                                    overlayContainer.setVisibility(View.GONE);
+                                    overlayContainer.setAlpha(1f);
+                                })
+                                .start();
+                        }
+                    }
+                })
+                .show();
+        } else {
+            // If no lock needed, proceed with setup
+            setupTrashFragment();
+        }
+    }
+    
+    // Method to set up the trash fragment after authentication
+    private void setupTrashFragment() {
+        if (getView() == null || getContext() == null) return;
+        
+        setupToolbar();
+        setupRecyclerView();
+        setupButtonListeners();
+        setupSelectAllCheckbox();
+        updateAutoDeleteInfoText();
+
+        // Auto-delete old items first, then load
+        int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+        int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), autoDeleteMinutes);
+        if (autoDeletedCount > 0) {
+            Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
+        }
+        loadTrashItems();
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Reset unlock state when leaving the fragment
+        isUnlocked = false;
     }
 
     // TODO: Create TrashAdapter class
