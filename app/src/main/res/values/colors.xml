@@ -36,4 +36,6 @@
     <color name="colorDialog">@color/gray</color>
     <color name="colorStatusBar">@color/gray</color>
     <!-- Fix End: Add color references for new theme attributes for maintainability -->
+
+    <color name="dark_red_card">#3B1818</color> <!-- Very dark, muted red for storage card -->
 </resources>

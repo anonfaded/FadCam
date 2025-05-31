@@ -53,11 +53,11 @@ import android.widget.Toast;
 import android.widget.ImageButton;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.cardview.widget.CardView; // Add this
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
@@ -102,6 +102,7 @@ import android.graphics.drawable.Drawable;
 import android.widget.ImageView; // <<< ADD IMPORT FOR ImageView
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
+import android.widget.ArrayAdapter;
 
 public class HomeFragment extends BaseFragment {
 
@@ -1556,6 +1557,29 @@ public class HomeFragment extends BaseFragment {
         // Initialize easter egg messages and setup listener for preview placeholder
         initializeMessages();
 
+        // ----- Fix Start: Apply dynamic theme colors to preview area cards -----
+CardView cardPreview = view.findViewById(R.id.cardPreview);
+CardView cardStats = view.findViewById(R.id.cardStats);
+CardView cardStorage = view.findViewById(R.id.cardStorage);
+CardView cardTips = view.findViewById(R.id.cardTips);
+
+int colorDialog = resolveThemeColor(R.attr.colorDialog);
+int colorButton = resolveThemeColor(R.attr.colorButton);
+int colorTransparent = android.graphics.Color.TRANSPARENT;
+int colorTextPrimary = resolveThemeColor(R.attr.colorHeading);
+int colorTextSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+
+if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
+if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
+if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_red_card));
+if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+
+setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
+setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
+setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
+setTextColorsRecursive(cardTips, colorTextPrimary, colorTextSecondary);
+// ----- Fix End: Apply dynamic theme colors to preview area cards -----
+
         vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
         TorchService.setHomeFragment(this);
         
@@ -1967,28 +1991,63 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void showDisplayOptionsDialog() {
-        // ----- Fix Start for this method(showDisplayOptionsDialog_revert)-----
         final String[] items = {
                 getString(R.string.dialog_clock_timeonly),
                 getString(R.string.dialog_clock_englishtime),
-                getString(R.string.dialog_clock_Islamic_calendar) // This was likely intended to be the "Everything" option
+                getString(R.string.dialog_clock_Islamic_calendar)
         };
-        // The mapping of options to array indices for `setSingleChoiceItems` is:
-        // 0 -> Time Only
-        // 1 -> Time and English Date (Day/Month)
-        // 2 -> Time, English Date, and Hijri Date (Everything)
-        int currentOption = getCurrentDisplayOption(); // This returns 0, 1, or 2
-
-        new MaterialAlertDialogBuilder(requireContext())
+        int currentOption = getCurrentDisplayOption();
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(white);
+                return view;
+            }
+        };
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle(getString(R.string.dialog_clock_title))
-                .setSingleChoiceItems(items, currentOption, (dialog, which) -> {
-                    saveDisplayOption(which); // Save the selected index (0, 1, or 2)
-                    updateClock(); // Update the widget based on the selected option
+                .setSingleChoiceItems(adapter, currentOption, (dialog, which) -> {
+                    saveDisplayOption(which);
+                    updateClock();
                     dialog.dismiss();
                 })
-                .setNegativeButton(R.string.universal_cancel, null) // Changed from OK to Cancel, and removed positive button action
+                .setNegativeButton(R.string.universal_cancel, null)
                 .show();
-        // ----- Fix Ended for this method(showDisplayOptionsDialog_revert)-----
+    }
+
+    private void showClockColorChooserDialog() {
+        String currentSelectedColorHex = sharedPreferencesManager.getClockCardColor();
+        int currentSelectedColorIndex = -1;
+        for (int i = 0; i < CLOCK_COLOR_HEX_VALUES.length; i++) {
+            if (CLOCK_COLOR_HEX_VALUES[i].equalsIgnoreCase(currentSelectedColorHex)) {
+                currentSelectedColorIndex = i;
+                break;
+            }
+        }
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, CLOCK_COLOR_NAMES) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(white);
+                return view;
+            }
+        };
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+                .setTitle("Choose Clock Background Color")
+                .setSingleChoiceItems(adapter, currentSelectedColorIndex, (dialog, which) -> {
+                    String selectedColorHex = CLOCK_COLOR_HEX_VALUES[which];
+                    sharedPreferencesManager.setClockCardColor(selectedColorHex);
+                    applyClockCardColor(selectedColorHex);
+                    Log.d(TAG, "User selected clock color: " + CLOCK_COLOR_NAMES[which] + " (" + selectedColorHex + ")");
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
     }
 
     private int getCurrentDisplayOption() {
@@ -2994,9 +3053,19 @@ public class HomeFragment extends BaseFragment {
 
     private void showClockAppearanceDialog() {
         final String[] appearanceOptions = {"Change Clock Display", "Change Clock Color"};
-        new MaterialAlertDialogBuilder(requireContext())
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_1, appearanceOptions) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(white);
+                return view;
+            }
+        };
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle("Clock Appearance")
-                .setItems(appearanceOptions, (dialog, which) -> {
+                .setAdapter(adapter, (dialog, which) -> {
                     if (which == 0) { // Change Clock Display
                         showDisplayOptionsDialog();
                     } else if (which == 1) { // Change Clock Color
@@ -3007,28 +3076,7 @@ public class HomeFragment extends BaseFragment {
                 .show();
     }
 
-    private void showClockColorChooserDialog() {
-        String currentSelectedColorHex = sharedPreferencesManager.getClockCardColor();
-        int currentSelectedColorIndex = -1;
-        for (int i = 0; i < CLOCK_COLOR_HEX_VALUES.length; i++) {
-            if (CLOCK_COLOR_HEX_VALUES[i].equalsIgnoreCase(currentSelectedColorHex)) {
-                currentSelectedColorIndex = i;
-                break;
-            }
-        }
 
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Choose Clock Background Color")
-                .setSingleChoiceItems(CLOCK_COLOR_NAMES, currentSelectedColorIndex, (dialog, which) -> {
-                    String selectedColorHex = CLOCK_COLOR_HEX_VALUES[which];
-                    sharedPreferencesManager.setClockCardColor(selectedColorHex);
-                    applyClockCardColor(selectedColorHex);
-                    Log.d(TAG, "User selected clock color: " + CLOCK_COLOR_NAMES[which] + " (" + selectedColorHex + ")");
-                    dialog.dismiss();
-                })
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
-    }
 
     /**
      * Override the onBackPressed method from BaseFragment
@@ -3216,4 +3264,24 @@ public class HomeFragment extends BaseFragment {
         }
     }
     // ----- Fix Ended for this method(onHiddenChanged)-----
+
+    // ----- Fix Start: Add setTextColorsRecursive helper for dynamic theming -----
+    private void setTextColorsRecursive(View view, int primary, int secondary) {
+        if (view == null) return;
+        if (view instanceof TextView) {
+            TextView tv = (TextView) view;
+            CharSequence text = tv.getText();
+            if (text != null && text.length() > 0 && (tv.getTextSize() >= 16f)) {
+                tv.setTextColor(primary);
+            } else {
+                tv.setTextColor(secondary);
+            }
+        } else if (view instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) view;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                setTextColorsRecursive(vg.getChildAt(i), primary, secondary);
+            }
+        }
+    }
+    // ----- Fix End: Add setTextColorsRecursive helper for dynamic theming -----
 }
