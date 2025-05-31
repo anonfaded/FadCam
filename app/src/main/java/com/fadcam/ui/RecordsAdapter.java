@@ -499,10 +499,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         int popupMenuStyle = 0;
         // Dynamically select the correct style for the current theme
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        if ("Red Passion".equals(currentTheme)) {
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Crimson Bloom".equals(currentTheme)) {
             popupMenuStyle = R.style.Widget_FadCam_Red_PopupMenu; // Use underscore, not dot
-        } else if ("AMOLED Black".equals(currentTheme)) {
+        } else if ("Faded Night".equals(currentTheme)) {
             // If you have a custom style for AMOLED, set it here
             // popupMenuStyle = R.style.Widget_FadCam_Amoled_PopupMenu;
             popupMenuStyle = 0; // fallback to default
@@ -514,9 +514,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // Set text color for all menu items
         int colorMenuText;
-        if ("Red Passion".equals(currentTheme)) {
+        if ("Crimson Bloom".equals(currentTheme)) {
             colorMenuText = ContextCompat.getColor(context, R.color.white);
-        } else if ("AMOLED Black".equals(currentTheme)) {
+        } else if ("Faded Night".equals(currentTheme)) {
             colorMenuText = ContextCompat.getColor(context, R.color.amoled_text_primary);
         } else {
             colorMenuText = resolveThemeColor(context, R.attr.colorHeading);
@@ -1237,9 +1237,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        if ("Red Passion".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
-        else if ("AMOLED Black".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Crimson Bloom".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
+        else if ("Faded Night".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
         return new MaterialAlertDialogBuilder(context, dialogTheme);
     }
 }

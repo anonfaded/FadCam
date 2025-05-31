@@ -6,7 +6,7 @@
     <color name="gray500">#9E9E9E</color>
     <color name="redPastel">#E43C3C</color>
     <color name="greenPastel">#77DD77</color>
-    <color name="colorPrimary">#cfbafd</color>
+    <color name="colorPrimary">#232323</color>
     <color name="material_on_surface_stroke">#cfbafd</color>
     <color name="material_on_surface_emphasis_medium">@color/white</color>
     <color name="torch_off">#757575</color>
@@ -25,12 +25,14 @@
     <color name="gold">#FFD700</color>
     <color name="colorTopBar">@color/gray</color>
     <color name="colorBottomNav">@color/gray</color>
-    <color name="colorHeading">#cfbafd</color>
-    <color name="colorButton">@color/colorPrimary</color>
+    <color name="colorHeading">#CCCCCC</color>
+    <color name="colorButton">#232323</color>
     <color name="colorToggle">@color/greenPastel</color>
-    <color name="colorDialog">@color/gray</color>
+    <color name="colorDialog">#181A1B</color>
     <color name="colorStatusBar">@color/gray</color>
     <color name="dark_red_card">#3B1818</color>
     <color name="dark_purple_bar">#231942</color>
     <color name="gray_button_filled">#2A2A2A</color>
+    <color name="colorSurface">#181A1B</color>
+    <color name="colorOnSurface">#E0E0E0</color>
 </resources> 

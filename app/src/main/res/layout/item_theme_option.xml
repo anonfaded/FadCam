@@ -1,20 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
+    android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:padding="8dp">
+    android:padding="16dp"
+    android:gravity="center_vertical">
+
     <View
         android:id="@+id/theme_color_circle"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:background="@drawable/theme_color_circle_bg"
+        android:background="@drawable/circle_shape"
         android:layout_marginEnd="16dp" />
+
     <TextView
         android:id="@+id/theme_name"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="16sp"
-        android:textColor="@android:color/black"/>
+        android:textColor="@android:color/white"
+        tools:text="Theme Name" />
+
 </LinearLayout> 

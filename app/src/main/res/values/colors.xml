@@ -40,5 +40,5 @@
     <color name="dark_red_card">#3B1818</color> <!-- Very dark, muted red for storage card -->
     <color name="dark_purple_bar">#231942</color> <!-- Very dark purple for dark mode top bar and navbar -->
 
-    <color name="gray_button_filled">#E0E0E0</color> <!-- Base declaration for filled button gray -->
+    <color name="gray_button_filled">#232323</color> <!-- Much darker gray for filled button in all themes -->
 </resources>

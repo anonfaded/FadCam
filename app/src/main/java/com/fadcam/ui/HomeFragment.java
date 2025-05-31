@@ -21,6 +21,8 @@ import android.content.res.AssetManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -92,6 +94,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Random;
 import java.util.HashSet; // For combining lists
 import java.util.Set;    // For combining lists
@@ -110,8 +113,8 @@ public class HomeFragment extends BaseFragment {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
 
     // ----- Fix Start for this method(fields)-----
-    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark"};
-    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745"};
+    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark", "Amoled Gray"};
+    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745", "#CCCCCC"};
     // ----- Fix Ended for this method(fields)-----
 
     private long recordingStartTime;
@@ -284,89 +287,64 @@ public class HomeFragment extends BaseFragment {
         if (messageQueue == null || messageQueue.isEmpty()) {
             initializeMessages(); // Reinitialize and shuffle if queue is empty or null
         }
-
         // Remove recently shown messages from the queue
         messageQueue.removeAll(recentlyShownMessages);
-
         // Ensure there are still messages to choose from
         if (!messageQueue.isEmpty()) {
             String randomMessage = messageQueue.remove(random.nextInt(messageQueue.size()));
-            
-            // Set text with padding
             tvPreviewPlaceholder.setPadding(40, tvPreviewPlaceholder.getPaddingTop(), 40, tvPreviewPlaceholder.getPaddingBottom());
             tvPreviewPlaceholder.setText(randomMessage);
-
-            // Create a bounce/wobble animation
             AnimatorSet animatorSet = new AnimatorSet();
-            
-            // Scale down then up animation (bounce effect)
             ObjectAnimator scaleDownX = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 0.7f);
             ObjectAnimator scaleDownY = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 0.7f);
             scaleDownX.setDuration(150);
             scaleDownY.setDuration(150);
-            
             ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleX", 1.0f);
             ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "scaleY", 1.0f);
             scaleUpX.setDuration(150);
             scaleUpY.setDuration(150);
-            
-            // Wobble animation (rotate slightly left then right)
             ObjectAnimator rotateLeft = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "rotation", 0f, -3f);
             rotateLeft.setDuration(80);
             ObjectAnimator rotateRight = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "rotation", -3f, 3f);
             rotateRight.setDuration(80);
             ObjectAnimator rotateCenter = ObjectAnimator.ofFloat(tvPreviewPlaceholder, "rotation", 3f, 0f);
             rotateCenter.setDuration(80);
-            
-            // Red flash animation for the background of cardPreview
-            // Store the original background drawable
             final Drawable originalBackground = cardPreview.getBackground();
-            
-            // Create a ValueAnimator for color transition
+            // ----- Fix Start: Use gray flash for AMOLED theme (avoid duplicate variable) -----
+            String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isAmoledLocal = "AMOLED".equalsIgnoreCase(themeName) || "Amoled".equalsIgnoreCase(themeName) || "Faded Night".equalsIgnoreCase(themeName);
+            int flashColor = isAmoledLocal ? Color.parseColor("#232323") : Color.parseColor("#302745");
             ValueAnimator colorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), 
-                    Color.parseColor("#302745"), // Use the app's dark purple color
+                    flashColor, 
                     Color.RED, 
-                    Color.parseColor("#302745"));
+                    flashColor);
+            // ----- Fix End: Use gray flash for AMOLED theme (avoid duplicate variable) -----
             colorAnim.setDuration(300);
             colorAnim.addUpdateListener(animator -> {
                 int color = (int) animator.getAnimatedValue();
                 cardPreview.setBackgroundColor(color);
             });
-            // Make sure to restore the original background when animation ends
             colorAnim.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     cardPreview.setBackground(originalBackground);
                 }
             });
-            
-            // Sequence the animations
             AnimatorSet bounceSet = new AnimatorSet();
             bounceSet.playTogether(scaleDownX, scaleDownY);
-            
             AnimatorSet expandSet = new AnimatorSet();
             expandSet.playTogether(scaleUpX, scaleUpY);
-            
             AnimatorSet wobbleSet = new AnimatorSet();
             wobbleSet.playSequentially(rotateLeft, rotateRight, rotateCenter);
-            
-            // Play bounce then wobble animations
             animatorSet.playSequentially(bounceSet, expandSet, wobbleSet);
             animatorSet.start();
-            
-            // Play the background flash animation
             colorAnim.start();
-
-            // Track recently shown messages
             recentlyShownMessages.add(randomMessage);
             if (recentlyShownMessages.size() > RECENT_MESSAGE_LIMIT) {
                 recentlyShownMessages.remove(0); // Remove the oldest message
             }
-
-            // Shuffle the list again
             Collections.shuffle(messageQueue);
         } else {
-            // Fallback message if no messages are available
             tvPreviewPlaceholder.setText("Oops! No messages available right now.");
         }
     }
@@ -792,50 +770,36 @@ public class HomeFragment extends BaseFragment {
      */
     private void resetUIButtonsToIdleState() {
         Log.d(TAG, "Reset UI to idle state");
-
-        // Guard against running if fragment/context isn't ready
         if (!isAdded() || getContext() == null || getView() == null) {
             Log.w(TAG, "resetUIButtonsToIdleState: Fragment/context unavailable");
             return;
         }
-        
         try {
-            // ----- Fix Start: Update start button handling -----
-            // Start button should always be enabled by default (and later updated by camera resource availability)
+            String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isAmoledLocal = "AMOLED".equalsIgnoreCase(themeName) || "Amoled".equalsIgnoreCase(themeName) || "Faded Night".equalsIgnoreCase(themeName);
             if (buttonStartStop != null) {
                 buttonStartStop.setText(R.string.button_start);
                 buttonStartStop.setIcon(AppCompatResources.getDrawable(getContext(), R.drawable.ic_play));
-                buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50"))); // GREEN
-                // Note: Don't set enabled state here - it will be handled by updateStartButtonAvailability()
+                int btnColor = isAmoledLocal ? Color.parseColor("#232323") : Color.parseColor("#4CAF50");
+                buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(btnColor));
             }
-            
-            // ----- Fix: Keep pause button visible but disabled instead of GONE -----
             if (buttonPauseResume != null) { 
                 buttonPauseResume.setVisibility(View.VISIBLE);
-                buttonPauseResume.setEnabled(false); // Disabled when not recording
-                buttonPauseResume.setAlpha(0.5f);    // Visually show it's disabled
-                // Reset icon to be ready for next recording
+                buttonPauseResume.setEnabled(false);
+                buttonPauseResume.setAlpha(0.5f);
                 buttonPauseResume.setIcon(AppCompatResources.getDrawable(getContext(), R.drawable.ic_pause));
-                // buttonPauseResume.setText(getString(R.string.button_pause));
             }
-            // ----- Fix End: Update button handling -----
-            
             if (buttonCamSwitch != null) {
                 buttonCamSwitch.setEnabled(true);
                 buttonCamSwitch.setVisibility(View.VISIBLE);
                 buttonCamSwitch.setAlpha(1f);
             }
-            
             if (buttonTorchSwitch != null) {
                 buttonTorchSwitch.setEnabled(true);
                 buttonTorchSwitch.setAlpha(1f);
             }
-            
-            // Add this call to ensure the start button is properly enabled/disabled
             updateStartButtonAvailability();
-            
             Log.d(TAG, "resetUIButtonsToIdleState: All UI elements reset to idle state");
-            
         } catch (Exception e) {
             Log.e(TAG, "Error in resetUIButtonsToIdleState", e);
         }
@@ -1537,10 +1501,47 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "onViewCreated: View created.");
+        com.fadcam.Log.i(TAG, "onViewCreated: method entered");
 
         // Initialize SharedPreferencesManager
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+
+        // Initialize isAmoledTheme at the top of the method for use throughout
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isAmoledTheme = currentTheme != null && 
+                               (currentTheme.equalsIgnoreCase("AMOLED") || 
+                                currentTheme.equalsIgnoreCase("Amoled") ||
+                                currentTheme.equalsIgnoreCase("Faded Night"));
+        
+        // ----- Fix Start: Reset clock color if theme changed (always use theme default) -----
+        String lastTheme = sharedPreferencesManager.sharedPreferences.getString("last_theme_for_clock_color", null);
+        
+        com.fadcam.Log.i(TAG, "Theme check - Current theme: [" + currentTheme + "], Last theme: [" + lastTheme + "]");
+        
+        // Simple theme change detection
+        if (!Objects.equals(currentTheme, lastTheme)) {
+            // Theme changed - get appropriate color from SharedPreferencesManager 
+            // (it handles AMOLED theme special case now)
+            String clockColorPref = sharedPreferencesManager.getClockCardColor();
+            
+            // Apply the color to the clock card
+            applyClockCardColor(clockColorPref);
+            
+            // Save current theme as last theme
+            sharedPreferencesManager.sharedPreferences.edit()
+                .putString("last_theme_for_clock_color", currentTheme)
+                .apply();
+            
+            Toast.makeText(requireContext(), "Theme changed: " + currentTheme, Toast.LENGTH_SHORT).show();
+            com.fadcam.Log.i(TAG, "Theme changed from [" + (lastTheme != null ? lastTheme : "null") + 
+                           "] to [" + currentTheme + "]. Applied color: " + clockColorPref);
+        } else {
+            // No theme change - just apply the current color preference
+            String clockColorPref = sharedPreferencesManager.getClockCardColor();
+            applyClockCardColor(clockColorPref);
+            com.fadcam.Log.i(TAG, "Applied saved clock card color: " + clockColorPref + " for theme: " + currentTheme);
+        }
+        // ----- Fix End: Reset clock color if theme changed (always use theme default) -----
 
         // Initialize ExecutorService
         if (executorService == null || executorService.isShutdown()) {
@@ -1562,6 +1563,9 @@ public class HomeFragment extends BaseFragment {
         CardView cardStats = view.findViewById(R.id.cardStats);
         CardView cardStorage = view.findViewById(R.id.cardStorage);
         CardView cardTips = view.findViewById(R.id.cardTips);
+        // Clock card is intentionally NOT included here as it has its own color logic
+
+        String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
 
         int colorDialog = resolveThemeColor(R.attr.colorDialog);
         int colorButton = resolveThemeColor(R.attr.colorButton);
@@ -1569,29 +1573,70 @@ public class HomeFragment extends BaseFragment {
         int colorTextPrimary = resolveThemeColor(R.attr.colorHeading);
         int colorTextSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
 
-        if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
-        if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
-        if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_red_card));
-        if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
-
-        setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
-        setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
-        setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
-        setTextColorsRecursive(cardTips, colorTextPrimary, colorTextSecondary);
-        // ----- Fix End: Apply dynamic theme colors to preview area cards -----
-
-        // ----- Fix Start: Apply dynamic theme colors to preview area cards (night mode specific) -----
-        boolean isNightMode = (requireContext().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-        if (isNightMode) {
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray));
-            if (cardStats != null) cardStats.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_purple_bar));
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_purple_bar));
+        // ----- Fix Start: Apply dynamic theme colors to preview area cards (force override for AMOLED and Red, use *_surface_dark) -----
+        if ("Crimson Bloom".equals(themeName)) {
+            int redSurface = ContextCompat.getColor(requireContext(), R.color.red_theme_surface_dark);
+            int redHeading = ContextCompat.getColor(requireContext(), R.color.red_theme_heading);
+            int redTextSecondary = ContextCompat.getColor(requireContext(), R.color.red_theme_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(redSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(redSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(redSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, redHeading, redTextSecondary);
+            setTextColorsRecursive(cardStats, redHeading, redTextSecondary);
+            setTextColorsRecursive(cardStorage, redHeading, redTextSecondary);
+            setTextColorsRecursive(cardTips, redHeading, redTextSecondary);
+        } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
+            int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
+            int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
+            int amoledTextSecondary = ContextCompat.getColor(requireContext(), R.color.amoled_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(amoledSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(amoledSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(amoledSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, amoledHeading, amoledTextSecondary);
+            setTextColorsRecursive(cardStats, amoledHeading, amoledTextSecondary);
+            setTextColorsRecursive(cardStorage, amoledHeading, amoledTextSecondary);
+            setTextColorsRecursive(cardTips, amoledHeading, amoledTextSecondary);
+        } else if ("Midnight Dusk".equals(themeName)) {
+            int darkSurface = ContextCompat.getColor(requireContext(), R.color.dark_purple_bar);
+            int darkHeading = ContextCompat.getColor(requireContext(), R.color.colorHeading);
+            int darkTextSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(darkSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(darkSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(darkSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, darkHeading, darkTextSecondary);
+            setTextColorsRecursive(cardStats, darkHeading, darkTextSecondary);
+            setTextColorsRecursive(cardStorage, darkHeading, darkTextSecondary);
+            setTextColorsRecursive(cardTips, darkHeading, darkTextSecondary);
         } else {
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_red_card));
-            if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
+            // Fallback for other themes: use dialog color for cards
             if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
+            if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(colorDialog);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
+            setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
+            setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
+            setTextColorsRecursive(cardTips, colorTextPrimary, colorTextSecondary);
         }
-        // ----- Fix End: Apply dynamic theme colors to preview area cards (night mode specific) -----
+        // ----- Fix End: Apply dynamic theme colors to preview area cards (force override for AMOLED and Red, use *_surface_dark) -----
+
+        // ----- Fix Start: Storage card always gray for all themes -----
+        if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray));
+        // ----- Fix End: Storage card always gray for all themes -----
+
+        // ----- Fix Start: Re-apply clock card color to ensure it's not affected by theme styling -----
+        // This ensures the clock card maintains its own independent color regardless of general card styling
+        String currentClockColor = sharedPreferencesManager.getClockCardColor();
+        
+        // No need for special AMOLED handling here - SharedPreferencesManager handles it
+        
+        // Final application of the determined color
+        applyClockCardColor(currentClockColor);
+        com.fadcam.Log.i(TAG, "Final clock card color applied: " + currentClockColor + " for theme: " + currentTheme);
+        // ----- Fix End: Re-apply clock card color to ensure it's not affected by theme styling -----
 
         vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
         TorchService.setHomeFragment(this);
@@ -1646,10 +1691,6 @@ public class HomeFragment extends BaseFragment {
         initializeTorch();
         setupTorchButton();
 
-        // ----- Fix Start for this method(onViewCreated)-----
-        // Apply saved clock card color
-        applyClockCardColor(sharedPreferencesManager.getClockCardColor());
-        // ----- Fix Ended for this method(onViewCreated)-----
 
         // Attempt to find camera with flash
         try {
@@ -2046,7 +2087,19 @@ public class HomeFragment extends BaseFragment {
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(white);
+                if (text1 != null) {
+                    text1.setTextColor(white);
+                    // ----- Fix Start: Add color circle before color name -----
+                    int size = (int) (text1.getTextSize() * 1.2f);
+                    GradientDrawable circle = new GradientDrawable();
+                    circle.setShape(GradientDrawable.OVAL);
+                    circle.setColor(Color.parseColor(CLOCK_COLOR_HEX_VALUES[position]));
+                    circle.setSize(size, size);
+                    // Set as left drawable
+                    text1.setCompoundDrawablesWithIntrinsicBounds(circle, null, null, null);
+                    text1.setCompoundDrawablePadding(24);
+                    // ----- Fix End: Add color circle before color name -----
+                }
                 return view;
             }
         };
@@ -3055,12 +3108,15 @@ public class HomeFragment extends BaseFragment {
         if (cardClock != null && colorHex != null) {
             try {
                 cardClock.setCardBackgroundColor(Color.parseColor(colorHex));
-                Log.d(TAG, "Applied clock card color: " + colorHex);
+                com.fadcam.Log.i(TAG, "Applied clock card color: " + colorHex + " successfully to cardClock view");
             } catch (IllegalArgumentException e) {
-                Log.e(TAG, "Invalid color hex for clock card: " + colorHex, e);
+                com.fadcam.Log.e(TAG, "Invalid color hex for clock card: " + colorHex, e);
                 // Optionally apply default color if parse fails
                 cardClock.setCardBackgroundColor(Color.parseColor(SharedPreferencesManager.DEFAULT_CLOCK_CARD_COLOR));
+                com.fadcam.Log.i(TAG, "Fallback to default color: " + SharedPreferencesManager.DEFAULT_CLOCK_CARD_COLOR);
             }
+        } else {
+            com.fadcam.Log.w(TAG, "Cannot apply clock color - cardClock: " + (cardClock != null) + ", colorHex: " + colorHex);
         }
     }
 
@@ -3297,4 +3353,53 @@ public class HomeFragment extends BaseFragment {
         }
     }
     // ----- Fix End: Add setTextColorsRecursive helper for dynamic theming -----
+
+    // ----- Fix Start: Add method to get default clock color for theme -----
+    private String getDefaultClockColorForTheme(String themeName) {
+        com.fadcam.Log.i(TAG, "getDefaultClockColorForTheme called with themeName=[" + themeName + "]");
+        
+        String result;
+        // Check for AMOLED theme first (prioritize this check)
+        if ("AMOLED".equals(themeName) || "Faded Night".equals(themeName) || "Amoled".equals(themeName) || "amoled".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[6]; // Dark Grey (#424242)
+            com.fadcam.Log.i(TAG, "AMOLED theme match, using Dark Grey: " + result);
+            
+            // Extra check: force reset the saved color for any AMOLED theme variant
+            String savedColor = sharedPreferencesManager.getClockCardColor();
+            if ("#673AB7".equals(savedColor)) { // If it's still the default purple
+                sharedPreferencesManager.setClockCardColor("#424242"); // Force set to Dark Grey
+                Toast.makeText(requireContext(), "Applied Dark Grey for AMOLED theme", Toast.LENGTH_SHORT).show();
+                com.fadcam.Log.i(TAG, "FORCE RESET: Changed saved clock color from Purple to Dark Grey for AMOLED");
+            }
+        } else if ("Crimson Bloom".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[5]; // Red (#F44336)
+            com.fadcam.Log.i(TAG, "Crimson Bloom theme match, using Red: " + result);
+        } else if ("Midnight Dusk".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[0]; // Purple (#673AB7)
+            com.fadcam.Log.i(TAG, "Midnight Dusk theme match, using Purple: " + result);
+        } else if ("Blue Ocean".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[1]; // Blue (#2196F3)
+            com.fadcam.Log.i(TAG, "Blue Ocean theme match, using Blue: " + result);
+        } else if ("Green Fields".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[2]; // Green (#4CAF50)
+            com.fadcam.Log.i(TAG, "Green Fields theme match, using Green: " + result);
+        } else if ("Teal Dream".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[3]; // Teal (#009688)
+            com.fadcam.Log.i(TAG, "Teal Dream theme match, using Teal: " + result);
+        } else if ("Orange Sunset".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[4]; // Orange (#FF9800)
+            com.fadcam.Log.i(TAG, "Orange Sunset theme match, using Orange: " + result);
+        } else if ("Dark Grey".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[6]; // Dark Grey (#424242)
+            com.fadcam.Log.i(TAG, "Dark Grey theme match, using Dark Grey: " + result);
+        } else {
+            // Fallback to default
+            result = CLOCK_COLOR_HEX_VALUES[0]; // Default to Purple (#673AB7)
+            com.fadcam.Log.w(TAG, "No specific theme match found for [" + themeName + "], defaulting to Purple");
+        }
+        
+        com.fadcam.Log.i(TAG, "Final default clock color for theme [" + themeName + "]: " + result);
+        return result;
+    }
+    // ----- Fix End: Add method to get default clock color for theme -----
 }

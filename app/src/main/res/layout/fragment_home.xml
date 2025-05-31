@@ -103,7 +103,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#673AB7"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 app:strokeColor="#4CAF50"
@@ -135,7 +135,7 @@
                             android:textSize="15sp"
                             android:textStyle="bold"
                             android:layout_gravity="top"
-                            android:textColor="#FFFFFF" />
+                            android:textColor="?attr/colorHeading" />
 
                         <TextView
                             android:id="@+id/tvDateEnglish"
@@ -143,7 +143,7 @@
                             android:layout_height="wrap_content"
                             android:textSize="13sp"
                             android:layout_gravity="left"
-                            android:textColor="#FFFFFF" />
+                            android:textColor="?attr/colorOnSurface" />
 
                         <TextView
                             android:id="@+id/tvDateArabic"
@@ -151,7 +151,7 @@
                             android:layout_gravity="right"
                             android:layout_height="wrap_content"
                             android:textSize="13sp"
-                            android:textColor="#FFFFFF" />
+                            android:textColor="?attr/colorOnSurface" />
 
                     </LinearLayout>
                 </LinearLayout>
@@ -162,7 +162,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#302745"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 app:strokeColor="#4CAF50"
@@ -187,7 +187,7 @@
                         android:layout_gravity="center"
                         android:layout_marginStart="5dp"
                         android:layout_marginTop="0dp"
-                        android:textColor="#FFFFFF"
+                        android:textColor="?attr/colorHeading"
                         android:text="Stats" />
 
                 </LinearLayout>
@@ -242,7 +242,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_margin="16dp"
-        app:cardBackgroundColor="#302745"
+        app:cardBackgroundColor="?attr/colorSurface"
         app:cardCornerRadius="8dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toTopOf="@id/layoutControls"
@@ -267,7 +267,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="@string/ui_preview_area"
-                android:textColor="@color/material_on_surface_stroke"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="24sp" />
 
         </FrameLayout>

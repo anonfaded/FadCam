@@ -61,7 +61,61 @@ public class SharedPreferencesManager {
 
     // ----- Fix Start for this class (SharedPreferencesManager_clock_color) -----
     private static final String PREF_KEY_CLOCK_CARD_COLOR = "clock_card_color";
-    public static final String DEFAULT_CLOCK_CARD_COLOR = "#673AB7"; // Default Purple
+    
+    // This will be set dynamically based on theme
+    public static String DEFAULT_CLOCK_CARD_COLOR = "#673AB7"; // Initial value: Purple
+    
+    /**
+     * Gets the currently set clock card color. 
+     * For AMOLED theme, special handling ensures the clock card always uses Dark Grey.
+     */
+    public String getClockCardColor() {
+        String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        
+        // Special case for AMOLED theme - always return Dark Grey
+        if (currentTheme != null && 
+            (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") || 
+             currentTheme.equalsIgnoreCase("Faded Night"))) {
+            return "#424242"; // Dark Grey for AMOLED
+        } else if (currentTheme.equals("Crimson Bloom")) {
+            return "#F44336"; // Red for Red theme
+        } else if (currentTheme.equals("Midnight Dusk")) {
+            return "#673AB7"; // Purple for Default Dark theme
+        }
+        
+        // For other themes or custom selection, get the saved value
+        return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
+    }
+    
+    /**
+     * Updates the default clock card color based on the current theme.
+     * This should be called whenever the theme changes or on app startup.
+     */
+    public void updateDefaultClockColorForTheme() {
+        String currentTheme = sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        Log.i("SharedPreferencesManager", "Updating default clock color for theme: " + currentTheme);
+        
+        // Set appropriate color based on theme
+        if (currentTheme != null && 
+            (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") || 
+             currentTheme.equalsIgnoreCase("Faded Night"))) {
+            // For AMOLED theme, always use Dark Grey
+            setClockCardColor("#424242");
+            Log.i("SharedPreferencesManager", "AMOLED theme detected, setting clock color to Dark Grey (#424242)");
+        } else if ("Crimson Bloom".equals(currentTheme)) {
+            // For Red theme, use Red
+            setClockCardColor("#F44336");
+            Log.i("SharedPreferencesManager", "Red theme detected, setting clock color to Red (#F44336)");
+        } else {
+            // For Default Dark theme, use Purple
+            setClockCardColor("#673AB7");
+            Log.i("SharedPreferencesManager", "Default theme detected, setting clock color to Purple (#673AB7)");
+        }
+    }
+    
+    public void setClockCardColor(String colorHex) {
+        sharedPreferences.edit().putString(PREF_KEY_CLOCK_CARD_COLOR, colorHex).apply();
+    }
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
     // ----- Fix Start for this class (SharedPreferencesManager_video_splitting) -----
@@ -349,16 +403,6 @@ public class SharedPreferencesManager {
         return minutes;
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete_methods) -----
-
-    // ----- Fix Start for this class (SharedPreferencesManager_clock_color) -----
-    public void setClockCardColor(String colorHex) {
-        sharedPreferences.edit().putString(PREF_KEY_CLOCK_CARD_COLOR, colorHex).apply();
-    }
-
-    public String getClockCardColor() {
-        return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
-    }
-    // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
     // ----- Fix Start for this class (SharedPreferencesManager_video_splitting_methods) -----
     public boolean isVideoSplittingEnabled() {

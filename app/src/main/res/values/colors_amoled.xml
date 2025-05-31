@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="amoled_background">#000000</color>
-    <color name="amoled_surface">#121212</color>
-    <color name="amoled_text_primary">#FFFFFF</color>
-    <color name="amoled_text_secondary">#B3FFFFFF</color>
-    <color name="amoled_border">#1AFFFFFF</color>
-    <color name="amoled_accent">#cfbafd</color>
-    <color name="amoled_dialog">@color/amoled_surface</color>
-    <color name="amoled_heading">@color/amoled_accent</color>
-    <color name="amoled_statusbar">@color/amoled_background</color>
+    <color name="amoled_surface">#181A1B</color>
+    <color name="amoled_card">#181A1B</color>
+    <color name="amoled_text_primary">#E0E0E0</color>
+    <color name="amoled_text_secondary">#A0A0A0</color>
+    <color name="amoled_border">#232323</color>
+    <color name="amoled_accent">#44484D</color>
+    <color name="amoled_dialog">#181A1B</color>
+    <color name="amoled_heading">#CCCCCC</color>
+    <color name="amoled_statusbar">#000000</color>
+    <color name="amoled_button">#232323</color>
+    <color name="amoled_on_surface">#E0E0E0</color>
+    <color name="amoled_on_primary">#E0E0E0</color>
+    <color name="amoled_primary">#232323</color>
+    <color name="amoled_primary_variant">#181A1B</color>
+    <color name="amoled_secondary">#44484D</color>
+    <color name="amoled_secondary_variant">#232323</color>
+    <color name="amoled_background_dark">#000000</color>
+    <color name="amoled_surface_dark">#181A1B</color>
+    <color name="amoled_on_secondary">#E0E0E0</color>
+    <color name="amoled_on_background">#E0E0E0</color>
+    <color name="amoled_error">#B00020</color>
+    <color name="amoled_outline">#232323</color>
+    <color name="amoled_icon">#CCCCCC</color>
+    <color name="amoled_text_secondary_dark">#B3B3B3</color>
 </resources> 

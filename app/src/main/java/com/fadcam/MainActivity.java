@@ -89,19 +89,40 @@ public class MainActivity extends AppCompatActivity {
 
         // ----- Fix Start: Apply selected theme globally before setContentView -----
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-
+        
+        // Get the saved theme
+        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         Log.d("MainActivity", "Saved theme: " + savedTheme);
+        
+        // Check if theme is one of the AMOLED variants
+        boolean isAmoledTheme = "Faded Night".equals(savedTheme) ||
+                "AMOLED".equals(savedTheme) ||
+                "Amoled".equals(savedTheme) || 
+                "amoled".equals(savedTheme);
 
-        if ("Red Passion".equals(savedTheme)) {
-            setTheme(R.style.Theme_FadCam_Red);
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        } else if ("AMOLED Black".equals(savedTheme)) {
+        // This applies the theme but theme changes to some components only take effect on restart
+        if (isAmoledTheme) {
+            // Use true AMOLED theme (pure black background)
             setTheme(R.style.Theme_FadCam_Amoled);
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            
+            // Standardize theme name to "Faded Night"
+            if (!"Faded Night".equals(savedTheme)) {
+                sharedPreferencesManager.sharedPreferences.edit()
+                .putString(Constants.PREF_APP_THEME, "Faded Night")
+                .apply();
+                savedTheme = "Faded Night";
+            }
+            
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.amoled_background, getTheme()));
+            
+        } else if ("Crimson Bloom".equals(savedTheme)) {
+            // Red theme
+            setTheme(R.style.Theme_FadCam_Red);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
         } else {
+            // Default dark theme
             setTheme(R.style.Base_Theme_FadCam);
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.gray, getTheme()));
         }
         // ----- Fix End: Apply selected theme globally before setContentView -----
         

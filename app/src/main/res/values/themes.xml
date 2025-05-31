@@ -35,22 +35,22 @@
         <item name="android:textColorSecondary">@color/amoled_text_secondary</item>
         
         <!-- Material Design component colors (fix for dialog/button/toggle contrast) -->
-        <item name="colorPrimary">#1A73E8</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorSecondary">#03DAC6</item>
-        <item name="colorOnSecondary">#000000</item>
+        <item name="colorPrimary">#232323</item>
+        <item name="colorOnPrimary">#E0E0E0</item>
+        <item name="colorSecondary">#44484D</item>
+        <item name="colorOnSecondary">#E0E0E0</item>
         <item name="colorSurface">@color/amoled_surface</item>
         <item name="colorOnSurface">@color/amoled_text_primary</item>
         <!-- Dialog theme override -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Amoled.MaterialAlertDialog</item>
         <!-- Card and surface styles -->
-        <item name="materialCardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
+        <item name="cardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
         <item name="bottomNavigationStyle">@style/Theme.FadCam.AmoledBottomNavigation</item>
         <item name="colorTopBar">@color/amoled_background</item>
         <item name="colorBottomNav">@color/amoled_background</item>
-        <item name="colorHeading">@color/amoled_text_primary</item>
-        <item name="colorButton">@color/amoled_text_primary</item>
-        <item name="colorToggle">@color/amoled_text_secondary</item>
+        <item name="colorHeading">@color/amoled_heading</item>
+        <item name="colorButton">#232323</item>
+        <item name="colorToggle">#44484D</item>
         <item name="colorDialog">@color/amoled_surface</item>
         <item name="colorStatusBar">@color/amoled_background</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
@@ -80,7 +80,7 @@
     </style>
 
     <style name="Theme.FadCam.Red" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorTopBar">@color/red_theme_primary</item>
+        <item name="colorTopBar">@color/red_theme_primary_variant</item>
         <item name="colorBottomNav">@color/red_theme_primary_variant</item>
         <item name="colorHeading">@color/red_theme_primary</item>
         <item name="colorButton">@color/red_theme_primary</item>

@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -107,6 +108,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 // ----- Fix Ended for this class (SettingsFragment_video_splitting_imports) -----
 
+import android.graphics.drawable.GradientDrawable;
 
 public class SettingsFragment extends BaseFragment {
 
@@ -471,6 +473,7 @@ public class SettingsFragment extends BaseFragment {
         MaterialButton audioSettingsButton = view.findViewById(R.id.audio_settings_button);
         if (audioSettingsButton != null) {
             audioSettingsButton.setOnClickListener(v -> showAudioSettingsDialog());
+            audioSettingsButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
         }
 
         // Initialize Storage UI elements
@@ -543,12 +546,14 @@ public class SettingsFragment extends BaseFragment {
         MaterialButton videoBitrateButton = view.findViewById(R.id.video_bitrate_button);
         if (videoBitrateButton != null) {
             videoBitrateButton.setOnClickListener(v -> showVideoBitrateDialog());
+            videoBitrateButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
         }
 
         // ----- Fix Start for onCreateView: Setup Choose Button for mic selection -----
         MaterialButton audioInputSourceButton = view.findViewById(R.id.audio_input_source_button);
         if (audioInputSourceButton != null) {
             audioInputSourceButton.setOnClickListener(v -> showMicSelectionDialog());
+            audioInputSourceButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
         }
         // Remove row click logic for audio_input_source_layout
         // ... existing code ...
@@ -575,6 +580,15 @@ public class SettingsFragment extends BaseFragment {
         // ----- Fix Start: Apply theme colors to headings, buttons, toggles using theme attributes -----
         applyThemeToUI(view);
         // ----- Fix End: Apply theme colors to headings, buttons, toggles using theme attributes -----
+
+        // ----- Fix Start: Apply theme color to top bar and buttons -----
+        // Top app bar
+        if (toolbar != null && "Crimson Bloom".equals(sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk"))) {
+            toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red_theme_primary_variant));
+        } else if (toolbar != null) {
+            toolbar.setBackgroundColor(resolveThemeColor(R.attr.colorTopBar));
+        }
+        // ----- Fix End: Apply theme color to top bar and buttons -----
 
         return view;
     }
@@ -799,19 +813,20 @@ public class SettingsFragment extends BaseFragment {
     // Method to visually update toggle button group state
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
         if(getContext() == null) return;
-        int red = resolveThemeColor(R.attr.colorButton); // red for selected
-        int gray = ContextCompat.getColor(requireContext(), R.color.gray); // neutral for unselected
-        int gray500 = ContextCompat.getColor(requireContext(), R.color.gray500); // border for unselected
+        int red = resolveThemeColor(R.attr.colorButton); // Theme color for selected
+        int black = ContextCompat.getColor(requireContext(), R.color.black); // Black for unselected
         int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        
         if (isSelected) {
             button.setBackgroundColor(red);
             button.setTextColor(white);
             button.setStrokeColor(ColorStateList.valueOf(red)); // No visible border
             button.setIconTintResource(android.R.color.white);
         } else {
-            button.setBackgroundColor(gray);
+            button.setBackgroundColor(black);
             button.setTextColor(white);
-            button.setStrokeColor(ColorStateList.valueOf(gray500));
+            button.setStrokeWidth(0); // Remove stroke completely
+            button.setStrokeColor(ColorStateList.valueOf(black)); // Set stroke to match background
             button.setIconTintResource(android.R.color.white);
         }
     }
@@ -2474,70 +2489,144 @@ public class SettingsFragment extends BaseFragment {
     private void setupThemeSpinner(View view) {
         MaterialButton themeButton = view.findViewById(R.id.theme_choose_button); // Add a button in layout for theme selection
         if (themeButton == null) return;
-        String[] themeNames = {getString(R.string.theme_red), "Dark Mode", "AMOLED Black"};
+        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night"};
         int[] themeColors = {
             ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.gray),
-            ContextCompat.getColor(requireContext(), R.color.amoled_background)
+            ContextCompat.getColor(requireContext(), R.color.amoled_surface) // Use surface color instead of background
         };
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        int tempThemeIndex = 1; // Default to Dark Mode
-        if ("Red Passion".equals(currentTheme)) tempThemeIndex = 0;
-        else if ("AMOLED Black".equals(currentTheme)) tempThemeIndex = 2;
-        final int selectedThemeIndex = tempThemeIndex;
-        themeButton.setText(themeNames[selectedThemeIndex]);
-        themeButton.setOnClickListener(v -> {
-            LayoutInflater inflater = LayoutInflater.from(requireContext());
-            View dialogView = inflater.inflate(R.layout.dialog_theme_chooser, null);
-            LinearLayout themeList = dialogView.findViewById(R.id.theme_list);
-            themeList.removeAllViews();
-            for (int i = 0; i < themeNames.length; i++) {
-                View item = inflater.inflate(R.layout.item_theme_option, themeList, false);
-                TextView name = item.findViewById(R.id.theme_name);
-                View colorCircle = item.findViewById(R.id.theme_color_circle);
-                name.setText(themeNames[i]);
-                name.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
-                colorCircle.getBackground().setTint(themeColors[i]);
-                int idx = i;
-                item.setOnClickListener(iv -> {
-                    sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_APP_THEME, themeNames[idx]).apply();
-                    themeButton.setText(themeNames[idx]);
-                    requireActivity().recreate();
-                });
-                if (i == selectedThemeIndex) item.setBackgroundResource(R.drawable.selected_theme_bg);
-                themeList.addView(item);
-            }
-            themedDialogBuilder(requireContext())
-                .setTitle(R.string.setting_theme_title)
-                .setView(dialogView)
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
-        });
-        // Set top app bar color to red if red theme is active
-        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
-        if (toolbar != null && "Red Passion".equals(currentTheme)) {
-            toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red_theme_primary));
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        int tempThemeIndex = 1; // Default to Dark Mode index
+        if ("Crimson Bloom".equals(currentTheme)) tempThemeIndex = 0;
+        else if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) tempThemeIndex = 2;
+        
+        final int themeIndex = tempThemeIndex;
+        themeButton.setText(themeNames[themeIndex]);
+        themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        
+        // Apply the correct background tint based on the current theme
+        if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) {
+            // For Faded Night theme, use the #232323 color which is more visible than pure black
+            themeButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.amoled_surface)));
+        } else {
+            themeButton.setBackgroundTintList(ColorStateList.valueOf(themeColors[themeIndex]));
         }
+        
+        themeButton.setOnClickListener(v -> {
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog);
+            builder.setTitle(R.string.settings_option_theme);
+            
+            // Create a custom adapter for the theme selection with color circles
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), R.layout.item_theme_option, R.id.theme_name, themeNames) {
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+                    View view = super.getView(position, convertView, parent);
+                    
+                    // Set the theme name
+                    TextView themeName = view.findViewById(R.id.theme_name);
+                    themeName.setText(themeNames[position]);
+                    themeName.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                    
+                    // Set the color circle
+                    View colorCircle = view.findViewById(R.id.theme_color_circle);
+                    GradientDrawable drawable = (GradientDrawable) colorCircle.getBackground();
+                    if (position == 2) { // Faded Night position
+                        drawable.setColor(ContextCompat.getColor(requireContext(), R.color.amoled_surface));
+                    } else {
+                        drawable.setColor(themeColors[position]);
+                    }
+                    
+                    // Highlight the current selection
+                    if (position == themeIndex) {
+                        view.setBackgroundResource(R.drawable.selected_theme_bg);
+                    } else {
+                        view.setBackground(null);
+                    }
+                    
+                    return view;
+                }
+            };
+            
+            builder.setSingleChoiceItems(adapter, themeIndex, (dialog, which) -> {
+                String newTheme = themeNames[which];
+                if ("Midnight Dusk".equals(newTheme)) {
+                    newTheme = "Midnight Dusk";
+                } else if ("Faded Night".equals(newTheme)) {
+                    newTheme = "Faded Night";
+                } else {
+                    newTheme = "Crimson Bloom";
+                }
+                
+                // Save theme and restart app if needed
+                if (!newTheme.equals(currentTheme)) {
+                    sharedPreferencesManager.sharedPreferences.edit()
+                            .putString(Constants.PREF_APP_THEME, newTheme)
+                            .apply();
+                    
+                    // Update default clock color for the new theme
+                    sharedPreferencesManager.updateDefaultClockColorForTheme();
+
+                    // Schedule app restart
+                    vibrateTouch();
+                    
+                    // Update UI immediately (colors may not fully update until restart)
+                    themeButton.setText(themeNames[which]);
+                    
+                    // Update button background with the right color for the selected theme
+                    if ("Faded Night".equals(newTheme)) {
+                        themeButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.amoled_surface)));
+                    } else {
+                        themeButton.setBackgroundTintList(ColorStateList.valueOf(themeColors[which]));
+                    }
+                    
+                    // Apply theme changes that don't require restart
+                    applyAppTheme(newTheme);
+                    
+                    MaterialToolbar toolbar = requireActivity().findViewById(R.id.topAppBar);
+                    if (toolbar != null && "Crimson Bloom".equals(newTheme)) {
+                        toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red_theme_primary_variant));
+                    } else if (toolbar != null) {
+                        // Reset to default toolbar color
+                        toolbar.setBackgroundColor(resolveThemeColor(R.attr.colorTopBar));
+                    }
+                    
+                    Toast.makeText(requireContext(), R.string.settings_theme_changed, Toast.LENGTH_SHORT).show();
+                    
+                    // CRITICAL: Recreate the activity to apply the theme change
+                    requireActivity().recreate();
+                }
+                dialog.dismiss();
+            });
+            
+            builder.setNegativeButton(R.string.universal_cancel, null);
+            AlertDialog dialog = builder.create();
+            dialog.setOnShowListener(dialogInterface -> {
+                // Set Cancel button text color to white
+                Button negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE);
+                if (negativeButton != null) {
+                    negativeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                }
+            });
+            dialog.show();
+        });
     }
 
-    /**
-     * Applies the selected theme globally by setting the correct theme style on the activity.
-     * This should be called before setContentView in the activity, but for runtime changes,
-     * we call recreate() after updating the preference, and the activity should read the preference
-     * and apply the correct theme in onCreate.
-     */
     private void applyAppTheme(String themeName) {
-        if (getActivity() == null) return;
-        if ("Red Passion".equals(themeName)) {
-            getActivity().setTheme(R.style.Theme_FadCam_Red); // Use the correct style name
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        } else if ("AMOLED Black".equals(themeName)) {
-            getActivity().setTheme(R.style.Theme_FadCam_Amoled);
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
-            getActivity().setTheme(R.style.Base_Theme_FadCam);
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        if ("Crimson Bloom".equals(themeName)) {
+            // Red theme
+            ContextCompat.getColor(requireContext(), R.color.red_theme_primary);
+            // Apply other Red theme-specific UI changes that can be done without recreation
+        } else if ("Faded Night".equals(themeName)) {
+            // AMOLED theme
+            ContextCompat.getColor(requireContext(), R.color.amoled_background);
+            // Apply other AMOLED theme-specific UI changes that can be done without recreation
+        } else if ("Midnight Dusk".equals(themeName)) {
+            // Default dark theme
+            ContextCompat.getColor(requireContext(), R.color.gray);
+            // Apply other default theme-specific UI changes that can be done without recreation
         }
+        // Apply other theme-agnostic UI updates
+        applyThemeToUI(requireView());
     }
     // --- End Theme Spinner Logic ---
 
@@ -3655,9 +3744,9 @@ public class SettingsFragment extends BaseFragment {
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        if ("Red Passion".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
-        else if ("AMOLED Black".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Crimson Bloom".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
+        else if ("Faded Night".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
         return new MaterialAlertDialogBuilder(context, dialogTheme);
     }
     // ----- Fix End: Add themedDialogBuilder helper to SettingsFragment -----

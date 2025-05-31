@@ -42,11 +42,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         // ----- Fix Start: Apply selected theme globally before setContentView -----
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
 
-        if ("Red Passion".equals(savedTheme)) {
+        if ("Crimson Bloom".equals(savedTheme)) {
             setTheme(R.style.Theme_FadCam_Red);
-        } else if ("AMOLED Black".equals(savedTheme)) {
+        } else if ("Faded Night".equals(savedTheme)) {
             setTheme(R.style.Theme_FadCam_Amoled);
         } else {
             setTheme(R.style.Base_Theme_FadCam);
