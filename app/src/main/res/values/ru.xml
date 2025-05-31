@@ -96,7 +96,6 @@
     <string name="video_menu_copy_filename">Copy Filename</string>
     <string name="video_menu_mark_viewed">Mark as Viewed</string>
     <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
-    <string name="video_menu_edit_faditorx">Edit in FaditorX</string>
     <string name="records_title">Recordings</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>
@@ -315,8 +314,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="bitrate_custom_hint">e.g. 16,000</string>
     <string name="bitrate_reset_button">Reset</string>
     <string name="bitrate_helper_text">Bitrate controls video quality and file size. Higher = better quality, but larger files. Too high or too low may cause recording errors or poor quality. The recommended range depends on your device and selected resolution. The default value above is based on your current settings.</string>
-    <string name="bitrate_info_default">Default bitrate for this resolution and framerate: %1$s Mbps</string>
-    <string name="bitrate_info_custom">Custom bitrate: %1$s Mbps</string>
+    <string name="bitrate_info_default">Default: %d Mbps</string>
+    <string name="bitrate_info_custom">Custom: %d Mbps</string>
     <string name="bitrate_info_warning_low">Warning: Bitrate is very low. Video quality may be poor.</string>
     <string name="bitrate_info_warning_high">Warning: Bitrate is very high. Recording may fail or overheat device.</string>
     <string name="bitrate_info_ok">Bitrate is in recommended range.</string>
@@ -487,4 +486,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_verify_to_change">Verify Current PIN</string>
     <string name="applock_verify_to_remove">Verify PIN to Remove</string>
     <string name="applock_verification_canceled">Verification canceled</string>
+    <string name="version_format">v%s</string>
+    <string name="edit_with_faditorx">Edit with FaditorX</string>
 </resources>
