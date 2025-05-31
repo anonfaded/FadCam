@@ -273,7 +273,7 @@
         ]]></string>
     <string name="recording_already_active">Recording is already in progress or paused.</string>
     <string name="setting_back_lens_title">Back Camera Lens</string>
-    <string name="setting_back_lens_note">Select specific lens if available e.g. Wide Angle Lens\n(Default: Main Lens(0))</string>
+    <string name="setting_back_lens_note">Select specific lens if available e.g. Wide Angle Lens\n(Default: Main (0))</string>
     <string name="setting_back_lens_info_single">Main lens only</string>
     <string name="setting_back_lens_info_single_v2">Only main back camera detected</string>
     <string-array name="theme_options">
@@ -467,4 +467,22 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Fix Start: Add location_permission_message string -->
     <string name="location_permission_message">Location permission is needed to add GPS coordinates to your videos. Please grant permission to use this feature.</string>
     <!-- Fix End: Add location_permission_message string -->
+    <!-- App Lock Strings -->
+    <string name="setting_applock_title">Tab Lock</string>
+    <string name="setting_applock_desc">Secure your videos with PIN lock for Records tab. \nFor your security, the Records tab will auto-lock whenever the app goes to the background or is closed. You will need to unlock again when you return</string>
+    <string name="setting_applock_configure">Configure</string>
+    <string name="applock_dialog_title">Tab Lock Options</string>
+    <string name="applock_enable">Enable Tab Lock</string>
+    <string name="applock_disable">Disable Tab Lock</string>
+    <string name="applock_set_pin">Set PIN</string>
+    <string name="applock_change_pin">Change PIN</string>
+    <string name="applock_remove_pin">Remove PIN</string>
+    <string name="applock_pin_created">PIN successfully created</string>
+    <string name="applock_pin_removed">PIN successfully removed</string>
+    <!-- App Lock Verification Messages -->
+    <string name="applock_verify_to_enable">Verify PIN to Enable Tab Lock</string>
+    <string name="applock_verify_to_disable">Verify PIN to Disable Tab Lock</string>
+    <string name="applock_verify_to_change">Verify Current PIN</string>
+    <string name="applock_verify_to_remove">Verify PIN to Remove</string>
+    <string name="applock_verification_canceled">Verification canceled</string>
 </resources>
