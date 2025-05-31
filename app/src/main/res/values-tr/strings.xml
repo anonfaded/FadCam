@@ -300,8 +300,8 @@
     <string name="bitrate_custom_hint">örn. 16,000</string>
     <string name="bitrate_reset_button">Sıfırla</string>
     <string name="bitrate_helper_text">Bit hızı, video kalitesini ve dosya boyutunu kontrol eder. Daha yüksek = daha iyi kalite, ancak daha büyük dosyalar anlamına gelir. Çok yüksek veya çok düşük değerler kayıt hatalarına veya düşük kaliteye neden olabilir. Önerilen aralık, cihazınıza ve seçilen çözünürlüğe bağlıdır. Yukarıdaki varsayılan değer, mevcut ayarlarınıza dayanır.</string>
-    <string name="bitrate_info_default">Bu çözünürlük ve kare hızı için varsayılan bit hızı: %1$s Mbps</string>
-    <string name="bitrate_info_custom">Özel bit hızı: %1$s Mbps</string>
+    <string name="bitrate_info_default">Bu çözünürlük ve kare hızı için varsayılan bit hızı: %d Mbps</string>
+    <string name="bitrate_info_custom">Özel bit hızı: %d Mbps</string>
     <string name="bitrate_info_warning_low">Uyarı: Bit hızı çok düşük. Video kalitesi kötü olabilir.</string>
     <string name="bitrate_info_warning_high">Uyarı: Bit hızı çok yüksek. Kayıt başarısız olabilir veya cihaz aşırı ısınabilir.</string>
     <string name="bitrate_info_ok">Bit hızı önerilen aralıkta.</string>

@@ -341,6 +341,39 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     PopupMenu popup = setupPopupMenu(holder, videoItem);
                     if (popup != null) {
                         popup.show();
+                        // --- Fix Start: Robustly gray out FaditorX menu item and show badge ---
+                        // Wait for the popup to be fully shown, then update the view
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            try {
+                                Field listViewField = popup.getClass().getDeclaredField("mPopup");
+                                listViewField.setAccessible(true);
+                                Object menuPopupHelper = listViewField.get(popup);
+                                Method getListViewMethod = menuPopupHelper.getClass().getDeclaredMethod("getListView");
+                                getListViewMethod.setAccessible(true);
+                                android.widget.ListView listView = (android.widget.ListView) getListViewMethod.invoke(menuPopupHelper);
+                                if (listView != null) {
+                                    for (int i = 0; i < listView.getChildCount(); i++) {
+                                        View row = listView.getChildAt(i);
+                                        TextView label = row.findViewById(R.id.menu_edit_label);
+                                        TextView badge = row.findViewById(R.id.menu_badge_coming_soon);
+                                        ImageView icon = row.findViewById(android.R.id.icon);
+                                        if (label != null && badge != null) {
+                                            label.setTextColor(Color.parseColor("#888888"));
+                                            badge.setVisibility(View.VISIBLE);
+                                            badge.setText("Coming Soon");
+                                            badge.setBackgroundResource(R.drawable.badge_background_red);
+                                            if (icon != null) {
+                                                icon.setColorFilter(Color.parseColor("#888888"), android.graphics.PorterDuff.Mode.SRC_IN);
+                                            }
+                                            break; // Found the correct row
+                                        }
+                                    }
+                                }
+                            } catch (Exception e) {
+                                Log.w(TAG, "Could not update FaditorX menu item badge: " + e.getMessage());
+                            }
+                        }, 50); // Delay to ensure popup is rendered
+                        // --- Fix End: Robustly gray out FaditorX menu item and show badge ---
                     }
                 }
             });
@@ -463,34 +496,89 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
         Context context = holder.itemView.getContext();
-        PopupMenu popup = new PopupMenu(context, holder.menuButtonContainer);
-        popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
-        int colorDialog = resolveThemeColor(context, R.attr.colorDialog);
-        int colorHeading = resolveThemeColor(context, R.attr.colorHeading);
-        // Set popup background and text color using theme attributes
-        try {
-            Field mPopupField = popup.getClass().getDeclaredField("mPopup");
-            mPopupField.setAccessible(true);
-            Object menuPopupHelper = mPopupField.get(popup);
-            Method setForceShowIcon = menuPopupHelper.getClass().getMethod("setForceShowIcon", boolean.class);
-            setForceShowIcon.invoke(menuPopupHelper, true);
-            // Set background color if possible
-            if (menuPopupHelper.getClass().getMethod("setPopupBackgroundDrawable", android.graphics.drawable.Drawable.class) != null) {
-                GradientDrawable bg = new GradientDrawable();
-                bg.setColor(colorDialog);
-                bg.setCornerRadius(16f);
-                menuPopupHelper.getClass().getMethod("setPopupBackgroundDrawable", android.graphics.drawable.Drawable.class).invoke(menuPopupHelper, bg);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Could not set popup menu background: " + e.getMessage());
+        int popupMenuStyle = 0;
+        // Dynamically select the correct style for the current theme
+        SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+        if ("Red Passion".equals(currentTheme)) {
+            popupMenuStyle = R.style.Widget_FadCam_Red_PopupMenu; // Use underscore, not dot
+        } else if ("AMOLED Black".equals(currentTheme)) {
+            // If you have a custom style for AMOLED, set it here
+            // popupMenuStyle = R.style.Widget_FadCam_Amoled_PopupMenu;
+            popupMenuStyle = 0; // fallback to default
         }
+        PopupMenu popup = (popupMenuStyle != 0)
+                ? new PopupMenu(context, holder.menuButtonContainer, 0, 0, popupMenuStyle)
+                : new PopupMenu(context, holder.menuButtonContainer);
+        popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
+
         // Set text color for all menu items
+        int colorMenuText;
+        if ("Red Passion".equals(currentTheme)) {
+            colorMenuText = ContextCompat.getColor(context, R.color.white);
+        } else if ("AMOLED Black".equals(currentTheme)) {
+            colorMenuText = ContextCompat.getColor(context, R.color.amoled_text_primary);
+        } else {
+            colorMenuText = resolveThemeColor(context, R.attr.colorHeading);
+        }
         for (int i = 0; i < popup.getMenu().size(); i++) {
             MenuItem item = popup.getMenu().getItem(i);
             SpannableString spanString = new SpannableString(item.getTitle());
-            spanString.setSpan(new ForegroundColorSpan(colorHeading), 0, spanString.length(), 0);
+            spanString.setSpan(new ForegroundColorSpan(colorMenuText), 0, spanString.length(), 0);
             item.setTitle(spanString);
         }
+        // Optionally force show icons (reflection, but safe fallback)
+        try {
+            java.lang.reflect.Field mPopupField = popup.getClass().getDeclaredField("mPopup");
+            mPopupField.setAccessible(true);
+            Object menuPopupHelper = mPopupField.get(popup);
+            java.lang.reflect.Method setForceShowIcon = menuPopupHelper.getClass().getMethod("setForceShowIcon", boolean.class);
+            setForceShowIcon.invoke(menuPopupHelper, true);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not force show popup menu icons: " + e.getMessage());
+        }
+        // Handle all menu actions
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_edit_faditorx) {
+                Toast.makeText(context, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                return true;
+            } else if (id == R.id.action_save) {
+                saveVideoToGalleryInternal(videoItem);
+                return true;
+            } else if (id == R.id.action_rename) {
+                showRenameDialog(videoItem);
+                return true;
+            } else if (id == R.id.action_info) {
+                showVideoInfoDialog(videoItem);
+                return true;
+            } else if (id == R.id.action_delete) {
+                if (actionListener != null) actionListener.onDeleteVideo(videoItem);
+                return true;
+            }
+            return false;
+        });
+
+        // After inflating the menu, update the 'Edit with FaditorX' item to show 'Coming Soon' and gray out
+        MenuItem faditorxItem = popup.getMenu().findItem(R.id.action_edit_faditorx);
+        if (faditorxItem != null) {
+            // Append badge text
+            String baseTitle = context.getString(R.string.edit_with_faditorx);
+            String badge = "  [Coming Soon]";
+            SpannableString spanString = new SpannableString(baseTitle + badge);
+            // Gray out the whole text
+            spanString.setSpan(new ForegroundColorSpan(Color.GRAY), 0, spanString.length(), 0);
+            faditorxItem.setTitle(spanString);
+            // Gray out the icon
+            Drawable icon = faditorxItem.getIcon();
+            if (icon != null) {
+                icon.mutate();
+                icon.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
+                faditorxItem.setIcon(icon);
+            }
+            // Do NOT disable the item, so it can show the toast
+        }
+
         return popup;
     }
 

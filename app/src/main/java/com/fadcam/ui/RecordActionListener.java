@@ -46,5 +46,11 @@ public interface RecordActionListener {
      */
     void onMoveToTrashFinished(boolean success, String message);
 
+    /**
+     * Called when a delete operation is requested for a video item.
+     * @param videoItem The video item to be deleted.
+     */
+    void onDeleteVideo(VideoItem videoItem);
+
     // Add more methods here for other actions if needed (e.g., onDeleteStarted/Finished)
 }

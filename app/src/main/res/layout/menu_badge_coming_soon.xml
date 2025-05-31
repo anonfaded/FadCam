@@ -7,6 +7,15 @@
     android:paddingStart="16dp"
     android:paddingEnd="16dp">
 
+    <ImageView
+        android:id="@+id/menu_edit_icon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_edit_cut"
+        android:tint="#888888"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="@string/edit_with_faditorx" />
+
     <TextView
         android:id="@+id/menu_edit_label"
         android:layout_width="0dp"

@@ -2161,4 +2161,12 @@ public class RecordsFragment extends BaseFragment implements
         requireContext().getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
+
+    // ----- Fix Start for this method(onDeleteVideo)-----
+    @Override
+    public void onDeleteVideo(VideoItem videoItem) {
+        // Delegate to the existing move-to-trash logic to avoid duplication
+        onMoveToTrashRequested(videoItem);
+    }
+    // ----- Fix Ended for this method(onDeleteVideo)-----
 }

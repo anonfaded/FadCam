@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -797,13 +798,22 @@ public class SettingsFragment extends BaseFragment {
 
     // Method to visually update toggle button group state
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
-        if(getContext() == null) return; // Prevent crashes if context is gone
-        int buttonColor = resolveThemeColor(R.attr.colorButton);
-        int textColor = isSelected ? android.R.color.black : android.R.color.white;
-        button.setIconTintResource(isSelected ? android.R.color.black : android.R.color.transparent);
-        button.setStrokeColorResource(isSelected ? R.color.black : R.color.material_on_surface_stroke);
-        button.setTextColor(ContextCompat.getColor(requireContext(), textColor));
-        button.setBackgroundColor(buttonColor);
+        if(getContext() == null) return;
+        int red = resolveThemeColor(R.attr.colorButton); // red for selected
+        int gray = ContextCompat.getColor(requireContext(), R.color.gray); // neutral for unselected
+        int gray500 = ContextCompat.getColor(requireContext(), R.color.gray500); // border for unselected
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        if (isSelected) {
+            button.setBackgroundColor(red);
+            button.setTextColor(white);
+            button.setStrokeColor(ColorStateList.valueOf(red)); // No visible border
+            button.setIconTintResource(android.R.color.white);
+        } else {
+            button.setBackgroundColor(gray);
+            button.setTextColor(white);
+            button.setStrokeColor(ColorStateList.valueOf(gray500));
+            button.setIconTintResource(android.R.color.white);
+        }
     }
 
 
