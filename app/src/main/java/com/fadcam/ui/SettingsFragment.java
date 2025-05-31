@@ -814,21 +814,56 @@ public class SettingsFragment extends BaseFragment {
     // Method to visually update toggle button group state
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
         if(getContext() == null) return;
-        int red = resolveThemeColor(R.attr.colorButton); // Theme color for selected
-        int black = ContextCompat.getColor(requireContext(), R.color.black); // Black for unselected
+        int themeColor = resolveThemeColor(R.attr.colorButton); // Theme color for selected
+        int black = ContextCompat.getColor(requireContext(), R.color.black); // Black for unselected in Faded Night
         int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        int purpleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
+        
+        // Check current theme to apply different styles
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         
         if (isSelected) {
-            button.setBackgroundColor(red);
+            // Selected button style (special handling for Midnight Dusk)
+            if ("Midnight Dusk".equals(currentTheme)) {
+                // For Midnight Dusk, ALWAYS use #cfbafd color directly for selected buttons
+                // Don't use themeColor or resolveThemeColor which might return gray
+                button.setBackgroundColor(purpleColor);
+                button.setTextColor(black); // Black text on light purple background
+                button.setStrokeColor(ColorStateList.valueOf(purpleColor)); // No visible border
+                button.setIconTintResource(android.R.color.black); // Icon should be black too for contrast
+            } else {
+                // For other themes, use theme color
+                button.setBackgroundColor(themeColor);
             button.setTextColor(white);
-            button.setStrokeColor(ColorStateList.valueOf(red)); // No visible border
+                button.setStrokeColor(ColorStateList.valueOf(themeColor)); // No visible border
             button.setIconTintResource(android.R.color.white);
+            }
         } else {
-            button.setBackgroundColor(black);
+            // Unselected button style (different per theme)
+            if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme) || "Midnight Dusk".equals(currentTheme)) {
+                // Faded Night and Midnight Dusk themes - black background, white text, no stroke
+                button.setBackgroundColor(black);
             button.setTextColor(white);
-            button.setStrokeWidth(0); // Remove stroke completely
-            button.setStrokeColor(ColorStateList.valueOf(black)); // Set stroke to match background
+                button.setStrokeWidth(0); // Remove stroke completely
+                button.setStrokeColor(ColorStateList.valueOf(black)); // Set stroke to match background
+                button.setIconTintResource(android.R.color.white);
+            } else if ("Crimson Bloom".equals(currentTheme)) {
+                // Crimson Bloom theme - darker red background, white text
+                int darkRed = ContextCompat.getColor(requireContext(), R.color.red_theme_primary_variant);
+                button.setBackgroundColor(darkRed);
+                button.setTextColor(white);
+                button.setStrokeWidth(0);
+                button.setStrokeColor(ColorStateList.valueOf(darkRed));
+                button.setIconTintResource(android.R.color.white);
+            } else {
+                // Fallback for any other theme - dark gray with white text
+                int darkGray = ContextCompat.getColor(requireContext(), R.color.gray_button_filled);
+                button.setBackgroundColor(darkGray);
+                button.setTextColor(white);
+                button.setStrokeWidth(0);
+                button.setStrokeColor(ColorStateList.valueOf(darkGray));
             button.setIconTintResource(android.R.color.white);
+            }
         }
     }
 
@@ -951,6 +986,32 @@ public class SettingsFragment extends BaseFragment {
         if (sharedPreferencesManager == null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
+        
+        // Force refresh the camera toggle buttons appearance
+        if (cameraSelectionToggle != null && view != null) {
+            MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
+            MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+            if (backCameraButton != null && frontCameraButton != null) {
+                CameraType selected = sharedPreferencesManager.getCameraSelection();
+                updateButtonAppearance(backCameraButton, selected == CameraType.BACK);
+                updateButtonAppearance(frontCameraButton, selected == CameraType.FRONT);
+                
+                // Special handling for Midnight Dusk theme to ensure purple color
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+                if ("Midnight Dusk".equals(currentTheme)) {
+                    // Force apply correct purple colors to selected button
+                    MaterialButton selectedButton = (selected == CameraType.BACK) ? backCameraButton : frontCameraButton;
+                    int purpleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
+                    selectedButton.setBackgroundColor(purpleColor);
+                    selectedButton.setTextColor(Color.BLACK);
+                    selectedButton.setStrokeColor(ColorStateList.valueOf(purpleColor));
+                    selectedButton.setIconTintResource(android.R.color.black);
+                    
+                    Log.d(TAG_SETTINGS, "onResume: Forcing purple color for Midnight Dusk theme");
+                }
+            }
+        }
+        
         // Sync UI state with current preferences
         syncCameraSwitch(view, cameraSelectionToggle);
         updateBackLensSpinnerVisibility(); // Sync lens visibility based on F/B state
@@ -1300,6 +1361,31 @@ public class SettingsFragment extends BaseFragment {
                 sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, CameraType.BACK.toString()).apply();
             }
         }
+        
+        // Force refresh button styles for Midnight Dusk theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Midnight Dusk".equals(currentTheme)) {
+            // Direct approach - bypass theme resolution entirely for Midnight Dusk
+            MaterialButton selectedButton = (selected == CameraType.FRONT) ? frontCameraButton : backCameraButton;
+            
+            // Set explicit colors
+            int purpleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
+            selectedButton.setBackgroundColor(purpleColor);
+            selectedButton.setTextColor(Color.BLACK);
+            selectedButton.setStrokeColor(ColorStateList.valueOf(purpleColor));
+            selectedButton.setIconTintResource(android.R.color.black);
+            
+            // Make sure unselected button is black with white text
+            MaterialButton unselectedButton = (selected == CameraType.FRONT) ? backCameraButton : frontCameraButton;
+            unselectedButton.setBackgroundColor(Color.BLACK);
+            unselectedButton.setTextColor(Color.WHITE);
+            unselectedButton.setStrokeWidth(0);
+            unselectedButton.setStrokeColor(ColorStateList.valueOf(Color.BLACK));
+            unselectedButton.setIconTintResource(android.R.color.white);
+            
+            Log.d(TAG_SETTINGS, "Applied direct colors for Midnight Dusk theme");
+        }
+        
         Log.d(TAG_SETTINGS,"Synced camera switch UI to: " + sharedPreferencesManager.getCameraSelection());
     }
 
@@ -1308,12 +1394,19 @@ public class SettingsFragment extends BaseFragment {
     private void setupCameraSelectionToggle(View view, MaterialButtonToggleGroup toggleGroup) {
         // ... (Existing syncCameraSwitch call and appearance update logic) ...
         if (toggleGroup == null || view == null) return;
+        
+        // Apply initial toggle state and appearance
         syncCameraSwitch(view, toggleGroup);
 
+        // Add listener for toggle changes
         toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                updateButtonAppearance(view.findViewById(R.id.button_back_camera), checkedId == R.id.button_back_camera);
-                updateButtonAppearance(view.findViewById(R.id.button_front_camera), checkedId == R.id.button_front_camera);
+                MaterialButton backCameraButton = view.findViewById(R.id.button_back_camera);
+                MaterialButton frontCameraButton = view.findViewById(R.id.button_front_camera);
+                
+                // Update appearance of both buttons
+                updateButtonAppearance(backCameraButton, checkedId == R.id.button_back_camera);
+                updateButtonAppearance(frontCameraButton, checkedId == R.id.button_front_camera);
 
                 CameraType selectedCamera = (checkedId == R.id.button_front_camera) ? CameraType.FRONT : CameraType.BACK;
                 if(selectedCamera != sharedPreferencesManager.getCameraSelection()) {
@@ -1329,6 +1422,18 @@ public class SettingsFragment extends BaseFragment {
                     Log.d(TAG, "Camera main selection didn't change.");
                     // Still need to update lens spinner visibility if fragment was just created
                     updateBackLensSpinnerVisibility();
+                }
+                
+                // Double-check Midnight Dusk theme color handling
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+                if ("Midnight Dusk".equals(currentTheme)) {
+                    // Force apply correct colors
+                    MaterialButton selectedButton = (checkedId == R.id.button_front_camera) ? frontCameraButton : backCameraButton;
+                    int purpleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
+                    selectedButton.setBackgroundColor(purpleColor);
+                    selectedButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.black));
+                    selectedButton.setStrokeColor(ColorStateList.valueOf(purpleColor));
+                    selectedButton.setIconTintResource(android.R.color.black);
                 }
             }
         });
@@ -3732,6 +3837,16 @@ public class SettingsFragment extends BaseFragment {
 
     // ----- Fix Start: Apply theme colors to headings, buttons, toggles using theme attributes -----
     private int resolveThemeColor(int attr) {
+        // Special handling for Midnight Dusk theme's colorButton
+        if (attr == R.attr.colorButton) {
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+            if ("Midnight Dusk".equals(currentTheme)) {
+                // Return purple directly for the Midnight Dusk theme's buttons
+                return ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
+            }
+        }
+        
+        // Normal theme attribute resolution for other cases
         android.util.TypedValue typedValue = new android.util.TypedValue();
         requireContext().getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;

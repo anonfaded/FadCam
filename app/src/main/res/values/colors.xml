@@ -44,4 +44,7 @@
     
     <!-- Darker color for storage card across all themes -->
     <color name="dark_card_background">#171717</color>
+    
+    <!-- Extra dark color for storage card in Crimson theme -->
+    <color name="crimson_dark_card_background">#1E0E0E</color>
 </resources>

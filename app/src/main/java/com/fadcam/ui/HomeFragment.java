@@ -1627,7 +1627,15 @@ public class HomeFragment extends BaseFragment {
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force override for AMOLED and Red, use *_surface_dark) -----
 
         // ----- Fix Start: Storage card always darker gray for all themes -----
-        if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_card_background));
+        if (cardStorage != null) {
+            if ("Crimson Bloom".equals(themeName)) {
+                // Use an even darker background for Crimson Bloom theme
+                cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.crimson_dark_card_background));
+            } else {
+                // Standard dark background for other themes
+                cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_card_background));
+            }
+        }
         // ----- Fix End: Storage card always darker gray for all themes -----
 
         // ----- Fix Start: Re-apply clock card color to ensure it's not affected by theme styling -----
@@ -1970,8 +1978,10 @@ public class HomeFragment extends BaseFragment {
         updateClockRunnable = new Runnable() {
             @Override
             public void run() {
-                updateClock();
-                handlerClock.postDelayed(this, 1000); // Update every second
+                if (isAdded()) {
+                    updateClock();
+                    handlerClock.postDelayed(this, 1000);
+                }
             }
         };
         handlerClock.post(updateClockRunnable);
@@ -2184,6 +2194,13 @@ public class HomeFragment extends BaseFragment {
         SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
         tvClock.setText(currentTime);
+        
+        // Check if we're in Crimson Bloom theme and set the time text to white for better visibility
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Crimson Bloom".equals(currentTheme)) {
+            // For Crimson Bloom theme, force white text for better visibility against red background
+            tvClock.setTextColor(Color.WHITE);
+        }
 
         // Update the date in English
         SimpleDateFormat dateFormatEnglish = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
