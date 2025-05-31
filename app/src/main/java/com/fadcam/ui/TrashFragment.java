@@ -92,10 +92,27 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
+        // Hide content initially until AppLock status is checked
+        view.findViewById(R.id.constraint_layout_root).setVisibility(View.INVISIBLE);
+
+        initializeViews(view);
+
         // Check if app lock is enabled and show unlock dialog if needed
         checkAppLock();
 
+        // Auto-delete old items first, then load
+        if (getContext() != null) {
+            int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+            int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), autoDeleteMinutes);
+            if (autoDeletedCount > 0) {
+                Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
+            }
+        }
+        loadTrashItems();
+    }
+
+    private void initializeViews(@NonNull View view) {
         toolbar = view.findViewById(R.id.trash_toolbar);
         recyclerViewTrashItems = view.findViewById(R.id.recycler_view_trash_items);
         buttonRestoreSelected = view.findViewById(R.id.button_restore_selected);
@@ -111,16 +128,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         setupButtonListeners();
         setupSelectAllCheckbox();
         updateAutoDeleteInfoText();
-
-        // Auto-delete old items first, then load
-        if (getContext() != null) {
-            int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
-            int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), autoDeleteMinutes);
-            if (autoDeletedCount > 0) {
-                Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
-            }
-        }
-        loadTrashItems();
     }
 
     private void setupToolbar() {
@@ -655,7 +662,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 .onUnlocked(() -> {
                     // Show content when unlocked
                     isUnlocked = true;
-                    setupTrashFragment();
+                    // Make content visible after successful unlock
+                    if (getView() != null) {
+                         getView().findViewById(R.id.constraint_layout_root).setVisibility(View.VISIBLE);
+                    }
                 })
                 .onCanceled(() -> {
                     // Close the trash fragment if unlock is canceled
@@ -678,28 +688,11 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 })
                 .show();
         } else {
-            // If no lock needed, proceed with setup
-            setupTrashFragment();
+            // If no lock needed, make content visible immediately
+            if (getView() != null) {
+                 getView().findViewById(R.id.constraint_layout_root).setVisibility(View.VISIBLE);
+            }
         }
-    }
-    
-    // Method to set up the trash fragment after authentication
-    private void setupTrashFragment() {
-        if (getView() == null || getContext() == null) return;
-        
-        setupToolbar();
-        setupRecyclerView();
-        setupButtonListeners();
-        setupSelectAllCheckbox();
-        updateAutoDeleteInfoText();
-
-        // Auto-delete old items first, then load
-        int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
-        int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), autoDeleteMinutes);
-        if (autoDeletedCount > 0) {
-            Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
-        }
-        loadTrashItems();
     }
     
     @Override

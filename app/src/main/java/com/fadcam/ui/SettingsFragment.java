@@ -3444,6 +3444,7 @@ public class SettingsFragment extends BaseFragment {
         // Show dialog with options
         new MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.applock_dialog_title)
+            // .setMessage(R.string.setting_dialog_description)
             .setItems(options.toArray(new String[0]), (dialog, which) -> {
                 String selectedOption = options.get(which);
                 

@@ -98,4 +98,14 @@
         android:visibility="gone"
         app:srcCompat="@drawable/ic_delete" />
 
+    <!-- Fix Start: AppLock full-screen overlay (initially gone)  -->
+    <FrameLayout
+        android:id="@+id/applock_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000"
+        android:visibility="gone"
+        android:elevation="24dp" />
+    <!--  Fix End: AppLock full-screen overlay -->
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

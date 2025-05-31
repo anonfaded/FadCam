@@ -1,27 +1,31 @@
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.guardanis.applock">
 
     <uses-permission
         android:name="android.permission.USE_FINGERPRINT" />
-
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-feature
         android:name="android.hardware.fingerprint"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.VIBRATE" />
     <application>
         <activity
             android:name="com.guardanis.applock.activities.LockCreationActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            android:theme="@style/applock__theme_activity" />
+            android:screenOrientation="fullSensor"
+            android:theme="@style/applock__theme_activity"
+            tools:ignore="DiscouragedApi" />
 
         <activity
             android:name="com.guardanis.applock.activities.UnlockActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            android:theme="@style/applock__theme_activity" />
+            android:screenOrientation="fullSensor"
+            android:theme="@style/applock__theme_activity"
+            tools:ignore="DiscouragedApi" />
     </application>
 </manifest>

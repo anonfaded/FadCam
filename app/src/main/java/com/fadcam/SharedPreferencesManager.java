@@ -80,6 +80,29 @@ public class SharedPreferencesManager {
     // App Lock preferences
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
 
+    // ----- Fix Start: AppLock session unlock state -----
+    private static final String KEY_APPLOCK_SESSION_UNLOCKED = "applock_session_unlocked";
+    private volatile boolean sessionUnlockedCache = false;
+
+    /**
+     * Returns true if the AppLock has been unlocked for this session.
+     */
+    public boolean isAppLockSessionUnlocked() {
+        if (sessionUnlockedCache) return true;
+        sessionUnlockedCache = sharedPreferences.getBoolean(KEY_APPLOCK_SESSION_UNLOCKED, false);
+        return sessionUnlockedCache;
+    }
+
+    /**
+     * Sets the AppLock session unlock state.
+     * @param unlocked true if unlocked, false to reset
+     */
+    public void setAppLockSessionUnlocked(boolean unlocked) {
+        sessionUnlockedCache = unlocked;
+        sharedPreferences.edit().putBoolean(KEY_APPLOCK_SESSION_UNLOCKED, unlocked).apply();
+    }
+    // ----- Fix End: AppLock session unlock state -----
+
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
         this.sharedPreferences = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);

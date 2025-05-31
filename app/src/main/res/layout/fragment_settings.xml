@@ -941,7 +941,8 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_location"
+                    android:src="@drawable/ic_navigation"
+                    app:tint="@color/white"
                     android:contentDescription="Location Embedding Icon"/>
                 <LinearLayout
                     android:layout_width="0dp"

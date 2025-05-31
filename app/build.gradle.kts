@@ -69,9 +69,9 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.9.0")
-    implementation("androidx.navigation:navigation-ui-ktx:2.9.0")
+    implementation(libs.swiperefreshlayout)
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
     implementation(libs.gson)
     
     // CameraX dependencies
@@ -107,4 +107,6 @@ dependencies {
     implementation(libs.lottie)
     // Removing AppLockLibrary as a project dependency
     // implementation(project(":app:libs:AppLockLibrary"))
+    implementation(libs.lifecycle.process)
+    implementation(libs.lifecycle.runtime)
 }
