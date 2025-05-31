@@ -106,6 +106,7 @@ import android.widget.ImageView; // <<< ADD IMPORT FOR ImageView
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 import android.widget.ArrayAdapter;
+import androidx.appcompat.app.AlertDialog;
 
 public class HomeFragment extends BaseFragment {
 
@@ -780,7 +781,8 @@ public class HomeFragment extends BaseFragment {
             if (buttonStartStop != null) {
                 buttonStartStop.setText(R.string.button_start);
                 buttonStartStop.setIcon(AppCompatResources.getDrawable(getContext(), R.drawable.ic_play));
-                int btnColor = isAmoledLocal ? Color.parseColor("#232323") : Color.parseColor("#4CAF50");
+                // Always use green color for start button regardless of theme
+                int btnColor = Color.parseColor("#4CAF50"); // Always green
                 buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(btnColor));
             }
             if (buttonPauseResume != null) { 
@@ -813,12 +815,14 @@ public class HomeFragment extends BaseFragment {
             return;
         }
         
-        // ----- Fix Start: Only disable start button when camera resources are unavailable -----
         // Only update if we're in a state where the start button would normally be enabled
         if (recordingState == RecordingState.NONE) {
             boolean shouldEnable = areCameraResourcesAvailable;
             buttonStartStop.setEnabled(shouldEnable);
             buttonStartStop.setAlpha(shouldEnable ? 1.0f : 0.5f);
+            
+            // Always maintain green color even when disabled
+            buttonStartStop.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
             
             if (!shouldEnable) {
                 Log.d(TAG, "Start button disabled due to camera resources being released");
@@ -826,7 +830,6 @@ public class HomeFragment extends BaseFragment {
                 Log.d(TAG, "Start button enabled as camera resources are available");
             }
         }
-        // ----- Fix End: Only disable start button when camera resources are unavailable -----
     }
 
     /** Helper for resetUIButtonsToIdleState to check flash without throwing checked exception */
@@ -1623,9 +1626,9 @@ public class HomeFragment extends BaseFragment {
         }
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force override for AMOLED and Red, use *_surface_dark) -----
 
-        // ----- Fix Start: Storage card always gray for all themes -----
-        if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray));
-        // ----- Fix End: Storage card always gray for all themes -----
+        // ----- Fix Start: Storage card always darker gray for all themes -----
+        if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_card_background));
+        // ----- Fix End: Storage card always darker gray for all themes -----
 
         // ----- Fix Start: Re-apply clock card color to ensure it's not affected by theme styling -----
         // This ensures the clock card maintains its own independent color regardless of general card styling
@@ -2044,6 +2047,36 @@ public class HomeFragment extends BaseFragment {
         scaleDownSet.start();
     }
 
+    private void showClockAppearanceDialog() {
+        final String[] appearanceOptions = {"Change Clock Display", "Change Clock Color"};
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_1, appearanceOptions) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(white);
+                return view;
+            }
+        };
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+                .setTitle("Clock Appearance")
+                .setAdapter(adapter, (dialog, which) -> {
+                    if (which == 0) { // Change Clock Display
+                        showDisplayOptionsDialog();
+                    } else if (which == 1) { // Change Clock Color
+                        showClockColorChooserDialog();
+                    }
+                })
+                .setNegativeButton(R.string.universal_cancel, null);
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text color to white
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
+    }
+
     private void showDisplayOptionsDialog() {
         final String[] items = {
                 getString(R.string.dialog_clock_timeonly),
@@ -2061,15 +2094,20 @@ public class HomeFragment extends BaseFragment {
                 return view;
             }
         };
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle(getString(R.string.dialog_clock_title))
                 .setSingleChoiceItems(adapter, currentOption, (dialog, which) -> {
                     saveDisplayOption(which);
                     updateClock();
                     dialog.dismiss();
                 })
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
+                .setNegativeButton(R.string.universal_cancel, null);
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text color to white
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
     }
 
     private void showClockColorChooserDialog() {
@@ -2103,7 +2141,7 @@ public class HomeFragment extends BaseFragment {
                 return view;
             }
         };
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle("Choose Clock Background Color")
                 .setSingleChoiceItems(adapter, currentSelectedColorIndex, (dialog, which) -> {
                     String selectedColorHex = CLOCK_COLOR_HEX_VALUES[which];
@@ -2112,8 +2150,13 @@ public class HomeFragment extends BaseFragment {
                     Log.d(TAG, "User selected clock color: " + CLOCK_COLOR_NAMES[which] + " (" + selectedColorHex + ")");
                     dialog.dismiss();
                 })
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
+                .setNegativeButton(R.string.universal_cancel, null);
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text color to white
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
     }
 
     private int getCurrentDisplayOption() {
@@ -3120,30 +3163,7 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    private void showClockAppearanceDialog() {
-        final String[] appearanceOptions = {"Change Clock Display", "Change Clock Color"};
-        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_1, appearanceOptions) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(white);
-                return view;
-            }
-        };
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
-                .setTitle("Clock Appearance")
-                .setAdapter(adapter, (dialog, which) -> {
-                    if (which == 0) { // Change Clock Display
-                        showDisplayOptionsDialog();
-                    } else if (which == 1) { // Change Clock Color
-                        showClockColorChooserDialog();
-                    }
-                })
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
-    }
+
 
 
 

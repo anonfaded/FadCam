@@ -41,4 +41,7 @@
     <color name="dark_purple_bar">#231942</color> <!-- Very dark purple for dark mode top bar and navbar -->
 
     <color name="gray_button_filled">#232323</color> <!-- Much darker gray for filled button in all themes -->
+    
+    <!-- Darker color for storage card across all themes -->
+    <color name="dark_card_background">#171717</color>
 </resources>
