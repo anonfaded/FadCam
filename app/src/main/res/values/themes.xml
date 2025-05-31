@@ -6,6 +6,16 @@
         <item name="android:fontFamily">@font/ubuntu_regular</item>
         <!-- Status bar color -->
         <item name="android:statusBarColor">@color/gray</item>
+        <item name="colorTopBar">@color/colorPrimary</item>
+        <item name="colorBottomNav">@color/colorPrimary</item>
+        <item name="colorHeading">@color/colorPrimary</item>
+        <item name="colorButton">@color/colorPrimary</item>
+        <item name="colorToggle">@color/greenPastel</item>
+        <item name="colorDialog">@color/gray</item>
+        <item name="colorStatusBar">@color/gray</item>
+        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
     </style>
 
     <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
@@ -24,15 +34,27 @@
         <item name="android:textColorPrimary">@color/amoled_text_primary</item>
         <item name="android:textColorSecondary">@color/amoled_text_secondary</item>
         
-        <!-- Material Design component colors -->
-        <item name="colorPrimary">@color/amoled_background</item>
-        <item name="colorPrimaryVariant">@color/amoled_background</item>
-        <item name="colorSecondary">@color/amoled_background</item>
-        <item name="colorSecondaryVariant">@color/amoled_background</item>
-        
+        <!-- Material Design component colors (fix for dialog/button/toggle contrast) -->
+        <item name="colorPrimary">#1A73E8</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#03DAC6</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorSurface">@color/amoled_surface</item>
+        <item name="colorOnSurface">@color/amoled_text_primary</item>
+        <!-- Dialog theme override -->
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Amoled.MaterialAlertDialog</item>
         <!-- Card and surface styles -->
         <item name="materialCardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
         <item name="bottomNavigationStyle">@style/Theme.FadCam.AmoledBottomNavigation</item>
+        <item name="colorTopBar">@color/amoled_background</item>
+        <item name="colorBottomNav">@color/amoled_background</item>
+        <item name="colorHeading">@color/amoled_text_primary</item>
+        <item name="colorButton">@color/amoled_text_primary</item>
+        <item name="colorToggle">@color/amoled_text_secondary</item>
+        <item name="colorDialog">@color/amoled_surface</item>
+        <item name="colorStatusBar">@color/amoled_background</item>
+        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
     </style>
 
     <style name="Theme.FadCam.AmoledCardView" parent="Widget.MaterialComponents.CardView">
@@ -44,4 +66,99 @@
         <item name="itemIconTint">@color/amoled_text_primary</item>
         <item name="itemTextColor">@color/amoled_text_primary</item>
     </style>
+
+    <style name="ThemeOverlay.FadCam.Amoled.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:textColorPrimary">@color/amoled_text_primary</item>
+        <item name="android:textColorSecondary">@color/amoled_text_primary</item>
+        <item name="android:background">@color/amoled_surface</item>
+        <item name="buttonBarPositiveButtonStyle">@style/AmoledDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/AmoledDialogButton</item>
+    </style>
+
+    <style name="AmoledDialogButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/amoled_text_primary</item>
+    </style>
+
+    <style name="Theme.FadCam.Red" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorTopBar">@color/red_theme_primary</item>
+        <item name="colorBottomNav">@color/red_theme_primary_variant</item>
+        <item name="colorHeading">@color/red_theme_primary</item>
+        <item name="colorButton">@color/red_theme_primary</item>
+        <item name="colorToggle">@color/red_theme_accent</item>
+        <item name="colorDialog">@color/red_theme_dialog</item>
+        <item name="colorStatusBar">@color/red_theme_primary_variant</item>
+        <item name="android:colorBackground">@color/red_theme_background_dark</item>
+        <item name="colorSurface">@color/red_theme_surface_dark</item>
+        <item name="backgroundColor">@color/red_theme_background_dark</item>
+        <item name="android:windowBackground">@color/red_theme_background_dark</item>
+        <item name="android:navigationBarColor">@color/red_theme_background_dark</item>
+        <item name="colorPrimary">@color/red_theme_primary</item>
+        <item name="colorPrimaryVariant">@color/red_theme_primary_variant</item>
+        <item name="colorSecondary">@color/red_theme_secondary</item>
+        <item name="colorSecondaryVariant">@color/red_theme_secondary_variant</item>
+        <item name="colorAccent">@color/red_theme_accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorOnBackground">@color/white</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/red_theme_text_secondary_dark</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.FadCam.Red.Button</item>
+        <item name="android:editTextBackground">@drawable/red_theme_edittext_bg</item>
+        <item name="android:popupMenuStyle">@style/Widget.FadCam.Red.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:background">@color/red_theme_surface_dark</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+        <item name="colorPrimary">@color/red_theme_primary</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+
+    <style name="Widget.FadCam.Red.Button" parent="Widget.Material3.Button">
+        <item name="android:background">@color/red_theme_primary</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="Widget.FadCam.Red.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@color/red_theme_surface_dark</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="Widget.FadCam.Toolbar" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">?attr/colorTopBar</item>
+        <item name="titleTextColor">@android:color/white</item>
+        <item name="subtitleTextColor">@android:color/white</item>
+    </style>
+
+    <style name="Widget.FadCam.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+        <item name="android:background">?attr/colorBottomNav</item>
+        <item name="itemIconTint">@color/white</item>
+        <item name="itemTextColor">@color/white</item>
+    </style>
+
+    <!-- Fix Start: Add theme overlays for bottom sheets and dialogs for all themes -->
+    <style name="ThemeOverlay.FadCam.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="android:background">?attr/colorDialog</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="colorPrimary">?attr/colorButton</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+    <style name="ThemeOverlay.FadCam.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:background">?attr/colorDialog</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+        <item name="colorPrimary">?attr/colorButton</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+    <!-- Fix End: Add theme overlays for bottom sheets and dialogs for all themes -->
 </resources>

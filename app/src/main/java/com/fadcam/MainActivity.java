@@ -87,22 +87,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Apply saved theme on startup
+        // ----- Fix Start: Apply selected theme globally before setContentView -----
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
         String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        
+
         Log.d("MainActivity", "Saved theme: " + savedTheme);
-        
-        // Always force dark mode
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        
-        // Only set AMOLED theme if explicitly selected
-        if ("AMOLED Black".equals(savedTheme)) {
-            Log.d("MainActivity", "Setting AMOLED theme");
-            getTheme().applyStyle(R.style.Theme_FadCam_Amoled, true);
+
+        if ("Red Passion".equals(savedTheme)) {
+            setTheme(R.style.Theme_FadCam_Red);
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        } else if ("AMOLED Black".equals(savedTheme)) {
+            setTheme(R.style.Theme_FadCam_Amoled);
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         } else {
-            Log.d("MainActivity", "Using default dark theme");
+            setTheme(R.style.Base_Theme_FadCam);
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         }
+        // ----- Fix End: Apply selected theme globally before setContentView -----
         
         // Load and apply the saved language preference before anything else
         SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -204,53 +205,66 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
             createDynamicShortcuts();
         }
+
+        // After setContentView, apply theme colors
+        int colorTopBar = resolveThemeColor(this, R.attr.colorTopBar);
+        int colorBottomNav = resolveThemeColor(this, R.attr.colorBottomNav);
+        int colorStatusBar = resolveThemeColor(this, R.attr.colorStatusBar);
+        // Top bar (if using Toolbar)
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.topAppBar);
+        if (toolbar != null) toolbar.setBackgroundColor(colorTopBar);
+        // Bottom navigation
+        com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) bottomNav.setBackgroundColor(colorBottomNav);
+        // Status bar
+        getWindow().setStatusBarColor(colorStatusBar);
+        getWindow().setNavigationBarColor(colorBottomNav);
     }
 
-@RequiresApi(api = Build.VERSION_CODES.N_MR1)
-private void createDynamicShortcuts() {
-    ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
+    @RequiresApi(api = Build.VERSION_CODES.N_MR1)
+    private void createDynamicShortcuts() {
+        ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
 
-    // Torch Toggle Shortcut
-    Intent torchIntent = new Intent(this, TorchToggleActivity.class);
-    torchIntent.setAction(Intent.ACTION_VIEW);
+        // Torch Toggle Shortcut
+        Intent torchIntent = new Intent(this, TorchToggleActivity.class);
+        torchIntent.setAction(Intent.ACTION_VIEW);
 
-    ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
-        .setShortLabel(getString(R.string.torch_shortcut_short_label))
-        .setLongLabel(getString(R.string.torch_shortcut_long_label))
-        .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
-        .setIntent(torchIntent)
-        .build();
+        ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
+            .setShortLabel(getString(R.string.torch_shortcut_short_label))
+            .setLongLabel(getString(R.string.torch_shortcut_long_label))
+            .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
+            .setIntent(torchIntent)
+            .build();
 
-    // Recording Start Shortcut
-    Intent startRecordIntent = new Intent(this, RecordingStartActivity.class);
-    startRecordIntent.setAction(Intent.ACTION_VIEW);
+        // Recording Start Shortcut
+        Intent startRecordIntent = new Intent(this, RecordingStartActivity.class);
+        startRecordIntent.setAction(Intent.ACTION_VIEW);
 
-    ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
-        .setShortLabel(getString(R.string.start_recording))
-        .setLongLabel(getString(R.string.start_recording))
-        .setIcon(Icon.createWithResource(this, R.drawable.start_shortcut))
-        .setIntent(startRecordIntent)
-        .build();
+        ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
+            .setShortLabel(getString(R.string.start_recording))
+            .setLongLabel(getString(R.string.start_recording))
+            .setIcon(Icon.createWithResource(this, R.drawable.start_shortcut))
+            .setIntent(startRecordIntent)
+            .build();
 
-    // Recording Stop Shortcut
-    Intent stopRecordIntent = new Intent(this, RecordingStopActivity.class);
-    stopRecordIntent.setAction(Intent.ACTION_VIEW);
+        // Recording Stop Shortcut
+        Intent stopRecordIntent = new Intent(this, RecordingStopActivity.class);
+        stopRecordIntent.setAction(Intent.ACTION_VIEW);
 
-    ShortcutInfo stopRecordShortcut = new ShortcutInfo.Builder(this, "record_stop")
-        .setShortLabel(getString(R.string.stop_recording))
-        .setLongLabel(getString(R.string.stop_recording))
-        .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
-        .setIntent(stopRecordIntent)
-        .build();
+        ShortcutInfo stopRecordShortcut = new ShortcutInfo.Builder(this, "record_stop")
+            .setShortLabel(getString(R.string.stop_recording))
+            .setLongLabel(getString(R.string.stop_recording))
+            .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
+            .setIntent(stopRecordIntent)
+            .build();
 
-    // Set all shortcuts
-    shortcutManager.setDynamicShortcuts(Arrays.asList(
-        torchShortcut,
-        startRecordShortcut,
-        stopRecordShortcut
-    ));
-}
-
+        // Set all shortcuts
+        shortcutManager.setDynamicShortcuts(Arrays.asList(
+            torchShortcut,
+            startRecordShortcut,
+            stopRecordShortcut
+        ));
+    }
 
     public void applyLanguage(String languageCode) {
         // Get current app language
@@ -516,4 +530,12 @@ private void createDynamicShortcuts() {
         backPressHandler.removeCallbacks(backPressRunnable);
     }
     // ----- Fix End: Proper back button handling with double-press to exit -----
+
+    // Helper to resolve theme color attribute
+    private int resolveThemeColor(Context context, int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        android.content.res.Resources.Theme theme = context.getTheme();
+        theme.resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
 }

@@ -25,13 +25,15 @@
     <color name="gray_text_light">#BDBDBD</color> <!-- Grey 400 -->
     <color name="gray_text_very_light">#E0E0E0</color> <!-- Grey 300 -->
 
-        <!-- AMOLED Theme Colors -->
-    <color name="amoled_background">#000000</color>
-    <color name="amoled_surface">#121212</color>
-    <color name="amoled_text_primary">#FFFFFF</color>
-    <color name="amoled_text_secondary">#B3FFFFFF</color>
-    <color name="amoled_border">#1AFFFFFF</color>
-
     <color name="gold">#FFD700</color>
 
+    <!-- Fix Start: Add color references for new theme attributes for maintainability -->
+    <color name="colorTopBar">@color/colorPrimary</color>
+    <color name="colorBottomNav">@color/colorPrimary</color>
+    <color name="colorHeading">@color/colorPrimary</color>
+    <color name="colorButton">@color/colorPrimary</color>
+    <color name="colorToggle">@color/greenPastel</color>
+    <color name="colorDialog">@color/gray</color>
+    <color name="colorStatusBar">@color/gray</color>
+    <!-- Fix End: Add color references for new theme attributes for maintainability -->
 </resources>

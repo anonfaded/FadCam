@@ -283,7 +283,9 @@
     <string-array name="theme_options">
         <item>Dark Mode</item>
         <item>AMOLED Black</item>
+        <item>Red Passion</item>
     </string-array>
+    <string name="theme_red">Red Passion</string>
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>

@@ -310,25 +310,40 @@ public class SettingsFragment extends BaseFragment {
             }
         }
         if (availableInputMics.size() == 1 && availableInputMics.get(0) == null) {
-            // Only phone mic available
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(getString(R.string.setting_audio_input_source_title))
-                    .setMessage(getString(R.string.audio_input_source_wired_not_available))
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show();
+            int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+            TextView messageView = new TextView(requireContext());
+            messageView.setText(getString(R.string.audio_input_source_wired_not_available));
+            messageView.setTextColor(white);
+            messageView.setTextSize(16);
+            int padding = (int) (16 * requireContext().getResources().getDisplayMetrics().density);
+            messageView.setPadding(padding, padding, padding, padding);
+            themedDialogBuilder(requireContext())
+                .setTitle(getString(R.string.setting_audio_input_source_title))
+                .setView(messageView)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
             return;
         }
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.setting_audio_input_source_title))
-                .setSingleChoiceItems(availableMicLabels.toArray(new String[0]), checkedItem, (dialog, which) -> {
-                    selectedMic = availableInputMics.get(which);
-                    updateAudioInputSourceStatusUI();
-                    // Save selection in SharedPreferences if needed
-                    sharedPreferencesManager.setAudioInputSource(selectedMic == null ? SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE : SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED);
-                    dialog.dismiss();
-                })
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
+        int color = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, availableMicLabels) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(color);
+                return view;
+            }
+        };
+        themedDialogBuilder(requireContext())
+            .setTitle(getString(R.string.setting_audio_input_source_title))
+            .setSingleChoiceItems(adapter, checkedItem, (dialog, which) -> {
+                selectedMic = availableInputMics.get(which);
+                updateAudioInputSourceStatusUI();
+                sharedPreferencesManager.setAudioInputSource(selectedMic == null ? SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE : SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED);
+                dialog.dismiss();
+            })
+            .setNegativeButton(R.string.universal_cancel, null)
+            .show();
     }
 
     /**
@@ -452,7 +467,6 @@ public class SettingsFragment extends BaseFragment {
         debugSwitch = view.findViewById(R.id.debug_toggle_group);
         audioSwitch = view.findViewById(R.id.audio_toggle_group); // Find audio switch
         MaterialButton reviewButton = view.findViewById(R.id.review_button);
-        themeSpinner = view.findViewById(R.id.theme_spinner); // Initialize themeSpinner
         MaterialButton audioSettingsButton = view.findViewById(R.id.audio_settings_button);
         if (audioSettingsButton != null) {
             audioSettingsButton.setOnClickListener(v -> showAudioSettingsDialog());
@@ -556,6 +570,10 @@ public class SettingsFragment extends BaseFragment {
         }
 
         setupUI();
+
+        // ----- Fix Start: Apply theme colors to headings, buttons, toggles using theme attributes -----
+        applyThemeToUI(view);
+        // ----- Fix End: Apply theme colors to headings, buttons, toggles using theme attributes -----
 
         return view;
     }
@@ -780,10 +798,12 @@ public class SettingsFragment extends BaseFragment {
     // Method to visually update toggle button group state
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
         if(getContext() == null) return; // Prevent crashes if context is gone
-        button.setIconTintResource(isSelected ? R.color.black : android.R.color.transparent);
-        button.setStrokeColorResource(isSelected ? R.color.colorPrimary : R.color.material_on_surface_stroke);
-        button.setTextColor(ContextCompat.getColor(requireContext(), isSelected ? R.color.black : R.color.material_on_surface_emphasis_medium));
-        button.setBackgroundColor(ContextCompat.getColor(requireContext(), isSelected ? R.color.colorPrimary : android.R.color.transparent));
+        int buttonColor = resolveThemeColor(R.attr.colorButton);
+        int textColor = isSelected ? android.R.color.black : android.R.color.white;
+        button.setIconTintResource(isSelected ? android.R.color.black : android.R.color.transparent);
+        button.setStrokeColorResource(isSelected ? R.color.black : R.color.material_on_surface_stroke);
+        button.setTextColor(ContextCompat.getColor(requireContext(), textColor));
+        button.setBackgroundColor(buttonColor);
     }
 
 
@@ -1756,7 +1776,7 @@ public class SettingsFragment extends BaseFragment {
 
     private void showReadmeDialog() {
         vibrateTouch();
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
         builder.setTitle(R.string.dialog_welcome_title);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_readme, null);
         if(dialogView == null) return; // Check if inflation failed
@@ -1799,18 +1819,28 @@ public class SettingsFragment extends BaseFragment {
         int selectedIndex = getLanguageIndex(savedLanguageCode);
         chooseButton.setText(languages[selectedIndex]);
         chooseButton.setOnClickListener(v -> {
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            int color = ContextCompat.getColor(requireContext(), android.R.color.white);
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, languages) {
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+                    View view = super.getView(position, convertView, parent);
+                    TextView text1 = view.findViewById(android.R.id.text1);
+                    if (text1 != null) text1.setTextColor(color);
+                    return view;
+                }
+            };
+            themedDialogBuilder(requireContext())
                 .setTitle(R.string.setting_language_title)
-                .setSingleChoiceItems(languages, selectedIndex, (dialog, which) -> {
+                .setSingleChoiceItems(adapter, selectedIndex, (dialog, which) -> {
                     String newLangCode = getLanguageCode(which);
                     if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
                         saveLanguagePreference(newLangCode);
-                    if(getActivity() instanceof MainActivity){
+                        if(getActivity() instanceof MainActivity){
                             ((MainActivity) requireActivity()).applyLanguage(newLangCode);
-                    } else {
-                        Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(getContext(), "Language changed. Restart app to apply.", Toast.LENGTH_LONG).show();
+                        }
                     }
-                }
                     chooseButton.setText(languages[which]);
                     dialog.dismiss();
                 })
@@ -2432,51 +2462,72 @@ public class SettingsFragment extends BaseFragment {
 
     // --- Theme Spinner Logic ---
     private void setupThemeSpinner(View view) {
-        themeSpinner = view.findViewById(R.id.theme_spinner);
-        if (themeSpinner == null) {
-            Log.e(TAG_SETTINGS, "Theme spinner not found!");
-            return;
-        }
-        String[] themeOptions = {"Dark Mode", "AMOLED Black"};
-        ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, themeOptions);
-        themeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        themeSpinner.setAdapter(themeAdapter);
-
+        MaterialButton themeButton = view.findViewById(R.id.theme_choose_button); // Add a button in layout for theme selection
+        if (themeButton == null) return;
+        String[] themeNames = {getString(R.string.theme_red), "Dark Mode", "AMOLED Black"};
+        int[] themeColors = {
+            ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
+            ContextCompat.getColor(requireContext(), R.color.gray),
+            ContextCompat.getColor(requireContext(), R.color.amoled_background)
+        };
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-        int currentThemeIndex = Arrays.asList(themeOptions).indexOf(currentTheme);
-        themeSpinner.setSelection(currentThemeIndex >= 0 ? currentThemeIndex : 0); // Select current or default
-        Log.d(TAG_SETTINGS,"Theme spinner set to index: " + themeSpinner.getSelectedItemPosition());
-
-        themeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedTheme = themeOptions[position];
-                String currentSavedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
-
-                if (!selectedTheme.equals(currentSavedTheme)) {
-                    Log.d(TAG_SETTINGS, "Theme selection changed to: " + selectedTheme);
-                    sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_APP_THEME, selectedTheme).apply();
-                    vibrateTouch();
-                    // Prompt user to restart
-                    new MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("Theme Change")
-                            .setMessage("Restart the app to apply the new theme?")
-                            .setPositiveButton("Restart", (dialog, which) -> {
-                                Intent intent = requireActivity().getPackageManager()
-                                        .getLaunchIntentForPackage(requireActivity().getPackageName());
-                                if (intent != null) {
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                    startActivity(intent);
-                                    requireActivity().finishAffinity(); // Close all activities of the app
-                                }
-                            })
-                            .setNegativeButton("Later", null)
-                            .show();
-                }
+        int tempThemeIndex = 1; // Default to Dark Mode
+        if ("Red Passion".equals(currentTheme)) tempThemeIndex = 0;
+        else if ("AMOLED Black".equals(currentTheme)) tempThemeIndex = 2;
+        final int selectedThemeIndex = tempThemeIndex;
+        themeButton.setText(themeNames[selectedThemeIndex]);
+        themeButton.setOnClickListener(v -> {
+            LayoutInflater inflater = LayoutInflater.from(requireContext());
+            View dialogView = inflater.inflate(R.layout.dialog_theme_chooser, null);
+            LinearLayout themeList = dialogView.findViewById(R.id.theme_list);
+            themeList.removeAllViews();
+            for (int i = 0; i < themeNames.length; i++) {
+                View item = inflater.inflate(R.layout.item_theme_option, themeList, false);
+                TextView name = item.findViewById(R.id.theme_name);
+                View colorCircle = item.findViewById(R.id.theme_color_circle);
+                name.setText(themeNames[i]);
+                name.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                colorCircle.getBackground().setTint(themeColors[i]);
+                int idx = i;
+                item.setOnClickListener(iv -> {
+                    sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_APP_THEME, themeNames[idx]).apply();
+                    themeButton.setText(themeNames[idx]);
+                    requireActivity().recreate();
+                });
+                if (i == selectedThemeIndex) item.setBackgroundResource(R.drawable.selected_theme_bg);
+                themeList.addView(item);
             }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            themedDialogBuilder(requireContext())
+                .setTitle(R.string.setting_theme_title)
+                .setView(dialogView)
+                .setNegativeButton(R.string.universal_cancel, null)
+                .show();
         });
+        // Set top app bar color to red if red theme is active
+        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
+        if (toolbar != null && "Red Passion".equals(currentTheme)) {
+            toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red_theme_primary));
+        }
+    }
+
+    /**
+     * Applies the selected theme globally by setting the correct theme style on the activity.
+     * This should be called before setContentView in the activity, but for runtime changes,
+     * we call recreate() after updating the preference, and the activity should read the preference
+     * and apply the correct theme in onCreate.
+     */
+    private void applyAppTheme(String themeName) {
+        if (getActivity() == null) return;
+        if ("Red Passion".equals(themeName)) {
+            getActivity().setTheme(R.style.Theme_FadCam_Red); // Use the correct style name
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        } else if ("AMOLED Black".equals(themeName)) {
+            getActivity().setTheme(R.style.Theme_FadCam_Amoled);
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            getActivity().setTheme(R.style.Base_Theme_FadCam);
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
     }
     // --- End Theme Spinner Logic ---
 
@@ -2775,6 +2826,11 @@ public class SettingsFragment extends BaseFragment {
         final MaterialButton resetButton = dialogView.findViewById(R.id.audio_reset_button);
         final TextView bitrateError = dialogView.findViewById(R.id.audio_bitrate_error);
         final TextView samplingRateError = dialogView.findViewById(R.id.audio_sampling_rate_error);
+        final TextView infoText = dialogView.findViewById(R.id.audio_info_text);
+
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        summaryText.setTextColor(white);
+        if (infoText != null) infoText.setTextColor(white);
 
         int currentBitrate = sharedPreferencesManager.getAudioBitrate();
         int currentSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
@@ -2856,7 +2912,7 @@ public class SettingsFragment extends BaseFragment {
             samplingRateInput.setText("48000");
         });
 
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
         builder.setTitle(R.string.dialog_audio_settings_title);
         builder.setView(dialogView);
         builder.setPositiveButton(R.string.dialog_audio_save, null); // We'll override this
@@ -3003,19 +3059,16 @@ public class SettingsFragment extends BaseFragment {
     private void showVideoBitrateDialog() {
         Context context = requireContext();
         LayoutInflater inflater = LayoutInflater.from(context);
-        // Custom layout for dialog
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
         int padding = (int) (16 * context.getResources().getDisplayMetrics().density);
         layout.setPadding(padding, padding, padding, padding);
-
         final EditText input = new EditText(context);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         input.setHint("1 - 200 Mbps");
         int currentMbps = getBitrateCustomValue() / 1000;
         input.setText(String.valueOf(currentMbps));
         input.setSelection(input.getText().length());
-        // Limit input to max 200
         input.setFilters(new android.text.InputFilter[]{
             new android.text.InputFilter.LengthFilter(3),
             (source, start, end, dest, dstart, dend) -> {
@@ -3028,18 +3081,16 @@ public class SettingsFragment extends BaseFragment {
                 return null;
             }
         });
-
         final TextView helper = new TextView(context);
         helper.setTextSize(14);
         helper.setPadding(0, padding / 2, 0, 0);
-        helper.setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray));
+        int white = ContextCompat.getColor(context, android.R.color.white);
+        helper.setTextColor(white);
         layout.addView(input);
         layout.addView(helper);
-
-        // Helper update logic
         Runnable updateHelper = () -> {
             String text = input.getText().toString().trim();
-            int color = ContextCompat.getColor(context, android.R.color.darker_gray);
+            int color = white;
             String msg = context.getString(R.string.bitrate_info_ok);
             try {
                 int value = Integer.parseInt(text);
@@ -3065,35 +3116,41 @@ public class SettingsFragment extends BaseFragment {
             public void afterTextChanged(android.text.Editable s) {}
         });
         updateHelper.run();
-
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
-                .setTitle(getString(R.string.setting_video_bitrate_title))
-                .setMessage(getString(R.string.bitrate_explanation_text))
-                .setView(layout)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    String text = input.getText().toString().trim();
-                    try {
-                        int value = Integer.parseInt(text);
-                        if (value < 1 || value > 200) {
-                            Toast.makeText(context, getString(R.string.bitrate_invalid, 1, 200), Toast.LENGTH_LONG).show();
-                        } else {
-                            setBitrateCustomValue(value * 1000); // Store as kbps
-                            setBitrateMode(true);
-                            updateBitrateInfoAndHelper();
-                            Toast.makeText(context, R.string.bitrate_save_success, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (Exception e) {
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(context)
+            .setTitle(getString(R.string.setting_video_bitrate_title))
+            .setView(layout)
+            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                String text = input.getText().toString().trim();
+                try {
+                    int value = Integer.parseInt(text);
+                    if (value < 1 || value > 200) {
                         Toast.makeText(context, getString(R.string.bitrate_invalid, 1, 200), Toast.LENGTH_LONG).show();
+                    } else {
+                        setBitrateCustomValue(value * 1000); // Store as kbps
+                        setBitrateMode(true);
+                        updateBitrateInfoAndHelper();
+                        Toast.makeText(context, R.string.bitrate_save_success, Toast.LENGTH_SHORT).show();
                     }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .setNeutralButton(R.string.bitrate_reset_button, (dialog, which) -> {
-                    setBitrateMode(false);
-                    setBitrateCustomValue(getDefaultBitrate());
-                    updateBitrateInfoAndHelper();
-                    Toast.makeText(context, R.string.bitrate_reset_success, Toast.LENGTH_SHORT).show();
-                })
-                .show();
+                } catch (Exception e) {
+                    Toast.makeText(context, getString(R.string.bitrate_invalid, 1, 200), Toast.LENGTH_LONG).show();
+                }
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton(R.string.bitrate_reset_button, (dialog, which) -> {
+                setBitrateMode(false);
+                setBitrateCustomValue(getDefaultBitrate());
+                updateBitrateInfoAndHelper();
+                Toast.makeText(context, R.string.bitrate_reset_success, Toast.LENGTH_SHORT).show();
+            });
+        // Set the dialog message as a white TextView
+        TextView messageView = new TextView(context);
+        messageView.setText(getString(R.string.bitrate_explanation_text));
+        messageView.setTextColor(white);
+        messageView.setTextSize(14);
+        messageView.setPadding(0, padding / 2, 0, padding / 2);
+        layout.addView(messageView, 0); // Add at the top
+        builder.setView(layout);
+        builder.show();
     }
 
     // --- Bitrate Preference Helpers ---
@@ -3207,48 +3264,46 @@ public class SettingsFragment extends BaseFragment {
 
     private void showVideoSplitSizeDialog() {
         if (getContext() == null || sharedPreferencesManager == null) return;
-
         final String[] items = {"500 MB", "1 GB", "2 GB (Recommended)", "4 GB", "Custom Size..."};
-        final int[] valuesMb = {500, 1024, 2048, 4096, -1}; // -1 for custom
-
+        final int[] valuesMb = {500, 1024, 2048, 4096, -1};
         int currentSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
         int checkedItem = -1;
-        for (int i = 0; i < valuesMb.length -1; i++) { // Exclude "Custom Size..."
+        for (int i = 0; i < valuesMb.length -1; i++) {
             if (valuesMb[i] == currentSizeMb) {
                 checkedItem = i;
                 break;
             }
         }
-        // If no preset matches, and it's not one of the standard values, it's custom
-        if (checkedItem == -1 && currentSizeMb > 0 &&
-            currentSizeMb != 500 && currentSizeMb != 1024 &&
-            currentSizeMb != 2048 && currentSizeMb != 4096) {
-            // No direct preset matches, if a custom value is set, don't pre-select a preset.
-            // Or, could select the "Custom Size..." item if we wanted to be more explicit.
-        }
-
-
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Set Video Split Size")
-                // .setMessage("Videos will be split into segments once the selected size is reached. New segments are automatically started (e.g., video_001.mp4, video_002.mp4).") // Temporarily commented out
-                .setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
-                    if (which == items.length - 1) { // "Custom Size..."
-                        dialog.dismiss();
-                        showCustomSplitSizeDialog();
-                    } else {
-                        sharedPreferencesManager.setVideoSplitSizeMb(valuesMb[which]);
-                        updateVideoSplitSizeSummary();
-                        dialog.dismiss();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        int color = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(color);
+                return view;
+            }
+        };
+        themedDialogBuilder(requireContext())
+            .setTitle("Set Video Split Size")
+            .setSingleChoiceItems(adapter, checkedItem, (dialog, which) -> {
+                if (which == items.length - 1) {
+                    dialog.dismiss();
+                    showCustomSplitSizeDialog();
+                } else {
+                    sharedPreferencesManager.setVideoSplitSizeMb(valuesMb[which]);
+                    updateVideoSplitSizeSummary();
+                    dialog.dismiss();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     private void showCustomSplitSizeDialog() {
         if (getContext() == null || sharedPreferencesManager == null) return;
 
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
         builder.setTitle("Custom Split Size (MB)");
 
         // Inflate custom layout
@@ -3424,57 +3479,49 @@ public class SettingsFragment extends BaseFragment {
     private void showAppLockConfigDialog() {
         boolean isEnrolled = AppLock.isEnrolled(requireContext());
         boolean isEnabled = sharedPreferencesManager.isAppLockEnabled();
-        
-        // Create options list based on current state
         List<String> options = new ArrayList<>();
-        
         if (isEnabled) {
             options.add(getString(R.string.applock_disable));
         } else {
             options.add(getString(R.string.applock_enable));
         }
-        
         if (!isEnrolled) {
             options.add(getString(R.string.applock_set_pin));
         } else {
             options.add(getString(R.string.applock_change_pin));
             options.add(getString(R.string.applock_remove_pin));
         }
-        
-        // Show dialog with options
-        new MaterialAlertDialogBuilder(requireContext())
+        int color = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_1, options) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(color);
+                return view;
+            }
+        };
+        themedDialogBuilder(requireContext())
             .setTitle(R.string.applock_dialog_title)
-            // .setMessage(R.string.setting_dialog_description)
-            .setItems(options.toArray(new String[0]), (dialog, which) -> {
+            .setAdapter(adapter, (dialog, which) -> {
                 String selectedOption = options.get(which);
-                
                 if (selectedOption.equals(getString(R.string.applock_enable))) {
                     if (isEnrolled) {
-                        // Verify PIN before enabling
-                        verifyPinThenExecute(() -> setAppLockEnabled(true), 
-                            R.string.applock_verify_to_enable);
+                        verifyPinThenExecute(() -> setAppLockEnabled(true), R.string.applock_verify_to_enable);
                     } else {
-                        // Need to create PIN first
                         showPinCreationDialog(true);
                     }
                 } else if (selectedOption.equals(getString(R.string.applock_disable))) {
-                    // Verify PIN before disabling
-                    verifyPinThenExecute(() -> setAppLockEnabled(false), 
-                        R.string.applock_verify_to_disable);
+                    verifyPinThenExecute(() -> setAppLockEnabled(false), R.string.applock_verify_to_disable);
                 } else if (selectedOption.equals(getString(R.string.applock_set_pin)) || 
-                          selectedOption.equals(getString(R.string.applock_change_pin))) {
+                           selectedOption.equals(getString(R.string.applock_change_pin))) {
                     if (isEnrolled) {
-                        // Verify PIN before changing
-                        verifyPinThenExecute(() -> showPinCreationDialog(isEnabled), 
-                            R.string.applock_verify_to_change);
+                        verifyPinThenExecute(() -> showPinCreationDialog(isEnabled), R.string.applock_verify_to_change);
                     } else {
-                        // New PIN - no verification needed
                         showPinCreationDialog(isEnabled);
                     }
                 } else if (selectedOption.equals(getString(R.string.applock_remove_pin))) {
-                    // Verify PIN before removing
                     verifyPinThenExecute(() -> {
-                        // Remove PIN
                         AppLock appLock = AppLock.getInstance(requireContext());
                         appLock.invalidateEnrollments();
                         setAppLockEnabled(false);
@@ -3549,8 +3596,7 @@ public class SettingsFragment extends BaseFragment {
         MaterialButton readmeButton = view.findViewById(R.id.readme_button);
         MaterialButton languageChooseButton = view.findViewById(R.id.language_choose_button);
         
-        // Initialize themeSpinner
-        themeSpinner = view.findViewById(R.id.theme_spinner); // Initialize themeSpinner
+
 
         cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
         
@@ -3574,4 +3620,35 @@ public class SettingsFragment extends BaseFragment {
         
         // ... existing code ...
     }
+
+    // ----- Fix Start: Apply theme colors to headings, buttons, toggles using theme attributes -----
+    private int resolveThemeColor(int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+
+    private void applyThemeToUI(View view) {
+        // Headings (only those with real IDs)
+        int headingColor = resolveThemeColor(R.attr.colorHeading);
+        for (int id : new int[]{R.id.location_title, R.id.location_embed_title, R.id.audio_title, R.id.debug_title, R.id.onboarding_title}) {
+            TextView tv = view.findViewById(id);
+            if (tv != null) tv.setTextColor(headingColor);
+        }
+        // Buttons
+        int buttonColor = resolveThemeColor(R.attr.colorButton);
+        // ... rest of method ...
+    }
+    // ----- Fix End: Apply theme colors to headings, buttons, toggles using theme attributes -----
+
+    // ----- Fix Start: Add themedDialogBuilder helper to SettingsFragment -----
+    private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
+        int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
+        SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+        if ("Red Passion".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
+        else if ("AMOLED Black".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        return new MaterialAlertDialogBuilder(context, dialogTheme);
+    }
+    // ----- Fix End: Add themedDialogBuilder helper to SettingsFragment -----
 }

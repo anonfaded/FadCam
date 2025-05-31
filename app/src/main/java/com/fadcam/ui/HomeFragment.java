@@ -75,6 +75,7 @@ import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.appbar.MaterialToolbar;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -1687,7 +1688,22 @@ public class HomeFragment extends BaseFragment {
             ivKoFiSupport.post(startWiggle[0]);
         }
         // ----- Fix Ended for this method(onViewCreated_kofi_support_icon) -----
+
+        // ----- Fix Start: Apply theme color to top bar and buttons in HomeFragment -----
+        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
+        if (toolbar != null) {
+            int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
+            toolbar.setBackgroundColor(colorTopBar);
+        }
+        // If you have FABs or MaterialButtons, set their background tint to colorButton here
     }
+
+    private int resolveThemeColor(int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+    // ----- Fix End: Apply theme color to top bar and buttons in HomeFragment -----
 
     private void setupTextureView(@NonNull View view) {
         textureView = view.findViewById(R.id.textureView);

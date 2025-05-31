@@ -82,6 +82,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import androidx.recyclerview.widget.DiffUtil;
+import android.graphics.drawable.GradientDrawable;
 
 // Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -454,103 +455,49 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
 
     // --- Popup Menu and Actions (Major Updates Here) ---
+    private int resolveThemeColor(Context context, int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        context.getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+
     private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
-        if (context == null) {
-            Log.e(TAG, "Context is null in setupPopupMenu. Cannot show menu.");
-            return null;
-        }
+        Context context = holder.itemView.getContext();
         PopupMenu popup = new PopupMenu(context, holder.menuButtonContainer);
         popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
-
-        // Attempt to force icons to be visible
+        int colorDialog = resolveThemeColor(context, R.attr.colorDialog);
+        int colorHeading = resolveThemeColor(context, R.attr.colorHeading);
+        // Set popup background and text color using theme attributes
         try {
-            Field[] fields = popup.getClass().getDeclaredFields();
-            for (Field field : fields) {
-                if ("mPopup".equals(field.getName())) {
-                    field.setAccessible(true);
-                    Object menuPopupHelper = field.get(popup);
-                    Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-                    Method setForceShowIcon = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-                    setForceShowIcon.invoke(menuPopupHelper, true);
-                    break;
-                }
+            Field mPopupField = popup.getClass().getDeclaredField("mPopup");
+            mPopupField.setAccessible(true);
+            Object menuPopupHelper = mPopupField.get(popup);
+            Method setForceShowIcon = menuPopupHelper.getClass().getMethod("setForceShowIcon", boolean.class);
+            setForceShowIcon.invoke(menuPopupHelper, true);
+            // Set background color if possible
+            if (menuPopupHelper.getClass().getMethod("setPopupBackgroundDrawable", android.graphics.drawable.Drawable.class) != null) {
+                GradientDrawable bg = new GradientDrawable();
+                bg.setColor(colorDialog);
+                bg.setCornerRadius(16f);
+                menuPopupHelper.getClass().getMethod("setPopupBackgroundDrawable", android.graphics.drawable.Drawable.class).invoke(menuPopupHelper, bg);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error forcing menu icons to show.", e);
+            Log.w(TAG, "Could not set popup menu background: " + e.getMessage());
         }
-
-        // ----- Fix Start for this method(setupPopupMenu) (FaditorX styling) -----
-        MenuItem faditorXItem = popup.getMenu().findItem(R.id.action_edit_faditorx);
-        if (faditorXItem != null) {
-            // String baseTitle = context.getString(R.string.video_menu_edit_faditorx); // Assuming R.string.video_menu_edit_faditorx exists
-            // Let's get the title directly from the menu item, which might already have the base string from XML.
-            String baseTitle = faditorXItem.getTitle().toString();
-            if (baseTitle.endsWith(" ")) { // Remove trailing space if present from XML to avoid double spacing
-                baseTitle = baseTitle.substring(0, baseTitle.length() - 1);
-            }
-
-            String comingSoonBadgeText = "(Coming Soon)";
-            String fullTitleText = baseTitle + " " + comingSoonBadgeText; // Add a space here for separation
-
-            SpannableString styledTitle = new SpannableString(fullTitleText);
-
-            // Style "Edit with FaditorX" part as gray
-            styledTitle.setSpan(new ForegroundColorSpan(Color.GRAY), 0, baseTitle.length(), SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-            // Style "(Coming Soon)" badge part
-            int badgeStartIndex = baseTitle.length() + 1; // +1 for the space separator
-            int badgeEndIndex = fullTitleText.length();
-
-            styledTitle.setSpan(new BackgroundColorSpan(Color.RED), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-            styledTitle.setSpan(new ForegroundColorSpan(Color.WHITE), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-            // Optionally, make the badge text a bit smaller or bold
-            // styledTitle.setSpan(new RelativeSizeSpan(0.8f), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-            // styledTitle.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), badgeStartIndex, badgeEndIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-            faditorXItem.setTitle(styledTitle);
-
-            // Gray out the icon
-            Drawable icon = faditorXItem.getIcon();
-            if (icon != null) {
-                Drawable mutedIcon = icon.mutate(); // Important to mutate before applying filter
-                mutedIcon.setColorFilter(new PorterDuffColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN));
-                faditorXItem.setIcon(mutedIcon);
-            }
+        // Set text color for all menu items
+        for (int i = 0; i < popup.getMenu().size(); i++) {
+            MenuItem item = popup.getMenu().getItem(i);
+            SpannableString spanString = new SpannableString(item.getTitle());
+            spanString.setSpan(new ForegroundColorSpan(colorHeading), 0, spanString.length(), 0);
+            item.setTitle(spanString);
         }
-        // ----- Fix Ended for this method(setupPopupMenu) (FaditorX styling) -----
-
-        popup.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
-
-            if (itemId == R.id.action_delete) {
-                if (actionListener != null) {
-                    actionListener.onMoveToTrashStarted(videoItem.displayName);
-                    actionListener.onMoveToTrashRequested(videoItem);
-                }
-                    return true;
-            } else if (itemId == R.id.action_info) {
-                showVideoInfoDialog(videoItem);
-                    return true;
-            } else if (itemId == R.id.action_rename) {
-                showRenameDialog(videoItem);
-                    return true;
-            } else if (itemId == R.id.action_save) {
-                saveVideoToGalleryInternal(videoItem);
-                    return true;
-            } else if (itemId == R.id.action_edit_faditorx) {
-                Toast.makeText(context, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
-                    return true;
-                }
-                return false;
-            });
-        // ----- Fix Ended for this method(setupPopupMenu) -----
         return popup;
     }
 
     // --- Restored Rename Logic ---
     private void showRenameDialog(VideoItem videoItem) {
         if (context == null) return;
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(context);
         builder.setTitle(R.string.rename_video_title);
 
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_rename, null);
@@ -823,7 +770,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
         // 2. Inflate layout and find views
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(context);
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_video_info, null);
         if (dialogView == null) {
             Log.e(TAG, "Failed to inflate dialog_video_info layout.");
@@ -1196,5 +1143,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     public void clearCaches() {
         loadedThumbnailCache.clear();
+    }
+
+    // For dialogs, use themed MaterialAlertDialogBuilder as in SettingsFragment
+    private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
+        int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
+        SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+        if ("Red Passion".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
+        else if ("AMOLED Black".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        return new MaterialAlertDialogBuilder(context, dialogTheme);
     }
 }

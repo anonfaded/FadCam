@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
 import com.fadcam.Utils;
+import com.google.android.material.appbar.MaterialToolbar;
 
 public class RemoteFragment extends BaseFragment {
     @Nullable
@@ -28,5 +29,21 @@ public class RemoteFragment extends BaseFragment {
         super.onResume();
         Toast.makeText(requireContext(), R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
 
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
+        if (toolbar != null) {
+            int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
+            toolbar.setBackgroundColor(colorTopBar);
+        }
+    }
+
+    private int resolveThemeColor(int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
     }
 }

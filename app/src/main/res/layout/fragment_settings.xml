@@ -49,7 +49,7 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- Theme Spinner -->
+            <!-- Theme Row (Simple, Consistent) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_theme_title" />
@@ -87,12 +87,21 @@
                         app:lineHeight="16sp"
                         android:text="@string/note_theme" />
                 </LinearLayout>
-                <Spinner
-                    android:id="@+id/theme_spinner"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/theme_choose_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:gravity="end"/>
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:text="@string/theme_red"
+                    android:textAllCaps="false"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:minWidth="64dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="0dp"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginBottom="0dp"
+                    app:backgroundTint="?attr/colorButton"/>
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
@@ -127,7 +136,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_applock_title" />
@@ -182,7 +191,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_language_title" />
@@ -236,7 +245,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_cam_title"/>
@@ -308,7 +317,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_back_lens_title" />
@@ -376,7 +385,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_quailty_title" />
@@ -427,7 +436,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_framerate_title" />
@@ -479,7 +488,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_codec_title" />
@@ -531,7 +540,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_video_bitrate_title" />
@@ -557,7 +566,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceCaption"
-                android:textColor="@color/colorPrimary"
+                android:textColor="?attr/colorHeading"
                 android:paddingTop="2dp"
                 android:paddingBottom="8dp"
                 tools:text="Helper: Higher bitrate = better quality, larger file size. Too high/low may cause issues."/>
@@ -593,7 +602,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_video_orientation_title"/>
@@ -646,7 +655,7 @@
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
                         android:textSize="16sp"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:text="Enable Video Splitting"/> 
                     <com.google.android.material.textview.MaterialTextView
@@ -691,7 +700,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceSubtitle2"
-                        android:textColor="?android:attr/textColorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:text="Split File Size"/>
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/video_split_size_value_textview"
@@ -743,7 +752,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_watermark" />
@@ -800,7 +809,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="2dp"
                             android:textAppearance="?attr/textAppearanceSubtitle1"
-                            android:textColor="@color/colorPrimary"
+                            android:textColor="?attr/colorHeading"
                             android:textSize="16sp"
                             android:textStyle="bold"
                             android:text="Storage Location"/>
@@ -825,13 +834,15 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:minHeight="48dp"
-                        android:text="Internal App Storage (Default, Private)"/>
+                        android:text="Internal App Storage (Default, Private)"
+                        android:textColor="?attr/colorHeading"/>
                     <RadioButton
                         android:id="@+id/radio_custom_location"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:minHeight="48dp"
-                        android:text="Custom Location (SD Card/Other, Gallery Visible)"/>
+                        android:text="Custom Location (SD Card/Other, Gallery Visible)"
+                        android:textColor="?attr/colorHeading"/>
                 </RadioGroup>
 
                 <com.google.android.material.button.MaterialButton
@@ -861,7 +872,7 @@
                     android:layout_marginTop="8dp"
                     android:text="Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam."
                     android:textAppearance="?attr/textAppearanceCaption"
-                    android:textColor="@color/colorPrimary"
+                    android:textColor="?attr/colorHeading"
                     android:background="#33CFBAFD"
                     android:padding="4dp"/>
             </LinearLayout>
@@ -901,7 +912,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_location_title"/>
@@ -955,7 +966,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_location_embed_title"/>
@@ -1008,7 +1019,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_audio_title"/>
@@ -1068,7 +1079,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_audio_input_source_title" />
@@ -1123,7 +1134,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_debug_title"/>
@@ -1176,7 +1187,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:text="@string/setting_onboarding_title"/>

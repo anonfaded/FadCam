@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fix Start: Add custom theme attributes for all major UI elements -->
+    <attr name="colorTopBar" format="color" />
+    <attr name="colorBottomNav" format="color" />
+    <attr name="colorHeading" format="color" />
+    <attr name="colorButton" format="color" />
+    <attr name="colorToggle" format="color" />
+    <attr name="colorDialog" format="color" />
+    <attr name="colorStatusBar" format="color" />
+    <!-- Fix End: Add custom theme attributes for all major UI elements -->
+</resources> 

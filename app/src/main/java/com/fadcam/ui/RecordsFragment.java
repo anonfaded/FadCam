@@ -528,6 +528,16 @@ public class RecordsFragment extends BaseFragment implements
             fadeOverlay(false);
         }
         // ----- Fix End: Show AppLock overlay immediately if required and not unlocked (session-based) -----
+
+        // ----- Fix Start: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
+        // Apply theme to top bar
+        int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
+        if (toolbar != null) toolbar.setBackgroundColor(colorTopBar);
+        // Apply theme to FABs
+        int colorButton = resolveThemeColor(R.attr.colorButton);
+        if (fabToggleView != null) fabToggleView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
+        if (fabDeleteSelected != null) fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
+        // ----- Fix End: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
     } // End onViewCreated
 
     @Override
@@ -1625,9 +1635,8 @@ public class RecordsFragment extends BaseFragment implements
 
     private void showRecordsSidebar() {
         if (getContext() == null) return;
-
         View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext());
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext(), R.style.ThemeOverlay_FadCam_BottomSheet);
         bottomSheetDialog.setContentView(bottomSheetView);
 
         RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
@@ -2145,5 +2154,11 @@ public class RecordsFragment extends BaseFragment implements
                 .withEndAction(() -> applockOverlay.setVisibility(View.GONE))
                 .start();
         }
+    }
+
+    private int resolveThemeColor(int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
     }
 }

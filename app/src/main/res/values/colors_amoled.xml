@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="amoled_background">#000000</color>
+    <color name="amoled_surface">#121212</color>
+    <color name="amoled_text_primary">#FFFFFF</color>
+    <color name="amoled_text_secondary">#B3FFFFFF</color>
+    <color name="amoled_border">#1AFFFFFF</color>
+    <color name="amoled_accent">#cfbafd</color>
+    <color name="amoled_dialog">@color/amoled_surface</color>
+    <color name="amoled_heading">@color/amoled_accent</color>
+    <color name="amoled_statusbar">@color/amoled_background</color>
+</resources> 
