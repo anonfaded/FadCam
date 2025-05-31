@@ -43,6 +43,9 @@ import android.widget.ImageView;
 import com.guardanis.applock.AppLock;
 import com.guardanis.applock.dialogs.UnlockDialogBuilder;
 
+import android.widget.ArrayAdapter;
+import androidx.core.content.ContextCompat;
+
 public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashItemInteractionListener {
 
     private static final String TAG = "TrashFragment";
@@ -233,9 +236,15 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 Toast.makeText(getContext(), getString(R.string.trash_no_items_selected_toast), Toast.LENGTH_SHORT).show();
                 return;
             }
-            new MaterialAlertDialogBuilder(requireContext())
+            // ----- Fix Start: White text for restore dialog -----
+            TextView messageView = new TextView(requireContext());
+            messageView.setText(getString(R.string.trash_dialog_restore_message, selectedItems.size()));
+            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            messageView.setPadding(48, 32, 48, 0);
+            messageView.setTextSize(16);
+            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                     .setTitle(getString(R.string.trash_dialog_restore_title))
-                    .setMessage(getString(R.string.trash_dialog_restore_message, selectedItems.size()))
+                    .setView(messageView)
                     .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
                         onRestoreFinished(false, getString(R.string.trash_restore_cancelled_toast));
                     })
@@ -248,7 +257,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                             boolean success = TrashManager.restoreItemsFromTrash(getContext(), selectedItems);
                             String message = success ? getString(R.string.trash_restore_success_toast, selectedItems.size())
                                                      : getString(R.string.trash_restore_fail_toast);
-                            
                             // Post result back to main thread
                             if (getActivity() != null) {
                                 getActivity().runOnUiThread(() -> {
@@ -261,6 +269,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         });
                     })
                     .show();
+            // ----- Fix End: White text for restore dialog -----
         });
 
         buttonDeleteSelectedPermanently.setOnClickListener(v -> {
@@ -269,10 +278,15 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 Toast.makeText(getContext(), getString(R.string.trash_empty_toast_message), Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            new MaterialAlertDialogBuilder(requireContext())
+            // ----- Fix Start: White text for delete dialog -----
+            TextView messageView = new TextView(requireContext());
+            messageView.setText(getString(R.string.dialog_permanently_delete_message, selectedItems.size()));
+            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            messageView.setPadding(48, 32, 48, 0);
+            messageView.setTextSize(16);
+            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                     .setTitle(getString(R.string.dialog_permanently_delete_title))
-                    .setMessage(getString(R.string.dialog_permanently_delete_message, selectedItems.size()))
+                    .setView(messageView)
                     .setNegativeButton(getString(R.string.universal_cancel), null)
                     .setPositiveButton(getString(R.string.universal_delete), (dialog, which) -> {
                         if (TrashManager.permanentlyDeleteItems(getContext(), selectedItems)) {
@@ -283,6 +297,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         }
                     })
                     .show();
+            // ----- Fix End: White text for delete dialog -----
         });
 
         buttonEmptyAllTrash.setOnClickListener(v -> {
@@ -290,9 +305,15 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 Toast.makeText(getContext(), getString(R.string.trash_empty_toast_message), Toast.LENGTH_SHORT).show();
                 return;
             }
-            new MaterialAlertDialogBuilder(requireContext())
+            // ----- Fix Start: White text for delete all dialog -----
+            TextView messageView = new TextView(requireContext());
+            messageView.setText(getString(R.string.dialog_empty_all_trash_message));
+            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            messageView.setPadding(48, 32, 48, 0);
+            messageView.setTextSize(16);
+            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                     .setTitle(getString(R.string.trash_dialog_empty_all_title))
-                    .setMessage(getString(R.string.dialog_empty_all_trash_message))
+                    .setView(messageView)
                     .setNegativeButton(getString(R.string.universal_cancel), null)
                     .setPositiveButton(getString(R.string.trash_button_empty_all_action), (dialog, which) -> {
                         if (TrashManager.emptyAllTrash(getContext())) {
@@ -303,6 +324,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         }
                     })
                     .show();
+            // ----- Fix End: White text for delete all dialog -----
         });
         updateActionButtonsState(); // Initial state
     }
@@ -523,10 +545,20 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 break;
             }
         }
-
-        new MaterialAlertDialogBuilder(requireContext())
+        // ----- Fix Start: White text for auto-delete dialog list -----
+        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(white);
+                return view;
+            }
+        };
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle(getString(R.string.auto_delete_dialog_title))
-                .setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+                .setSingleChoiceItems(adapter, checkedItem, (dialog, which) -> {
                     // Action on item selection (optional, could update a temporary variable)
                 })
                 .setPositiveButton(getString(R.string.auto_delete_save_setting), (dialog, which) -> {
@@ -537,7 +569,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         sharedPreferencesManager.setTrashAutoDeleteMinutes(selectedMinutes);
                         updateAutoDeleteInfoText();
                         Log.d(TAG, "Auto-delete setting updated to: " + selectedMinutes + " minutes.");
-                        
                         boolean itemsWereAutoDeleted = false;
                         if (getContext() != null) {
                             int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), selectedMinutes);
@@ -554,6 +585,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 })
                 .setNegativeButton(getString(R.string.universal_cancel), null)
                 .show();
+        // ----- Fix End: White text for auto-delete dialog list -----
     }
 
     private void updateAutoDeleteInfoText() {
