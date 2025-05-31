@@ -83,60 +83,54 @@ public class AboutFragment extends BaseFragment {
         try {
             String versionName = requireContext().getPackageManager().getPackageInfo(requireContext().getPackageName(), 0).versionName;
             appVersion.setText(getString(R.string.version_format, versionName));
+            appVersion.setTextColor(Color.WHITE);
         } catch (Exception e) {
             appVersion.setText("");
         }
         String appDesc = getString(R.string.app_description);
-        int highlightColor = colorButton; // or colorOnPrimary for more contrast
-        String highlightColorHex = String.format("#%06X", (0xFFFFFF & highlightColor));
+        // Use a darker gray that's more distinguishable from white
+        String highlightColorHex = "#AAAAAA"; // Darker gray for better contrast
         appDesc = appDesc.replaceAll("#cfbafd", highlightColorHex);
         appDescription.setText(Html.fromHtml(appDesc, Html.FROM_HTML_MODE_LEGACY));
-        // Set app description text color to white for dark mode readability
         appDescription.setTextColor(Color.WHITE);
-        checkUpdatesButton.setTextColor(colorButton);
+        checkUpdatesButton.setTextColor(Color.WHITE);
+        checkUpdatesButton.setIconTint(ColorStateList.valueOf(Color.WHITE));
         checkUpdatesButton.setStrokeColor(ColorStateList.valueOf(colorButton));
         fadSecInfoCard.setCardBackgroundColor(colorDialog);
         fadSecInfoCard.setStrokeColor(colorButton);
-        // Set FadSec info text color
         TextView fadSecInfoText = fadSecInfoCard.findViewById(R.id.fadsec_info_text);
-        if (fadSecInfoText != null) fadSecInfoText.setTextColor(colorButton);
-        // Set source code button style for dark mode: filled lighter gray background, darker gray border, white text and icon
+        if (fadSecInfoText != null) fadSecInfoText.setTextColor(Color.WHITE);
         sourceCodeButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_button_filled)));
         sourceCodeButton.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray)));
         sourceCodeButton.setTextColor(Color.WHITE);
         sourceCodeButton.setIconTint(ColorStateList.valueOf(Color.WHITE));
-        // Set donate button to gold background and black text/icon for donation emphasis
         int gold = ContextCompat.getColor(requireContext(), R.color.gold);
         int black = ContextCompat.getColor(requireContext(), R.color.black);
         donateButton.setBackgroundTintList(ColorStateList.valueOf(gold));
         donateButton.setTextColor(black);
         donateButton.setIconTint(ColorStateList.valueOf(black));
-        emailText.setTextColor(colorButton);
-        discordText.setTextColor(colorButton);
+        emailText.setTextColor(Color.WHITE);
+        discordText.setTextColor(Color.WHITE);
         privacyInfoCard.setCardBackgroundColor(colorDialog);
         privacyInfoCard.setStrokeColor(colorButton);
-        // Set privacy info title and content colors
         LinearLayout privacyHeader = privacyInfoCard.findViewById(R.id.privacy_info_header);
         if (privacyHeader != null) {
             TextView privacyTitle = privacyHeader.findViewById(R.id.privacy_info_title);
-            if (privacyTitle != null) privacyTitle.setTextColor(colorButton);
+            if (privacyTitle != null) privacyTitle.setTextColor(Color.WHITE);
             ImageView expandIcon = privacyHeader.findViewById(R.id.expand_icon);
-            if (expandIcon != null) expandIcon.setColorFilter(colorButton);
+            if (expandIcon != null) expandIcon.setColorFilter(Color.WHITE);
         }
         TextView privacyInfoContent = privacyInfoCard.findViewById(R.id.privacy_info_content);
-        if (privacyInfoContent != null) privacyInfoContent.setTextColor(colorOnPrimary);
-        // Update HTML color codes in privacy info
+        if (privacyInfoContent != null) privacyInfoContent.setTextColor(Color.WHITE);
         String[] questions = getResources().getStringArray(R.array.questions_array);
         String[] answers = getResources().getStringArray(R.array.answers_array);
-        int answerColor = colorButton; // or colorOnPrimary for more contrast
-        String answerColorHex = String.format("#%06X", (0xFFFFFF & answerColor));
+        String answerColorHex = "#AAAAAA";
         StringBuilder qnaContent = new StringBuilder();
         for (int i = 0; i < questions.length; i++) {
             qnaContent.append("<b><font color='#FFFFFF'>").append(questions[i]).append("</font></b><br>")
                     .append("<font color='" + answerColorHex + "'>").append(answers[i]).append("</font><br><br>");
         }
         privacyInfoContent.setText(Html.fromHtml(qnaContent.toString(), Html.FROM_HTML_MODE_LEGACY));
-
         sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/"));
         donateButton.setOnClickListener(v -> {
             KoFiSupportBottomSheet bottomSheet = new KoFiSupportBottomSheet();
@@ -145,9 +139,26 @@ public class AboutFragment extends BaseFragment {
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());
         discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
-
         setupPrivacyInfo(privacyInfoCard, scrollView);
         view.findViewById(R.id.check_updates_button).setOnClickListener(v -> checkForUpdates());
+
+        // Make copyright text white for better visibility
+        // Find the copyright TextView by searching through all TextView children in the layout
+        ScrollView scrollViewObj = view.findViewById(R.id.scroll_view);
+        if (scrollViewObj != null && scrollViewObj.getChildCount() > 0) {
+            ViewGroup rootLayout = (ViewGroup) scrollViewObj.getChildAt(0);
+            for (int i = 0; i < rootLayout.getChildCount(); i++) {
+                View child = rootLayout.getChildAt(i);
+                if (child instanceof TextView) {
+                    TextView textView = (TextView) child;
+                    CharSequence text = textView.getText();
+                    if (text != null && text.toString().contains(getString(R.string.copyright_info))) {
+                        textView.setTextColor(Color.WHITE);
+                        break;
+                    }
+                }
+            }
+        }
 
         executorService = Executors.newSingleThreadExecutor();
         alertDialogBuilder = new MaterialAlertDialogBuilder(requireContext())
@@ -159,8 +170,8 @@ public class AboutFragment extends BaseFragment {
     private void setupPrivacyInfo(MaterialCardView cardView, ScrollView scrollView) {
         String[] questions = getResources().getStringArray(R.array.questions_array);
         String[] answers = getResources().getStringArray(R.array.answers_array);
-        int answerColor = resolveThemeColor(R.attr.colorButton); // or colorOnPrimary for more contrast
-        String answerColorHex = String.format("#%06X", (0xFFFFFF & answerColor));
+        // Use darker gray for answers - better contrast with white
+        String answerColorHex = "#AAAAAA"; 
         StringBuilder qnaContent = new StringBuilder();
         for (int i = 0; i < questions.length; i++) {
             qnaContent.append("<b><font color='#FFFFFF'>").append(questions[i]).append("</font></b><br>")
@@ -374,7 +385,7 @@ public class AboutFragment extends BaseFragment {
 
 
     private void showUpdateAvailableDialog(String newVersion) {
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle(getString(R.string.update_available_title))
                 .setMessage(getString(R.string.update_available_message, newVersion))
                 .setPositiveButton(getString(R.string.visit_fdroid), (dialog, which) -> {
@@ -382,8 +393,15 @@ public class AboutFragment extends BaseFragment {
                 })
                 .setNegativeButton(getString(R.string.visit_github), (dialog, which) -> {
                     openUpdateUrl("https://github.com/anonfaded/FadCam");
-                })
-                .show();
+                });
+        
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text colors to white
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
     }
 
 
@@ -393,19 +411,32 @@ public class AboutFragment extends BaseFragment {
         messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
         messageView.setPadding(48, 32, 48, 32);
         messageView.setTextSize(16);
-        themedDialogBuilder(requireContext())
+        
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext())
                 .setTitle(getString(R.string.up_to_date))
                 .setView(messageView)
-                .setPositiveButton("OK", null)
-                .show();
+                .setPositiveButton("OK", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text color to white
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
     }
 
     private void showErrorDialog(String message) {
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle("Error")
                 .setMessage(message)
-                .setPositiveButton("OK", null)
-                .show();
+                .setPositiveButton("OK", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text color to white
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
     }
 
     private void openUpdateUrl(String url) {

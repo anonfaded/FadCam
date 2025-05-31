@@ -109,6 +109,7 @@ import android.text.TextWatcher;
 // ----- Fix Ended for this class (SettingsFragment_video_splitting_imports) -----
 
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.Color;
 
 public class SettingsFragment extends BaseFragment {
 
@@ -1809,13 +1810,22 @@ public class SettingsFragment extends BaseFragment {
         MaterialButton discordButton = dialogView.findViewById(R.id.discord_button);
         if (githubButton != null) {
             githubButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
+            githubButton.setTextColor(Color.WHITE);
         }
         if (discordButton != null) {
             discordButton.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
+            discordButton.setTextColor(Color.WHITE);
         }
         builder.setView(dialogView);
         builder.setPositiveButton(android.R.string.ok, null); // Use standard OK text
-        builder.show();
+        
+        // Create dialog and set button color to white
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Set button text color to white
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+        });
+        dialog.show();
     }
 
 
