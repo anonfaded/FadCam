@@ -258,6 +258,8 @@
     <string name="more_options">More Options</string>
     <string name="records_options_title">Records Options</string>
     <string name="setting_theme_title">App Theme</string>
+    <string name="settings_option_theme">Choose Theme</string>
+    <string name="settings_theme_changed">Theme changed. Applying changes...</string>
     <string name="note_theme">Choose your preferred app theme</string>
     <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
     <string name="start_recording">Start</string>
@@ -276,11 +278,11 @@
     <string name="setting_back_lens_info_single">Main lens only</string>
     <string name="setting_back_lens_info_single_v2">Only main back camera detected</string>
     <string-array name="theme_options">
-        <item>Dark Mode</item>
-        <item>AMOLED Black</item>
-        <item>Red Passion</item>
+        <item>Midnight Dusk</item>
+        <item>Faded Night</item>
+        <item>Crimson Bloom</item>
     </string-array>
-    <string name="theme_red">Red Passion</string>
+    <string name="theme_red">Crimson Bloom</string>
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
