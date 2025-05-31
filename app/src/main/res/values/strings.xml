@@ -507,4 +507,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_verify_to_remove">Verify PIN to Remove</string>
     <string name="applock_verification_canceled">Verification canceled</string>
 
+    <string name="version_format">v%s</string>
+
 </resources>

@@ -28,7 +28,7 @@
             android:layout_marginTop="16dp"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="?attr/colorHeading" />
 
         <TextView
             android:id="@+id/app_version"
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
-            android:textColor="#CFBAFD" />
+            android:textColor="?attr/colorButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/check_updates_button"
@@ -47,8 +47,8 @@
             android:layout_marginTop="16dp"
             android:text="@string/check_for_updates"
             app:icon="@drawable/ic_update"
-            android:textColor="#CFBAFD"
-            app:strokeColor="#CFBAFD" />
+            android:textColor="?attr/colorButton"
+            app:strokeColor="?attr/colorButton" />
 
         <TextView
             android:id="@+id/app_description"
@@ -57,23 +57,24 @@
             android:layout_marginTop="24dp"
             android:gravity="center"
             android:text="@string/app_description"
-            android:textColor="#FFFFFF" />
+            android:textColor="?attr/colorOnPrimary" />
         
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/fadsec_info_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            app:cardBackgroundColor="#262233"
+            app:cardBackgroundColor="?attr/colorDialog"
             app:cardCornerRadius="8dp"
-            app:strokeColor="#604895" >
+            app:strokeColor="?attr/colorButton" >
 
             <TextView
+                android:id="@+id/fadsec_info_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
                 android:text="@string/fadsec_info"
-                android:textColor="#CFBAFD" />
+                android:textColor="?attr/colorButton" />
 
         </com.google.android.material.card.MaterialCardView>
 
@@ -88,10 +89,10 @@
             android:layout_marginTop="32dp"
             android:text="@string/view_source_code"
             app:icon="@drawable/ic_github"
-            app:backgroundTint="#3C3C3C"
-            android:textColor="#FFFFFF"
-            app:strokeColor="#4C4C4C"
-            app:iconTint="@color/white"/>
+            app:backgroundTint="?attr/colorDialog"
+            android:textColor="?attr/colorOnPrimary"
+            app:strokeColor="?attr/colorButton"
+            app:iconTint="?attr/colorOnPrimary"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/donate_button"
@@ -101,11 +102,10 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
             android:text="@string/buy_me_a_coffee"
-            android:textColor="@color/black"
-            app:backgroundTint="#FFC107"
-            app:backgroundTintMode="screen"
+            android:textColor="?attr/colorOnPrimary"
+            app:backgroundTint="?attr/colorButton"
             app:icon="@drawable/ic_kofi"
-            app:iconTint="@color/black"/>
+            app:iconTint="?attr/colorOnPrimary"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -113,7 +113,7 @@
             android:layout_marginTop="32dp"
             android:text="@string/contact"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="?attr/colorHeading" />
 
         <TextView
             android:id="@+id/email_text"
@@ -123,7 +123,7 @@
             android:drawablePadding="8dp"
             android:text="@string/send_email"
             app:drawableStartCompat="@drawable/ic_email"
-            android:textColor="#CFBAFD" />
+            android:textColor="?attr/colorButton" />
 
         <TextView
             android:id="@+id/discord_text"
@@ -133,34 +133,36 @@
             android:drawablePadding="8dp"
             android:text="@string/join_community"
             app:drawableStartCompat="@drawable/ic_discord"
-            android:textColor="#CFBAFD" />
+            android:textColor="?attr/colorButton" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/privacy_info_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            app:cardBackgroundColor="#262233"
+            app:cardBackgroundColor="?attr/colorDialog"
             app:cardCornerRadius="8dp"
             android:paddingBottom="1dp"
-            app:strokeColor="#604895">
+            app:strokeColor="?attr/colorButton">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
                 <LinearLayout
+                    android:id="@+id/privacy_info_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
                     <TextView
+                        android:id="@+id/privacy_info_title"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/privacy_information"
-                        android:textColor="#CFBAFD"
+                        android:textColor="?attr/colorButton"
                         android:textSize="18sp"
                         android:textStyle="bold" />
                     <ImageView
@@ -168,7 +170,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_arrow_down"
-                        app:tint="#CFBAFD" />
+                        app:tint="?attr/colorButton" />
                 </LinearLayout>
                 <TextView
                     android:id="@+id/privacy_info_content"
@@ -176,7 +178,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:paddingBottom="1dp"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    android:textColor="?attr/colorOnPrimary"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -186,7 +189,7 @@
             android:layout_marginTop="24dp"
             android:text="@string/copyright_info"
             android:textAlignment="center"
-            android:textColor="#CFBAFD" />
+            android:textColor="?attr/colorButton" />
 
     </LinearLayout>
 </ScrollView>
