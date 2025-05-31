@@ -1558,27 +1558,40 @@ public class HomeFragment extends BaseFragment {
         initializeMessages();
 
         // ----- Fix Start: Apply dynamic theme colors to preview area cards -----
-CardView cardPreview = view.findViewById(R.id.cardPreview);
-CardView cardStats = view.findViewById(R.id.cardStats);
-CardView cardStorage = view.findViewById(R.id.cardStorage);
-CardView cardTips = view.findViewById(R.id.cardTips);
+        CardView cardPreview = view.findViewById(R.id.cardPreview);
+        CardView cardStats = view.findViewById(R.id.cardStats);
+        CardView cardStorage = view.findViewById(R.id.cardStorage);
+        CardView cardTips = view.findViewById(R.id.cardTips);
 
-int colorDialog = resolveThemeColor(R.attr.colorDialog);
-int colorButton = resolveThemeColor(R.attr.colorButton);
-int colorTransparent = android.graphics.Color.TRANSPARENT;
-int colorTextPrimary = resolveThemeColor(R.attr.colorHeading);
-int colorTextSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+        int colorDialog = resolveThemeColor(R.attr.colorDialog);
+        int colorButton = resolveThemeColor(R.attr.colorButton);
+        int colorTransparent = android.graphics.Color.TRANSPARENT;
+        int colorTextPrimary = resolveThemeColor(R.attr.colorHeading);
+        int colorTextSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
 
-if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
-if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
-if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_red_card));
-if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+        if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
+        if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
+        if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_red_card));
+        if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
 
-setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
-setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
-setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
-setTextColorsRecursive(cardTips, colorTextPrimary, colorTextSecondary);
-// ----- Fix End: Apply dynamic theme colors to preview area cards -----
+        setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
+        setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
+        setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
+        setTextColorsRecursive(cardTips, colorTextPrimary, colorTextSecondary);
+        // ----- Fix End: Apply dynamic theme colors to preview area cards -----
+
+        // ----- Fix Start: Apply dynamic theme colors to preview area cards (night mode specific) -----
+        boolean isNightMode = (requireContext().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        if (isNightMode) {
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray));
+            if (cardStats != null) cardStats.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_purple_bar));
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_purple_bar));
+        } else {
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_red_card));
+            if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
+        }
+        // ----- Fix End: Apply dynamic theme colors to preview area cards (night mode specific) -----
 
         vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
         TorchService.setHomeFragment(this);

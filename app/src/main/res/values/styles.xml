@@ -19,4 +19,16 @@
         <item name="android:paddingStart">24dp</item>
         <item name="android:paddingEnd">24dp</item>
     </style>
+
+    <!-- Fix Start: Add missing Material text appearance styles for compatibility -->
+    <style name="textAppearanceSubtitle1" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">?attr/colorHeading</item>
+    </style>
+    <style name="textAppearanceCaption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+    </style>
+    <style name="textAppearanceSubtitle2" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorHeading</item>
+    </style>
+    <!-- Fix End: Add missing Material text appearance styles for compatibility -->
 </resources>

@@ -19,26 +19,18 @@
     <color name="danger_red_light">#F44336</color>
     <color name="colorError">#D32F2F</color>
     <color name="green">#4CAF50</color>
-
-    <!-- Added for Trash Item Remaining Time Display -->
-    <color name="colorWarning">#FFA726</color> <!-- Orange A400 -->
-    <color name="gray_text_light">#BDBDBD</color> <!-- Grey 400 -->
-    <color name="gray_text_very_light">#E0E0E0</color> <!-- Grey 300 -->
-
+    <color name="colorWarning">#FFA726</color>
+    <color name="gray_text_light">#BDBDBD</color>
+    <color name="gray_text_very_light">#E0E0E0</color>
     <color name="gold">#FFD700</color>
-
-    <!-- Fix Start: Add color references for new theme attributes for maintainability -->
-    <color name="colorTopBar">@color/colorPrimary</color>
-    <color name="colorBottomNav">@color/colorPrimary</color>
-    <color name="colorHeading">@color/colorPrimary</color>
+    <color name="colorTopBar">@color/gray</color>
+    <color name="colorBottomNav">@color/gray</color>
+    <color name="colorHeading">#cfbafd</color>
     <color name="colorButton">@color/colorPrimary</color>
     <color name="colorToggle">@color/greenPastel</color>
     <color name="colorDialog">@color/gray</color>
     <color name="colorStatusBar">@color/gray</color>
-    <!-- Fix End: Add color references for new theme attributes for maintainability -->
-
-    <color name="dark_red_card">#3B1818</color> <!-- Very dark, muted red for storage card -->
-    <color name="dark_purple_bar">#231942</color> <!-- Very dark purple for dark mode top bar and navbar -->
-
-    <color name="gray_button_filled">#E0E0E0</color> <!-- Base declaration for filled button gray -->
-</resources>
+    <color name="dark_red_card">#3B1818</color>
+    <color name="dark_purple_bar">#231942</color>
+    <color name="gray_button_filled">#2A2A2A</color>
+</resources> 

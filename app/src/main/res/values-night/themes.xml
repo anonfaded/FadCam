@@ -6,6 +6,12 @@
         <item name="android:fontFamily">@font/ubuntu_regular</item>
 <!--        the color for statusbar at top-->
         <item name="android:statusBarColor">@color/gray</item>
-
+        <item name="colorTopBar">@color/gray</item>
+        <item name="colorBottomNav">@color/gray</item>
+        <item name="colorHeading">@color/colorHeading</item>
+        <item name="colorButton">@color/colorButton</item>
+        <item name="colorToggle">@color/colorToggle</item>
+        <item name="colorDialog">@color/colorDialog</item>
+        <item name="colorStatusBar">@color/colorStatusBar</item>
     </style>
 </resources>

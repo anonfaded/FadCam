@@ -91,6 +91,8 @@ public class AboutFragment extends BaseFragment {
         String highlightColorHex = String.format("#%06X", (0xFFFFFF & highlightColor));
         appDesc = appDesc.replaceAll("#cfbafd", highlightColorHex);
         appDescription.setText(Html.fromHtml(appDesc, Html.FROM_HTML_MODE_LEGACY));
+        // Set app description text color to white for dark mode readability
+        appDescription.setTextColor(Color.WHITE);
         checkUpdatesButton.setTextColor(colorButton);
         checkUpdatesButton.setStrokeColor(ColorStateList.valueOf(colorButton));
         fadSecInfoCard.setCardBackgroundColor(colorDialog);
@@ -98,9 +100,11 @@ public class AboutFragment extends BaseFragment {
         // Set FadSec info text color
         TextView fadSecInfoText = fadSecInfoCard.findViewById(R.id.fadsec_info_text);
         if (fadSecInfoText != null) fadSecInfoText.setTextColor(colorButton);
-        sourceCodeButton.setTextColor(colorOnPrimary);
-        sourceCodeButton.setStrokeColor(ColorStateList.valueOf(colorButton));
-        sourceCodeButton.setBackgroundTintList(ColorStateList.valueOf(colorDialog));
+        // Set source code button style for dark mode: filled lighter gray background, darker gray border, white text and icon
+        sourceCodeButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_button_filled)));
+        sourceCodeButton.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray)));
+        sourceCodeButton.setTextColor(Color.WHITE);
+        sourceCodeButton.setIconTint(ColorStateList.valueOf(Color.WHITE));
         // Set donate button to gold background and black text/icon for donation emphasis
         int gold = ContextCompat.getColor(requireContext(), R.color.gold);
         int black = ContextCompat.getColor(requireContext(), R.color.black);
