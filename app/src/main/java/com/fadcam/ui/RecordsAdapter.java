@@ -296,8 +296,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_checked); // Replace with actual drawable
                     holder.checkIcon.setAlpha(1.0f);
                     // Highlight background and adjust text color for contrast
-                    if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorPrimary));
-                    if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK); // Use BLACK for contrast on primary color
+                    if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(resolveThemeColor(context, R.attr.colorButton));
+                    if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.WHITE); // Use WHITE for contrast on accent color
                 } else {
                     holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_outline); // Replace with actual drawable
                     holder.checkIcon.setAlpha(0.7f);

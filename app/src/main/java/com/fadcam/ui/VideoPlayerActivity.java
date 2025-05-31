@@ -7,14 +7,21 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.Toast;
+import android.widget.TextView;
+import android.widget.ArrayAdapter;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.fadcam.R;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.C; // For Playback Speed
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Constants;
 
 
 public class VideoPlayerActivity extends AppCompatActivity {
@@ -33,9 +40,20 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // ----- Fix Start: Apply selected theme globally before setContentView -----
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Dark Mode");
+
+        if ("Red Passion".equals(savedTheme)) {
+            setTheme(R.style.Theme_FadCam_Red);
+        } else if ("AMOLED Black".equals(savedTheme)) {
+            setTheme(R.style.Theme_FadCam_Amoled);
+        } else {
+            setTheme(R.style.Base_Theme_FadCam);
+        }
+        // ----- Fix End: Apply selected theme globally before setContentView -----
+
         super.onCreate(savedInstanceState);
-        // Use app's R file for app layouts/ids
-        // Ensure correct theme is set in AndroidManifest for MaterialAlertDialogBuilder
         setContentView(com.fadcam.R.layout.activity_video_player);
 
         playerView = findViewById(com.fadcam.R.id.player_view);
@@ -57,6 +75,23 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
 
         setupBackButton();
+
+        // ----- Fix Start: Programmatically set seekbar colors for dynamic theming -----
+        // ExoPlayer's XML attributes may not always apply theme attributes at runtime, so set them here
+        View timeBar = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+        if (timeBar instanceof com.google.android.exoplayer2.ui.DefaultTimeBar) {
+            com.google.android.exoplayer2.ui.DefaultTimeBar bar = (com.google.android.exoplayer2.ui.DefaultTimeBar) timeBar;
+            int played = resolveThemeColor(R.attr.colorButton);
+            int unplayed = resolveThemeColor(R.attr.colorDialog);
+            int buffered = resolveThemeColor(R.attr.colorHeading);
+            int scrubber = resolveThemeColor(R.attr.colorButton);
+            bar.setPlayedColor(played);
+            bar.setUnplayedColor(unplayed);
+            bar.setBufferedColor(buffered);
+            bar.setScrubberColor(scrubber);
+//            bar.setTouchTargetHeight((int) (getResources().getDisplayMetrics().density * 32));
+        }
+        // ----- Fix End: Programmatically set seekbar colors for dynamic theming -----
     }
 
     // *** FIX: Modified method signature to accept Uri ***
@@ -105,6 +140,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
+    // ----- Fix Start: Use themed dialog for playback speed with white text for radio items -----
     private void showPlaybackSpeedDialog() {
         if (player == null) {
             Log.e(TAG, "Player is null, cannot show speed dialog.");
@@ -114,26 +150,43 @@ public class VideoPlayerActivity extends AppCompatActivity {
             playerView.hideController(); // Hide controller during dialog interaction
         }
 
-        // Use MaterialAlertDialogBuilder which respects the Activity's theme
-        new MaterialAlertDialogBuilder(this)
+        // Custom ArrayAdapter to force white text for radio items
+        int white = getResources().getColor(android.R.color.white);
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(this, android.R.layout.simple_list_item_single_choice, speedOptions) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                if (text1 != null) text1.setTextColor(white);
+                return view;
+            }
+        };
+
+        themedDialogBuilder()
                 .setTitle("Playback Speed")
-                .setSingleChoiceItems(speedOptions, currentSpeedIndex, (dialog, which) -> {
+                .setSingleChoiceItems(adapter, currentSpeedIndex, (dialog, which) -> {
                     currentSpeedIndex = which;
-                    // Apply the selected speed parameter
                     player.setPlaybackParameters(new PlaybackParameters(speedValues[which]));
                     Log.i(TAG, "Playback speed set to: " + speedOptions[which]);
-                    dialog.dismiss(); // Dismiss dialog on selection
+                    dialog.dismiss();
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> {
-                    if (playerView != null) playerView.showController(); // Show controller again if cancelled
+                    if (playerView != null) playerView.showController();
                 })
                 .setOnDismissListener(dialog -> {
-                    if (playerView != null) playerView.showController(); // Ensure controller shows when dialog closes
+                    if (playerView != null) playerView.showController();
                 })
                 .show();
     }
-    // --- End Playback Speed Controls ---
+    // ----- Fix End: Use themed dialog for playback speed with white text for radio items -----
 
+    // ----- Fix Start: Add resolveThemeColor helper -----
+    private int resolveThemeColor(int attr) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+    // ----- Fix End: Add resolveThemeColor helper -----
 
     // --- Lifecycle Management ---
     @Override
@@ -173,4 +226,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
     // --- End Lifecycle Management ---
+
+    // ----- Fix Start: Add themedDialogBuilder helper -----
+    private MaterialAlertDialogBuilder themedDialogBuilder() {
+        int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
+        return new MaterialAlertDialogBuilder(this, dialogTheme);
+    }
+    // ----- Fix End: Add themedDialogBuilder helper -----
 }

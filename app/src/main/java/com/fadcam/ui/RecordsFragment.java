@@ -141,7 +141,7 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    // *** NEW: Implement onMoveToTrashRequested from RecordActionListener ***
+    // --- NEW: Implement onMoveToTrashRequested from RecordActionListener ---
     @Override
     public void onMoveToTrashRequested(VideoItem videoItem) {
         if (videoItem == null || videoItem.uri == null) {
@@ -155,9 +155,16 @@ public class RecordsFragment extends BaseFragment implements
 
         Log.i(TAG, "Delete requested for: " + videoItem.displayName);
 
+        // Use a custom TextView for the message to ensure correct color (always white for best contrast)
+        TextView messageView = new TextView(requireContext());
+        messageView.setText(getString(R.string.delete_video_dialog_message, videoItem.displayName));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        messageView.setTextSize(16);
+        messageView.setPadding(48, 32, 48, 32);
+
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.delete_video_dialog_title))
-                .setMessage(getString(R.string.delete_video_dialog_message, videoItem.displayName))
+                .setView(messageView)
                 .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
                     onMoveToTrashFinished(false, getString(R.string.delete_video_cancelled_toast));
                 })
@@ -535,8 +542,14 @@ public class RecordsFragment extends BaseFragment implements
         if (toolbar != null) toolbar.setBackgroundColor(colorTopBar);
         // Apply theme to FABs
         int colorButton = resolveThemeColor(R.attr.colorButton);
-        if (fabToggleView != null) fabToggleView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
-        if (fabDeleteSelected != null) fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
+        if (fabToggleView != null) {
+            fabToggleView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
+            fabToggleView.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+        }
+        if (fabDeleteSelected != null) {
+            fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
+            fabDeleteSelected.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+        }
         // ----- Fix End: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
     } // End onViewCreated
 
@@ -1369,9 +1382,15 @@ public class RecordsFragment extends BaseFragment implements
         }
         int count = selectedUris.size();
         Log.d(TAG,"Showing confirm delete dialog for " + count + " items.");
-        new MaterialAlertDialogBuilder(requireContext())
+        // Use a custom TextView for the message to ensure correct color (always white for best contrast)
+        TextView messageView = new TextView(requireContext());
+        messageView.setText(getResources().getString(R.string.dialog_multi_video_del_note));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        messageView.setTextSize(16);
+        messageView.setPadding(48, 32, 48, 32);
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle(getResources().getString(R.string.dialog_multi_video_del_title) + " ("+count+")")
-                .setMessage(getResources().getString(R.string.dialog_multi_video_del_note))
+                .setView(messageView)
                 .setNegativeButton(getResources().getString(R.string.dialog_multi_video_del_no), null)
                 .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos()) // Calls corrected delete method
                 .show();
@@ -1432,17 +1451,20 @@ public class RecordsFragment extends BaseFragment implements
     }
     private void confirmDeleteAll() {
         vibrate();
-        
-        // Use allLoadedItems instead of videoItems to get the actual total count
         int totalVideoCount = allLoadedItems.size();
-        
         if (totalVideoCount == 0){
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
         }
-        new MaterialAlertDialogBuilder(requireContext())
+        // Use a custom TextView for the message to ensure correct color (always white for best contrast)
+        TextView messageView = new TextView(requireContext());
+        messageView.setText(getString(R.string.delete_all_videos_description) + "\n(" + totalVideoCount + " videos will be removed)");
+        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        messageView.setTextSize(16);
+        messageView.setPadding(48, 32, 48, 32);
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
                 .setTitle(getString(R.string.delete_all_videos_title))
-                .setMessage(getString(R.string.delete_all_videos_description) + "\n(" + totalVideoCount + " videos will be removed)")
+                .setView(messageView)
                 .setPositiveButton(getString(R.string.dialog_del_confirm), (dialog, which) -> deleteAllVideos())
                 .setNegativeButton(getString(R.string.universal_cancel), null)
                 .show();
@@ -1636,8 +1658,22 @@ public class RecordsFragment extends BaseFragment implements
     private void showRecordsSidebar() {
         if (getContext() == null) return;
         View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
+        // Use the new dynamic theme
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext(), R.style.ThemeOverlay_FadCam_BottomSheet);
         bottomSheetDialog.setContentView(bottomSheetView);
+
+        // Fix: Only set background for the bottom sheet, not the whole screen, and use correct color for theme
+        View sheet = bottomSheetDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (sheet != null) {
+            // Use the dialog background color for the sheet (surface/dialog, not heading/accent)
+            int bgColor = resolveThemeColor(R.attr.colorDialog);
+            sheet.setBackgroundColor(bgColor);
+        }
+
+        // Use white for text in bottom sheet for all themes for best contrast
+        int textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.white);
+        int textColorSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+        setTextColorsRecursive(bottomSheetView, textColorPrimary, textColorSecondary);
 
         RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
         LinearLayout deleteAllOption = bottomSheetView.findViewById(R.id.option_delete_all);
@@ -1664,7 +1700,7 @@ public class RecordsFragment extends BaseFragment implements
                     currentSortOption = newSortOption;
                     performVideoSort(); // Call the sorting method
                 } else {
-                    Log.d(TAG,"Sort option clicked, but no change: "+currentSortOption);
+                    Log.d(TAG,"Sort option clicked, but no change:"+currentSortOption);
                 }
                 bottomSheetDialog.dismiss();
             });
@@ -2169,4 +2205,23 @@ public class RecordsFragment extends BaseFragment implements
         onMoveToTrashRequested(videoItem);
     }
     // ----- Fix Ended for this method(onDeleteVideo)-----
+
+    // Helper to set text colors recursively for all TextViews and RadioButtons
+    private void setTextColorsRecursive(View view, int primary, int secondary) {
+        if (view instanceof TextView) {
+            // Use primary for main titles, secondary for descriptions
+            TextView tv = (TextView) view;
+            CharSequence text = tv.getText();
+            if (text != null && text.length() > 0 && (tv.getTextSize() >= 16f)) {
+                tv.setTextColor(primary);
+            } else {
+                tv.setTextColor(secondary);
+            }
+        } else if (view instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) view;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                setTextColorsRecursive(vg.getChildAt(i), primary, secondary);
+            }
+        }
+    }
 }
