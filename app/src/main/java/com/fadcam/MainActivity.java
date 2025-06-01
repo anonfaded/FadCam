@@ -135,6 +135,13 @@ public class MainActivity extends AppCompatActivity {
             // Pookie Pink theme
             setTheme(R.style.Theme_FadCam_PookiePink);
             getWindow().setNavigationBarColor(getResources().getColor(R.color.pookiepink_theme_background_dark, getTheme()));
+        } else if ("Snow Veil".equals(savedTheme)) {
+            // Snow Veil theme
+            setTheme(R.style.Theme_FadCam_SnowVeil);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.snowveil_theme_background_light, getTheme()));
+            
+            // Set status bar icons to dark for light theme
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         } else {
             // Default dark theme
             setTheme(R.style.Base_Theme_FadCam);
@@ -447,6 +454,24 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        
+        // Update UI for current theme
+        String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        
+        // Special handling for Snow Veil theme - set light status bar with dark icons
+        if ("Snow Veil".equals(currentTheme) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            
+            // Also set light navigation bar if API level is high enough
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                );
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // For other themes, use dark status bar with light icons (default)
+            getWindow().getDecorView().setSystemUiVisibility(0);
+        }
         
         // Restore language settings
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);

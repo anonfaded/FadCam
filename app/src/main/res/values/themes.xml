@@ -344,6 +344,106 @@
         <item name="android:textColor">@color/white</item>
     </style>
 
+    <style name="Theme.FadCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorTopBar">@color/snowveil_theme_primary_variant</item>
+        <item name="colorBottomNav">@color/snowveil_theme_primary_variant</item>
+        <item name="colorHeading">@color/snowveil_theme_primary</item>
+        <item name="colorButton">@color/snowveil_theme_primary</item>
+        <item name="colorToggle">@color/snowveil_theme_accent</item>
+        <item name="colorDialog">@color/snowveil_theme_dialog</item>
+        <item name="colorStatusBar">@color/snowveil_theme_primary_variant</item>
+        <item name="android:colorBackground">@color/snowveil_theme_background_light</item>
+        <item name="colorSurface">@color/snowveil_theme_surface_light</item>
+        <item name="backgroundColor">@color/snowveil_theme_background_light</item>
+        <item name="android:windowBackground">@color/snowveil_theme_background_light</item>
+        <item name="android:navigationBarColor">@color/snowveil_theme_background_light</item>
+        <item name="colorPrimary">@color/snowveil_theme_primary</item>
+        <item name="colorPrimaryVariant">@color/snowveil_theme_primary_variant</item>
+        <item name="colorSecondary">@color/snowveil_theme_secondary</item>
+        <item name="colorSecondaryVariant">@color/snowveil_theme_secondary_variant</item>
+        <item name="colorAccent">@color/snowveil_theme_accent</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorOnBackground">@color/black</item>
+        <item name="colorOnSurface">@color/black</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textColorPrimary">@color/black</item>
+        <item name="android:textColorSecondary">@color/snowveil_theme_text_secondary_light</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.SnowVeil.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.FadCam.SnowVeil.Button</item>
+        <item name="android:editTextBackground">@drawable/snowveil_theme_edittext_bg</item>
+        <item name="android:popupMenuStyle">@style/Widget.FadCam.SnowVeil.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar.Light</item>
+        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView.Light</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SnowVeil.Dialog</item>
+        <!-- Force pure white CardView backgrounds for better contrast with black text -->
+        <item name="cardViewStyle">@style/Theme.FadCam.SnowVeilCardView</item>
+        <!-- Improve contrast for Snow Veil theme -->
+        <item name="android:iconTint">@color/black</item>
+        <item name="colorControlNormal">@color/black</item>
+        <item name="android:textColorTertiary">@color/black</item>
+        <item name="colorSwitchThumbNormal">@color/black</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="switchStyle">@style/Widget.FadCam.SnowVeil.Switch</item>
+        <item name="checkboxStyle">@style/Widget.FadCam.SnowVeil.Checkbox</item>
+        <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
+    </style>
+
+    <!-- Add CardView style for Snow Veil theme -->
+    <style name="Theme.FadCam.SnowVeilCardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@android:color/white</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardCornerRadius">8dp</item>
+    </style>
+
+    <!-- Add additional styles for Snow Veil theme components -->
+    <style name="Widget.FadCam.SnowVeil.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="thumbTint">@color/black</item>
+        <item name="trackTint">@color/snowveil_theme_accent</item>
+    </style>
+    
+    <style name="Widget.FadCam.SnowVeil.Checkbox" parent="Widget.MaterialComponents.CompoundButton.CheckBox">
+        <item name="android:buttonTint">@color/black</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+    
+    <style name="Widget.FadCam.SnowVeil.RadioButton" parent="Widget.MaterialComponents.CompoundButton.RadioButton">
+        <item name="android:buttonTint">@color/black</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="ThemeOverlay.FadCam.SnowVeil.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:background">@color/snowveil_theme_surface_light</item>
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:textColorSecondary">@android:color/black</item>
+        <item name="colorPrimary">@color/snowveil_theme_primary</item>
+        <item name="colorOnPrimary">@color/black</item>
+    </style>
+
+    <style name="Widget.FadCam.SnowVeil.Button" parent="Widget.Material3.Button">
+        <item name="android:background">@color/snowveil_theme_primary</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="Widget.FadCam.SnowVeil.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@color/snowveil_theme_surface_light</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+    
+    <style name="Widget.FadCam.Toolbar.Light" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">?attr/colorTopBar</item>
+        <item name="titleTextColor">@android:color/black</item>
+        <item name="subtitleTextColor">@android:color/black</item>
+    </style>
+
+    <style name="Widget.FadCam.BottomNavigationView.Light" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+        <item name="android:background">?attr/colorBottomNav</item>
+        <item name="itemIconTint">@color/black</item>
+        <item name="itemTextColor">@color/black</item>
+    </style>
+
     <style name="Widget.FadCam.Toolbar" parent="Widget.MaterialComponents.Toolbar">
         <item name="android:background">?attr/colorTopBar</item>
         <item name="titleTextColor">@android:color/white</item>
@@ -364,6 +464,18 @@
         <item name="colorPrimary">?attr/colorButton</item>
         <item name="colorOnPrimary">@android:color/white</item>
     </style>
+    
+    <!-- Add Snow Veil specific bottom sheet style -->
+    <style name="ThemeOverlay.FadCam.SnowVeil.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="android:background">@color/snowveil_theme_surface_light</item>
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:textColorSecondary">@android:color/black</item>
+        <item name="colorPrimary">@color/snowveil_theme_primary</item>
+        <item name="colorOnPrimary">@android:color/black</item>
+        <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
+    </style>
+    
     <style name="ThemeOverlay.FadCam.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">?attr/colorDialog</item>
         <item name="android:textColor">@android:color/white</item>

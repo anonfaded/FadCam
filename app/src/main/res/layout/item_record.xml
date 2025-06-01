@@ -7,7 +7,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"  
-    app:cardBackgroundColor="@color/gray"
     app:cardElevation="2dp"
     app:cardCornerRadius="8dp"
     android:background="?android:attr/selectableItemBackground">
@@ -132,7 +131,6 @@
             android:layout_marginBottom="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/menu_button_container"

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="snowveil_theme_primary">#E0E0E0</color>
+    <color name="snowveil_theme_primary_variant">#BDBDBD</color>
+    <color name="snowveil_theme_secondary">#F5F5F5</color>
+    <color name="snowveil_theme_secondary_variant">#E8EAF6</color>
+    <color name="snowveil_theme_background_light">#FFFFFF</color>
+    <color name="snowveil_theme_surface_light">#F8F8F8</color>
+    <color name="snowveil_theme_on_primary">#000000</color>
+    <color name="snowveil_theme_on_secondary">#000000</color>
+    <color name="snowveil_theme_on_background">#000000</color>
+    <color name="snowveil_theme_on_surface">#000000</color>
+    <color name="snowveil_theme_accent">#90CAF9</color>
+    <color name="snowveil_theme_error">#F44336</color>
+    <color name="snowveil_theme_outline">#BDBDBD</color>
+    <color name="snowveil_theme_icon">#757575</color>
+    <color name="snowveil_theme_text_primary">#212121</color>
+    <color name="snowveil_theme_text_secondary">#757575</color>
+    <color name="snowveil_theme_text_secondary_light">#9E9E9E</color>
+    <color name="snowveil_theme_dialog">@color/snowveil_theme_surface_light</color>
+    <color name="snowveil_theme_heading">@color/snowveil_theme_primary</color>
+    <color name="snowveil_theme_card_background">#FFFFFF</color>
+    
+    <!-- New darker preview area color for better contrast in Snow Veil theme -->
+    <color name="snowveil_theme_preview_area">#BDBDBD</color>
+</resources> 

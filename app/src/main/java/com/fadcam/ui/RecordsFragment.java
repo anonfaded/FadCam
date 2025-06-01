@@ -1,9 +1,17 @@
 package com.fadcam.ui;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.UriPermission;
+import android.content.res.ColorStateList;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Rect;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,6 +27,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.RadioButton;
 import android.widget.Toast;
 // Import ImageView
 import android.widget.TextView;     // Import TextView
@@ -85,6 +94,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.utils.DebouncedRunnable;
 import android.util.SparseArray;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 
 public class RecordsFragment extends BaseFragment implements
         RecordsAdapter.OnVideoClickListener,
@@ -155,14 +166,20 @@ public class RecordsFragment extends BaseFragment implements
 
         Log.i(TAG, "Delete requested for: " + videoItem.displayName);
 
-        // Use a custom TextView for the message to ensure correct color (always white for best contrast)
+        // Check current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+
+        // Use a custom TextView for the message to ensure correct color
         TextView messageView = new TextView(requireContext());
         messageView.setText(getString(R.string.delete_video_dialog_message, videoItem.displayName));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         messageView.setTextSize(16);
         messageView.setPadding(48, 32, 48, 32);
 
-        new MaterialAlertDialogBuilder(requireContext())
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
                 .setTitle(getString(R.string.delete_video_dialog_title))
                 .setView(messageView)
                 .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
@@ -199,8 +216,24 @@ public class RecordsFragment extends BaseFragment implements
                             });
                         }
                     });
-                })
-                .show();
+                });
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Set button colors based on theme
+        if (isSnowVeilTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+        } else if (isFadedNightTheme) {
+            // Set white button text for Faded Night theme
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            }
+            if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+            }
+        }
     }
 
     @Override
@@ -211,13 +244,21 @@ public class RecordsFragment extends BaseFragment implements
                 moveTrashProgressDialog.dismiss(); // Dismiss previous if any
             }
 
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+            // Check for Snow Veil theme
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme);
             LayoutInflater inflater = LayoutInflater.from(getContext());
             View dialogView = inflater.inflate(R.layout.dialog_progress, null); // Assuming R.layout.dialog_progress exists
 
             TextView progressText = dialogView.findViewById(R.id.progress_text); // Assuming R.id.progress_text exists in dialog_progress.xml
             if (progressText != null) {
                 progressText.setText(getString(R.string.delete_video_progress, videoName));
+                // Set text color based on theme
+                progressText.setTextColor(ContextCompat.getColor(requireContext(), 
+                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
             }
 
             builder.setView(dialogView);
@@ -575,6 +616,16 @@ public class RecordsFragment extends BaseFragment implements
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
+        
+        // ----- Fix Start: Check for theme changes and update adapter -----
+        if (recordsAdapter != null && sharedPreferencesManager != null) {
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
+            Log.d(TAG, "onResume: Updated Snow Veil theme flag on adapter: " + isSnowVeilTheme);
+        }
+        // ----- Fix End: Check for theme changes and update adapter -----
+        
         Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume.");
         loadRecordsList(); // RESTORED: Always reload the list when the fragment resumes
         updateFabIcons();
@@ -599,14 +650,22 @@ public class RecordsFragment extends BaseFragment implements
             progressDialog.dismiss(); // Dismiss any previous dialog
         }
 
+        // Check for Snow Veil theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+
         // Create and show the progress dialog
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext());
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext(), dialogTheme);
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View dialogView = inflater.inflate(R.layout.dialog_progress, null);
 
         TextView progressText = dialogView.findViewById(R.id.progress_text);
         if (progressText != null) {
             progressText.setText("Saving '" + fileName + "'..."); // Indicate which file
+            // Set text color based on theme
+            progressText.setTextColor(ContextCompat.getColor(requireContext(), 
+                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         }
 
         builder.setView(dialogView);
@@ -662,6 +721,13 @@ public class RecordsFragment extends BaseFragment implements
             recordsAdapter.updateRecords(videoItems);
             Log.d(TAG, "UPDATING existing adapter in setupRecyclerView");
         }
+        
+        // ----- Fix Start: Set Snow Veil theme flag on adapter -----
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
+        Log.d(TAG, "Set Snow Veil theme flag on adapter: " + isSnowVeilTheme);
+        // ----- Fix End: Set Snow Veil theme flag on adapter -----
         
         // Create a debouncer for loading more items to avoid rapid triggers
         loadMoreDebouncer = new DebouncedRunnable(() -> {
@@ -1382,18 +1448,38 @@ public class RecordsFragment extends BaseFragment implements
         }
         int count = selectedUris.size();
         Log.d(TAG,"Showing confirm delete dialog for " + count + " items.");
-        // Use a custom TextView for the message to ensure correct color (always white for best contrast)
+        
+        // Check current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+        
+        // Use a custom TextView for the message to ensure correct color
         TextView messageView = new TextView(requireContext());
         messageView.setText(getResources().getString(R.string.dialog_multi_video_del_note));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         messageView.setTextSize(16);
         messageView.setPadding(48, 32, 48, 32);
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
                 .setTitle(getResources().getString(R.string.dialog_multi_video_del_title) + " ("+count+")")
                 .setView(messageView)
                 .setNegativeButton(getResources().getString(R.string.dialog_multi_video_del_no), null)
-                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos()) // Calls corrected delete method
-                .show();
+                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos());
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Set button colors based on theme
+        if (isSnowVeilTheme) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+        } else if (isFadedNightTheme) {
+            // Set white button text for Faded Night theme
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        }
     }
 
     // --- deleteSelectedVideos (Corrected version from previous step) ---
@@ -1456,18 +1542,38 @@ public class RecordsFragment extends BaseFragment implements
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
         }
-        // Use a custom TextView for the message to ensure correct color (always white for best contrast)
+        
+        // Check current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+        
+        // Use a custom TextView for the message to ensure correct color
         TextView messageView = new TextView(requireContext());
         messageView.setText(getString(R.string.delete_all_videos_description) + "\n(" + totalVideoCount + " videos will be removed)");
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         messageView.setTextSize(16);
         messageView.setPadding(48, 32, 48, 32);
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
                 .setTitle(getString(R.string.delete_all_videos_title))
                 .setView(messageView)
                 .setPositiveButton(getString(R.string.dialog_del_confirm), (dialog, which) -> deleteAllVideos())
-                .setNegativeButton(getString(R.string.universal_cancel), null)
-                .show();
+                .setNegativeButton(getString(R.string.universal_cancel), null);
+                
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Set button colors based on theme
+        if (isSnowVeilTheme) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+        } else if (isFadedNightTheme) {
+            // Set white button text for Faded Night theme
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        }
     }
 
     // Inside RecordsFragment.java
@@ -1658,21 +1764,82 @@ public class RecordsFragment extends BaseFragment implements
     private void showRecordsSidebar() {
         if (getContext() == null) return;
         View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
+        
+        // Check theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        
+        // Use appropriate bottom sheet style based on theme
+        int bottomSheetStyle = isSnowVeilTheme ? 
+            R.style.ThemeOverlay_FadCam_SnowVeil_BottomSheet : 
+            R.style.ThemeOverlay_FadCam_BottomSheet;
+            
         // Use the new dynamic theme
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext(), R.style.ThemeOverlay_FadCam_BottomSheet);
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext(), bottomSheetStyle);
         bottomSheetDialog.setContentView(bottomSheetView);
 
         // Fix: Only set background for the bottom sheet, not the whole screen, and use correct color for theme
         View sheet = bottomSheetDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
         if (sheet != null) {
             // Use the dialog background color for the sheet (surface/dialog, not heading/accent)
-            int bgColor = resolveThemeColor(R.attr.colorDialog);
+            int bgColor = isSnowVeilTheme ? 
+                ContextCompat.getColor(requireContext(), R.color.snowveil_theme_surface_light) :
+                resolveThemeColor(R.attr.colorDialog);
             sheet.setBackgroundColor(bgColor);
         }
 
-        // Use white for text in bottom sheet for all themes for best contrast
-        int textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.white);
-        int textColorSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+        // Set text colors based on theme
+        int textColorPrimary, textColorSecondary;
+        if (isSnowVeilTheme) {
+            // Use black text for Snow Veil theme
+            textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.black);
+            textColorSecondary = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_secondary_light);
+            
+            // Ensure radio buttons have black tint
+            RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
+            if (sortOptionsGroup != null) {
+                for (int i = 0; i < sortOptionsGroup.getChildCount(); i++) {
+                    View child = sortOptionsGroup.getChildAt(i);
+                    if (child instanceof RadioButton) {
+                        ((RadioButton) child).setButtonTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK));
+                        ((RadioButton) child).setTextColor(android.graphics.Color.BLACK);
+                    }
+                }
+            }
+        } else if (isFadedNightTheme) {
+            // Use white text and radio buttons for Faded Night theme
+            textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.white);
+            textColorSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+            
+            // Ensure radio buttons have WHITE tint for Faded Night theme
+            RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
+            if (sortOptionsGroup != null) {
+                // Create a white ColorStateList for radio buttons
+                int[][] states = new int[][] {
+                    new int[] { android.R.attr.state_checked },  // checked state
+                    new int[] { -android.R.attr.state_checked }  // unchecked state
+                };
+                int[] colors = new int[] {
+                    Color.WHITE,  // color for checked state - WHITE
+                    Color.WHITE   // color for unchecked state - WHITE
+                };
+                ColorStateList colorStateList = new ColorStateList(states, colors);
+                
+                for (int i = 0; i < sortOptionsGroup.getChildCount(); i++) {
+                    View child = sortOptionsGroup.getChildAt(i);
+                    if (child instanceof RadioButton) {
+                        ((RadioButton) child).setButtonTintList(colorStateList);
+                        ((RadioButton) child).setTextColor(Color.WHITE);
+                    }
+                }
+            }
+        } else {
+            // Use white text for other themes (dark backgrounds)
+            textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.white);
+            textColorSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+        }
+        
         setTextColorsRecursive(bottomSheetView, textColorPrimary, textColorSecondary);
 
         RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);

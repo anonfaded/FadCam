@@ -87,6 +87,8 @@ public class SharedPreferencesManager {
             return "#A5A9AB"; // Silver for Shadow Alloy theme
         } else if (currentTheme.equals("Pookie Pink")) {
             return "#F06292"; // Pink for Pookie Pink theme
+        } else if (currentTheme.equals("Snow Veil")) {
+            return "#E0E0E0"; // Light Grey for Snow Veil theme
         }
         
         // For other themes or default
@@ -115,6 +117,8 @@ public class SharedPreferencesManager {
                 setClockCardColor("#A5A9AB"); // Silver for Shadow Alloy theme
             } else if (currentTheme.equals("Pookie Pink")) {
                 setClockCardColor("#F06292"); // Pink for Pookie Pink theme
+            } else if (currentTheme.equals("Snow Veil")) {
+                setClockCardColor("#E0E0E0"); // Light Grey for Snow Veil theme
             } else {
                 setClockCardColor(DEFAULT_CLOCK_CARD_COLOR); // Default purple for other themes
             }

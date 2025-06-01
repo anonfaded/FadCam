@@ -21,13 +21,18 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.graphics.drawable.Drawable;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.cardview.widget.CardView;
 import androidx.core.text.HtmlCompat;
 import androidx.fragment.app.Fragment;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.fadcam.Log;
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -54,7 +59,20 @@ public class AboutFragment extends BaseFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_about, container, false);
+        
+        // Initialize with executor service
+        executorService = Executors.newSingleThreadExecutor();
+        
+        // Initialize views and setup interactions
         initializeViews();
+        
+        // Apply theme-specific UI adjustments for Snow Veil theme
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Snow Veil".equals(currentTheme)) {
+            applySnowVeilThemeToUI(view);
+        }
+        
         return view;
     }
 
@@ -95,6 +113,14 @@ public class AboutFragment extends BaseFragment {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary); // Silver (#A5A9AB)
         } else if ("Pookie Pink".equals(currentTheme)) {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary); // Pink (#F06292)
+        } else if ("Snow Veil".equals(currentTheme)) {
+            themeTextColor = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary); // Black (#212121)
+            // Set any Snow Veil specific theme elements to black
+            appDescription.setTextColor(Color.BLACK);
+            emailText.setTextColor(Color.BLACK);
+            discordText.setTextColor(Color.BLACK);
+            checkUpdatesButton.setTextColor(Color.BLACK);
+            checkUpdatesButton.setIconTint(ColorStateList.valueOf(Color.BLACK));
         } else {
             themeTextColor = Color.WHITE; // Default for Faded Night
         }
@@ -126,6 +152,8 @@ public class AboutFragment extends BaseFragment {
             highlightColorHex = "#A5A9AB"; // Silver color for Shadow Alloy
         } else if ("Pookie Pink".equals(currentTheme)) {
             highlightColorHex = "#F06292"; // Pink color for Pookie Pink
+        } else if ("Snow Veil".equals(currentTheme)) {
+            highlightColorHex = "#2196F3"; // Light Blue for Snow Veil
         } else {
             highlightColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -227,11 +255,10 @@ public class AboutFragment extends BaseFragment {
             }
         }
 
-        executorService = Executors.newSingleThreadExecutor();
+        // Initialize the alert dialog builder just once
         alertDialogBuilder = new MaterialAlertDialogBuilder(requireContext())
                 .setView(R.layout.loading_dialog)
                 .setCancelable(false);
-        alertDialogBuilder = new MaterialAlertDialogBuilder(requireContext());
     }
 
     private void setupPrivacyInfo(MaterialCardView cardView, ScrollView scrollView) {
@@ -255,13 +282,21 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#A5A9AB"; // Silver color for Shadow Alloy
         } else if ("Pookie Pink".equals(currentTheme)) {
             answerColorHex = "#F06292"; // Pink color for Pookie Pink
+        } else if ("Snow Veil".equals(currentTheme)) {
+            answerColorHex = "#2196F3"; // Light Blue for Snow Veil
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
         
+        // Determine question text color based on theme
+        String questionColorHex = "#FFFFFF"; // Default white for most themes
+        if ("Snow Veil".equals(currentTheme)) {
+            questionColorHex = "#000000"; // Black for Snow Veil theme
+        }
+        
         StringBuilder qnaContent = new StringBuilder();
         for (int i = 0; i < questions.length; i++) {
-            qnaContent.append("<b><font color='#FFFFFF'>").append(questions[i]).append("</font></b><br>")
+            qnaContent.append("<b><font color='").append(questionColorHex).append("'>").append(questions[i]).append("</font></b><br>")
                     .append("<font color='" + answerColorHex + "'>").append(answers[i]).append("</font><br><br>");
         }
         TextView privacyInfoContent = cardView.findViewById(R.id.privacy_info_content);
@@ -453,7 +488,14 @@ public class AboutFragment extends BaseFragment {
         requireActivity().runOnUiThread(() -> {
             TextView messageView = new TextView(requireContext());
             messageView.setText(message);
-            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            
+            // Check if we're using Snow Veil theme
+            String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            
+            // Set text color based on theme
+            messageView.setTextColor(isSnowVeilTheme ? Color.BLACK : Color.WHITE);
+            
             messageView.setPadding(48, 32, 48, 32);
             messageView.setTextSize(16);
             MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
@@ -483,7 +525,7 @@ public class AboutFragment extends BaseFragment {
                 });
         
         AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> setDialogButtonsWhite(dialog));
+        dialog.setOnShowListener(dialogInterface -> setDialogButtonColors(dialog));
         dialog.show();
     }
 
@@ -491,7 +533,14 @@ public class AboutFragment extends BaseFragment {
     private void showUpToDateDialog() {
         TextView messageView = new TextView(requireContext());
         messageView.setText(getString(R.string.up_to_date_description));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        
+        // Check if we're using Snow Veil theme
+        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        
+        // Set text color based on theme
+        messageView.setTextColor(isSnowVeilTheme ? Color.BLACK : Color.WHITE);
+        
         messageView.setPadding(48, 32, 48, 32);
         messageView.setTextSize(16);
         
@@ -501,19 +550,28 @@ public class AboutFragment extends BaseFragment {
                 .setPositiveButton("OK", null);
         
         AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> setDialogButtonsWhite(dialog));
+        dialog.setOnShowListener(dialogInterface -> setDialogButtonColors(dialog));
         dialog.show();
     }
 
     private void showErrorDialog(String message) {
+        // Check if we're using Snow Veil theme
+        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        
         MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext())
                 .setTitle("Error")
                 .setMessage(message)
                 .setPositiveButton("OK", null);
         
         AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> setDialogButtonsWhite(dialog));
+        dialog.setOnShowListener(dialogInterface -> setDialogButtonColors(dialog));
         dialog.show();
+        
+        // If using Snow Veil theme, make sure the message text is black
+        if (isSnowVeilTheme && dialog.findViewById(android.R.id.message) instanceof TextView) {
+            ((TextView) dialog.findViewById(android.R.id.message)).setTextColor(Color.BLACK);
+        }
     }
 
     private void openUpdateUrl(String url) {
@@ -604,16 +662,191 @@ public class AboutFragment extends BaseFragment {
     }
 
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
-        // Simply return the themed builder without trying to set listeners
-        return new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_FadCam_Dialog);
+        // Get current theme
+        SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
+        String currentTheme = spm.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        
+        // Select the appropriate dialog theme based on current app theme
+        int dialogTheme;
+        if ("Crimson Bloom".equals(currentTheme)) {
+            dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
+        } else if ("Faded Night".equals(currentTheme)) {
+            dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        } else if ("Snow Veil".equals(currentTheme)) {
+            dialogTheme = R.style.ThemeOverlay_FadCam_SnowVeil_Dialog;
+        } else {
+            dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
+        }
+        
+        return new MaterialAlertDialogBuilder(context, dialogTheme);
     }
     
-    // Helper method to make dialog buttons white
-    private void setDialogButtonsWhite(AlertDialog dialog) {
-        if (dialog != null) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.WHITE);
+    // Helper method to make dialog buttons white or black based on theme
+    private void setDialogButtonColors(AlertDialog dialog) {
+        if (dialog == null) return;
+        
+        // Check if we're using Snow Veil theme
+        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        
+        // Set button colors based on theme
+        int buttonColor = isSnowVeilTheme ? Color.BLACK : Color.WHITE;
+        
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(buttonColor);
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(buttonColor);
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(buttonColor);
+    }
+
+    // New method to handle Snow Veil theme UI adjustments
+    private void applySnowVeilThemeToUI(View rootView) {
+        // Find all icon views and set them to black for better contrast
+        tintAllIcons(rootView, Color.BLACK);
+        
+        // Ensure all text views have proper contrast
+        ensureTextContrast(rootView);
+        
+        // Apply specific adjustments to MaterialCardViews
+        applySnowVeilToCards(rootView);
+    }
+    
+    private void applySnowVeilToCards(View rootView) {
+        try {
+            // Find MaterialCardViews in the fragment
+            MaterialCardView fadsecInfoCard = rootView.findViewById(R.id.fadsec_info_card);
+            MaterialCardView privacyInfoCard = rootView.findViewById(R.id.privacy_info_card);
+            
+            // Apply Snow Veil theme styles to cards
+            if (fadsecInfoCard != null) {
+                fadsecInfoCard.setCardBackgroundColor(Color.WHITE);
+                fadsecInfoCard.setStrokeColor(Color.LTGRAY);
+                
+                // Find text views inside the card and set color
+                TextView fadsecInfoText = fadsecInfoCard.findViewById(R.id.fadsec_info_text);
+                if (fadsecInfoText != null) {
+                    fadsecInfoText.setTextColor(Color.BLACK);
+                }
+            }
+            
+            if (privacyInfoCard != null) {
+                privacyInfoCard.setCardBackgroundColor(Color.WHITE);
+                privacyInfoCard.setStrokeColor(Color.LTGRAY);
+                
+                // Find views inside the privacy card
+                TextView privacyTitle = privacyInfoCard.findViewById(R.id.privacy_info_title);
+                TextView privacyContent = privacyInfoCard.findViewById(R.id.privacy_info_content);
+                ImageView expandIcon = privacyInfoCard.findViewById(R.id.expand_icon);
+                
+                if (privacyTitle != null) {
+                    privacyTitle.setTextColor(Color.BLACK);
+                }
+                
+                if (privacyContent != null) {
+                    privacyContent.setTextColor(Color.BLACK);
+                }
+                
+                if (expandIcon != null) {
+                    expandIcon.setColorFilter(Color.BLACK);
+                }
+            }
+            
+            // Apply to other UI elements
+            MaterialButton sourceCodeButton = rootView.findViewById(R.id.source_code_button);
+            MaterialButton donateButton = rootView.findViewById(R.id.donate_button);
+            MaterialButton checkUpdatesButton = rootView.findViewById(R.id.check_updates_button);
+            
+            if (sourceCodeButton != null) {
+                sourceCodeButton.setTextColor(Color.WHITE);
+                sourceCodeButton.setIconTint(ColorStateList.valueOf(Color.WHITE));
+                sourceCodeButton.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray)));
+                sourceCodeButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_button_filled)));
+            }
+            
+            if (donateButton != null) {
+                donateButton.setTextColor(Color.BLACK);
+                donateButton.setIconTint(ColorStateList.valueOf(Color.BLACK));
+            }
+            
+            if (checkUpdatesButton != null) {
+                checkUpdatesButton.setTextColor(Color.BLACK);
+                checkUpdatesButton.setIconTint(ColorStateList.valueOf(Color.BLACK));
+                checkUpdatesButton.setStrokeColor(ColorStateList.valueOf(Color.BLACK));
+            }
+            
+            // ----- Fix Start: Only tint email icon for Snow Veil theme -----
+            // Find and apply black tint ONLY to the email icon
+            TextView emailText = rootView.findViewById(R.id.email_text);
+            if (emailText != null) {
+                // For the email icon, use direct approach to set the drawable tint
+                Drawable[] emailDrawables = emailText.getCompoundDrawablesRelative();
+                if (emailDrawables[0] != null) { // Start drawable
+                    Drawable emailIcon = emailDrawables[0].mutate(); // Create a mutable copy
+                    emailIcon.setColorFilter(Color.BLACK, android.graphics.PorterDuff.Mode.SRC_IN);
+                    emailText.setCompoundDrawablesRelativeWithIntrinsicBounds(emailIcon, null, null, null);
+                }
+                emailText.setTextColor(Color.BLACK);
+            }
+            // ----- Fix End: Only tint email icon for Snow Veil theme -----
+            
+        } catch (Exception e) {
+            Log.e("AboutFragment", "Error applying Snow Veil theme to cards: " + e.getMessage());
         }
+    }
+    
+    private void setTextRecursive(ViewGroup viewGroup, int color) {
+        for (int i = 0; i < viewGroup.getChildCount(); i++) {
+            View child = viewGroup.getChildAt(i);
+            if (child instanceof TextView) {
+                ((TextView) child).setTextColor(color);
+            } else if (child instanceof ViewGroup) {
+                setTextRecursive((ViewGroup) child, color);
+            }
+        }
+    }
+    
+    // Helper method to tint all icons in the view hierarchy
+    private void tintAllIcons(View view, int color) {
+        if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                tintAllIcons(viewGroup.getChildAt(i), color);
+            }
+        } else if (view instanceof ImageView) {
+            // ----- Fix Start: Exclude app logo from black tint -----
+            // Skip applying tint to the app icon
+            if (view.getId() == R.id.app_icon) {
+                return; // Don't apply tint to app logo
+            }
+            // ----- Fix End: Exclude app logo from black tint -----
+            
+            ((ImageView) view).setColorFilter(color);
+        } else if (view instanceof MaterialButton) {
+            MaterialButton button = (MaterialButton) view;
+            if (button.getIcon() != null) {
+                button.setIconTint(ColorStateList.valueOf(color));
+            }
+        }
+    }
+    
+    // Helper method to ensure text has proper contrast
+    private void ensureTextContrast(View view) {
+        if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                ensureTextContrast(viewGroup.getChildAt(i));
+            }
+        } else if (view instanceof TextView) {
+            TextView textView = (TextView) view;
+            // Only override if the text is very light (poor contrast against white)
+            int currentColor = textView.getCurrentTextColor();
+            if (isLightColor(currentColor)) {
+                textView.setTextColor(Color.BLACK);
+            }
+        }
+    }
+    
+    // Helper method to determine if a color is light
+    private boolean isLightColor(int color) {
+        double darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255;
+        return darkness < 0.5; // If darkness is less than 0.5, it's a light color
     }
 }

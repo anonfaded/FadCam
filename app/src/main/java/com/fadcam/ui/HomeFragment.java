@@ -42,6 +42,7 @@ import android.provider.Settings;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -107,6 +108,7 @@ import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentMana
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 import android.widget.ArrayAdapter;
 import androidx.appcompat.app.AlertDialog;
+import android.text.SpannableString;
 
 public class HomeFragment extends BaseFragment {
 
@@ -1640,6 +1642,24 @@ public class HomeFragment extends BaseFragment {
             setTextColorsRecursive(cardStats, pinkHeading, pinkTextSecondary);
             setTextColorsRecursive(cardStorage, pinkHeading, pinkTextSecondary);
             setTextColorsRecursive(cardTips, pinkHeading, pinkTextSecondary);
+        } else if ("Snow Veil".equals(themeName)) {
+            // Snow Veil theme (white/light)
+            // ----- Fix Start: Use darker gray for preview area in Snow Veil theme -----
+            int snowSurface = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_preview_area); // Darker gray for preview
+            // ----- Fix End: Use darker gray for preview area in Snow Veil theme -----
+            int snowHeading = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary);
+            int snowTextSecondary = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_secondary);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(snowSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(snowSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(snowSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, snowHeading, snowTextSecondary);
+            setTextColorsRecursive(cardStats, snowHeading, snowTextSecondary);
+            setTextColorsRecursive(cardStorage, snowHeading, snowTextSecondary);
+            setTextColorsRecursive(cardTips, snowHeading, snowTextSecondary);
+            
+            // Apply additional contrast improvements for the Snow Veil theme
+            applySnowVeilThemeToUI(view);
         } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
             int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
             int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
@@ -2546,11 +2566,30 @@ public class HomeFragment extends BaseFragment {
                     ? Formatter.formatFileSize(getContext(), totalSizeBytes)
                     : String.format(Locale.US,"%.2f GB", totalSizeBytes / (1024.0*1024.0*1024.0)); // Fallback format
 
-            // Prepare final text for UI
-            final String statsText = String.format(Locale.getDefault(),
+            // Get current theme
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            
+            // Prepare final text for UI - special formatting for Snow Veil theme
+            final String statsText;
+            final Spanned formattedText;
+            
+            if (isSnowVeilTheme) {
+                // Create a custom black text version for Snow Veil theme
+                statsText = "\n    " +
+                    "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
+                    "<font color='#333333' style='font-size:11sp;'>" + numVideos + "</font><br>" +
+                    "<font color='#000000' style='font-size:12sp;'><b>Used Space:</font>" +
+                    "<font color='#333333' style='font-size:11sp;'>" + totalSizeFormatted + "</font>" +
+                    "\n";
+            } else {
+                // Use the standard resource for other themes
+                statsText = String.format(Locale.getDefault(),
                     getString(R.string.mainpage_video_info), // Using your existing string resource
                     numVideos, totalSizeFormatted);
-            final Spanned formattedText = Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY); // If your string uses HTML
+            }
+            
+            formattedText = Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY);
 
             Log.d(TAG,"updateStats BG: Calculation complete. Count="+numVideos+", Size="+totalSizeFormatted);
 
@@ -3135,6 +3174,23 @@ public class HomeFragment extends BaseFragment {
                         R.drawable.ic_flashlight_on // Icon itself might not need to change, selector handles tint
                     ));
                     buttonTorchSwitch.setSelected(isOn); // This controls the visual feedback (e.g., tint)
+                    
+                    // Store the torch state
+                    isTorchOn = isOn;
+                    
+                    // Check if we're in Snow Veil theme and reapply special tinting
+                    String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+                    if ("Snow Veil".equals(currentTheme)) {
+                        // For Snow Veil theme, we need to manually handle the icon tint
+                        if (isOn) {
+                            // Use yellow/amber color for ON state
+                            buttonTorchSwitch.setIconTint(ColorStateList.valueOf(Color.parseColor("#FFC107")));
+                        } else {
+                            // Use black for OFF state
+                            buttonTorchSwitch.setIconTint(ColorStateList.valueOf(Color.BLACK));
+                        }
+                    }
+                    
                     // DO NOT set enabled state here; it's handled by recording state UI methods.
                     Log.d("TorchDebug", "Torch UI updated (selected state): " + isOn + ", Enabled: " + buttonTorchSwitch.isEnabled());
                 } catch (Exception e) {
@@ -3588,4 +3644,208 @@ public class HomeFragment extends BaseFragment {
         return result;
     }
     // ----- Fix End: Add method to get default clock color for theme -----
+
+    // ----- Fix Start: Add Snow Veil theme UI adjustments -----
+    /**
+     * Applies Snow Veil theme UI adjustments to improve contrast
+     */
+    private void applySnowVeilThemeToUI(View rootView) {
+        // Selectively tint only essential buttons, not all icons
+        applyButtonTinting();
+        
+        // Ensure text in cards has proper contrast
+        ensureCardTextContrast(rootView);
+    }
+    
+    /**
+     * Apply tinting only to main action buttons
+     */
+    private void applyButtonTinting() {
+        // Only tint the main action buttons that we already have references to
+        // This avoids searching for IDs that might not exist
+        
+        // Start/Stop button
+        if (buttonStartStop != null) {
+            buttonStartStop.setTextColor(Color.BLACK);
+            buttonStartStop.setIconTint(ColorStateList.valueOf(Color.BLACK));
+        }
+        
+        // Pause/Resume button
+        if (buttonPauseResume != null) {
+            buttonPauseResume.setTextColor(Color.BLACK);
+            buttonPauseResume.setIconTint(ColorStateList.valueOf(Color.BLACK));
+        }
+        
+        // Torch switch button - special handling for on/off state
+        if (buttonTorchSwitch != null) {
+            buttonTorchSwitch.setTextColor(Color.BLACK);
+            
+            // Only set black icon tint if torch is OFF
+            // For ON state, preserve the yellow color by not setting a black tint
+            if (!isTorchOn) {
+                buttonTorchSwitch.setIconTint(ColorStateList.valueOf(Color.BLACK));
+            } else {
+                // Use yellow/amber color for the torch when it's ON
+                buttonTorchSwitch.setIconTint(ColorStateList.valueOf(Color.parseColor("#FFC107")));
+            }
+        }
+        
+        // Camera switch button
+        if (buttonCamSwitch != null) {
+            buttonCamSwitch.setTextColor(Color.BLACK);
+        }
+    }
+    
+    /**
+     * Ensure text in cards has proper contrast with focused handling for video states card
+     */
+    private void ensureCardTextContrast(View rootView) {
+        // Find cards by their actual IDs from the layout
+        CardView cardStats = rootView.findViewById(R.id.cardStats);
+        CardView cardStorage = rootView.findViewById(R.id.cardStorage);
+        CardView cardClock = rootView.findViewById(R.id.cardClock);
+        CardView cardTips = rootView.findViewById(R.id.cardTips);
+        
+        // Stats card text - this card shows videos space info below the clock
+        if (cardStats != null) {
+            // Force all text in the stats card to black, including headings
+            forceForceMakeAllTextBlack(cardStats);
+            
+            // Extra handling for the HTML/styled text in tvStats which might need special handling
+            if (tvStats != null) {
+                // For Snow Veil theme, we need to override the HTML color codes
+                if (tvStats.getText() != null) {
+                    // Get current stats data
+                    String currentText = tvStats.getText().toString();
+                    
+                    // Extract the numbers from the current text
+                    int videoCount = 0;
+                    String usedSpace = "";
+                    try {
+                        // Try to parse out the values from the formatted text
+                        String[] lines = currentText.split("\\n");
+                        for (String line : lines) {
+                            if (line.contains("Videos:")) {
+                                // Extract number after "Videos:"
+                                String[] parts = line.trim().split(":");
+                                if (parts.length > 1) {
+                                    videoCount = Integer.parseInt(parts[1].trim());
+                                }
+                            } else if (line.contains("Used Space:")) {
+                                // Extract text after "Used Space:"
+                                String[] parts = line.trim().split(":");
+                                if (parts.length > 1) {
+                                    usedSpace = parts[1].trim();
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing stats text: " + e.getMessage());
+                    }
+                    
+                    // Create a custom black text version for Snow Veil theme
+                    String blackStatsText = "\n    " +
+                        "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
+                        "<font color='#333333' style='font-size:11sp;'>" + videoCount + "</font><br>" +
+                        "<font color='#000000' style='font-size:12sp;'><b>Used Space:</font>" +
+                        "<font color='#333333' style='font-size:11sp;'>" + usedSpace + "</font>" +
+                        "\n";
+                    
+                    // Apply the black text version
+                    tvStats.setText(Html.fromHtml(blackStatsText, Html.FROM_HTML_MODE_LEGACY));
+                }
+            }
+        }
+        
+        // Storage info card text
+        if (cardStorage != null) {
+            forceForceMakeAllTextBlack(cardStorage);
+        }
+        
+        // Tips card text
+        if (cardTips != null) {
+            forceForceMakeAllTextBlack(cardTips);
+        }
+        
+        // Direct access to known TextViews for clock
+        if (tvClock != null) {
+            tvClock.setTextColor(Color.BLACK);
+        }
+        
+        if (tvDateEnglish != null) {
+            tvDateEnglish.setTextColor(Color.BLACK);
+        }
+        
+        if (tvDateArabic != null) {
+            tvDateArabic.setTextColor(Color.BLACK);
+        }
+        
+        // Direct access to storage info TextView
+        if (tvStorageInfo != null) {
+            tvStorageInfo.setTextColor(Color.BLACK);
+            
+            // This TextView likely contains HTML/styled text that needs special handling
+            CharSequence text = tvStorageInfo.getText();
+            if (text instanceof Spanned) {
+                // Try to extract any spans and convert them
+                Spanned spanned = (Spanned) text;
+                Object[] spans = spanned.getSpans(0, spanned.length(), Object.class);
+                
+                // Create a new SpannableString to modify
+                SpannableString newText = new SpannableString(text);
+                
+                // Copy over all spans except ForegroundColorSpan (we'll add our own)
+                for (Object span : spans) {
+                    if (!(span instanceof ForegroundColorSpan)) {
+                        newText.setSpan(span, 
+                            spanned.getSpanStart(span),
+                            spanned.getSpanEnd(span),
+                            spanned.getSpanFlags(span));
+                    }
+                }
+                
+                // Add black color spans for the entire text
+                newText.setSpan(new ForegroundColorSpan(Color.BLACK), 
+                    0, newText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                
+                // Set the new text
+                tvStorageInfo.setText(newText);
+            }
+        }
+        
+        // Direct access to tips TextView
+        if (tvTip != null) {
+            tvTip.setTextColor(Color.BLACK);
+        }
+    }
+    
+    /**
+     * Helper method to make all text in a ViewGroup black - more aggressive version
+     */
+    private void forceForceMakeAllTextBlack(ViewGroup viewGroup) {
+        try {
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                View child = viewGroup.getChildAt(i);
+                if (child instanceof TextView) {
+                    TextView textView = (TextView) child;
+                    textView.setTextColor(Color.BLACK);
+                    
+                    // Handle if the text has any spans (HTML formatting)
+                    CharSequence text = textView.getText();
+                    if (text instanceof Spanned) {
+                        // Create a new SpannableString that preserves formatting but forces black color
+                        SpannableString newText = new SpannableString(text);
+                        newText.setSpan(new ForegroundColorSpan(Color.BLACK), 
+                            0, newText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textView.setText(newText);
+                    }
+                } else if (child instanceof ViewGroup) {
+                    forceForceMakeAllTextBlack((ViewGroup) child);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error making text black: " + e.getMessage());
+        }
+    }
+    // ----- Fix End: Add Snow Veil theme UI adjustments -----
 }

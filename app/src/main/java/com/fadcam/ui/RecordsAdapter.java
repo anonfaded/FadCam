@@ -4,13 +4,12 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Color;
+
 import android.media.MediaMetadataRetriever;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -18,14 +17,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.RelativeSizeSpan;
-import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -39,26 +33,24 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.core.text.HtmlCompat;
-import androidx.core.content.res.ResourcesCompat; // For getting drawables
+// For getting drawables
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.Constants;
 import com.fadcam.R;
-import com.fadcam.ui.VideoItem; // Ensure VideoItem import is correct
+// Ensure VideoItem import is correct
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.fadcam.Utils; // Import Utils for the new formatter
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +59,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -77,9 +68,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import androidx.cardview.widget.CardView; // *** ADD Import ***
 import com.fadcam.SharedPreferencesManager;
-import android.content.Intent;
+
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import androidx.recyclerview.widget.DiffUtil;
 import android.graphics.drawable.GradientDrawable;
@@ -165,6 +155,22 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         return false;
     }
 
+    // ----- Fix Start: Add isSnowVeilTheme flag and method to set it -----
+    private boolean isSnowVeilTheme = false;
+
+    /**
+     * Set whether we're currently using the Snow Veil theme
+     * This allows special styling for cards in the Snow Veil theme
+     */
+    public void setSnowVeilTheme(boolean isSnowVeilTheme) {
+        if (this.isSnowVeilTheme != isSnowVeilTheme) {
+            this.isSnowVeilTheme = isSnowVeilTheme;
+            // Need to refresh all items when theme changes
+            notifyDataSetChanged();
+        }
+    }
+    // ----- Fix End: Add isSnowVeilTheme flag and method to set it -----
+
     @NonNull
     @Override
     public RecordViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -218,6 +224,56 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.textViewSerialNumber != null) holder.textViewSerialNumber.setText(String.valueOf(position + 1));
         if (holder.textViewRecord != null) holder.textViewRecord.setText(displayName);
         if (holder.textViewFileSize != null) holder.textViewFileSize.setText(formatFileSize(videoItem.size));
+        
+        // ----- Fix Start: Apply Snow Veil theme card colors -----
+        // Apply proper background and text colors based on theme
+        if (isSnowVeilTheme) {
+            // For Snow Veil theme, ALWAYS use white card background with black text for maximum contrast
+            if (holder.itemView instanceof CardView) {
+                CardView cardView = (CardView) holder.itemView;
+                // Force pure white background for all cards in Snow Veil theme
+                cardView.setCardBackgroundColor(Color.WHITE);
+                
+                // Log for debugging
+                Log.d(TAG, "Setting WHITE card background for Snow Veil theme at position " + position);
+            }
+            
+            // Apply black tint to the three-dot menu icon for better contrast on white background
+            if (holder.menuButton != null) {
+                holder.menuButton.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
+            }
+            
+            // Ensure file time and size in the overlay have good contrast
+            if (holder.textViewFileSize != null) {
+                holder.textViewFileSize.setTextColor(Color.WHITE);
+            }
+            if (holder.textViewFileTime != null) {
+                holder.textViewFileTime.setTextColor(Color.WHITE);
+            }
+        } else {
+            // For other themes, use the default background color
+            if (holder.itemView instanceof CardView && context != null) {
+                CardView cardView = (CardView) holder.itemView;
+                cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
+                
+                // Log for debugging
+                Log.d(TAG, "Setting GRAY card background for other theme at position " + position);
+            }
+            
+            // Clear any tint for other themes
+            if (holder.menuButton != null) {
+                holder.menuButton.clearColorFilter();
+            }
+            
+            // Leave text colors as default for other themes
+            if (holder.textViewRecord != null) {
+                holder.textViewRecord.setTextColor(holder.defaultTextColor);
+            }
+            if (holder.textViewTimeAgo != null) {
+                holder.textViewTimeAgo.setTextColor(holder.defaultTextColor);
+            }
+        }
+        // ----- Fix End: Apply Snow Veil theme card colors -----
         
         // Optimize time-consuming operations using lightweight caching
         if (holder.textViewFileTime != null) {
@@ -296,20 +352,43 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_checked); // Replace with actual drawable
                     holder.checkIcon.setAlpha(1.0f);
                     // Highlight background and adjust text color for contrast
-                    if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(resolveThemeColor(context, R.attr.colorButton));
-                    if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.WHITE); // Use WHITE for contrast on accent color
+                    if(holder.itemView instanceof CardView && context!=null) {
+                        if (isSnowVeilTheme) {
+                            // For Snow Veil, use a light blue highlight with black text
+                            ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.snowveil_theme_accent));
+                            if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
+                        } else {
+                            // For other themes, use normal selection color with white text
+                            ((CardView)holder.itemView).setCardBackgroundColor(resolveThemeColor(context, R.attr.colorButton));
+                            if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.WHITE);
+                        }
+                    }
                 } else {
                     holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_outline); // Replace with actual drawable
                     holder.checkIcon.setAlpha(0.7f);
                     // Reset background and text color
-                    if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
-                    if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor); // Use stored default
+                    if(holder.itemView instanceof CardView && context!=null) {
+                        if (isSnowVeilTheme) {
+                            ((CardView)holder.itemView).setCardBackgroundColor(Color.WHITE);
+                            if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
+                        } else {
+                            ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
+                            if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor);
+                        }
+                    }
                 }
             } else { // Not in selection mode
                 holder.checkIcon.setVisibility(View.GONE);
                 // Ensure default background and text color are restored
-                if(holder.itemView instanceof CardView && context!=null) ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
-                if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor);
+                if(holder.itemView instanceof CardView && context!=null) {
+                    if (isSnowVeilTheme) {
+                        ((CardView)holder.itemView).setCardBackgroundColor(Color.WHITE);
+                        if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
+                    } else {
+                        ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
+                        if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor);
+                    }
+                }
             }
         } else { Log.w(TAG, "checkIcon is null in ViewHolder at pos "+position); }
 
@@ -442,6 +521,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         // If no specific payload, do a full bind
         onBindViewHolder(holder, position);
+        
+        // EMERGENCY FIX: Force apply Snow Veil card color after normal binding
+        if (isSnowVeilTheme && holder.itemView instanceof CardView) {
+            ((CardView)holder.itemView).setCardBackgroundColor(Color.WHITE);
+            Log.d(TAG, "🔴 EMERGENCY: Forced WHITE card for Snow Veil at position " + position);
+            
+            // Force black text on all text elements
+            if (holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
+            if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setTextColor(Color.BLACK);
+        }
     }
 
     // --- Selection Handling ---
@@ -590,18 +679,106 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_rename, null);
         final TextInputEditText input = dialogView.findViewById(R.id.edit_text_name);
+        
+        // Find TextInputLayout (parent of the EditText)
+        com.google.android.material.textfield.TextInputLayout inputLayout = null;
+        try {
+            if (input != null && input.getParent() != null && input.getParent().getParent() instanceof com.google.android.material.textfield.TextInputLayout) {
+                inputLayout = (com.google.android.material.textfield.TextInputLayout) input.getParent().getParent();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get TextInputLayout parent", e);
+        }
 
         String currentName = videoItem.displayName;
         int dotIndex = currentName.lastIndexOf(".");
         String baseName = (dotIndex > 0) ? currentName.substring(0, dotIndex) : currentName;
         input.setText(baseName);
-        // Request focus and select all text for easy editing
-        if (input != null) {
-        input.requestFocus();
-            // It's often better to post a delayed runnable for selectAll to ensure view is fully ready
-            input.post(() -> input.selectAll());
+        
+        // Get current theme for custom styling
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        
+        // For Faded Night theme: set white hint text color and cursor
+        if (isFadedNightTheme) {
+            // Set white hint text color in both TextInputLayout and EditText
+            if (inputLayout != null) {
+                // If using TextInputLayout, set its hint color
+                inputLayout.setHintTextColor(ColorStateList.valueOf(Color.WHITE));
+                inputLayout.setDefaultHintTextColor(ColorStateList.valueOf(Color.WHITE));
+                
+                // Also customize the box stroke color if using outlined style
+                inputLayout.setBoxStrokeColor(Color.WHITE);
+            }
+            
+            if (input != null) {
+                // Set text and hint colors directly on EditText
+                input.setTextColor(Color.WHITE);
+                input.setHintTextColor(Color.WHITE);
+                
+                // Force set hint directly
+                input.setHint(R.string.rename_video_hint);
+                
+                // Try to set the cursor color using tinting (API 29+)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    input.setTextCursorDrawable(R.drawable.white_cursor);
+                } else {
+                    // Try reflection approach for older devices
+                    try {
+                        // First try mCursorDrawableRes field
+                        Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
+                        fCursorDrawableRes.setAccessible(true);
+                        
+                        // Create a drawable shape for cursor
+                        GradientDrawable cursorDrawable = new GradientDrawable();
+                        cursorDrawable.setColor(Color.WHITE);
+                        cursorDrawable.setSize(2, input.getLineHeight());
+                        
+                        // Different approaches based on Android version
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            // For Android 9+
+                            fCursorDrawableRes.set(input, 0); // Clear existing cursor
+                            
+                            Field fEditor = TextView.class.getDeclaredField("mEditor");
+                            fEditor.setAccessible(true);
+                            Object editor = fEditor.get(input);
+                            
+                            Field fCursorDrawable = editor.getClass().getDeclaredField("mDrawableForCursor");
+                            fCursorDrawable.setAccessible(true);
+                            fCursorDrawable.set(editor, cursorDrawable);
+                        } else {
+                            // For older Android versions
+                            fCursorDrawableRes.set(input, 0); // Clear existing cursor
+                            
+                            Field fEditor = TextView.class.getDeclaredField("mEditor");
+                            fEditor.setAccessible(true);
+                            Object editor = fEditor.get(input);
+                            
+                            Field fCursorDrawable = editor.getClass().getDeclaredField("mCursorDrawable");
+                            fCursorDrawable.setAccessible(true);
+                            Drawable[] drawables = new Drawable[2];
+                            drawables[0] = cursorDrawable;
+                            drawables[1] = cursorDrawable;
+                            fCursorDrawable.set(editor, drawables);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to set cursor color", e);
+                    }
+                }
+                
+                // Additional method to try forcing the cursor color
+                try {
+                    // Use a blue-ish highlight color instead of white for better contrast
+                    // when text is selected (since text is white)
+                    input.setHighlightColor(Color.parseColor("#335588"));
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to set highlight color", e);
+                }
+                
+                // Force white background tint as well
+                input.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
+            }
         }
-
 
         builder.setView(dialogView);
         builder.setPositiveButton(R.string.universal_ok, (dialog, which) -> { // Using R.string.universal_ok if it exists, otherwise "OK"
@@ -634,7 +811,38 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
         });
         builder.setNegativeButton(R.string.universal_cancel, (dialog, which) -> dialog.cancel());
-        builder.show();
+        
+        // Create the dialog and show it
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        
+        // Force show keyboard when dialog appears
+        dialog.setOnShowListener(dialogInterface -> {
+            if (input != null) {
+                input.requestFocus();
+                input.selectAll();
+                
+                // Use a slight delay to ensure the view is ready
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        android.view.inputmethod.InputMethodManager imm = 
+                            (android.view.inputmethod.InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (imm != null) {
+                            // Try to force show the keyboard with SHOW_FORCED flag
+                            imm.toggleSoftInput(android.view.inputmethod.InputMethodManager.SHOW_FORCED, 0);
+                            // Also try the showSoftInput method with SHOW_FORCED
+                            imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_FORCED);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to show keyboard", e);
+                    }
+                }, 200); // 200ms delay
+            }
+        });
+        
+        dialog.show();
+        
+        // Apply theme-specific button colors after dialog is shown
+        setSnowVeilButtonColors(dialog);
     }
 
     private void renameVideo(VideoItem videoItem, String newFullName) {
@@ -958,8 +1166,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // 8. Build and Show Dialog
         builder.setTitle("Video Information")
                 .setView(dialogView)
-                .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
-                .show();
+                .setPositiveButton("Close", (dialog, which) -> dialog.dismiss());
+                
+        // Create and show the dialog
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Apply Snow Veil button colors after dialog is shown
+        setSnowVeilButtonColors(dialog);
     } // End of showVideoInfoDialog
 
     // --- NEW Helper to get resolution (refactored from info dialog) ---
@@ -1240,6 +1454,44 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         if ("Crimson Bloom".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
         else if ("Faded Night".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        else if ("Snow Veil".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_SnowVeil_Dialog;
         return new MaterialAlertDialogBuilder(context, dialogTheme);
+    }
+    
+    /**
+     * Sets dialog button colors based on theme
+     * @param dialog The dialog whose buttons need color adjustment
+     */
+    private void setSnowVeilButtonColors(androidx.appcompat.app.AlertDialog dialog) {
+        if (dialog == null) return;
+        
+        // Check current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        
+        if (isSnowVeilTheme) {
+            // Set black text color for both positive and negative buttons
+            if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            }
+            if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE) != null) {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            }
+            if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL) != null) {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.BLACK);
+            }
+        } else if (isFadedNightTheme) {
+            // Set white text color for Faded Night theme buttons
+            if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            }
+            if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE) != null) {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+            }
+            if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL) != null) {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.WHITE);
+            }
+        }
     }
 }
