@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -142,6 +143,9 @@ public class SettingsFragment extends BaseFragment {
     // App Lock
     private MaterialButton appLockConfigureButton;
     private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
+
+    // App Icon
+    private MaterialButton appIconChooseButton;
 
     private View view; // Make sure view is accessible
     private View backCameraLensDivider; // *** ADD FIELD FOR THE DIVIDER ***
@@ -629,6 +633,7 @@ public class SettingsFragment extends BaseFragment {
 
     private void setupUI() {
         // Set up the UI with saved preferences
+        setupAppIconButton(view); // Add app icon setup
         setupCameraSelectionToggle(view, cameraSelectionToggle);
         setupResolutionSpinner();
         setupFrameRateSpinner();
@@ -4422,4 +4427,169 @@ public class SettingsFragment extends BaseFragment {
             dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setTextColor(buttonTextColor);
         }
     }
+
+    // --- App Icon Selection Logic ---
+    private void setupAppIconButton(View view) {
+        appIconChooseButton = view.findViewById(R.id.app_icon_choose_button);
+        if (appIconChooseButton == null) return;
+        
+        // Get currently selected app icon
+        String currentIcon = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
+        
+        // Set the button text to show the current icon name
+        appIconChooseButton.setText(currentIcon.equals(Constants.APP_ICON_DEFAULT) ? 
+                getString(R.string.app_icon_default) : getString(R.string.app_icon_alternative));
+                
+        // Set proper text color based on current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || 
+            "Shadow Alloy".equals(currentTheme) || "Pookie Pink".equals(currentTheme) || 
+            "Snow Veil".equals(currentTheme)) {
+            appIconChooseButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black));
+        } else {
+            appIconChooseButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        }
+        
+        // Set button click listener to show icon selection dialog
+        appIconChooseButton.setOnClickListener(v -> showAppIconSelectionDialog());
+    }
+    
+    /**
+     * Shows a dialog for selecting the app icon
+     */
+    private void showAppIconSelectionDialog() {
+        // Get current app icon
+        String currentIcon = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
+        
+        // Create dialog builder with themed style
+        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
+        builder.setTitle(R.string.app_icon_dialog_title);
+        
+        // Icon options
+        String[] iconNames = {
+            getString(R.string.app_icon_default),
+            getString(R.string.app_icon_alternative)
+        };
+        
+        // Create a custom list adapter for the app icons
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), R.layout.item_app_icon_option, R.id.app_icon_name, iconNames) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                
+                // Get references to views
+                TextView iconName = view.findViewById(R.id.app_icon_name);
+                ImageView iconPreview = view.findViewById(R.id.app_icon_preview);
+                RadioButton radioButton = view.findViewById(R.id.app_icon_radio_button);
+                
+                // Set icon preview image
+                if (position == 0) {
+                    // Default icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher);
+                } else {
+                    // Detective icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_2);
+                }
+                
+                // Set text color based on current theme
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+                
+                if (isSnowVeilTheme) {
+                    iconName.setTextColor(Color.BLACK);
+                } else {
+                    iconName.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                }
+                
+                // Select current icon
+                String iconKey = position == 0 ? Constants.APP_ICON_DEFAULT : Constants.APP_ICON_ALTERNATIVE;
+                radioButton.setChecked(iconKey.equals(currentIcon));
+                
+                // Highlight background if selected
+                if (radioButton.isChecked()) {
+                    if (isSnowVeilTheme) {
+                        // Light highlight for Snow Veil theme
+                        GradientDrawable highlightBg = new GradientDrawable();
+                        highlightBg.setCornerRadius(8 * getResources().getDisplayMetrics().density); // 8dp
+                        highlightBg.setColor(ContextCompat.getColor(requireContext(), R.color.snowveil_theme_accent));
+                        view.setBackground(highlightBg);
+                    } else {
+                        // Standard selection background for other themes
+                        view.setBackgroundResource(R.drawable.selected_theme_bg);
+                    }
+                } else {
+                    view.setBackground(null);
+                }
+                
+                return view;
+            }
+        };
+        
+        // Set click listener for each item
+        builder.setSingleChoiceItems(adapter, currentIcon.equals(Constants.APP_ICON_DEFAULT) ? 0 : 1, (dialog, which) -> {
+            String newIcon = which == 0 ? Constants.APP_ICON_DEFAULT : Constants.APP_ICON_ALTERNATIVE;
+            
+            if (!newIcon.equals(currentIcon)) {
+                // Save the new icon preference
+                sharedPreferencesManager.sharedPreferences.edit()
+                        .putString(Constants.PREF_APP_ICON, newIcon)
+                        .apply();
+                
+                // Update button text
+                appIconChooseButton.setText(which == 0 ? 
+                        getString(R.string.app_icon_default) : getString(R.string.app_icon_alternative));
+                
+                // Apply the icon change
+                updateAppIcon(newIcon);
+                
+                // Give feedback
+                vibrateTouch();
+                Toast.makeText(requireContext(), R.string.app_icon_changed, Toast.LENGTH_SHORT).show();
+            }
+            
+            dialog.dismiss();
+        });
+        
+        builder.setNegativeButton(R.string.universal_cancel, null);
+        
+        // Create and show dialog
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            // Apply appropriate button text colors for the current theme
+            setDialogButtonColors(dialog);
+        });
+        dialog.show();
+    }
+    
+    /**
+     * Updates the app icon by enabling/disabling activity-alias components
+     * @param iconKey The key of the icon to enable
+     */
+    private void updateAppIcon(String iconKey) {
+        PackageManager pm = requireContext().getPackageManager();
+        
+        // Component names for our activity aliases
+        ComponentName defaultIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity");
+        ComponentName alternativeIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.AlternativeIcon");
+        
+        // Enable/disable appropriate components based on selected icon
+        if (Constants.APP_ICON_DEFAULT.equals(iconKey)) {
+            pm.setComponentEnabledSetting(defaultIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(alternativeIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else {
+            pm.setComponentEnabledSetting(defaultIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(alternativeIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        }
+    }
+
+
 }
