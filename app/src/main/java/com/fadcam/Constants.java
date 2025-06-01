@@ -136,6 +136,7 @@ public abstract class Constants {
     
     // ----- App Icon Preference -----
     public static final String PREF_APP_ICON = "app_icon";
-    public static final String APP_ICON_DEFAULT = "default"; // Default icon
+    public static final String APP_ICON_DEFAULT = "default"; // Original icon
     public static final String APP_ICON_ALTERNATIVE = "alternative"; // Detective icon
+    public static final String APP_ICON_FADED = "faded"; // Faded icon
 }

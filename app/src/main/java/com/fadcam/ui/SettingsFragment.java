@@ -4444,8 +4444,13 @@ public class SettingsFragment extends BaseFragment {
         String currentIcon = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
         
         // Set the button text to show the current icon name
-        appIconChooseButton.setText(currentIcon.equals(Constants.APP_ICON_DEFAULT) ? 
-                getString(R.string.app_icon_default) : getString(R.string.app_icon_alternative));
+        if (currentIcon.equals(Constants.APP_ICON_DEFAULT)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_default));
+        } else if (currentIcon.equals(Constants.APP_ICON_ALTERNATIVE)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_alternative));
+        } else if (currentIcon.equals(Constants.APP_ICON_FADED)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_faded));
+        }
                 
         // Set proper text color based on current theme
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
@@ -4475,7 +4480,8 @@ public class SettingsFragment extends BaseFragment {
         // Icon options
         String[] iconNames = {
             getString(R.string.app_icon_default),
-            getString(R.string.app_icon_alternative)
+            getString(R.string.app_icon_alternative),
+            getString(R.string.app_icon_faded)
         };
         
         // Create a custom list adapter for the app icons
@@ -4491,11 +4497,14 @@ public class SettingsFragment extends BaseFragment {
                 
                 // Set icon preview image
                 if (position == 0) {
-                    // Default icon
+                    // Default/Original icon
                     iconPreview.setImageResource(R.mipmap.ic_launcher);
-                } else {
+                } else if (position == 1) {
                     // Detective icon
                     iconPreview.setImageResource(R.mipmap.ic_launcher_2);
+                } else if (position == 2) {
+                    // Faded icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_faded);
                 }
                 
                 // Set text color based on current theme
@@ -4510,7 +4519,14 @@ public class SettingsFragment extends BaseFragment {
                 }
                 
                 // Select current icon
-                String iconKey = position == 0 ? Constants.APP_ICON_DEFAULT : Constants.APP_ICON_ALTERNATIVE;
+                String iconKey;
+                if (position == 0) {
+                    iconKey = Constants.APP_ICON_DEFAULT;
+                } else if (position == 1) {
+                    iconKey = Constants.APP_ICON_ALTERNATIVE;
+                } else {
+                    iconKey = Constants.APP_ICON_FADED;
+                }
                 radioButton.setChecked(iconKey.equals(currentIcon));
                 
                 // Highlight background if selected
@@ -4533,9 +4549,24 @@ public class SettingsFragment extends BaseFragment {
             }
         };
         
-        // Set click listener for each item
-        builder.setSingleChoiceItems(adapter, currentIcon.equals(Constants.APP_ICON_DEFAULT) ? 0 : 1, (dialog, which) -> {
-            String newIcon = which == 0 ? Constants.APP_ICON_DEFAULT : Constants.APP_ICON_ALTERNATIVE;
+        // Determine which item is currently selected (for initial selection in dialog)
+        int selectedPosition = 0; // Default position
+        if (Constants.APP_ICON_ALTERNATIVE.equals(currentIcon)) {
+            selectedPosition = 1;
+        } else if (Constants.APP_ICON_FADED.equals(currentIcon)) {
+            selectedPosition = 2;
+        }
+        
+        builder.setSingleChoiceItems(adapter, selectedPosition, (dialog, which) -> {
+            // Determine which icon was selected based on position
+            String newIcon;
+            if (which == 0) {
+                newIcon = Constants.APP_ICON_DEFAULT;
+            } else if (which == 1) {
+                newIcon = Constants.APP_ICON_ALTERNATIVE;
+            } else {
+                newIcon = Constants.APP_ICON_FADED;
+            }
             
             if (!newIcon.equals(currentIcon)) {
                 // Save the new icon preference
@@ -4544,8 +4575,13 @@ public class SettingsFragment extends BaseFragment {
                         .apply();
                 
                 // Update button text
-                appIconChooseButton.setText(which == 0 ? 
-                        getString(R.string.app_icon_default) : getString(R.string.app_icon_alternative));
+                if (which == 0) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_default));
+                } else if (which == 1) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_alternative));
+                } else {
+                    appIconChooseButton.setText(getString(R.string.app_icon_faded));
+                }
                 
                 // Apply the icon change
                 updateAppIcon(newIcon);
@@ -4579,20 +4615,30 @@ public class SettingsFragment extends BaseFragment {
         // Component names for our activity aliases
         ComponentName defaultIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity");
         ComponentName alternativeIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.AlternativeIcon");
+        ComponentName fadedIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FadedIcon");
         
-        // Enable/disable appropriate components based on selected icon
+        // Disable all icon activity-aliases first
+        pm.setComponentEnabledSetting(defaultIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(alternativeIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(fadedIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+                
+        // Enable only the selected icon
         if (Constants.APP_ICON_DEFAULT.equals(iconKey)) {
             pm.setComponentEnabledSetting(defaultIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_ALTERNATIVE.equals(iconKey)) {
             pm.setComponentEnabledSetting(alternativeIcon, 
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else {
-            pm.setComponentEnabledSetting(defaultIcon, 
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
-                    PackageManager.DONT_KILL_APP);
-            pm.setComponentEnabledSetting(alternativeIcon, 
+        } else if (Constants.APP_ICON_FADED.equals(iconKey)) {
+            pm.setComponentEnabledSetting(fadedIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
         }
