@@ -79,6 +79,8 @@ public class SharedPreferencesManager {
             return "#424242"; // Dark Grey for AMOLED
         } else if (currentTheme.equals("Crimson Bloom")) {
             return "#F44336"; // Red for Red theme
+        } else if (currentTheme.equals("Premium Gold")) {
+            return "#FFD700"; // Gold for Premium Gold theme
         } else if (currentTheme.equals("Midnight Dusk")) {
             return "#673AB7"; // Purple for Default Dark theme
         }
@@ -106,6 +108,10 @@ public class SharedPreferencesManager {
             // For Red theme, use Red
             setClockCardColor("#F44336");
             Log.i("SharedPreferencesManager", "Red theme detected, setting clock color to Red (#F44336)");
+        } else if ("Premium Gold".equals(currentTheme)) {
+            // For Gold theme, use Gold
+            setClockCardColor("#FFD700");
+            Log.i("SharedPreferencesManager", "Premium Gold theme detected, setting clock color to Gold (#FFD700)");
         } else {
             // For Default Dark theme, use Purple
             setClockCardColor("#673AB7");

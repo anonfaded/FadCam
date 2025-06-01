@@ -287,6 +287,7 @@
         <item>Crimson Bloom</item>
     </string-array>
     <string name="theme_red">Crimson Bloom</string>
+    <string name="theme_gold">Premium Gold</string>
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>

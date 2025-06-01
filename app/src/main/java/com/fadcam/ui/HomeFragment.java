@@ -114,8 +114,8 @@ public class HomeFragment extends BaseFragment {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
 
     // ----- Fix Start for this method(fields)-----
-    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark", "Amoled Gray"};
-    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745", "#CCCCCC"};
+    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark", "Amoled Gray", "Gold"};
+    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745", "#CCCCCC", "#FFD700"};
     // ----- Fix Ended for this method(fields)-----
 
     private long recordingStartTime;
@@ -1589,6 +1589,18 @@ public class HomeFragment extends BaseFragment {
             setTextColorsRecursive(cardStats, redHeading, redTextSecondary);
             setTextColorsRecursive(cardStorage, redHeading, redTextSecondary);
             setTextColorsRecursive(cardTips, redHeading, redTextSecondary);
+        } else if ("Premium Gold".equals(themeName)) {
+            int goldSurface = ContextCompat.getColor(requireContext(), R.color.gold_theme_surface_dark);
+            int goldHeading = ContextCompat.getColor(requireContext(), R.color.gold_theme_heading);
+            int goldTextSecondary = ContextCompat.getColor(requireContext(), R.color.gold_theme_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(goldSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(goldSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(goldSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, goldHeading, goldTextSecondary);
+            setTextColorsRecursive(cardStats, goldHeading, goldTextSecondary);
+            setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
+            setTextColorsRecursive(cardTips, goldHeading, goldTextSecondary);
         } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
             int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
             int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
@@ -1631,6 +1643,9 @@ public class HomeFragment extends BaseFragment {
             if ("Crimson Bloom".equals(themeName)) {
                 // Use an even darker background for Crimson Bloom theme
                 cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.crimson_dark_card_background));
+            } else if ("Premium Gold".equals(themeName)) {
+                // Use the gold theme specific card background
+                cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gold_theme_card_background));
             } else {
                 // Standard dark background for other themes
                 cardStorage.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_card_background));
@@ -2157,6 +2172,22 @@ public class HomeFragment extends BaseFragment {
                     String selectedColorHex = CLOCK_COLOR_HEX_VALUES[which];
                     sharedPreferencesManager.setClockCardColor(selectedColorHex);
                     applyClockCardColor(selectedColorHex);
+                    
+                    // Update clock text colors based on background brightness
+                    int selectedColor = Color.parseColor(selectedColorHex);
+                    boolean isLightColor = isLightColor(selectedColor);
+                    
+                    // Set text colors based on background brightness
+                    if (isLightColor) {
+                        tvClock.setTextColor(Color.BLACK);
+                        tvDateEnglish.setTextColor(Color.BLACK);
+                        tvDateArabic.setTextColor(Color.BLACK);
+                    } else {
+                        tvClock.setTextColor(Color.WHITE);
+                        tvDateEnglish.setTextColor(Color.WHITE);
+                        tvDateArabic.setTextColor(Color.WHITE);
+                    }
+                    
                     Log.d(TAG, "User selected clock color: " + CLOCK_COLOR_NAMES[which] + " (" + selectedColorHex + ")");
                     dialog.dismiss();
                 })
@@ -2167,6 +2198,21 @@ public class HomeFragment extends BaseFragment {
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
         });
         dialog.show();
+    }
+    
+    /**
+     * Determines if a color is light or dark.
+     * @param color The color to check
+     * @return true if the color is light, false if dark
+     */
+    private boolean isLightColor(int color) {
+        // Calculate the perceived brightness using the formula
+        // (0.299*R + 0.587*G + 0.114*B)
+        double brightness = (Color.red(color) * 0.299) + 
+                           (Color.green(color) * 0.587) + 
+                           (Color.blue(color) * 0.114);
+        // If the brightness is greater than 160, consider it a light color
+        return brightness > 160;
     }
 
     private int getCurrentDisplayOption() {
@@ -2195,11 +2241,43 @@ public class HomeFragment extends BaseFragment {
         String currentTime = timeFormat.format(new Date());
         tvClock.setText(currentTime);
         
-        // Check if we're in Crimson Bloom theme and set the time text to white for better visibility
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
-        if ("Crimson Bloom".equals(currentTheme)) {
-            // For Crimson Bloom theme, force white text for better visibility against red background
-            tvClock.setTextColor(Color.WHITE);
+        // Get the current clock background color and determine if it's light or dark
+        int backgroundColor = -1;
+        if (cardClock != null) {
+            backgroundColor = ((ColorStateList) cardClock.getCardBackgroundColor()).getDefaultColor();
+        }
+        
+        // Set text colors based on background brightness and theme settings
+        if (backgroundColor != -1) {
+            // Use background color to determine text color
+            boolean isLightBackground = isLightColor(backgroundColor);
+            int textColor = isLightBackground ? Color.BLACK : Color.WHITE;
+            
+            tvClock.setTextColor(textColor);
+            tvDateEnglish.setTextColor(textColor);
+            tvDateArabic.setTextColor(textColor);
+            
+            Log.d(TAG, "updateClock: Applied text color based on clock background: " + 
+                (isLightBackground ? "BLACK" : "WHITE"));
+        } else {
+            // Fallback to theme-based coloring if clock background color can't be determined
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            if ("Crimson Bloom".equals(currentTheme)) {
+                // For Crimson Bloom theme, force white text for better visibility against red background
+                tvClock.setTextColor(Color.WHITE);
+                tvDateEnglish.setTextColor(Color.WHITE);
+                tvDateArabic.setTextColor(Color.WHITE);
+            } else if ("Premium Gold".equals(currentTheme)) {
+                // For Premium Gold theme, force black text for better visibility against gold background
+                tvClock.setTextColor(Color.BLACK);
+                tvDateEnglish.setTextColor(Color.BLACK);
+                tvDateArabic.setTextColor(Color.BLACK);
+            } else {
+                // For other dark themes, use white text
+                tvClock.setTextColor(Color.WHITE);
+                tvDateEnglish.setTextColor(Color.WHITE);
+                tvDateArabic.setTextColor(Color.WHITE);
+            }
         }
 
         // Update the date in English
@@ -3165,10 +3243,28 @@ public class HomeFragment extends BaseFragment {
 
     // ----- Fix Start for this class (HomeFragment_clock_color_picker) -----
     private void applyClockCardColor(String colorHex) {
-        if (cardClock != null && colorHex != null) {
+        if (cardClock != null && colorHex != null && tvClock != null && tvDateEnglish != null && tvDateArabic != null) {
             try {
-                cardClock.setCardBackgroundColor(Color.parseColor(colorHex));
-                com.fadcam.Log.i(TAG, "Applied clock card color: " + colorHex + " successfully to cardClock view");
+                // Parse the color and apply background immediately
+                int backgroundColor = Color.parseColor(colorHex);
+                cardClock.setCardBackgroundColor(backgroundColor);
+                
+                // Determine if the background color is light or dark
+                boolean isLightBackground = isLightColor(backgroundColor);
+                
+                // Set text colors IMMEDIATELY based on background brightness for better contrast
+                int textColor = isLightBackground ? Color.BLACK : Color.WHITE;
+                
+                // Apply text colors directly without delay
+                tvClock.setTextColor(textColor);
+                tvDateEnglish.setTextColor(textColor);
+                tvDateArabic.setTextColor(textColor);
+                
+                // Force redraw
+                cardClock.invalidate();
+                
+                com.fadcam.Log.i(TAG, "Applied clock card color: " + colorHex + " with text color: " + 
+                    (isLightBackground ? "BLACK" : "WHITE"));
             } catch (IllegalArgumentException e) {
                 com.fadcam.Log.e(TAG, "Invalid color hex for clock card: " + colorHex, e);
                 // Optionally apply default color if parse fails
@@ -3176,7 +3272,9 @@ public class HomeFragment extends BaseFragment {
                 com.fadcam.Log.i(TAG, "Fallback to default color: " + SharedPreferencesManager.DEFAULT_CLOCK_CARD_COLOR);
             }
         } else {
-            com.fadcam.Log.w(TAG, "Cannot apply clock color - cardClock: " + (cardClock != null) + ", colorHex: " + colorHex);
+            com.fadcam.Log.w(TAG, "Cannot apply clock color - missing views: cardClock=" + (cardClock != null) + 
+                ", tvClock=" + (tvClock != null) + ", tvDateEnglish=" + (tvDateEnglish != null) +
+                ", tvDateArabic=" + (tvDateArabic != null) + ", colorHex=" + colorHex);
         }
     }
 
@@ -3411,6 +3509,9 @@ public class HomeFragment extends BaseFragment {
         } else if ("Crimson Bloom".equals(themeName)) {
             result = CLOCK_COLOR_HEX_VALUES[5]; // Red (#F44336)
             com.fadcam.Log.i(TAG, "Crimson Bloom theme match, using Red: " + result);
+        } else if ("Premium Gold".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[9]; // Gold (#FFD700)
+            com.fadcam.Log.i(TAG, "Premium Gold theme match, using Gold: " + result);
         } else if ("Midnight Dusk".equals(themeName)) {
             result = CLOCK_COLOR_HEX_VALUES[0]; // Purple (#673AB7)
             com.fadcam.Log.i(TAG, "Midnight Dusk theme match, using Purple: " + result);

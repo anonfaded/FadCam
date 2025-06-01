@@ -823,7 +823,7 @@ public class SettingsFragment extends BaseFragment {
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         
         if (isSelected) {
-            // Selected button style (special handling for Midnight Dusk)
+            // Selected button style (special handling for Midnight Dusk and Premium Gold)
             if ("Midnight Dusk".equals(currentTheme)) {
                 // For Midnight Dusk, ALWAYS use #cfbafd color directly for selected buttons
                 // Don't use themeColor or resolveThemeColor which might return gray
@@ -831,19 +831,25 @@ public class SettingsFragment extends BaseFragment {
                 button.setTextColor(black); // Black text on light purple background
                 button.setStrokeColor(ColorStateList.valueOf(purpleColor)); // No visible border
                 button.setIconTintResource(android.R.color.black); // Icon should be black too for contrast
+            } else if ("Premium Gold".equals(currentTheme)) {
+                // For Gold theme, use gold color with black text for contrast
+                button.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gold_theme_primary));
+                button.setTextColor(black); // Black text on gold background
+                button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gold_theme_primary)));
+                button.setIconTintResource(android.R.color.black);
             } else {
                 // For other themes, use theme color
                 button.setBackgroundColor(themeColor);
-            button.setTextColor(white);
+                button.setTextColor(white);
                 button.setStrokeColor(ColorStateList.valueOf(themeColor)); // No visible border
-            button.setIconTintResource(android.R.color.white);
+                button.setIconTintResource(android.R.color.white);
             }
         } else {
             // Unselected button style (different per theme)
             if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme) || "Midnight Dusk".equals(currentTheme)) {
                 // Faded Night and Midnight Dusk themes - black background, white text, no stroke
                 button.setBackgroundColor(black);
-            button.setTextColor(white);
+                button.setTextColor(white);
                 button.setStrokeWidth(0); // Remove stroke completely
                 button.setStrokeColor(ColorStateList.valueOf(black)); // Set stroke to match background
                 button.setIconTintResource(android.R.color.white);
@@ -855,6 +861,14 @@ public class SettingsFragment extends BaseFragment {
                 button.setStrokeWidth(0);
                 button.setStrokeColor(ColorStateList.valueOf(darkRed));
                 button.setIconTintResource(android.R.color.white);
+            } else if ("Premium Gold".equals(currentTheme)) {
+                // Premium Gold theme - darker gold background, white text
+                int darkGold = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary_variant);
+                button.setBackgroundColor(darkGold);
+                button.setTextColor(white);
+                button.setStrokeWidth(0);
+                button.setStrokeColor(ColorStateList.valueOf(darkGold));
+                button.setIconTintResource(android.R.color.white);
             } else {
                 // Fallback for any other theme - dark gray with white text
                 int darkGray = ContextCompat.getColor(requireContext(), R.color.gray_button_filled);
@@ -862,7 +876,7 @@ public class SettingsFragment extends BaseFragment {
                 button.setTextColor(white);
                 button.setStrokeWidth(0);
                 button.setStrokeColor(ColorStateList.valueOf(darkGray));
-            button.setIconTintResource(android.R.color.white);
+                button.setIconTintResource(android.R.color.white);
             }
         }
     }
@@ -1362,7 +1376,7 @@ public class SettingsFragment extends BaseFragment {
             }
         }
         
-        // Force refresh button styles for Midnight Dusk theme
+        // Force refresh button styles for Midnight Dusk and Premium Gold themes
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         if ("Midnight Dusk".equals(currentTheme)) {
             // Direct approach - bypass theme resolution entirely for Midnight Dusk
@@ -1384,6 +1398,27 @@ public class SettingsFragment extends BaseFragment {
             unselectedButton.setIconTintResource(android.R.color.white);
             
             Log.d(TAG_SETTINGS, "Applied direct colors for Midnight Dusk theme");
+        } else if ("Premium Gold".equals(currentTheme)) {
+            // Direct approach for Premium Gold theme
+            MaterialButton selectedButton = (selected == CameraType.FRONT) ? frontCameraButton : backCameraButton;
+            
+            // Set explicit colors for Gold theme
+            int goldColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
+            selectedButton.setBackgroundColor(goldColor);
+            selectedButton.setTextColor(Color.BLACK); // Black text on gold background
+            selectedButton.setStrokeColor(ColorStateList.valueOf(goldColor));
+            selectedButton.setIconTintResource(android.R.color.black);
+            
+            // Make sure unselected button is dark gold with white text
+            MaterialButton unselectedButton = (selected == CameraType.FRONT) ? backCameraButton : frontCameraButton;
+            int darkGold = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary_variant);
+            unselectedButton.setBackgroundColor(darkGold);
+            unselectedButton.setTextColor(Color.WHITE);
+            unselectedButton.setStrokeWidth(0);
+            unselectedButton.setStrokeColor(ColorStateList.valueOf(darkGold));
+            unselectedButton.setIconTintResource(android.R.color.white);
+            
+            Log.d(TAG_SETTINGS, "Applied direct colors for Premium Gold theme");
         }
         
         Log.d(TAG_SETTINGS,"Synced camera switch UI to: " + sharedPreferencesManager.getCameraSelection());
@@ -1424,7 +1459,7 @@ public class SettingsFragment extends BaseFragment {
                     updateBackLensSpinnerVisibility();
                 }
                 
-                // Double-check Midnight Dusk theme color handling
+                // Check special theme handling for Midnight Dusk and Premium Gold
                 String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
                 if ("Midnight Dusk".equals(currentTheme)) {
                     // Force apply correct colors
@@ -1433,6 +1468,14 @@ public class SettingsFragment extends BaseFragment {
                     selectedButton.setBackgroundColor(purpleColor);
                     selectedButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.black));
                     selectedButton.setStrokeColor(ColorStateList.valueOf(purpleColor));
+                    selectedButton.setIconTintResource(android.R.color.black);
+                } else if ("Premium Gold".equals(currentTheme)) {
+                    // Force apply correct colors for Gold theme
+                    MaterialButton selectedButton = (checkedId == R.id.button_front_camera) ? frontCameraButton : backCameraButton;
+                    int goldColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
+                    selectedButton.setBackgroundColor(goldColor);
+                    selectedButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.black)); // Black text
+                    selectedButton.setStrokeColor(ColorStateList.valueOf(goldColor));
                     selectedButton.setIconTintResource(android.R.color.black);
                 }
             }
@@ -2604,20 +2647,28 @@ public class SettingsFragment extends BaseFragment {
     private void setupThemeSpinner(View view) {
         MaterialButton themeButton = view.findViewById(R.id.theme_choose_button); // Add a button in layout for theme selection
         if (themeButton == null) return;
-        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night"};
+        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold)};
         int[] themeColors = {
             ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.gray),
-            ContextCompat.getColor(requireContext(), R.color.amoled_surface) // Use surface color instead of background
+            ContextCompat.getColor(requireContext(), R.color.amoled_surface), // Use surface color instead of background
+            ContextCompat.getColor(requireContext(), R.color.gold_theme_primary)
         };
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         int tempThemeIndex = 1; // Default to Dark Mode index
         if ("Crimson Bloom".equals(currentTheme)) tempThemeIndex = 0;
         else if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) tempThemeIndex = 2;
+        else if ("Premium Gold".equals(currentTheme)) tempThemeIndex = 3;
         
         final int themeIndex = tempThemeIndex;
         themeButton.setText(themeNames[themeIndex]);
-        themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        
+        // Set text color based on theme - black for Gold, white for others
+        if ("Premium Gold".equals(currentTheme)) {
+            themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black));
+        } else {
+            themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        }
         
         // Apply the correct background tint based on the current theme
         if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) {
@@ -2640,6 +2691,8 @@ public class SettingsFragment extends BaseFragment {
                     // Set the theme name
                     TextView themeName = view.findViewById(R.id.theme_name);
                     themeName.setText(themeNames[position]);
+                    
+                    // All text in the dialog should be white for better visibility against dark dialog background
                     themeName.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
                     
                     // Set the color circle
@@ -2668,6 +2721,8 @@ public class SettingsFragment extends BaseFragment {
                     newTheme = "Midnight Dusk";
                 } else if ("Faded Night".equals(newTheme)) {
                     newTheme = "Faded Night";
+                } else if (getString(R.string.theme_gold).equals(newTheme)) {
+                    newTheme = "Premium Gold";
                 } else {
                     newTheme = "Crimson Bloom";
                 }
@@ -2739,6 +2794,10 @@ public class SettingsFragment extends BaseFragment {
             // Default dark theme
             ContextCompat.getColor(requireContext(), R.color.gray);
             // Apply other default theme-specific UI changes that can be done without recreation
+        } else if ("Premium Gold".equals(themeName)) {
+            // Gold theme
+            ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
+            // Apply other Gold theme-specific UI changes that can be done without recreation
         }
         // Apply other theme-agnostic UI updates
         applyThemeToUI(requireView());

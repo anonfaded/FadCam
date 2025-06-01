@@ -87,6 +87,8 @@ public class AboutFragment extends BaseFragment {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary); // Light purple (#cfbafd)
         } else if ("Crimson Bloom".equals(currentTheme)) {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.red_theme_secondary); // Bright red (#FF5252)
+        } else if ("Premium Gold".equals(currentTheme)) {
+            themeTextColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary); // Gold (#FFD700)
         } else {
             themeTextColor = Color.WHITE; // Default white for other themes
         }
@@ -110,6 +112,8 @@ public class AboutFragment extends BaseFragment {
             highlightColorHex = "#cfbafd"; // Light purple for Midnight Dusk
         } else if ("Crimson Bloom".equals(currentTheme)) {
             highlightColorHex = "#FF5252"; // Red theme secondary color for Crimson Bloom
+        } else if ("Premium Gold".equals(currentTheme)) {
+            highlightColorHex = "#FFD700"; // Gold color for Premium Gold
         } else {
             highlightColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -158,6 +162,8 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#cfbafd"; // Light purple for Midnight Dusk
         } else if ("Crimson Bloom".equals(currentThemeAnswers)) {
             answerColorHex = "#FF5252"; // Red theme secondary color for Crimson Bloom
+        } else if ("Premium Gold".equals(currentThemeAnswers)) {
+            answerColorHex = "#FFD700"; // Gold color for Premium Gold
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -223,6 +229,8 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#cfbafd"; // Light purple for Midnight Dusk
         } else if ("Crimson Bloom".equals(currentTheme)) {
             answerColorHex = "#FF5252"; // Red theme secondary color for Crimson Bloom
+        } else if ("Premium Gold".equals(currentTheme)) {
+            answerColorHex = "#FFD700"; // Gold color for Premium Gold
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }

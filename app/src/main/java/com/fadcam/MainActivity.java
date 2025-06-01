@@ -119,6 +119,10 @@ public class MainActivity extends AppCompatActivity {
             // Red theme
             setTheme(R.style.Theme_FadCam_Red);
             getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
+        } else if ("Premium Gold".equals(savedTheme)) {
+            // Gold theme
+            setTheme(R.style.Theme_FadCam_Gold);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.gold_theme_background_dark, getTheme()));
         } else {
             // Default dark theme
             setTheme(R.style.Base_Theme_FadCam);

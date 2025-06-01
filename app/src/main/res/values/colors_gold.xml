@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="gold_theme_primary">#FFD700</color>
+    <color name="gold_theme_primary_variant">#392E0A</color>
+    <color name="gold_theme_secondary">#FFC107</color>
+    <color name="gold_theme_secondary_variant">#C79100</color>
+    <color name="gold_theme_background_dark">#1A1600</color>
+    <color name="gold_theme_surface_dark">#2B2308</color>
+    <color name="gold_theme_on_primary">#000000</color>
+    <color name="gold_theme_on_secondary">#000000</color>
+    <color name="gold_theme_on_background">#1f1e23</color>
+    <color name="gold_theme_on_surface">#1f1e23</color>
+    <color name="gold_theme_accent">#FFB300</color>
+    <color name="gold_theme_error">#B00020</color>
+    <color name="gold_theme_outline">#FFD700</color>
+    <color name="gold_theme_icon">#FFD700</color>
+    <color name="gold_theme_text_primary">#FFFFFF</color>
+    <color name="gold_theme_text_secondary">#FFC107</color>
+    <color name="gold_theme_text_secondary_dark">#FFE082</color>
+    <color name="gold_theme_dialog">@color/gold_theme_surface_dark</color>
+    <color name="gold_theme_heading">@color/gold_theme_primary</color>
+    <color name="gold_theme_card_background">#211C04</color>
+</resources> 
