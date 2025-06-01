@@ -395,7 +395,7 @@ public class OnboardingActivity extends AppIntro {
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
         
         // ----- Fix Start: Ensure onboarding completion is properly saved -----
-        // Use apply() for immediate effect and make sure we're writing to the correct key
+        // Use commit() for immediate effect and make sure we're writing to the correct key
         sharedPreferencesManager.sharedPreferences.edit()
             .putBoolean(com.fadcam.Constants.COMPLETED_ONBOARDING_KEY, true)
             .commit(); // Use commit() instead of apply() to ensure it's written immediately
@@ -404,8 +404,7 @@ public class OnboardingActivity extends AppIntro {
         sharedPreferencesManager.setShowOnboarding(false);
         
         // Log the change to verify it happened
-        android.util.Log.d("OnboardingActivity", "Onboarding marked as completed: " + 
-            !sharedPreferencesManager.isShowOnboarding());
+        android.util.Log.d("OnboardingActivity", "Onboarding marked as completed");
         // ----- Fix End: Ensure onboarding completion is properly saved -----
         
         // Return to MainActivity or just finish

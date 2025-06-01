@@ -7,6 +7,7 @@ public abstract class Constants {
     public static final String PREFS_NAME = "app_prefs";
     public static final String LANGUAGE_KEY = "language";
     public static final String COMPLETED_ONBOARDING_KEY = "pref_completed_onboarding";
+    public static final String FIRST_INSTALL_CHECKED_KEY = "first_install_checked";
 
     public static final String PREF_VIDEO_RESOLUTION_WIDTH = "video_resolution_width";
     public static final String PREF_VIDEO_RESOLUTION_HEIGHT = "video_resolution_height";

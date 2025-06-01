@@ -603,6 +603,13 @@ public class SettingsFragment extends BaseFragment {
             boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
             onboardingToggle.setChecked(showOnboarding);
             onboardingToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                // When enabling onboarding, also clear the first install check flag
+                // so the onboarding will definitely show on next launch
+                if (isChecked) {
+                    sharedPreferencesManager.sharedPreferences.edit()
+                        .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false)
+                        .commit();
+                }
                 sharedPreferencesManager.setShowOnboarding(isChecked);
             });
         }

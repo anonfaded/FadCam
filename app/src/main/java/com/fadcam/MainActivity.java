@@ -90,18 +90,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ----- Fix Start: Fix onboarding check before other initialization -----
+        // ----- Fix Start: Ensure onboarding shows on first install -----
         // Initialize SharedPreferencesManager instance first
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
         
-        // Force the onboarding flag to be explicitly set if it doesn't exist yet
-        if (!sharedPreferencesManager.sharedPreferences.contains(Constants.COMPLETED_ONBOARDING_KEY)) {
-            // This is a fresh install - make sure onboarding flag is explicitly set to false
+        // Check if this is a first launch by looking for a special flag
+        boolean firstInstallChecked = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
+        
+        if (!firstInstallChecked) {
+            // This is definitely a first install or app data was cleared
+            // Force onboarding to show by setting the flag to false
+            android.util.Log.d("MainActivity", "First install detected! Forcing onboarding to show.");
             sharedPreferencesManager.sharedPreferences.edit()
                 .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
+                .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
                 .commit(); // Use commit() for immediate effect
-            
-            android.util.Log.d("MainActivity", "First app launch detected. Onboarding flag explicitly set to FALSE.");
         }
         
         // Check for onboarding BEFORE applying theme or language
@@ -115,11 +118,11 @@ public class MainActivity extends AppCompatActivity {
             finish(); // Finish this activity so it's not in the back stack
             return;
         }
+        // ----- Fix End: Ensure onboarding shows on first install -----
         
         // Now that we know we're not showing onboarding, continue with normal initialization
         initTheme();
-        // ----- Fix End: Fix onboarding check before other initialization -----
-        
+
         // Load and apply the saved language preference before anything else
         SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
         String savedLanguageCode = prefs.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
