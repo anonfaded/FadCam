@@ -81,6 +81,8 @@ public class SharedPreferencesManager {
             return "#F44336"; // Red for Red theme
         } else if (currentTheme.equals("Premium Gold")) {
             return "#FFD700"; // Gold for Premium Gold theme
+        } else if (currentTheme.equals("Silent Forest")) {
+            return "#26A69A"; // Green for Silent Forest theme
         } else if (currentTheme.equals("Midnight Dusk")) {
             return "#673AB7"; // Purple for Default Dark theme
         }
@@ -112,6 +114,10 @@ public class SharedPreferencesManager {
             // For Gold theme, use Gold
             setClockCardColor("#FFD700");
             Log.i("SharedPreferencesManager", "Premium Gold theme detected, setting clock color to Gold (#FFD700)");
+        } else if ("Silent Forest".equals(currentTheme)) {
+            // For Silent Forest theme, use Green
+            setClockCardColor("#26A69A");
+            Log.i("SharedPreferencesManager", "Silent Forest theme detected, setting clock color to Green (#26A69A)");
         } else {
             // For Default Dark theme, use Purple
             setClockCardColor("#673AB7");

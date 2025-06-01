@@ -89,6 +89,8 @@ public class AboutFragment extends BaseFragment {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.red_theme_secondary); // Bright red (#FF5252)
         } else if ("Premium Gold".equals(currentTheme)) {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary); // Gold (#FFD700)
+        } else if ("Silent Forest".equals(currentTheme)) {
+            themeTextColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary); // Green (#26A69A)
         } else {
             themeTextColor = Color.WHITE; // Default white for other themes
         }
@@ -114,6 +116,8 @@ public class AboutFragment extends BaseFragment {
             highlightColorHex = "#FF5252"; // Red theme secondary color for Crimson Bloom
         } else if ("Premium Gold".equals(currentTheme)) {
             highlightColorHex = "#FFD700"; // Gold color for Premium Gold
+        } else if ("Silent Forest".equals(currentTheme)) {
+            highlightColorHex = "#26A69A"; // Green color for Silent Forest
         } else {
             highlightColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -231,6 +235,8 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#FF5252"; // Red theme secondary color for Crimson Bloom
         } else if ("Premium Gold".equals(currentTheme)) {
             answerColorHex = "#FFD700"; // Gold color for Premium Gold
+        } else if ("Silent Forest".equals(currentTheme)) {
+            answerColorHex = "#26A69A"; // Green color for Silent Forest
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }

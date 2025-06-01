@@ -813,7 +813,8 @@ public class SettingsFragment extends BaseFragment {
 
     // Method to visually update toggle button group state
     private void updateButtonAppearance(MaterialButton button, boolean isSelected) {
-        if(getContext() == null) return;
+        if (button == null) return;
+        
         int themeColor = resolveThemeColor(R.attr.colorButton); // Theme color for selected
         int black = ContextCompat.getColor(requireContext(), R.color.black); // Black for unselected in Faded Night
         int white = ContextCompat.getColor(requireContext(), android.R.color.white);
@@ -823,7 +824,6 @@ public class SettingsFragment extends BaseFragment {
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         
         if (isSelected) {
-            // Selected button style (special handling for Midnight Dusk and Premium Gold)
             if ("Midnight Dusk".equals(currentTheme)) {
                 // For Midnight Dusk, ALWAYS use #cfbafd color directly for selected buttons
                 // Don't use themeColor or resolveThemeColor which might return gray
@@ -836,6 +836,12 @@ public class SettingsFragment extends BaseFragment {
                 button.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gold_theme_primary));
                 button.setTextColor(black); // Black text on gold background
                 button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gold_theme_primary)));
+                button.setIconTintResource(android.R.color.black);
+            } else if ("Silent Forest".equals(currentTheme)) {
+                // For Silent Forest theme, use green/teal color with black text for contrast
+                button.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary));
+                button.setTextColor(black); // Black text on green background
+                button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary)));
                 button.setIconTintResource(android.R.color.black);
             } else {
                 // For other themes, use theme color
@@ -868,6 +874,14 @@ public class SettingsFragment extends BaseFragment {
                 button.setTextColor(white);
                 button.setStrokeWidth(0);
                 button.setStrokeColor(ColorStateList.valueOf(darkGold));
+                button.setIconTintResource(android.R.color.white);
+            } else if ("Silent Forest".equals(currentTheme)) {
+                // Silent Forest theme - darker green background, white text
+                int darkGreen = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary_variant);
+                button.setBackgroundColor(darkGreen);
+                button.setTextColor(white);
+                button.setStrokeWidth(0);
+                button.setStrokeColor(ColorStateList.valueOf(darkGreen));
                 button.setIconTintResource(android.R.color.white);
             } else {
                 // Fallback for any other theme - dark gray with white text
@@ -1419,6 +1433,27 @@ public class SettingsFragment extends BaseFragment {
             unselectedButton.setIconTintResource(android.R.color.white);
             
             Log.d(TAG_SETTINGS, "Applied direct colors for Premium Gold theme");
+        } else if ("Silent Forest".equals(currentTheme)) {
+            // Direct approach for Silent Forest theme
+            MaterialButton selectedButton = (selected == CameraType.FRONT) ? frontCameraButton : backCameraButton;
+            
+            // Set explicit colors for Silent Forest theme
+            int greenColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
+            selectedButton.setBackgroundColor(greenColor);
+            selectedButton.setTextColor(Color.BLACK); // Black text on green background
+            selectedButton.setStrokeColor(ColorStateList.valueOf(greenColor));
+            selectedButton.setIconTintResource(android.R.color.black);
+            
+            // Make sure unselected button is dark green with white text
+            MaterialButton unselectedButton = (selected == CameraType.FRONT) ? backCameraButton : frontCameraButton;
+            int darkGreen = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary_variant);
+            unselectedButton.setBackgroundColor(darkGreen);
+            unselectedButton.setTextColor(Color.WHITE);
+            unselectedButton.setStrokeWidth(0);
+            unselectedButton.setStrokeColor(ColorStateList.valueOf(darkGreen));
+            unselectedButton.setIconTintResource(android.R.color.white);
+            
+            Log.d(TAG_SETTINGS, "Applied direct colors for Silent Forest theme");
         }
         
         Log.d(TAG_SETTINGS,"Synced camera switch UI to: " + sharedPreferencesManager.getCameraSelection());
@@ -1476,6 +1511,14 @@ public class SettingsFragment extends BaseFragment {
                     selectedButton.setBackgroundColor(goldColor);
                     selectedButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.black)); // Black text
                     selectedButton.setStrokeColor(ColorStateList.valueOf(goldColor));
+                    selectedButton.setIconTintResource(android.R.color.black);
+                } else if ("Silent Forest".equals(currentTheme)) {
+                    // Force apply correct colors for Silent Forest theme
+                    MaterialButton selectedButton = (checkedId == R.id.button_front_camera) ? frontCameraButton : backCameraButton;
+                    int greenColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
+                    selectedButton.setBackgroundColor(greenColor);
+                    selectedButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.black)); // Black text
+                    selectedButton.setStrokeColor(ColorStateList.valueOf(greenColor));
                     selectedButton.setIconTintResource(android.R.color.black);
                 }
             }
@@ -2647,24 +2690,26 @@ public class SettingsFragment extends BaseFragment {
     private void setupThemeSpinner(View view) {
         MaterialButton themeButton = view.findViewById(R.id.theme_choose_button); // Add a button in layout for theme selection
         if (themeButton == null) return;
-        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold)};
+        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold), getString(R.string.theme_silentforest)};
         int[] themeColors = {
             ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.gray),
             ContextCompat.getColor(requireContext(), R.color.amoled_surface), // Use surface color instead of background
-            ContextCompat.getColor(requireContext(), R.color.gold_theme_primary)
+            ContextCompat.getColor(requireContext(), R.color.gold_theme_primary),
+            ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary)
         };
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         int tempThemeIndex = 1; // Default to Dark Mode index
         if ("Crimson Bloom".equals(currentTheme)) tempThemeIndex = 0;
         else if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) tempThemeIndex = 2;
         else if ("Premium Gold".equals(currentTheme)) tempThemeIndex = 3;
+        else if ("Silent Forest".equals(currentTheme)) tempThemeIndex = 4;
         
         final int themeIndex = tempThemeIndex;
         themeButton.setText(themeNames[themeIndex]);
         
-        // Set text color based on theme - black for Gold, white for others
-        if ("Premium Gold".equals(currentTheme)) {
+        // Set text color based on theme - black for Gold and Silent Forest, white for others
+        if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme)) {
             themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black));
         } else {
             themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
@@ -2723,6 +2768,8 @@ public class SettingsFragment extends BaseFragment {
                     newTheme = "Faded Night";
                 } else if (getString(R.string.theme_gold).equals(newTheme)) {
                     newTheme = "Premium Gold";
+                } else if (getString(R.string.theme_silentforest).equals(newTheme)) {
+                    newTheme = "Silent Forest";
                 } else {
                     newTheme = "Crimson Bloom";
                 }
@@ -2798,6 +2845,10 @@ public class SettingsFragment extends BaseFragment {
             // Gold theme
             ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
             // Apply other Gold theme-specific UI changes that can be done without recreation
+        } else if ("Silent Forest".equals(themeName)) {
+            // Silent Forest theme
+            ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
+            // Apply other Silent Forest theme-specific UI changes that can be done without recreation
         }
         // Apply other theme-agnostic UI updates
         applyThemeToUI(requireView());

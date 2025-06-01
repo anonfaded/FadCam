@@ -184,6 +184,59 @@
         <item name="android:popupBackground">@color/gold_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
+    
+    <style name="Theme.FadCam.SilentForest" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorTopBar">@color/silentforest_theme_primary_variant</item>
+        <item name="colorBottomNav">@color/silentforest_theme_primary_variant</item>
+        <item name="colorHeading">@color/silentforest_theme_primary</item>
+        <item name="colorButton">@color/silentforest_theme_primary</item>
+        <item name="colorToggle">@color/silentforest_theme_accent</item>
+        <item name="colorDialog">@color/silentforest_theme_dialog</item>
+        <item name="colorStatusBar">@color/silentforest_theme_primary_variant</item>
+        <item name="android:colorBackground">@color/silentforest_theme_background_dark</item>
+        <item name="colorSurface">@color/silentforest_theme_surface_dark</item>
+        <item name="backgroundColor">@color/silentforest_theme_background_dark</item>
+        <item name="android:windowBackground">@color/silentforest_theme_background_dark</item>
+        <item name="android:navigationBarColor">@color/silentforest_theme_background_dark</item>
+        <item name="colorPrimary">@color/silentforest_theme_primary</item>
+        <item name="colorPrimaryVariant">@color/silentforest_theme_primary_variant</item>
+        <item name="colorSecondary">@color/silentforest_theme_secondary</item>
+        <item name="colorSecondaryVariant">@color/silentforest_theme_secondary_variant</item>
+        <item name="colorAccent">@color/silentforest_theme_accent</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorOnBackground">@color/white</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/silentforest_theme_text_secondary_dark</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.FadCam.SilentForest.Button</item>
+        <item name="android:editTextBackground">@drawable/silentforest_theme_edittext_bg</item>
+        <item name="android:popupMenuStyle">@style/Widget.FadCam.SilentForest.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.FadCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:background">@color/silentforest_theme_surface_dark</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+        <item name="colorPrimary">@color/silentforest_theme_primary</item>
+        <item name="colorOnPrimary">@color/black</item>
+    </style>
+
+    <style name="Widget.FadCam.SilentForest.Button" parent="Widget.Material3.Button">
+        <item name="android:background">@color/silentforest_theme_primary</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="Widget.FadCam.SilentForest.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@color/silentforest_theme_surface_dark</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
 
     <style name="Widget.FadCam.Toolbar" parent="Widget.MaterialComponents.Toolbar">
         <item name="android:background">?attr/colorTopBar</item>

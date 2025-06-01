@@ -1601,6 +1601,18 @@ public class HomeFragment extends BaseFragment {
             setTextColorsRecursive(cardStats, goldHeading, goldTextSecondary);
             setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
             setTextColorsRecursive(cardTips, goldHeading, goldTextSecondary);
+        } else if ("Silent Forest".equals(themeName)) {
+            int greenSurface = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_surface_dark);
+            int greenHeading = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_heading);
+            int greenTextSecondary = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(greenSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(greenSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(greenSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, greenHeading, greenTextSecondary);
+            setTextColorsRecursive(cardStats, greenHeading, greenTextSecondary);
+            setTextColorsRecursive(cardStorage, greenHeading, greenTextSecondary);
+            setTextColorsRecursive(cardTips, greenHeading, greenTextSecondary);
         } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
             int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
             int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
