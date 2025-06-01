@@ -588,7 +588,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         int popupMenuStyle = 0;
         // Dynamically select the correct style for the current theme
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Crimson Bloom".equals(currentTheme)) {
             popupMenuStyle = R.style.Widget_FadCam_Red_PopupMenu; // Use underscore, not dot
         } else if ("Faded Night".equals(currentTheme)) {
@@ -696,7 +696,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         input.setText(baseName);
         
         // Get current theme for custom styling
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         
         // For Faded Night theme: set white hint text color and cursor
@@ -1486,7 +1486,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Crimson Bloom".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
         else if ("Faded Night".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
         else if ("Snow Veil".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_SnowVeil_Dialog;
@@ -1501,7 +1501,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (dialog == null) return;
         
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         

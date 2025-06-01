@@ -30,6 +30,7 @@ import androidx.fragment.app.Fragment;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.fadcam.Constants;
 import com.fadcam.Log;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
@@ -68,7 +69,7 @@ public class AboutFragment extends BaseFragment {
         
         // Apply theme-specific UI adjustments for Snow Veil theme
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Snow Veil".equals(currentTheme)) {
             applySnowVeilThemeToUI(view);
         }
@@ -97,7 +98,7 @@ public class AboutFragment extends BaseFragment {
         int colorOnSurface = resolveThemeColor(android.R.attr.textColorSecondary);
         
         // Get current theme
-        String currentTheme = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         
         // Define theme-specific colors
         int themeTextColor;
@@ -194,7 +195,7 @@ public class AboutFragment extends BaseFragment {
         String[] answers = getResources().getStringArray(R.array.answers_array);
         
         // Check current theme to determine answers color
-        String currentThemeAnswers = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentThemeAnswers = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         
         // Use theme-specific colors for answers
         String answerColorHex;
@@ -210,6 +211,8 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#A5A9AB"; // Silver color for Shadow Alloy
         } else if ("Pookie Pink".equals(currentThemeAnswers)) {
             answerColorHex = "#F06292"; // Pink color for Pookie Pink
+        } else if ("Snow Veil".equals(currentThemeAnswers)) {
+            answerColorHex = "#2196F3"; // Light Blue for Snow Veil theme
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -266,7 +269,7 @@ public class AboutFragment extends BaseFragment {
         String[] answers = getResources().getStringArray(R.array.answers_array);
         
         // Check current theme to determine answers color
-        String currentTheme = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         
         // Use theme-specific colors for answers
         String answerColorHex;
@@ -490,7 +493,7 @@ public class AboutFragment extends BaseFragment {
             messageView.setText(message);
             
             // Check if we're using Snow Veil theme
-            String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             
             // Set text color based on theme
@@ -535,7 +538,7 @@ public class AboutFragment extends BaseFragment {
         messageView.setText(getString(R.string.up_to_date_description));
         
         // Check if we're using Snow Veil theme
-        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         
         // Set text color based on theme
@@ -556,7 +559,7 @@ public class AboutFragment extends BaseFragment {
 
     private void showErrorDialog(String message) {
         // Check if we're using Snow Veil theme
-        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         
         MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext())
@@ -664,7 +667,7 @@ public class AboutFragment extends BaseFragment {
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
         // Get current theme
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = spm.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         
         // Select the appropriate dialog theme based on current app theme
         int dialogTheme;
@@ -686,7 +689,7 @@ public class AboutFragment extends BaseFragment {
         if (dialog == null) return;
         
         // Check if we're using Snow Veil theme
-        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         
         // Set button colors based on theme

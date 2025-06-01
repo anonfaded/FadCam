@@ -167,7 +167,7 @@ public class RecordsFragment extends BaseFragment implements
         Log.i(TAG, "Delete requested for: " + videoItem.displayName);
 
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
@@ -245,7 +245,7 @@ public class RecordsFragment extends BaseFragment implements
             }
 
             // Check for Snow Veil theme
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
 
@@ -619,7 +619,7 @@ public class RecordsFragment extends BaseFragment implements
         
         // ----- Fix Start: Check for theme changes and update adapter -----
         if (recordsAdapter != null && sharedPreferencesManager != null) {
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
             Log.d(TAG, "onResume: Updated Snow Veil theme flag on adapter: " + isSnowVeilTheme);
@@ -651,7 +651,7 @@ public class RecordsFragment extends BaseFragment implements
         }
 
         // Check for Snow Veil theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
 
@@ -723,7 +723,7 @@ public class RecordsFragment extends BaseFragment implements
         }
         
         // ----- Fix Start: Set Snow Veil theme flag on adapter -----
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
         Log.d(TAG, "Set Snow Veil theme flag on adapter: " + isSnowVeilTheme);
@@ -1450,7 +1450,7 @@ public class RecordsFragment extends BaseFragment implements
         Log.d(TAG,"Showing confirm delete dialog for " + count + " items.");
         
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
@@ -1544,7 +1544,7 @@ public class RecordsFragment extends BaseFragment implements
         }
         
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
@@ -1766,7 +1766,7 @@ public class RecordsFragment extends BaseFragment implements
         View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
         
         // Check theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         

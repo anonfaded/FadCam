@@ -314,7 +314,7 @@ public class HomeFragment extends BaseFragment {
             rotateCenter.setDuration(80);
             final Drawable originalBackground = cardPreview.getBackground();
             // ----- Fix Start: Use gray flash for AMOLED theme (avoid duplicate variable) -----
-            String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isAmoledLocal = "AMOLED".equalsIgnoreCase(themeName) || "Amoled".equalsIgnoreCase(themeName) || "Faded Night".equalsIgnoreCase(themeName);
             int flashColor = isAmoledLocal ? Color.parseColor("#232323") : Color.parseColor("#302745");
             ValueAnimator colorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), 
@@ -778,7 +778,7 @@ public class HomeFragment extends BaseFragment {
             return;
         }
         try {
-            String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isAmoledLocal = "AMOLED".equalsIgnoreCase(themeName) || "Amoled".equalsIgnoreCase(themeName) || "Faded Night".equalsIgnoreCase(themeName);
             if (buttonStartStop != null) {
                 buttonStartStop.setText(R.string.button_start);
@@ -1512,7 +1512,7 @@ public class HomeFragment extends BaseFragment {
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
         // Initialize isAmoledTheme at the top of the method for use throughout
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isAmoledTheme = currentTheme != null && 
                                (currentTheme.equalsIgnoreCase("AMOLED") || 
                                 currentTheme.equalsIgnoreCase("Amoled") ||
@@ -1537,7 +1537,7 @@ public class HomeFragment extends BaseFragment {
                 .putString("last_theme_for_clock_color", currentTheme)
                 .apply();
             
-            Toast.makeText(requireContext(), "Theme changed: " + currentTheme, Toast.LENGTH_SHORT).show();
+            // Remove the toast that shows theme changed
             com.fadcam.Log.i(TAG, "Theme changed from [" + (lastTheme != null ? lastTheme : "null") + 
                            "] to [" + currentTheme + "]. Applied color: " + clockColorPref);
         } else {
@@ -1570,7 +1570,7 @@ public class HomeFragment extends BaseFragment {
         CardView cardTips = view.findViewById(R.id.cardTips);
         // Clock card is intentionally NOT included here as it has its own color logic
 
-        String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
 
         int colorDialog = resolveThemeColor(R.attr.colorDialog);
         int colorButton = resolveThemeColor(R.attr.colorButton);
@@ -2320,7 +2320,7 @@ public class HomeFragment extends BaseFragment {
                 (isLightBackground ? "BLACK" : "WHITE"));
         } else {
             // Fallback to theme-based coloring if clock background color can't be determined
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             if ("Crimson Bloom".equals(currentTheme)) {
                 // For Crimson Bloom theme, force white text for better visibility against red background
                 tvClock.setTextColor(Color.WHITE);
@@ -2567,7 +2567,7 @@ public class HomeFragment extends BaseFragment {
                     : String.format(Locale.US,"%.2f GB", totalSizeBytes / (1024.0*1024.0*1024.0)); // Fallback format
 
             // Get current theme
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             
             // Prepare final text for UI - special formatting for Snow Veil theme
@@ -3179,7 +3179,7 @@ public class HomeFragment extends BaseFragment {
                     isTorchOn = isOn;
                     
                     // Check if we're in Snow Veil theme and reapply special tinting
-                    String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+                    String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
                     if ("Snow Veil".equals(currentTheme)) {
                         // For Snow Veil theme, we need to manually handle the icon tint
                         if (isOn) {

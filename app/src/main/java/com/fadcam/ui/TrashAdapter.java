@@ -24,6 +24,7 @@ import android.util.Log;
 import android.widget.Toast;
 import com.fadcam.SharedPreferencesManager;
 import java.util.concurrent.TimeUnit;
+import com.fadcam.Constants;
 
 public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHolder> {
 
@@ -54,10 +55,10 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         this.trashItems = trashItems;
         this.interactionListener = interactionListener;
         this.longClickListener = longClickListener;
-        this.sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
         
-        // Check if current theme is Snow Veil
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        // Get current theme for theming
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         this.isSnowVeilTheme = "Snow Veil".equals(currentTheme);
     }
 

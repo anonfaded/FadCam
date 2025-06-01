@@ -318,7 +318,7 @@ public class SettingsFragment extends BaseFragment {
         if (availableInputMics.size() == 1 && availableInputMics.get(0) == null) {
             // ----- Fix Start for Audio Input Source dialog text color -----
             // Check if we're using Snow Veil theme for text color
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             int textColor = ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white);
             // ----- Fix End for Audio Input Source dialog text color -----
@@ -342,7 +342,7 @@ public class SettingsFragment extends BaseFragment {
         
         // ----- Fix Start for Audio Input Source dialog text color -----
         // Check if we're using Snow Veil theme for text color
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         int color = ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white);
         // ----- Fix End for Audio Input Source dialog text color -----
@@ -617,7 +617,7 @@ public class SettingsFragment extends BaseFragment {
 
         // ----- Fix Start: Apply theme color to top bar and buttons -----
         // Top app bar
-        if (toolbar != null && "Crimson Bloom".equals(sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk"))) {
+        if (toolbar != null && "Crimson Bloom".equals(sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME))) {
             toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red_theme_primary_variant));
         } else if (toolbar != null) {
             toolbar.setBackgroundColor(resolveThemeColor(R.attr.colorTopBar));
@@ -784,7 +784,7 @@ public class SettingsFragment extends BaseFragment {
         Log.d(TAG_SETTINGS, "Updating UI - Mode: " + currentMode + ", URI set: " + (customUriString != null));
 
         // ----- Fix Start: Set radio button text color for Faded Night theme -----
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         
         if (isFadedNightTheme) {
@@ -897,7 +897,7 @@ public class SettingsFragment extends BaseFragment {
         int purpleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
         
         // Check current theme to apply different styles
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         
         if (isSelected) {
             if ("Midnight Dusk".equals(currentTheme)) {
@@ -1131,7 +1131,7 @@ public class SettingsFragment extends BaseFragment {
                 updateButtonAppearance(frontCameraButton, selected == CameraType.FRONT);
                 
                 // Special handling for Midnight Dusk theme to ensure purple color
-                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
                 if ("Midnight Dusk".equals(currentTheme)) {
                     // Force apply correct purple colors to selected button
                     MaterialButton selectedButton = (selected == CameraType.BACK) ? backCameraButton : frontCameraButton;
@@ -1497,7 +1497,7 @@ public class SettingsFragment extends BaseFragment {
         }
         
         // Force refresh button styles for Midnight Dusk and Premium Gold themes
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Midnight Dusk".equals(currentTheme)) {
             // Direct approach - bypass theme resolution entirely for Midnight Dusk
             MaterialButton selectedButton = (selected == CameraType.FRONT) ? frontCameraButton : backCameraButton;
@@ -1664,7 +1664,7 @@ public class SettingsFragment extends BaseFragment {
                 }
                 
                 // Check special theme handling for Midnight Dusk and Premium Gold
-                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
                 if ("Midnight Dusk".equals(currentTheme)) {
                     // Force apply correct colors
                     MaterialButton selectedButton = (checkedId == R.id.button_front_camera) ? frontCameraButton : backCameraButton;
@@ -2192,7 +2192,7 @@ public class SettingsFragment extends BaseFragment {
         if(dialogView == null) return; // Check if inflation failed
         
         // Check if we're using Snow Veil theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         
         MaterialButton githubButton = dialogView.findViewById(R.id.github_button);
@@ -2244,7 +2244,7 @@ public class SettingsFragment extends BaseFragment {
         chooseButton.setOnClickListener(v -> {
             // ----- Fix Start for Language Dialog text color -----
             // Check if we're using Snow Veil theme for text color
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             int color = ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white);
             // ----- Fix End for Language Dialog text color -----
@@ -2908,7 +2908,7 @@ public class SettingsFragment extends BaseFragment {
             ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary)
         };
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         int tempThemeIndex = 1; // Default to Dark Mode index
         if ("Crimson Bloom".equals(currentTheme)) tempThemeIndex = 0;
         else if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) tempThemeIndex = 2;
@@ -2919,7 +2919,11 @@ public class SettingsFragment extends BaseFragment {
         else if ("Snow Veil".equals(currentTheme)) tempThemeIndex = 7;
         
         final int themeIndex = tempThemeIndex;
+        
+        // ----- Fix Start for theme button text display -----
+        // Set the button text to show the CURRENT theme name, not a hardcoded value
         themeButton.setText(themeNames[themeIndex]);
+        // ----- Fix End for theme button text display -----
         
         // Set text color based on theme - black for Gold, Silent Forest, Shadow Alloy, Pookie Pink, and Snow Veil, white for others
         if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || "Shadow Alloy".equals(currentTheme) || "Pookie Pink".equals(currentTheme) || "Snow Veil".equals(currentTheme)) {
@@ -3411,7 +3415,7 @@ public class SettingsFragment extends BaseFragment {
 
         // ----- Fix Start for Audio Settings dialog text color -----
         // Check if we're using Snow Veil theme for text color
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         
@@ -3688,7 +3692,7 @@ public class SettingsFragment extends BaseFragment {
         
         // ----- Fix Start for Bitrate dialog text color -----
         // Check if we're using Snow Veil theme for text color
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         int textColor = ContextCompat.getColor(context, isSnowVeilTheme ? android.R.color.black : android.R.color.white);
         helper.setTextColor(textColor);
@@ -4105,7 +4109,7 @@ public class SettingsFragment extends BaseFragment {
         
         // ----- Fix Start for App Lock dialog text color -----
         // Check if we're using Snow Veil theme for text color
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         int color = ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white);
         // ----- Fix End for App Lock dialog text color -----
@@ -4246,7 +4250,7 @@ public class SettingsFragment extends BaseFragment {
         setupAppLockButton();
         
         // Apply theme-specific UI adjustments for Snow Veil theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Snow Veil".equals(currentTheme)) {
             applySnowVeilThemeToUI(view);
         }
@@ -4355,7 +4359,7 @@ public class SettingsFragment extends BaseFragment {
     private int resolveThemeColor(int attr) {
         // Special handling for Midnight Dusk theme's colorButton
         if (attr == R.attr.colorButton) {
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             if ("Midnight Dusk".equals(currentTheme)) {
                 // Return purple directly for the Midnight Dusk theme's buttons
                 return ContextCompat.getColor(requireContext(), R.color.colorPrimary); // #cfbafd
@@ -4385,7 +4389,7 @@ public class SettingsFragment extends BaseFragment {
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
-        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = spm.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Crimson Bloom".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
         else if ("Faded Night".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
         else if ("Snow Veil".equals(currentTheme)) dialogTheme = R.style.ThemeOverlay_FadCam_SnowVeil_Dialog;
@@ -4402,7 +4406,7 @@ public class SettingsFragment extends BaseFragment {
         if (dialog == null) return;
         
         // Check if we're using Snow Veil theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         
         // Set text color for all dialog buttons

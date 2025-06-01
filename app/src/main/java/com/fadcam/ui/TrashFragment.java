@@ -241,7 +241,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
 
     private void setupButtonListeners() {
         // Set the restore button to blue color for Faded Night theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         
         if (isFadedNightTheme && buttonRestoreSelected != null) {
@@ -250,14 +250,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             buttonRestoreSelected.setTextColor(blueColor);
         }
         
-        // Improve the button appearances when disabled - make it visually obvious
-        // Initially disabled (no selection) for both buttons
+        // Improve the delete button appearance when disabled - make it visually obvious
         if (buttonDeleteSelectedPermanently != null) {
-            updateDeleteButtonAppearance(false);
-        }
-        
-        if (buttonRestoreSelected != null) {
-            updateRestoreButtonAppearance(false);
+            updateDeleteButtonAppearance(false); // Initially disabled (no selection)
         }
         
         buttonRestoreSelected.setOnClickListener(v -> {
@@ -454,13 +449,11 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             
             // Check current theme to apply appropriate styling
             // Get the current theme from shared preferences
-            String currentThemeForButton = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
-            boolean isFadedNightThemeForButton = "Faded Night".equals(currentThemeForButton);
+            String currentThemeForButton = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
             
-            if (isFadedNightThemeForButton) {
-                // For Faded Night theme, make disabled color a darker red
-                buttonDeleteSelectedPermanently.setTextColor(Color.parseColor("#661111"));
-            }
+            // Always use a muted red color for the disabled delete button
+            int disabledRedColor = ContextCompat.getColor(requireContext(), R.color.colorErrorDisabled);
+            buttonDeleteSelectedPermanently.setTextColor(disabledRedColor);
         }
     }
 
@@ -477,7 +470,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             buttonRestoreSelected.setAlpha(1.0f);
             
             // Set proper color based on theme
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
             boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
             
             if (isFadedNightTheme) {
@@ -493,7 +486,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             buttonRestoreSelected.setAlpha(0.5f); // Semi-transparent
             
             // Check current theme to apply appropriate styling
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
             boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
             
             if (isFadedNightTheme) {
@@ -588,7 +581,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 progressText.setText("Restoring " + itemCount + " item(s)...");
                 
                 // Set text color based on theme
-                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
                 boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
                 progressText.setTextColor(ContextCompat.getColor(requireContext(), 
                     isSnowVeilTheme ? android.R.color.black : android.R.color.white));
@@ -714,7 +707,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         }
         
         // Determine text color based on theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         
@@ -1004,7 +997,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
         
         // Check the current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         if ("Snow Veil".equals(currentTheme)) {
             dialogTheme = R.style.ThemeOverlay_FadCam_SnowVeil_Dialog;
         } else if ("Crimson Bloom".equals(currentTheme)) {
@@ -1024,7 +1017,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (dialog == null) return;
         
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
         

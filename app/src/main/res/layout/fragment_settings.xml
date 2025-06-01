@@ -305,7 +305,7 @@
                     android:contentDescription="Back Camera Lens Icon"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_lens"
-                    app:tint="?android:attr/textColorSecondary" />
+                    app:tint="@color/white" />
 
                 <LinearLayout
                     android:layout_width="0dp"

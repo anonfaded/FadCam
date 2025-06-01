@@ -40,9 +40,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // ----- Fix Start: Apply selected theme globally before setContentView -----
+        // Initialize SharedPreferencesManager for theme
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
+        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
 
         if ("Crimson Bloom".equals(savedTheme)) {
             setTheme(R.style.Theme_FadCam_Red);
@@ -51,7 +51,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
         } else {
             setTheme(R.style.Base_Theme_FadCam);
         }
-        // ----- Fix End: Apply selected theme globally before setContentView -----
 
         super.onCreate(savedInstanceState);
         setContentView(com.fadcam.R.layout.activity_video_player);
