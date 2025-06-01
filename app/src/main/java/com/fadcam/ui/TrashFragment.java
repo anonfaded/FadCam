@@ -45,6 +45,16 @@ import com.guardanis.applock.dialogs.UnlockDialogBuilder;
 
 import android.widget.ArrayAdapter;
 import androidx.core.content.ContextCompat;
+import android.graphics.Color;
+import android.content.Context;
+import android.content.res.ColorStateList;
+import android.os.Build;
+import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Looper;
+import android.graphics.PorterDuff;
+import android.widget.RadioButton;
+import java.lang.reflect.Field;
 
 public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashItemInteractionListener {
 
@@ -230,25 +240,51 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     }
 
     private void setupButtonListeners() {
+        // Set the restore button to blue color for Faded Night theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        
+        if (isFadedNightTheme && buttonRestoreSelected != null) {
+            // Use a blue color for restore button in Faded Night theme
+            int blueColor = Color.parseColor("#4285F4"); // Google blue
+            buttonRestoreSelected.setTextColor(blueColor);
+        }
+        
+        // Improve the button appearances when disabled - make it visually obvious
+        // Initially disabled (no selection) for both buttons
+        if (buttonDeleteSelectedPermanently != null) {
+            updateDeleteButtonAppearance(false);
+        }
+        
+        if (buttonRestoreSelected != null) {
+            updateRestoreButtonAppearance(false);
+        }
+        
         buttonRestoreSelected.setOnClickListener(v -> {
             List<TrashItem> selectedItems = trashAdapter.getSelectedItems();
             if (selectedItems.isEmpty()) {
                 Toast.makeText(getContext(), getString(R.string.trash_no_items_selected_toast), Toast.LENGTH_SHORT).show();
                 return;
             }
-            // ----- Fix Start: White text for restore dialog -----
+            
+            // Use the themed dialog builder helper method
             TextView messageView = new TextView(requireContext());
             messageView.setText(getString(R.string.trash_dialog_restore_message, selectedItems.size()));
-            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            
+            // Set text color based on theme
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            messageView.setTextColor(ContextCompat.getColor(requireContext(), 
+                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
             messageView.setPadding(48, 32, 48, 0);
             messageView.setTextSize(16);
-            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+            
+            AlertDialog dialog = themedDialogBuilder(requireContext())
                     .setTitle(getString(R.string.trash_dialog_restore_title))
                     .setView(messageView)
-                    .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
+                    .setNegativeButton(getString(R.string.universal_cancel), (dialogInterface, which) -> {
                         onRestoreFinished(false, getString(R.string.trash_restore_cancelled_toast));
                     })
-                    .setPositiveButton(getString(R.string.universal_restore), (dialog, which) -> {
+                    .setPositiveButton(getString(R.string.universal_restore), (dialogInterface, which) -> {
                         onRestoreStarted(selectedItems.size());
                         if (executorService == null || executorService.isShutdown()) {
                             executorService = Executors.newSingleThreadExecutor(); // Re-initialize if shutdown
@@ -268,8 +304,17 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                             }
                         });
                     })
-                    .show();
-            // ----- Fix End: White text for restore dialog -----
+                    .create();
+                    
+            dialog.show();
+            
+            // Apply theme-specific button colors
+            setDialogButtonColors(dialog);
+            
+            // Color the restore button specially
+            if (isFadedNightTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#4285F4"));
+            }
         });
 
         buttonDeleteSelectedPermanently.setOnClickListener(v -> {
@@ -278,17 +323,24 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 Toast.makeText(getContext(), getString(R.string.trash_empty_toast_message), Toast.LENGTH_SHORT).show();
                 return;
             }
-            // ----- Fix Start: White text for delete dialog -----
+            
+            // Use the themed dialog builder helper method
             TextView messageView = new TextView(requireContext());
             messageView.setText(getString(R.string.dialog_permanently_delete_message, selectedItems.size()));
-            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            
+            // Set text color based on theme
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            
+            messageView.setTextColor(ContextCompat.getColor(requireContext(), 
+                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
             messageView.setPadding(48, 32, 48, 0);
             messageView.setTextSize(16);
-            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+            
+            AlertDialog dialog = themedDialogBuilder(requireContext())
                     .setTitle(getString(R.string.dialog_permanently_delete_title))
                     .setView(messageView)
                     .setNegativeButton(getString(R.string.universal_cancel), null)
-                    .setPositiveButton(getString(R.string.universal_delete), (dialog, which) -> {
+                    .setPositiveButton(getString(R.string.universal_delete), (dialogInterface, which) -> {
                         if (TrashManager.permanentlyDeleteItems(getContext(), selectedItems)) {
                             Toast.makeText(getContext(), getString(R.string.trash_items_deleted_toast, selectedItems.size()), Toast.LENGTH_SHORT).show();
                             loadTrashItems();
@@ -296,8 +348,18 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                             Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast), Toast.LENGTH_SHORT).show();
                         }
                     })
-                    .show();
-            // ----- Fix End: White text for delete dialog -----
+                    .create();
+                    
+            dialog.show();
+            
+            // Apply theme-specific button colors
+            setDialogButtonColors(dialog);
+            
+            // Set delete button to red color for emphasis
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                int errorColor = ContextCompat.getColor(requireContext(), R.color.colorError);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(errorColor);
+            }
         });
 
         buttonEmptyAllTrash.setOnClickListener(v -> {
@@ -305,17 +367,24 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 Toast.makeText(getContext(), getString(R.string.trash_empty_toast_message), Toast.LENGTH_SHORT).show();
                 return;
             }
-            // ----- Fix Start: White text for delete all dialog -----
+            
+            // Use the themed dialog builder helper method
             TextView messageView = new TextView(requireContext());
             messageView.setText(getString(R.string.dialog_empty_all_trash_message));
-            messageView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+            
+            // Set text color based on theme
+            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+            
+            messageView.setTextColor(ContextCompat.getColor(requireContext(), 
+                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
             messageView.setPadding(48, 32, 48, 0);
             messageView.setTextSize(16);
-            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+            
+            AlertDialog dialog = themedDialogBuilder(requireContext())
                     .setTitle(getString(R.string.trash_dialog_empty_all_title))
                     .setView(messageView)
                     .setNegativeButton(getString(R.string.universal_cancel), null)
-                    .setPositiveButton(getString(R.string.trash_button_empty_all_action), (dialog, which) -> {
+                    .setPositiveButton(getString(R.string.trash_button_empty_all_action), (dialogInterface, which) -> {
                         if (TrashManager.emptyAllTrash(getContext())) {
                             Toast.makeText(getContext(), getString(R.string.trash_emptied_toast), Toast.LENGTH_SHORT).show();
                             loadTrashItems();
@@ -323,8 +392,18 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                             Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast), Toast.LENGTH_SHORT).show();
                         }
                     })
-                    .show();
-            // ----- Fix End: White text for delete all dialog -----
+                    .create();
+                    
+            dialog.show();
+            
+            // Apply theme-specific button colors
+            setDialogButtonColors(dialog);
+            
+            // Set empty all button to red color for emphasis
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                int errorColor = ContextCompat.getColor(requireContext(), R.color.colorError);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(errorColor);
+            }
         });
         updateActionButtonsState(); // Initial state
     }
@@ -347,6 +426,81 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         buttonRestoreSelected.setEnabled(anySelected);
         buttonDeleteSelectedPermanently.setEnabled(anySelected);
         buttonEmptyAllTrash.setEnabled(!trashItems.isEmpty());
+        
+        // Update the delete and restore button appearances
+        updateDeleteButtonAppearance(anySelected);
+        updateRestoreButtonAppearance(anySelected);
+    }
+
+    /**
+     * Updates the appearance of the delete button based on whether items are selected
+     * @param anySelected true if any items are selected, false otherwise
+     */
+    private void updateDeleteButtonAppearance(boolean anySelected) {
+        if (buttonDeleteSelectedPermanently == null) return;
+        
+        if (anySelected) {
+            // Items selected - button should be bright red and enabled
+            buttonDeleteSelectedPermanently.setEnabled(true);
+            buttonDeleteSelectedPermanently.setAlpha(1.0f);
+            
+            // Set a bright, vibrant red color matching the "Empty All" button
+            int errorColor = ContextCompat.getColor(requireContext(), R.color.colorError);
+            buttonDeleteSelectedPermanently.setTextColor(errorColor);
+        } else {
+            // No items selected - button should be visually disabled
+            buttonDeleteSelectedPermanently.setEnabled(false);
+            buttonDeleteSelectedPermanently.setAlpha(0.5f); // Semi-transparent
+            
+            // Check current theme to apply appropriate styling
+            // Get the current theme from shared preferences
+            String currentThemeForButton = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isFadedNightThemeForButton = "Faded Night".equals(currentThemeForButton);
+            
+            if (isFadedNightThemeForButton) {
+                // For Faded Night theme, make disabled color a darker red
+                buttonDeleteSelectedPermanently.setTextColor(Color.parseColor("#661111"));
+            }
+        }
+    }
+
+    /**
+     * Updates the appearance of the restore button based on whether items are selected
+     * @param anySelected true if any items are selected, false otherwise
+     */
+    private void updateRestoreButtonAppearance(boolean anySelected) {
+        if (buttonRestoreSelected == null) return;
+        
+        if (anySelected) {
+            // Items selected - button should be fully visible and enabled
+            buttonRestoreSelected.setEnabled(true);
+            buttonRestoreSelected.setAlpha(1.0f);
+            
+            // Set proper color based on theme
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+            
+            if (isFadedNightTheme) {
+                // For Faded Night theme, use blue color
+                buttonRestoreSelected.setTextColor(Color.parseColor("#4285F4")); // Google blue
+            } else {
+                // For other themes, use theme's primary/accent color
+                buttonRestoreSelected.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
+            }
+        } else {
+            // No items selected - button should be visually disabled
+            buttonRestoreSelected.setEnabled(false);
+            buttonRestoreSelected.setAlpha(0.5f); // Semi-transparent
+            
+            // Check current theme to apply appropriate styling
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+            boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+            
+            if (isFadedNightTheme) {
+                // For Faded Night theme, use darker blue for disabled state
+                buttonRestoreSelected.setTextColor(Color.parseColor("#2A4374")); // Darker blue
+            }
+        }
     }
 
     private void checkEmptyState() {
@@ -423,14 +577,23 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             if (restoreProgressDialog != null && restoreProgressDialog.isShowing()) {
                 restoreProgressDialog.dismiss();
             }
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+            
+            // Use the themed dialog builder
+            MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
             LayoutInflater inflater = LayoutInflater.from(getContext());
             View dialogView = inflater.inflate(R.layout.dialog_progress, null);
 
             TextView progressText = dialogView.findViewById(R.id.progress_text);
             if (progressText != null) {
                 progressText.setText("Restoring " + itemCount + " item(s)...");
+                
+                // Set text color based on theme
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+                boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+                progressText.setTextColor(ContextCompat.getColor(requireContext(), 
+                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
             }
+            
             builder.setView(dialogView);
             builder.setCancelable(false);
             restoreProgressDialog = builder.create();
@@ -464,6 +627,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             
             // Update UI based on selection state
             updateActionButtonsState();
+            
+            // Explicitly update button appearances based on selection
+            updateDeleteButtonAppearance(hasSelectedItems);
+            updateRestoreButtonAppearance(hasSelectedItems);
             
             // Update toolbar title if in selection mode
             if (toolbar != null && isInSelectionMode) {
@@ -545,24 +712,34 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 break;
             }
         }
-        // ----- Fix Start: White text for auto-delete dialog list -----
-        int white = ContextCompat.getColor(requireContext(), android.R.color.white);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, items) {
+        
+        // Determine text color based on theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        
+        int textColor = ContextCompat.getColor(requireContext(), 
+            isSnowVeilTheme ? android.R.color.black : android.R.color.white);
+            
+        // Create adapter with proper text colors
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), 
+            android.R.layout.simple_list_item_single_choice, items) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(white);
+                if (text1 != null) text1.setTextColor(textColor);
                 return view;
             }
         };
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_FadCam_Dialog)
+        
+        AlertDialog dialog = themedDialogBuilder(requireContext())
                 .setTitle(getString(R.string.auto_delete_dialog_title))
-                .setSingleChoiceItems(adapter, checkedItem, (dialog, which) -> {
+                .setSingleChoiceItems(adapter, checkedItem, (dialogInterface, which) -> {
                     // Action on item selection (optional, could update a temporary variable)
                 })
-                .setPositiveButton(getString(R.string.auto_delete_save_setting), (dialog, which) -> {
-                    AlertDialog alertDialog = (AlertDialog) dialog;
+                .setPositiveButton(getString(R.string.auto_delete_save_setting), (dialogInterface, which) -> {
+                    AlertDialog alertDialog = (AlertDialog) dialogInterface;
                     int selectedPosition = alertDialog.getListView().getCheckedItemPosition();
                     if (selectedPosition != -1 && selectedPosition < valuesInMinutes.length) {
                         int selectedMinutes = valuesInMinutes[selectedPosition];
@@ -584,8 +761,88 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                     }
                 })
                 .setNegativeButton(getString(R.string.universal_cancel), null)
-                .show();
-        // ----- Fix End: White text for auto-delete dialog list -----
+                .create();
+                
+        dialog.show();
+        
+        // After dialog is shown, tint the radio buttons for Faded Night theme
+        if (isFadedNightTheme && dialog.getListView() != null) {
+            try {
+                // Force a small delay to ensure the ListView has been populated
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        // For each visible list item, find and tint the RadioButton
+                        for (int i = 0; i < dialog.getListView().getChildCount(); i++) {
+                            View listItem = dialog.getListView().getChildAt(i);
+                            if (listItem != null) {
+                                // Try several common IDs for RadioButton
+                                int[] possibleIds = {
+                                    android.R.id.checkbox
+                                };
+                                
+                                RadioButton radioButton = null;
+                                for (int id : possibleIds) {
+                                    View potential = listItem.findViewById(id);
+                                    if (potential instanceof RadioButton) {
+                                        radioButton = (RadioButton) potential;
+                                        break;
+                                    }
+                                }
+                                
+                                // If not found by ID, try to find by class
+                                if (radioButton == null && listItem instanceof ViewGroup) {
+                                    ViewGroup vg = (ViewGroup) listItem;
+                                    for (int j = 0; j < vg.getChildCount(); j++) {
+                                        View child = vg.getChildAt(j);
+                                        if (child instanceof RadioButton) {
+                                            radioButton = (RadioButton) child;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Apply white tint if found
+                                if (radioButton != null) {
+                                    ColorStateList whiteStateList = ColorStateList.valueOf(Color.WHITE);
+                                    
+                                    // Use appropriate method based on API level
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                        radioButton.setButtonTintList(whiteStateList);
+                                    } else {
+                                        // For older versions, we can try reflection or a different approach
+                                        try {
+                                            Field buttonDrawable = RadioButton.class.getDeclaredField("mButtonDrawable");
+                                            buttonDrawable.setAccessible(true);
+                                            Drawable drawable = (Drawable) buttonDrawable.get(radioButton);
+                                            if (drawable != null) {
+                                                drawable.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                                            }
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Failed to tint radio button via reflection: " + e.getMessage());
+                                        }
+                                    }
+                                    
+                                    // Also set the radio button's text color
+                                    radioButton.setTextColor(Color.WHITE);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to tint radio buttons after delay: " + e.getMessage());
+                    }
+                }, 100); // Short delay to ensure views are laid out
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to schedule radio button tinting: " + e.getMessage());
+            }
+        }
+        
+        // Apply theme-specific button colors
+        setDialogButtonColors(dialog);
+        
+        // Highlight the Save button with blue for better visibility in Faded Night theme
+        if (isFadedNightTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#4285F4"));
+        }
     }
 
     private void updateAutoDeleteInfoText() {
@@ -642,6 +899,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             if (toolbar != null) {
                 toolbar.setTitle(getString(R.string.trash_fragment_title_text));
             }
+            
+            // Explicitly update button appearances
+            updateDeleteButtonAppearance(false);
+            updateRestoreButtonAppearance(false);
             
             // Hide select all checkbox
             if (checkboxSelectAll != null) {
@@ -737,4 +998,58 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     // TODO: Create TrashAdapter class
     // TODO: Implement logic for restore, permanent delete, empty all
     // TODO: Implement auto-deletion of files older than 30 days (perhaps in TrashManager and called periodically or on fragment load)
+
+    // Add a helper method for themedDialogBuilder similar to other fragments
+    private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
+        int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
+        
+        // Check the current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        if ("Snow Veil".equals(currentTheme)) {
+            dialogTheme = R.style.ThemeOverlay_FadCam_SnowVeil_Dialog;
+        } else if ("Crimson Bloom".equals(currentTheme)) {
+            dialogTheme = R.style.ThemeOverlay_FadCam_Red_Dialog;
+        } else if ("Faded Night".equals(currentTheme)) {
+            dialogTheme = R.style.ThemeOverlay_FadCam_Amoled_MaterialAlertDialog;
+        }
+        
+        return new MaterialAlertDialogBuilder(context, dialogTheme);
+    }
+    
+    /**
+     * Sets dialog button colors based on theme
+     * @param dialog The dialog whose buttons need color adjustment
+     */
+    private void setDialogButtonColors(AlertDialog dialog) {
+        if (dialog == null) return;
+        
+        // Check current theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        
+        if (isSnowVeilTheme) {
+            // Set black text color for buttons in Snow Veil theme
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            }
+            if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            }
+            if (dialog.getButton(AlertDialog.BUTTON_NEUTRAL) != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.BLACK);
+            }
+        } else if (isFadedNightTheme) {
+            // Set white text color for Faded Night theme buttons
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            }
+            if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+            }
+            if (dialog.getButton(AlertDialog.BUTTON_NEUTRAL) != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.WHITE);
+            }
+        }
+    }
 } 

@@ -781,7 +781,23 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
         builder.setView(dialogView);
-        builder.setPositiveButton(R.string.universal_ok, (dialog, which) -> { // Using R.string.universal_ok if it exists, otherwise "OK"
+        builder.setPositiveButton(R.string.universal_ok, (dialog, which) -> { 
+            // First hide the keyboard and clear focus
+            try {
+                if (input != null) {
+                    input.clearFocus();
+                    
+                    android.view.inputmethod.InputMethodManager imm = 
+                        (android.view.inputmethod.InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error clearing focus on OK press", e);
+            }
+            
+            // Then proceed with the rename operation
             String newNameBase = "";
             if (input != null && input.getText() != null) {
                 newNameBase = input.getText().toString().trim();
@@ -836,6 +852,25 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                         Log.e(TAG, "Failed to show keyboard", e);
                     }
                 }, 200); // 200ms delay
+            }
+        });
+        
+        // Clear focus and hide keyboard when dialog is dismissed
+        dialog.setOnDismissListener(dialogInterface -> {
+            try {
+                // Clear focus
+                if (input != null) {
+                    input.clearFocus();
+                }
+                
+                // Hide keyboard
+                android.view.inputmethod.InputMethodManager imm = 
+                    (android.view.inputmethod.InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null && input != null) {
+                    imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error clearing focus or hiding keyboard", e);
             }
         });
         
