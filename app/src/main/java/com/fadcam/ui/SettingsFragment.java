@@ -897,6 +897,14 @@ public class SettingsFragment extends BaseFragment {
                 button.setStrokeWidth(0);
                 button.setStrokeColor(ColorStateList.valueOf(darkSilver));
                 button.setIconTintResource(android.R.color.white);
+            } else if ("Pookie Pink".equals(currentTheme)) {
+                // Pookie Pink theme - darker pink background, white text
+                int darkPink = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary_variant);
+                button.setBackgroundColor(darkPink);
+                button.setTextColor(white);
+                button.setStrokeWidth(0);
+                button.setStrokeColor(ColorStateList.valueOf(darkPink));
+                button.setIconTintResource(android.R.color.white);
             } else {
                 // Fallback for any other theme - dark gray with white text
                 int darkGray = ContextCompat.getColor(requireContext(), R.color.gray_button_filled);
@@ -1489,6 +1497,27 @@ public class SettingsFragment extends BaseFragment {
             unselectedButton.setIconTintResource(android.R.color.white);
             
             Log.d(TAG_SETTINGS, "Applied direct colors for Shadow Alloy theme");
+        } else if ("Pookie Pink".equals(currentTheme)) {
+            // Direct approach for Pookie Pink theme
+            MaterialButton selectedButton = (selected == CameraType.FRONT) ? frontCameraButton : backCameraButton;
+            
+            // Set explicit colors for Pookie Pink theme
+            int pinkColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary);
+            selectedButton.setBackgroundColor(pinkColor);
+            selectedButton.setTextColor(Color.BLACK); // Black text on pink background
+            selectedButton.setStrokeColor(ColorStateList.valueOf(pinkColor));
+            selectedButton.setIconTintResource(android.R.color.black);
+            
+            // Make sure unselected button is dark pink with white text
+            MaterialButton unselectedButton = (selected == CameraType.FRONT) ? backCameraButton : frontCameraButton;
+            int darkPink = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary_variant);
+            unselectedButton.setBackgroundColor(darkPink);
+            unselectedButton.setTextColor(Color.WHITE);
+            unselectedButton.setStrokeWidth(0);
+            unselectedButton.setStrokeColor(ColorStateList.valueOf(darkPink));
+            unselectedButton.setIconTintResource(android.R.color.white);
+            
+            Log.d(TAG_SETTINGS, "Applied direct colors for Pookie Pink theme");
         }
         
         Log.d(TAG_SETTINGS,"Synced camera switch UI to: " + sharedPreferencesManager.getCameraSelection());
@@ -1562,6 +1591,14 @@ public class SettingsFragment extends BaseFragment {
                     selectedButton.setBackgroundColor(silverColor);
                     selectedButton.setTextColor(Color.BLACK); // Black text on silver background
                     selectedButton.setStrokeColor(ColorStateList.valueOf(silverColor));
+                    selectedButton.setIconTintResource(android.R.color.black);
+                } else if ("Pookie Pink".equals(currentTheme)) {
+                    // Force apply correct colors for Pookie Pink theme
+                    MaterialButton selectedButton = (checkedId == R.id.button_front_camera) ? frontCameraButton : backCameraButton;
+                    int pinkColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary);
+                    selectedButton.setBackgroundColor(pinkColor);
+                    selectedButton.setTextColor(Color.BLACK); // Black text on pink background
+                    selectedButton.setStrokeColor(ColorStateList.valueOf(pinkColor));
                     selectedButton.setIconTintResource(android.R.color.black);
                 }
             }
@@ -2733,14 +2770,15 @@ public class SettingsFragment extends BaseFragment {
     private void setupThemeSpinner(View view) {
         MaterialButton themeButton = view.findViewById(R.id.theme_choose_button); // Add a button in layout for theme selection
         if (themeButton == null) return;
-        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold), getString(R.string.theme_silentforest), getString(R.string.theme_shadowalloy)};
+        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold), getString(R.string.theme_silentforest), getString(R.string.theme_shadowalloy), getString(R.string.theme_pookiepink)};
         int[] themeColors = {
             ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.gray),
             ContextCompat.getColor(requireContext(), R.color.amoled_surface), // Use surface color instead of background
             ContextCompat.getColor(requireContext(), R.color.gold_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary),
-            ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary)
+            ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary),
+            ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary)
         };
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         int tempThemeIndex = 1; // Default to Dark Mode index
@@ -2749,12 +2787,13 @@ public class SettingsFragment extends BaseFragment {
         else if ("Premium Gold".equals(currentTheme)) tempThemeIndex = 3;
         else if ("Silent Forest".equals(currentTheme)) tempThemeIndex = 4;
         else if ("Shadow Alloy".equals(currentTheme)) tempThemeIndex = 5;
+        else if ("Pookie Pink".equals(currentTheme)) tempThemeIndex = 6;
         
         final int themeIndex = tempThemeIndex;
         themeButton.setText(themeNames[themeIndex]);
         
-        // Set text color based on theme - black for Gold and Silent Forest, white for others
-        if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || "Shadow Alloy".equals(currentTheme)) {
+        // Set text color based on theme - black for Gold, Silent Forest, Shadow Alloy, and Pookie Pink, white for others
+        if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || "Shadow Alloy".equals(currentTheme) || "Pookie Pink".equals(currentTheme)) {
             themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black));
         } else {
             themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
@@ -2817,6 +2856,8 @@ public class SettingsFragment extends BaseFragment {
                     newTheme = "Silent Forest";
                 } else if (getString(R.string.theme_shadowalloy).equals(newTheme)) {
                     newTheme = "Shadow Alloy";
+                } else if (getString(R.string.theme_pookiepink).equals(newTheme)) {
+                    newTheme = "Pookie Pink";
                 } else {
                     newTheme = "Crimson Bloom";
                 }
@@ -2900,6 +2941,10 @@ public class SettingsFragment extends BaseFragment {
             // Shadow Alloy theme
             ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
             // Apply other Shadow Alloy theme-specific UI changes that can be done without recreation
+        } else if ("Pookie Pink".equals(themeName)) {
+            // Pookie Pink theme
+            ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary);
+            // Apply other Pookie Pink theme-specific UI changes that can be done without recreation
         }
         // Apply other theme-agnostic UI updates
         applyThemeToUI(requireView());

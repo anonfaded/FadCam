@@ -114,8 +114,8 @@ public class HomeFragment extends BaseFragment {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
 
     // ----- Fix Start for this method(fields)-----
-    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark", "Amoled Gray", "Gold"};
-    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745", "#CCCCCC", "#FFD700"};
+    private static final String[] CLOCK_COLOR_NAMES = {"Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey", "App Theme Dark", "Amoled Gray", "Gold", "Pink"};
+    private static final String[] CLOCK_COLOR_HEX_VALUES = {"#673AB7", "#2196F3", "#4CAF50", "#009688", "#FF9800", "#F44336", "#424242", "#302745", "#CCCCCC", "#FFD700", "#F06292"};
     // ----- Fix Ended for this method(fields)-----
 
     private long recordingStartTime;
@@ -1626,7 +1626,20 @@ public class HomeFragment extends BaseFragment {
             setTextColorsRecursive(cardPreview, alloyHeading, alloyTextSecondary);
             setTextColorsRecursive(cardStats, alloyHeading, alloyTextSecondary);
             setTextColorsRecursive(cardStorage, alloyHeading, alloyTextSecondary);
-            setTextColorsRecursive(cardTips, Color.WHITE, Color.LTGRAY);
+            setTextColorsRecursive(cardTips, alloyHeading, alloyTextSecondary);
+        } else if ("Pookie Pink".equals(themeName)) {
+            // Pookie Pink theme (pink)
+            int pinkSurface = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_surface_dark);
+            int pinkHeading = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_heading);
+            int pinkTextSecondary = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(pinkSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(pinkSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(pinkSurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, pinkHeading, pinkTextSecondary);
+            setTextColorsRecursive(cardStats, pinkHeading, pinkTextSecondary);
+            setTextColorsRecursive(cardStorage, pinkHeading, pinkTextSecondary);
+            setTextColorsRecursive(cardTips, pinkHeading, pinkTextSecondary);
         } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
             int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
             int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
@@ -3556,6 +3569,15 @@ public class HomeFragment extends BaseFragment {
         } else if ("Dark Grey".equals(themeName)) {
             result = CLOCK_COLOR_HEX_VALUES[6]; // Dark Grey (#424242)
             com.fadcam.Log.i(TAG, "Dark Grey theme match, using Dark Grey: " + result);
+        } else if ("Silent Forest".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[2]; // Green (#4CAF50)
+            com.fadcam.Log.i(TAG, "Silent Forest theme match, using Green: " + result);
+        } else if ("Shadow Alloy".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[8]; // Amoled Gray closest to silver
+            com.fadcam.Log.i(TAG, "Shadow Alloy theme match, using Silver-ish: " + result);
+        } else if ("Pookie Pink".equals(themeName)) {
+            result = CLOCK_COLOR_HEX_VALUES[10]; // Pink (#F06292)
+            com.fadcam.Log.i(TAG, "Pookie Pink theme match, using Pink: " + result);
         } else {
             // Fallback to default
             result = CLOCK_COLOR_HEX_VALUES[0]; // Default to Purple (#673AB7)

@@ -85,14 +85,12 @@ public class SharedPreferencesManager {
             return "#26A69A"; // Green for Silent Forest theme
         } else if (currentTheme.equals("Shadow Alloy")) {
             return "#A5A9AB"; // Silver for Shadow Alloy theme
+        } else if (currentTheme.equals("Pookie Pink")) {
+            return "#F06292"; // Pink for Pookie Pink theme
         }
         
-        // For all other themes, use the saved color preference or default if not set
-        String clockColor = sharedPreferences.getString("clock_card_color", "#cfbafd"); // Default purple
-        if (clockColor.isEmpty()) {
-            clockColor = "#cfbafd"; // Safety check - ensure not empty
-        }
-        return clockColor;
+        // For other themes or default
+        return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
     }
     
     /**
@@ -101,26 +99,25 @@ public class SharedPreferencesManager {
      */
     public void updateDefaultClockColorForTheme() {
         String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
-        String newDefaultColor;
         
+        // Only update if the theme changes and the color wasn't manually set by the user
         if (currentTheme != null) {
-            if (currentTheme.equalsIgnoreCase("AMOLED") || 
-                currentTheme.equalsIgnoreCase("Amoled") || 
+            if (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") || 
                 currentTheme.equalsIgnoreCase("Faded Night")) {
-                newDefaultColor = "#424242"; // Dark Grey for AMOLED
+                setClockCardColor("#424242"); // Dark Grey for AMOLED
             } else if (currentTheme.equals("Crimson Bloom")) {
-                newDefaultColor = "#F44336"; // Red for Red theme
+                setClockCardColor("#F44336"); // Red for Red theme
             } else if (currentTheme.equals("Premium Gold")) {
-                newDefaultColor = "#FFD700"; // Gold for Premium Gold theme
+                setClockCardColor("#FFD700"); // Gold for Gold theme
             } else if (currentTheme.equals("Silent Forest")) {
-                newDefaultColor = "#26A69A"; // Green for Silent Forest theme
+                setClockCardColor("#26A69A"); // Green for Silent Forest theme
             } else if (currentTheme.equals("Shadow Alloy")) {
-                newDefaultColor = "#A5A9AB"; // Silver for Shadow Alloy theme
+                setClockCardColor("#A5A9AB"); // Silver for Shadow Alloy theme
+            } else if (currentTheme.equals("Pookie Pink")) {
+                setClockCardColor("#F06292"); // Pink for Pookie Pink theme
             } else {
-                newDefaultColor = "#cfbafd"; // Purple for default theme
+                setClockCardColor(DEFAULT_CLOCK_CARD_COLOR); // Default purple for other themes
             }
-            
-            sharedPreferences.edit().putString("clock_card_color", newDefaultColor).apply();
         }
     }
     

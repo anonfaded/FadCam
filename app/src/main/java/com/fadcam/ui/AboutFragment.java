@@ -93,6 +93,8 @@ public class AboutFragment extends BaseFragment {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary); // Green (#26A69A)
         } else if ("Shadow Alloy".equals(currentTheme)) {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary); // Silver (#A5A9AB)
+        } else if ("Pookie Pink".equals(currentTheme)) {
+            themeTextColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary); // Pink (#F06292)
         } else {
             themeTextColor = Color.WHITE; // Default for Faded Night
         }
@@ -120,6 +122,10 @@ public class AboutFragment extends BaseFragment {
             highlightColorHex = "#FFD700"; // Gold color for Premium Gold
         } else if ("Silent Forest".equals(currentTheme)) {
             highlightColorHex = "#26A69A"; // Green color for Silent Forest
+        } else if ("Shadow Alloy".equals(currentTheme)) {
+            highlightColorHex = "#A5A9AB"; // Silver color for Shadow Alloy
+        } else if ("Pookie Pink".equals(currentTheme)) {
+            highlightColorHex = "#F06292"; // Pink color for Pookie Pink
         } else {
             highlightColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -170,6 +176,12 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#FF5252"; // Red theme secondary color for Crimson Bloom
         } else if ("Premium Gold".equals(currentThemeAnswers)) {
             answerColorHex = "#FFD700"; // Gold color for Premium Gold
+        } else if ("Silent Forest".equals(currentThemeAnswers)) {
+            answerColorHex = "#26A69A"; // Green color for Silent Forest
+        } else if ("Shadow Alloy".equals(currentThemeAnswers)) {
+            answerColorHex = "#A5A9AB"; // Silver color for Shadow Alloy
+        } else if ("Pookie Pink".equals(currentThemeAnswers)) {
+            answerColorHex = "#F06292"; // Pink color for Pookie Pink
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
@@ -239,6 +251,10 @@ public class AboutFragment extends BaseFragment {
             answerColorHex = "#FFD700"; // Gold color for Premium Gold
         } else if ("Silent Forest".equals(currentTheme)) {
             answerColorHex = "#26A69A"; // Green color for Silent Forest
+        } else if ("Shadow Alloy".equals(currentTheme)) {
+            answerColorHex = "#A5A9AB"; // Silver color for Shadow Alloy
+        } else if ("Pookie Pink".equals(currentTheme)) {
+            answerColorHex = "#F06292"; // Pink color for Pookie Pink
         } else {
             answerColorHex = "#AAAAAA"; // Default dark gray for other themes (like Faded Night)
         }
