@@ -127,6 +127,10 @@ public class MainActivity extends AppCompatActivity {
             // Silent Forest theme
             setTheme(R.style.Theme_FadCam_SilentForest);
             getWindow().setNavigationBarColor(getResources().getColor(R.color.silentforest_theme_background_dark, getTheme()));
+        } else if ("Shadow Alloy".equals(savedTheme)) {
+            // Shadow Alloy theme
+            setTheme(R.style.Theme_FadCam_ShadowAlloy);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.shadowalloy_theme_background_dark, getTheme()));
         } else {
             // Default dark theme
             setTheme(R.style.Base_Theme_FadCam);

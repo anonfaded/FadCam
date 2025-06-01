@@ -843,6 +843,12 @@ public class SettingsFragment extends BaseFragment {
                 button.setTextColor(black); // Black text on green background
                 button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary)));
                 button.setIconTintResource(android.R.color.black);
+            } else if ("Shadow Alloy".equals(currentTheme)) {
+                // For Shadow Alloy theme, use silver color with black text for contrast
+                button.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary));
+                button.setTextColor(black); // Black text on silver background
+                button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary)));
+                button.setIconTintResource(android.R.color.black);
             } else {
                 // For other themes, use theme color
                 button.setBackgroundColor(themeColor);
@@ -882,6 +888,14 @@ public class SettingsFragment extends BaseFragment {
                 button.setTextColor(white);
                 button.setStrokeWidth(0);
                 button.setStrokeColor(ColorStateList.valueOf(darkGreen));
+                button.setIconTintResource(android.R.color.white);
+            } else if ("Shadow Alloy".equals(currentTheme)) {
+                // Shadow Alloy theme - darker silver background, white text
+                int darkSilver = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary_variant);
+                button.setBackgroundColor(darkSilver);
+                button.setTextColor(white);
+                button.setStrokeWidth(0);
+                button.setStrokeColor(ColorStateList.valueOf(darkSilver));
                 button.setIconTintResource(android.R.color.white);
             } else {
                 // Fallback for any other theme - dark gray with white text
@@ -1454,6 +1468,27 @@ public class SettingsFragment extends BaseFragment {
             unselectedButton.setIconTintResource(android.R.color.white);
             
             Log.d(TAG_SETTINGS, "Applied direct colors for Silent Forest theme");
+        } else if ("Shadow Alloy".equals(currentTheme)) {
+            // Direct approach for Shadow Alloy theme
+            MaterialButton selectedButton = (selected == CameraType.FRONT) ? frontCameraButton : backCameraButton;
+            
+            // Set explicit colors for Shadow Alloy theme
+            int silverColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
+            selectedButton.setBackgroundColor(silverColor);
+            selectedButton.setTextColor(Color.BLACK); // Black text on silver background
+            selectedButton.setStrokeColor(ColorStateList.valueOf(silverColor));
+            selectedButton.setIconTintResource(android.R.color.black);
+            
+            // Make sure unselected button is dark silver with white text
+            MaterialButton unselectedButton = (selected == CameraType.FRONT) ? backCameraButton : frontCameraButton;
+            int darkSilver = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary_variant);
+            unselectedButton.setBackgroundColor(darkSilver);
+            unselectedButton.setTextColor(Color.WHITE);
+            unselectedButton.setStrokeWidth(0);
+            unselectedButton.setStrokeColor(ColorStateList.valueOf(darkSilver));
+            unselectedButton.setIconTintResource(android.R.color.white);
+            
+            Log.d(TAG_SETTINGS, "Applied direct colors for Shadow Alloy theme");
         }
         
         Log.d(TAG_SETTINGS,"Synced camera switch UI to: " + sharedPreferencesManager.getCameraSelection());
@@ -1519,6 +1554,14 @@ public class SettingsFragment extends BaseFragment {
                     selectedButton.setBackgroundColor(greenColor);
                     selectedButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.black)); // Black text
                     selectedButton.setStrokeColor(ColorStateList.valueOf(greenColor));
+                    selectedButton.setIconTintResource(android.R.color.black);
+                } else if ("Shadow Alloy".equals(currentTheme)) {
+                    // Force apply correct colors for Shadow Alloy theme
+                    MaterialButton selectedButton = (checkedId == R.id.button_front_camera) ? frontCameraButton : backCameraButton;
+                    int silverColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
+                    selectedButton.setBackgroundColor(silverColor);
+                    selectedButton.setTextColor(Color.BLACK); // Black text on silver background
+                    selectedButton.setStrokeColor(ColorStateList.valueOf(silverColor));
                     selectedButton.setIconTintResource(android.R.color.black);
                 }
             }
@@ -2690,13 +2733,14 @@ public class SettingsFragment extends BaseFragment {
     private void setupThemeSpinner(View view) {
         MaterialButton themeButton = view.findViewById(R.id.theme_choose_button); // Add a button in layout for theme selection
         if (themeButton == null) return;
-        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold), getString(R.string.theme_silentforest)};
+        String[] themeNames = {getString(R.string.theme_red), "Midnight Dusk", "Faded Night", getString(R.string.theme_gold), getString(R.string.theme_silentforest), getString(R.string.theme_shadowalloy)};
         int[] themeColors = {
             ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
             ContextCompat.getColor(requireContext(), R.color.gray),
             ContextCompat.getColor(requireContext(), R.color.amoled_surface), // Use surface color instead of background
             ContextCompat.getColor(requireContext(), R.color.gold_theme_primary),
-            ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary)
+            ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary),
+            ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary)
         };
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
         int tempThemeIndex = 1; // Default to Dark Mode index
@@ -2704,12 +2748,13 @@ public class SettingsFragment extends BaseFragment {
         else if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) tempThemeIndex = 2;
         else if ("Premium Gold".equals(currentTheme)) tempThemeIndex = 3;
         else if ("Silent Forest".equals(currentTheme)) tempThemeIndex = 4;
+        else if ("Shadow Alloy".equals(currentTheme)) tempThemeIndex = 5;
         
         final int themeIndex = tempThemeIndex;
         themeButton.setText(themeNames[themeIndex]);
         
         // Set text color based on theme - black for Gold and Silent Forest, white for others
-        if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme)) {
+        if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || "Shadow Alloy".equals(currentTheme)) {
             themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black));
         } else {
             themeButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
@@ -2770,6 +2815,8 @@ public class SettingsFragment extends BaseFragment {
                     newTheme = "Premium Gold";
                 } else if (getString(R.string.theme_silentforest).equals(newTheme)) {
                     newTheme = "Silent Forest";
+                } else if (getString(R.string.theme_shadowalloy).equals(newTheme)) {
+                    newTheme = "Shadow Alloy";
                 } else {
                     newTheme = "Crimson Bloom";
                 }
@@ -2849,6 +2896,10 @@ public class SettingsFragment extends BaseFragment {
             // Silent Forest theme
             ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
             // Apply other Silent Forest theme-specific UI changes that can be done without recreation
+        } else if ("Shadow Alloy".equals(themeName)) {
+            // Shadow Alloy theme
+            ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
+            // Apply other Shadow Alloy theme-specific UI changes that can be done without recreation
         }
         // Apply other theme-agnostic UI updates
         applyThemeToUI(requireView());

@@ -1602,17 +1602,31 @@ public class HomeFragment extends BaseFragment {
             setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
             setTextColorsRecursive(cardTips, goldHeading, goldTextSecondary);
         } else if ("Silent Forest".equals(themeName)) {
-            int greenSurface = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_surface_dark);
-            int greenHeading = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_heading);
-            int greenTextSecondary = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_text_secondary_dark);
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(greenSurface);
-            if (cardStats != null) cardStats.setCardBackgroundColor(greenSurface);
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(greenSurface);
+            // Silent Forest theme (green/teal)
+            int forestSurface = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_surface_dark);
+            int forestHeading = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_heading);
+            int forestTextSecondary = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(forestSurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(forestSurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(forestSurface);
             if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
-            setTextColorsRecursive(cardPreview, greenHeading, greenTextSecondary);
-            setTextColorsRecursive(cardStats, greenHeading, greenTextSecondary);
-            setTextColorsRecursive(cardStorage, greenHeading, greenTextSecondary);
-            setTextColorsRecursive(cardTips, greenHeading, greenTextSecondary);
+            setTextColorsRecursive(cardPreview, forestHeading, forestTextSecondary);
+            setTextColorsRecursive(cardStats, forestHeading, forestTextSecondary);
+            setTextColorsRecursive(cardStorage, forestHeading, forestTextSecondary);
+            setTextColorsRecursive(cardTips, Color.WHITE, Color.LTGRAY);
+        } else if ("Shadow Alloy".equals(themeName)) {
+            // Shadow Alloy theme (silver/metallic)
+            int alloySurface = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_surface_dark);
+            int alloyHeading = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_heading);
+            int alloyTextSecondary = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_text_secondary_dark);
+            if (cardPreview != null) cardPreview.setCardBackgroundColor(alloySurface);
+            if (cardStats != null) cardStats.setCardBackgroundColor(alloySurface);
+            if (cardStorage != null) cardStorage.setCardBackgroundColor(alloySurface);
+            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
+            setTextColorsRecursive(cardPreview, alloyHeading, alloyTextSecondary);
+            setTextColorsRecursive(cardStats, alloyHeading, alloyTextSecondary);
+            setTextColorsRecursive(cardStorage, alloyHeading, alloyTextSecondary);
+            setTextColorsRecursive(cardTips, Color.WHITE, Color.LTGRAY);
         } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
             int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
             int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);

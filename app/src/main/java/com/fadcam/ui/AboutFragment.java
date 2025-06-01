@@ -91,8 +91,10 @@ public class AboutFragment extends BaseFragment {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary); // Gold (#FFD700)
         } else if ("Silent Forest".equals(currentTheme)) {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary); // Green (#26A69A)
+        } else if ("Shadow Alloy".equals(currentTheme)) {
+            themeTextColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary); // Silver (#A5A9AB)
         } else {
-            themeTextColor = Color.WHITE; // Default white for other themes
+            themeTextColor = Color.WHITE; // Default for Faded Night
         }
 
         appIcon.setImageResource(R.mipmap.ic_launcher);

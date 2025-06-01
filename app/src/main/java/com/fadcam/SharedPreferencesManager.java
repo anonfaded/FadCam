@@ -83,12 +83,16 @@ public class SharedPreferencesManager {
             return "#FFD700"; // Gold for Premium Gold theme
         } else if (currentTheme.equals("Silent Forest")) {
             return "#26A69A"; // Green for Silent Forest theme
-        } else if (currentTheme.equals("Midnight Dusk")) {
-            return "#673AB7"; // Purple for Default Dark theme
+        } else if (currentTheme.equals("Shadow Alloy")) {
+            return "#A5A9AB"; // Silver for Shadow Alloy theme
         }
         
-        // For other themes or custom selection, get the saved value
-        return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
+        // For all other themes, use the saved color preference or default if not set
+        String clockColor = sharedPreferences.getString("clock_card_color", "#cfbafd"); // Default purple
+        if (clockColor.isEmpty()) {
+            clockColor = "#cfbafd"; // Safety check - ensure not empty
+        }
+        return clockColor;
     }
     
     /**
@@ -96,32 +100,27 @@ public class SharedPreferencesManager {
      * This should be called whenever the theme changes or on app startup.
      */
     public void updateDefaultClockColorForTheme() {
-        String currentTheme = sharedPreferences.getString(Constants.PREF_APP_THEME, "Midnight Dusk");
-        Log.i("SharedPreferencesManager", "Updating default clock color for theme: " + currentTheme);
+        String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, "Midnight Dusk");
+        String newDefaultColor;
         
-        // Set appropriate color based on theme
-        if (currentTheme != null && 
-            (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") || 
-             currentTheme.equalsIgnoreCase("Faded Night"))) {
-            // For AMOLED theme, always use Dark Grey
-            setClockCardColor("#424242");
-            Log.i("SharedPreferencesManager", "AMOLED theme detected, setting clock color to Dark Grey (#424242)");
-        } else if ("Crimson Bloom".equals(currentTheme)) {
-            // For Red theme, use Red
-            setClockCardColor("#F44336");
-            Log.i("SharedPreferencesManager", "Red theme detected, setting clock color to Red (#F44336)");
-        } else if ("Premium Gold".equals(currentTheme)) {
-            // For Gold theme, use Gold
-            setClockCardColor("#FFD700");
-            Log.i("SharedPreferencesManager", "Premium Gold theme detected, setting clock color to Gold (#FFD700)");
-        } else if ("Silent Forest".equals(currentTheme)) {
-            // For Silent Forest theme, use Green
-            setClockCardColor("#26A69A");
-            Log.i("SharedPreferencesManager", "Silent Forest theme detected, setting clock color to Green (#26A69A)");
-        } else {
-            // For Default Dark theme, use Purple
-            setClockCardColor("#673AB7");
-            Log.i("SharedPreferencesManager", "Default theme detected, setting clock color to Purple (#673AB7)");
+        if (currentTheme != null) {
+            if (currentTheme.equalsIgnoreCase("AMOLED") || 
+                currentTheme.equalsIgnoreCase("Amoled") || 
+                currentTheme.equalsIgnoreCase("Faded Night")) {
+                newDefaultColor = "#424242"; // Dark Grey for AMOLED
+            } else if (currentTheme.equals("Crimson Bloom")) {
+                newDefaultColor = "#F44336"; // Red for Red theme
+            } else if (currentTheme.equals("Premium Gold")) {
+                newDefaultColor = "#FFD700"; // Gold for Premium Gold theme
+            } else if (currentTheme.equals("Silent Forest")) {
+                newDefaultColor = "#26A69A"; // Green for Silent Forest theme
+            } else if (currentTheme.equals("Shadow Alloy")) {
+                newDefaultColor = "#A5A9AB"; // Silver for Shadow Alloy theme
+            } else {
+                newDefaultColor = "#cfbafd"; // Purple for default theme
+            }
+            
+            sharedPreferences.edit().putString("clock_card_color", newDefaultColor).apply();
         }
     }
     
