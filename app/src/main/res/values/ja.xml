@@ -281,9 +281,15 @@
         <item>Midnight Dusk</item>
         <item>Faded Night</item>
         <item>Crimson Bloom</item>
+        <item>Silent Forest</item>
+        <item>Shadow Alloy</item>
+        <item>Pookie Pink</item>
     </string-array>
     <string name="theme_red">Crimson Bloom</string>
     <string name="theme_gold">Premium Gold</string>
+    <string name="theme_silentforest">Silent Forest</string>
+    <string name="theme_shadowalloy">Shadow Alloy</string>
+    <string name="theme_pookiepink">Pookie Pink</string>
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
