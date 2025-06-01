@@ -487,4 +487,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_verification_canceled">Verification canceled</string>
     <string name="version_format">v%s</string>
     <string name="edit_with_faditorx">Edit with FaditorX</string>
+    <!-- App Icon Strings -->
+    <string name="setting_app_icon_title">App Icon</string>
+    <string name="setting_app_icon_desc">Change the app\'s launcher icon</string>
+    <string name="app_icon_dialog_title">Choose App Icon</string>
+    <string name="app_icon_default">Default</string>
+    <string name="app_icon_alternative">Detective</string>
+    <string name="app_icon_changed">App icon changed</string>
+    <!-- Misc -->
 </resources>
