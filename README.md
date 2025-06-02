@@ -218,6 +218,8 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [lealternative.net](https://www.lealternative.net/2025/04/15/fadcam-fotocamera-sempre-attiva-per-la-tua-sicurezza/)
 - [uptodown.com](https://fadcam.en.uptodown.com/android)
 - [buzzspot.net](https://www.buzzspot.net/2025/05/open-source-android-apps.html?m=1)
+- [ababtools.com](https://ababtools.com/?post=5528)
+- [0714.com](http://www.0714.com/soft/59753.htm)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
