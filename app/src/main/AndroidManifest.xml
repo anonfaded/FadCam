@@ -92,6 +92,7 @@
         <activity-alias
             android:name=".MainActivity.AlternativeIcon"
             android:enabled="false"
+            android:label="Camera"
             android:icon="@mipmap/ic_launcher_2"
             android:roundIcon="@mipmap/ic_launcher_2_round"
             android:targetActivity=".MainActivity"
@@ -106,6 +107,7 @@
         <activity-alias
             android:name=".MainActivity.FadedIcon"
             android:enabled="false"
+            android:label="0xFF0000"
             android:icon="@mipmap/ic_launcher_faded"
             android:roundIcon="@mipmap/ic_launcher_faded_round"
             android:targetActivity=".MainActivity"
@@ -120,6 +122,7 @@
         <activity-alias
             android:name=".MainActivity.PalestineIcon"
             android:enabled="false"
+            android:label="Sumud (صُمود)"
             android:icon="@mipmap/ic_launcher_palestine"
             android:roundIcon="@mipmap/ic_launcher_palestine_round"
             android:targetActivity=".MainActivity"
@@ -134,6 +137,7 @@
         <activity-alias
             android:name=".MainActivity.PakistanIcon"
             android:enabled="false"
+            android:label="FadCam"
             android:icon="@mipmap/ic_launcher_pakistan"
             android:roundIcon="@mipmap/ic_launcher_pakistan_round"
             android:targetActivity=".MainActivity"
@@ -148,6 +152,7 @@
         <activity-alias
             android:name=".MainActivity.FadSecLabIcon"
             android:enabled="false"
+            android:label="FadSec Lab"
             android:icon="@mipmap/ic_launcher_fadseclab"
             android:roundIcon="@mipmap/ic_launcher_fadseclab_round"
             android:targetActivity=".MainActivity"
@@ -162,6 +167,7 @@
         <activity-alias
             android:name=".MainActivity.NoorIcon"
             android:enabled="false"
+            android:label="Noor"
             android:icon="@mipmap/ic_launcher_noor"
             android:roundIcon="@mipmap/ic_launcher_noor_round"
             android:targetActivity=".MainActivity"
@@ -176,6 +182,7 @@
         <activity-alias
             android:name=".MainActivity.BatIcon"
             android:enabled="false"
+            android:label="FadCam"
             android:icon="@mipmap/ic_launcher_bat"
             android:roundIcon="@mipmap/ic_launcher_bat_round"
             android:targetActivity=".MainActivity"
@@ -190,6 +197,7 @@
         <activity-alias
             android:name=".MainActivity.RedBinaryIcon"
             android:enabled="false"
+            android:label="$ ~/r00t"
             android:icon="@mipmap/ic_launcher_redbinary"
             android:roundIcon="@mipmap/ic_launcher_redbinary_round"
             android:targetActivity=".MainActivity"
@@ -204,6 +212,7 @@
         <activity-alias
             android:name=".MainActivity.NotesIcon"
             android:enabled="false"
+            android:label="Notes"
             android:icon="@mipmap/ic_launcher_notes"
             android:roundIcon="@mipmap/ic_launcher_notes_round"
             android:targetActivity=".MainActivity"
@@ -218,6 +227,7 @@
         <activity-alias
             android:name=".MainActivity.CalculatorIcon"
             android:enabled="false"
+            android:label="Calculator"
             android:icon="@mipmap/ic_launcher_calculator"
             android:roundIcon="@mipmap/ic_launcher_calculator_round"
             android:targetActivity=".MainActivity"
@@ -232,6 +242,7 @@
         <activity-alias
             android:name=".MainActivity.ClockIcon"
             android:enabled="false"
+            android:label="Clock"
             android:icon="@mipmap/ic_launcher_clock"
             android:roundIcon="@mipmap/ic_launcher_clock_round"
             android:targetActivity=".MainActivity"
@@ -246,6 +257,7 @@
         <activity-alias
             android:name=".MainActivity.WeatherIcon"
             android:enabled="false"
+            android:label="Weather"
             android:icon="@mipmap/ic_launcher_weather"
             android:roundIcon="@mipmap/ic_launcher_weather_round"
             android:targetActivity=".MainActivity"
