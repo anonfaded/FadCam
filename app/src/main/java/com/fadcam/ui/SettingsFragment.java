@@ -4460,6 +4460,16 @@ public class SettingsFragment extends BaseFragment {
             appIconChooseButton.setText(getString(R.string.app_icon_noor));
         } else if (currentIcon.equals(Constants.APP_ICON_BAT)) {
             appIconChooseButton.setText(getString(R.string.app_icon_bat));
+        } else if (currentIcon.equals(Constants.APP_ICON_REDBINARY)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_redbinary));
+        } else if (currentIcon.equals(Constants.APP_ICON_NOTES)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_notes));
+        } else if (currentIcon.equals(Constants.APP_ICON_CALCULATOR)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_calculator));
+        } else if (currentIcon.equals(Constants.APP_ICON_CLOCK)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_clock));
+        } else if (currentIcon.equals(Constants.APP_ICON_WEATHER)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_weather));
         }
         
         // Set proper text color based on current theme
@@ -4496,7 +4506,12 @@ public class SettingsFragment extends BaseFragment {
             getString(R.string.app_icon_pakistan),
             getString(R.string.app_icon_fadseclab),
             getString(R.string.app_icon_noor),
-            getString(R.string.app_icon_bat)
+            getString(R.string.app_icon_bat),
+            getString(R.string.app_icon_redbinary),
+            getString(R.string.app_icon_notes),
+            getString(R.string.app_icon_calculator),
+            getString(R.string.app_icon_clock),
+            getString(R.string.app_icon_weather)
         };
         
         // Create a custom list adapter for the app icons
@@ -4535,6 +4550,21 @@ public class SettingsFragment extends BaseFragment {
                 } else if (position == 7) {
                     // FadBat icon
                     iconPreview.setImageResource(R.mipmap.ic_launcher_bat);
+                } else if (position == 8) {
+                    // Red Binary icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_redbinary);
+                } else if (position == 9) {
+                    // Notes icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_notes);
+                } else if (position == 10) {
+                    // Calculator icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_calculator);
+                } else if (position == 11) {
+                    // Clock icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_clock);
+                } else if (position == 12) {
+                    // Weather icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_weather);
                 }
                 
                 // Set text color based on current theme
@@ -4564,8 +4594,18 @@ public class SettingsFragment extends BaseFragment {
                     iconKey = Constants.APP_ICON_FADSECLAB;
                 } else if (position == 6) {
                     iconKey = Constants.APP_ICON_NOOR;
-                } else {
+                } else if (position == 7) {
                     iconKey = Constants.APP_ICON_BAT;
+                } else if (position == 8) {
+                    iconKey = Constants.APP_ICON_REDBINARY;
+                } else if (position == 9) {
+                    iconKey = Constants.APP_ICON_NOTES;
+                } else if (position == 10) {
+                    iconKey = Constants.APP_ICON_CALCULATOR;
+                } else if (position == 11) {
+                    iconKey = Constants.APP_ICON_CLOCK;
+                } else {
+                    iconKey = Constants.APP_ICON_WEATHER;
                 }
                 radioButton.setChecked(iconKey.equals(currentIcon));
                 
@@ -4589,11 +4629,22 @@ public class SettingsFragment extends BaseFragment {
             selectedPosition = 6;
         } else if (Constants.APP_ICON_BAT.equals(currentIcon)) {
             selectedPosition = 7;
+        } else if (Constants.APP_ICON_REDBINARY.equals(currentIcon)) {
+            selectedPosition = 8;
+        } else if (Constants.APP_ICON_NOTES.equals(currentIcon)) {
+            selectedPosition = 9;
+        } else if (Constants.APP_ICON_CALCULATOR.equals(currentIcon)) {
+            selectedPosition = 10;
+        } else if (Constants.APP_ICON_CLOCK.equals(currentIcon)) {
+            selectedPosition = 11;
+        } else if (Constants.APP_ICON_WEATHER.equals(currentIcon)) {
+            selectedPosition = 12;
         }
         
         builder.setSingleChoiceItems(adapter, selectedPosition, (dialog, which) -> {
             // Determine which icon was selected based on position
-            String newIcon;
+            String newIcon = Constants.APP_ICON_DEFAULT; // Initialize with default value to avoid "might not have been initialized" error
+            
             if (which == 0) {
                 newIcon = Constants.APP_ICON_DEFAULT;
             } else if (which == 1) {
@@ -4608,8 +4659,18 @@ public class SettingsFragment extends BaseFragment {
                 newIcon = Constants.APP_ICON_FADSECLAB;
             } else if (which == 6) {
                 newIcon = Constants.APP_ICON_NOOR;
-            } else {
+            } else if (which == 7) {
                 newIcon = Constants.APP_ICON_BAT;
+            } else if (which == 8) {
+                newIcon = Constants.APP_ICON_REDBINARY;
+            } else if (which == 9) {
+                newIcon = Constants.APP_ICON_NOTES;
+            } else if (which == 10) {
+                newIcon = Constants.APP_ICON_CALCULATOR;
+            } else if (which == 11) {
+                newIcon = Constants.APP_ICON_CLOCK;
+            } else if (which == 12) {
+                newIcon = Constants.APP_ICON_WEATHER;
             }
             
             if (!newIcon.equals(currentIcon)) {
@@ -4635,6 +4696,16 @@ public class SettingsFragment extends BaseFragment {
                     appIconChooseButton.setText(getString(R.string.app_icon_noor));
                 } else if (which == 7) {
                     appIconChooseButton.setText(getString(R.string.app_icon_bat));
+                } else if (which == 8) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_redbinary));
+                } else if (which == 9) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_notes));
+                } else if (which == 10) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_calculator));
+                } else if (which == 11) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_clock));
+                } else if (which == 12) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_weather));
                 }
                 
                 // Apply the icon change
@@ -4675,6 +4746,11 @@ public class SettingsFragment extends BaseFragment {
         ComponentName fadseclabIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FadSecLabIcon");
         ComponentName noorIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.NoorIcon");
         ComponentName batIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.BatIcon");
+        ComponentName redbinaryIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.RedBinaryIcon");
+        ComponentName notesIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.NotesIcon");
+        ComponentName calculatorIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.CalculatorIcon");
+        ComponentName clockIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.ClockIcon");
+        ComponentName weatherIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.WeatherIcon");
         
         // Disable all icon activity-aliases first
         pm.setComponentEnabledSetting(defaultIcon, 
@@ -4701,7 +4777,22 @@ public class SettingsFragment extends BaseFragment {
         pm.setComponentEnabledSetting(batIcon, 
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
-                
+        pm.setComponentEnabledSetting(redbinaryIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(notesIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(calculatorIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(clockIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(weatherIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        
         // Enable only the selected icon
         if (Constants.APP_ICON_DEFAULT.equals(iconKey)) {
             pm.setComponentEnabledSetting(defaultIcon, 
@@ -4733,6 +4824,26 @@ public class SettingsFragment extends BaseFragment {
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_BAT.equals(iconKey)) {
             pm.setComponentEnabledSetting(batIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_REDBINARY.equals(iconKey)) {
+            pm.setComponentEnabledSetting(redbinaryIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_NOTES.equals(iconKey)) {
+            pm.setComponentEnabledSetting(notesIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_CALCULATOR.equals(iconKey)) {
+            pm.setComponentEnabledSetting(calculatorIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_CLOCK.equals(iconKey)) {
+            pm.setComponentEnabledSetting(clockIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_WEATHER.equals(iconKey)) {
+            pm.setComponentEnabledSetting(weatherIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
         }
