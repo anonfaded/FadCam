@@ -123,7 +123,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_theme"
+                    android:src="@drawable/unknown_icon3"
                     app:tint="@color/white"
                     android:contentDescription="App Icon"/>
                 <LinearLayout
