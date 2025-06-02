@@ -139,4 +139,9 @@ public abstract class Constants {
     public static final String APP_ICON_DEFAULT = "default"; // Original icon
     public static final String APP_ICON_ALTERNATIVE = "alternative"; // Detective icon
     public static final String APP_ICON_FADED = "faded"; // Faded icon
+    public static final String APP_ICON_PALESTINE = "palestine"; // Sumud icon
+    public static final String APP_ICON_PAKISTAN = "pakistan"; // MadeInPK icon
+    public static final String APP_ICON_FADSECLAB = "fadseclab"; // r00t icon
+    public static final String APP_ICON_NOOR = "noor"; // Noor icon
+    public static final String APP_ICON_BAT = "bat"; // FadBat icon
 }

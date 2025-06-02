@@ -4450,8 +4450,18 @@ public class SettingsFragment extends BaseFragment {
             appIconChooseButton.setText(getString(R.string.app_icon_alternative));
         } else if (currentIcon.equals(Constants.APP_ICON_FADED)) {
             appIconChooseButton.setText(getString(R.string.app_icon_faded));
+        } else if (currentIcon.equals(Constants.APP_ICON_PALESTINE)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_palestine));
+        } else if (currentIcon.equals(Constants.APP_ICON_PAKISTAN)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_pakistan));
+        } else if (currentIcon.equals(Constants.APP_ICON_FADSECLAB)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_fadseclab));
+        } else if (currentIcon.equals(Constants.APP_ICON_NOOR)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_noor));
+        } else if (currentIcon.equals(Constants.APP_ICON_BAT)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_bat));
         }
-                
+        
         // Set proper text color based on current theme
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || 
@@ -4481,7 +4491,12 @@ public class SettingsFragment extends BaseFragment {
         String[] iconNames = {
             getString(R.string.app_icon_default),
             getString(R.string.app_icon_alternative),
-            getString(R.string.app_icon_faded)
+            getString(R.string.app_icon_faded),
+            getString(R.string.app_icon_palestine),
+            getString(R.string.app_icon_pakistan),
+            getString(R.string.app_icon_fadseclab),
+            getString(R.string.app_icon_noor),
+            getString(R.string.app_icon_bat)
         };
         
         // Create a custom list adapter for the app icons
@@ -4505,6 +4520,21 @@ public class SettingsFragment extends BaseFragment {
                 } else if (position == 2) {
                     // Faded icon
                     iconPreview.setImageResource(R.mipmap.ic_launcher_faded);
+                } else if (position == 3) {
+                    // Palestine/Sumud icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_palestine);
+                } else if (position == 4) {
+                    // Pakistan/MadeInPK icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_pakistan);
+                } else if (position == 5) {
+                    // FadSecLab/r00t icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_fadseclab);
+                } else if (position == 6) {
+                    // Noor icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_noor);
+                } else if (position == 7) {
+                    // FadBat icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_bat);
                 }
                 
                 // Set text color based on current theme
@@ -4524,26 +4554,20 @@ public class SettingsFragment extends BaseFragment {
                     iconKey = Constants.APP_ICON_DEFAULT;
                 } else if (position == 1) {
                     iconKey = Constants.APP_ICON_ALTERNATIVE;
-                } else {
+                } else if (position == 2) {
                     iconKey = Constants.APP_ICON_FADED;
+                } else if (position == 3) {
+                    iconKey = Constants.APP_ICON_PALESTINE;
+                } else if (position == 4) {
+                    iconKey = Constants.APP_ICON_PAKISTAN;
+                } else if (position == 5) {
+                    iconKey = Constants.APP_ICON_FADSECLAB;
+                } else if (position == 6) {
+                    iconKey = Constants.APP_ICON_NOOR;
+                } else {
+                    iconKey = Constants.APP_ICON_BAT;
                 }
                 radioButton.setChecked(iconKey.equals(currentIcon));
-                
-                // Highlight background if selected
-                if (radioButton.isChecked()) {
-                    if (isSnowVeilTheme) {
-                        // Light highlight for Snow Veil theme
-                        GradientDrawable highlightBg = new GradientDrawable();
-                        highlightBg.setCornerRadius(8 * getResources().getDisplayMetrics().density); // 8dp
-                        highlightBg.setColor(ContextCompat.getColor(requireContext(), R.color.snowveil_theme_accent));
-                        view.setBackground(highlightBg);
-                    } else {
-                        // Standard selection background for other themes
-                        view.setBackgroundResource(R.drawable.selected_theme_bg);
-                    }
-                } else {
-                    view.setBackground(null);
-                }
                 
                 return view;
             }
@@ -4555,6 +4579,16 @@ public class SettingsFragment extends BaseFragment {
             selectedPosition = 1;
         } else if (Constants.APP_ICON_FADED.equals(currentIcon)) {
             selectedPosition = 2;
+        } else if (Constants.APP_ICON_PALESTINE.equals(currentIcon)) {
+            selectedPosition = 3;
+        } else if (Constants.APP_ICON_PAKISTAN.equals(currentIcon)) {
+            selectedPosition = 4;
+        } else if (Constants.APP_ICON_FADSECLAB.equals(currentIcon)) {
+            selectedPosition = 5;
+        } else if (Constants.APP_ICON_NOOR.equals(currentIcon)) {
+            selectedPosition = 6;
+        } else if (Constants.APP_ICON_BAT.equals(currentIcon)) {
+            selectedPosition = 7;
         }
         
         builder.setSingleChoiceItems(adapter, selectedPosition, (dialog, which) -> {
@@ -4564,8 +4598,18 @@ public class SettingsFragment extends BaseFragment {
                 newIcon = Constants.APP_ICON_DEFAULT;
             } else if (which == 1) {
                 newIcon = Constants.APP_ICON_ALTERNATIVE;
-            } else {
+            } else if (which == 2) {
                 newIcon = Constants.APP_ICON_FADED;
+            } else if (which == 3) {
+                newIcon = Constants.APP_ICON_PALESTINE;
+            } else if (which == 4) {
+                newIcon = Constants.APP_ICON_PAKISTAN;
+            } else if (which == 5) {
+                newIcon = Constants.APP_ICON_FADSECLAB;
+            } else if (which == 6) {
+                newIcon = Constants.APP_ICON_NOOR;
+            } else {
+                newIcon = Constants.APP_ICON_BAT;
             }
             
             if (!newIcon.equals(currentIcon)) {
@@ -4579,8 +4623,18 @@ public class SettingsFragment extends BaseFragment {
                     appIconChooseButton.setText(getString(R.string.app_icon_default));
                 } else if (which == 1) {
                     appIconChooseButton.setText(getString(R.string.app_icon_alternative));
-                } else {
+                } else if (which == 2) {
                     appIconChooseButton.setText(getString(R.string.app_icon_faded));
+                } else if (which == 3) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_palestine));
+                } else if (which == 4) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_pakistan));
+                } else if (which == 5) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_fadseclab));
+                } else if (which == 6) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_noor));
+                } else if (which == 7) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_bat));
                 }
                 
                 // Apply the icon change
@@ -4616,6 +4670,11 @@ public class SettingsFragment extends BaseFragment {
         ComponentName defaultIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity");
         ComponentName alternativeIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.AlternativeIcon");
         ComponentName fadedIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FadedIcon");
+        ComponentName palestineIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.PalestineIcon");
+        ComponentName pakistanIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.PakistanIcon");
+        ComponentName fadseclabIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FadSecLabIcon");
+        ComponentName noorIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.NoorIcon");
+        ComponentName batIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.BatIcon");
         
         // Disable all icon activity-aliases first
         pm.setComponentEnabledSetting(defaultIcon, 
@@ -4625,6 +4684,21 @@ public class SettingsFragment extends BaseFragment {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(fadedIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(palestineIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(pakistanIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(fadseclabIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(noorIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(batIcon, 
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
                 
@@ -4639,6 +4713,26 @@ public class SettingsFragment extends BaseFragment {
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_FADED.equals(iconKey)) {
             pm.setComponentEnabledSetting(fadedIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_PALESTINE.equals(iconKey)) {
+            pm.setComponentEnabledSetting(palestineIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_PAKISTAN.equals(iconKey)) {
+            pm.setComponentEnabledSetting(pakistanIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_FADSECLAB.equals(iconKey)) {
+            pm.setComponentEnabledSetting(fadseclabIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_NOOR.equals(iconKey)) {
+            pm.setComponentEnabledSetting(noorIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_BAT.equals(iconKey)) {
+            pm.setComponentEnabledSetting(batIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
         }
