@@ -538,6 +538,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_calculator" translatable="false">Calculator</string>
     <string name="app_icon_clock" translatable="false">Clock</string>
     <string name="app_icon_weather" translatable="false">Weather</string>
+    <string name="app_icon_football" translatable="false">FootballX 2024</string>
     <string name="app_icon_changed">App icon changed</string>
     
     <!-- Misc -->

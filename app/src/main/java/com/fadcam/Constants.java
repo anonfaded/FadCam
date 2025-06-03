@@ -149,4 +149,5 @@ public abstract class Constants {
     public static final String APP_ICON_CALCULATOR = "calculator"; // Calculator icon
     public static final String APP_ICON_CLOCK = "clock"; // Clock icon
     public static final String APP_ICON_WEATHER = "weather"; // Weather icon
+    public static final String APP_ICON_FOOTBALL = "football"; // Football game icon
 }

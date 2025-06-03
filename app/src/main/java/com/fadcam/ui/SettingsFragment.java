@@ -29,9 +29,11 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.DocumentsContract;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.util.Log; // Make sure Log is imported
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,11 +71,13 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
+import com.fadcam.utils.CameraXFrameRateUtil;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textview.MaterialTextView;
 
 // Add AppLock imports
@@ -262,7 +266,7 @@ public class SettingsFragment extends BaseFragment {
                     }
                 }
             }
-            android.util.Log.i(TAG_SETTINGS, logBuilder.toString());
+            Log.i(TAG_SETTINGS, logBuilder.toString());
         } else {
             // Fallback for older devices: use legacy intent sticky
             Intent intent = requireContext().registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
@@ -272,7 +276,7 @@ public class SettingsFragment extends BaseFragment {
                 availableInputMics.add(null); // No AudioDeviceInfo, but we can still show
                 wiredMicDetected = true;
             }
-            android.util.Log.i(TAG_SETTINGS, "Legacy headset plug state: " + legacyWired);
+            Log.i(TAG_SETTINGS, "Legacy headset plug state: " + legacyWired);
         }
         // Add special label if only headphones (no mic) detected
         if (!wiredMicDetected && headphonesNoMicDetected) {
@@ -401,7 +405,7 @@ public class SettingsFragment extends BaseFragment {
             status = getString(R.string.setting_audio_input_source_status_wired) + ":\n" + selectedMic.getProductName();
         }
         audioInputSourceStatus.setText(status);
-        android.util.Log.i(TAG_SETTINGS, "Audio input source status updated. Selected: " + selectedMic);
+        Log.i(TAG_SETTINGS, "Audio input source status updated. Selected: " + selectedMic);
     }
 
     // --- Activity Result Launcher Initialization & onCreate---
@@ -409,7 +413,7 @@ public class SettingsFragment extends BaseFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Use standard Log
-        android.util.Log.d(TAG_SETTINGS,"onCreate: Initializing fragment.");
+        Log.d(TAG_SETTINGS,"onCreate: Initializing fragment.");
         // Initialize helpers/managers FIRST
         locationHelper = new LocationHelper(requireContext());
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
@@ -481,7 +485,7 @@ public class SettingsFragment extends BaseFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_settings, container, false);
-        android.util.Log.d(TAG_SETTINGS,"onCreateView: Inflating layout and setting up views.");
+        Log.d(TAG_SETTINGS,"onCreateView: Inflating layout and setting up views.");
 
         // Find views by ID
         MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
@@ -664,7 +668,7 @@ public class SettingsFragment extends BaseFragment {
     public void onStart()
     {
         super.onStart();
-        android.util.Log.d(TAG_SETTINGS,"onStart: Registering receivers.");
+        Log.d(TAG_SETTINGS,"onStart: Registering receivers.");
         registerBroadcastOnRecordingStarted();
         registerBrodcastOnRecordingStopped();
 
@@ -770,12 +774,12 @@ public class SettingsFragment extends BaseFragment {
     }
 
     private void launchDirectoryPicker() {
-        android.util.Log.d(TAG_SETTINGS, "Launching directory picker (ACTION_OPEN_DOCUMENT_TREE)");
+        Log.d(TAG_SETTINGS, "Launching directory picker (ACTION_OPEN_DOCUMENT_TREE)");
         Uri initialUri = null;
         try {
             openDocumentTreeLauncher.launch(initialUri);
         } catch (Exception e) {
-            android.util.Log.e(TAG_SETTINGS, "Error launching directory picker", e);
+            Log.e(TAG_SETTINGS, "Error launching directory picker", e);
             Toast.makeText(requireContext(),"Could not open folder picker", Toast.LENGTH_SHORT).show();
             sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
             updateStorageLocationUI(); // Reset UI if launch fails
@@ -1244,13 +1248,13 @@ public class SettingsFragment extends BaseFragment {
                     }
                 }
             }
-            android.util.Log.i(TAG_SETTINGS, logBuilder.toString());
+            Log.i(TAG_SETTINGS, logBuilder.toString());
         } else {
             // Fallback for older devices: use legacy intent sticky
             Intent intent = requireContext().registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
             isWiredMicConnected = intent != null && intent.getIntExtra("state", 0) == 1;
             selectedMic = null; // No AudioDeviceInfo available on legacy
-            android.util.Log.i(TAG_SETTINGS, "Legacy headset plug state: " + isWiredMicConnected);
+            Log.i(TAG_SETTINGS, "Legacy headset plug state: " + isWiredMicConnected);
         }
     }
 
@@ -3090,40 +3094,54 @@ public class SettingsFragment extends BaseFragment {
     }
 
     private void applyAppTheme(String themeName) {
+        int themeColor;
+        
         if ("Crimson Bloom".equals(themeName)) {
             // Red theme
-            ContextCompat.getColor(requireContext(), R.color.red_theme_primary);
-            // Apply other Red theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.red_theme_primary);
         } else if ("Faded Night".equals(themeName)) {
             // AMOLED theme
-            ContextCompat.getColor(requireContext(), R.color.amoled_background);
-            // Apply other AMOLED theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.amoled_background);
         } else if ("Midnight Dusk".equals(themeName)) {
             // Default dark theme
-            ContextCompat.getColor(requireContext(), R.color.gray);
-            // Apply other default theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.gray);
         } else if ("Premium Gold".equals(themeName)) {
             // Gold theme
-            ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
-            // Apply other Gold theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
         } else if ("Silent Forest".equals(themeName)) {
             // Silent Forest theme
-            ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
-            // Apply other Silent Forest theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
         } else if ("Shadow Alloy".equals(themeName)) {
             // Shadow Alloy theme
-            ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
-            // Apply other Shadow Alloy theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
         } else if ("Pookie Pink".equals(themeName)) {
             // Pookie Pink theme
-            ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary);
-            // Apply other Pookie Pink theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary);
         } else if ("Snow Veil".equals(themeName)) {
             // Snow Veil theme
-            ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary);
-            // Apply other Snow Veil theme-specific UI changes that can be done without recreation
+            themeColor = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary);
+            // Special handling for light theme
+            applySnowVeilThemeToUI(requireView());
+            return;
+        } else {
+            // Default to Crimson Bloom if unknown
+            themeColor = ContextCompat.getColor(requireContext(), R.color.red_theme_primary);
         }
-        // Apply other theme-agnostic UI updates
+        
+        // Apply theme color to UI elements
+        MaterialToolbar toolbar = requireActivity().findViewById(R.id.topAppBar);
+        if (toolbar != null) {
+            if ("Crimson Bloom".equals(themeName)) {
+                toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red_theme_primary_variant));
+            } else {
+                toolbar.setBackgroundColor(themeColor);
+            }
+        }
+        
+        // Apply other theme-specific UI updates that can be done without recreation
+        // (UI elements that respond to theme but don't require activity recreation)
+        
+        // Apply theme-agnostic UI updates
         applyThemeToUI(requireView());
     }
     // --- End Theme Spinner Logic ---
@@ -3147,7 +3165,7 @@ public class SettingsFragment extends BaseFragment {
         // Use the new CameraX utility for framerate detection
         try {
             Log.i(TAG_SETTINGS, "Using CameraX API for framerate detection");
-            return com.fadcam.utils.CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(), cameraType);
+            return CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(), cameraType);
         } catch (Exception e) {
             Log.e(TAG_SETTINGS, "Error using CameraX for framerate detection, falling back to Camera2", e);
             // Fallback to Camera2 API implementation - retain original logic
@@ -3418,8 +3436,8 @@ public class SettingsFragment extends BaseFragment {
         final TextView summaryText = dialogView.findViewById(R.id.audio_settings_summary);
         final TextView bitrateLabel = dialogView.findViewById(R.id.audio_bitrate_label);
         final TextView samplingRateLabel = dialogView.findViewById(R.id.audio_sampling_rate_label);
-        final android.widget.EditText bitrateInput = dialogView.findViewById(R.id.audio_bitrate_input);
-        final android.widget.EditText samplingRateInput = dialogView.findViewById(R.id.audio_sampling_rate_input);
+        final EditText bitrateInput = dialogView.findViewById(R.id.audio_bitrate_input);
+        final EditText samplingRateInput = dialogView.findViewById(R.id.audio_sampling_rate_input);
         final MaterialButton resetButton = dialogView.findViewById(R.id.audio_reset_button);
         final TextView bitrateError = dialogView.findViewById(R.id.audio_bitrate_error);
         final TextView samplingRateError = dialogView.findViewById(R.id.audio_sampling_rate_error);
@@ -3508,15 +3526,15 @@ public class SettingsFragment extends BaseFragment {
             }
         };
 
-        bitrateInput.addTextChangedListener(new android.text.TextWatcher() {
+        bitrateInput.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             public void onTextChanged(CharSequence s, int start, int before, int count) { validate.run(); }
-            public void afterTextChanged(android.text.Editable s) {}
+            public void afterTextChanged(Editable s) {}
         });
-        samplingRateInput.addTextChangedListener(new android.text.TextWatcher() {
+        samplingRateInput.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             public void onTextChanged(CharSequence s, int start, int before, int count) { validate.run(); }
-            public void afterTextChanged(android.text.Editable s) {}
+            public void afterTextChanged(Editable s) {}
         });
 
         resetButton.setOnClickListener(v -> {
@@ -3529,19 +3547,19 @@ public class SettingsFragment extends BaseFragment {
         builder.setView(dialogView);
         builder.setPositiveButton(R.string.dialog_audio_save, null); // We'll override this
         builder.setNegativeButton(R.string.dialog_audio_cancel, null);
-        final androidx.appcompat.app.AlertDialog dialog = builder.create();
+        final AlertDialog dialog = builder.create();
         dialog.setOnShowListener(dlg -> {
-            final android.widget.Button saveBtn = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE);
+            final Button saveBtn = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE);
             validate.run();
             saveBtn.setEnabled(validation.bitrateValid && validation.samplingValid);
             // Live enable/disable
-            android.text.TextWatcher watcher = new android.text.TextWatcher() {
+            TextWatcher watcher = new TextWatcher() {
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     validate.run();
                     saveBtn.setEnabled(validation.bitrateValid && validation.samplingValid);
                 }
-                public void afterTextChanged(android.text.Editable s) {}
+                public void afterTextChanged(Editable s) {}
             };
             bitrateInput.addTextChangedListener(watcher);
             samplingRateInput.addTextChangedListener(watcher);
@@ -3681,13 +3699,13 @@ public class SettingsFragment extends BaseFragment {
         int padding = (int) (16 * context.getResources().getDisplayMetrics().density);
         layout.setPadding(padding, padding, padding, padding);
         final EditText input = new EditText(context);
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
         input.setHint("1 - 200 Mbps");
         int currentMbps = getBitrateCustomValue() / 1000;
         input.setText(String.valueOf(currentMbps));
         input.setSelection(input.getText().length());
-        input.setFilters(new android.text.InputFilter[]{
-            new android.text.InputFilter.LengthFilter(3),
+        input.setFilters(new InputFilter[]{
+            new InputFilter.LengthFilter(3),
             (source, start, end, dest, dstart, dend) -> {
                 try {
                     String result = dest.toString().substring(0, dstart) + source + dest.toString().substring(dend);
@@ -3734,10 +3752,10 @@ public class SettingsFragment extends BaseFragment {
             helper.setText(msg);
             helper.setTextColor(color);
         };
-        input.addTextChangedListener(new android.text.TextWatcher() {
+        input.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             public void onTextChanged(CharSequence s, int start, int before, int count) { updateHelper.run(); }
-            public void afterTextChanged(android.text.Editable s) {}
+            public void afterTextChanged(Editable s) {}
         });
         updateHelper.run();
         MaterialAlertDialogBuilder builder = themedDialogBuilder(context)
@@ -3938,8 +3956,8 @@ public class SettingsFragment extends BaseFragment {
         View dialogView = inflater.inflate(R.layout.dialog_custom_split_size, null); // You'll need to create this layout
         builder.setView(dialogView);
 
-        final com.google.android.material.textfield.TextInputEditText inputEditText = dialogView.findViewById(R.id.custom_split_size_edittext); // ID in your dialog_custom_split_size.xml
-        final com.google.android.material.textview.MaterialTextView errorTextView = dialogView.findViewById(R.id.custom_split_size_error_textview); // ID in your dialog_custom_split_size.xml
+        final TextInputEditText inputEditText = dialogView.findViewById(R.id.custom_split_size_edittext); // ID in your dialog_custom_split_size.xml
+        final MaterialTextView errorTextView = dialogView.findViewById(R.id.custom_split_size_error_textview); // ID in your dialog_custom_split_size.xml
 
         int currentCustomSize = sharedPreferencesManager.getVideoSplitSizeMb();
         // If current value is one of the presets, default to 2048 for custom, otherwise use current custom.
@@ -3960,13 +3978,13 @@ public class SettingsFragment extends BaseFragment {
 
         AlertDialog alertDialog = builder.create();
 
-        inputEditText.addTextChangedListener(new android.text.TextWatcher() {
+        inputEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override
-            public void afterTextChanged(android.text.Editable s) {
+            public void afterTextChanged(Editable s) {
                 validateCustomSplitSizeInput(s.toString(), errorTextView, alertDialog.getButton(AlertDialog.BUTTON_POSITIVE));
             }
         });
@@ -4379,7 +4397,7 @@ public class SettingsFragment extends BaseFragment {
         }
         
         // Normal theme attribute resolution for other cases
-        android.util.TypedValue typedValue = new android.util.TypedValue();
+        TypedValue typedValue = new TypedValue();
         requireContext().getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
@@ -4511,7 +4529,8 @@ public class SettingsFragment extends BaseFragment {
             getString(R.string.app_icon_notes),
             getString(R.string.app_icon_calculator),
             getString(R.string.app_icon_clock),
-            getString(R.string.app_icon_weather)
+            getString(R.string.app_icon_weather),
+            getString(R.string.app_icon_football)
         };
         
         // Create a custom list adapter for the app icons
@@ -4565,6 +4584,9 @@ public class SettingsFragment extends BaseFragment {
                 } else if (position == 12) {
                     // Weather icon
                     iconPreview.setImageResource(R.mipmap.ic_launcher_weather);
+                } else if (position == 13) {
+                    // Football icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_football);
                 }
                 
                 // Set text color based on current theme
@@ -4579,7 +4601,7 @@ public class SettingsFragment extends BaseFragment {
                 }
                 
                 // Select current icon
-                String iconKey;
+                String iconKey = Constants.APP_ICON_DEFAULT; // Initialize with default value
                 if (position == 0) {
                     iconKey = Constants.APP_ICON_DEFAULT;
                 } else if (position == 1) {
@@ -4604,8 +4626,10 @@ public class SettingsFragment extends BaseFragment {
                     iconKey = Constants.APP_ICON_CALCULATOR;
                 } else if (position == 11) {
                     iconKey = Constants.APP_ICON_CLOCK;
-                } else {
+                } else if (position == 12) {
                     iconKey = Constants.APP_ICON_WEATHER;
+                } else if (position == 13) {
+                    iconKey = Constants.APP_ICON_FOOTBALL;
                 }
                 radioButton.setChecked(iconKey.equals(currentIcon));
                 
@@ -4639,6 +4663,8 @@ public class SettingsFragment extends BaseFragment {
             selectedPosition = 11;
         } else if (Constants.APP_ICON_WEATHER.equals(currentIcon)) {
             selectedPosition = 12;
+        } else if (Constants.APP_ICON_FOOTBALL.equals(currentIcon)) {
+            selectedPosition = 13;
         }
         
         builder.setSingleChoiceItems(adapter, selectedPosition, (dialog, which) -> {
@@ -4671,6 +4697,8 @@ public class SettingsFragment extends BaseFragment {
                 newIcon = Constants.APP_ICON_CLOCK;
             } else if (which == 12) {
                 newIcon = Constants.APP_ICON_WEATHER;
+            } else if (which == 13) {
+                newIcon = Constants.APP_ICON_FOOTBALL;
             }
             
             if (!newIcon.equals(currentIcon)) {
@@ -4706,6 +4734,8 @@ public class SettingsFragment extends BaseFragment {
                     appIconChooseButton.setText(getString(R.string.app_icon_clock));
                 } else if (which == 12) {
                     appIconChooseButton.setText(getString(R.string.app_icon_weather));
+                } else if (which == 13) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_football));
                 }
                 
                 // Apply the icon change
@@ -4751,6 +4781,7 @@ public class SettingsFragment extends BaseFragment {
         ComponentName calculatorIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.CalculatorIcon");
         ComponentName clockIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.ClockIcon");
         ComponentName weatherIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.WeatherIcon");
+        ComponentName footballIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FootballIcon");
         
         // Disable all icon activity-aliases first
         pm.setComponentEnabledSetting(defaultIcon, 
@@ -4790,6 +4821,9 @@ public class SettingsFragment extends BaseFragment {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(weatherIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(footballIcon, 
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         
@@ -4844,6 +4878,10 @@ public class SettingsFragment extends BaseFragment {
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_WEATHER.equals(iconKey)) {
             pm.setComponentEnabledSetting(weatherIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_FOOTBALL.equals(iconKey)) {
+            pm.setComponentEnabledSetting(footballIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
         }

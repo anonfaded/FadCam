@@ -53,7 +53,7 @@
 
     <application
         android:name=".FadCamApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -260,6 +260,21 @@
             android:label="Weather"
             android:icon="@mipmap/ic_launcher_weather"
             android:roundIcon="@mipmap/ic_launcher_weather_round"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        
+        <!-- Football Game App Icon (Activity Alias) -->
+        <activity-alias
+            android:name=".MainActivity.FootballIcon"
+            android:enabled="false"
+            android:label="FootballX 2024"
+            android:icon="@mipmap/ic_launcher_football"
+            android:roundIcon="@mipmap/ic_launcher_football_round"
             android:targetActivity=".MainActivity"
             android:exported="true">
             <intent-filter>

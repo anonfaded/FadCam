@@ -88,6 +88,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Apply theme before setContentView
+        applyTheme();
+        
         super.onCreate(savedInstanceState);
 
         // ----- Fix Start: Ensure onboarding shows on first install -----
@@ -121,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
         // ----- Fix End: Ensure onboarding shows on first install -----
         
         // Now that we know we're not showing onboarding, continue with normal initialization
-        initTheme();
 
         // Load and apply the saved language preference before anything else
         SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -640,5 +642,52 @@ public class MainActivity extends AppCompatActivity {
                 getWindow().setNavigationBarColor(getResources().getColor(R.color.gray, getTheme()));
             }
         }
+    }
+
+    /**
+     * Apply the selected theme from preferences before any views are created
+     * This ensures the theme is consistently applied across the entire app
+     */
+    private void applyTheme() {
+        // Get shared preferences and current theme
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        String themeName = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        
+        // Ensure we have a valid theme name, default to Crimson Bloom if null or empty
+        if (themeName == null || themeName.isEmpty()) {
+            themeName = Constants.DEFAULT_APP_THEME;
+            sharedPreferencesManager.sharedPreferences.edit()
+                .putString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME)
+                .apply();
+        }
+        
+        // Apply appropriate theme based on name
+        if ("Crimson Bloom".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_Red);
+        } else if ("Faded Night".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_Amoled);
+        } else if ("Midnight Dusk".equals(themeName)) {
+            setTheme(R.style.Base_Theme_FadCam); // Default theme
+        } else if ("Premium Gold".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_Gold);
+        } else if ("Silent Forest".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_SilentForest);
+        } else if ("Shadow Alloy".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_ShadowAlloy);
+        } else if ("Pookie Pink".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_PookiePink);
+        } else if ("Snow Veil".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_SnowVeil);
+        } else {
+            // Default to Crimson Bloom for any unknown values
+            setTheme(R.style.Theme_FadCam_Red);
+            // Save the corrected theme value
+            sharedPreferencesManager.sharedPreferences.edit()
+                .putString(Constants.PREF_APP_THEME, "Crimson Bloom")
+                .apply();
+        }
+        
+        // Update default clock color based on theme
+        sharedPreferencesManager.updateDefaultClockColorForTheme();
     }
 }
