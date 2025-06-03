@@ -73,64 +73,64 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
         TextView titleTextView = view.findViewById(R.id.bottom_sheet_title);
         titleTextView.setText(R.string.app_icon_dialog_title);
 
-        // Setup icon grid data
+        // Setup icon grid data - rearranged according to user preference
         String[] iconNames = {
-            getString(R.string.app_icon_default),
-            getString(R.string.app_icon_alternative),
-            getString(R.string.app_icon_faded),
-            getString(R.string.app_icon_palestine),
-            getString(R.string.app_icon_pakistan),
-            getString(R.string.app_icon_fadseclab),
-            getString(R.string.app_icon_noor),
-            getString(R.string.app_icon_bat),
-            getString(R.string.app_icon_redbinary),
+            getString(R.string.app_icon_default),          // Legacy first
+            getString(R.string.app_icon_alternative),      // $ sign icon
+            getString(R.string.app_icon_noor),             // Noor
+            getString(R.string.app_icon_redbinary),        // 0xFF0000
+            getString(R.string.app_icon_fadseclab),        // FadSecLab
+            getString(R.string.app_icon_bat),              // Bat icon
+            getString(R.string.app_icon_football),         // Football icon
+            getString(R.string.app_icon_car),              // Car icon
+            getString(R.string.app_icon_jet),              // JF-17 fighter jet
+            getString(R.string.app_icon_palestine),        // Palestine flag
+            getString(R.string.app_icon_pakistan),         // Pakistan flag
+            getString(R.string.app_icon_faded),            // Faded icon
+            getString(R.string.app_icon_clock),            // Utility icons
+            getString(R.string.app_icon_weather),          // last
             getString(R.string.app_icon_notes),
-            getString(R.string.app_icon_calculator),
-            getString(R.string.app_icon_clock),
-            getString(R.string.app_icon_weather),
-            getString(R.string.app_icon_football),
-            getString(R.string.app_icon_car),
-            getString(R.string.app_icon_jet)
+            getString(R.string.app_icon_calculator)
         };
 
-        // Icon resources
+        // Icon resources - rearranged to match the names array
         int[] iconResources = {
-            R.mipmap.ic_launcher,
-            R.mipmap.ic_launcher_2,
-            R.mipmap.ic_launcher_faded,
-            R.mipmap.ic_launcher_palestine,
-            R.mipmap.ic_launcher_pakistan,
-            R.mipmap.ic_launcher_fadseclab,
-            R.mipmap.ic_launcher_noor,
-            R.mipmap.ic_launcher_bat,
-            R.mipmap.ic_launcher_redbinary,
-            R.mipmap.ic_launcher_notes,
-            R.mipmap.ic_launcher_calculator,
-            R.mipmap.ic_launcher_clock,
+            R.mipmap.ic_launcher,                // Legacy
+            R.mipmap.ic_launcher_2,              // Alternative ($ sign)
+            R.mipmap.ic_launcher_noor,           // Noor
+            R.mipmap.ic_launcher_redbinary,      // 0xFF0000
+            R.mipmap.ic_launcher_fadseclab,      // FadSecLab
+            R.mipmap.ic_launcher_bat,            // Bat
+            R.mipmap.ic_launcher_football,       // Football
+            R.mipmap.ic_launcher_car,            // Car
+            R.mipmap.ic_launcher_jet,            // JF-17 jet
+            R.mipmap.ic_launcher_palestine,      // Palestine
+            R.mipmap.ic_launcher_pakistan,       // Pakistan
+            R.mipmap.ic_launcher_faded,          // Faded
+            R.mipmap.ic_launcher_clock,          // Utility icons
             R.mipmap.ic_launcher_weather,
-            R.mipmap.ic_launcher_football,
-            R.mipmap.ic_launcher_car,
-            R.mipmap.ic_launcher_jet
+            R.mipmap.ic_launcher_notes,
+            R.mipmap.ic_launcher_calculator
         };
 
-        // Icon keys
+        // Icon keys - rearranged to match the order above
         String[] iconKeys = {
-            Constants.APP_ICON_DEFAULT,
-            Constants.APP_ICON_ALTERNATIVE,
-            Constants.APP_ICON_FADED,
-            Constants.APP_ICON_PALESTINE,
-            Constants.APP_ICON_PAKISTAN,
-            Constants.APP_ICON_FADSECLAB,
-            Constants.APP_ICON_NOOR,
-            Constants.APP_ICON_BAT,
-            Constants.APP_ICON_REDBINARY,
-            Constants.APP_ICON_NOTES,
-            Constants.APP_ICON_CALCULATOR,
-            Constants.APP_ICON_CLOCK,
+            Constants.APP_ICON_DEFAULT,          // Legacy
+            Constants.APP_ICON_ALTERNATIVE,      // Alternative ($ sign)
+            Constants.APP_ICON_NOOR,             // Noor
+            Constants.APP_ICON_REDBINARY,        // 0xFF0000
+            Constants.APP_ICON_FADSECLAB,        // FadSecLab
+            Constants.APP_ICON_BAT,              // Bat
+            Constants.APP_ICON_FOOTBALL,         // Football
+            Constants.APP_ICON_CAR,              // Car
+            Constants.APP_ICON_JET,              // JF-17 jet
+            Constants.APP_ICON_PALESTINE,        // Palestine
+            Constants.APP_ICON_PAKISTAN,         // Pakistan
+            Constants.APP_ICON_FADED,            // Faded
+            Constants.APP_ICON_CLOCK,            // Utility icons
             Constants.APP_ICON_WEATHER,
-            Constants.APP_ICON_FOOTBALL,
-            Constants.APP_ICON_CAR,
-            Constants.APP_ICON_JET
+            Constants.APP_ICON_NOTES,
+            Constants.APP_ICON_CALCULATOR
         };
 
         // Check current theme for text color
