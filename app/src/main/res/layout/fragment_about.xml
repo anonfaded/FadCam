@@ -191,5 +191,40 @@
             android:textAlignment="center"
             android:textColor="?attr/colorButton" />
 
+        <!-- Added Footer Group -->
+        <LinearLayout
+            android:id="@+id/footerGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="24dp">
+
+            <ImageView
+                android:id="@+id/ivFadSecLabLogo"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:src="@drawable/fadseclab"
+                android:layout_marginBottom="0dp"
+                android:scaleType="centerInside"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/app_name"
+                android:layout_gravity="center_horizontal" />
+                
+            <TextView
+                android:id="@+id/tvAboutFooter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingTop="8dp"
+                android:paddingBottom="16dp"
+                android:textSize="15sp"
+                android:textColor="?attr/colorOnPrimary"
+                android:textStyle="normal"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:importantForAccessibility="auto"
+                android:text="@string/kofi_footer_text" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

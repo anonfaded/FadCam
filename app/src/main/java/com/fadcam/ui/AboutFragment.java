@@ -23,6 +23,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.graphics.drawable.Drawable;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 import androidx.core.text.HtmlCompat;
@@ -90,6 +91,10 @@ public class AboutFragment extends BaseFragment {
         TextView discordText = view.findViewById(R.id.discord_text);
         MaterialCardView privacyInfoCard = view.findViewById(R.id.privacy_info_card);
         ScrollView scrollView = view.findViewById(R.id.scroll_view);
+
+        // Initialize footer elements
+        ImageView ivFadSecLabLogo = view.findViewById(R.id.ivFadSecLabLogo);
+        TextView tvAboutFooter = view.findViewById(R.id.tvAboutFooter);
 
         int colorHeading = resolveThemeColor(R.attr.colorHeading);
         int colorButton = resolveThemeColor(R.attr.colorButton);
@@ -194,6 +199,60 @@ public class AboutFragment extends BaseFragment {
         String[] questions = getResources().getStringArray(R.array.questions_array);
         String[] answers = getResources().getStringArray(R.array.answers_array);
         
+        // Setup footer text with Palestine and Pakistan flags
+        if (tvAboutFooter != null) {
+            String footer = "Made with Palestine at FadSec Lab in Pakistan";
+            android.text.SpannableString spannable = new android.text.SpannableString(footer);
+            
+            // Palestine flag image
+            Drawable palestine = androidx.core.content.res.ResourcesCompat.getDrawable(getResources(), R.drawable.palestine, null);
+            if (palestine != null) {
+                int size = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 18, getResources().getDisplayMetrics());
+                palestine.setBounds(0, 0, size, size);
+                android.text.style.ImageSpan palestineSpan = new android.text.style.ImageSpan(palestine, android.text.style.ImageSpan.ALIGN_BOTTOM);
+                int palestineIndex = footer.indexOf("Palestine");
+                if (palestineIndex != -1) {
+                    spannable.setSpan(palestineSpan, palestineIndex, palestineIndex + "Palestine".length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
+            
+            // Pakistan flag image
+            Drawable pakistan = androidx.core.content.res.ResourcesCompat.getDrawable(getResources(), R.drawable.pakistan, null);
+            if (pakistan != null) {
+                int size = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 18, getResources().getDisplayMetrics());
+                pakistan.setBounds(0, 0, size, size);
+                android.text.style.ImageSpan pakistanSpan = new android.text.style.ImageSpan(pakistan, android.text.style.ImageSpan.ALIGN_BOTTOM);
+                int pakistanIndex = footer.indexOf("Pakistan");
+                if (pakistanIndex != -1) {
+                    spannable.setSpan(pakistanSpan, pakistanIndex, pakistanIndex + "Pakistan".length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
+            
+            // FadSec Lab clickable, bold, and red
+            int fadSecLabStart = footer.indexOf("FadSec Lab");
+            int fadSecLabEnd = fadSecLabStart + "FadSec Lab".length();
+            if (fadSecLabStart >= 0) {
+                spannable.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), fadSecLabStart, fadSecLabEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                spannable.setSpan(new android.text.style.ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/fadsec-lab"));
+                        widget.getContext().startActivity(browserIntent);
+                    }
+                    @Override
+                    public void updateDrawState(android.text.TextPaint ds) {
+                        super.updateDrawState(ds);
+                        ds.setColor(Color.parseColor("#E43C3C")); // Red color
+                        ds.setUnderlineText(false); // No underline
+                    }
+                }, fadSecLabStart, fadSecLabEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            
+            tvAboutFooter.setText(spannable);
+            tvAboutFooter.setTextColor(isSnowVeilTheme() ? Color.BLACK : Color.WHITE);
+            tvAboutFooter.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+        }
+        
         // Check current theme to determine answers color
         String currentThemeAnswers = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         
@@ -247,10 +306,6 @@ public class AboutFragment extends BaseFragment {
                         String textStr = text.toString();
                         // Set copyright text color
                         if (textStr.contains(getString(R.string.copyright_info))) {
-                            textView.setTextColor(themeTextColor);
-                        } 
-                        // Set contact heading color
-                        else if (textStr.equals(getString(R.string.contact))) {
                             textView.setTextColor(themeTextColor);
                         }
                     }
@@ -851,5 +906,11 @@ public class AboutFragment extends BaseFragment {
     private boolean isLightColor(int color) {
         double darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255;
         return darkness < 0.5; // If darkness is less than 0.5, it's a light color
+    }
+
+    // Helper method to check if Snow Veil theme is active
+    private boolean isSnowVeilTheme() {
+        String currentTheme = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        return "Snow Veil".equals(currentTheme);
     }
 }
