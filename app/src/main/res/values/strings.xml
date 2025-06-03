@@ -525,7 +525,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_app_icon_title">App Icon</string>
     <string name="setting_app_icon_desc">Change the app\'s launcher icon and name</string>
     <string name="app_icon_dialog_title">Choose App Icon</string>
-    <string name="app_icon_default" translatable="false">FadCam</string>
+    <string name="app_icon_default" translatable="false">Legacy</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
