@@ -489,21 +489,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="edit_with_faditorx">Edit with FaditorX</string>
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">App Icon</string>
-    <string name="setting_app_icon_desc">Change the app\'s launcher icon</string>
+    <string name="setting_app_icon_desc">Change the app\'s launcher icon and name</string>
     <string name="app_icon_dialog_title">Choose App Icon</string>
-    <string name="app_icon_default">Original</string>
-    <string name="app_icon_alternative">Detective</string>
-    <string name="app_icon_faded">Faded</string>
-    <string name="app_icon_palestine">Sumud (صمود)</string>
-    <string name="app_icon_pakistan">MadeInPK</string>
-    <string name="app_icon_fadseclab">$ ~/r00t</string>
-    <string name="app_icon_noor">Noor (نور) 🌼</string>
-    <string name="app_icon_bat">FadBat</string>
-    <string name="app_icon_redbinary">0xFF0000</string>
-    <string name="app_icon_notes">Notes</string>
-    <string name="app_icon_calculator">Calculator</string>
-    <string name="app_icon_clock">Clock</string>
-    <string name="app_icon_weather">Weather</string>
     <string name="app_icon_changed">App icon changed</string>
     <!-- Misc -->
 </resources>
