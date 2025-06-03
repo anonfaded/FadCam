@@ -539,6 +539,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_clock" translatable="false">Clock</string>
     <string name="app_icon_weather" translatable="false">Weather</string>
     <string name="app_icon_football" translatable="false">FootballX 2024</string>
+    <string name="app_icon_car" translatable="false">ClutchX</string>
+    <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
     <string name="app_icon_changed">App icon changed</string>
     
     <!-- Misc -->

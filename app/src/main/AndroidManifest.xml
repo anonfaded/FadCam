@@ -283,6 +283,36 @@
             </intent-filter>
         </activity-alias>
         
+        <!-- Car App Icon (Activity Alias) -->
+        <activity-alias
+            android:name=".MainActivity.CarIcon"
+            android:enabled="false"
+            android:label="ClutchX"
+            android:icon="@mipmap/ic_launcher_car"
+            android:roundIcon="@mipmap/ic_launcher_car_round"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        
+        <!-- Jet Fighter App Icon (Activity Alias) -->
+        <activity-alias
+            android:name=".MainActivity.JetIcon"
+            android:enabled="false"
+            android:label="JF-17: ThunderX"
+            android:icon="@mipmap/ic_launcher_jet"
+            android:roundIcon="@mipmap/ic_launcher_jet_round"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        
         <activity
             android:name=".ui.VideoPlayerActivity"
             android:theme="@style/Base.Theme.FadCam" />

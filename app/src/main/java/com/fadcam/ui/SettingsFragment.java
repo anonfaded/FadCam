@@ -4455,13 +4455,14 @@ public class SettingsFragment extends BaseFragment {
 
     // --- App Icon Selection Logic ---
     private void setupAppIconButton(View view) {
+        // Find the button
         appIconChooseButton = view.findViewById(R.id.app_icon_choose_button);
         if (appIconChooseButton == null) return;
         
-        // Get currently selected app icon
+        // Get current app icon
         String currentIcon = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
         
-        // Set the button text to show the current icon name
+        // Set button text based on current icon
         if (currentIcon.equals(Constants.APP_ICON_DEFAULT)) {
             appIconChooseButton.setText(getString(R.string.app_icon_default));
         } else if (currentIcon.equals(Constants.APP_ICON_ALTERNATIVE)) {
@@ -4488,6 +4489,12 @@ public class SettingsFragment extends BaseFragment {
             appIconChooseButton.setText(getString(R.string.app_icon_clock));
         } else if (currentIcon.equals(Constants.APP_ICON_WEATHER)) {
             appIconChooseButton.setText(getString(R.string.app_icon_weather));
+        } else if (currentIcon.equals(Constants.APP_ICON_FOOTBALL)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_football));
+        } else if (currentIcon.equals(Constants.APP_ICON_CAR)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_car));
+        } else if (currentIcon.equals(Constants.APP_ICON_JET)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_jet));
         }
         
         // Set proper text color based on current theme
@@ -4530,7 +4537,9 @@ public class SettingsFragment extends BaseFragment {
             getString(R.string.app_icon_calculator),
             getString(R.string.app_icon_clock),
             getString(R.string.app_icon_weather),
-            getString(R.string.app_icon_football)
+            getString(R.string.app_icon_football),
+            getString(R.string.app_icon_car),
+            getString(R.string.app_icon_jet)
         };
         
         // Create a custom list adapter for the app icons
@@ -4587,6 +4596,12 @@ public class SettingsFragment extends BaseFragment {
                 } else if (position == 13) {
                     // Football icon
                     iconPreview.setImageResource(R.mipmap.ic_launcher_football);
+                } else if (position == 14) {
+                    // Car icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_car);
+                } else if (position == 15) {
+                    // Jet icon
+                    iconPreview.setImageResource(R.mipmap.ic_launcher_jet);
                 }
                 
                 // Set text color based on current theme
@@ -4630,6 +4645,10 @@ public class SettingsFragment extends BaseFragment {
                     iconKey = Constants.APP_ICON_WEATHER;
                 } else if (position == 13) {
                     iconKey = Constants.APP_ICON_FOOTBALL;
+                } else if (position == 14) {
+                    iconKey = Constants.APP_ICON_CAR;
+                } else if (position == 15) {
+                    iconKey = Constants.APP_ICON_JET;
                 }
                 radioButton.setChecked(iconKey.equals(currentIcon));
                 
@@ -4665,6 +4684,10 @@ public class SettingsFragment extends BaseFragment {
             selectedPosition = 12;
         } else if (Constants.APP_ICON_FOOTBALL.equals(currentIcon)) {
             selectedPosition = 13;
+        } else if (Constants.APP_ICON_CAR.equals(currentIcon)) {
+            selectedPosition = 14;
+        } else if (Constants.APP_ICON_JET.equals(currentIcon)) {
+            selectedPosition = 15;
         }
         
         builder.setSingleChoiceItems(adapter, selectedPosition, (dialog, which) -> {
@@ -4699,6 +4722,10 @@ public class SettingsFragment extends BaseFragment {
                 newIcon = Constants.APP_ICON_WEATHER;
             } else if (which == 13) {
                 newIcon = Constants.APP_ICON_FOOTBALL;
+            } else if (which == 14) {
+                newIcon = Constants.APP_ICON_CAR;
+            } else if (which == 15) {
+                newIcon = Constants.APP_ICON_JET;
             }
             
             if (!newIcon.equals(currentIcon)) {
@@ -4736,6 +4763,10 @@ public class SettingsFragment extends BaseFragment {
                     appIconChooseButton.setText(getString(R.string.app_icon_weather));
                 } else if (which == 13) {
                     appIconChooseButton.setText(getString(R.string.app_icon_football));
+                } else if (which == 14) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_car));
+                } else if (which == 15) {
+                    appIconChooseButton.setText(getString(R.string.app_icon_jet));
                 }
                 
                 // Apply the icon change
@@ -4782,6 +4813,8 @@ public class SettingsFragment extends BaseFragment {
         ComponentName clockIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.ClockIcon");
         ComponentName weatherIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.WeatherIcon");
         ComponentName footballIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FootballIcon");
+        ComponentName carIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.CarIcon");
+        ComponentName jetIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.JetIcon");
         
         // Disable all icon activity-aliases first
         pm.setComponentEnabledSetting(defaultIcon, 
@@ -4824,6 +4857,12 @@ public class SettingsFragment extends BaseFragment {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(footballIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(carIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(jetIcon, 
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         
@@ -4882,6 +4921,14 @@ public class SettingsFragment extends BaseFragment {
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_FOOTBALL.equals(iconKey)) {
             pm.setComponentEnabledSetting(footballIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_CAR.equals(iconKey)) {
+            pm.setComponentEnabledSetting(carIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_JET.equals(iconKey)) {
+            pm.setComponentEnabledSetting(jetIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
         }
