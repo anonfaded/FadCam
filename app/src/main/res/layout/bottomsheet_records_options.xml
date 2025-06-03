@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent">
+
+    <com.fadcam.ui.IconRainView
+        android:id="@+id/iconRainView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:alpha="0.18"
+        android:translationZ="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/transparent"
+        android:padding="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/bottom_sheet_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/records_options_title"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#E43C3C"
+            android:gravity="center" />
+
+        <View
+            android:layout_width="80dp"
+            android:layout_height="2dp"
+            android:background="#FFFFFF"
+            android:layout_marginBottom="16dp"
+            android:layout_gravity="center_horizontal" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sort By"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#CCCCCC"
+                android:layout_marginBottom="8dp"/>
+
+            <RadioGroup
+                android:id="@+id/sort_options_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/sort_latest"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Latest First"
+                    android:textColor="#FFFFFF"/>
+
+                <RadioButton
+                    android:id="@+id/sort_oldest"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Oldest First"
+                    android:textColor="#FFFFFF"/>
+
+                <RadioButton
+                    android:id="@+id/sort_smallest"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Smallest Files First"
+                    android:textColor="#FFFFFF"/>
+
+                <RadioButton
+                    android:id="@+id/sort_largest"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Largest Files First"
+                    android:textColor="#FFFFFF"/>
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#FFFFFF"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:id="@+id/option_delete_all"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="?attr/selectableItemBackground"
+                android:padding="12dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_delete_all"
+                    android:layout_marginEnd="16dp"
+                    android:tint="@color/danger_red"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/delete_all_videos_title"
+                        android:textSize="16sp"
+                        android:textColor="@color/danger_red"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/delete_all_videos_description"
+                        android:textSize="12sp"
+                        android:textColor="@color/danger_red_light"/>
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

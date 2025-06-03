@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">FadCam</string>
-    <string name="app_icon_description" translatable="false">FadCam app icon</string>
+    <string name="app_icon_description">Choose an icon and name for your app. This will change how it appears on your home screen.</string>
     <string name="check_for_updates">Check for Updates</string>
     <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
 
@@ -542,6 +542,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_car" translatable="false">ClutchX</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
     <string name="app_icon_changed">App icon changed</string>
+    <string name="app_icon_preview">App icon preview</string>
     
     <!-- Misc -->
 

@@ -4,7 +4,7 @@
         <item name="backgroundTint">@null</item>
     </style>
 
-    <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+    <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
     </style>
 

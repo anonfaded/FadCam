@@ -28,6 +28,7 @@ public class IconRainView extends View {
     private static class IconDrop {
         float y, speed, offset;
         float tilt;
+        int iconType; // 0-2 for different icons
     }
 
     private IconDrop[] drops;
@@ -35,12 +36,12 @@ public class IconRainView extends View {
     private int iconSizePx;
     private int gapPx;
     private int viewWidth, viewHeight;
-    private Bitmap iconBitmap;
+    private Bitmap[] iconBitmaps; // Array of different app icons
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Handler handler = new Handler();
-    private static final int FRAME_DELAY = 18; // ms
-    private static final float SPEED_MIN = 3.0f;
-    private static final float SPEED_MAX = 6.0f;
+    private static final int FRAME_DELAY = 20; // ms
+    private static final float SPEED_MIN = 1.0f;
+    private static final float SPEED_MAX = 2.2f;
     private final Random random = new Random();
 
     public IconRainView(Context context) {
@@ -57,21 +58,19 @@ public class IconRainView extends View {
     }
 
     private void init(Context context) {
-        iconSizePx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics());
+        iconSizePx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, context.getResources().getDisplayMetrics());
         gapPx = 0; // denser, no gap
-        iconBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.unknown_icon3);
-        paint.setAlpha(255); // Full opacity
-
-        // Further reduce brightness using ColorMatrix
-        float brightness = -40; // Negative value for a much darker effect
-        android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix(new float[] {
-            1, 0, 0, 0, brightness,
-            0, 1, 0, 0, brightness,
-            0, 0, 1, 0, brightness,
-            0, 0, 0, 1, 0
-        });
-        paint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
-
+        
+        // Load different app icons
+        iconBitmaps = new Bitmap[6];
+        iconBitmaps[0] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
+        iconBitmaps[1] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_2);
+        iconBitmaps[2] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_faded);
+        iconBitmaps[3] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_noor);
+        iconBitmaps[4] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_bat);
+        iconBitmaps[5] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_redbinary);
+        
+        paint.setAlpha((int) (0.45f * 255)); // More transparent than coffee
         startAnimation();
     }
 
@@ -95,13 +94,15 @@ public class IconRainView extends View {
             drop.y += drop.speed;
             if (drop.y > viewHeight) {
                 drop.y = -iconSizePx - drop.offset;
-                drop.speed = SPEED_MIN + random.nextFloat() * 0.7f;
+                drop.speed = SPEED_MIN + random.nextFloat() * (SPEED_MAX - SPEED_MIN);
                 drop.offset = random.nextInt(iconSizePx * 2);
-                // Only tilted icons, never 0: pick -32 to -12 or +12 to +32
+                drop.iconType = random.nextInt(iconBitmaps.length);
+                
+                // Vary the tilt for more natural look
                 if (random.nextBoolean()) {
-                    drop.tilt = -32f + random.nextFloat() * 20f; // -32 to -12
+                    drop.tilt = -25f + random.nextFloat() * 15f; // -25 to -10
                 } else {
-                    drop.tilt = 12f + random.nextFloat() * 20f; // +12 to +32
+                    drop.tilt = 10f + random.nextFloat() * 15f; // +10 to +25
                 }
             }
         }
@@ -110,41 +111,32 @@ public class IconRainView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (iconBitmap == null || drops == null) return;
-        Paint iconPaint = new Paint(paint);
-        // Create a vertical gradient shader for the icon (white to transparent)
-        android.graphics.LinearGradient iconGradient = new android.graphics.LinearGradient(
-            0, 0, 0, iconSizePx,
-            0xFFFFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP
-        );
-        iconPaint.setShader(iconGradient);
-        if (numColumns == 1) {
-            float x = (viewWidth - iconSizePx) / 2f;
-            IconDrop drop = drops[0];
-            Rect dest = new Rect((int)x, (int)drop.y, (int)x + iconSizePx, (int)drop.y + iconSizePx);
-            canvas.save();
-            canvas.rotate(drop.tilt, x + iconSizePx / 2f, drop.y + iconSizePx / 2f);
-            canvas.drawBitmap(iconBitmap, null, dest, iconPaint);
-            canvas.restore();
-        } else {
-            for (int i = 0; i < numColumns; i++) {
-                float x = i * (iconSizePx + gapPx);
-                IconDrop drop = drops[i];
-                float y = drop.y;
+        if (iconBitmaps == null || drops == null) return;
+        
+        for (int i = 0; i < numColumns; i++) {
+            // Evenly distribute columns from left to right
+            float x = i * (iconSizePx + gapPx);
+            IconDrop drop = drops[i];
+            float y = drop.y;
+            
+            // Choose icon based on drop's iconType
+            Bitmap iconBitmap = iconBitmaps[drop.iconType];
+            if (iconBitmap != null) {
                 Rect dest = new Rect((int)x, (int)y, (int)x + iconSizePx, (int)y + iconSizePx);
                 canvas.save();
                 canvas.rotate(drop.tilt, x + iconSizePx / 2f, y + iconSizePx / 2f);
-                canvas.drawBitmap(iconBitmap, null, dest, iconPaint);
+                canvas.drawBitmap(iconBitmap, null, dest, paint);
                 canvas.restore();
             }
         }
-        // Draw a more prominent black-to-transparent gradient at the bottom (fade out)
-        int gradientHeight = (int) (viewHeight * 0.4f);
+        
+        // Draw a gradient at the bottom (fade out)
+        int gradientHeight = (int) (viewHeight * 0.35f);
         Paint gradPaint = new Paint();
         LinearGradient grad = new LinearGradient(
             0, viewHeight, // start at bottom
             0, viewHeight - gradientHeight, // end at top of gradient
-            0xCC000000, 0x00000000, // 80% black to transparent
+            0xBB000000, 0x00000000, // Black to transparent
             Shader.TileMode.CLAMP
         );
         gradPaint.setShader(grad);
@@ -156,19 +148,23 @@ public class IconRainView extends View {
         super.onSizeChanged(w, h, oldw, oldh);
         viewWidth = w;
         viewHeight = h;
-        // Fill the width with as many columns as possible, matrix style
-        numColumns = Math.max(2, w / (iconSizePx + gapPx) * 2);
+        
+        // Fill the width with columns - matrix style
+        numColumns = Math.max(1, w / (iconSizePx + gapPx));
         drops = new IconDrop[numColumns];
+        
         for (int i = 0; i < numColumns; i++) {
             drops[i] = new IconDrop();
-            drops[i].y = -random.nextInt(h + iconSizePx); // randomize initial y across the whole height
-            drops[i].speed = SPEED_MIN + random.nextFloat() * 0.7f; // less variation for uniform effect
+            drops[i].y = -random.nextInt(h + iconSizePx); // randomize initial y position
+            drops[i].speed = SPEED_MIN + random.nextFloat() * (SPEED_MAX - SPEED_MIN);
             drops[i].offset = random.nextInt(iconSizePx * 2);
-            // Only tilted icons, never 0: pick -32 to -12 or +12 to +32
+            drops[i].iconType = random.nextInt(iconBitmaps.length); // Random icon for variety
+            
+            // Random tilt but always tilted
             if (random.nextBoolean()) {
-                drops[i].tilt = -32f + random.nextFloat() * 20f; // -32 to -12
+                drops[i].tilt = -25f + random.nextFloat() * 15f; // -25 to -10
             } else {
-                drops[i].tilt = 12f + random.nextFloat() * 20f; // +12 to +32
+                drops[i].tilt = 10f + random.nextFloat() * 15f; // +10 to +25
             }
         }
     }

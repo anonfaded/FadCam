@@ -1763,124 +1763,68 @@ public class RecordsFragment extends BaseFragment implements
 
     private void showRecordsSidebar() {
         if (getContext() == null) return;
-        View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_records_options, null);
         
-        // Check theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        // Create listeners for sort option selection and delete all
+        RecordsOptionsBottomSheet.OnSortOptionSelectedListener sortListener = bottomSheetSortOption -> {
+            // Convert the bottom sheet SortOption to the fragment SortOption
+            SortOption fragmentSortOption;
+            switch (bottomSheetSortOption) {
+                case LATEST_FIRST:
+                    fragmentSortOption = SortOption.LATEST_FIRST;
+                    break;
+                case OLDEST_FIRST:
+                    fragmentSortOption = SortOption.OLDEST_FIRST;
+                    break;
+                case SMALLEST_FILES:
+                    fragmentSortOption = SortOption.SMALLEST_FILES;
+                    break;
+                case LARGEST_FILES:
+                    fragmentSortOption = SortOption.LARGEST_FILES;
+                    break;
+                default:
+                    fragmentSortOption = SortOption.LATEST_FIRST;
+                    break;
+            }
+            
+            if (fragmentSortOption != currentSortOption) {
+                Log.i(TAG, "Sort option changed to: " + fragmentSortOption);
+                currentSortOption = fragmentSortOption;
+                performVideoSort(); // Call the sorting method
+            } else {
+                Log.d(TAG, "Sort option clicked, but no change: " + currentSortOption);
+            }
+        };
         
-        // Use appropriate bottom sheet style based on theme
-        int bottomSheetStyle = isSnowVeilTheme ? 
-            R.style.ThemeOverlay_FadCam_SnowVeil_BottomSheet : 
-            R.style.ThemeOverlay_FadCam_BottomSheet;
-            
-        // Use the new dynamic theme
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext(), bottomSheetStyle);
-        bottomSheetDialog.setContentView(bottomSheetView);
-
-        // Fix: Only set background for the bottom sheet, not the whole screen, and use correct color for theme
-        View sheet = bottomSheetDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
-        if (sheet != null) {
-            // Use the dialog background color for the sheet (surface/dialog, not heading/accent)
-            int bgColor = isSnowVeilTheme ? 
-                ContextCompat.getColor(requireContext(), R.color.snowveil_theme_surface_light) :
-                resolveThemeColor(R.attr.colorDialog);
-            sheet.setBackgroundColor(bgColor);
-        }
-
-        // Set text colors based on theme
-        int textColorPrimary, textColorSecondary;
-        if (isSnowVeilTheme) {
-            // Use black text for Snow Veil theme
-            textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.black);
-            textColorSecondary = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_secondary_light);
-            
-            // Ensure radio buttons have black tint
-            RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
-            if (sortOptionsGroup != null) {
-                for (int i = 0; i < sortOptionsGroup.getChildCount(); i++) {
-                    View child = sortOptionsGroup.getChildAt(i);
-                    if (child instanceof RadioButton) {
-                        ((RadioButton) child).setButtonTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK));
-                        ((RadioButton) child).setTextColor(android.graphics.Color.BLACK);
-                    }
-                }
-            }
-        } else if (isFadedNightTheme) {
-            // Use white text and radio buttons for Faded Night theme
-            textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.white);
-            textColorSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
-            
-            // Ensure radio buttons have WHITE tint for Faded Night theme
-            RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
-            if (sortOptionsGroup != null) {
-                // Create a white ColorStateList for radio buttons
-                int[][] states = new int[][] {
-                    new int[] { android.R.attr.state_checked },  // checked state
-                    new int[] { -android.R.attr.state_checked }  // unchecked state
-                };
-                int[] colors = new int[] {
-                    Color.WHITE,  // color for checked state - WHITE
-                    Color.WHITE   // color for unchecked state - WHITE
-                };
-                ColorStateList colorStateList = new ColorStateList(states, colors);
-                
-                for (int i = 0; i < sortOptionsGroup.getChildCount(); i++) {
-                    View child = sortOptionsGroup.getChildAt(i);
-                    if (child instanceof RadioButton) {
-                        ((RadioButton) child).setButtonTintList(colorStateList);
-                        ((RadioButton) child).setTextColor(Color.WHITE);
-                    }
-                }
-            }
-        } else {
-            // Use white text for other themes (dark backgrounds)
-            textColorPrimary = ContextCompat.getColor(requireContext(), android.R.color.white);
-            textColorSecondary = ContextCompat.getColor(requireContext(), R.color.gray_text_light);
+        RecordsOptionsBottomSheet.OnDeleteAllClickedListener deleteListener = this::confirmDeleteAll;
+        
+        // Convert the fragment SortOption to the bottom sheet SortOption
+        RecordsOptionsBottomSheet.SortOption bottomSheetSortOption;
+        switch (currentSortOption) {
+            case LATEST_FIRST:
+                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LATEST_FIRST;
+                break;
+            case OLDEST_FIRST:
+                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.OLDEST_FIRST;
+                break;
+            case SMALLEST_FILES:
+                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.SMALLEST_FILES;
+                break;
+            case LARGEST_FILES:
+                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LARGEST_FILES;
+                break;
+            default:
+                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LATEST_FIRST;
+                break;
         }
         
-        setTextColorsRecursive(bottomSheetView, textColorPrimary, textColorSecondary);
-
-        RadioGroup sortOptionsGroup = bottomSheetView.findViewById(R.id.sort_options_group);
-        LinearLayout deleteAllOption = bottomSheetView.findViewById(R.id.option_delete_all);
-
-        // Pre-select current sort option
-        if (sortOptionsGroup != null) {
-            switch (currentSortOption) {
-                case LATEST_FIRST: sortOptionsGroup.check(R.id.sort_latest); break;
-                case OLDEST_FIRST: sortOptionsGroup.check(R.id.sort_oldest); break;
-                case SMALLEST_FILES: sortOptionsGroup.check(R.id.sort_smallest); break;
-                case LARGEST_FILES: sortOptionsGroup.check(R.id.sort_largest); break;
-            }
-            Log.d(TAG,"Sidebar sort options pre-checked: "+currentSortOption);
-
-            sortOptionsGroup.setOnCheckedChangeListener((group, checkedId) -> {
-                SortOption newSortOption = currentSortOption; // Start assuming no change
-                if (checkedId == R.id.sort_latest) newSortOption = SortOption.LATEST_FIRST;
-                else if (checkedId == R.id.sort_oldest) newSortOption = SortOption.OLDEST_FIRST;
-                else if (checkedId == R.id.sort_smallest) newSortOption = SortOption.SMALLEST_FILES;
-                else if (checkedId == R.id.sort_largest) newSortOption = SortOption.LARGEST_FILES;
-
-                if (newSortOption != currentSortOption) {
-                    Log.i(TAG,"Sort option changed to: "+ newSortOption);
-                    currentSortOption = newSortOption;
-                    performVideoSort(); // Call the sorting method
-                } else {
-                    Log.d(TAG,"Sort option clicked, but no change:"+currentSortOption);
-                }
-                bottomSheetDialog.dismiss();
-            });
-        }
-
-        if (deleteAllOption != null) {
-            deleteAllOption.setOnClickListener(v -> {
-                bottomSheetDialog.dismiss();
-                confirmDeleteAll(); // Call delete all confirmation
-            });
-        }
-
-        bottomSheetDialog.show();
+        // Create and show the custom bottom sheet
+        RecordsOptionsBottomSheet bottomSheet = new RecordsOptionsBottomSheet(
+                sharedPreferencesManager,
+                bottomSheetSortOption,
+                sortListener,
+                deleteListener);
+        
+        bottomSheet.show(getChildFragmentManager(), "RecordsOptionsBottomSheet");
     }
 
 

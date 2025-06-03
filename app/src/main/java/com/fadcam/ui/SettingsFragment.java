@@ -37,6 +37,8 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LayoutAnimationController;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -61,6 +63,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
@@ -117,6 +121,8 @@ import android.text.TextWatcher;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 public class SettingsFragment extends BaseFragment {
 
@@ -4496,7 +4502,7 @@ public class SettingsFragment extends BaseFragment {
         } else if (currentIcon.equals(Constants.APP_ICON_JET)) {
             appIconChooseButton.setText(getString(R.string.app_icon_jet));
         }
-        
+                
         // Set proper text color based on current theme
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         if ("Premium Gold".equals(currentTheme) || "Silent Forest".equals(currentTheme) || 
@@ -4512,291 +4518,31 @@ public class SettingsFragment extends BaseFragment {
     }
     
     /**
-     * Shows a dialog for selecting the app icon
+     * Shows a custom bottom sheet for selecting the app icon with grid layout and animations
      */
     private void showAppIconSelectionDialog() {
-        // Get current app icon
-        String currentIcon = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
+        // Create and show the app icon selection bottom sheet
+        AppIconGridBottomSheet bottomSheet = new AppIconGridBottomSheet(
+                (iconKey, iconName) -> {
+                    // Update button text
+                    appIconChooseButton.setText(iconName);
+                    
+                    // Update app icon
+                    updateAppIcon(iconKey);
+                    
+                    // Add subtle vibration feedback
+                    vibrateTouch();
+                });
         
-        // Create dialog builder with themed style
-        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext());
-        builder.setTitle(R.string.app_icon_dialog_title);
-        
-        // Icon options
-        String[] iconNames = {
-            getString(R.string.app_icon_default),
-            getString(R.string.app_icon_alternative),
-            getString(R.string.app_icon_faded),
-            getString(R.string.app_icon_palestine),
-            getString(R.string.app_icon_pakistan),
-            getString(R.string.app_icon_fadseclab),
-            getString(R.string.app_icon_noor),
-            getString(R.string.app_icon_bat),
-            getString(R.string.app_icon_redbinary),
-            getString(R.string.app_icon_notes),
-            getString(R.string.app_icon_calculator),
-            getString(R.string.app_icon_clock),
-            getString(R.string.app_icon_weather),
-            getString(R.string.app_icon_football),
-            getString(R.string.app_icon_car),
-            getString(R.string.app_icon_jet)
-        };
-        
-        // Create a custom list adapter for the app icons
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), R.layout.item_app_icon_option, R.id.app_icon_name, iconNames) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                
-                // Get references to views
-                TextView iconName = view.findViewById(R.id.app_icon_name);
-                ImageView iconPreview = view.findViewById(R.id.app_icon_preview);
-                RadioButton radioButton = view.findViewById(R.id.app_icon_radio_button);
-                
-                // Set icon preview image
-                if (position == 0) {
-                    // Default/Original icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher);
-                } else if (position == 1) {
-                    // Detective icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_2);
-                } else if (position == 2) {
-                    // Faded icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_faded);
-                } else if (position == 3) {
-                    // Palestine/Sumud icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_palestine);
-                } else if (position == 4) {
-                    // Pakistan/MadeInPK icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_pakistan);
-                } else if (position == 5) {
-                    // FadSecLab/r00t icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_fadseclab);
-                } else if (position == 6) {
-                    // Noor icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_noor);
-                } else if (position == 7) {
-                    // FadBat icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_bat);
-                } else if (position == 8) {
-                    // Red Binary icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_redbinary);
-                } else if (position == 9) {
-                    // Notes icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_notes);
-                } else if (position == 10) {
-                    // Calculator icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_calculator);
-                } else if (position == 11) {
-                    // Clock icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_clock);
-                } else if (position == 12) {
-                    // Weather icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_weather);
-                } else if (position == 13) {
-                    // Football icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_football);
-                } else if (position == 14) {
-                    // Car icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_car);
-                } else if (position == 15) {
-                    // Jet icon
-                    iconPreview.setImageResource(R.mipmap.ic_launcher_jet);
-                }
-                
-                // Set text color based on current theme
-                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(
-                        Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-                boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-                
-                if (isSnowVeilTheme) {
-                    iconName.setTextColor(Color.BLACK);
-                } else {
-                    iconName.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
-                }
-                
-                // Select current icon
-                String iconKey = Constants.APP_ICON_DEFAULT; // Initialize with default value
-                if (position == 0) {
-                    iconKey = Constants.APP_ICON_DEFAULT;
-                } else if (position == 1) {
-                    iconKey = Constants.APP_ICON_ALTERNATIVE;
-                } else if (position == 2) {
-                    iconKey = Constants.APP_ICON_FADED;
-                } else if (position == 3) {
-                    iconKey = Constants.APP_ICON_PALESTINE;
-                } else if (position == 4) {
-                    iconKey = Constants.APP_ICON_PAKISTAN;
-                } else if (position == 5) {
-                    iconKey = Constants.APP_ICON_FADSECLAB;
-                } else if (position == 6) {
-                    iconKey = Constants.APP_ICON_NOOR;
-                } else if (position == 7) {
-                    iconKey = Constants.APP_ICON_BAT;
-                } else if (position == 8) {
-                    iconKey = Constants.APP_ICON_REDBINARY;
-                } else if (position == 9) {
-                    iconKey = Constants.APP_ICON_NOTES;
-                } else if (position == 10) {
-                    iconKey = Constants.APP_ICON_CALCULATOR;
-                } else if (position == 11) {
-                    iconKey = Constants.APP_ICON_CLOCK;
-                } else if (position == 12) {
-                    iconKey = Constants.APP_ICON_WEATHER;
-                } else if (position == 13) {
-                    iconKey = Constants.APP_ICON_FOOTBALL;
-                } else if (position == 14) {
-                    iconKey = Constants.APP_ICON_CAR;
-                } else if (position == 15) {
-                    iconKey = Constants.APP_ICON_JET;
-                }
-                radioButton.setChecked(iconKey.equals(currentIcon));
-                
-                return view;
-            }
-        };
-        
-        // Determine which item is currently selected (for initial selection in dialog)
-        int selectedPosition = 0; // Default position
-        if (Constants.APP_ICON_ALTERNATIVE.equals(currentIcon)) {
-            selectedPosition = 1;
-        } else if (Constants.APP_ICON_FADED.equals(currentIcon)) {
-            selectedPosition = 2;
-        } else if (Constants.APP_ICON_PALESTINE.equals(currentIcon)) {
-            selectedPosition = 3;
-        } else if (Constants.APP_ICON_PAKISTAN.equals(currentIcon)) {
-            selectedPosition = 4;
-        } else if (Constants.APP_ICON_FADSECLAB.equals(currentIcon)) {
-            selectedPosition = 5;
-        } else if (Constants.APP_ICON_NOOR.equals(currentIcon)) {
-            selectedPosition = 6;
-        } else if (Constants.APP_ICON_BAT.equals(currentIcon)) {
-            selectedPosition = 7;
-        } else if (Constants.APP_ICON_REDBINARY.equals(currentIcon)) {
-            selectedPosition = 8;
-        } else if (Constants.APP_ICON_NOTES.equals(currentIcon)) {
-            selectedPosition = 9;
-        } else if (Constants.APP_ICON_CALCULATOR.equals(currentIcon)) {
-            selectedPosition = 10;
-        } else if (Constants.APP_ICON_CLOCK.equals(currentIcon)) {
-            selectedPosition = 11;
-        } else if (Constants.APP_ICON_WEATHER.equals(currentIcon)) {
-            selectedPosition = 12;
-        } else if (Constants.APP_ICON_FOOTBALL.equals(currentIcon)) {
-            selectedPosition = 13;
-        } else if (Constants.APP_ICON_CAR.equals(currentIcon)) {
-            selectedPosition = 14;
-        } else if (Constants.APP_ICON_JET.equals(currentIcon)) {
-            selectedPosition = 15;
-        }
-        
-        builder.setSingleChoiceItems(adapter, selectedPosition, (dialog, which) -> {
-            // Determine which icon was selected based on position
-            String newIcon = Constants.APP_ICON_DEFAULT; // Initialize with default value to avoid "might not have been initialized" error
-            
-            if (which == 0) {
-                newIcon = Constants.APP_ICON_DEFAULT;
-            } else if (which == 1) {
-                newIcon = Constants.APP_ICON_ALTERNATIVE;
-            } else if (which == 2) {
-                newIcon = Constants.APP_ICON_FADED;
-            } else if (which == 3) {
-                newIcon = Constants.APP_ICON_PALESTINE;
-            } else if (which == 4) {
-                newIcon = Constants.APP_ICON_PAKISTAN;
-            } else if (which == 5) {
-                newIcon = Constants.APP_ICON_FADSECLAB;
-            } else if (which == 6) {
-                newIcon = Constants.APP_ICON_NOOR;
-            } else if (which == 7) {
-                newIcon = Constants.APP_ICON_BAT;
-            } else if (which == 8) {
-                newIcon = Constants.APP_ICON_REDBINARY;
-            } else if (which == 9) {
-                newIcon = Constants.APP_ICON_NOTES;
-            } else if (which == 10) {
-                newIcon = Constants.APP_ICON_CALCULATOR;
-            } else if (which == 11) {
-                newIcon = Constants.APP_ICON_CLOCK;
-            } else if (which == 12) {
-                newIcon = Constants.APP_ICON_WEATHER;
-            } else if (which == 13) {
-                newIcon = Constants.APP_ICON_FOOTBALL;
-            } else if (which == 14) {
-                newIcon = Constants.APP_ICON_CAR;
-            } else if (which == 15) {
-                newIcon = Constants.APP_ICON_JET;
-            }
-            
-            if (!newIcon.equals(currentIcon)) {
-                // Save the new icon preference
-                sharedPreferencesManager.sharedPreferences.edit()
-                        .putString(Constants.PREF_APP_ICON, newIcon)
-                        .apply();
-                
-                // Update button text
-                if (which == 0) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_default));
-                } else if (which == 1) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_alternative));
-                } else if (which == 2) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_faded));
-                } else if (which == 3) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_palestine));
-                } else if (which == 4) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_pakistan));
-                } else if (which == 5) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_fadseclab));
-                } else if (which == 6) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_noor));
-                } else if (which == 7) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_bat));
-                } else if (which == 8) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_redbinary));
-                } else if (which == 9) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_notes));
-                } else if (which == 10) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_calculator));
-                } else if (which == 11) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_clock));
-                } else if (which == 12) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_weather));
-                } else if (which == 13) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_football));
-                } else if (which == 14) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_car));
-                } else if (which == 15) {
-                    appIconChooseButton.setText(getString(R.string.app_icon_jet));
-                }
-                
-                // Apply the icon change
-                updateAppIcon(newIcon);
-                
-                // Give feedback
-                vibrateTouch();
-                Toast.makeText(requireContext(), R.string.app_icon_changed, Toast.LENGTH_SHORT).show();
-            }
-            
-            dialog.dismiss();
-        });
-        
-        builder.setNegativeButton(R.string.universal_cancel, null);
-        
-        // Create and show dialog
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> {
-            // Apply appropriate button text colors for the current theme
-            setDialogButtonColors(dialog);
-        });
-        dialog.show();
+        bottomSheet.show(getParentFragmentManager(), "AppIconGridBottomSheet");
     }
-    
+
     /**
      * Updates the app icon by enabling/disabling activity-alias components
      * @param iconKey The key of the icon to enable
      */
     private void updateAppIcon(String iconKey) {
-        PackageManager pm = requireContext().getPackageManager();
+            PackageManager pm = requireContext().getPackageManager();
         
         // Component names for our activity aliases
         ComponentName defaultIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity");
@@ -4869,55 +4615,55 @@ public class SettingsFragment extends BaseFragment {
         // Enable only the selected icon
         if (Constants.APP_ICON_DEFAULT.equals(iconKey)) {
             pm.setComponentEnabledSetting(defaultIcon, 
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_ALTERNATIVE.equals(iconKey)) {
             pm.setComponentEnabledSetting(alternativeIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_FADED.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_FADED.equals(iconKey)) {
             pm.setComponentEnabledSetting(fadedIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_PALESTINE.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_PALESTINE.equals(iconKey)) {
             pm.setComponentEnabledSetting(palestineIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_PAKISTAN.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_PAKISTAN.equals(iconKey)) {
             pm.setComponentEnabledSetting(pakistanIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_FADSECLAB.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_FADSECLAB.equals(iconKey)) {
             pm.setComponentEnabledSetting(fadseclabIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_NOOR.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_NOOR.equals(iconKey)) {
             pm.setComponentEnabledSetting(noorIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_BAT.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_BAT.equals(iconKey)) {
             pm.setComponentEnabledSetting(batIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_REDBINARY.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_REDBINARY.equals(iconKey)) {
             pm.setComponentEnabledSetting(redbinaryIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_NOTES.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_NOTES.equals(iconKey)) {
             pm.setComponentEnabledSetting(notesIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_CALCULATOR.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_CALCULATOR.equals(iconKey)) {
             pm.setComponentEnabledSetting(calculatorIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_CLOCK.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_CLOCK.equals(iconKey)) {
             pm.setComponentEnabledSetting(clockIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
-        } else if (Constants.APP_ICON_WEATHER.equals(iconKey)) {
+                    } else if (Constants.APP_ICON_WEATHER.equals(iconKey)) {
             pm.setComponentEnabledSetting(weatherIcon, 
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_FOOTBALL.equals(iconKey)) {
             pm.setComponentEnabledSetting(footballIcon, 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="6dp"
+    android:gravity="center"
+    android:layout_margin="4dp"
+    android:background="@drawable/app_icon_grid_background"
+    android:foreground="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/app_icon_preview"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:padding="2dp"
+        android:contentDescription="@string/app_icon_preview" />
+
+    <TextView
+        android:id="@+id/app_icon_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceSubtitle1"
+        android:textSize="11sp"
+        android:maxLines="2"
+        android:minLines="2"
+        android:ellipsize="end"
+        android:textAlignment="center"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp" />
+
+    <RadioButton
+        android:id="@+id/app_icon_radio_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:scaleX="0.8"
+        android:scaleY="0.8" />
+</LinearLayout> 
