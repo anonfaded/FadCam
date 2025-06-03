@@ -531,7 +531,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>

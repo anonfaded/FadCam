@@ -167,7 +167,7 @@
         <activity-alias
             android:name=".MainActivity.NoorIcon"
             android:enabled="false"
-            android:label="Noor"
+            android:label="FadCam ++"
             android:icon="@mipmap/ic_launcher_noor"
             android:roundIcon="@mipmap/ic_launcher_noor_round"
             android:targetActivity=".MainActivity"
