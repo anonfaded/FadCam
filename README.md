@@ -161,6 +161,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [El Androide Feliz on YouTube](https://youtu.be/H02x9pnJh_g?si=dXCmNLaDm9Hrra2C&t=669)
 - [ODORIZZI on YouTube](https://www.youtube.com/watch?v=e2IFJJgjKRg)
 - [Tech OverWatch on TikTok](https://www.tiktok.com/@tech_overwatch/video/7506821012655181062)
+- [tech_overwatch on Insta](https://www.instagram.com/reel/DJ6Nn5uNHxq/)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
@@ -220,6 +221,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [buzzspot.net](https://www.buzzspot.net/2025/05/open-source-android-apps.html?m=1)
 - [ababtools.com](https://ababtools.com/?post=5528)
 - [0714.com](http://www.0714.com/soft/59753.htm)
+- [yeeach.com](https://yeeach.com/1685/%E5%BC%80%E6%BA%90android%E5%90%8E%E5%8F%B0%E5%BD%95%E9%9F%B3-%E5%BD%95%E5%83%8F%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB/)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
