@@ -98,6 +98,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 // Add to the beginning of the file
 import android.media.MediaMetadataRetriever;
 
+import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
+import com.fadcam.utils.DeviceHelper;
+import com.fadcam.utils.camera.FrameRateHelper;
+import com.fadcam.utils.camera.HighSpeedCaptureHelper;
+import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
+import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
+
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
@@ -1889,47 +1896,96 @@ public class RecordingService extends Service {
         }
         Log.d(TAG,"createCameraPreviewSession: Creating session...");
         try {
-            List<Surface> surfaces = new ArrayList<>();
-
-            // Get the MediaRecorder surface
             Surface recorderSurface = mediaRecorder.getSurface();
+            
+            // Setup a list of surfaces for the capture session
+            List<Surface> surfaces = new ArrayList<>();
             surfaces.add(recorderSurface);
-            Log.d(TAG,"Added MediaRecorder surface.");
-
-            // Add UI preview surface IF available and valid
-            if (previewSurface != null && previewSurface.isValid()) {
+            
+            // Add preview surface if available
+            if (previewSurface != null) {
                 surfaces.add(previewSurface);
-                Log.d(TAG,"Added Preview surface.");
-            } else {
-                Log.w(TAG,"Preview surface is null or invalid, not adding.");
             }
-
-            // Create the CaptureRequest builder
-            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-
-            // Add surfaces as targets
-            captureRequestBuilder.addTarget(recorderSurface);
-            if (previewSurface != null && previewSurface.isValid()) {
-                captureRequestBuilder.addTarget(previewSurface);
+            
+            // Get camera characteristics for frame rate handling
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            String cameraId = getCameraId(cameraManager, cameraType);
+            CameraCharacteristics characteristics = null;
+            
+            if (cameraId != null) {
+                characteristics = cameraManager.getCameraCharacteristics(cameraId);
             }
-
-            // Set desired frame rate range for stability
+            
+            // Get target frame rate from settings
             int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
-            Range<Integer> fpsRange = new Range<>(targetFrameRate, targetFrameRate);
-            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
-            Log.d(TAG,"Set target FPS range: "+fpsRange);
-
-
-            // Create the session
-            cameraDevice.createCaptureSession(surfaces, captureSessionCallback, backgroundHandler);
-            Log.d(TAG, "Requested camera capture session creation.");
-
+            
+            // Log device info once for debugging
+            DeviceHelper.logDeviceInfo();
+            
+            // Check if we need to use high-speed session for 60fps+ recording
+            boolean isHighFrameRate = targetFrameRate >= 60;
+            boolean useHighSpeedSession = false;
+            
+            // For high frame rates, evaluate if we should use high-speed session
+            if (isHighFrameRate && characteristics != null) {
+                // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
+                if (DeviceHelper.isSamsung()) {
+                    Log.d(TAG, "Samsung device detected - Using Samsung-specific approach for " + targetFrameRate + "fps");
+                    
+                    // Show toast informing the user about experimental 60fps
+                    showFrameRateToast(targetFrameRate);
+                    
+                    // Always use standard session with Samsung vendor keys
+                    useHighSpeedSession = false;
+                    
+                    // Create standard session with Samsung-specific frame rate settings
+                    createStandardSession(surfaces, targetFrameRate, characteristics);
+                    return;
+                } 
+                // For Huawei devices, also prefer vendor keys
+                else if (DeviceHelper.isHuawei()) {
+                    Log.d(TAG, "Using Huawei-specific approach for high frame rates");
+                    
+                    // Show toast informing the user about experimental 60fps
+                    showFrameRateToast(targetFrameRate);
+                    
+                    // Use standard session with Huawei vendor keys
+                    useHighSpeedSession = false;
+                }
+                // For other devices, check if high-speed is supported
+                else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
+                    Log.d(TAG, "High-speed session is supported for " + targetFrameRate + "fps");
+                    useHighSpeedSession = true;
+                    
+                    // Show toast informing the user about experimental 60fps
+                    showFrameRateToast(targetFrameRate);
+                } else {
+                    Log.d(TAG, "High-speed not supported for " + targetFrameRate + 
+                           "fps, using standard session");
+                           
+                    // Show toast informing the user that high frame rate may not be fully supported
+                    showFrameRateToast(targetFrameRate);
+                }
+            }
+            
+            // Create the appropriate type of session
+            if (useHighSpeedSession) {
+                // For high-speed sessions
+                createHighSpeedSession(surfaces, characteristics, targetFrameRate);
+            } else {
+                // Create a standard session with appropriate frame rate settings
+                createStandardSession(surfaces, targetFrameRate, characteristics);
+            }
         } catch (CameraAccessException e) {
             Log.e(TAG, "createCameraPreviewSession: Camera Access Exception", e);
-            stopRecording(); // Stop if session creation fails
+            stopRecording();
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "createCameraPreviewSession: IllegalStateException", e);
+            stopRecording();
         } catch (Exception e) {
-            Log.e(TAG, "createCameraPreviewSession: Unexpected error", e);
-            stopRecording(); // Stop on general errors
+            Log.e(TAG, "createCameraPreviewSession: Exception", e);
+            stopRecording();
         }
     }
 
@@ -1937,94 +1993,151 @@ public class RecordingService extends Service {
     private final CameraCaptureSession.StateCallback captureSessionCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "Capture session configured: " + session);
+            Log.d(TAG, "Standard capture session configured");
             if (cameraDevice == null) {
-                Log.e(TAG,"onConfigured: Camera closed before session configured!");
-                session.close(); // Close the session if camera is gone
+                Log.e(TAG, "Camera closed before session configured");
+                session.close();
                 return;
             }
-            captureSession = session; // Assign the configured session
-
+            
+            captureSession = session;
+            
             try {
-                // Start the repeating request (includes preview and feeds recorder)
-                captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO); // Use auto mode
-                // ----- Fix Start for this method(onConfigured)-----
-                // Re-introduce setting FLASH_MODE based on the session's torch state
-                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
-                // ----- Fix Ended for this method(onConfigured)-----
-
-                session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
-                Log.d(TAG,"Repeating request started.");
-
-
-                // ----- Fix Start for this method(onConfigured_prevent_restart_on_surface_change)-----
-                // If we are in a state where recording should be active
-                if (recordingState == RecordingState.STARTING) {
-                    // This is the initial start of the very first segment
-                    recordingStartTime = SystemClock.elapsedRealtime();
-                    Log.d(TAG, "MediaRecorder starting for the first segment (state was STARTING).");
-                    mediaRecorder.start(); // START RECORDING for the first segment
-                    
-                    recordingState = RecordingState.IN_PROGRESS; // Transition from STARTING to IN_PROGRESS
-                    sharedPreferencesManager.setRecordingInProgress(true);
-                    setupRecordingInProgressNotification();
-                    broadcastOnRecordingStarted(); 
-                    Log.d(TAG, "Initial MediaRecorder started! Recording now IN_PROGRESS.");
-
-                } else if (recordingState == RecordingState.IN_PROGRESS) {
-                    // This typically means the session was reconfigured (e.g., due to surface change)
-                    // WHILE a recording (either initial or a subsequent segment) was already in progress.
-                    // DO NOT call mediaRecorder.start() again if it's already started for the current segment.
-                    // The existing MediaRecorder instance continues with the new session.
-                    Log.d(TAG, "Capture session reconfigured while IN_PROGRESS (e.g. surface change). MediaRecorder for segment " + currentSegmentNumber + " should already be running. Ensuring notification is current.");
-                    setupRecordingInProgressNotification(); // Ensure notification is correct
+                // Set auto control mode
+                captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
                 
-                } else if (recordingState == RecordingState.PAUSED) { 
-                    Log.w(TAG,"Session reconfigured while PAUSED. MediaRecorder was resumed prior. State remains PAUSED until explicit resume.");
-                    setupRecordingResumeNotification(); // Show PAUSED notification
-                }
-                // ----- Fix Ended for this method(onConfigured_prevent_restart_on_surface_change)-----
-
+                // Set torch/flash mode
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, 
+                    isRecordingTorchEnabled ? 
+                        CaptureRequest.FLASH_MODE_TORCH : 
+                        CaptureRequest.FLASH_MODE_OFF);
+                
+                // Start repeating request
+                session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                Log.d(TAG, "Started repeating request for standard session");
+                
+                // Handle recording state
+                handleSessionConfigured();
             } catch (CameraAccessException e) {
-                Log.e(TAG, "onConfigured: Error starting repeating request or MediaRecorder", e);
-                stopRecording(); // Stop if cannot set repeating request
-            } catch (IllegalStateException e) {
-                Log.e(TAG, "onConfigured: IllegalStateException (Session, Camera, or MediaRecorder closed/in wrong state?)", e);
+                Log.e(TAG, "Error starting repeating request", e);
                 stopRecording();
             }
         }
-
+        
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            Log.e(TAG, "Capture session configuration failed: " + session);
-            // ----- Fix Start for this method(onConfigureFailed)-----
-            if (recordingState == RecordingState.STARTING) {
-                Log.w(TAG, "Configuration failed during STARTING state, resetting to NONE.");
-                recordingState = RecordingState.NONE;
-            }
-            // ----- Fix Ended for this method(onConfigureFailed)-----
-            stopRecording(); // Stop if session configuration fails
+            Log.e(TAG, "Standard capture session configuration failed");
+            stopRecording();
         }
+        
         @Override
         public void onClosed(@NonNull CameraCaptureSession session) {
-            Log.d(TAG,"CaptureSession.onClosed: session=" + session + ". Checking isRolloverClosingOldSession. Value: " + isRolloverClosingOldSession);
-            // This is the crucial part for rollover
-            if (isRolloverClosingOldSession) { // Check the flag
-                Log.i(TAG, "Old capture session closed during rollover. Posting proceedWithRolloverAfterOldSessionClosed.");
-                isRolloverClosingOldSession = false; // Reset flag
-                if (backgroundHandler != null) {
-                    backgroundHandler.post(RecordingService.this::proceedWithRolloverAfterOldSessionClosed);
-                } else {
-                    Log.e(TAG, "Rollover: BackgroundHandler is null in CaptureSession.onClosed, cannot continue rollover! Stopping.");
-                    new Handler(Looper.getMainLooper()).post(RecordingService.this::stopRecording);
-                }
-            } else {
-                Log.w(TAG, "CaptureSession.onClosed: isRolloverClosingOldSession is FALSE. Rollover will not proceed via this path. This might be a normal session closure from stopRecording, or an unexpected state.");
+            Log.d(TAG, "Capture session closed");
+            
+            if (session == captureSession) {
+                captureSession = null;
             }
-            // captureSession = null; // Nullify if needed elsewhere
+            
+            if (isRolloverClosingOldSession) {
+                Log.d(TAG, "Capture session closed as part of rollover");
+                isRolloverClosingOldSession = false;
+                proceedWithRolloverAfterOldSessionClosed();
+            }
         }
     };
-    // --- End MediaRecorder & Camera Session Setup ---
+
+    /**
+     * Callback for high-speed session state changes
+     */
+    private final CameraCaptureSession.StateCallback highSpeedSessionCallback = 
+            new CameraCaptureSession.StateCallback() {
+        
+        @Override
+        public void onConfigured(@NonNull CameraCaptureSession session) {
+            if (cameraDevice == null) {
+                Log.e(TAG, "Camera closed before high-speed session configured");
+                return;
+            }
+            
+            try {
+                Log.d(TAG, "High-speed session configured successfully");
+                captureSession = session;
+                
+                // For high-speed sessions, we need to create a list of requests for burst
+                CameraConstrainedHighSpeedCaptureSession highSpeedSession = 
+                        (CameraConstrainedHighSpeedCaptureSession) session;
+                        
+                List<CaptureRequest> highSpeedRequests = 
+                        highSpeedSession.createHighSpeedRequestList(captureRequestBuilder.build());
+                        
+                // Start repeating burst for high-speed recording
+                highSpeedSession.setRepeatingBurst(highSpeedRequests, null, backgroundHandler);
+                
+                // Handle recording state
+                handleSessionConfigured();
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "Error setting up high-speed repeating burst", e);
+                stopRecording();
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                Log.e(TAG, "Error in high-speed session configuration", e);
+                stopRecording();
+            }
+        }
+        
+        @Override
+        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+            Log.e(TAG, "High-speed session configuration failed");
+            
+            try {
+                // Can't get surfaces from the failed session, need to recreate them
+                CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+                String cameraId = getCameraId(cameraManager, cameraType);
+                CameraCharacteristics characteristics = null;
+                
+                if (cameraId != null) {
+                    characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                }
+                
+                int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+                
+                // Recreate surfaces for standard session
+                List<Surface> surfaces = new ArrayList<>();
+                
+                // Add recorder surface
+                if (mediaRecorder != null) {
+                    Surface recorderSurface = mediaRecorder.getSurface();
+                    if (recorderSurface != null) {
+                        surfaces.add(recorderSurface);
+                    }
+                }
+                
+                // Add preview surface if available
+                if (previewSurface != null) {
+                    surfaces.add(previewSurface);
+                }
+                
+                // Create standard session as fallback
+                if (!surfaces.isEmpty()) {
+                    createStandardSession(surfaces, targetFrameRate, characteristics);
+                } else {
+                    Log.e(TAG, "Failed to create surfaces for fallback session");
+                    stopRecording();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to create fallback session after high-speed failure", e);
+                stopRecording();
+            }
+        }
+        
+        @Override
+        public void onClosed(@NonNull CameraCaptureSession session) {
+            // Handle session closure same as standard session
+            if (captureSessionCallback != null) {
+                captureSessionCallback.onClosed(session);
+            }
+        }
+    };
 
     // --- Watermarking & Processing ---
     // ----- Fix Start for this method(processLatestVideoFileWithWatermark_comment_out_isProcessingWatermark_references)-----
@@ -3280,4 +3393,204 @@ public class RecordingService extends Service {
         Log.d(TAG, "==== Location Helpers Reinitialization Complete ====");
     }
     // ----- Fix Ended for this class(RecordingService) -----
+
+    /**
+     * Creates a high-speed constrained capture session for 60fps+ recording
+     */
+    private void createHighSpeedSession(List<Surface> surfaces, CameraCharacteristics characteristics, 
+                                       int targetFrameRate) {
+        try {
+            // For high-speed recording, we need a constrained high-speed capture session
+            Log.d(TAG, "Creating constrained high-speed session for " + targetFrameRate + "fps");
+            
+            // Get the best size for high-speed recording
+            Size highSpeedSize = HighSpeedCaptureHelper.getBestHighSpeedSize(
+                    characteristics, targetFrameRate, 0, 0);
+                    
+            if (highSpeedSize == null) {
+                Log.d(TAG, "No suitable high-speed size found");
+                // Fallback to standard session
+                createStandardSession(surfaces, targetFrameRate, characteristics);
+                return;
+            }
+            
+            // Configure a builder for high-speed recording
+            captureRequestBuilder = HighSpeedCaptureHelper.configureHighSpeedRequestBuilder(
+                    cameraDevice, null, targetFrameRate, characteristics);
+                    
+            if (captureRequestBuilder == null) {
+                Log.d(TAG, "Failed to create high-speed request builder");
+                // Fallback to standard session
+                createStandardSession(surfaces, targetFrameRate, characteristics);
+                return;
+            }
+            
+            // Add surfaces as targets
+            for (Surface surface : surfaces) {
+                captureRequestBuilder.addTarget(surface);
+            }
+            
+            // Set torch mode if enabled
+            if (isRecordingTorchEnabled) {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            } else {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            }
+            
+            // Create the constrained high-speed session
+            cameraDevice.createConstrainedHighSpeedCaptureSession(
+                    surfaces, 
+                    highSpeedSessionCallback, 
+                    backgroundHandler);
+                    
+            Log.d(TAG, "Requested constrained high-speed capture session creation");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create high-speed session", e);
+            // Fallback to standard session
+            try {
+                createStandardSession(surfaces, targetFrameRate, characteristics);
+            } catch (Exception e2) {
+                Log.e(TAG, "Failed to create fallback standard session", e2);
+                stopRecording();
+            }
+        }
+    }
+
+    /**
+     * Fallback to create a standard session with the best possible frame rate settings
+     */
+    private void createStandardSession(List<Surface> surfaces, int targetFrameRate, 
+                                     CameraCharacteristics characteristics) {
+        try {
+            Log.d(TAG, "Creating standard session with optimized frame rate settings");
+            
+            // Create standard request builder
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            
+            // Add surfaces as targets
+            for (Surface surface : surfaces) {
+                captureRequestBuilder.addTarget(surface);
+            }
+            
+            // Apply frame rate settings
+            applyFrameRateSettings(captureRequestBuilder, targetFrameRate, characteristics);
+            
+            // Set torch mode if enabled
+            if (isRecordingTorchEnabled) {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            } else {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            }
+            
+            // Create the session
+            cameraDevice.createCaptureSession(surfaces, captureSessionCallback, backgroundHandler);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create standard session", e);
+            stopRecording();
+        }
+    }
+
+    /**
+     * Apply appropriate frame rate settings based on device type
+     */
+    private void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, 
+                                      CameraCharacteristics characteristics) {
+        if (DeviceHelper.isSamsung()) {
+            // Apply Samsung-specific frame rate settings
+            Log.d(TAG, "Applying Samsung-specific frame rate settings for " + targetFrameRate + "fps");
+            SamsungFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
+        } else if (DeviceHelper.isHuawei()) {
+            // Apply Huawei-specific frame rate settings
+            Log.d(TAG, "Applying Huawei-specific frame rate settings for " + targetFrameRate + "fps");
+            HuaweiFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
+        } else {
+            // Standard Camera2 API approach for other devices
+            Log.d(TAG, "Applying standard frame rate settings for " + targetFrameRate + "fps");
+            Range<Integer> fpsRange = FrameRateHelper.findBestFpsRange(characteristics, targetFrameRate);
+            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+            Log.d(TAG, "Set target FPS range: " + fpsRange);
+        }
+    }
+
+    /**
+     * Previously showed toast messages for high frame rates
+     * Now just logs the message as warnings are shown permanently in the settings UI
+     */
+    private void showFrameRateToast(int frameRate) {
+        // Frame rate warnings are now shown permanently in the settings UI
+        // This method is kept to avoid refactoring all callers
+        
+        if (frameRate >= 60) {
+            // Just log the high frame rate usage
+            if (DeviceHelper.isSamsung()) {
+                Log.d(TAG, "Using experimental " + frameRate + "fps mode for Samsung");
+            } else if (DeviceHelper.isHuawei()) {
+                Log.d(TAG, "Using experimental " + frameRate + "fps mode for Huawei");
+            } else {
+                Log.d(TAG, "Using experimental " + frameRate + "fps mode");
+            }
+        }
+    }
+
+    /**
+     * Helper method to get the proper camera ID based on camera type
+     */
+    private String getCameraId(CameraManager cameraManager, CameraType cameraType) {
+        if (cameraManager == null) return null;
+        
+        try {
+            if (cameraType == CameraType.BACK) {
+                // For back camera, use the selected back camera ID
+                return sharedPreferencesManager.getSelectedBackCameraId();
+            } else {
+                // For front camera, find the first front-facing camera
+                String[] cameraIds = cameraManager.getCameraIdList();
+                for (String id : cameraIds) {
+                    CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                    Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        return id;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error finding camera ID", e);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Handle common tasks after any session is configured
+     */
+    private void handleSessionConfigured() {
+        // Handle recording states
+        if (recordingState == RecordingState.STARTING) {
+            try {
+                // Start the MediaRecorder
+                mediaRecorder.start();
+                recordingState = RecordingState.IN_PROGRESS;
+                recordingStartTime = System.currentTimeMillis();
+                
+                // Setup notification
+                setupRecordingInProgressNotification();
+                
+                // Broadcast that recording has started
+                broadcastOnRecordingStarted();
+                
+                Log.d(TAG, "Recording started successfully");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start recording", e);
+                stopRecording();
+            }
+        } else if (recordingState == RecordingState.IN_PROGRESS) {
+            // This typically means the session was reconfigured
+            Log.d(TAG, "Session reconfigured while recording is in progress");
+            setupRecordingInProgressNotification();
+        } else if (recordingState == RecordingState.PAUSED) {
+            // Handle paused state
+            Log.d(TAG, "Session configured while in PAUSED state");
+            setupRecordingResumeNotification();
+        }
+    }
 }

@@ -2367,19 +2367,44 @@ public class HomeFragment extends BaseFragment {
         double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
         double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
 
-        long elapsedTime = SystemClock.elapsedRealtime() - recordingStartTime;
-        long estimatedBytesUsed = (elapsedTime * videoBitrate) / 8000; // Convert ms and bits to bytes
+        // Only calculate estimated bytes used if we're actually recording
+        long elapsedTime = 0;
+        long estimatedBytesUsed = 0;
+        
+        if (isRecording() || isPaused()) {
+            elapsedTime = Math.max(0, SystemClock.elapsedRealtime() - recordingStartTime);
+            // Only calculate if we have valid values
+            if (elapsedTime > 0 && videoBitrate > 0) {
+                estimatedBytesUsed = (elapsedTime * videoBitrate) / 8000; // Convert ms and bits to bytes
+                // Safety check: don't let estimated bytes exceed available bytes
+                estimatedBytesUsed = Math.min(estimatedBytesUsed, bytesAvailable);
+                Log.d(TAG, "updateStorageInfo: Elapsed=" + elapsedTime + "ms, Est. bytes used=" + estimatedBytesUsed);
+            }
+        }
 
         // Update available space based on estimated bytes used
         bytesAvailable -= estimatedBytesUsed;
+        // Ensure we never show negative available space
+        bytesAvailable = Math.max(0, bytesAvailable);
         gbAvailable = Math.max(0, bytesAvailable / (1024.0 * 1024.0 * 1024.0));
 
         // Calculate remaining recording time based on available space and bitrate
-        long remainingTime = (videoBitrate > 0) ? (bytesAvailable * 8) / videoBitrate * 2 : 0; // Double the remaining time        // Calculate days, hours, minutes, and seconds for remaining time
+        long remainingTime = 0;
+        if (videoBitrate > 0) {
+            remainingTime = (bytesAvailable * 8) / videoBitrate; 
+        }
+        // Ensure remaining time is never negative
+        remainingTime = Math.max(0, remainingTime);
+        
+        // Calculate days, hours, minutes, and seconds for remaining time
         long days = remainingTime / (24 * 3600);
         long hours = (remainingTime % (24 * 3600)) / 3600;
         long minutes = (remainingTime % 3600) / 60;
         long seconds = remainingTime % 60;
+
+        // Use elapsedTime only if it's valid
+        long elapsedMinutes = Math.max(0, elapsedTime / 60000);
+        long elapsedSeconds = Math.max(0, (elapsedTime / 1000) % 60);
 
         String storageInfo = String.format(Locale.getDefault(),
                 getString(R.string.mainpage_storage_indicator),
@@ -2387,7 +2412,7 @@ public class HomeFragment extends BaseFragment {
                 getRecordingTimeEstimate(bytesAvailable, (10 * 1024 * 1024) / 2), // 50% of 10 Mbps
                 getRecordingTimeEstimate(bytesAvailable, (5 * 1024 * 1024) / 2),  // 50% of 5 Mbps
                 getRecordingTimeEstimate(bytesAvailable, (1024 * 1024) / 2),      // 50% of 1 Mbps
-                elapsedTime / 60000, (elapsedTime / 1000) % 60,
+                elapsedMinutes, elapsedSeconds,
                 formatRemainingTime(days, hours, minutes, seconds)
         );
 
@@ -2396,7 +2421,10 @@ public class HomeFragment extends BaseFragment {
         // Update UI on the main thread
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
-                tvStorageInfo.setText(formattedText);
+                if (tvStorageInfo != null) {
+                    tvStorageInfo.setText(formattedText);
+                    Log.d(TAG, "updateStorageInfo: UI updated with elapsed=" + elapsedMinutes + "m " + elapsedSeconds + "s");
+                }
             });
         }
     }
@@ -2419,25 +2447,56 @@ public class HomeFragment extends BaseFragment {
     }
 
     private String getRecordingTimeEstimate(long availableBytes, long bitrate) {
-        long recordingSeconds = (availableBytes * 8) / bitrate;
+        // Prevent division by zero
+        if (bitrate <= 0) {
+            return "∞ h ∞ min"; // Infinite time if bitrate is zero
+        }
+        
+        // Calculate seconds, handling potential overflow
+        long recordingSeconds;
+        try {
+            recordingSeconds = (availableBytes * 8) / bitrate;
+        } catch (Exception e) {
+            Log.e(TAG, "Error calculating recording time estimate", e);
+            recordingSeconds = 0;
+        }
+        
+        // Ensure non-negative values
+        recordingSeconds = Math.max(0, recordingSeconds);
+        
         long recordingHours = recordingSeconds / 3600;
         long recordingMinutes = (recordingSeconds % 3600) / 60;
+        
         return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
     }
 
     //    update storage and stats in real time while recording is started
     private void startUpdatingInfo() {
+        // Cancel any existing runnable first
+        if (updateInfoRunnable != null) {
+            handlerClock.removeCallbacks(updateInfoRunnable);
+            updateInfoRunnable = null;
+        }
+        
+        // Create a new runnable
         updateInfoRunnable = new Runnable() {
             @Override
             public void run() {
-                if (isRecording() && isAdded()) {
+                if ((isRecording() || isPaused()) && isAdded()) {
+                    Log.d(TAG, "Update timer: Refreshing storage info and stats");
                     updateStorageInfo();
                     updateStats();
                     handlerClock.postDelayed(this, 1000); // Update every second
+                } else {
+                    Log.d(TAG, "Update timer: Not recording or fragment detached, stopping updates");
+                    stopUpdatingInfo(); // Clean up if recording state changed
                 }
             }
         };
+        
+        // Post immediately to start updates
         handlerClock.post(updateInfoRunnable);
+        Log.d(TAG, "startUpdatingInfo: Started real-time storage/stats updates");
     }
 
     private void stopUpdatingInfo() {

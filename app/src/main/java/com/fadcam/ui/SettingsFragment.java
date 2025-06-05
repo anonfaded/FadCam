@@ -31,6 +31,7 @@ import android.os.Vibrator;
 import android.provider.DocumentsContract;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.text.Html;
 import android.util.Log; // Make sure Log is imported
 import android.util.Size;
 import android.util.TypedValue;
@@ -123,6 +124,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.fadcam.utils.DeviceHelper;
 
 public class SettingsFragment extends BaseFragment {
 
@@ -2009,8 +2011,25 @@ public class SettingsFragment extends BaseFragment {
                         Log.i(TAG, "FPS PREFERENCE SAVED for CameraType [" + currentSelectedCamera + "]: " + newlySelectedRate + "fps");
                         vibrateTouch(); // Add feedback on successful save
                         onResolutionOrFramerateChanged(); // Call the new method
+                        
+                        // Update the frame rate note text to show experimental warning if needed
+                        // ----- Fix Start for this method(setupFrameRateSpinner) -----
+                        // Using the fragment's view field instead of the onItemSelected view parameter
+                        TextView noteTextView = SettingsFragment.this.view.findViewById(R.id.framerate_note_textview);
+                        // ----- Fix End for this method(setupFrameRateSpinner) -----
+                        if (noteTextView != null) {
+                            updateFrameRateNoteText(noteTextView);
+                        }
                     } else {
                         Log.d(TAG,"User selected same FPS as already saved for "+currentSelectedCamera+". No save needed.");
+                        
+                        // ----- Fix Start for this method(setupFrameRateSpinner) -----
+                        // Update warning text even when same value is selected (for UI consistency)
+                        TextView noteTextView = SettingsFragment.this.view.findViewById(R.id.framerate_note_textview);
+                        if (noteTextView != null) {
+                            updateFrameRateNoteText(noteTextView);
+                        }
+                        // ----- Fix End for this method(setupFrameRateSpinner) -----
                     }
                 } else {
                     Log.e(TAG, "Invalid position selected in FPS spinner: " + position + ". Rates available: "+ currentHardwareRates.size());
@@ -2107,6 +2126,13 @@ public class SettingsFragment extends BaseFragment {
             Log.e(TAG_SETTINGS,"FPS Spinner Update: CRITICAL - supportedHardwareRates is unexpectedly empty for " + selectedCameraType + ". Disabling spinner.");
             // Clear the adapter to show nothing or placeholder? (Adapter already set with empty list earlier)
         }
+        
+        // Update the note text to reflect current selection
+        TextView noteTextView = view.findViewById(R.id.framerate_note_textview);
+        if (noteTextView != null) {
+            updateFrameRateNoteText(noteTextView);
+        }
+        
         Log.d(TAG_SETTINGS,"FPS Spinner update finished for "+selectedCameraType+". Enabled: "+frameRateSpinner.isEnabled());
     } // End updateFrameRateSpinner
 
@@ -2530,6 +2556,52 @@ public class SettingsFragment extends BaseFragment {
         TextView noteTextView = view.findViewById(R.id.framerate_note_textview);
         if (noteTextView != null) {
             noteTextView.setText(getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE));
+            
+            // Update note text based on current selected frame rate
+            updateFrameRateNoteText(noteTextView);
+        }
+    }
+    
+    /**
+     * Updates the frame rate note text based on the currently selected frame rate
+     * Shows a warning for experimental high frame rates (60fps and above)
+     */
+    private void updateFrameRateNoteText(TextView noteTextView) {
+        if (noteTextView == null) return;
+        
+        CameraType currentSelectedCamera = sharedPreferencesManager.getCameraSelection();
+        int currentFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(currentSelectedCamera);
+        
+        if (currentFrameRate >= 60) {
+            // For high frame rates, show experimental warning with red color for better visibility
+            String warningText = getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE) + 
+                    "\n\n<font color='#FF0000'><b>EXPERIMENTAL:</b> " + currentFrameRate + "fps is an experimental mode " +
+                    (DeviceHelper.isSamsung() ? "for Samsung devices. " : 
+                    (DeviceHelper.isHuawei() ? "for Huawei devices. " : "")) +
+                    "This frame rate may not be supported on all devices and could cause instability. " +
+                    "Use only if your hardware can support it.</font>";
+            
+            noteTextView.setText(Html.fromHtml(warningText, Html.FROM_HTML_MODE_COMPACT));
+            noteTextView.setVisibility(View.VISIBLE);
+            
+            // Add a bit of extra padding for better visibility
+            noteTextView.setPadding(
+                noteTextView.getPaddingLeft(),
+                noteTextView.getPaddingTop(),
+                noteTextView.getPaddingRight(),
+                (int)(16 * getResources().getDisplayMetrics().density)
+            );
+        } else {
+            // For normal frame rates, show standard note
+            noteTextView.setText(getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE));
+            
+            // Reset padding to default if it was changed
+            noteTextView.setPadding(
+                noteTextView.getPaddingLeft(),
+                noteTextView.getPaddingTop(),
+                noteTextView.getPaddingRight(),
+                (int)(8 * getResources().getDisplayMetrics().density)
+            );
         }
     }
 
@@ -3171,7 +3243,27 @@ public class SettingsFragment extends BaseFragment {
         // Use the new CameraX utility for framerate detection
         try {
             Log.i(TAG_SETTINGS, "Using CameraX API for framerate detection");
-            return CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(), cameraType);
+            List<Integer> detectedRates = CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(), cameraType);
+            
+            // Special handling for Samsung devices - explicitly add 60fps support if not already present
+            if (DeviceHelper.isSamsung() && !detectedRates.contains(60)) {
+                Log.i(TAG_SETTINGS, "Samsung device detected - Adding 60fps support explicitly");
+                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
+                enhancedRates.add(60);
+                Collections.sort(enhancedRates);
+                return enhancedRates;
+            }
+            
+            // Special handling for high-end Huawei devices
+            if (DeviceHelper.isHuawei() && DeviceHelper.isHighEndDevice() && !detectedRates.contains(60)) {
+                Log.i(TAG_SETTINGS, "High-end Huawei device detected - Adding 60fps support");
+                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
+                enhancedRates.add(60);
+                Collections.sort(enhancedRates);
+                return enhancedRates;
+            }
+            
+            return detectedRates;
         } catch (Exception e) {
             Log.e(TAG_SETTINGS, "Error using CameraX for framerate detection, falling back to Camera2", e);
             // Fallback to Camera2 API implementation - retain original logic
