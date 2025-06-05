@@ -587,9 +587,26 @@ public class HomeFragment extends BaseFragment {
         broadcastOnRecordingStarted = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent i) {
-                recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, 0);
-                
                 // ----- Fix Start for this method(registerBroadcastOnRecordingStarted) -----
+                // Get the timestamp from the intent with current time as fallback
+                long startTimeFromService = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, SystemClock.elapsedRealtime());
+                
+                // Validate the timestamp - ensure it's not ridicuously old or in the future
+                long currentTime = SystemClock.elapsedRealtime();
+                
+                // Check if the time from service is within a reasonable range
+                // (not more than 5 seconds in the past or 1 second in the future)
+                if (startTimeFromService < currentTime - 5000 || startTimeFromService > currentTime + 1000) {
+                    Log.w(TAG, "Received invalid recordingStartTime from service: " + startTimeFromService 
+                          + ", current time: " + currentTime + ". Using current time instead.");
+                    startTimeFromService = currentTime;
+                }
+                
+                // Set our recording start time to the validated time from service
+                recordingStartTime = startTimeFromService;
+                Log.d(TAG, "BROADCAST_ON_RECORDING_STARTED: Set recordingStartTime=" + recordingStartTime);
+                // ----- Fix End for this method(registerBroadcastOnRecordingStarted) -----
+                
                 // Update our internal state first
                 onRecordingStarted(true);
                 
@@ -624,7 +641,6 @@ public class HomeFragment extends BaseFragment {
                         }
                     }, 200); // Slightly longer delay as a final attempt
                 }
-                // ----- Fix Ended for this method(registerBroadcastOnRecordingStarted) -----
             }
         };
     }
@@ -656,12 +672,23 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void onRecordingStarted(boolean toast) {
-        Log.d(TAG,"onRecordingStarted. Toast: " + toast);
+        Log.d(TAG, "onRecordingStarted. Toast: " + toast);
+        
+        // ----- Fix Start for this method(onRecordingStarted) -----
+        // Reset recording start time to ensure a fresh start - always use current time
+        // This fixes cases where old stale timestamps might be causing incorrect elapsed time
+        recordingStartTime = SystemClock.elapsedRealtime();
+        Log.d(TAG, "onRecordingStarted: RESET recordingStartTime=" + recordingStartTime);
+        // ----- Fix End for this method(onRecordingStarted) -----
+        
         recordingState = RecordingState.IN_PROGRESS;
         setUIForRecordingActive();
         if(toast) Utils.showQuickToast(requireContext(), R.string.video_recording_started);
         acquireWakeLock(); // Acquire wake lock
         updateStats(); // Update stats when recording starts
+        
+        // Always start the info update timer to keep elapsed time current
+        startUpdatingInfo();
         
         // ----- Fix Start for this method(onRecordingStarted) -----
         // Always force preview enabled on first recording start
@@ -1012,7 +1039,10 @@ public class HomeFragment extends BaseFragment {
                     if (!isAdded() || i == null) return;
                     Log.d(TAG, "Received BROADCAST_ON_RECORDING_STARTED (New Handler)");
                     
-                    recordingStartTime = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, SystemClock.elapsedRealtime());
+                    // Get timestamp from the service with current time as fallback
+                    long startTimeFromService = i.getLongExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, SystemClock.elapsedRealtime());
+                    recordingStartTime = startTimeFromService;
+                    Log.d(TAG, "initializeRecordingStateReceivers: Setting recordingStartTime=" + recordingStartTime);
                     
                     // Perform non-UI actions previously in onRecordingStarted(true)
                     acquireWakeLock();
@@ -1466,8 +1496,22 @@ public class HomeFragment extends BaseFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView: Inflating fragment_home layout");
+        // Debug recording time issue
+        debugRecordingTimeVariables();
+        
         return inflater.inflate(R.layout.fragment_home, container, false);
+    }
+    
+    // Debug method to help diagnose recording time issue
+    private void debugRecordingTimeVariables() {
+        Log.d(TAG, "======== DEBUG RECORDING TIME ========");
+        Log.d(TAG, "recordingStartTime = " + recordingStartTime);
+        Log.d(TAG, "currentTimeMillis = " + System.currentTimeMillis());
+        Log.d(TAG, "elapsedRealtime = " + SystemClock.elapsedRealtime());
+        Log.d(TAG, "recordingState = " + recordingState);
+        Log.d(TAG, "isRecording() = " + isRecording());
+        Log.d(TAG, "isPaused() = " + isPaused());
+        Log.d(TAG, "======== END DEBUG INFO ========");
     }
 
     private void performHapticFeedback() {
@@ -2372,7 +2416,22 @@ public class HomeFragment extends BaseFragment {
         long estimatedBytesUsed = 0;
         
         if (isRecording() || isPaused()) {
-            elapsedTime = Math.max(0, SystemClock.elapsedRealtime() - recordingStartTime);
+            // Check if recordingStartTime is valid, otherwise reset it
+            if (recordingStartTime <= 0) {
+                recordingStartTime = SystemClock.elapsedRealtime();
+                Log.w(TAG, "updateStorageInfo: Invalid recordingStartTime detected, resetting to current time");
+            }
+            
+            // Always calculate elapsed time since recording started
+            elapsedTime = SystemClock.elapsedRealtime() - recordingStartTime;
+            
+            // Force elapsed time to be non-negative
+            elapsedTime = Math.max(0, elapsedTime);
+            
+            Log.d(TAG, "updateStorageInfo: recordingStartTime=" + recordingStartTime + 
+                  ", currentTime=" + SystemClock.elapsedRealtime() + 
+                  ", calculated elapsedTime=" + elapsedTime + "ms");
+            
             // Only calculate if we have valid values
             if (elapsedTime > 0 && videoBitrate > 0) {
                 estimatedBytesUsed = (elapsedTime * videoBitrate) / 8000; // Convert ms and bits to bytes
@@ -2380,6 +2439,10 @@ public class HomeFragment extends BaseFragment {
                 estimatedBytesUsed = Math.min(estimatedBytesUsed, bytesAvailable);
                 Log.d(TAG, "updateStorageInfo: Elapsed=" + elapsedTime + "ms, Est. bytes used=" + estimatedBytesUsed);
             }
+        } else {
+            // Reset recording start time when not recording
+            recordingStartTime = 0;
+            Log.d(TAG, "updateStorageInfo: Not recording, reset recordingStartTime=0");
         }
 
         // Update available space based on estimated bytes used
@@ -2402,9 +2465,13 @@ public class HomeFragment extends BaseFragment {
         long minutes = (remainingTime % 3600) / 60;
         long seconds = remainingTime % 60;
 
-        // Use elapsedTime only if it's valid
-        long elapsedMinutes = Math.max(0, elapsedTime / 60000);
-        long elapsedSeconds = Math.max(0, (elapsedTime / 1000) % 60);
+        // Calculate elapsed minutes and seconds - ensure they're always non-negative
+        long elapsedMinutes = elapsedTime / 60000;  // Convert ms to minutes
+        long elapsedSeconds = (elapsedTime / 1000) % 60;  // Get seconds part
+        
+        // Log elapsed time values for debugging
+        Log.d(TAG, "updateStorageInfo: Formatted elapsed time = " + elapsedMinutes + ":" + 
+              String.format(Locale.US, "%02d", elapsedSeconds));
 
         String storageInfo = String.format(Locale.getDefault(),
                 getString(R.string.mainpage_storage_indicator),
@@ -2483,7 +2550,14 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void run() {
                 if ((isRecording() || isPaused()) && isAdded()) {
-                    Log.d(TAG, "Update timer: Refreshing storage info and stats");
+                    // Check if we have a valid recording start time
+                    if (recordingStartTime <= 0) {
+                        // Try to get the current system time as fallback
+                        recordingStartTime = SystemClock.elapsedRealtime();
+                        Log.w(TAG, "startUpdatingInfo: Invalid recordingStartTime detected, resetting to current time: " + recordingStartTime);
+                    }
+                    
+                    Log.d(TAG, "Update timer: Refreshing storage info and stats, recordingStartTime=" + recordingStartTime);
                     updateStorageInfo();
                     updateStats();
                     handlerClock.postDelayed(this, 1000); // Update every second

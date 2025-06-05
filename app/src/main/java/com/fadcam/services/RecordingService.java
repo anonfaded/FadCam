@@ -3570,7 +3570,12 @@ public class RecordingService extends Service {
                 // Start the MediaRecorder
                 mediaRecorder.start();
                 recordingState = RecordingState.IN_PROGRESS;
-                recordingStartTime = System.currentTimeMillis();
+                
+                // ----- Fix Start for this method(handleSessionConfigured) -----
+                // Use SystemClock.elapsedRealtime() instead of System.currentTimeMillis() for consistency with HomeFragment
+                recordingStartTime = SystemClock.elapsedRealtime();
+                Log.d(TAG, "Recording started with recordingStartTime=" + recordingStartTime);
+                // ----- Fix End for this method(handleSessionConfigured) -----
                 
                 // Setup notification
                 setupRecordingInProgressNotification();
