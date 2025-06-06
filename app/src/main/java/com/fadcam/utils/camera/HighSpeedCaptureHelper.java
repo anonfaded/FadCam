@@ -250,38 +250,11 @@ public class HighSpeedCaptureHelper {
                 return builder; // Return basic builder
             }
             
-            Size[] sizes = map.getHighSpeedVideoSizes();
-            if (sizes == null || sizes.length == 0) {
-                Log.e(TAG, "No high-speed sizes available");
-                return builder; // Return basic builder
-            }
-            
-            // Find a size that supports our frame rate
-            Size selectedSize = null;
-            Range<Integer> selectedRange = null;
-            
-            for (Size size : sizes) {
-                Range<Integer>[] ranges = map.getHighSpeedVideoFpsRangesFor(size);
-                if (ranges != null) {
-                    for (Range<Integer> range : ranges) {
-                        if (range.getUpper() >= targetFrameRate) {
-                            selectedSize = size;
-                            selectedRange = range;
-                            break;
-                        }
-                    }
-                }
-                if (selectedSize != null) break;
-            }
-            
-            if (selectedRange != null) {
-                builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, selectedRange);
-                Log.d(TAG, "Set high-speed FPS range: " + selectedRange);
-            } else {
-                Range<Integer> fallback = new Range<>(targetFrameRate, targetFrameRate);
-                builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fallback);
-                Log.d(TAG, "No high-speed range found, using fallback: " + fallback);
-            }
+            // Set SENSOR_FRAME_DURATION for precise frame timing (essential for high FPS)
+            // This is required for constrained high-speed sessions
+            long frameDuration = 1_000_000_000L / targetFrameRate;
+            builder.set(CaptureRequest.SENSOR_FRAME_DURATION, frameDuration);
+            Log.d(TAG, "Set SENSOR_FRAME_DURATION to " + frameDuration + " ns for " + targetFrameRate + "fps in high-speed request builder");
             
             return builder;
         } catch (Exception e) {

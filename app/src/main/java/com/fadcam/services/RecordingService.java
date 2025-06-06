@@ -191,6 +191,10 @@ public class RecordingService extends Service {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     // ----- Fix End for camera resource availability -----
 
+    // ----- Fix Start for this class (RecordingService_isCameraOpen_field)-----
+    private boolean isCameraOpen = false;
+    // ----- Fix Ended for this class (RecordingService_isCameraOpen_field)-----
+
     // --- Lifecycle Methods ---
     @Override
     public void onCreate() {
@@ -1931,18 +1935,31 @@ public class RecordingService extends Service {
             if (isHighFrameRate && characteristics != null) {
                 // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
                 if (DeviceHelper.isSamsung()) {
-                    Log.d(TAG, "Samsung device detected - Using Samsung-specific approach for " + targetFrameRate + "fps");
-                    
-                    // Show toast informing the user about experimental 60fps
+                    Log.d(TAG, "Samsung device detected. Handling " + targetFrameRate + "fps for this device.");
                     showFrameRateToast(targetFrameRate);
-                    
-                    // Always use standard session with Samsung vendor keys
-                    useHighSpeedSession = false;
-                    
-                    // Create standard session with Samsung-specific frame rate settings
-                    createStandardSession(surfaces, targetFrameRate, characteristics);
-                    return;
-                } 
+
+                    // Determine Samsung FPS compatibility status
+                    SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
+
+                    if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.HIGH_SPEED_COMPATIBLE) {
+                        // For SM-G990E (S21 FE Exynos) specifically, or other devices known to work with high-speed sessions
+                        Log.d(TAG, "Device status is HIGH_SPEED_COMPATIBLE. Attempting constrained high-speed session for " + targetFrameRate + "fps.");
+                        useHighSpeedSession = true;
+                        createHighSpeedSession(surfaces, characteristics, targetFrameRate);
+                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.REQUIRES_VENDOR_KEYS || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.FULLY_COMPATIBLE || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.UNKNOWN) {
+                        // For other Samsung devices that use vendor keys in standard session, or unknown devices
+                        Log.d(TAG, "Device status is REQUIRES_VENDOR_KEYS or FULLY_COMPATIBLE or UNKNOWN. Attempting standard session with Samsung vendor keys for " + targetFrameRate + "fps.");
+                        useHighSpeedSession = false; // Ensure it's a standard session
+                        createStandardSession(surfaces, targetFrameRate, characteristics);
+                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
+                        // For known incompatible Samsung devices, do not attempt 60fps+
+                        Log.e(TAG, "Device is KNOWN_INCOMPATIBLE with 60fps+. Blocking request.");
+                        Toast.makeText(this, "60fps not supported on this device model.", Toast.LENGTH_LONG).show();
+                        RecordingService.this.recordingState = RecordingState.NONE; // Reset state to NONE by direct assignment from outer class
+                        return; // Do not proceed with recording
+                    }
+                    return; // Return after handling Samsung-specific logic
+                }
                 // For Huawei devices, also prefer vendor keys
                 else if (DeviceHelper.isHuawei()) {
                     Log.d(TAG, "Using Huawei-specific approach for high frame rates");
@@ -3495,20 +3512,18 @@ public class RecordingService extends Service {
      */
     private void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, 
                                       CameraCharacteristics characteristics) {
+        // Apply standard AE target FPS range
+        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new android.util.Range<>(targetFrameRate, targetFrameRate));
+        Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to [" + targetFrameRate + "," + targetFrameRate + "]");
+
+        // Apply Samsung-specific keys if applicable
         if (DeviceHelper.isSamsung()) {
-            // Apply Samsung-specific frame rate settings
-            Log.d(TAG, "Applying Samsung-specific frame rate settings for " + targetFrameRate + "fps");
             SamsungFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
-        } else if (DeviceHelper.isHuawei()) {
-            // Apply Huawei-specific frame rate settings
-            Log.d(TAG, "Applying Huawei-specific frame rate settings for " + targetFrameRate + "fps");
+        }
+
+        // Apply Huawei-specific keys if applicable
+        if (DeviceHelper.isHuawei() && targetFrameRate >= 60) {
             HuaweiFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
-        } else {
-            // Standard Camera2 API approach for other devices
-            Log.d(TAG, "Applying standard frame rate settings for " + targetFrameRate + "fps");
-            Range<Integer> fpsRange = FrameRateHelper.findBestFpsRange(characteristics, targetFrameRate);
-            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
-            Log.d(TAG, "Set target FPS range: " + fpsRange);
         }
     }
 
@@ -3598,4 +3613,5 @@ public class RecordingService extends Service {
             setupRecordingResumeNotification();
         }
     }
+
 }
