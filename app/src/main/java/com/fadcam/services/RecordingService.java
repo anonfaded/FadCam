@@ -1937,7 +1937,7 @@ public class RecordingService extends Service {
                 if (DeviceHelper.isSamsung()) {
                     Log.d(TAG, "Samsung device detected. Handling " + targetFrameRate + "fps for this device.");
                     showFrameRateToast(targetFrameRate);
-
+                    
                     // Determine Samsung FPS compatibility status
                     SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
 
@@ -1950,7 +1950,7 @@ public class RecordingService extends Service {
                         // For other Samsung devices that use vendor keys in standard session, or unknown devices
                         Log.d(TAG, "Device status is REQUIRES_VENDOR_KEYS or FULLY_COMPATIBLE or UNKNOWN. Attempting standard session with Samsung vendor keys for " + targetFrameRate + "fps.");
                         useHighSpeedSession = false; // Ensure it's a standard session
-                        createStandardSession(surfaces, targetFrameRate, characteristics);
+                    createStandardSession(surfaces, targetFrameRate, characteristics);
                     } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
                         // For known incompatible Samsung devices, do not attempt 60fps+
                         Log.e(TAG, "Device is KNOWN_INCOMPATIBLE with 60fps+. Blocking request.");
@@ -1959,7 +1959,7 @@ public class RecordingService extends Service {
                         return; // Do not proceed with recording
                     }
                     return; // Return after handling Samsung-specific logic
-                }
+                } 
                 // For Huawei devices, also prefer vendor keys
                 else if (DeviceHelper.isHuawei()) {
                     Log.d(TAG, "Using Huawei-specific approach for high frame rates");

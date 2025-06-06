@@ -103,14 +103,6 @@ public class SamsungFrameRateHelper {
     public static SamsungFpsStatus getDeviceFpsStatus() {
         String model = Build.MODEL.toLowerCase();
 
-        // --- Special handling for SM-G990E (S21 FE Exynos) ---
-        // This specific model has known issues with Samsung vendor keys at 60fps+,
-        // and works better with the constrained high-speed session.
-        if (model.contains("sm-g990e")) {
-            Log.d(TAG, "Device " + model + " (SM-G990E) detected. Recommending HIGH_SPEED_COMPATIBLE for 60fps+.");
-            return SamsungFpsStatus.HIGH_SPEED_COMPATIBLE;
-        }
-
         // Known fully compatible devices - These will prioritize standard session with vendor keys (if supported)
         List<String> fullyCompatibleModels = Arrays.asList(
             "sm-g988", "sm-g986", "sm-g985", "sm-g981", "sm-g980", // S20 series
@@ -123,14 +115,16 @@ public class SamsungFrameRateHelper {
         );
 
         // Devices specifically requiring constrained high-speed session (e.g., S21 FE for 60fps+)
+        // This includes some S21 FE variants that struggle with vendor keys in standard session.
         List<String> requiresConstrainedHighSpeedModels = Arrays.asList(
             "sm-g990"  // S21 FE (specifically for Exynos variants that struggle with vendor keys in standard session if not SM-G990E)
         );
 
-        // Known incompatible devices
+        // Known incompatible devices - SM-G990E moved here as its vendor keys are not supported.
         List<String> knownIncompatibleModels = Arrays.asList(
             "sm-g950", "sm-g955", // S8 series
-            "sm-j"     // J series
+            "sm-j",     // J series
+            "sm-g990e"  // S21 FE Exynos - Vendor keys for 60fps are NOT supported.
         );
 
         // Check model against known device lists
