@@ -4056,6 +4056,20 @@ public class SettingsFragment extends BaseFragment {
 
         final TextInputEditText inputEditText = dialogView.findViewById(R.id.custom_split_size_edittext); // ID in your dialog_custom_split_size.xml
         final MaterialTextView errorTextView = dialogView.findViewById(R.id.custom_split_size_error_textview); // ID in your dialog_custom_split_size.xml
+        final com.google.android.material.textfield.TextInputLayout inputLayout = dialogView.findViewById(R.id.custom_split_size_input_layout);
+
+        // ----- Fix Start: Set placeholder (hint) color to white for Faded Night theme (TextInputLayout and EditText) -----
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        if (isFadedNightTheme) {
+            if (inputEditText != null) inputEditText.setHintTextColor(android.graphics.Color.WHITE);
+            if (inputLayout != null) {
+                android.content.res.ColorStateList whiteHint = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE);
+                inputLayout.setHintTextColor(whiteHint);
+                inputLayout.setDefaultHintTextColor(whiteHint);
+            }
+        }
+        // ----- Fix End: Set placeholder (hint) color to white for Faded Night theme (TextInputLayout and EditText) -----
 
         int currentCustomSize = sharedPreferencesManager.getVideoSplitSizeMb();
         // If current value is one of the presets, default to 2048 for custom, otherwise use current custom.
