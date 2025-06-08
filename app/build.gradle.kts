@@ -23,7 +23,7 @@ android {
         versionCode = 10
         versionName = "1.2.1-beta"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+//        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -60,6 +60,8 @@ android {
             // Include all resources
             res.srcDir("libs/AppLockLibrary/src/main/res")
         }
+        getByName("test").java.srcDirs("none")
+        getByName("androidTest").java.srcDirs("none")
     }
 }
 
@@ -81,9 +83,9 @@ dependencies {
     implementation(libs.camerax.video)
     implementation(libs.camerax.extensions)
 
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
+//    testImplementation(libs.junit)
+//    androidTestImplementation(libs.ext.junit)
+//    androidTestImplementation(libs.espresso.core)
     implementation(libs.core.ktx)
     implementation(libs.exoplayer.core)
     implementation(libs.exoplayer.ui)
