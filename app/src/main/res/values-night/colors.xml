@@ -35,4 +35,5 @@
     <color name="gray_button_filled">#2A2A2A</color>
     <color name="colorSurface">#181A1B</color>
     <color name="colorOnSurface">#E0E0E0</color>
+    <color name="midnight_dusk_bg">#181A1B</color>
 </resources> 

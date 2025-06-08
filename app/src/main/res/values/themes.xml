@@ -485,4 +485,38 @@
         <item name="colorOnPrimary">@android:color/white</item>
     </style>
     <!-- Fix End: Add theme overlays for bottom sheets and dialogs for all themes -->
+
+    <!-- Fix Start: Add always-dark Midnight Dusk theme -->
+    <style name="Theme.FadCam.MidnightDusk" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <item name="android:statusBarColor">@color/gray</item>
+        <item name="colorTopBar">@color/gray</item>
+        <item name="colorBottomNav">@color/gray</item>
+        <item name="colorHeading">@color/colorHeading</item>
+        <item name="colorButton">@color/colorButton</item>
+        <item name="colorToggle">@color/greenPastel</item>
+        <item name="colorDialog">@color/gray</item>
+        <item name="colorStatusBar">@color/gray</item>
+        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
+        <item name="android:colorBackground">@color/midnight_dusk_bg</item>
+        <item name="colorSurface">@color/midnight_dusk_bg</item>
+        <item name="backgroundColor">@color/midnight_dusk_bg</item>
+        <item name="android:windowBackground">@color/midnight_dusk_bg</item>
+        <item name="android:navigationBarColor">@color/gray</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimary</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
+        <item name="colorSecondaryVariant">@color/colorPrimary</item>
+        <item name="colorAccent">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorOnBackground">@color/white</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/gray_text_light</item>
+    </style>
+    <!-- Fix End: Add always-dark Midnight Dusk theme -->
 </resources>

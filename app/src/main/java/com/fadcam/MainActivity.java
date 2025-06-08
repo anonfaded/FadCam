@@ -627,8 +627,8 @@ public class MainActivity extends AppCompatActivity {
             // Set status bar icons to dark for light theme
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         } else if ("Midnight Dusk".equals(themeName)) {
-            // Default dark theme
-            setTheme(R.style.Base_Theme_FadCam);
+            // Always use the custom always-dark theme for Midnight Dusk
+            setTheme(R.style.Theme_FadCam_MidnightDusk);
             getWindow().setNavigationBarColor(getResources().getColor(R.color.gray, getTheme()));
         } else {
             // If we get an unknown theme name, use the system default
@@ -667,7 +667,7 @@ public class MainActivity extends AppCompatActivity {
         } else if ("Faded Night".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Amoled);
         } else if ("Midnight Dusk".equals(themeName)) {
-            setTheme(R.style.Base_Theme_FadCam); // Default theme
+            setTheme(R.style.Theme_FadCam_MidnightDusk); // Always use the custom always-dark theme
         } else if ("Premium Gold".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Gold);
         } else if ("Silent Forest".equals(themeName)) {

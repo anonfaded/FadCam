@@ -48,4 +48,6 @@
     
     <!-- Extra dark color for storage card in Crimson theme -->
     <color name="crimson_dark_card_background">#1E0E0E</color>
+
+    <color name="midnight_dusk_bg">#111113</color>
 </resources>
