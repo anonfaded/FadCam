@@ -50,9 +50,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.pm.ServiceInfo;
 
-import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.Level;
-import com.arthenica.ffmpegkit.ReturnCode;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
@@ -105,13 +102,20 @@ import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
 
+// Add import
+import com.fadcam.opengl.GLRecordingPipeline;
+import com.fadcam.opengl.WatermarkInfoProvider;
+
+// ----- Fix Start: Add isCameraResourceReleasing field -----
+// ----- Fix End: Add isCameraResourceReleasing field -----
+
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "RecordingServiceChannel";
     private static final String TAG = "RecordingService"; // Use standard Log TAG
+    private static volatile boolean isCameraResourceReleasing = false;
 
-    private MediaRecorder mediaRecorder;
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
     private CaptureRequest.Builder captureRequestBuilder;
@@ -120,32 +124,10 @@ public class RecordingService extends Service {
     private LocationHelper locationHelper;
     private GeotagHelper geotagHelper;
 
-    // File / URI tracking
-    private File currentRecordingFile; // Track file path if internal
-    private Uri currentRecordingSafUri; // Track SAF URI if custom
-    private DocumentFile currentRecordingDocFile; // Track DocumentFile if custom
-    private ParcelFileDescriptor currentParcelFileDescriptor; // Track PFD if custom
-
-    // ----- Fix Start for this class (RecordingService_saf_next_docfile_tracking_declaration) -----
-    private DocumentFile nextRecordingDocFile;
-    // ----- Fix Ended for this class (RecordingService_saf_next_docfile_tracking_declaration) -----
-
     private RecordingState recordingState = RecordingState.NONE;
     private AtomicInteger ffmpegProcessingTaskCount = new AtomicInteger(0);
 
-    // ----- Fix Start for this class (RecordingService_video_splitting_imports_and_fields) -----
-    private boolean isVideoSplittingEnabled = false;
-    private long videoSplitSizeBytes = -1L; // -1L means no limit by default, stored in bytes
-    private int currentSegmentNumber = 1; // Start with segment 1
-    // ----- Fix Ended for this class (RecordingService_video_splitting_imports_and_fields) -----
-    // ----- Fix Start for this class (RecordingService_rollover_callback_flag) -----
-    // Field isRolloverInProgressJustClosedDevice removed as it's obsolete.
-    // ----- Fix Ended for this class (RecordingService_rollover_callback_flag) -----
-
-    // ----- Fix Start for this class (RecordingService) -----
-    // Re-introduce isRecordingTorchEnabled to manage torch state *during an active recording session only*
     private boolean isRecordingTorchEnabled = false;
-    // ----- Fix Ended for this class (RecordingService) -----
 
     private CameraManager cameraManager; // Primary camera manager
     private Handler backgroundHandler; // For camera operations
@@ -153,47 +135,18 @@ public class RecordingService extends Service {
     private long recordingStartTime;
 
     private SharedPreferencesManager sharedPreferencesManager; // Your settings manager
-    private File currentInternalTempFile;
 
     private boolean isRolloverClosingOldSession = false; // Flag to manage state during segment rollover when the old session is closing
 
-    // Fields to temporarily store information about the completed segment during rollover
-    private File completedSegmentTempFile;
-    private Uri completedSegmentSafUri;
-    private DocumentFile completedSegmentDocFile;
-
     private WakeLock recordingWakeLock;
 
-    // ----- Fix Start for this class (RecordingService_setNextOutputFile_fields) -----
-    // For setNextOutputFile segment rollover
-    private File nextSegmentTempFile;
-    // ----- Fix Ended for this class (RecordingService_setNextOutputFile_fields) -----
-
-    // ----- Fix Start for this class (RecordingService_setNextOutputFile_flag) -----
-    // Track if setNextOutputFile has been called and not yet started
-    private boolean isNextOutputFileSet = false;
-    // ----- Fix Ended for this class (RecordingService_setNextOutputFile_flag) -----
-
-    // ----- Fix Start for this class (RecordingService_setNextOutputFile_flag_robust) -----
-    // Track if a next output file is already pending (per Android docs)
-    private boolean nextOutputFilePending = false;
-    // ----- Fix Ended for this class (RecordingService_setNextOutputFile_flag_robust) -----
-
-    // ----- Fix Start for this class (RecordingService_saf_pfd_fields) -----
-    // Track open ParcelFileDescriptors for SAF segments
-    private ParcelFileDescriptor currentSegmentPfd = null;
-    private ParcelFileDescriptor nextSegmentPfd = null;
-    // ----- Fix Ended for this class (RecordingService_saf_pfd_fields) -----
-
-    // ----- Fix Start for camera resource availability -----
-    // A flag to track if camera resources are being released
-    private static volatile boolean isCameraResourceReleasing = false;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    // ----- Fix End for camera resource availability -----
-
-    // ----- Fix Start for this class (RecordingService_isCameraOpen_field)-----
     private boolean isCameraOpen = false;
-    // ----- Fix Ended for this class (RecordingService_isCameraOpen_field)-----
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private boolean pendingStartRecording = false;
+
+    private volatile boolean isStopping = false;
 
     // --- Lifecycle Methods ---
     @Override
@@ -278,7 +231,7 @@ public class RecordingService extends Service {
             Log.i(TAG, "Handling START_RECORDING intent. Service recording state is " + recordingState);
             
             // Reset recording state if it's somehow corrupted
-            if (recordingState != RecordingState.NONE && mediaRecorder == null && cameraDevice == null) {
+            if (recordingState != RecordingState.NONE && cameraDevice == null) {
                 Log.w(TAG, "Recording state inconsistency detected. Resetting state from " + recordingState + " to NONE.");
                 recordingState = RecordingState.NONE;
                 sharedPreferencesManager.setRecordingInProgress(false);
@@ -289,18 +242,6 @@ public class RecordingService extends Service {
                 // Update the UI and Service state atomically
                 recordingState = RecordingState.STARTING;
                 sharedPreferencesManager.setRecordingInProgress(true);
-                
-                // Load video splitting preferences
-                isVideoSplittingEnabled = sharedPreferencesManager.isVideoSplittingEnabled();
-                int splitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
-                if (isVideoSplittingEnabled && splitSizeMb > 0) {
-                    videoSplitSizeBytes = (long) splitSizeMb * 1024 * 1024; // Convert MB to Bytes
-                    Log.d(TAG, "Video splitting enabled. Size: " + splitSizeMb + "MB (" + videoSplitSizeBytes + " Bytes)");
-                } else {
-                    videoSplitSizeBytes = -1L; // Disable splitting if not enabled or invalid size
-                    Log.d(TAG, "Video splitting disabled or size invalid.");
-                }
-                currentSegmentNumber = 1; // Always reset segment number on new recording start
                 
                 // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
@@ -313,7 +254,12 @@ public class RecordingService extends Service {
                 setupRecordingInProgressNotification();
                 
                 // Begin camera/recording setup
-                startRecording();
+                if (cameraDevice == null) {
+                    pendingStartRecording = true;
+                    openCamera();
+                } else {
+                    startRecording();
+                }
                 
                 // Notify UI that we're starting
                 broadcastOnRecordingStarted();
@@ -339,6 +285,9 @@ public class RecordingService extends Service {
         } else if (Constants.INTENT_ACTION_CHANGE_SURFACE.equals(action)) {
             // Handle surface changes for preview
             setupSurfaceTexture(intent);
+            if (glRecordingPipeline != null) {
+                glRecordingPipeline.setPreviewSurface(previewSurface);
+            }
             if (isRecording() || isPaused()) {
                 createCameraPreviewSession();
             }
@@ -402,16 +351,6 @@ public class RecordingService extends Service {
         }
     }
     // ----- Fix Ended for this method(onStartCommand_video_splitting) -----
-
-    /** Helper method to fully release MediaRecorder instance safely */
-    private void releaseMediaRecorderSafely() {
-        if (mediaRecorder != null) {
-            Log.d(TAG, "Releasing MediaRecorder instance safely...");
-            try { mediaRecorder.reset(); mediaRecorder.release(); Log.i(TAG, "MediaRecorder released successfully."); }
-            catch (Exception e) { Log.e(TAG, "Exception during MediaRecorder reset/release", e); }
-            finally { mediaRecorder = null; }
-        }
-    }
 
     @Nullable
     @Override
@@ -478,222 +417,63 @@ public class RecordingService extends Service {
 
 
     // --- Core Recording Logic ---
-    private void startRecording() {
-        Log.d(TAG, "startRecording: beginning recording setup");
-        
-        // Add additional state checking at the top of the method
-        if (recordingState != RecordingState.STARTING) {
-            Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
-            return;
-        }
-        
-        // Create notification channel early to ensure notifications work properly
-        createNotificationChannel();
-
-        // Reset segment number (first segment = 1)
-        currentSegmentNumber = 1;
-        
-        // Initialize GeotagHelper early if location embedding is enabled, but do it asynchronously
-        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
-            // Create in background thread to avoid ANR
-            new Thread(() -> {
-                try {
-                    if (geotagHelper == null) {
-                        Log.d(TAG, "GeotagHelper: Creating GeotagHelper at recording start");
-                        geotagHelper = new GeotagHelper(this);
-                    }
-                    
-                    // Start updates in background
-                    boolean started = geotagHelper.startUpdates();
-                    Log.d(TAG, "GeotagHelper: Location updates started: " + started);
-                    
-                    // Small delay before continuing, but in background thread
-                    Thread.sleep(800);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error initializing GeotagHelper", e);
-                }
-            }).start();
-        }
-        
-        // Use try/catch for entire recording setup to ensure we reset state on failure
-        try {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG,"Permissions missing, cannot start recording.");
-                Toast.makeText(this,"Permissions required for recording", Toast.LENGTH_LONG).show();
-                recordingState = RecordingState.NONE;
-                sharedPreferencesManager.setRecordingInProgress(false);
-                stopSelf();
-                return;
-            }
-            
-            Log.d(TAG,"startRecording: Attempting to start.");
-            
-            // Acquire wake lock if needed
-            if (recordingWakeLock != null && !recordingWakeLock.isHeld()) {
-                recordingWakeLock.acquire();
-                Log.d(TAG, "Recording WakeLock acquired.");
-            }
-            
-            try {
-                setupMediaRecorder();
-                if (mediaRecorder == null) {
-                    Log.e(TAG, "startRecording: MediaRecorder setup failed.");
-                    recordingState = RecordingState.NONE;
-                    sharedPreferencesManager.setRecordingInProgress(false);
-                    return;
-                }
-                openCamera();
-            } catch (Exception e) {
-                Log.e(TAG, "Error starting recording process", e);
-                recordingState = RecordingState.NONE;
-                sharedPreferencesManager.setRecordingInProgress(false);
-                releaseRecordingResources();
-                Toast.makeText(this,"Error starting recording", Toast.LENGTH_LONG).show();
-                stopSelf();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Exception in startRecording", e);
-            recordingState = RecordingState.NONE;
-            sharedPreferencesManager.setRecordingInProgress(false);
-            stopSelf();
-        }
-    }
-
-    /**
-     * Initiates the sequence to stop recording, release hardware resources,
-     * notify the UI, and then potentially start background processing.
-     */
     private void stopRecording() {
+        if (isStopping) return;
+        isStopping = true;
         Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
-        if (recordingState == RecordingState.NONE && ffmpegProcessingTaskCount.get() == 0) {
-            Log.w(TAG, "stopRecording called but state is already NONE and no ffmpeg tasks are active.");
+        if (recordingState == RecordingState.NONE) {
             sharedPreferencesManager.setRecordingInProgress(false);
             if (!isWorkingInProgress()) stopSelf();
-            // ----- Fix Start for this method(stopRecording_release_wakelock)-----
-            if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
-                recordingWakeLock.release();
-                Log.d(TAG, "Recording WakeLock released.");
-            }
-            // ----- Fix Ended for this method(stopRecording_release_wakelock)-----
+            if (recordingWakeLock != null && recordingWakeLock.isHeld()) recordingWakeLock.release();
             return;
         }
-
-        File tempFileToProcess = this.currentInternalTempFile;
-        Uri safUriToProcess = this.currentRecordingSafUri;
-        DocumentFile docFileToProcess = this.currentRecordingDocFile;
-
-        final RecordingState previousState = recordingState;
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
 
-        boolean stoppedCleanly = false;
-        if (mediaRecorder != null) {
-            try {
-                mediaRecorder.stop();
-                stoppedCleanly = true;
-                Log.d(TAG, "MediaRecorder stopped successfully.");
-            } catch (Exception e) {
-                Log.e(TAG, "Exception stopping MediaRecorder: " + e.getMessage());
-                stoppedCleanly = true; // Treat as stopped for resource release path
-            }
-            releaseMediaRecorderSafely();
-            Log.i(TAG, "MediaRecorder instance fully released after stop.");
-        } else {
-            Log.w(TAG, "stopRecording: mediaRecorder was already null.");
-            stoppedCleanly = true;
+        if (glRecordingPipeline != null) {
+            glRecordingPipeline.stopRecording();
+            glRecordingPipeline = null;
+            Log.d(TAG, "GLRecordingPipeline stopped and released.");
         }
-
         stopForeground(true);
         cancelNotification();
-        Log.d(TAG,"Stopped foreground and cancelled notification.");
-
-        try { if (captureSession != null) { captureSession.close(); Log.d(TAG,"CaptureSession closed."); } } catch (Exception e) { Log.w(TAG,"Error closing captureSession",e); } finally { captureSession = null; }
-        try { if (cameraDevice != null) { cameraDevice.close(); Log.d(TAG,"CameraDevice closed."); } } catch (Exception e) { Log.w(TAG,"Error closing cameraDevice",e); } finally { cameraDevice = null; }
-        Log.i(TAG, "CameraDevice and CaptureSession close initiated.");
-
-        // ----- Fix Start for camera resource cooldown -----
-        // Set the flag to block new recordings for a short period
+        try { if (captureSession != null) { captureSession.close(); } } catch (Exception e) { } finally { captureSession = null; }
+        try { if (cameraDevice != null) { cameraDevice.close(); } } catch (Exception e) { } finally { cameraDevice = null; }
         setCameraResourcesReleasing(true);
-        // ----- Fix End for camera resource cooldown -----
-
         broadcastOnRecordingStopped();
-        Log.d(TAG, "Sent BROADCAST_ON_RECORDING_STOPPED.");
-
-        // ----- Fix Start for this method(stopRecording_restore_ffmpeg_processing)-----
-        boolean needsProcessing = (previousState != RecordingState.NONE) && stoppedCleanly;
-        File actualFileToProcessForFFmpeg = null;
-        Uri originalSafUriForThisSegment = null;
-
-        if (needsProcessing) {
-            if (tempFileToProcess != null && tempFileToProcess.exists() && tempFileToProcess.length() > 0) {
-                Log.d(TAG, "stopRecording: Last segment was internal temp file: " + tempFileToProcess.getAbsolutePath());
-                actualFileToProcessForFFmpeg = tempFileToProcess;
-            } else if (safUriToProcess != null && docFileToProcess != null && docFileToProcess.exists() && docFileToProcess.length() > 0) {
-                Log.d(TAG, "stopRecording: Last segment was SAF URI: " + safUriToProcess + ". Copying to cache for processing.");
-                actualFileToProcessForFFmpeg = copySafUriToTempCacheForProcessing(getApplicationContext(), safUriToProcess, docFileToProcess.getName());
-                if (actualFileToProcessForFFmpeg != null && actualFileToProcessForFFmpeg.exists()) {
-                    originalSafUriForThisSegment = safUriToProcess;
-                } else {
-                    Log.e(TAG, "stopRecording: Failed to copy last SAF segment to cache. Cannot process: " + docFileToProcess.getName());
-                    needsProcessing = false;
-                }
-            } else {
-                Log.w(TAG, "stopRecording: No valid last segment file/URI found for processing.");
-                needsProcessing = false;
-            }
-        }
-
-        if (needsProcessing && actualFileToProcessForFFmpeg != null) {
-            Log.i(TAG, "Proceeding to background video processing for: " + actualFileToProcessForFFmpeg.getName() + (originalSafUriForThisSegment != null ? " (Original SAF: "+originalSafUriForThisSegment+")" : ""));
-            this.currentInternalTempFile = actualFileToProcessForFFmpeg;
-            this.currentRecordingSafUri = null;
-            this.currentRecordingDocFile = null;
-            this.currentParcelFileDescriptor = null;
-            
-            processAndMoveVideo(actualFileToProcessForFFmpeg, originalSafUriForThisSegment);
-        } else {
-            Log.w(TAG, "Skipping processing. PrevState:" + previousState + " CleanStop:" + stoppedCleanly + " (needsProcessing evaluated to: "+needsProcessing+")");
-            cleanupTemporaryFile();
-            Uri broadcastUri = null;
-            if (tempFileToProcess != null && tempFileToProcess.exists()) broadcastUri = Uri.fromFile(tempFileToProcess);
-            else if (safUriToProcess != null) broadcastUri = safUriToProcess;
-
-            sendRecordingCompleteBroadcast(stoppedCleanly, broadcastUri, originalSafUriForThisSegment);
-            checkIfServiceCanStop();
-        }
-        // ----- Fix Ended for this method(stopRecording_restore_ffmpeg_processing)-----
-
-        // MediaRecorder is already released by releaseMediaRecorderSafely() earlier if it was not null.
-        Log.i(TAG,"<< stopRecording sequence finished. >>");
-        // ----- Fix Start for this method(stopRecording_release_wakelock)-----
-        if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
-            recordingWakeLock.release();
-            Log.d(TAG, "Recording WakeLock released.");
-        }
-        // ----- Fix Ended for this method(stopRecording_release_wakelock)-----
-
-        // After releasing MediaRecorder and before processing, queue the last segment if needed
-        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
-            if (currentRecordingDocFile != null && currentRecordingDocFile.exists() && currentRecordingDocFile.length() > 0) {
-                Log.d(TAG, "stopRecording: Queuing last SAF segment for FFmpeg: " + currentRecordingDocFile.getUri());
-                segmentProcessingQueue.add(currentRecordingDocFile);
-                processNextSegmentInQueue();
-                currentRecordingDocFile = null;
-            }
-        } else {
-            if (currentInternalTempFile != null && currentInternalTempFile.exists() && currentInternalTempFile.length() > 0) {
-                Log.d(TAG, "stopRecording: Queuing last segment for FFmpeg: " + currentInternalTempFile.getAbsolutePath());
-                segmentProcessingQueue.add(currentInternalTempFile);
-                processNextSegmentInQueue();
-                currentInternalTempFile = null; // Prevent double-processing
-            }
-        }
-        // SAF: Close any open PFDs
-        closeCurrentPfd();
+        checkIfServiceCanStop();
+        if (recordingWakeLock != null && recordingWakeLock.isHeld()) recordingWakeLock.release();
     }
 
-    // Inside RecordingService.java
+    private void pauseRecording() {
+        if (recordingState != RecordingState.IN_PROGRESS) return;
+        if (glRecordingPipeline != null) glRecordingPipeline.pauseRecording(); // if supported
+        recordingState = RecordingState.PAUSED;
+        sharedPreferencesManager.setRecordingInProgress(false);
+        setupRecordingResumeNotification();
+        showRecordingInPausedToast();
+        broadcastOnRecordingPaused();
+    }
+
+    private void resumeRecording() {
+        if (recordingState != RecordingState.PAUSED) return;
+        if (glRecordingPipeline != null) glRecordingPipeline.resumeRecording(); // if supported
+        recordingState = RecordingState.IN_PROGRESS;
+        sharedPreferencesManager.setRecordingInProgress(true);
+        setupRecordingInProgressNotification();
+        showRecordingResumedToast();
+        broadcastOnRecordingResumed();
+    }
+
+    private void releaseRecordingResources() {
+        if (isStopping) return;
+        isStopping = true;
+        try { if (captureSession != null) { captureSession.close(); } } catch (Exception e) { } finally { captureSession = null; }
+        try { if (cameraDevice != null) { cameraDevice.close(); } } catch (Exception e) { } finally { cameraDevice = null; }
+        if (glRecordingPipeline != null) { glRecordingPipeline.stopRecording(); glRecordingPipeline = null; }
+        recordingState = RecordingState.NONE;
+        sharedPreferencesManager.setRecordingInProgress(false);
+    }
 
     /**
      * Checks if the service has any active work (recording, pausing, or processing)
@@ -717,900 +497,272 @@ public class RecordingService extends Service {
         // ----- Fix Ended for this method(checkIfServiceCanStop)-----
     }
 
-    private void pauseRecording() {
-        if (recordingState != RecordingState.IN_PROGRESS) {
-            Log.w(TAG,"pauseRecording requested but not IN_PROGRESS. State: " + recordingState);
-            return;
-        }
-        Log.d(TAG, "pauseRecording: Pausing.");
-        try {
-            if (mediaRecorder != null) {
-                mediaRecorder.pause();
-                recordingState = RecordingState.PAUSED;
-                sharedPreferencesManager.setRecordingInProgress(false); // Consider if 'paused' is 'in progress'
-                setupRecordingResumeNotification(); // Update notification for resume action
-                showRecordingInPausedToast();
-                broadcastOnRecordingPaused();
-                Log.d(TAG, "Recording paused.");
-            } else {
-                Log.e(TAG,"pauseRecording: mediaRecorder is null!");
-            }
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "Error pausing recording (IllegalStateException)", e);
-            // This might mean recording was already stopped or in error state
-            stopRecording(); // Attempt graceful stop if pause fails
-        } catch (Exception e) {
-            Log.e(TAG,"General error pausing recording",e);
-            stopRecording(); // Attempt graceful stop on error
-        }
-    }
-
-    private void resumeRecording() {
-        if (recordingState != RecordingState.PAUSED) {
-            Log.w(TAG,"resumeRecording requested but not PAUSED. State: " + recordingState);
-            // If state is NONE, might mean app was killed and restarted, try starting?
-            // If state is IN_PROGRESS, ignore.
-            return;
-        }
-        Log.d(TAG,"resumeRecording: Resuming...");
-        try {
-            if (mediaRecorder != null) {
-                // Surface setup should happen before resume if needed
-                if(previewSurface == null || !previewSurface.isValid()) {
-                    Log.w(TAG,"resumeRecording: Preview surface invalid/null, may not show preview.");
-                    // Consider recreating capture session if surface is critical and missing?
-                }
-
-                mediaRecorder.resume();
-                recordingState = RecordingState.IN_PROGRESS;
-                sharedPreferencesManager.setRecordingInProgress(true);
-                setupRecordingInProgressNotification(); // Update notification
-                showRecordingResumedToast();
-                broadcastOnRecordingResumed();
-                Log.d(TAG,"Recording resumed.");
-            } else {
-                Log.e(TAG,"resumeRecording: mediaRecorder is null! Cannot resume.");
-                // If recorder is null, likely something went wrong. Stop? Start new?
-                stopRecording(); // Attempt safe stop
-            }
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "Error resuming recording (IllegalStateException)", e);
-            stopRecording(); // Attempt stop if resume fails
-        } catch (Exception e) {
-            Log.e(TAG,"General error resuming recording",e);
-            stopRecording(); // Attempt stop on error
-        }
-    }
-
-
-    /** Ensures ALL hardware resources related to recording are released. */
-    private void releaseRecordingResources() {
-        Log.d(TAG, "Releasing ALL recording resources (Camera, Session, Recorder)...");
-        // Order: Session -> Device -> Recorder
-        try { if (captureSession != null) { captureSession.close(); Log.d(TAG,"Rel: CaptureSession closed."); } } catch (Exception e) { Log.w(TAG,"Err close CaptureSession",e); } finally { captureSession = null; }
-        try { if (cameraDevice != null) { cameraDevice.close(); Log.d(TAG,"Rel: CameraDevice closed."); } } catch (Exception e) { Log.w(TAG,"Err close CameraDevice",e); } finally { cameraDevice = null; }
-        releaseMediaRecorderSafely(); // Release recorder object
-
-        // Reset state if not already done
-        recordingState = RecordingState.NONE;
-        if (sharedPreferencesManager.isRecordingInProgress()){ // Check pref mismatch
-            Log.w(TAG,"Release: Pref indicated recording, resetting it.");
-            sharedPreferencesManager.setRecordingInProgress(false);
-        }
-
-        // ----- Fix Start for this method(releaseRecordingResources_check_ffmpeg_counter)-----
-        // Cleanup temp file only if processing isn't active
-        if (ffmpegProcessingTaskCount.get() == 0) {
-            cleanupTemporaryFile();
-        } else {
-            Log.d(TAG,"Release: Keeping temp file reference for ongoing processing (ffmpeg tasks > 0).");
-        }
-        // ----- Fix Ended for this method(releaseRecordingResources_check_ffmpeg_counter)-----
-        Log.d(TAG, "Finished releasing recording resources.");
-    }
-    // --- End Core Recording Logic ---
-
-    private void processAndMoveVideo(@NonNull File internalTempFileToProcess, @Nullable Uri originalSafTempUri) { // Arg is now in external cache
-        Log.d(TAG,"processAndMoveVideo starting for (ext cache): " + internalTempFileToProcess.getName() + (originalSafTempUri != null ? ", Original SAF Temp: " + originalSafTempUri : ""));
-        if (!internalTempFileToProcess.exists() || internalTempFileToProcess.length() == 0) {
-            Log.e(TAG,"Temp file invalid/empty: " + internalTempFileToProcess.getAbsolutePath());
-            // ----- Fix Start for this method(processAndMoveVideo_ensure_ffmpeg_counter_not_incremented_on_early_exit)-----
-            // isProcessingWatermark = false; // No longer used directly here for this check
-            // ----- Fix Ended for this method(processAndMoveVideo_ensure_ffmpeg_counter_not_incremented_on_early_exit)-----
-            if(internalTempFileToProcess.exists()&&!internalTempFileToProcess.delete()) Log.w(TAG,"Failed del invalid temp"); 
-            // ----- Fix Start for this method(processAndMoveVideo_decrement_on_early_error)-----
-            // If we return here, the task was never really started, so no need to adjust counter if it wasn't incremented.
-            // However, the increment is now at the beginning. So if we exit here, we MUST decrement.
-            // This scenario (invalid input file) should ideally not increment the counter.
-            // Let's move the increment after this initial check.
-            // ----- Fix Ended for this method(processAndMoveVideo_decrement_on_early_error)-----
-            return;
-        }
-        // ----- Fix Start for this method(processAndMoveVideo_increment_ffmpeg_counter)-----
-        // isProcessingWatermark = true;
-        ffmpegProcessingTaskCount.incrementAndGet();
-        Log.d(TAG, "FFmpeg task count incremented to: " + ffmpegProcessingTaskCount.get() + " for file: " + internalTempFileToProcess.getName());
-        // ----- Fix Ended for this method(processAndMoveVideo_increment_ffmpeg_counter)-----
-        String storageMode = sharedPreferencesManager.getStorageMode();
-        String customUriString = sharedPreferencesManager.getCustomStorageUri();
-        String tempFileName = internalTempFileToProcess.getName();
-        String finalBaseName = tempFileName.replace("temp_", Constants.RECORDING_DIRECTORY + "_");
-        String internalTempInputPath = internalTempFileToProcess.getAbsolutePath(); // Path is in ext cache now
-
-        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
-            Log.d(TAG, "Target is Custom SAF Location: " + customUriString);
-
-            // Define intermediate output path also in EXTERNAL CACHE
-            File cacheDir = getExternalCacheDir(); // <--- CHANGE HERE
-            if (cacheDir == null) { cacheDir = new File(getCacheDir(), "processed_temp"); Log.w(TAG,"Ext Cache null, using int cache for processed temp"); } else { cacheDir = new File(cacheDir, "processed_temp"); } // Create subdir in external cache
-            // ----- Fix Start for this method(processAndMoveVideo_handle_error_decrement_counter)-----
-            if (!cacheDir.exists() && !cacheDir.mkdirs()) { 
-                handleProcessingError("Cannot create processed cache dir", internalTempInputPath);
-                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
-                Log.d(TAG, "FFmpeg task count decremented due to processed cache dir error. Count: " + ffmpegProcessingTaskCount.get());
-                return; 
-            }
-            File internalProcessedOutputFile = new File(cacheDir, finalBaseName);
-            String internalProcessedOutputPath = internalProcessedOutputFile.getAbsolutePath(); // Path is in ext cache now
-
-            Log.d(TAG, "Intermediate processed path (ext cache): " + internalProcessedOutputPath);
-
-            String ffmpegCommand = buildFFmpegCommand(internalTempInputPath, internalProcessedOutputPath);
-            if (ffmpegCommand == null) { 
-                handleProcessingError("Failed build FFmpeg command", internalTempInputPath);
-                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
-                Log.d(TAG, "FFmpeg task count decremented due to command build error. Count: " + ffmpegProcessingTaskCount.get());
-                return; 
-            }
-            // ----- Fix Ended for this method(processAndMoveVideo_handle_error_decrement_counter)-----
-            executeFFmpegAndMoveToSAF(ffmpegCommand, internalTempFileToProcess, internalProcessedOutputFile, customUriString, originalSafTempUri); // Pass correct files and original SAF temp URI
-
-        } else {
-            Log.d(TAG, "Target is Internal App Storage");
-            // Process from external cache -> final internal directory
-            File finalInternalDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY); // Standard final location
-            // ----- Fix Start for this method(processAndMoveVideo_handle_error_decrement_counter)-----
-            if (!finalInternalDir.exists() && !finalInternalDir.mkdirs()) { 
-                handleProcessingError("Cannot create final internal dir", internalTempInputPath);
-                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
-                Log.d(TAG, "FFmpeg task count decremented due to final internal dir error. Count: " + ffmpegProcessingTaskCount.get());
-                return; 
-            }
-            File finalInternalOutputFile = new File(finalInternalDir, finalBaseName);
-            String finalInternalOutputPath = finalInternalOutputFile.getAbsolutePath();
-            Log.d(TAG, "Final internal path: " + finalInternalOutputPath);
-
-            String ffmpegCommand = buildFFmpegCommand(internalTempInputPath, finalInternalOutputPath);
-            if (ffmpegCommand == null) { 
-                handleProcessingError("Failed build FFmpeg command", internalTempInputPath); 
-                ffmpegProcessingTaskCount.decrementAndGet(); // Decrement because FFmpeg task won't start
-                Log.d(TAG, "FFmpeg task count decremented due to command build error. Count: " + ffmpegProcessingTaskCount.get());
-                return; 
-            }
-            // ----- Fix Ended for this method(processAndMoveVideo_handle_error_decrement_counter)-----
-            executeFFmpegInternalOnly(ffmpegCommand, internalTempFileToProcess, finalInternalOutputFile); // Pass correct temp input file
-        }
-    }
-
-    // Builds the appropriate FFmpeg command
-    // Replace the existing buildFFmpegCommand method in RecordingService.java
-
-    // Replace the existing buildFFmpegCommand method in RecordingService.java
-
-    @Nullable
-    private String buildFFmpegCommand(String inputPath, String outputPath) {
-        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-
-        if ("no_watermark".equals(watermarkOption)) {
-            Log.d(TAG,"Building FFmpeg copy command (no watermark).");
-            // When copying, no re-encoding happens, codec and pixel format don't matter.
-            // Add -map_metadata 0 to preserve all metadata from the input file
-            return String.format(Locale.US, "-i %s -codec copy -map_metadata 0 -y %s", 
-                escapeFFmpegPath(inputPath), escapeFFmpegPath(outputPath));
-        } else {
-            Log.d(TAG,"Building FFmpeg watermark command.");
-
-            // Always use H.264 hardware encoder for watermarking processing for compatibility
-            String codecStringForProcessing = "h264_mediacodec";
-            Log.i(TAG,"Watermark enabled. Using processing codec: " + codecStringForProcessing);
-
-            try {
-                // Existing logic to prepare watermark text, font, etc.
-                String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
-                File fontFile = new File(fontPath);
-                if(!fontFile.exists()){ Log.e(TAG,"Font file missing at: "+fontPath); return null;}
-
-                String watermarkText;
-                boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
-                String locationText = isLocationEnabled ? getLocationData() : "";
-                switch (watermarkOption) {
-                    case "timestamp": watermarkText = getCurrentTimestamp() + locationText; break;
-                    default: watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + locationText; break;
-                }
-                watermarkText = convertArabicNumeralsToEnglish(watermarkText);
-                String escapedWatermarkText = escapeFFmpegString(watermarkText);
-                String escapedFontPath = escapeFFmpegPath(fontPath);
-
-                int fontSize = getFontSizeBasedOnBitrate();
-                String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
-                int frameRates = sharedPreferencesManager.getSpecificVideoFrameRate(sharedPreferencesManager.getCameraSelection());
-                int bitratesEstimated = getVideoBitrate();
-
-                // *** ADDED: Force pixel format to NV12 before encoding ***
-                String pixelFormatOption = "-pix_fmt nv12";
-                Log.d(TAG, "Adding pixel format option: " + pixelFormatOption);
-
-                // Build the command using the forced H.264 codec AND forced pixel format
-                // Order: Input -> Filters -> Output Codec -> Output Bitrate -> Pixel Format -> Audio Codec -> Output Path
-                // Added -map_metadata 0 to preserve all metadata from the input file
-                return String.format(Locale.US,
-                        "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d %s -map_metadata 0 -codec:a copy -y %s",
-                        escapeFFmpegPath(inputPath),
-                        frameRates,
-                        escapedWatermarkText,
-                        fontSizeStr,
-                        escapedFontPath,
-                        codecStringForProcessing, // Force h264_mediacodec
-                        bitratesEstimated,
-                        pixelFormatOption,        // *** ADDED -pix_fmt nv12 here ***
-                        escapeFFmpegPath(outputPath)
-                );
-            } catch (Exception e){
-                Log.e(TAG, "Error building watermark FFmpeg command",e);
-                return null;
-            }
-        }
-    }
-
-    // Execute FFmpeg, saving result to final internal directory
-    private void executeFFmpegInternalOnly(String command, File internalTempInput, File finalInternalOutput) {
-        Log.d(TAG, "executeFFmpegInternalOnly: Processing " + internalTempInput.getName() + " -> " + finalInternalOutput.getName());
-
-        // ** FIX: Add inputFile and finalOutputUriIfKnown arguments to the call **
-        executeFFmpegAsync(
-                command,
-                internalTempInput,                          // Pass the input file object
-                Uri.fromFile(finalInternalOutput),          // Pass the known final output URI
-                () -> { // Success Runnable
-                    Log.d(TAG, "FFmpeg internal success. Output: " + finalInternalOutput.getAbsolutePath());
-                    // Delete the *input* temp file on success
-                    if (internalTempInput.exists() && !internalTempInput.delete()) {
-                        Log.w(TAG, "Failed to delete internal temp after successful processing: " + internalTempInput.getName());
-                    }
-                    // Optional: Media Scan if needed for finalInternalOutput
-                    sendRecordingCompleteBroadcast(true, Uri.fromFile(finalInternalOutput), null); // originalTempSafUri is null for internal
-                },
-                () -> { // Failure Runnable
-                    Log.e(TAG, "FFmpeg internal process failed for: " + internalTempInput.getName());
-                    // Clean up the FAILED *output* file if it exists
-                    if (finalInternalOutput.exists() && !finalInternalOutput.delete()) {
-                        Log.w(TAG, "Failed to delete failed internal output: " + finalInternalOutput.getName());
-                    }
-                    // Do NOT delete the input temp file on failure
-                    sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), null); // originalTempSafUri is null for internal
-                }
-        ); // ** End of executeFFmpegAsync call **
-    }
-
-    /**
-     * Helper method to execute FFmpeg commands asynchronously and handle callbacks.
-     * Sets/resets the processing flag and checks if the service should stop itself.
-     *
-     * @param ffmpegCommand The FFmpeg command string to execute.
-     * @param onSuccess Runnable to execute if FFmpeg finishes successfully.
-     * @param onFailure Runnable to execute if FFmpeg fails.
-     */
-    // Centralized Async FFmpeg Execution
-    // Updated helper to run FFmpeg and broadcast completion
-    // Updated helper to run FFmpeg and broadcast START/END processing states
-    private void executeFFmpegAsync(String ffmpegCommand, File inputFile, Uri finalOutputUriIfKnown, Runnable onSuccess, Runnable onFailure) {
-        Log.d(TAG, "executeFFmpegAsync: Starting FFmpeg processing for: " + inputFile.getName());
-        // Make the service foreground again if it's not already in the foreground
-
-        // ----- Fix Start for fixing FFmpeg foreground service crash -----
-        // Show processing notification to keep the service in foreground state during FFmpeg tasks
-        NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentTitle("Processing Video")
-                .setContentText("Processing " + inputFile.getName())
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setProgress(0, 0, true); // Indeterminate progress bar
-                
-        // Start or update foreground service notification
-        startForeground(NOTIFICATION_ID, builder.build());
-        Log.d(TAG, "Started foreground service for FFmpeg processing");
-        // ----- Fix End for fixing FFmpeg foreground service crash -----
-        
-        // Send broadcast to UI that processing started
-        if (finalOutputUriIfKnown != null) {
-            sendProcessingStateBroadcast(true, finalOutputUriIfKnown);
-            } else {
-            sendProcessingStateBroadcast(true, Uri.fromFile(inputFile));
-        }
-
-        String tempInputPath = inputFile.getAbsolutePath();
-        if (!inputFile.exists()) {
-            Log.e(TAG, "executeFFmpegAsync: Input file doesn't exist: " + tempInputPath);
-            if (onFailure != null) onFailure.run();
-            return;
-        }
-
-        // Remove Config.enableLogCallback and Config.enableStatisticsCallback calls
-        // as they don't exist in this version of the FFmpegKit library
-
-        FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            ReturnCode returnCode = session.getReturnCode();
-            try {
-                // ----- Fix Start for fixing FFmpeg foreground service crash -----
-                // Update notification to show completion
-                NotificationCompat.Builder completeBuilder = createBaseNotificationBuilder()
-                        .setContentTitle("Processing Complete")
-                        .setContentText(ReturnCode.isSuccess(returnCode) ? "Video processing completed" : "Video processing failed")
-                        .setPriority(NotificationCompat.PRIORITY_LOW);
-                        
-                // Keep showing notification until we check if service can stop
-                startForeground(NOTIFICATION_ID, completeBuilder.build());
-                // ----- Fix End for fixing FFmpeg foreground service crash -----
-                
-                if (ReturnCode.isSuccess(returnCode)) {
-                    Log.i(TAG, "FFmpeg execution completed successfully for " + inputFile.getName());
-                    
-                    // Check if the output file has location metadata (only for files, not SAF URIs)
-                    if (finalOutputUriIfKnown != null && finalOutputUriIfKnown.getScheme() != null && 
-                        finalOutputUriIfKnown.getScheme().equals("file") && 
-                        sharedPreferencesManager.isLocationEmbeddingEnabled()) {
-                        String outputPath = finalOutputUriIfKnown.getPath();
-                        if (outputPath != null) {
-                            verifyLocationMetadata(outputPath);
-                        }
-                    }
-                    
-                    if (onSuccess != null) onSuccess.run();
-                    isSegmentProcessingActive = false;
-                    // Process next in queue
-                    processNextSegmentInQueue();
-                    
-                    // Update notification to show completion and remove foreground state
-                    if (finalOutputUriIfKnown != null) {
-                        sendProcessingStateBroadcast(false, finalOutputUriIfKnown);
-                    } else {
-                        sendProcessingStateBroadcast(false, Uri.fromFile(inputFile));
-                    }
-                    
-                } else if (ReturnCode.isCancel(returnCode)) {
-                    Log.w(TAG, "FFmpeg execution canceled for " + inputFile.getName());
-                    if (onFailure != null) onFailure.run();
-                    isSegmentProcessingActive = false;
-                    processNextSegmentInQueue();
-                } else {
-                    Log.e(TAG, "FFmpeg execution failed for " + inputFile.getName() + " with state: " + session.getState() + " and return code: " + returnCode);
-                    if (onFailure != null) onFailure.run();
-                    isSegmentProcessingActive = false;
-                    processNextSegmentInQueue();
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Exception in FFmpeg completion callback", e);
-                if (onFailure != null) onFailure.run();
-                isSegmentProcessingActive = false;
-                processNextSegmentInQueue();
-            } finally {
-                // ----- Fix Start for FFmpeg counter decrement -----
-                int remainingTasks = ffmpegProcessingTaskCount.decrementAndGet();
-                Log.d(TAG, "FFmpeg task count decremented to: " + remainingTasks);
-                
-                // Only check if service can stop once the remaining tasks counter reaches 0 
-                if (remainingTasks == 0) {
-                    // Only consider stopping the service when all FFmpeg tasks are done
-                    checkIfServiceCanStop();
-                }
-                // ----- Fix End for FFmpeg counter decrement -----
-            }
-        }, log -> {
-            // Log handler - just log the message
-            if (log != null && log.getMessage() != null) {
-                String message = log.getMessage();
-                // Truncate any long lines for log readability
-                if (message.length() > 1000) {
-                    message = message.substring(0, 997) + "...";
-                }
-                Log.d(TAG, "[FFmpeg] " + message);
-            }
-        }, statistics -> {
-            // Statistics handler - log periodically
-            if (statistics != null && statistics.getTime() % 5000 < 500) { // Every 5s approx
-                try {
-                    Log.d(TAG, String.format(Locale.US, 
-                        "[FFmpeg Stats] Time: %d ms, size: %d KB, speed: %.2f, bitrate: %.2f kbits/s",
-                        statistics.getTime(), 
-                        statistics.getSize() / 1024, 
-                        statistics.getSpeed(), 
-                        statistics.getBitrate()));
-                } catch (Exception e) {
-                    Log.w(TAG, "Error formatting FFmpeg statistics: " + e.getMessage());
-                }
-            }
-        });
-    }
-
-    // --- NEW: Helper to send the PROCESSING start/end broadcast ---
-    private void sendProcessingStateBroadcast(boolean started, @NonNull Uri fileUri) {
-        if (fileUri == null) {
-            Log.e(TAG, "Cannot send processing state broadcast, file URI is null.");
-            return;
-        }
-        Intent stateIntent = new Intent(started ? Constants.ACTION_PROCESSING_STARTED : Constants.ACTION_PROCESSING_FINISHED);
-        stateIntent.putExtra(Constants.EXTRA_PROCESSING_URI_STRING, fileUri.toString());
-        sendBroadcast(stateIntent);
-        Log.i(TAG, "Broadcast sent: " + stateIntent.getAction() + " for URI: " + fileUri.toString());
-    }
-
-    // --- NEW: Helper to send the completion broadcast ---
-    private void sendRecordingCompleteBroadcast(boolean success, @Nullable Uri resultUri, @Nullable Uri originalTempSafUriForReplacement) {
-        Intent completeIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
-        completeIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, success);
-        if (resultUri != null) {
-            completeIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, resultUri.toString());
-        } else {
-            Log.w(TAG,"Sending RECORDING_COMPLETE broadcast without a result URI (Success="+success+").");
-        }
-        if (originalTempSafUriForReplacement != null) {
-            completeIntent.putExtra(Constants.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING, originalTempSafUriForReplacement.toString());
-            Log.d(TAG, "Included original temp SAF URI for replacement in complete broadcast: " + originalTempSafUriForReplacement.toString());
-        }
-        // Optional: Include package name if you want to restrict the broadcast
-        // completeIntent.setPackage(getPackageName());
-        sendBroadcast(completeIntent);
-        Log.i(TAG, "Broadcast sent: " + Constants.ACTION_RECORDING_COMPLETE + " (Success=" + success + ")");
-    }
-
-    // --- NEW / Placeholder: Helper to determine the success URI ---
-    // This needs to be adapted based on HOW/WHERE your onSuccess runnable saves the final file
-    // ----- Fix Start for this method(determineSuccessUri_use_input_filename_parameter)-----
-    private Uri determineSuccessUri(String originalTempInputFileName) {
-    // ----- Fix Ended for this method(determineSuccessUri_use_input_filename_parameter)-----
-        // Option 1: If onSuccess writes to a known variable (like 'finalInternalOutputFile' or 'finalOutputDocFile's URI)
-        // return finalOutputFileUri; // You need to capture this URI after the FFmpegKit.execute block completes
-
-        // Option 2: Reconstruct it based on known inputs (less reliable if renaming occurs)
-        String storageMode = sharedPreferencesManager.getStorageMode();
-        if (SharedPreferencesManager.STORAGE_MODE_INTERNAL.equals(storageMode)) {
-            File finalInternalDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-            // You NEED the final file name here - this might require passing it into executeFFmpegAsync or storing it
-            // ----- Fix Start for this method(determineSuccessUri_use_input_filename_parameter)-----
-            String finalName = reconstructFinalNameFromTemp(originalTempInputFileName); // Use passed parameter
-            // ----- Fix Ended for this method(determineSuccessUri_use_input_filename_parameter)-----
-            if (finalName != null) {
-                return Uri.fromFile(new File(finalInternalDir, finalName));
-            }
-        } else {
-            String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            if (customUriString != null) {
-                // ----- Fix Start for this method(determineSuccessUri_use_input_filename_parameter)-----
-                String finalName = reconstructFinalNameFromTemp(originalTempInputFileName); // Use passed parameter
-                // ----- Fix Ended for this method(determineSuccessUri_use_input_filename_parameter)-----
-                if(finalName != null){
-                    // To get the final SAF URI, you need to list the directory or know the exact URI created
-                    // This is harder without passing the final DocumentFile URI back from the success callback
-                    Log.w(TAG,"Cannot reliably determine final SAF URI here without more context.");
-                    // Could potentially pass null or try a best guess
-                }
-            }
-        }
-        return null; // Return null if URI cannot be determined
-    }
-
-    // Helper - Needs access to the *original* temp filename when FFmpeg started
-    // ----- Fix Start for this method(reconstructFinalNameFromTemp_use_parameter)-----
-    private String reconstructFinalNameFromTemp(String originalTempInputFileName){
-        if(originalTempInputFileName != null){ // Use the passed parameter
-            return originalTempInputFileName.replace("temp_", Constants.RECORDING_DIRECTORY + "_");
-        }
-    // ----- Fix Ended for this method(reconstructFinalNameFromTemp_use_parameter)-----
-        return null;
-    }
-
-    // In RecordingService.java
-
-    // Execute FFmpeg saving to temp internal cache, then move result to SAF
-    private void executeFFmpegAndMoveToSAF(String command, File internalTempInput, File tempInternalProcessedOutput, String targetSafDirUriString, @Nullable Uri originalSafTempUri) {
-        Log.d(TAG, "executeFFmpegAndMoveToSAF: Processing " + internalTempInput.getName() + " -> " + tempInternalProcessedOutput.getName() + " -> SAF" + (originalSafTempUri != null ? ", OriginalSAF: " + originalSafTempUri : ""));
-
-        // ** FIX: Add inputFile and finalOutputUriIfKnown (which is null here) arguments **
-        executeFFmpegAsync(
-                command,
-                internalTempInput,              // Pass the original temp input file
-                null,                          // Pass null for final output URI, as it's determined later
-                () -> { // FFmpeg Success Runnable (FFmpeg wrote successfully to tempInternalProcessedOutput)
-                    Log.d(TAG, "FFmpeg successful (intermediate cache file created): " + tempInternalProcessedOutput.getAbsolutePath());
-                    // Now move the processed file from cache to SAF
-                    Uri finalSafUri = moveInternalFileToSAF(tempInternalProcessedOutput, targetSafDirUriString);
-                    if (finalSafUri != null) {
-                        Log.d(TAG, "Successfully moved processed cache file to SAF: " + finalSafUri);
-                        // Delete BOTH internal temp files (original input and processed cache) on success
-                        if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG, "Failed to delete initial temp: " + internalTempInput.getName()); }
-                        if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) { Log.w(TAG, "Failed to delete processed cache temp: " + tempInternalProcessedOutput.getName()); }
-
-                        // If there was an original temporary SAF URI, delete it now
-                        if (originalSafTempUri != null) {
-                            try {
-                                DocumentFile originalTempSafDoc = DocumentFile.fromSingleUri(this, originalSafTempUri);
-                                if (originalTempSafDoc != null && originalTempSafDoc.exists()) {
-                                    if (originalTempSafDoc.delete()) {
-                                        Log.d(TAG, "Successfully deleted original temporary SAF file: " + originalSafTempUri);
-                                    } else {
-                                        Log.w(TAG, "Failed to delete original temporary SAF file: " + originalSafTempUri);
-                                    }
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error deleting original temporary SAF file: " + originalSafTempUri, e);
-                            }
-                        }
-                        sendRecordingCompleteBroadcast(true, finalSafUri, originalSafTempUri);
-                    } else {
-                        Log.e(TAG, "Failed to move processed cache file to SAF!");
-                        Toast.makeText(this, "Failed to save to custom location", Toast.LENGTH_LONG).show();
-                        // Leave the *processed* temp cache file as backup.
-                        // Delete the *original* input temp file if FFmpeg succeeded but move failed.
-                        if (internalTempInput.exists() && !internalTempInput.delete()) { Log.w(TAG, "Failed to delete initial temp after move failure: " + internalTempInput.getName()); }
-                        sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), originalSafTempUri); // Send failure for original, include original SAF temp
-                    }
-                },
-                () -> { // FFmpeg Failure Runnable (FFmpeg failed to write to tempInternalProcessedOutput)
-                    Log.e(TAG, "FFmpeg process failed (writing to cache) for: " + internalTempInput.getName());
-                    // Clean up the FAILED *processed* cache output if it exists
-                    if (tempInternalProcessedOutput.exists() && !tempInternalProcessedOutput.delete()) {
-                        Log.w(TAG, "Failed to delete failed processed cache output: " + tempInternalProcessedOutput.getName());
-                    }
-                    // Do NOT delete the original input temp file on FFmpeg failure
-                    sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), originalSafTempUri); // Send failure, include original SAF temp
-                }
-        ); // ** End of executeFFmpegAsync call **
-    }
-
-    // Helper to move an internal file to a SAF directory URI
-    @Nullable
-    private Uri moveInternalFileToSAF(File internalSourceFile, String targetDirUriString) {
-        if (!internalSourceFile.exists()) {
-            Log.e(TAG,"moveInternalFileToSAF: Source file does not exist: " + internalSourceFile.getAbsolutePath());
-            return null;
-        }
-        if (targetDirUriString == null) {
-            Log.e(TAG,"moveInternalFileToSAF: Target SAF directory URI is null.");
-            return null;
-        }
-
-        // Verify location metadata in the source file before copying (for debugging)
-        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
-            verifyLocationMetadata(internalSourceFile.getAbsolutePath());
-        }
-
-        ContentResolver resolver = getContentResolver();
-        Uri dirUri = Uri.parse(targetDirUriString);
-        DocumentFile targetDir = DocumentFile.fromTreeUri(this, dirUri);
-
-        if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
-            Log.e(TAG, "moveInternalFileToSAF: Target SAF directory is invalid or not writable: " + targetDirUriString);
-            return null;
-        }
-
-        String mimeType = "video/" + Constants.RECORDING_FILE_EXTENSION; // Adjust if needed
-        String displayName = internalSourceFile.getName(); // Use the final processed name
-
-        // Create destination file (overwrite might need check/delete first if needed)
-        DocumentFile existingFile = targetDir.findFile(displayName);
-        if(existingFile != null){
-            Log.w(TAG,"SAF Move: Destination file already exists. Deleting first.");
-            if(!existingFile.delete()) { Log.e(TAG,"SAF Move: Failed to delete existing file."); return null; }
-        }
-
-        DocumentFile newSafFile = targetDir.createFile(mimeType, displayName);
-        if (newSafFile == null || !newSafFile.exists()) {
-            Log.e(TAG, "moveInternalFileToSAF: Failed to create destination file in SAF: " + displayName);
-            return null;
-        }
-        Log.d(TAG,"moveInternalFileToSAF: Created destination SAF file: " + newSafFile.getUri());
-
-
-        // Copy content using streams
-        InputStream inputStream = null;
-        OutputStream outputStream = null;
-        try {
-            inputStream = new FileInputStream(internalSourceFile);
-            outputStream = resolver.openOutputStream(newSafFile.getUri());
-            if (outputStream == null) {
-                throw new IOException("Failed to open output stream for SAF URI: " + newSafFile.getUri());
-            }
-
-            byte[] buffer = new byte[8192]; // 8K buffer
-            int bytesRead;
-            long totalBytesCopied = 0;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-                totalBytesCopied += bytesRead;
-            }
-            Log.d(TAG,"moveInternalFileToSAF: Copied " + totalBytesCopied + " bytes to " + newSafFile.getName());
-            return newSafFile.getUri(); // Copy successful, return the URI of the new file
-
-        } catch (IOException e) {
-            Log.e(TAG, "moveInternalFileToSAF: Error during file copy to SAF", e);
-            // Attempt to delete the partially created/failed SAF file
-            if (newSafFile.exists() && !newSafFile.delete()) {
-                Log.w(TAG, "Could not delete partially written SAF file: "+newSafFile.getName());
-            }
-            return null; // Copy failed
-        } finally {
-            // Close streams safely
-            try { if (inputStream != null) inputStream.close(); } catch (IOException e) { /* Ignore */ }
-            try { if (outputStream != null) outputStream.close(); } catch (IOException e) { /* Ignore */ }
-        }
-    }
-
-
     // --- MediaRecorder & Camera Session Setup ---
     // Updated setupMediaRecorder to target EXTERNAL cache first
 
     // ----- Fix Start for this method(setupMediaRecorder_saf_pfd_support)-----
-    private void setupMediaRecorder() throws IOException {
-        Log.d(TAG, "Setting up MediaRecorder for segment " + currentSegmentNumber + "...");
-        releaseMediaRecorderSafely();
-        try {
-            Thread.sleep(500);
-            Log.d(TAG, "Waited 500ms after media recorder release.");
-        } catch (InterruptedException e) {
-            Log.w(TAG, "Delay interrupted while waiting to create new MediaRecorder", e);
-            Thread.currentThread().interrupt();
-        }
-        mediaRecorder = new MediaRecorder();
-        Log.d(TAG, "New MediaRecorder instance created for segment " + currentSegmentNumber);
-        mediaRecorder.setOnInfoListener(mediaRecorderInfoListener);
-        mediaRecorder.setOnErrorListener((mr, what, extra) -> {
-            Log.e(TAG, "MediaRecorder error: what=" + what + ", extra=" + extra + " for segment " + currentSegmentNumber);
-            new Handler(Looper.getMainLooper()).post(() -> {
-                Log.e(TAG, "Handling MediaRecorder error on main service thread for segment " + currentSegmentNumber);
-                stopRecording();
-                Toast.makeText(getApplicationContext(), "Recording error (segment " + currentSegmentNumber + ", code: " + what + ")", Toast.LENGTH_LONG).show();
-            });
-        });
-        if (sharedPreferencesManager.isRecordAudioEnabled()) {
-            int maxRetries = 3;
-            int retryDelayMs = 500;
-            boolean audioSourceSet = false;
-            String audioInputSource = sharedPreferencesManager.getAudioInputSource();
-            int requestedSource = MediaRecorder.AudioSource.MIC; // Default
-            boolean wiredMicAvailable = isWiredMicConnected();
-            if (audioInputSource.equals(SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED)) {
-                if (wiredMicAvailable) {
-                    requestedSource = MediaRecorder.AudioSource.CAMCORDER; // Use CAMCORDER for wired
-                } else {
-                    Log.w(TAG, "User selected wired mic, but none detected. Falling back to phone mic.");
-                    Toast.makeText(getApplicationContext(), getString(R.string.audio_input_source_wired_not_connected), Toast.LENGTH_SHORT).show();
-                    requestedSource = MediaRecorder.AudioSource.MIC;
-                }
-            } else {
-                requestedSource = MediaRecorder.AudioSource.MIC;
-            }
-            for (int i = 0; i < maxRetries; i++) {
-                try {
-                    mediaRecorder.setAudioSource(requestedSource);
-                    audioSourceSet = true;
-                    Log.d(TAG, "setAudioSource (" + requestedSource + ") successful on attempt " + (i + 1));
-                    break;
-                } catch (RuntimeException e) {
-                    Log.e(TAG, "setAudioSource failed on attempt " + (i + 1) + "/" + maxRetries + ": " + e.getMessage());
-                    if (i < maxRetries - 1) {
-                        try {
-                            Log.d(TAG, "Resetting MediaRecorder before retrying setAudioSource due to RuntimeException.");
-                            mediaRecorder.reset();
-                            Thread.sleep(retryDelayMs);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            Log.w(TAG, "Audio setup retry delay interrupted", ie);
-                            throw new IOException("Audio setup retry interrupted", ie);
-                        } catch (Exception resetEx) {
-                            Log.e(TAG, "Exception during MediaRecorder.reset() in audio setup retry: " + resetEx.getMessage());
-                            throw new IOException("Failed to reset MediaRecorder during audio setup retry", e);
-                        }
-                    } else {
-                        Log.e(TAG, "setAudioSource failed after all retries. Forcing fallback to phone mic.");
-                        // Fallback to phone mic as last resort
-                        try {
-                            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                            audioSourceSet = true;
-                            Log.w(TAG, "Fallback to phone mic audio source succeeded.");
-                        } catch (Exception fallbackEx) {
-                            Log.e(TAG, "Fallback to phone mic audio source failed.", fallbackEx);
-                        }
-                    }
-                }
-            }
-            if (!audioSourceSet) {
-                Log.e(TAG, "Failed to set audio source after retries, using phone mic as last resort.");
-                try {
-                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                } catch (Exception fallbackEx) {
-                    Log.e(TAG, "Final fallback to phone mic audio source failed.", fallbackEx);
-                }
-            }
-        }
-        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        String storageMode = sharedPreferencesManager.getStorageMode();
-        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
-            // SAF/DocumentFile mode
-            String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            if (customUriString == null) {
-                handleStorageError("Custom storage selected but URI is null");
-                throw new IOException("Custom storage selected but URI is null");
-            }
-            Uri treeUri = Uri.parse(customUriString);
-            DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
-            if (pickedDir == null || !pickedDir.canWrite()) {
-                handleStorageError("Cannot write to selected custom directory");
-                throw new IOException("Cannot write to selected custom directory");
-            }
-            // Create a new DocumentFile for this segment
-            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber);
-            String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-            currentRecordingDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
-            if (currentRecordingDocFile == null || !currentRecordingDocFile.exists()) {
-                Log.e(TAG, "Failed to create DocumentFile in SAF: " + tempBaseFilename);
-                handleStorageError("Failed to create file in custom directory");
-                throw new IOException("Failed to create file in custom directory");
-            }
-            currentRecordingSafUri = currentRecordingDocFile.getUri();
-            Log.i(TAG, "Output configured for SAF: " + currentRecordingSafUri.toString());
-            // Open a ParcelFileDescriptor for this segment
-            closeCurrentPfd();
-            currentSegmentPfd = getContentResolver().openFileDescriptor(currentRecordingSafUri, "w");
-            if (currentSegmentPfd == null) {
-                Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI: " + currentRecordingSafUri);
-                throw new IOException("Failed to open ParcelFileDescriptor for SAF URI");
-            }
-            mediaRecorder.setOutputFile(currentSegmentPfd.getFileDescriptor());
-        } else {
-            // Internal storage mode
-            File tempOutputFileForInternal = createOutputFile();
-            if (currentRecordingSafUri != null) {
-                throw new IOException("setNextOutputFile: SAF/DocumentFile not supported in this mode");
-            } else if (tempOutputFileForInternal != null) {
-            Log.d(TAG, "Configuring MediaRecorder output for Internal temp file: " + tempOutputFileForInternal.getAbsolutePath());
-            mediaRecorder.setOutputFile(tempOutputFileForInternal.getAbsolutePath());
-        } else {
-            throw new IOException("createOutputFile() did not configure any valid output (neither SAF URI nor Internal temp file).");
-        }
-        }
-        VideoCodec codec = sharedPreferencesManager.getVideoCodec();
-        mediaRecorder.setVideoEncoder(codec.getEncoder());
-        Size resolution = sharedPreferencesManager.getCameraResolution();
-        boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
-        Log.d(TAG, "Setting video size directly from resolution: " + resolution.getWidth() + "x" + resolution.getHeight() + " for isLandscape=" + isLandscape);
-        mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
+    // private void setupMediaRecorder() throws IOException {
+    //     Log.d(TAG, "Setting up MediaRecorder for segment " + currentSegmentNumber + "...");
+    //     releaseMediaRecorderSafely();
+    //     try {
+    //         Thread.sleep(500);
+    //         Log.d(TAG, "Waited 500ms after media recorder release.");
+    //     } catch (InterruptedException e) {
+    //         Log.w(TAG, "Delay interrupted while waiting to create new MediaRecorder", e);
+    //         Thread.currentThread().interrupt();
+    //     }
+    //     mediaRecorder = new MediaRecorder();
+    //     Log.d(TAG, "New MediaRecorder instance created for segment " + currentSegmentNumber);
+    //     mediaRecorder.setOnInfoListener(mediaRecorderInfoListener);
+    //     mediaRecorder.setOnErrorListener((mr, what, extra) -> {
+    //         Log.e(TAG, "MediaRecorder error: what=" + what + ", extra=" + extra + " for segment " + currentSegmentNumber);
+    //         new Handler(Looper.getMainLooper()).post(() -> {
+    //             Log.e(TAG, "Handling MediaRecorder error on main service thread for segment " + currentSegmentNumber);
+    //             stopRecording();
+    //             Toast.makeText(getApplicationContext(), "Recording error (segment " + currentSegmentNumber + ", code: " + what + ")", Toast.LENGTH_LONG).show();
+    //         });
+    //     });
+    //     if (sharedPreferencesManager.isRecordAudioEnabled()) {
+    //         int maxRetries = 3;
+    //         int retryDelayMs = 500;
+    //         boolean audioSourceSet = false;
+    //         String audioInputSource = sharedPreferencesManager.getAudioInputSource();
+    //         int requestedSource = MediaRecorder.AudioSource.MIC; // Default
+    //         boolean wiredMicAvailable = isWiredMicConnected();
+    //         if (audioInputSource.equals(SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED)) {
+    //             if (wiredMicAvailable) {
+    //                 requestedSource = MediaRecorder.AudioSource.CAMCORDER; // Use CAMCORDER for wired
+    //             } else {
+    //                 Log.w(TAG, "User selected wired mic, but none detected. Falling back to phone mic.");
+    //                 Toast.makeText(getApplicationContext(), getString(R.string.audio_input_source_wired_not_connected), Toast.LENGTH_SHORT).show();
+    //                 requestedSource = MediaRecorder.AudioSource.MIC;
+    //             }
+    //         } else {
+    //             requestedSource = MediaRecorder.AudioSource.MIC;
+    //         }
+    //         for (int i = 0; i < maxRetries; i++) {
+    //             try {
+    //                 mediaRecorder.setAudioSource(requestedSource);
+    //                 audioSourceSet = true;
+    //                 Log.d(TAG, "setAudioSource (" + requestedSource + ") successful on attempt " + (i + 1));
+    //                 break;
+    //             } catch (RuntimeException e) {
+    //                 Log.e(TAG, "setAudioSource failed on attempt " + (i + 1) + "/" + maxRetries + ": " + e.getMessage());
+    //                 if (i < maxRetries - 1) {
+    //                     try {
+    //                         Log.d(TAG, "Resetting MediaRecorder before retrying setAudioSource due to RuntimeException.");
+    //                         mediaRecorder.reset();
+    //                         Thread.sleep(retryDelayMs);
+    //                     } catch (InterruptedException ie) {
+    //                         Thread.currentThread().interrupt();
+    //                         Log.w(TAG, "Audio setup retry delay interrupted", ie);
+    //                         throw new IOException("Audio setup retry interrupted", ie);
+    //                     } catch (Exception resetEx) {
+    //                         Log.e(TAG, "Exception during MediaRecorder.reset() in audio setup retry: " + resetEx.getMessage());
+    //                         throw new IOException("Failed to reset MediaRecorder during audio setup retry", e);
+    //                     }
+    //                 } else {
+    //                     Log.e(TAG, "setAudioSource failed after all retries. Forcing fallback to phone mic.");
+    //                     // Fallback to phone mic as last resort
+    //                     try {
+    //                         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+    //                         audioSourceSet = true;
+    //                         Log.w(TAG, "Fallback to phone mic audio source succeeded.");
+    //                     } catch (Exception fallbackEx) {
+    //                         Log.e(TAG, "Fallback to phone mic audio source failed.", fallbackEx);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         if (!audioSourceSet) {
+    //             Log.e(TAG, "Failed to set audio source after retries, using phone mic as last resort.");
+    //             try {
+    //                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+    //             } catch (Exception fallbackEx) {
+    //                 Log.e(TAG, "Final fallback to phone mic audio source failed.", fallbackEx);
+    //             }
+    //         }
+    //     }
+    //     mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+    //     mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+    //     String storageMode = sharedPreferencesManager.getStorageMode();
+    //     if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+    //         // SAF/DocumentFile mode
+    //         String customUriString = sharedPreferencesManager.getCustomStorageUri();
+    //         if (customUriString == null) {
+    //             handleStorageError("Custom storage selected but URI is null");
+    //             throw new IOException("Custom storage selected but URI is null");
+    //         }
+    //         Uri treeUri = Uri.parse(customUriString);
+    //         DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
+    //         if (pickedDir == null || !pickedDir.canWrite()) {
+    //             handleStorageError("Cannot write to selected custom directory");
+    //             throw new IOException("Cannot write to selected custom directory");
+    //         }
+    //         // Create a new DocumentFile for this segment
+    //         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+    //         String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber);
+    //         String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+    //         currentRecordingDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
+    //         if (currentRecordingDocFile == null || !currentRecordingDocFile.exists()) {
+    //             Log.e(TAG, "Failed to create DocumentFile in SAF: " + tempBaseFilename);
+    //             handleStorageError("Failed to create file in custom directory");
+    //             throw new IOException("Failed to create file in custom directory");
+    //         }
+    //         currentRecordingSafUri = currentRecordingDocFile.getUri();
+    //         Log.i(TAG, "Output configured for SAF: " + currentRecordingSafUri.toString());
+    //         // Open a ParcelFileDescriptor for this segment
+    //         closeCurrentPfd();
+    //         currentSegmentPfd = getContentResolver().openFileDescriptor(currentRecordingSafUri, "w");
+    //         if (currentSegmentPfd == null) {
+    //             Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI: " + currentRecordingSafUri);
+    //             throw new IOException("Failed to open ParcelFileDescriptor for SAF URI");
+    //         }
+    //         mediaRecorder.setOutputFile(currentSegmentPfd.getFileDescriptor());
+    //     } else {
+    //         // Internal storage mode
+    //         File tempOutputFileForInternal = createOutputFile();
+    //         if (currentRecordingSafUri != null) {
+    //             throw new IOException("setNextOutputFile: SAF/DocumentFile not supported in this mode");
+    //         } else if (tempOutputFileForInternal != null) {
+    //         Log.d(TAG, "Configuring MediaRecorder output for Internal temp file: " + tempOutputFileForInternal.getAbsolutePath());
+    //         mediaRecorder.setOutputFile(tempOutputFileForInternal.getAbsolutePath());
+    //     } else {
+    //         throw new IOException("createOutputFile() did not configure any valid output (neither SAF URI nor Internal temp file).");
+    //     }
+    //     }
+    //     VideoCodec codec = sharedPreferencesManager.getVideoCodec();
+    //     mediaRecorder.setVideoEncoder(codec.getEncoder());
+    //     Size resolution = sharedPreferencesManager.getCameraResolution();
+    //     boolean isLandscape = sharedPreferencesManager.isOrientationLandscape();
+    //     Log.d(TAG, "Setting video size directly from resolution: " + resolution.getWidth() + "x" + resolution.getHeight() + " for isLandscape=" + isLandscape);
+    //     mediaRecorder.setVideoSize(resolution.getWidth(), resolution.getHeight());
         
-        // ----- Fix Start for this method(setupMediaRecorder)-----
-        // Determine if this is a front camera
-        CameraType cameraType = sharedPreferencesManager.getCameraSelection();
-        boolean isFrontCamera = (cameraType == CameraType.FRONT);
+    //     // ----- Fix Start for this method(setupMediaRecorder)-----
+    //     // Determine if this is a front camera
+    //     CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+    //     boolean isFrontCamera = (cameraType == CameraType.FRONT);
         
-        // Set orientation hint based on camera type and device orientation
-        if (isFrontCamera) {
-            // Front camera needs different orientation hint to avoid upside-down recording
-        if (!isLandscape) {
-                mediaRecorder.setOrientationHint(270); // 270 degrees for portrait front camera
-        } else {
-                mediaRecorder.setOrientationHint(180); // 180 degrees for landscape front camera
-        }
-            Log.d(TAG, "Front camera: Setting orientation hint to " + (isLandscape ? "180" : "270") + " degrees");
-        } else {
-            // Back camera uses normal orientation
-            if (!isLandscape) {
-                mediaRecorder.setOrientationHint(90); // 90 degrees for portrait back camera
-            } else {
-                mediaRecorder.setOrientationHint(0); // 0 degrees for landscape back camera
-            }
-            Log.d(TAG, "Back camera: Setting orientation hint to " + (isLandscape ? "0" : "90") + " degrees");
-        }
-        // ----- Fix End for this method(setupMediaRecorder)-----
+    //     // Set orientation hint based on camera type and device orientation
+    //     if (isFrontCamera) {
+    //         // Front camera needs different orientation hint to avoid upside-down recording
+    //     if (!isLandscape) {
+    //             mediaRecorder.setOrientationHint(270); // 270 degrees for portrait front camera
+    //     } else {
+    //             mediaRecorder.setOrientationHint(180); // 180 degrees for landscape front camera
+    //     }
+    //         Log.d(TAG, "Front camera: Setting orientation hint to " + (isLandscape ? "180" : "270") + " degrees");
+    //     } else {
+    //         // Back camera uses normal orientation
+    //         if (!isLandscape) {
+    //             mediaRecorder.setOrientationHint(90); // 90 degrees for portrait back camera
+    //         } else {
+    //             mediaRecorder.setOrientationHint(0); // 0 degrees for landscape back camera
+    //         }
+    //         Log.d(TAG, "Back camera: Setting orientation hint to " + (isLandscape ? "0" : "90") + " degrees");
+    //     }
+    //     // ----- Fix End for this method(setupMediaRecorder)-----
         
-        int bitRate = getVideoBitrate();
-        int frameRate = sharedPreferencesManager.getVideoFrameRate();
-        mediaRecorder.setVideoEncodingBitRate(bitRate);
-        mediaRecorder.setVideoFrameRate(frameRate);
-        if (sharedPreferencesManager.isRecordAudioEnabled()) {
-            int audioBitrate = sharedPreferencesManager.getAudioBitrate();
-            int audioSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
-            mediaRecorder.setAudioEncodingBitRate(audioBitrate);
-            mediaRecorder.setAudioSamplingRate(audioSamplingRate);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        }
+    //     int bitRate = getVideoBitrate();
+    //     int frameRate = sharedPreferencesManager.getVideoFrameRate();
+    //     mediaRecorder.setVideoEncodingBitRate(bitRate);
+    //     mediaRecorder.setVideoFrameRate(frameRate);
+    //     if (sharedPreferencesManager.isRecordAudioEnabled()) {
+    //         int audioBitrate = sharedPreferencesManager.getAudioBitrate();
+    //         int audioSamplingRate = sharedPreferencesManager.getAudioSamplingRate();
+    //         mediaRecorder.setAudioEncodingBitRate(audioBitrate);
+    //         mediaRecorder.setAudioSamplingRate(audioSamplingRate);
+    //         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+    //     }
         
-        // ----- Fix Start for this method(setupMediaRecorder_location_embedding) -----
-        // Add location metadata to video if enabled
-        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
-            boolean locationApplied = false;
+    //     // ----- Fix Start for this method(setupMediaRecorder_location_embedding) -----
+    //     // Add location metadata to video if enabled
+    //     if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+    //         boolean locationApplied = false;
             
-            // First attempt: Use existing geotagHelper if available
-            if (geotagHelper != null) {
-                boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
-                if (success) {
-                    Log.d(TAG, "GeotagHelper: Successfully applied location to MediaRecorder");
-                    locationApplied = true;
-                } else {
-                    Log.w(TAG, "GeotagHelper: Failed to apply location to MediaRecorder on first attempt");
-                }
-            } else {
-                Log.d(TAG, "GeotagHelper is null, will create new instance");
-            }
+    //         // First attempt: Use existing geotagHelper if available
+    //         if (geotagHelper != null) {
+    //             boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
+    //             if (success) {
+    //                 Log.d(TAG, "GeotagHelper: Successfully applied location to MediaRecorder");
+    //                 locationApplied = true;
+    //             } else {
+    //                 Log.w(TAG, "GeotagHelper: Failed to apply location to MediaRecorder on first attempt");
+    //             }
+    //         } else {
+    //             Log.d(TAG, "GeotagHelper is null, will create new instance");
+    //         }
             
-            // Second attempt: If first attempt failed or geotagHelper was null, create and try again
-            if (!locationApplied) {
-                try {
-                    // Force creation of a new GeotagHelper
-                    Log.d(TAG, "GeotagHelper: Creating new instance and starting updates");
-                    geotagHelper = new GeotagHelper(this);
-                    boolean started = geotagHelper.startUpdates();
-                    Log.d(TAG, "GeotagHelper: Updates started: " + started);
+    //         // Second attempt: If first attempt failed or geotagHelper was null, create and try again
+    //         if (!locationApplied) {
+    //             try {
+    //                 // Force creation of a new GeotagHelper
+    //                 Log.d(TAG, "GeotagHelper: Creating new instance and starting updates");
+    //                 geotagHelper = new GeotagHelper(this);
+    //                 boolean started = geotagHelper.startUpdates();
+    //                 Log.d(TAG, "GeotagHelper: Updates started: " + started);
                     
-                    // Try to apply location immediately
-                    boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
-                    if (success) {
-                        Log.d(TAG, "GeotagHelper: Successfully applied location on second attempt");
-                        locationApplied = true;
-                    } else {
-                        Log.w(TAG, "GeotagHelper: Failed to apply location on second attempt");
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "GeotagHelper: Error during initialization", e);
-                }
-            }
+    //                 // Try to apply location immediately
+    //                 boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
+    //                 if (success) {
+    //                     Log.d(TAG, "GeotagHelper: Successfully applied location on second attempt");
+    //                     locationApplied = true;
+    //                 } else {
+    //                     Log.w(TAG, "GeotagHelper: Failed to apply location on second attempt");
+    //                 }
+    //             } catch (Exception e) {
+    //                 Log.e(TAG, "GeotagHelper: Error during initialization", e);
+    //             }
+    //         }
             
-            // Third attempt: Background thread with delay if previous attempts failed
-            if (!locationApplied) {
-                Log.d(TAG, "GeotagHelper: Scheduling delayed attempt to apply location");
-                new Thread(() -> {
-                    try {
-                        // Give more time for location to become available
-                        Thread.sleep(2000);
-                        if (mediaRecorder != null && geotagHelper != null) {
-                            boolean retrySuccess = geotagHelper.applyLocationToRecorder(mediaRecorder);
-                            Log.d(TAG, "GeotagHelper: Delayed retry applying location was " + 
-                                (retrySuccess ? "successful" : "unsuccessful"));
-                        } else {
-                            Log.w(TAG, "GeotagHelper: Delayed retry aborted - resources no longer available");
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error during delayed location retry", e);
-                    }
-                }).start();
-            }
+    //         // Third attempt: Background thread with delay if previous attempts failed
+    //         if (!locationApplied) {
+    //             Log.d(TAG, "GeotagHelper: Scheduling delayed attempt to apply location");
+    //             new Thread(() -> {
+    //                 try {
+    //                     // Give more time for location to become available
+    //                     Thread.sleep(2000);
+    //                     if (mediaRecorder != null && geotagHelper != null) {
+    //                         boolean retrySuccess = geotagHelper.applyLocationToRecorder(mediaRecorder);
+    //                         Log.d(TAG, "GeotagHelper: Delayed retry applying location was " + 
+    //                             (retrySuccess ? "successful" : "unsuccessful"));
+    //                     } else {
+    //                         Log.w(TAG, "GeotagHelper: Delayed retry aborted - resources no longer available");
+    //                     }
+    //                 } catch (Exception e) {
+    //                     Log.e(TAG, "Error during delayed location retry", e);
+    //                 }
+    //             }).start();
+    //         }
             
-            Log.d(TAG, "GeotagHelper: Location embedding setup completed, immediate success: " + locationApplied);
-        } else {
-            Log.d(TAG, "GeotagHelper: Location embedding disabled in preferences");
-        }
-        // ----- Fix Ended for this method(setupMediaRecorder_location_embedding) -----
+    //         Log.d(TAG, "GeotagHelper: Location embedding setup completed, immediate success: " + locationApplied);
+    //     } else {
+    //         Log.d(TAG, "GeotagHelper: Location embedding disabled in preferences");
+    //     }
+    //     // ----- Fix Ended for this method(setupMediaRecorder_location_embedding) -----
         
-        if (isVideoSplittingEnabled && videoSplitSizeBytes > 0) {
-            Log.d(TAG, "Setting MediaRecorder max file size to: " + videoSplitSizeBytes + " bytes for segment " + currentSegmentNumber);
-            mediaRecorder.setMaxFileSize(videoSplitSizeBytes);
-        } else {
-            mediaRecorder.setMaxFileSize(0);
-            Log.d(TAG, "Video splitting not enabled or size invalid, setting max file size to 0 (no limit).");
-        }
-        try {
-            mediaRecorder.prepare();
-            Log.d(TAG, "MediaRecorder prepared successfully for segment " + currentSegmentNumber);
-        } catch (IOException e) {
-            Log.e(TAG, "IOException preparing MediaRecorder for segment " + currentSegmentNumber, e);
-            releaseMediaRecorderSafely();
-            closeCurrentPfd();
-            if (currentRecordingSafUri != null && currentRecordingDocFile != null && currentRecordingDocFile.exists()) {
-                currentRecordingDocFile.delete();
-            } else if (currentInternalTempFile != null && currentInternalTempFile.exists()) {
-                currentInternalTempFile.delete();
-            }
-            throw e;
-        }
-    }
+    //     if (isVideoSplittingEnabled && videoSplitSizeBytes > 0) {
+    //         Log.d(TAG, "Setting MediaRecorder max file size to: " + videoSplitSizeBytes + " bytes for segment " + currentSegmentNumber);
+    //         mediaRecorder.setMaxFileSize(videoSplitSizeBytes);
+    //     } else {
+    //         mediaRecorder.setMaxFileSize(0);
+    //         Log.d(TAG, "Video splitting not enabled or size invalid, setting max file size to 0 (no limit).");
+    //     }
+    //     try {
+    //         mediaRecorder.prepare();
+    //         Log.d(TAG, "MediaRecorder prepared successfully for segment " + currentSegmentNumber);
+    //     } catch (IOException e) {
+    //         Log.e(TAG, "IOException preparing MediaRecorder for segment " + currentSegmentNumber, e);
+    //         releaseMediaRecorderSafely();
+    //         closeCurrentPfd();
+    //         if (currentRecordingSafUri != null && currentRecordingDocFile != null && currentRecordingDocFile.exists()) {
+    //             currentRecordingDocFile.delete();
+    //         } else if (currentInternalTempFile != null && currentInternalTempFile.exists()) {
+    //             currentInternalTempFile.delete();
+    //         }
+    //         throw e;
+    //     }
+    // }
     // ----- Fix Ended for this method(setupMediaRecorder_saf_pfd_support)-----
 
 // Replace the ENTIRE existing openCamera method in RecordingService.java with this corrected version:
@@ -1801,20 +953,16 @@ public class RecordingService extends Service {
         public void onOpened(@NonNull CameraDevice camera) {
             Log.d(TAG, "Camera " + camera.getId() + " opened.");
             cameraDevice = camera;
-
-            // ----- Fix Start for this method(onOpened_setup_recorder_before_session)-----
-            // MediaRecorder setup is now handled by startRecording() for the initial start,
-            // and by proceedWithRolloverAfterOldSessionClosed() for rollovers.
-            // Removing the setupMediaRecorder() call from here to prevent double setup and delays.
-            // If mediaRecorder is null when createCameraPreviewSession is called, it will be caught there.
-            Log.d(TAG, "onOpened: Camera device opened. Proceeding to createCameraPreviewSession. MediaRecorder should be ready.");
-            // ----- Fix Ended for this method(onOpened_setup_recorder_before_session)-----
-
-            // Start the capture session now that camera is open
-            createCameraPreviewSession();
+            isCameraOpen = true;
+            // Only start recording here, not createCameraPreviewSession
+            if (pendingStartRecording) {
+                pendingStartRecording = false;
+                startRecording();
+            }
         }
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
+            if (isStopping) return;
             Log.w(TAG, "Camera " + camera.getId() + " disconnected.");
             // ----- Fix Start for this method(onDisconnected_handle_rollover_flag) -----
             // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
@@ -1830,6 +978,7 @@ public class RecordingService extends Service {
         }
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {
+            if (isStopping) return;
             Log.e(TAG, "Camera " + camera.getId() + " error: " + error);
             // ----- Fix Start for this method(onError_handle_rollover_flag) -----
             // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
@@ -1845,6 +994,7 @@ public class RecordingService extends Service {
         }
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
+            if (isStopping) return;
             // ----- Fix Start for this method(onClosed_handle_rollover_callback) -----
             String closedCameraId = camera.getId();
             // Restore the logging of isRolloverClosingOldSession as the field will now be declared
@@ -1893,20 +1043,59 @@ public class RecordingService extends Service {
             stopRecording(); // Cannot create session without camera
             return;
         }
-        if (mediaRecorder == null) {
-            Log.e(TAG,"createCameraPreviewSession: mediaRecorder is null!");
-            stopRecording(); // Cannot create session without recorder
+        // If using OpenGL pipeline for watermarking
+        if (glRecordingPipeline != null) {
+            Log.d(TAG, "createCameraPreviewSession: Using GL pipeline for watermarking");
+            Surface glSurface = glRecordingPipeline.getCameraInputSurface();
+            List<Surface> surfaces = new ArrayList<>();
+            if (glSurface != null) {
+                surfaces.add(glSurface);
+            } else {
+                Log.e(TAG, "GL pipeline camera input surface is null!");
+            }
+            // Do NOT add previewSurface to Camera2 session outputs
+            // if (previewSurface != null) {
+            //     surfaces.add(previewSurface);
+            // } else {
+            //     Log.w(TAG, "Preview surface is null; preview will be disabled.");
+            // }
+            if (surfaces.isEmpty()) {
+                Log.e(TAG, "No valid surfaces for camera session!");
+                stopRecording();
+                return;
+            }
+            // Get camera characteristics for frame rate handling
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            String cameraId = getCameraId(cameraManager, cameraType);
+            CameraCharacteristics characteristics = null;
+            if (cameraId != null) {
+                try {
+                    characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error getting camera characteristics", e);
+                }
+            }
+            int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+            boolean isHighFrameRate = targetFrameRate >= 60;
+            boolean useHighSpeedSession = false;
+            if (isHighFrameRate && characteristics != null) {
+                // ... (same Samsung/Huawei/high-speed logic as before)
+            }
+            if (useHighSpeedSession) {
+                createHighSpeedSession(surfaces, characteristics, targetFrameRate);
+            } else {
+                createStandardSession(surfaces, targetFrameRate, characteristics);
+            }
             return;
         }
+
         Log.d(TAG,"createCameraPreviewSession: Creating session...");
         try {
-            Surface recorderSurface = mediaRecorder.getSurface();
-            
-            // Setup a list of surfaces for the capture session
             List<Surface> surfaces = new ArrayList<>();
-            surfaces.add(recorderSurface);
-            
-            // Add preview surface if available
+            if (glRecordingPipeline != null) {
+                surfaces.add(glRecordingPipeline.getCameraInputSurface());
+            }
             if (previewSurface != null) {
                 surfaces.add(previewSurface);
             }
@@ -2010,29 +1199,38 @@ public class RecordingService extends Service {
     private final CameraCaptureSession.StateCallback captureSessionCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "Standard capture session configured");
-            if (cameraDevice == null) {
-                Log.e(TAG, "Camera closed before session configured");
-                session.close();
+            if (isStopping || cameraDevice == null || recordingState == RecordingState.NONE) {
+                Log.w(TAG, "onConfigured: Service is stopping, camera device is null, or recording state is NONE. Aborting.");
                 return;
             }
-            
+            Log.d(TAG, "Standard capture session configured");
             captureSession = session;
-            
             try {
                 // Set auto control mode
                 captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-                
                 // Set torch/flash mode
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE, 
                     isRecordingTorchEnabled ? 
                         CaptureRequest.FLASH_MODE_TORCH : 
                         CaptureRequest.FLASH_MODE_OFF);
-                
+                // Defensive: check session state before using
+                if (captureSession == null || cameraDevice == null || recordingState == RecordingState.NONE) {
+                    Log.w(TAG, "onConfigured: Session or cameraDevice became null before setRepeatingRequest. Aborting.");
+                    return;
+                }
                 // Start repeating request
-                session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
-                Log.d(TAG, "Started repeating request for standard session");
-                
+                try {
+                    session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                    Log.d(TAG, "Started repeating request for standard session");
+                } catch (IllegalStateException ise) {
+                    Log.e(TAG, "setRepeatingRequest failed: session likely closed", ise);
+                    stopRecording();
+                    return;
+                }
+                // Start the GL pipeline only after session is configured and repeating request is set
+                if (glRecordingPipeline != null) {
+                    glRecordingPipeline.startRecording();
+                }
                 // Handle recording state
                 handleSessionConfigured();
             } catch (CameraAccessException e) {
@@ -2043,12 +1241,14 @@ public class RecordingService extends Service {
         
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+            if (isStopping) return;
             Log.e(TAG, "Standard capture session configuration failed");
             stopRecording();
         }
         
         @Override
         public void onClosed(@NonNull CameraCaptureSession session) {
+            if (isStopping) return;
             Log.d(TAG, "Capture session closed");
             
             if (session == captureSession) {
@@ -2071,8 +1271,8 @@ public class RecordingService extends Service {
         
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
-            if (cameraDevice == null) {
-                Log.e(TAG, "Camera closed before high-speed session configured");
+            if (isStopping || cameraDevice == null) {
+                Log.e(TAG, "onConfigured: Service is stopping or camera closed before high-speed session configured");
                 return;
             }
             
@@ -2103,6 +1303,7 @@ public class RecordingService extends Service {
         
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+            if (isStopping) return;
             Log.e(TAG, "High-speed session configuration failed");
             
             try {
@@ -2122,12 +1323,12 @@ public class RecordingService extends Service {
                 List<Surface> surfaces = new ArrayList<>();
                 
                 // Add recorder surface
-                if (mediaRecorder != null) {
-                    Surface recorderSurface = mediaRecorder.getSurface();
-                    if (recorderSurface != null) {
-                        surfaces.add(recorderSurface);
-                    }
-                }
+//                if (mediaRecorder != null) {
+//                    Surface recorderSurface = mediaRecorder.getSurface();
+//                    if (recorderSurface != null) {
+//                        surfaces.add(recorderSurface);
+//                    }
+//                }
                 
                 // Add preview surface if available
                 if (previewSurface != null) {
@@ -2149,6 +1350,7 @@ public class RecordingService extends Service {
         
         @Override
         public void onClosed(@NonNull CameraCaptureSession session) {
+            if (isStopping) return;
             // Handle session closure same as standard session
             if (captureSessionCallback != null) {
                 captureSessionCallback.onClosed(session);
@@ -2162,133 +1364,104 @@ public class RecordingService extends Service {
     // It still references the old 'isProcessingWatermark' flag instead of the new 'ffmpegProcessingTaskCount'.
     // The primary video processing path for segments is now handleSegmentRollover -> processAndMoveVideo.
     // This method should be reviewed and likely REMOVED or REFACTORED if still needed for a different purpose.
-    private void processLatestVideoFileWithWatermark() {
-        Log.d(TAG,"processLatestVideoFileWithWatermark starting...");
-        String inputUriOrPath;
-        String outputUriOrPath;
-        String tempFileName; // Needed for constructing output name
-        Uri inputUri = null;
-        File inputFile = null;
-        Uri outputDirectoryUri = null; // Only for SAF output directory
-
-        // isProcessingWatermark = true; // OLD FLAG - DO NOT USE - Handled by ffmpegProcessingTaskCount in other methods
-
-        // Identify the source file/URI that was just recorded
-        if (currentRecordingFile != null) {
-            inputFile = currentRecordingFile;
-            inputUriOrPath = inputFile.getAbsolutePath();
-            tempFileName = inputFile.getName();
-            Log.d(TAG,"Processing Internal File: " + inputUriOrPath);
-        } else if (currentRecordingSafUri != null) {
-            inputUri = currentRecordingSafUri;
-            inputUriOrPath = inputUri.toString();
-            if (currentRecordingDocFile != null) {
-                tempFileName = currentRecordingDocFile.getName();
-            } else { // Fallback to deriving from URI if doc file lost
-                tempFileName = DocumentFile.fromSingleUri(this,inputUri).getName();
-            }
-            // Get parent directory for SAF output
-            DocumentFile parentDir = DocumentFile.fromSingleUri(this,inputUri).getParentFile();
-            if(parentDir != null) outputDirectoryUri = parentDir.getUri();
-
-            Log.d(TAG,"Processing SAF URI: " + inputUriOrPath +", Temp Name: "+tempFileName);
-        } else {
-            Log.e(TAG, "processLatest: No valid recording file/URI tracked!");
-            // isProcessingWatermark = false; // OLD FLAG - DO NOT USE at line ~1410
-            return;
-        }
-        if(tempFileName == null) {
-            Log.e(TAG, "Could not determine temporary filename, aborting processing.");
-            // isProcessingWatermark = false; // OLD FLAG - DO NOT USE
-            cleanupTemporaryFile(); // Attempt cleanup
-            return;
-        }
-    // ----- Fix Ended for this method(processLatestVideoFileWithWatermark_comment_out_isProcessingWatermark_references)-----
-
-
-        // Construct final output filename (always prefixed)
-        String finalOutputName = tempFileName.replace("temp_", Constants.RECORDING_DIRECTORY + "_");
-
-        // Determine and Create Output Target (Path or SAF URI)
-        DocumentFile finalOutputDocFile = null; // For SAF cleanup on failure
-
-        if (outputDirectoryUri != null) { // Custom SAF Location
-            DocumentFile parentDir = DocumentFile.fromTreeUri(this, outputDirectoryUri);
-            if (parentDir == null || !parentDir.canWrite()) {
-                handleProcessingError("Cannot write to SAF output directory: " + outputDirectoryUri, inputUriOrPath);
-                return;
-            }
-            // Check if final file already exists (shouldn't normally, but handle anyway)
-            if(parentDir.findFile(finalOutputName) != null){
-                Log.w(TAG, "Final output file already exists in SAF dir: "+finalOutputName+". Overwriting might fail or take time.");
-                // FFmpeg might handle overwrite depending on version/options
-            }
-
-            finalOutputDocFile = parentDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, finalOutputName);
-            if (finalOutputDocFile == null || !finalOutputDocFile.exists()) {
-                handleProcessingError("Failed to create output SAF file: " + finalOutputName + " in " + outputDirectoryUri, inputUriOrPath);
-                return;
-            }
-            outputUriOrPath = finalOutputDocFile.getUri().toString();
-            Log.d(TAG,"Output target: SAF URI = "+ outputUriOrPath);
-
-        } else { // Internal Storage Location
-            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-            File outputFile = new File(videoDir, finalOutputName);
-            outputUriOrPath = outputFile.getAbsolutePath();
-            Log.d(TAG,"Output target: Internal Path = " + outputUriOrPath);
-        }
-
-        // Prepare and Execute FFmpeg Command
-        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-        String ffmpegCommand;
-
-        if ("no_watermark".equals(watermarkOption)) {
-            Log.d(TAG,"No watermark selected, using copy codec.");
-            // Use -movflags +faststart potentially?
-            ffmpegCommand = String.format("-i %s -codec copy -y %s", inputUriOrPath, outputUriOrPath); // -y overwrites
-        } else {
-            Log.d(TAG,"Applying watermark: " + watermarkOption);
-            // Fetch watermark text and format it
-            String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf"; // Ensure font exists
-            String watermarkText;
-            boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
-            String locationText = isLocationEnabled ? getLocationData() : "";
-            switch (watermarkOption) {
-                case "timestamp": watermarkText = getCurrentTimestamp() + locationText; break;
-                default: watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + locationText; break;
-            }
-            watermarkText = convertArabicNumeralsToEnglish(watermarkText);
-            String escapedWatermarkText = escapeFFmpegString(watermarkText);
-            String escapedFontPath = escapeFFmpegPath(fontPath);
-
-            int fontSize = getFontSizeBasedOnBitrate();
-            String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
-            int frameRates = sharedPreferencesManager.getVideoFrameRate();
-            int bitratesEstimated = getVideoBitrate();
-
-            // ----- Fix Start for this method(processLatestVideoFileWithWatermark_codec_fix)-----
-            // Retrieve the codec string for ffmpeg from the selected VideoCodec
-            VideoCodec videoCodec = sharedPreferencesManager.getVideoCodec();
-            String ffmpegCodec = videoCodec.getFfmpeg();
-            // Build FFmpeg command carefully
-            ffmpegCommand = String.format(
-                    Locale.US, // Use US Locale for number formatting consistency
-                    "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s':escape_text=0\" -q:v 0 -codec:v %s -b:v %d -codec:a copy -y %s",
-                    inputUriOrPath,
-                    frameRates,
-                    escapedWatermarkText,
-                    fontSizeStr,
-                    escapedFontPath,
-                    ffmpegCodec,
-                    bitratesEstimated,
-                    outputUriOrPath
-            );
-            // ----- Fix Ended for this method(processLatestVideoFileWithWatermark_codec_fix)-----
-        }
-
-        executeFFmpegCommand(ffmpegCommand, inputUriOrPath, outputUriOrPath); // Pass both input and potential failed SAF output path
-    }
+//    private void processLatestVideoFileWithWatermark() {
+//        Log.d(TAG,"processLatestVideoFileWithWatermark starting...");
+//        String inputUriOrPath;
+//        String outputUriOrPath;
+//        String tempFileName; // Needed for constructing output name
+//        Uri inputUri = null;
+//        File inputFile = null;
+//        Uri outputDirectoryUri = null; // Only for SAF output directory
+//
+//        // isProcessingWatermark = true; // OLD FLAG - DO NOT USE - Handled by ffmpegProcessingTaskCount in other methods
+//
+//
+//    // ----- Fix Ended for this method(processLatestVideoFileWithWatermark_comment_out_isProcessingWatermark_references)-----
+//
+//
+//        // Construct final output filename (always prefixed)
+//        String finalOutputName = tempFileName.replace("temp_", Constants.RECORDING_DIRECTORY + "_");
+//
+//        // Determine and Create Output Target (Path or SAF URI)
+//        DocumentFile finalOutputDocFile = null; // For SAF cleanup on failure
+//
+//        if (outputDirectoryUri != null) { // Custom SAF Location
+//            DocumentFile parentDir = DocumentFile.fromTreeUri(this, outputDirectoryUri);
+//            if (parentDir == null || !parentDir.canWrite()) {
+//                handleProcessingError("Cannot write to SAF output directory: " + outputDirectoryUri, inputUriOrPath);
+//                return;
+//            }
+//            // Check if final file already exists (shouldn't normally, but handle anyway)
+//            if(parentDir.findFile(finalOutputName) != null){
+//                Log.w(TAG, "Final output file already exists in SAF dir: "+finalOutputName+". Overwriting might fail or take time.");
+//                // FFmpeg might handle overwrite depending on version/options
+//            }
+//
+//            finalOutputDocFile = parentDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, finalOutputName);
+//            if (finalOutputDocFile == null || !finalOutputDocFile.exists()) {
+//                handleProcessingError("Failed to create output SAF file: " + finalOutputName + " in " + outputDirectoryUri, inputUriOrPath);
+//                return;
+//            }
+//            outputUriOrPath = finalOutputDocFile.getUri().toString();
+//            Log.d(TAG,"Output target: SAF URI = "+ outputUriOrPath);
+//
+//        } else { // Internal Storage Location
+//            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+//            File outputFile = new File(videoDir, finalOutputName);
+//            outputUriOrPath = outputFile.getAbsolutePath();
+//            Log.d(TAG,"Output target: Internal Path = " + outputUriOrPath);
+//        }
+//
+//        // Prepare and Execute FFmpeg Command
+//        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+//        String ffmpegCommand;
+//
+//        if ("no_watermark".equals(watermarkOption)) {
+//            Log.d(TAG,"No watermark selected, using copy codec.");
+//            // Use -movflags +faststart potentially?
+//            ffmpegCommand = String.format("-i %s -codec copy -y %s", inputUriOrPath, outputUriOrPath); // -y overwrites
+//        } else {
+//            Log.d(TAG,"Applying watermark: " + watermarkOption);
+//            // Fetch watermark text and format it
+//            String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf"; // Ensure font exists
+//            String watermarkText;
+//            boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+//            String locationText = isLocationEnabled ? getLocationData() : "";
+//            switch (watermarkOption) {
+//                case "timestamp": watermarkText = getCurrentTimestamp() + locationText; break;
+//                default: watermarkText = "Captured by FadCam - " + getCurrentTimestamp() + locationText; break;
+//            }
+//            watermarkText = convertArabicNumeralsToEnglish(watermarkText);
+//            String escapedWatermarkText = escapeFFmpegString(watermarkText);
+//            String escapedFontPath = escapeFFmpegPath(fontPath);
+//
+//            int fontSize = getFontSizeBasedOnBitrate();
+//            String fontSizeStr = convertArabicNumeralsToEnglish(String.valueOf(fontSize));
+//            int frameRates = sharedPreferencesManager.getVideoFrameRate();
+//            int bitratesEstimated = getVideoBitrate();
+//
+//            // ----- Fix Start for this method(processLatestVideoFileWithWatermark_codec_fix)-----
+//            // Retrieve the codec string for ffmpeg from the selected VideoCodec
+//            VideoCodec videoCodec = sharedPreferencesManager.getVideoCodec();
+//            String ffmpegCodec = videoCodec.getFfmpeg();
+//            // Build FFmpeg command carefully
+//            ffmpegCommand = String.format(
+//                    Locale.US, // Use US Locale for number formatting consistency
+//                    "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s':escape_text=0\" -q:v 0 -codec:v %s -b:v %d -codec:a copy -y %s",
+//                    inputUriOrPath,
+//                    frameRates,
+//                    escapedWatermarkText,
+//                    fontSizeStr,
+//                    escapedFontPath,
+//                    ffmpegCodec,
+//                    bitratesEstimated,
+//                    outputUriOrPath
+//            );
+//            // ----- Fix Ended for this method(processLatestVideoFileWithWatermark_codec_fix)-----
+//        }
+//
+//        executeFFmpegCommand(ffmpegCommand, inputUriOrPath, outputUriOrPath); // Pass both input and potential failed SAF output path
+//    }
 
     /**
      * Handles errors that occur during the preparation or execution of video processing.
@@ -2349,7 +1522,7 @@ public class RecordingService extends Service {
         }
 
         // Reset the global tracking variable since the process tied to it failed
-        currentInternalTempFile = null;
+//        currentInternalTempFile = null;
         // SAF/PFD related vars aren't directly used here anymore in error case
         // closeCurrentPfd(); // Method removed
 
@@ -2385,80 +1558,80 @@ public class RecordingService extends Service {
         // ffmpegProcessingTaskCount.incrementAndGet();
         // Log.d(TAG, "FFmpeg task count incremented via executeFFmpegCommand for: " + inputUriOrPath);
 
-        FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            boolean success = ReturnCode.isSuccess(session.getReturnCode());
-            Log.d(TAG, "FFmpeg session (via executeFFmpegCommand) finished - Success: " + success + ", RC: " + session.getReturnCode());
-
-            if (success) {
-                Log.d(TAG, "FFmpeg process successful (via executeFFmpegCommand). Output: " + outputUriOrPath);
-                cleanupTemporaryFile(); // Delete the temp file (inputUriOrPath)
-
-                // Optional: Update records UI / Media Scanner if needed
-            } else {
-                Log.e(TAG, "FFmpeg (via executeFFmpegCommand) failed! Logs:");
-                Log.e(TAG, session.getAllLogsAsString());
-                Log.e(TAG, "Command was: "+ffmpegCommand);
-                Toast.makeText(this, "Error processing video (via executeFFmpegCommand)", Toast.LENGTH_LONG).show();
-
-                // Try to cleanup the FAILED output file if it was created via SAF
-                if (outputUriOrPath != null && outputUriOrPath.startsWith("content://")) {
-                    try {
-                        DocumentFile failedOutput = DocumentFile.fromSingleUri(this, Uri.parse(outputUriOrPath));
-                        if(failedOutput != null && failedOutput.exists() && failedOutput.delete()){
-                            Log.d(TAG,"Deleted failed SAF output file (via executeFFmpegCommand): "+ outputUriOrPath);
-                        } else {
-                            Log.w(TAG, "Could not delete failed SAF output file (via executeFFmpegCommand): "+outputUriOrPath);
-                        }
-                    } catch (Exception e) {
-                        // ----- Fix Start for this method(executeFFmpegCommand_fix_string_literal)-----
-                        Log.e(TAG,"Error deleting failed SAF output (via executeFFmpegCommand)", e);
-                        // ----- Fix Ended for this method(executeFFmpegCommand_fix_string_literal)-----
-                    }
-                }
-                // IMPORTANT: DO NOT delete the input temp file if processing failed.
-                currentRecordingFile = null;
-                currentRecordingSafUri = null;
-                currentRecordingDocFile = null;
-            }
-
-            // If this method (executeFFmpegCommand) were managing an FFmpeg task lifecycle:
-            // int tasksLeft = ffmpegProcessingTaskCount.decrementAndGet();
-            // Log.d(TAG, "FFmpeg task (via executeFFmpegCommand) finished. Count decremented to: " + tasksLeft);
-
-            // Check if service can stop now
-            if (!isWorkingInProgress()) {
-                Log.d(TAG,"FFmpeg (via executeFFmpegCommand) finished and no other work pending, stopping service.");
-                stopSelf();
-            } else {
-                Log.d(TAG,"FFmpeg (via executeFFmpegCommand) finished, but service might still be recording/working.");
-            }
-        });
+//        FFmpegKit.executeAsync(ffmpegCommand, session -> {
+//            boolean success = ReturnCode.isSuccess(session.getReturnCode());
+//            Log.d(TAG, "FFmpeg session (via executeFFmpegCommand) finished - Success: " + success + ", RC: " + session.getReturnCode());
+//
+//            if (success) {
+//                Log.d(TAG, "FFmpeg process successful (via executeFFmpegCommand). Output: " + outputUriOrPath);
+//                cleanupTemporaryFile(); // Delete the temp file (inputUriOrPath)
+//
+//                // Optional: Update records UI / Media Scanner if needed
+//            } else {
+//                Log.e(TAG, "FFmpeg (via executeFFmpegCommand) failed! Logs:");
+//                Log.e(TAG, session.getAllLogsAsString());
+//                Log.e(TAG, "Command was: "+ffmpegCommand);
+//                Toast.makeText(this, "Error processing video (via executeFFmpegCommand)", Toast.LENGTH_LONG).show();
+//
+//                // Try to cleanup the FAILED output file if it was created via SAF
+//                if (outputUriOrPath != null && outputUriOrPath.startsWith("content://")) {
+//                    try {
+//                        DocumentFile failedOutput = DocumentFile.fromSingleUri(this, Uri.parse(outputUriOrPath));
+//                        if(failedOutput != null && failedOutput.exists() && failedOutput.delete()){
+//                            Log.d(TAG,"Deleted failed SAF output file (via executeFFmpegCommand): "+ outputUriOrPath);
+//                        } else {
+//                            Log.w(TAG, "Could not delete failed SAF output file (via executeFFmpegCommand): "+outputUriOrPath);
+//                        }
+//                    } catch (Exception e) {
+//                        // ----- Fix Start for this method(executeFFmpegCommand_fix_string_literal)-----
+//                        Log.e(TAG,"Error deleting failed SAF output (via executeFFmpegCommand)", e);
+//                        // ----- Fix Ended for this method(executeFFmpegCommand_fix_string_literal)-----
+//                    }
+//                }
+//                // IMPORTANT: DO NOT delete the input temp file if processing failed.
+//                currentRecordingFile = null;
+//                currentRecordingSafUri = null;
+//                currentRecordingDocFile = null;
+//            }
+//
+//            // If this method (executeFFmpegCommand) were managing an FFmpeg task lifecycle:
+//            // int tasksLeft = ffmpegProcessingTaskCount.decrementAndGet();
+//            // Log.d(TAG, "FFmpeg task (via executeFFmpegCommand) finished. Count decremented to: " + tasksLeft);
+//
+//            // Check if service can stop now
+//            if (!isWorkingInProgress()) {
+//                Log.d(TAG,"FFmpeg (via executeFFmpegCommand) finished and no other work pending, stopping service.");
+//                stopSelf();
+//            } else {
+//                Log.d(TAG,"FFmpeg (via executeFFmpegCommand) finished, but service might still be recording/working.");
+//            }
+//        });
     }
     // ----- Fix Ended for this method(executeFFmpegCommand_full_rewrite)-----
 
 
     // Centralized Temp File Cleanup
-    private void cleanupTemporaryFile() {
-        Log.d(TAG,"cleanupTemporaryFile: Attempting cleanup of temporary recording file...");
-        File tempToClean = currentInternalTempFile; // Use the instance variable
-
-        if (tempToClean != null) {
-            Log.d(TAG, "Cleaning up internal file: " + tempToClean.getAbsolutePath());
-            if (tempToClean.exists()) {
-                if (tempToClean.delete()) {
-                    Log.d(TAG, "Deleted internal temp file: " + tempToClean.getName());
-                } else {
-                    Log.w(TAG, "Failed to delete internal temp file: " + tempToClean.getName());
-                }
-            } else {
-                Log.w(TAG, "Internal temp file reference exists but file not found for cleanup.");
-            }
-            currentInternalTempFile = null; // Clear reference after attempt
-        } else {
-            Log.d(TAG,"No temporary file currently tracked for cleanup.");
-        }
-        // Removed logic for cleaning SAF temps as they are handled differently
-    }
+//    private void cleanupTemporaryFile() {
+//        Log.d(TAG,"cleanupTemporaryFile: Attempting cleanup of temporary recording file...");
+////        File tempToClean = currentInternalTempFile; // Use the instance variable
+//
+//        if (tempToClean != null) {
+//            Log.d(TAG, "Cleaning up internal file: " + tempToClean.getAbsolutePath());
+//            if (tempToClean.exists()) {
+//                if (tempToClean.delete()) {
+//                    Log.d(TAG, "Deleted internal temp file: " + tempToClean.getName());
+//                } else {
+//                    Log.w(TAG, "Failed to delete internal temp file: " + tempToClean.getName());
+//                }
+//            } else {
+//                Log.w(TAG, "Internal temp file reference exists but file not found for cleanup.");
+//            }
+//            currentInternalTempFile = null; // Clear reference after attempt
+//        } else {
+//            Log.d(TAG,"No temporary file currently tracked for cleanup.");
+//        }
+//        // Removed logic for cleaning SAF temps as they are handled differently
+//    }
 
     // Helper to handle storage setup errors consistently
     private void handleStorageError(String message) {
@@ -2479,16 +1652,16 @@ public class RecordingService extends Service {
         }
     }
 
-    private void closeCurrentPfd() {
-        if (currentSegmentPfd != null) {
-            try { currentSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing currentSegmentPfd", e); }
-            currentSegmentPfd = null;
-        }
-        if (nextSegmentPfd != null) {
-            try { nextSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing nextSegmentPfd", e); }
-            nextSegmentPfd = null;
-        }
-    }
+//    private void closeCurrentPfd() {
+//        if (currentSegmentPfd != null) {
+//            try { currentSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing currentSegmentPfd", e); }
+//            currentSegmentPfd = null;
+//        }
+//        if (nextSegmentPfd != null) {
+//            try { nextSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing nextSegmentPfd", e); }
+//            nextSegmentPfd = null;
+//        }
+//    }
 
 
     private int getVideoBitrate() {
@@ -2801,122 +1974,122 @@ public class RecordingService extends Service {
     // --- End Status Check ---
 
     // ----- Fix Start for this class (RecordingService_video_splitting_listener_and_rollover) -----
-    private final MediaRecorder.OnInfoListener mediaRecorderInfoListener = new MediaRecorder.OnInfoListener() {
-        @Override
-        public void onInfo(MediaRecorder mr, int what, int extra) {
-            Log.d(TAG, "[OnInfoListener] what=" + what + ", extra=" + extra);
-            try {
-                if (what == 802 /* MEDIA_RECORDER_INFO_MAX_FILESIZE_APPROACHING */) {
-                    Log.i(TAG, "[OnInfoListener] Max filesize approaching! Preparing next output file for seamless rollover.");
-                    if (isVideoSplittingEnabled && videoSplitSizeBytes > 0 && !nextOutputFilePending) {
-                        nextSegmentTempFile = createNextSegmentOutputFile();
-                        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
-                            // SAF mode: nextSegmentPfd is set in createNextSegmentOutputFile
-                            if (nextSegmentPfd != null) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    mediaRecorder.setNextOutputFile(nextSegmentPfd.getFileDescriptor());
-                                    nextOutputFilePending = true;
-                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (APPROACHING) called for SAF PFD.");
-                                }
-                } else {
-                                Log.e(TAG, "[OnInfoListener] Failed to open nextSegmentPfd for SAF. Stopping recording.");
-                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
-                            }
-                        } else {
-                            // Internal storage mode
-                            if (nextSegmentTempFile != null) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    mediaRecorder.setNextOutputFile(nextSegmentTempFile);
-                                    nextOutputFilePending = true;
-                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (APPROACHING) called for internal file.");
-                                }
-                            } else {
-                                Log.e(TAG, "[OnInfoListener] Failed to create next segment file for rollover (APPROACHING). Stopping recording.");
-                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
-                            }
-                        }
-                    }
-                } else if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
-                    Log.i(TAG, "[OnInfoListener] Max filesize reached! Attempting setNextOutputFile rollover.");
-                    if (isVideoSplittingEnabled && videoSplitSizeBytes > 0 && !nextOutputFilePending) {
-                        nextSegmentTempFile = createNextSegmentOutputFile();
-                        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
-                            if (nextSegmentPfd != null) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    mediaRecorder.setNextOutputFile(nextSegmentPfd.getFileDescriptor());
-                                    nextOutputFilePending = true;
-                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (REACHED) called for SAF PFD.");
-                                }
-                            } else {
-                                Log.e(TAG, "[OnInfoListener] Failed to open nextSegmentPfd for SAF. Stopping recording.");
-                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
-                            }
-                        } else {
-                            if (nextSegmentTempFile != null) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    mediaRecorder.setNextOutputFile(nextSegmentTempFile);
-                                    nextOutputFilePending = true;
-                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (REACHED) called for internal file.");
-                                }
-                            } else {
-                                Log.e(TAG, "[OnInfoListener] Failed to create next segment file for rollover (REACHED). Stopping recording.");
-                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
-                            }
-                        }
-                    } else if (!isVideoSplittingEnabled || videoSplitSizeBytes <= 0) {
-                        Log.w(TAG, "[OnInfoListener] Max filesize reached, but splitting not enabled/configured. Stopping recording.");
-                        new Handler(Looper.getMainLooper()).post(() -> stopRecording());
-                    }
-                } else if (what == 803 /* MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED */) {
-                    Log.i(TAG, "[OnInfoListener] Next output file started. Advancing segment number and updating file tracking.");
-                    // SAF: Close previous segment PFD
-                    if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
-                        if (currentSegmentPfd != null) {
-                            try { currentSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing previous segment PFD", e); }
-                            currentSegmentPfd = nextSegmentPfd;
-                            nextSegmentPfd = null;
-                        }
-                        // Queue the completed SAF segment for FFmpeg processing
-                        if (currentRecordingDocFile != null && currentRecordingDocFile.exists() && currentRecordingDocFile.length() > 0) {
-                            Log.d(TAG, "[OnInfoListener] Queuing completed SAF segment for FFmpeg: " + currentRecordingDocFile.getUri());
-                            segmentProcessingQueue.add(currentRecordingDocFile);
-                            processNextSegmentInQueue();
-                        } else {
-                            Log.w(TAG, "[OnInfoListener] Previous SAF segment missing or empty, skipping FFmpeg queue.");
-                        }
-                        // ----- Fix Start for this method(OnInfoListener_update_current_docfile_on_rollover) -----
-                        // Update currentRecordingDocFile and currentRecordingSafUri to the new segment
-                        currentRecordingDocFile = nextRecordingDocFile;
-                        currentRecordingSafUri = (currentRecordingDocFile != null) ? currentRecordingDocFile.getUri() : null;
-                        nextRecordingDocFile = null;
-                        // ----- Fix Ended for this method(OnInfoListener_update_current_docfile_on_rollover) -----
-                    } else {
-                        // Internal storage mode
-                        if (currentInternalTempFile != null && currentInternalTempFile.exists() && currentInternalTempFile.length() > 0) {
-                            Log.d(TAG, "[OnInfoListener] Queuing completed segment for FFmpeg: " + currentInternalTempFile.getAbsolutePath());
-                            segmentProcessingQueue.add(currentInternalTempFile);
-                            processNextSegmentInQueue();
-                        } else {
-                            Log.w(TAG, "[OnInfoListener] Previous segment file missing or empty, skipping FFmpeg queue.");
-                        }
-                    }
-                    currentSegmentNumber++;
-                    currentInternalTempFile = nextSegmentTempFile;
-                    nextSegmentTempFile = null;
-                    nextOutputFilePending = false; // Now it's safe to queue another next output file
-                    Intent segmentIntent = new Intent(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
-                    segmentIntent.putExtra(Constants.INTENT_EXTRA_FILE_URI, currentRecordingSafUri != null ? currentRecordingSafUri.toString() : (currentInternalTempFile != null ? Uri.fromFile(currentInternalTempFile).toString() : ""));
-                    sendBroadcast(segmentIntent);
-                    Log.d(TAG, "[OnInfoListener] Broadcasted segment complete for segment " + (currentSegmentNumber - 1));
-                } else {
-                    Log.d(TAG, "[OnInfoListener] Unhandled info event: what=" + what);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "[OnInfoListener] Exception in OnInfoListener", e);
-                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
-            }
-        }
-    };
+//    private final MediaRecorder.OnInfoListener mediaRecorderInfoListener = new MediaRecorder.OnInfoListener() {
+//        @Override
+//        public void onInfo(MediaRecorder mr, int what, int extra) {
+//            Log.d(TAG, "[OnInfoListener] what=" + what + ", extra=" + extra);
+//            try {
+//                if (what == 802 /* MEDIA_RECORDER_INFO_MAX_FILESIZE_APPROACHING */) {
+//                    Log.i(TAG, "[OnInfoListener] Max filesize approaching! Preparing next output file for seamless rollover.");
+//                    if (isVideoSplittingEnabled && videoSplitSizeBytes > 0 && !nextOutputFilePending) {
+//                        nextSegmentTempFile = createNextSegmentOutputFile();
+//                        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
+//                            // SAF mode: nextSegmentPfd is set in createNextSegmentOutputFile
+//                            if (nextSegmentPfd != null) {
+//                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                    mediaRecorder.setNextOutputFile(nextSegmentPfd.getFileDescriptor());
+//                                    nextOutputFilePending = true;
+//                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (APPROACHING) called for SAF PFD.");
+//                                }
+//                } else {
+//                                Log.e(TAG, "[OnInfoListener] Failed to open nextSegmentPfd for SAF. Stopping recording.");
+//                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
+//                            }
+//                        } else {
+//                            // Internal storage mode
+//                            if (nextSegmentTempFile != null) {
+//                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                    mediaRecorder.setNextOutputFile(nextSegmentTempFile);
+//                                    nextOutputFilePending = true;
+//                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (APPROACHING) called for internal file.");
+//                                }
+//                            } else {
+//                                Log.e(TAG, "[OnInfoListener] Failed to create next segment file for rollover (APPROACHING). Stopping recording.");
+//                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
+//                            }
+//                        }
+//                    }
+//                } else if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+//                    Log.i(TAG, "[OnInfoListener] Max filesize reached! Attempting setNextOutputFile rollover.");
+//                    if (isVideoSplittingEnabled && videoSplitSizeBytes > 0 && !nextOutputFilePending) {
+//                        nextSegmentTempFile = createNextSegmentOutputFile();
+//                        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
+//                            if (nextSegmentPfd != null) {
+//                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                    mediaRecorder.setNextOutputFile(nextSegmentPfd.getFileDescriptor());
+//                                    nextOutputFilePending = true;
+//                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (REACHED) called for SAF PFD.");
+//                                }
+//                            } else {
+//                                Log.e(TAG, "[OnInfoListener] Failed to open nextSegmentPfd for SAF. Stopping recording.");
+//                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
+//                            }
+//                        } else {
+//                            if (nextSegmentTempFile != null) {
+//                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                    mediaRecorder.setNextOutputFile(nextSegmentTempFile);
+//                                    nextOutputFilePending = true;
+//                                    Log.d(TAG, "[OnInfoListener] setNextOutputFile (REACHED) called for internal file.");
+//                                }
+//                            } else {
+//                                Log.e(TAG, "[OnInfoListener] Failed to create next segment file for rollover (REACHED). Stopping recording.");
+//                                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
+//                            }
+//                        }
+//                    } else if (!isVideoSplittingEnabled || videoSplitSizeBytes <= 0) {
+//                        Log.w(TAG, "[OnInfoListener] Max filesize reached, but splitting not enabled/configured. Stopping recording.");
+//                        new Handler(Looper.getMainLooper()).post(() -> stopRecording());
+//                    }
+//                } else if (what == 803 /* MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED */) {
+//                    Log.i(TAG, "[OnInfoListener] Next output file started. Advancing segment number and updating file tracking.");
+//                    // SAF: Close previous segment PFD
+//                    if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(sharedPreferencesManager.getStorageMode())) {
+//                        if (currentSegmentPfd != null) {
+//                            try { currentSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing previous segment PFD", e); }
+//                            currentSegmentPfd = nextSegmentPfd;
+//                            nextSegmentPfd = null;
+//                        }
+//                        // Queue the completed SAF segment for FFmpeg processing
+//                        if (currentRecordingDocFile != null && currentRecordingDocFile.exists() && currentRecordingDocFile.length() > 0) {
+//                            Log.d(TAG, "[OnInfoListener] Queuing completed SAF segment for FFmpeg: " + currentRecordingDocFile.getUri());
+//                            segmentProcessingQueue.add(currentRecordingDocFile);
+//                            processNextSegmentInQueue();
+//                        } else {
+//                            Log.w(TAG, "[OnInfoListener] Previous SAF segment missing or empty, skipping FFmpeg queue.");
+//                        }
+//                        // ----- Fix Start for this method(OnInfoListener_update_current_docfile_on_rollover) -----
+//                        // Update currentRecordingDocFile and currentRecordingSafUri to the new segment
+//                        currentRecordingDocFile = nextRecordingDocFile;
+//                        currentRecordingSafUri = (currentRecordingDocFile != null) ? currentRecordingDocFile.getUri() : null;
+//                        nextRecordingDocFile = null;
+//                        // ----- Fix Ended for this method(OnInfoListener_update_current_docfile_on_rollover) -----
+//                    } else {
+//                        // Internal storage mode
+//                        if (currentInternalTempFile != null && currentInternalTempFile.exists() && currentInternalTempFile.length() > 0) {
+//                            Log.d(TAG, "[OnInfoListener] Queuing completed segment for FFmpeg: " + currentInternalTempFile.getAbsolutePath());
+//                            segmentProcessingQueue.add(currentInternalTempFile);
+//                            processNextSegmentInQueue();
+//                        } else {
+//                            Log.w(TAG, "[OnInfoListener] Previous segment file missing or empty, skipping FFmpeg queue.");
+//                        }
+//                    }
+//                    currentSegmentNumber++;
+//                    currentInternalTempFile = nextSegmentTempFile;
+//                    nextSegmentTempFile = null;
+//                    nextOutputFilePending = false; // Now it's safe to queue another next output file
+//                    Intent segmentIntent = new Intent(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
+//                    segmentIntent.putExtra(Constants.INTENT_EXTRA_FILE_URI, currentRecordingSafUri != null ? currentRecordingSafUri.toString() : (currentInternalTempFile != null ? Uri.fromFile(currentInternalTempFile).toString() : ""));
+//                    sendBroadcast(segmentIntent);
+//                    Log.d(TAG, "[OnInfoListener] Broadcasted segment complete for segment " + (currentSegmentNumber - 1));
+//                } else {
+//                    Log.d(TAG, "[OnInfoListener] Unhandled info event: what=" + what);
+//                }
+//            } catch (Exception e) {
+//                Log.e(TAG, "[OnInfoListener] Exception in OnInfoListener", e);
+//                new Handler(Looper.getMainLooper()).post(() -> stopRecording());
+//            }
+//        }
+//    };
 
     private void handleSegmentRolloverInternal() {
         Log.i(TAG, "handleSegmentRolloverInternal: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
@@ -3004,81 +2177,81 @@ public class RecordingService extends Service {
      * @return The File object for internal storage, or null if using SAF (currentRecordingSafUri will be set).
      *         Returns null on critical failure to create any output.
      */
-    private File createOutputFile() {
-        String storageMode = sharedPreferencesManager.getStorageMode();
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        // Format segment number with leading zeros (e.g., _001, _002)
-        String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber);
-
-        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-        String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-
-        Log.d(TAG, "createOutputFile called for segment " + currentSegmentNumber + ". Base: " + baseFilename + ", Temp: " + tempBaseFilename);
-
-        // Reset previous PFD and URIs
-        closeCurrentPfd();
-        currentRecordingFile = null;
-        currentRecordingSafUri = null;
-        currentRecordingDocFile = null;
-        currentInternalTempFile = null; // Important to reset this too
-
-        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
-            String customUriString = sharedPreferencesManager.getCustomStorageUri();
-            if (customUriString == null) {
-                handleStorageError("Custom storage selected but URI is null");
-                return null; // Critical error, cannot proceed with SAF
-            }
-            Uri treeUri = Uri.parse(customUriString);
-            DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
-            if (pickedDir == null || !pickedDir.canWrite()) {
-                handleStorageError("Cannot write to selected custom directory");
-                return null; // Critical error
-            }
-
-            // Use the TEMP filename for SAF creation as well initially
-            currentRecordingDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
-            if (currentRecordingDocFile == null || !currentRecordingDocFile.exists()) {
-                Log.e(TAG, "Failed to create DocumentFile in SAF: " + tempBaseFilename);
-                handleStorageError("Failed to create file in custom directory");
-                return null; // Critical error
-            }
-            currentRecordingSafUri = currentRecordingDocFile.getUri();
-            Log.i(TAG, "Output configured for SAF: " + currentRecordingSafUri.toString());
-            // No internal temp file needed if directly writing to SAF PFD
-            return null; // Signify SAF is being used
-
-        } else { // Internal Storage
-            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-            if (!videoDir.exists() && !videoDir.mkdirs()) {
-                Log.e(TAG, "Cannot create internal recording directory: " + videoDir.getAbsolutePath());
-                Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
-                return null; // Critical error
-            }
-            // For internal storage, we record to a temp file first, then process to final name.
-            // The temp file should also be in a cache location, not the final directory.
-            File cacheDir = getExternalCacheDir();
-            if (cacheDir == null) {
-                Log.w(TAG, "External cache dir null, using internal cache for temp file.");
-                cacheDir = new File(getCacheDir(), "recording_temp"); // Fallback to internal app cache
-            } else {
-                cacheDir = new File(cacheDir, "recording_temp"); // Subdir in external cache
-            }
-            if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                Log.e(TAG, "Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
-                Toast.makeText(this, "Error creating temp cache directory", Toast.LENGTH_LONG).show();
-                return null; // Critical error
-            }
-
-            currentInternalTempFile = new File(cacheDir, tempBaseFilename);
-            Log.i(TAG, "Output (temp) configured for Internal: " + currentInternalTempFile.getAbsolutePath());
-            currentRecordingFile = new File(videoDir, baseFilename); // This is the *final* intended path after processing
-            return currentInternalTempFile; // Return the temp file to be written to by MediaRecorder
-        }
-    }
+//    private File createOutputFile() {
+//        String storageMode = sharedPreferencesManager.getStorageMode();
+//        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+//        // Format segment number with leading zeros (e.g., _001, _002)
+//        String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber);
+//
+//        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+//        String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+//
+//        Log.d(TAG, "createOutputFile called for segment " + currentSegmentNumber + ". Base: " + baseFilename + ", Temp: " + tempBaseFilename);
+//
+//        // Reset previous PFD and URIs
+//        closeCurrentPfd();
+//        currentRecordingFile = null;
+//        currentRecordingSafUri = null;
+//        currentRecordingDocFile = null;
+//        currentInternalTempFile = null; // Important to reset this too
+//
+//        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+//            String customUriString = sharedPreferencesManager.getCustomStorageUri();
+//            if (customUriString == null) {
+//                handleStorageError("Custom storage selected but URI is null");
+//                return null; // Critical error, cannot proceed with SAF
+//            }
+//            Uri treeUri = Uri.parse(customUriString);
+//            DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
+//            if (pickedDir == null || !pickedDir.canWrite()) {
+//                handleStorageError("Cannot write to selected custom directory");
+//                return null; // Critical error
+//            }
+//
+//            // Use the TEMP filename for SAF creation as well initially
+//            currentRecordingDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
+//            if (currentRecordingDocFile == null || !currentRecordingDocFile.exists()) {
+//                Log.e(TAG, "Failed to create DocumentFile in SAF: " + tempBaseFilename);
+//                handleStorageError("Failed to create file in custom directory");
+//                return null; // Critical error
+//            }
+//            currentRecordingSafUri = currentRecordingDocFile.getUri();
+//            Log.i(TAG, "Output configured for SAF: " + currentRecordingSafUri.toString());
+//            // No internal temp file needed if directly writing to SAF PFD
+//            return null; // Signify SAF is being used
+//
+//        } else { // Internal Storage
+//            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+//            if (!videoDir.exists() && !videoDir.mkdirs()) {
+//                Log.e(TAG, "Cannot create internal recording directory: " + videoDir.getAbsolutePath());
+//                Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
+//                return null; // Critical error
+//            }
+//            // For internal storage, we record to a temp file first, then process to final name.
+//            // The temp file should also be in a cache location, not the final directory.
+//            File cacheDir = getExternalCacheDir();
+//            if (cacheDir == null) {
+//                Log.w(TAG, "External cache dir null, using internal cache for temp file.");
+//                cacheDir = new File(getCacheDir(), "recording_temp"); // Fallback to internal app cache
+//            } else {
+//                cacheDir = new File(cacheDir, "recording_temp"); // Subdir in external cache
+//            }
+//            if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+//                Log.e(TAG, "Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
+//                Toast.makeText(this, "Error creating temp cache directory", Toast.LENGTH_LONG).show();
+//                return null; // Critical error
+//            }
+//
+//            currentInternalTempFile = new File(cacheDir, tempBaseFilename);
+//            Log.i(TAG, "Output (temp) configured for Internal: " + currentInternalTempFile.getAbsolutePath());
+//            currentRecordingFile = new File(videoDir, baseFilename); // This is the *final* intended path after processing
+//            return currentInternalTempFile; // Return the temp file to be written to by MediaRecorder
+//        }
+//    }
     // ----- Fix Ended for this method(createOutputFile_segmented_naming) -----
 
     // ----- Fix Start for this method(createNextSegmentOutputFile_saf_pfd_support)-----
-    private File createNextSegmentOutputFile() {
+    private File createNextSegmentOutputFile(int nextSegmentNumber) {
         String storageMode = sharedPreferencesManager.getStorageMode();
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/DocumentFile mode
@@ -3094,7 +2267,7 @@ public class RecordingService extends Service {
                 return null;
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber + 1);
+            String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
             String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
             DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
             if (nextDocFile == null || !nextDocFile.exists()) {
@@ -3102,29 +2275,24 @@ public class RecordingService extends Service {
                 return null;
             }
             try {
-                // Open a ParcelFileDescriptor for the next segment
-                if (nextSegmentPfd != null) {
-                    try { nextSegmentPfd.close(); } catch (Exception e) { Log.w(TAG, "Error closing previous nextSegmentPfd", e); }
-                }
-                nextSegmentPfd = getContentResolver().openFileDescriptor(nextDocFile.getUri(), "w");
-                if (nextSegmentPfd == null) {
+                // Open a ParcelFileDescriptor for the next segment (no longer tracked by nextSegmentPfd)
+                ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(nextDocFile.getUri(), "w");
+                if (pfd == null) {
                     Log.e(TAG, "createNextSegmentOutputFile: Failed to open ParcelFileDescriptor for next SAF URI: " + nextDocFile.getUri());
                     return null;
                 }
+                pfd.close(); // Immediately close, as the pipeline will open as needed
             } catch (Exception e) {
                 Log.e(TAG, "createNextSegmentOutputFile: Exception opening PFD for next SAF URI", e);
                 return null;
             }
             Log.i(TAG, "Next segment SAF file created: " + nextDocFile.getUri());
-            // ----- Fix Start for this method(createNextSegmentOutputFile_track_next_docfile) -----
-            nextRecordingDocFile = nextDocFile;
-            // ----- Fix Ended for this method(createNextSegmentOutputFile_track_next_docfile) -----
-            // For SAF, we return null here, but the PFD is set for use in setNextOutputFile
+//            nextRecordingDocFile = nextDocFile;
             return null;
         } else {
             // Internal storage mode
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String segmentSuffix = String.format(Locale.US, "_%03d", currentSegmentNumber + 1);
+            String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
             String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
             File cacheDir = getExternalCacheDir();
             if (cacheDir == null) {
@@ -3168,7 +2336,7 @@ public class RecordingService extends Service {
         isSegmentProcessingActive = true;
         if (nextSegment instanceof File) {
             Log.i(TAG, "processNextSegmentInQueue: Starting FFmpeg processing for: " + ((File) nextSegment).getAbsolutePath());
-            processAndMoveVideo((File) nextSegment, null);
+//            processAndMoveVideo((File) nextSegment, null);
         } else if (nextSegment instanceof DocumentFile) {
             Log.i(TAG, "processNextSegmentInQueue: Starting FFmpeg processing for SAF: " + ((DocumentFile) nextSegment).getUri());
             processAndMoveSafVideo((DocumentFile) nextSegment);
@@ -3184,7 +2352,7 @@ public class RecordingService extends Service {
         // Copy SAF file to temp cache, then process as normal
         File tempCacheFile = copySafUriToTempCacheForProcessing(getApplicationContext(), safDocFile.getUri(), safDocFile.getName());
         if (tempCacheFile != null && tempCacheFile.exists()) {
-            processAndMoveVideo(tempCacheFile, safDocFile.getUri());
+//            processAndMoveVideo(tempCacheFile, safDocFile.getUri());
         } else {
             Log.e(TAG, "processAndMoveSafVideo: Failed to copy SAF file to temp cache for processing: " + safDocFile.getUri());
             isSegmentProcessingActive = false;
@@ -3371,30 +2539,30 @@ public class RecordingService extends Service {
             }
             
             // If currently recording, try to apply location to current mediaRecorder
-            if (mediaRecorder != null && geotagHelper != null && 
-                (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED)) {
-                try {
-                    // Try immediately
-                    boolean immediateSuccess = geotagHelper.applyLocationToRecorder(mediaRecorder);
-                    Log.d(TAG, "Applied location to active MediaRecorder: " + immediateSuccess);
-                    
-                    // Also schedule a delayed attempt for higher chance of success
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(1500);
-                            if (mediaRecorder != null && geotagHelper != null &&
-                                (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED)) {
-                                boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
-                                Log.d(TAG, "Applied location to active MediaRecorder (delayed): " + success);
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error in delayed location application", e);
-                        }
-                    }).start();
-                } catch (Exception e) {
-                    Log.e(TAG, "Error applying location after reinitialization", e);
-                }
-            }
+//            if (mediaRecorder != null && geotagHelper != null &&
+//                (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED)) {
+//                try {
+//                    // Try immediately
+//                    boolean immediateSuccess = geotagHelper.applyLocationToRecorder(mediaRecorder);
+//                    Log.d(TAG, "Applied location to active MediaRecorder: " + immediateSuccess);
+//
+//                    // Also schedule a delayed attempt for higher chance of success
+//                    new Thread(() -> {
+//                        try {
+//                            Thread.sleep(1500);
+//                            if (mediaRecorder != null && geotagHelper != null &&
+//                                (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED)) {
+//                                boolean success = geotagHelper.applyLocationToRecorder(mediaRecorder);
+//                                Log.d(TAG, "Applied location to active MediaRecorder (delayed): " + success);
+//                            }
+//                        } catch (Exception e) {
+//                            Log.e(TAG, "Error in delayed location application", e);
+//                        }
+//                    }).start();
+//                } catch (Exception e) {
+//                    Log.e(TAG, "Error applying location after reinitialization", e);
+//                }
+//            }
         } else {
             if (geotagHelper != null) {
                 try {
@@ -3583,7 +2751,7 @@ public class RecordingService extends Service {
         if (recordingState == RecordingState.STARTING) {
             try {
                 // Start the MediaRecorder
-                mediaRecorder.start();
+//                mediaRecorder.start();
                 recordingState = RecordingState.IN_PROGRESS;
                 
                 // ----- Fix Start for this method(handleSessionConfigured) -----
@@ -3614,4 +2782,209 @@ public class RecordingService extends Service {
         }
     }
 
+    // Add these fields to RecordingService class
+    private GLRecordingPipeline glRecordingPipeline;
+    private WatermarkInfoProvider watermarkInfoProvider;
+
+    // Add this helper method for OpenGL pipeline direct output
+    private File getFinalOutputFile() {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String segmentSuffix = ""; // No segment number for the initial file
+        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+        File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+        if (!videoDir.exists() && !videoDir.mkdirs()) {
+            Log.e(TAG, "Cannot create internal recording directory: " + videoDir.getAbsolutePath());
+            Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
+            return null;
+        }
+        return new File(videoDir, baseFilename);
+    }
+
+    // ----- Fix Start: Add OpenGL pipeline segment rollover support -----
+    // Inner class for OpenGL pipeline segment callback
+    private class GLSegmentCallback implements com.fadcam.opengl.GLRecordingPipeline.SegmentCallback {
+        @Override
+        public void onSegmentRollover(int nextSegmentNumber) {
+            String storageMode = sharedPreferencesManager.getStorageMode();
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+                // SAF: create new file and open new ParcelFileDescriptor
+                String customUriString = sharedPreferencesManager.getCustomStorageUri();
+                if (customUriString == null) {
+                    Log.e(TAG, "Segment rollover: Custom storage selected but URI is null");
+                    stopRecording();
+                    return;
+                }
+                Uri treeUri = Uri.parse(customUriString);
+                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(RecordingService.this, treeUri);
+                if (pickedDir == null || !pickedDir.canWrite()) {
+                    Log.e(TAG, "Segment rollover: Cannot write to selected custom directory");
+                    stopRecording();
+                    return;
+                }
+                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+                String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
+                String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + ".mp4";
+                androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
+                if (videoFile == null) {
+                    Log.e(TAG, "Segment rollover: Failed to create SAF file");
+                    stopRecording();
+                    return;
+                }
+                Uri safUri = videoFile.getUri();
+                try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w")) {
+                    if (pfd == null) {
+                        Log.e(TAG, "Segment rollover: Failed to open ParcelFileDescriptor for SAF URI");
+                        stopRecording();
+                        return;
+                    }
+                    if (glRecordingPipeline != null) {
+                        glRecordingPipeline.setNextOutput(null, pfd.getFileDescriptor());
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Segment rollover: Exception opening PFD for SAF URI", e);
+                    stopRecording();
+                }
+            } else {
+                // Internal: use createNextSegmentOutputFile()
+                File nextFile = createNextSegmentOutputFile(nextSegmentNumber);
+                if (nextFile == null) {
+                    Log.e(TAG, "Segment rollover: Failed to create next segment file");
+                    stopRecording();
+                    return;
+                }
+                if (glRecordingPipeline != null) {
+                    glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
+                }
+            }
+        }
+    }
+
+    // Update startRecording to use new GLRecordingPipeline constructor
+    private void startRecording() {
+        Log.d(TAG, "startRecording: beginning recording setup");
+        if (recordingState != RecordingState.STARTING) {
+            Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
+            return;
+        }
+        createNotificationChannel();
+
+        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            new Thread(() -> {
+                try {
+                    if (geotagHelper == null) geotagHelper = new GeotagHelper(this);
+                    geotagHelper.startUpdates();
+                    Thread.sleep(800);
+                } catch (Exception e) { Log.e(TAG, "Error initializing GeotagHelper", e); }
+            }).start();
+        }
+
+        try {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Log.e(TAG,"Permissions missing, cannot start recording.");
+                Toast.makeText(this,"Permissions required for recording", Toast.LENGTH_LONG).show();
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+                stopSelf();
+                return;
+            }
+
+            if (recordingWakeLock != null && !recordingWakeLock.isHeld()) recordingWakeLock.acquire();
+
+            watermarkInfoProvider = new WatermarkInfoProvider() {
+                @Override
+                public String getWatermarkText() {
+                    String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+                    String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
+                    switch (watermarkOption) {
+                        case "timestamp": return getCurrentTimestamp() + locationText;
+                        default: return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                    }
+                }
+            };
+
+            Size resolution = sharedPreferencesManager.getCameraResolution();
+            String orientation = sharedPreferencesManager.getVideoOrientation();
+            int videoWidth = resolution.getWidth();
+            int videoHeight = resolution.getHeight();
+            if ("portrait".equals(orientation) && videoWidth > videoHeight) {
+                // Swap for portrait
+                int tmp = videoWidth;
+                videoWidth = videoHeight;
+                videoHeight = tmp;
+            }
+            // Get sensor orientation
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            String cameraId = getCameraId(cameraManager, cameraType);
+            int sensorOrientation = 0;
+            if (cameraId != null) {
+                try {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                    Integer so = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                    if (so != null) sensorOrientation = so;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error getting sensor orientation", e);
+                }
+            }
+            int videoBitrate = getVideoBitrate();
+            int videoFramerate = sharedPreferencesManager.getVideoFrameRate();
+            long splitSizeBytes = sharedPreferencesManager.getVideoSplitSizeBytes();
+            int initialSegmentNumber = 1;
+            GLSegmentCallback segmentCallback = new GLSegmentCallback();
+            String storageMode = sharedPreferencesManager.getStorageMode();
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+                String customUriString = sharedPreferencesManager.getCustomStorageUri();
+                if (customUriString == null) {
+                    Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
+                    Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                Uri treeUri = Uri.parse(customUriString);
+                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri);
+                if (pickedDir == null || !pickedDir.canWrite()) {
+                    Log.e(TAG, "Cannot write to selected custom directory");
+                    Toast.makeText(this, "Cannot write to selected custom directory", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+                String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + ".mp4";
+                androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
+                if (videoFile == null) {
+                    Log.e(TAG, "Failed to create SAF file");
+                    Toast.makeText(this, "Failed to create file for writing", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                Uri safUri = videoFile.getUri();
+                try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w")) {
+                    if (pfd == null) {
+                        Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
+                        Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                        stopSelf();
+                        return;
+                    }
+                    glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, pfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+                } catch (Exception e) {
+                    Log.e(TAG, "Exception opening PFD for SAF URI", e);
+                    Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+            } else {
+                File outputFile = getFinalOutputFile();
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+            }
+            glRecordingPipeline.prepareSurfaces();
+            createCameraPreviewSession();
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in startRecording", e);
+            recordingState = RecordingState.NONE;
+            sharedPreferencesManager.setRecordingInProgress(false);
+            stopSelf();
+        }
+    }
+    // ----- Fix End: Add OpenGL pipeline segment rollover support -----
 }

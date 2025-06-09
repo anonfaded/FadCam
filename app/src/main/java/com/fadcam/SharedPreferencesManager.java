@@ -497,4 +497,15 @@ public class SharedPreferencesManager {
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_applock) -----
 
+    // ----- Fix Start for this method(getVideoSplitSizeBytes)-----
+    /**
+     * Returns the video split size in bytes, based on the value in MB.
+     * @return Split size in bytes
+     */
+    public long getVideoSplitSizeBytes() {
+        int mb = getVideoSplitSizeMb();
+        return mb > 0 ? mb * 1024L * 1024L : 0L;
+    }
+    // ----- Fix Ended for this method(getVideoSplitSizeBytes)-----
+
 }
