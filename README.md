@@ -1,6 +1,9 @@
 <div align="center">
     
-<img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >
+<!-- <img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >  this is the old banner -->
+
+<img src="https://github.com/user-attachments/assets/0539bee3-5d70-4486-adbd-b69c9420a19f" style="width: 900px; height: auto;" >
+
 
 <!-- https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365 -->
 
