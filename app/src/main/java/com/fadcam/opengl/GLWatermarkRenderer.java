@@ -16,6 +16,7 @@ import android.opengl.GLUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.opengl.Matrix;
+import android.opengl.EGLExt;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -62,19 +63,20 @@ public class GLWatermarkRenderer {
     private int oesTexCoordHandle = 0;
     private int oesTextureHandle = 0;
     private int oesRotationHandle = -1;
+    private int transformHandle = -1;
     private FloatBuffer vertexBuffer;
     private FloatBuffer texCoordBuffer;
     private static final float[] VERTICES = {
-        -1.0f, -1.0f,
-         1.0f, -1.0f,
-        -1.0f,  1.0f,
-         1.0f,  1.0f
+        -1.0f, -1.0f,  // bottom left
+         1.0f, -1.0f,  // bottom right
+        -1.0f,  1.0f,  // top left
+         1.0f,  1.0f   // top right
     };
     private static final float[] TEXCOORDS = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 0.0f
+        0.0f, 1.0f,  // bottom left
+        1.0f, 1.0f,  // bottom right
+        0.0f, 0.0f,  // top left
+        1.0f, 0.0f   // top right
     };
 
     private volatile boolean frameAvailable = false;
@@ -97,6 +99,11 @@ public class GLWatermarkRenderer {
     private final int sensorOrientation;
     private final int videoWidth;
     private final int videoHeight;
+    private final float targetAspectRatio;  // The desired aspect ratio based on selected resolution
+
+    // Transform matrix for texture coordinates
+    private final float[] transformMatrix = new float[16];
+    private boolean watermarkEnabled = true; // Default to true since watermark is a core feature
 
     public interface OnFrameAvailableListener {
         void onFrameAvailable();
@@ -135,12 +142,29 @@ public class GLWatermarkRenderer {
         this.sensorOrientation = sensorOrientation;
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
+        
+        // Store the literal aspect ratio of the selected resolution
+        this.targetAspectRatio = (float) videoWidth / videoHeight;
+        
         watermarkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         watermarkPaint.setColor(0xFFFFFFFF);
         watermarkPaint.setTextSize(48f);
         watermarkPaint.setShadowLayer(4f, 2f, 2f, 0xFF000000);
+        
         // Do NOT call any GLES20 function here!
         setupOESTexture();
+    }
+
+    /**
+     * Determines the target aspect ratio based on resolution dimensions
+     * @param width Width of selected resolution
+     * @param height Height of selected resolution
+     * @return Target aspect ratio (width/height)
+     */
+    private float determineTargetAspectRatio(int width, int height) {
+        // Simply return the exact aspect ratio of the selected resolution
+        // We're not trying to fit it into any standard ratio anymore
+        return (float) width / height;
     }
 
     private void setupEGL() {
@@ -155,15 +179,24 @@ public class GLWatermarkRenderer {
             Log.e(TAG, "Unable to initialize EGL14");
             return;
         }
-        // 2. Choose EGL config
+
+        // 2. Choose EGL config with RGB888 and proper buffer settings
         int[] attribList = {
             EGL14.EGL_RED_SIZE, 8,
             EGL14.EGL_GREEN_SIZE, 8,
             EGL14.EGL_BLUE_SIZE, 8,
             EGL14.EGL_ALPHA_SIZE, 8,
             EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+            // Add buffer configuration
+            EGL14.EGL_BUFFER_SIZE, 32,
+            EGL14.EGL_DEPTH_SIZE, 16,
+            EGL14.EGL_STENCIL_SIZE, 0,
+            EGL14.EGL_SAMPLE_BUFFERS, 0,
+            // Ensure direct rendering to avoid intermediate copies
+            EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
             EGL14.EGL_NONE
         };
+
         EGLConfig[] configs = new EGLConfig[1];
         int[] numConfigs = new int[1];
         if (!EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0)) {
@@ -171,7 +204,8 @@ public class GLWatermarkRenderer {
             return;
         }
         EGLConfig eglConfig = configs[0];
-        // 3. Create EGL context
+
+        // 3. Create EGL context with proper flags
         int[] contextAttribs = {
             EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
             EGL14.EGL_NONE
@@ -181,8 +215,11 @@ public class GLWatermarkRenderer {
             Log.e(TAG, "Unable to create EGL context");
             return;
         }
-        // 4. Create EGL window surface
+
+        // 4. Create EGL window surface with proper attributes
         int[] surfaceAttribs = {
+            // Ensure proper buffer behavior
+            EGL14.EGL_RENDER_BUFFER, EGL14.EGL_BACK_BUFFER,
             EGL14.EGL_NONE
         };
         eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
@@ -190,19 +227,25 @@ public class GLWatermarkRenderer {
             Log.e(TAG, "Unable to create EGL window surface");
             return;
         }
-        // 5. Make context current
+
+        // 5. Make context current and verify configuration
         if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
             Log.e(TAG, "Unable to make EGL context current");
             return;
         }
-        // After eglMakeCurrent, log OpenGL version and setup shaders
-        Log.d(TAG, "OpenGL version: " + GLES20.glGetString(GLES20.GL_VERSION));
+
+        // Verify the configuration
+        int[] value = new int[1];
+        EGL14.eglQueryContext(eglDisplay, eglContext, EGL14.EGL_CONTEXT_CLIENT_VERSION, value, 0);
+        Log.d(TAG, "EGL Context Client Version: " + value[0]);
+        
+        // After eglMakeCurrent, setup shaders
         setupSimpleWatermarkShader();
         setupOESShader();
     }
 
     private void setupOESTexture() {
-        // Generate OES texture
+        // Generate OES texture with proper parameters
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
         oesTextureId = textures[0];
@@ -212,8 +255,28 @@ public class GLWatermarkRenderer {
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
-        // Create SurfaceTexture and Surface for camera input
+        // Create SurfaceTexture for camera input
         cameraSurfaceTexture = new SurfaceTexture(oesTextureId);
+        
+        // CRITICAL: Set buffer size based on video orientation to ensure proper aspect ratio
+        // Note: Camera sensors are naturally landscape, so buffer dimensions need to be set accordingly
+        if ("portrait".equalsIgnoreCase(orientation)) {
+            // For portrait videos, we need to swap width and height for proper orientation
+            cameraSurfaceTexture.setDefaultBufferSize(videoHeight, videoWidth);
+        } else {
+            // For landscape videos, use normal dimensions
+            cameraSurfaceTexture.setDefaultBufferSize(videoWidth, videoHeight);
+        }
+        
+        cameraSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                synchronized (frameSyncObject) {
+                    frameAvailable = true;
+                    frameSyncObject.notifyAll();
+                }
+            }
+        });
         cameraInputSurface = new Surface(cameraSurfaceTexture);
     }
 
@@ -260,50 +323,86 @@ public class GLWatermarkRenderer {
             setupEGL();
             initialized = true;
         }
+
         try {
-            // Make EGL context current for encoder
+            // Make EGL context current
             if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
                 Log.e(TAG, "eglMakeCurrent failed: " + EGL14.eglGetError());
                 return;
             }
-            // Wait for a new frame
+
+            // Wait for new frame
             synchronized (frameSyncObject) {
                 while (!frameAvailable) {
                     try {
-                        frameSyncObject.wait(250); // Timeout to avoid deadlock
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, "Frame wait interrupted", e);
-                        return;
+                        frameSyncObject.wait(1000000 / 30); // 33ms timeout
+                        if (!frameAvailable) {
+                            Log.w(TAG, "Frame wait timed out");
+                            return;
+                        }
+                    } catch (InterruptedException ie) {
+                        throw new RuntimeException(ie);
                     }
                 }
                 frameAvailable = false;
             }
-            // Update camera frame
+
+            // Update texture with new frame
             if (cameraSurfaceTexture != null) {
-                try {
-                    cameraSurfaceTexture.updateTexImage();
-                    long ts = cameraSurfaceTexture.getTimestamp();
-                    Log.d(TAG, "updateTexImage: timestamp=" + ts);
-                } catch (Exception e) {
-                    Log.e(TAG, "SurfaceTexture.updateTexImage() failed", e);
-                    return;
-                }
+                cameraSurfaceTexture.updateTexImage();
+                cameraSurfaceTexture.getTransformMatrix(transformMatrix);
             }
-            GLES20.glClearColor(0, 0, 0, 1);
+
+            // Clear the surface with black
+            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-            // Draw OES camera frame
-            drawOESTexture();
-            // Draw watermark overlay
-            drawWatermarkTexture();
-            int error = GLES20.glGetError();
-            if (error != GLES20.GL_NO_ERROR) {
-                Log.e(TAG, "GL error after draw: " + error);
+
+            // Set viewport to the exact dimensions of our output surface
+            GLES20.glViewport(0, 0, videoWidth, videoHeight);
+
+            // Apply a fixed rotation based on the initial orientation and sensor orientation
+            // This ensures the video is correctly oriented (portrait or landscape) from the start
+            float[] rotationMatrix = new float[16];
+            Matrix.setIdentityM(rotationMatrix, 0);
+            
+            // CRITICAL: Apply orientation based on requested video orientation, not device rotation
+            // For portrait videos
+            if ("portrait".equalsIgnoreCase(orientation)) {
+                if (sensorOrientation == 90) { // Back camera
+                    Matrix.rotateM(rotationMatrix, 0, 270, 0, 0, 1.0f);
+                } else if (sensorOrientation == 270) { // Front camera
+                    Matrix.rotateM(rotationMatrix, 0, 90, 0, 0, 1.0f);
+                }
+            } 
+            // For landscape videos
+            else {
+                if (sensorOrientation == 90) { // Back camera
+                    Matrix.rotateM(rotationMatrix, 0, 180, 0, 0, 1.0f);
+                }
+                // For front camera in landscape, use identity matrix
             }
+
+            // Apply the camera frame with fixed orientation - no dynamic rotation
+            drawOESTexture(rotationMatrix);
+            
+            // Draw watermark if needed
+            if (watermarkEnabled) {
+                drawWatermarkTexture();
+            }
+
+            // Ensure GL commands complete
+            GLES20.glFinish();
+
+            // Present frame with timestamp
+            EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, 
+                cameraSurfaceTexture != null ? cameraSurfaceTexture.getTimestamp() : System.nanoTime());
+            
             if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
                 Log.e(TAG, "eglSwapBuffers failed: " + EGL14.eglGetError());
             }
+
         } catch (Exception e) {
-            Log.e(TAG, "Error rendering frame", e);
+            Log.e(TAG, "Exception in renderFrame", e);
         }
     }
 
@@ -469,19 +568,24 @@ public class GLWatermarkRenderer {
                 "attribute vec4 aPosition;\n" +
                 "attribute vec2 aTexCoord;\n" +
                 "uniform mat4 uRotation;\n" +
+                "uniform mat4 uTransform;\n" +
                 "varying vec2 vTexCoord;\n" +
                 "void main() {\n" +
                 "    gl_Position = uRotation * aPosition;\n" +
-                "    vTexCoord = aTexCoord;\n" +
+                "    vec4 texCoordVec = vec4(aTexCoord, 0.0, 1.0);\n" +
+                "    texCoordVec = uTransform * texCoordVec;\n" +
+                "    vTexCoord = texCoordVec.xy;\n" +
                 "}";
+
         String fragmentShaderCode =
                 "#extension GL_OES_EGL_image_external : require\n" +
-                "precision mediump float;\n" +
+                "precision highp float;\n" +
                 "varying vec2 vTexCoord;\n" +
                 "uniform samplerExternalOES uTexture;\n" +
                 "void main() {\n" +
                 "    gl_FragColor = texture2D(uTexture, vTexCoord);\n" +
-                "}";
+                "}\n";
+
         int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode);
         int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode);
         oesProgram = GLES20.glCreateProgram();
@@ -492,9 +596,7 @@ public class GLWatermarkRenderer {
         oesTexCoordHandle = GLES20.glGetAttribLocation(oesProgram, "aTexCoord");
         oesTextureHandle = GLES20.glGetUniformLocation(oesProgram, "uTexture");
         oesRotationHandle = GLES20.glGetUniformLocation(oesProgram, "uRotation");
-        if (oesPositionHandle == -1 || oesTexCoordHandle == -1 || oesTextureHandle == -1 || oesRotationHandle == -1) {
-            Log.e(TAG, "OES shader attribute/uniform location not found");
-        }
+        transformHandle = GLES20.glGetUniformLocation(oesProgram, "uTransform");
         vertexBuffer = ByteBuffer.allocateDirect(VERTICES.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         vertexBuffer.put(VERTICES).position(0);
         texCoordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -518,89 +620,28 @@ public class GLWatermarkRenderer {
         return shader;
     }
 
-    private void drawOESTexture() {
+    private void drawOESTexture(float[] rotationMatrix) {
         GLES20.glUseProgram(oesProgram);
-        float scaleX = 1.0f, scaleY = 1.0f;
-        float[] scaledVertices = {
-            -scaleX, -scaleY,
-             scaleX, -scaleY,
-            -scaleX,  scaleY,
-             scaleX,  scaleY
-        };
-        vertexBuffer.clear();
-        vertexBuffer.put(scaledVertices).position(0);
 
-        // Calculate rotation based on the official Android formula
-        int deviceOrientation = 0;  // Natural orientation
-        if ("portrait".equals(orientation)) {
-            deviceOrientation = 0;
-        } else {
-            deviceOrientation = 90;  // Landscape orientation
-        }
-
-        int sign = (sensorOrientation == 90) ? -1 : 1;  // -1 for back camera, 1 for front camera
-        // Formula: rotation = (sensorOrientationDegrees - deviceOrientationDegrees * sign + 360) % 360
-        int totalRotation = (sensorOrientation - deviceOrientation * sign + 360) % 360;
-
-        // For back camera, we need to rotate an additional 180 degrees to get the correct orientation
-        if (sensorOrientation == 90) {
-            totalRotation = (totalRotation + 180) % 360;
-        }
-
-        float[] texCoords;
-        if (sensorOrientation == 90) {  // Back camera
-            if ("portrait".equals(orientation)) {
-                texCoords = new float[] {
-                    0.0f, 1.0f,  // bottom-left
-                    1.0f, 1.0f,  // bottom-right
-                    0.0f, 0.0f,  // top-left
-                    1.0f, 0.0f   // top-right
-                };
-            } else {  // Landscape
-                texCoords = new float[] {
-                    0.0f, 0.0f,  // top-left
-                    0.0f, 1.0f,  // bottom-left
-                    1.0f, 0.0f,  // top-right
-                    1.0f, 1.0f   // bottom-right
-                };
-            }
-        } else {  // Front camera (270 degrees)
-            if ("portrait".equals(orientation)) {
-                texCoords = new float[] {
-                    0.0f, 1.0f,  // bottom-left
-                    1.0f, 1.0f,  // bottom-right
-                    0.0f, 0.0f,  // top-left
-                    1.0f, 0.0f   // top-right
-                };
-            } else {  // Landscape
-                texCoords = new float[] {
-                    0.0f, 0.0f,  // top-left
-                    0.0f, 1.0f,  // bottom-left
-                    1.0f, 0.0f,  // top-right
-                    1.0f, 1.0f   // bottom-right
-                };
-            }
-        }
-
-        // Update texture coordinates
-        texCoordBuffer.clear();
-        texCoordBuffer.put(texCoords).position(0);
-
-        // Apply rotation
-        float[] rotationMatrix = new float[16];
-        Matrix.setIdentityM(rotationMatrix, 0);
-        Matrix.rotateM(rotationMatrix, 0, totalRotation, 0.0f, 0.0f, 1.0f);
-
-        // Pass matrices to shader
-        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, rotationMatrix, 0);
-
+        // Use the default vertex positions - a full screen quad
         vertexBuffer.position(0);
-        texCoordBuffer.position(0);
-
-        GLES20.glEnableVertexAttribArray(oesPositionHandle);
         GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
-        GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
+        GLES20.glEnableVertexAttribArray(oesPositionHandle);
+
+        // Apply fixed texture coordinates
+        texCoordBuffer.position(0);
         GLES20.glVertexAttribPointer(oesTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
+        GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
+
+        // Apply fixed rotation matrix that ignores device physical rotation
+        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, rotationMatrix, 0);
+        
+        // This matrix is static and doesn't change with device orientation during recording
+        // Ignore dynamic transformations that would cause distortion
+        float[] fixedTransform = new float[16];
+        Matrix.setIdentityM(fixedTransform, 0);
+        GLES20.glUniformMatrix4fv(transformHandle, 1, false, fixedTransform, 0);
+
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
         GLES20.glUniform1i(oesTextureHandle, 0);
@@ -608,6 +649,12 @@ public class GLWatermarkRenderer {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glDisableVertexAttribArray(oesPositionHandle);
         GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
+    }
+
+    private void drawOESTexture() {
+        float[] identityMatrix = new float[16];
+        Matrix.setIdentityM(identityMatrix, 0);
+        drawOESTexture(identityMatrix);
     }
 
     private void setupSimpleWatermarkShader() {
