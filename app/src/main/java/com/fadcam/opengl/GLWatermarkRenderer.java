@@ -529,26 +529,74 @@ public class GLWatermarkRenderer {
         };
         vertexBuffer.clear();
         vertexBuffer.put(scaledVertices).position(0);
-        float[] texCoords;
+
+        // Calculate rotation based on the official Android formula
+        int deviceOrientation = 0;  // Natural orientation
         if ("portrait".equals(orientation)) {
-            texCoords = new float[] {
-                1.0f, 1.0f,
-                0.0f, 1.0f,
-                1.0f, 0.0f,
-                0.0f, 0.0f
-            };
+            deviceOrientation = 0;
         } else {
-            texCoords = new float[] {
-                0.0f, 1.0f,
-                1.0f, 1.0f,
-                0.0f, 0.0f,
-                1.0f, 0.0f
-            };
+            deviceOrientation = 90;  // Landscape orientation
         }
+
+        int sign = (sensorOrientation == 90) ? -1 : 1;  // -1 for back camera, 1 for front camera
+        // Formula: rotation = (sensorOrientationDegrees - deviceOrientationDegrees * sign + 360) % 360
+        int totalRotation = (sensorOrientation - deviceOrientation * sign + 360) % 360;
+
+        // For back camera, we need to rotate an additional 180 degrees to get the correct orientation
+        if (sensorOrientation == 90) {
+            totalRotation = (totalRotation + 180) % 360;
+        }
+
+        float[] texCoords;
+        if (sensorOrientation == 90) {  // Back camera
+            if ("portrait".equals(orientation)) {
+                texCoords = new float[] {
+                    0.0f, 1.0f,  // bottom-left
+                    1.0f, 1.0f,  // bottom-right
+                    0.0f, 0.0f,  // top-left
+                    1.0f, 0.0f   // top-right
+                };
+            } else {  // Landscape
+                texCoords = new float[] {
+                    0.0f, 0.0f,  // top-left
+                    0.0f, 1.0f,  // bottom-left
+                    1.0f, 0.0f,  // top-right
+                    1.0f, 1.0f   // bottom-right
+                };
+            }
+        } else {  // Front camera (270 degrees)
+            if ("portrait".equals(orientation)) {
+                texCoords = new float[] {
+                    0.0f, 1.0f,  // bottom-left
+                    1.0f, 1.0f,  // bottom-right
+                    0.0f, 0.0f,  // top-left
+                    1.0f, 0.0f   // top-right
+                };
+            } else {  // Landscape
+                texCoords = new float[] {
+                    0.0f, 0.0f,  // top-left
+                    0.0f, 1.0f,  // bottom-left
+                    1.0f, 0.0f,  // top-right
+                    1.0f, 1.0f   // bottom-right
+                };
+            }
+        }
+
+        // Update texture coordinates
         texCoordBuffer.clear();
         texCoordBuffer.put(texCoords).position(0);
+
+        // Apply rotation
+        float[] rotationMatrix = new float[16];
+        Matrix.setIdentityM(rotationMatrix, 0);
+        Matrix.rotateM(rotationMatrix, 0, totalRotation, 0.0f, 0.0f, 1.0f);
+
+        // Pass matrices to shader
+        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, rotationMatrix, 0);
+
         vertexBuffer.position(0);
         texCoordBuffer.position(0);
+
         GLES20.glEnableVertexAttribArray(oesPositionHandle);
         GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
         GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
@@ -556,13 +604,7 @@ public class GLWatermarkRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
         GLES20.glUniform1i(oesTextureHandle, 0);
-        float[] rotationMatrix = new float[16];
-        Matrix.setIdentityM(rotationMatrix, 0);
-        if ("portrait".equals(orientation)) {
-            // Rotate 90 degrees counterclockwise for portrait
-            Matrix.rotateM(rotationMatrix, 0, 90f, 0f, 0f, 1f);
-        }
-        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, rotationMatrix, 0);
+
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glDisableVertexAttribArray(oesPositionHandle);
         GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
