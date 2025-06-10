@@ -32,6 +32,7 @@ import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * OnboardingActivity shows the app intro slides using AppIntro.
@@ -316,19 +317,48 @@ public class OnboardingActivity extends AppIntro {
         int selectedIndex = getLanguageIndex(savedLanguageCode);
         chooseButton.setText(languages[selectedIndex]);
         chooseButton.setOnClickListener(v -> {
-            new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.setting_language_title)
-                .setSingleChoiceItems(languages, selectedIndex, (dialog, which) -> {
-                    String newLangCode = getLanguageCode(which);
-                    if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
-                        sharedPreferencesManager.sharedPreferences.edit().putString(com.fadcam.Constants.LANGUAGE_KEY, newLangCode).apply();
-                        applyLanguage(newLangCode);
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+            android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+            android.view.View dialogView = inflater.inflate(R.layout.dialog_language_dark, null);
+            android.widget.ListView listView = dialogView.findViewById(R.id.language_list);
+            android.widget.TextView titleView = dialogView.findViewById(R.id.dialog_title);
+            titleView.setText(R.string.setting_language_title);
+            titleView.setTextColor(android.graphics.Color.WHITE);
+            String[] languagesArr = getResources().getStringArray(R.array.languages_array);
+            listView.setAdapter(new android.widget.ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, languagesArr) {
+                @Override
+                public android.view.View getView(int position, android.view.View convertView, android.view.ViewGroup parent) {
+                    android.view.View view = super.getView(position, convertView, parent);
+                    android.widget.TextView text1 = view.findViewById(android.R.id.text1);
+                    if (text1 != null) {
+                        text1.setTextColor(android.graphics.Color.WHITE);
                     }
-                    chooseButton.setText(languages[which]);
-                    dialog.dismiss();
-                })
-                .setNegativeButton(R.string.universal_cancel, null)
-                .show();
+                    return view;
+                }
+            });
+            listView.setChoiceMode(android.widget.ListView.CHOICE_MODE_SINGLE);
+            listView.setItemChecked(selectedIndex, true);
+            final android.app.AlertDialog[] dialogHolder = new android.app.AlertDialog[1];
+            listView.setOnItemClickListener((parent, view1, position, id) -> {
+                String newLangCode = getLanguageCode(position);
+                if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
+                    sharedPreferencesManager.sharedPreferences.edit().putString(com.fadcam.Constants.LANGUAGE_KEY, newLangCode).apply();
+                    applyLanguage(newLangCode);
+                }
+                chooseButton.setText(languagesArr[position]);
+                if (dialogHolder[0] != null) dialogHolder[0].dismiss();
+            });
+            builder.setView(dialogView);
+            builder.setNegativeButton(R.string.universal_cancel, (dialogInterface, i) -> dialogInterface.dismiss());
+            android.app.AlertDialog dialog = builder.create();
+            dialogHolder[0] = dialog;
+            Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.background_dark);
+            dialog.show();
+            // Set cancel button text color to white
+            android.widget.Button negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE);
+            if (negativeButton != null) {
+                negativeButton.setTextColor(android.graphics.Color.WHITE);
+            }
         });
     }
 

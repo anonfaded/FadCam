@@ -47,7 +47,7 @@
             android:text="FadCam needs access to your camera, microphone, and storage to record and save videos."
             android:textSize="@dimen/onboarding_desc_size"
             android:fontFamily="monospace"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/white"
             android:gravity="center"
             android:paddingLeft="@dimen/onboarding_margin"
             android:paddingRight="@dimen/onboarding_margin"
@@ -96,7 +96,8 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@drawable/ic_camera"
-                    android:contentDescription="Camera" />
+                    android:contentDescription="Camera"
+                    android:tint="@color/white" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -115,7 +116,8 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@drawable/ic_mic"
-                    android:contentDescription="Microphone" />
+                    android:contentDescription="Microphone"
+                    android:tint="@color/white" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -133,7 +135,8 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@drawable/ic_save2"
-                    android:contentDescription="Storage" />
+                    android:contentDescription="Storage"
+                    android:tint="@color/white" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -227,7 +230,7 @@
             android:text="You must grant all permissions to continue."
             android:textSize="@dimen/onboarding_small_text_size"
             android:fontFamily="monospace"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/white"
             android:gravity="center"
             android:layout_marginTop="@dimen/onboarding_margin"
             android:layout_marginBottom="@dimen/onboarding_nav_margin"
