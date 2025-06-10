@@ -2,9 +2,10 @@
     
 <!-- <img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >  this is the old banner -->
 
-<img src="https://github.com/user-attachments/assets/0539bee3-5d70-4486-adbd-b69c9420a19f" style="width: 900px; height: auto;" >
+<img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/tvBanner.jpg" style="width: 900px; height: auto;" >
 
 <!-- https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365 -->
+
 
 <br>
 </div>
@@ -111,10 +112,16 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
     <br>
     <em>apk icon</em> -->
     <br><br>
-    <img src="https://github.com/user-attachments/assets/f356225a-8b86-4a17-8414-fb24b6588a87" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/5062be4c-ccb6-471e-bbaf-f0ab0b5ea26b" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/168fab68-f4fc-45a2-8bba-b8126d572d00" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/05826459-c1bc-4add-96b2-24afb3c0b7cb" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/8.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/9.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/10.jpg" style="width: 200px; height: auto;" >
  <br>
 
 <!--     <br> -->
@@ -261,28 +268,36 @@ Or:
 
 ## Features:
 
-- **Background Video Recording:** Record with screen off.
-- **Material Design UI:** Modern and easy-to-use.
-- **No ads:** Completely ad-free.
-- **Internal Storage Options:** Save videos internally or to the gallery.
-- **Inbuilt Videoplayer** ExoPlayer integration; play videos in-app.
-- **Dynamic Watermarks:** Timestamp, logo, location options.
-- **Real-time Storage Updates:** Inspect remaining storage with estimated recording times.
-- **Video Quality Selection:** SD, HD, FHD options.
-- **Video Renaming:** Rename videos in-app.
-- **Location Data in Watermarks:** Precise location in watermarks.
-- **Long Press Haptic Feedback:** Haptic feedback with animations.
-- **Date and Time Widget:** Customizable widget.
-
+- **Background Video Recording:** Record discreetly even with the screen off.
+- **Modern UI:** Clean, Material-inspired design with bottom sheet actions.
+- **Audio Controls:** Toggle audio, choose bitrate, and select mic input (wired/Bluetooth).
+- **Video Settings:** Configure orientation, bitrate, and fixed framerate (60/90fps supported).
+- **Auto Video Splitting:** Automatically split large recordings based on size.
+- **Geotagging:** Embed location data into video metadata.
+- **Wide-Angle Detection:** Auto-detect wide-angle camera support.
+- **Sorting & Filters:** Sort videos by date, size, and more.
+- **Enhanced Thumbnails:** Show index, duration, and file size.
+- **Trash Bin:** Restore deleted videos or auto-delete after a set time.
+- **Select All in Trash:** Bulk actions made easier.
+- **Inbuilt Video Player:** Smooth playback using ExoPlayer.
+- **Dynamic Watermarks:** Add timestamp, logo, and GPS watermark options.
+- **Video Info View:** View details like resolution, size, and duration.
+- **Video Renaming:** Rename recordings directly in-app.
+- **Storage Indicator:** Real-time storage info with estimated record time.
+- **Clock Widget:** Customizable date/time widget with color options.
+- **7+ App Themes & 15+ Icons:** AMOLED, Light, System, and more.
+- **Localization:** Italian language support.
+- **No Ads:** 100% free and ad-free.
 
 ## Upcoming Features:
 
-- **Scheduled Recording:** Automatic start and stop at set times.
-- **Google Drive Auto-Upload:** Auto-upload videos to Google Drive.
-- **Custom Icon:** Personalize with custom app icons.
-- **Custom Notifications:** Custom messages for discreet notifications.
-- **App Lock:** Secure the app with an applock.
-- **Custom Saving:** Provide custom location saving option.
+- **Scheduled Recording:** Automatically start/stop recordings at set times.
+- **Google Drive Auto-Upload:** Seamless cloud backup for videos.
+- **Custom Icons & Themes:** Expand personalization even further.
+- **In-App Video Editor:** Quick trim/edit with FaditorX (coming soon).
+- **Remote Tab:** Connect and control recordings across devices.
+- **Custom Save Paths:** Set your preferred video storage location.
+
 
 
 ## Join Community
