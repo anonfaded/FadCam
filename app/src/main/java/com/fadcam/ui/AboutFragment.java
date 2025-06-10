@@ -456,25 +456,35 @@ public class AboutFragment extends BaseFragment {
 
     private void checkForUpdates() {
         showLoadingDialog(getString(R.string.up_to_date_loading));
-
-        executorService.execute(() -> {
+        ExecutorService updateExecutor = Executors.newSingleThreadExecutor();
+        updateExecutor.execute(() -> {
             try {
-                JSONObject releaseInfo = fetchLatestReleaseInfo();
-                String latestVersion = releaseInfo.getString("tag_name").substring(1); // Remove 'v' prefix
+                java.net.URL url = new java.net.URL("https://github.com/anonfaded/FadCam/releases/latest");
+                java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setInstanceFollowRedirects(false); // Do not follow redirects
+                connection.connect();
+                String location = connection.getHeaderField("Location");
+                connection.disconnect();
+                String latestVersion = null;
+                String tagUrl = "https://github.com/anonfaded/FadCam/releases/latest";
+                if (location != null && location.contains("/tag/")) {
+                    int tagIndex = location.lastIndexOf("/tag/");
+                    tagUrl = location;
+                    latestVersion = location.substring(tagIndex + 5).replace("v", "").trim();
+                }
                 String currentVersion = getAppVersionForUpdates();
-//                String downloadUrl = getDownloadUrl(releaseInfo);
-
+                final String finalCurrentVersion = currentVersion;
+                final String finalLatestVersion = latestVersion;
+                final String finalTagUrl = tagUrl;
                 requireActivity().runOnUiThread(() -> {
                     dismissLoadingDialog();
-                    if (isUpdateAvailable(currentVersion, latestVersion)) {
-//                        showUpdateAvailableDialog(latestVersion, downloadUrl);
-                        showUpdateAvailableDialog(latestVersion); // Pass only the latestVersion
+                    if (finalLatestVersion != null && isUpdateAvailable(finalCurrentVersion, finalLatestVersion)) {
+                        String changelog = ""; // Not available via this method
+                        UpdateAvailableBottomSheet.newInstance(finalLatestVersion, changelog, finalTagUrl)
+                            .show(getParentFragmentManager(), "UpdateAvailableBottomSheet");
                     } else {
-                        dismissLoadingDialog(); // Dismiss the loading dialog in case of an error
-
                         showUpToDateDialog();
-
-
                     }
                 });
             } catch (Exception e) {
@@ -485,45 +495,6 @@ public class AboutFragment extends BaseFragment {
                 });
             }
         });
-    }
-
-    private JSONObject fetchLatestReleaseInfo() throws Exception {
-        URL url = new URL("https://api.github.com/repos/anonfaded/FadCam/releases/latest");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            StringBuilder result = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line);
-            }
-            return new JSONObject(result.toString());
-        } finally {
-            connection.disconnect();
-        }
-    }
-
-    private String getDownloadUrl(JSONObject releaseInfo) throws JSONException {
-        JSONArray assets = releaseInfo.getJSONArray("assets");
-        for (int i = 0; i < assets.length(); i++) {
-            JSONObject asset = assets.getJSONObject(i);
-            if (asset.getString("name").endsWith(".apk")) {
-                return asset.getString("browser_download_url");
-            }
-        }
-        throw new JSONException("No APK found in release assets");
-    }
-
-    private String getAppVersion() {
-        try {
-            PackageManager pm = requireActivity().getPackageManager();
-            PackageInfo pInfo = pm.getPackageInfo(requireActivity().getPackageName(), 0);
-            return pInfo.versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            return "0.0.0";
-        }
     }
 
     private boolean isUpdateAvailable(String currentVersion, String latestVersion) {
@@ -576,21 +547,7 @@ public class AboutFragment extends BaseFragment {
     }
 
 
-    private void showUpdateAvailableDialog(String newVersion) {
-        MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext())
-                .setTitle(getString(R.string.update_available_title))
-                .setMessage(getString(R.string.update_available_message, newVersion))
-                .setPositiveButton(getString(R.string.visit_fdroid), (dialog, which) -> {
-                    openUpdateUrl("https://f-droid.org/packages/com.fadcam");
-                })
-                .setNegativeButton(getString(R.string.visit_github), (dialog, which) -> {
-                    openUpdateUrl("https://github.com/anonfaded/FadCam");
-                });
-        
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> setDialogButtonColors(dialog));
-        dialog.show();
-    }
+
 
 
     private void showUpToDateDialog() {
@@ -641,81 +598,6 @@ public class AboutFragment extends BaseFragment {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         startActivity(intent);
     }
-
-
-// Below is the old version of update-checking logic where it downloads the apk too
-
-//    private void showUpdateAvailableDialog(String newVersion, String downloadUrl) {
-//        new MaterialAlertDialogBuilder(requireContext())
-//                .setTitle("Update Available")
-//                .setMessage("A new version (" + newVersion + ") is available. Do you want to download and install it?")
-//                .setPositiveButton("Yes", (dialog, which) -> startUpdateDownload(downloadUrl))
-//                .setNegativeButton("No", null)
-//                .show();
-//    }
-//
-//    private void showUpToDateDialog() {
-//        new MaterialAlertDialogBuilder(requireContext())
-//                .setTitle("Up to Date")
-//                .setMessage("You are already using the latest version.")
-//                .setPositiveButton("OK", null)
-//                .show();
-//    }
-//
-//    private void showErrorDialog(String message) {
-//        new MaterialAlertDialogBuilder(requireContext())
-//                .setTitle("Error")
-//                .setMessage(message)
-//                .setPositiveButton("OK", null)
-//                .show();
-//    }
-//
-//    private void startUpdateDownload(String downloadUrl) {
-//        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl))
-//                .setTitle("FadCam Update")
-//                .setDescription("Downloading the latest version of FadCam")
-//                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-//                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "FadCam_update.apk")
-//                .setAllowedOverMetered(true)
-//                .setAllowedOverRoaming(true);
-//
-//        DownloadManager downloadManager = (DownloadManager) requireContext().getSystemService(Context.DOWNLOAD_SERVICE);
-//        long downloadId = downloadManager.enqueue(request);
-//
-//        BroadcastReceiver onComplete = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
-//                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-//                    if (id == downloadId) {
-//                        installUpdate();
-//                    }
-//                }
-//            }
-//        };
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//                requireActivity().registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED);
-//            }
-//        }
-//    }
-//
-//    private void installUpdate() {
-//        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "FadCam_update.apk");
-//        Uri uri;
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//            uri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".provider", file);
-//        } else {
-//            uri = Uri.fromFile(file);
-//        }
-//
-//        Intent intent = new Intent(Intent.ACTION_VIEW);
-//        intent.setDataAndType(uri, "application/vnd.android.package-archive");
-//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//        startActivity(intent);
-//    }
 
 
     private int resolveThemeColor(int attr) {

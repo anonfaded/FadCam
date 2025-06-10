@@ -110,6 +110,8 @@ import android.widget.ArrayAdapter;
 import androidx.appcompat.app.AlertDialog;
 import android.text.SpannableString;
 
+import com.fadcam.utils.DeviceHelper;
+
 public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
@@ -527,6 +529,47 @@ public class HomeFragment extends BaseFragment {
 
         // Ensure we have the latest state
         fetchRecordingState();
+
+        // ----- Update Check Bottom Sheet Start -----
+        if (com.fadcam.ui.SettingsFragment.isAutoUpdateCheckEnabled(requireContext()) && DeviceHelper.isInternetAvailable(requireContext())) {
+            // Only show once per app open
+            if (getParentFragmentManager().findFragmentByTag("UpdateAvailableBottomSheet") == null) {
+                ExecutorService updateExecutor = Executors.newSingleThreadExecutor();
+                updateExecutor.execute(() -> {
+                    try {
+                        java.net.URL url = new java.net.URL("https://github.com/anonfaded/FadCam/releases/latest");
+                        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+                        connection.setRequestMethod("GET");
+                        connection.setInstanceFollowRedirects(false); // Do not follow redirects
+                        connection.connect();
+                        String location = connection.getHeaderField("Location");
+                        connection.disconnect();
+                        String latestVersion = null;
+                        String tagUrl = "https://github.com/anonfaded/FadCam/releases/latest";
+                        if (location != null && location.contains("/tag/")) {
+                            int tagIndex = location.lastIndexOf("/tag/");
+                            tagUrl = location;
+                            latestVersion = location.substring(tagIndex + 5).replace("v", "").trim();
+                        }
+                        String currentVersion = getAppVersionForUpdates();
+                        if (latestVersion != null && isUpdateAvailable(currentVersion, latestVersion)) {
+                            String changelog = ""; // Not available via this method
+                            final String finalLatestVersion = latestVersion;
+                            final String finalTagUrl = tagUrl;
+                            requireActivity().runOnUiThread(() -> {
+                                UpdateAvailableBottomSheet.newInstance(finalLatestVersion, changelog, finalTagUrl)
+                                    .show(getParentFragmentManager(), "UpdateAvailableBottomSheet");
+                            });
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Update check failed", e);
+                    }
+                });
+            }
+        } else {
+            Log.i(TAG, "Auto update check is disabled or no internet available, not showing update bottom sheet");
+        }
+        // ----- Update Check Bottom Sheet End -----
     }
 
     /**
@@ -3981,4 +4024,34 @@ public class HomeFragment extends BaseFragment {
         }
     }
     // ----- Fix End: Add Snow Veil theme UI adjustments -----
+
+    // Utility method to get the current app version (versionName)
+    private String getAppVersionForUpdates() {
+        try {
+            android.content.pm.PackageManager pm = requireActivity().getPackageManager();
+            android.content.pm.PackageInfo pInfo = pm.getPackageInfo(requireActivity().getPackageName(), 0);
+            return pInfo.versionName;
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return "N/A";
+        }
+    }
+
+    // Utility method to compare versions and determine if an update is available
+    private boolean isUpdateAvailable(String currentVersion, String latestVersion) {
+        boolean currentIsBeta = currentVersion.contains("beta");
+        currentVersion = currentVersion.replace("-beta", "");
+        String[] current = currentVersion.split("\\.");
+        String[] latest = latestVersion.split("\\.");
+        for (int i = 0; i < Math.min(current.length, latest.length); i++) {
+            int currentPart = Integer.parseInt(current[i]);
+            int latestPart = Integer.parseInt(latest[i]);
+            if (latestPart > currentPart) {
+                return true;
+            } else if (latestPart < currentPart) {
+                return false;
+            }
+        }
+        return latest.length > current.length || (latest.length == current.length && currentIsBeta);
+    }
 }

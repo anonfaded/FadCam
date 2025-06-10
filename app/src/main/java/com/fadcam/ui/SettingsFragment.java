@@ -4,8 +4,6 @@ import static android.content.ContentValues.TAG;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -15,7 +13,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.content.res.Configuration;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -28,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.provider.DocumentsContract;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Html;
@@ -38,8 +34,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LayoutAnimationController;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -58,14 +52,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
@@ -89,7 +79,6 @@ import com.google.android.material.textview.MaterialTextView;
 import com.guardanis.applock.AppLock;
 import com.guardanis.applock.dialogs.LockCreationDialogBuilder;
 import com.guardanis.applock.dialogs.UnlockDialogBuilder;
-import com.guardanis.applock.services.PINLockService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,19 +89,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
 import android.util.Range; // Make sure this import is present
 import java.util.TreeSet; // Used for sorting and uniqueness
 import java.util.Set;     // Used for intermediate storage
-import java.util.stream.IntStream; // For easy array conversion
-import java.util.Comparator; // For sorting camera IDs
+// For easy array conversion
+// For sorting camera IDs
 import java.util.concurrent.ExecutorService; // Make sure this import exists
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-import android.content.Intent; // Add Intent import
-import androidx.localbroadcastmanager.content.LocalBroadcastManager; // OR use ContextCompat if not using LocalBroadcastManager
-import androidx.core.content.ContextCompat; // If using standard broadcast
+// Add Intent import
+// OR use ContextCompat if not using LocalBroadcastManager
+// If using standard broadcast
 
 // ----- Fix Start for this class (SettingsFragment_video_splitting_imports) -----
 import android.text.Editable;
@@ -122,8 +110,7 @@ import android.text.TextWatcher;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
+
 import com.fadcam.utils.DeviceHelper;
 
 public class SettingsFragment extends BaseFragment {
@@ -151,10 +138,12 @@ public class SettingsFragment extends BaseFragment {
     private MaterialSwitch locationEmbedSwitch; // Declare location embedding switch
     private MaterialSwitch debugSwitch; // Declare debugSwitch
     private MaterialSwitch audioSwitch; // Declare audioSwitch
+    private MaterialSwitch autoUpdateCheckSwitch; // Declare auto update check switch
     
     // App Lock
     private MaterialButton appLockConfigureButton;
     private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
+    private static final String PREF_AUTO_UPDATE_CHECK = "auto_update_check_enabled";
 
     // App Icon
     private MaterialButton appIconChooseButton;
@@ -4398,6 +4387,16 @@ public class SettingsFragment extends BaseFragment {
         }
         
         // ... rest of existing code ...
+
+        // --- Auto Update Check Toggle ---
+        autoUpdateCheckSwitch = view.findViewById(R.id.auto_update_check_toggle);
+        boolean isAutoUpdateCheckEnabled = sharedPreferencesManager.sharedPreferences.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
+        autoUpdateCheckSwitch.setChecked(isAutoUpdateCheckEnabled);
+        autoUpdateCheckSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_AUTO_UPDATE_CHECK, isChecked).apply();
+            vibrateTouch();
+        });
+        // ... existing code ...
     }
     
     // New method to handle Snow Veil theme UI adjustments
@@ -4786,5 +4785,10 @@ public class SettingsFragment extends BaseFragment {
         }
     }
 
+    // Utility method for other fragments to check if auto update is enabled
+    public static boolean isAutoUpdateCheckEnabled(Context context) {
+        SharedPreferences prefs = SharedPreferencesManager.getInstance(context).sharedPreferences;
+        return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
+    }
 
 }
