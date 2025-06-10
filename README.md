@@ -268,28 +268,36 @@ Or:
 
 ## Features:
 
-- **Background Video Recording:** Record with screen off.
-- **Material Design UI:** Modern and easy-to-use.
-- **No ads:** Completely ad-free.
-- **Internal Storage Options:** Save videos internally or to the gallery.
-- **Inbuilt Videoplayer** ExoPlayer integration; play videos in-app.
-- **Dynamic Watermarks:** Timestamp, logo, location options.
-- **Real-time Storage Updates:** Inspect remaining storage with estimated recording times.
-- **Video Quality Selection:** SD, HD, FHD options.
-- **Video Renaming:** Rename videos in-app.
-- **Location Data in Watermarks:** Precise location in watermarks.
-- **Long Press Haptic Feedback:** Haptic feedback with animations.
-- **Date and Time Widget:** Customizable widget.
-
+- **Background Video Recording:** Record discreetly even with the screen off.
+- **Modern UI:** Clean, Material-inspired design with bottom sheet actions.
+- **Audio Controls:** Toggle audio, choose bitrate, and select mic input (wired/Bluetooth).
+- **Video Settings:** Configure orientation, bitrate, and fixed framerate (60/90fps supported).
+- **Auto Video Splitting:** Automatically split large recordings based on size.
+- **Geotagging:** Embed location data into video metadata.
+- **Wide-Angle Detection:** Auto-detect wide-angle camera support.
+- **Sorting & Filters:** Sort videos by date, size, and more.
+- **Enhanced Thumbnails:** Show index, duration, and file size.
+- **Trash Bin:** Restore deleted videos or auto-delete after a set time.
+- **Select All in Trash:** Bulk actions made easier.
+- **Inbuilt Video Player:** Smooth playback using ExoPlayer.
+- **Dynamic Watermarks:** Add timestamp, logo, and GPS watermark options.
+- **Video Info View:** View details like resolution, size, and duration.
+- **Video Renaming:** Rename recordings directly in-app.
+- **Storage Indicator:** Real-time storage info with estimated record time.
+- **Clock Widget:** Customizable date/time widget with color options.
+- **7+ App Themes & 15+ Icons:** AMOLED, Light, System, and more.
+- **Localization:** Italian language support.
+- **No Ads:** 100% free and ad-free.
 
 ## Upcoming Features:
 
-- **Scheduled Recording:** Automatic start and stop at set times.
-- **Google Drive Auto-Upload:** Auto-upload videos to Google Drive.
-- **Custom Icon:** Personalize with custom app icons.
-- **Custom Notifications:** Custom messages for discreet notifications.
-- **App Lock:** Secure the app with an applock.
-- **Custom Saving:** Provide custom location saving option.
+- **Scheduled Recording:** Automatically start/stop recordings at set times.
+- **Google Drive Auto-Upload:** Seamless cloud backup for videos.
+- **Custom Icons & Themes:** Expand personalization even further.
+- **In-App Video Editor:** Quick trim/edit with FaditorX (coming soon).
+- **Remote Tab:** Connect and control recordings across devices.
+- **Custom Save Paths:** Set your preferred video storage location.
+
 
 
 ## Join Community
