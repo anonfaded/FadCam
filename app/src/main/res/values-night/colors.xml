@@ -33,7 +33,5 @@
     <color name="dark_red_card">#3B1818</color>
     <color name="dark_purple_bar">#231942</color>
     <color name="gray_button_filled">#2A2A2A</color>
-    <color name="colorSurface">#181A1B</color>
-    <color name="colorOnSurface">#E0E0E0</color>
     <color name="midnight_dusk_bg">#181A1B</color>
 </resources> 
