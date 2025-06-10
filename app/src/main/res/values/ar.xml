@@ -223,8 +223,8 @@
     <string name="up_to_date">Up To Date</string>
     <string name="up_to_date_description">You are already using the latest version.</string>
     <string name="up_to_date_loading">Checking for updates…</string>
-    <string name="update_available_title">Update Available</string>
-    <string name="update_available_message">A new version (%1$s) is available. To update, please visit the F-Droid store or our GitHub repository for more details.</string>
+    <string name="update_available_title">New Version Available</string>
+    <string name="update_available_message">A freshly baked update is ready! You\'re on v%1$s, latest is v%2$s. Enjoy new features and improvements.</string>
     <string name="visit_fdroid">Visit F-Droid</string>
     <string name="visit_github">Visit GitHub</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
@@ -515,4 +515,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_changed">App icon changed</string>
     <string name="app_icon_preview">App icon preview</string>
     <!-- Misc -->
+    <string name="changelog_label">What\'s New</string>
+    <!-- Fix Start: Add auto update check toggle strings -->
+    <string name="setting_auto_update_check_title">Auto Update Check on Startup</string>
+    <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
+    <!-- Fix End: Add auto update check toggle strings -->
 </resources>
