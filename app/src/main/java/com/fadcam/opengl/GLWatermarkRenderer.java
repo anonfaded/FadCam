@@ -3,6 +3,7 @@ package com.fadcam.opengl;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -36,6 +37,7 @@ public class GLWatermarkRenderer {
     private EGLContext eglContext;
     private EGLSurface eglSurface;
     private Surface outputSurface;
+    private final Context context;
 
     // OES texture and camera input
     private int oesTextureId;
@@ -63,7 +65,6 @@ public class GLWatermarkRenderer {
     private int oesTexCoordHandle = 0;
     private int oesTextureHandle = 0;
     private int oesRotationHandle = -1;
-    private int transformHandle = -1;
     private FloatBuffer vertexBuffer;
     private FloatBuffer texCoordBuffer;
     private static final float[] VERTICES = {
@@ -115,6 +116,13 @@ public class GLWatermarkRenderer {
 
     private static final int PREVIEW_RENDER_INTERVAL_MS = 33; // Increase to 30fps for smoother preview (was 100)
 
+    // Device orientation: 0=portrait, 1=landscape, 2=reverse portrait, 3=reverse landscape
+    private int deviceOrientation = 0; // Default to portrait
+
+    // Surface dimensions for aspect ratio calculations
+    private int mSurfaceWidth = 0;
+    private int mSurfaceHeight = 0;
+
     public interface OnFrameAvailableListener {
         void onFrameAvailable();
     }
@@ -147,22 +155,45 @@ public class GLWatermarkRenderer {
      * @param videoHeight Height of the video
      */
     public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation, int videoWidth, int videoHeight) {
+        this.context = context;
         this.outputSurface = outputSurface;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
+        
+        // Initialize deviceOrientation based on requested orientation
+        // Default to portrait (0) if "portrait", landscape (1) otherwise
+        this.deviceOrientation = "portrait".equalsIgnoreCase(orientation) ? 0 : 1;
+        
+        // Always store the width and height in the intended final output orientation
+        // This ensures consistent dimensions regardless of phone rotation
+        if ("portrait".equalsIgnoreCase(orientation) && videoWidth > videoHeight) {
+            // Swap dimensions for portrait mode if width is larger than height
+            this.videoWidth = videoHeight;
+            this.videoHeight = videoWidth;
+        } else {
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
+        }
         
-        // Store the literal aspect ratio of the selected resolution
-        this.targetAspectRatio = (float) videoWidth / videoHeight;
+        // Calculate target aspect ratio based on the final output dimensions
+        this.targetAspectRatio = determineTargetAspectRatio(this.videoWidth, this.videoHeight);
         
-        watermarkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        watermarkPaint.setColor(0xFFFFFFFF);
-        watermarkPaint.setTextSize(48f);
-        watermarkPaint.setShadowLayer(4f, 2f, 2f, 0xFF000000);
+        // Initialize default watermark paint
+        watermarkPaint = new Paint();
+        watermarkPaint.setTextSize(48);
+        watermarkPaint.setAntiAlias(true);
+        watermarkPaint.setARGB(255, 255, 255, 255);
+        watermarkPaint.setShadowLayer(1f, 0f, 1f, Color.BLACK);
         
-        // Do NOT setup the OES texture here - it will be done in initializeEGL()
-        // after we have a valid OpenGL context
+        // Initialize vertex and texture coordinate buffers with default values
+        // These will be updated later in setupTextureCoordinates
+        vertexBuffer = ByteBuffer.allocateDirect(VERTICES.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        vertexBuffer.put(VERTICES).position(0);
+        
+        texCoordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        texCoordBuffer.put(TEXCOORDS).position(0);
     }
 
     /**
@@ -179,26 +210,26 @@ public class GLWatermarkRenderer {
 
     private void setupEGL() {
         try {
-            // 1. Get EGL display
-            eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-            if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-                Log.e(TAG, "Unable to get EGL14 display");
-                return;
-            }
-            int[] version = new int[2];
-            if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
+        // 1. Get EGL display
+        eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
+            Log.e(TAG, "Unable to get EGL14 display");
+            return;
+        }
+        int[] version = new int[2];
+        if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
                 Log.e(TAG, "Unable to initialize EGL14: " + EGL14.eglGetError());
-                return;
-            }
+            return;
+        }
             Log.d(TAG, "EGL initialized, version " + version[0] + "." + version[1]);
 
             // 2. Choose EGL config with RGB888 and proper buffer settings
-            int[] attribList = {
-                EGL14.EGL_RED_SIZE, 8,
-                EGL14.EGL_GREEN_SIZE, 8,
-                EGL14.EGL_BLUE_SIZE, 8,
-                EGL14.EGL_ALPHA_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+        int[] attribList = {
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_GREEN_SIZE, 8,
+            EGL14.EGL_BLUE_SIZE, 8,
+            EGL14.EGL_ALPHA_SIZE, 8,
+            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
                 // Add buffer configuration
                 EGL14.EGL_BUFFER_SIZE, 32,
                 EGL14.EGL_DEPTH_SIZE, 16,
@@ -206,51 +237,51 @@ public class GLWatermarkRenderer {
                 EGL14.EGL_SAMPLE_BUFFERS, 0,
                 // Ensure direct rendering to avoid intermediate copies
                 EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
-                EGL14.EGL_NONE
-            };
+            EGL14.EGL_NONE
+        };
 
-            EGLConfig[] configs = new EGLConfig[1];
-            int[] numConfigs = new int[1];
-            if (!EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0)) {
+        EGLConfig[] configs = new EGLConfig[1];
+        int[] numConfigs = new int[1];
+        if (!EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0)) {
                 Log.e(TAG, "Unable to choose EGL config: " + EGL14.eglGetError());
-                return;
-            }
+            return;
+        }
             
             if (numConfigs[0] <= 0 || configs[0] == null) {
                 Log.e(TAG, "No suitable EGL configs found");
                 return;
             }
             
-            EGLConfig eglConfig = configs[0];
+        EGLConfig eglConfig = configs[0];
 
             // 3. Create EGL context with proper flags - IMPORTANT: Add EGL_CONTEXT_CLIENT_VERSION
-            int[] contextAttribs = {
-                EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-                EGL14.EGL_NONE
-            };
-            eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
-            if (eglContext == null || eglContext == EGL14.EGL_NO_CONTEXT) {
+        int[] contextAttribs = {
+            EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+            EGL14.EGL_NONE
+        };
+        eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
+        if (eglContext == null || eglContext == EGL14.EGL_NO_CONTEXT) {
                 Log.e(TAG, "Unable to create EGL context: " + EGL14.eglGetError());
-                return;
-            }
+            return;
+        }
 
             // 4. Create EGL window surface with proper attributes
-            int[] surfaceAttribs = {
+        int[] surfaceAttribs = {
                 // Ensure proper buffer behavior
                 EGL14.EGL_RENDER_BUFFER, EGL14.EGL_BACK_BUFFER,
-                EGL14.EGL_NONE
-            };
-            eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
-            if (eglSurface == null || eglSurface == EGL14.EGL_NO_SURFACE) {
+            EGL14.EGL_NONE
+        };
+        eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
+        if (eglSurface == null || eglSurface == EGL14.EGL_NO_SURFACE) {
                 Log.e(TAG, "Unable to create EGL window surface: " + EGL14.eglGetError());
-                return;
-            }
+            return;
+        }
 
             // 5. Make context current and verify configuration
-            if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+        if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
                 Log.e(TAG, "Unable to make EGL context current: " + EGL14.eglGetError());
-                return;
-            }
+            return;
+        }
 
             // Verify the configuration
             int[] value = new int[1];
@@ -271,50 +302,35 @@ public class GLWatermarkRenderer {
 
     private void setupOESTexture() {
         try {
-            Log.d(TAG, "Setting up OES texture");
-            
-            // Ensure we have a valid EGL context before generating textures
-            if (eglDisplay == null || eglContext == null || eglSurface == null) {
-                Log.e(TAG, "Cannot setup OES texture - EGL context not initialized");
-                return;
-            }
-            
-            // Make sure context is current before generating textures
-            if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-                Log.e(TAG, "Failed to make EGL context current for texture creation");
-                return;
-            }
-            
-            // Generate OES texture with proper parameters
-            int[] textures = new int[1];
-            GLES20.glGenTextures(1, textures, 0);
-            oesTextureId = textures[0];
+        int[] textures = new int[1];
+        GLES20.glGenTextures(1, textures, 0);
+        oesTextureId = textures[0];
             
             if (oesTextureId == 0) {
-                int error = GLES20.glGetError();
-                Log.e(TAG, "Failed to generate OES texture ID, GL error: 0x" + Integer.toHexString(error));
+                Log.e(TAG, "Failed to generate OES texture");
                 return;
             }
             
-            Log.d(TAG, "Created OES texture with ID: " + oesTextureId);
+            // Set proper texture settings for the OES texture
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
             
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
+            // Use bilinear filtering for smoother video texture 
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
             
-            // Set proper texture parameters
-            // Note: Using GL_LINEAR for better visual quality
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            
-            // Check if texture was created successfully
+            // Essential for camera textures to avoid artifacts at edges
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+            // Check for errors
             int error = GLES20.glGetError();
             if (error != GLES20.GL_NO_ERROR) {
-                Log.e(TAG, "Error in texture setup: 0x" + Integer.toHexString(error));
-                return;
+                Log.e(TAG, "Error setting up OES texture parameters: 0x" + Integer.toHexString(error));
+            } else {
+                Log.d(TAG, "OES texture created successfully: " + oesTextureId);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error setting up OES texture", e);
+            Log.e(TAG, "Error creating OES texture", e);
         }
     }
 
@@ -358,35 +374,30 @@ public class GLWatermarkRenderer {
      */
     public void renderFrame() {
         synchronized (renderLock) {
-            if (!initialized) {
-                setupEGL();
+        if (!initialized) {
+            setupEGL();
                 setupOESShader();
                 setupSimpleWatermarkShader();
                 createCameraSurfaceTexture();
-                initialized = true;
-            }
+            initialized = true;
+        }
 
-            try {
-                // Skip rendering if we're stopping or resources are released
+        try {
                 if (eglDisplay == null || eglSurface == null || eglContext == null) {
                     Log.d(TAG, "Skipping renderFrame - EGL resources are null");
                     return;
                 }
-                
-                // Make EGL context current
-                if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-                    Log.e(TAG, "eglMakeCurrent failed: " + EGL14.eglGetError());
-                    return;
-                }
-
-                // Wait for new frame
-                synchronized (frameSyncObject) {
-                    while (!frameAvailable) {
-                        try {
-                            frameSyncObject.wait(1000000 / 30); // 33ms timeout
+            if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                Log.e(TAG, "eglMakeCurrent failed: " + EGL14.eglGetError());
+                return;
+            }
+            synchronized (frameSyncObject) {
+                while (!frameAvailable) {
+                    try {
+                            frameSyncObject.wait(1000000 / 30);
                             if (!frameAvailable) {
                                 Log.w(TAG, "Frame wait timed out");
-                                return;
+                        return;
                             }
                         } catch (InterruptedException ie) {
                             throw new RuntimeException(ie);
@@ -394,80 +405,39 @@ public class GLWatermarkRenderer {
                     }
                     frameAvailable = false;
                 }
-
-                // Update texture with new frame - CAREFULLY handle error cases
-                if (cameraSurfaceTexture != null) {
-                    // Clear any previous GL errors before updating the texture
-                    GLES20.glGetError(); // Clear errors before operation
-                    
-                    try {
-                        cameraSurfaceTexture.updateTexImage();
-                        cameraSurfaceTexture.getTransformMatrix(transformMatrix);
-                    } catch (Exception e) {
+            if (cameraSurfaceTexture != null) {
+                    GLES20.glGetError();
+                try {
+                    cameraSurfaceTexture.updateTexImage();
+                } catch (Exception e) {
                         Log.e(TAG, "Error updating texture image", e);
-                        return;
+                    return;
                     }
-                    
-                    // Check for errors right after update
                     int error = GLES20.glGetError();
                     if (error != GLES20.GL_NO_ERROR) {
                         Log.e(TAG, "GL error after updateTexImage: 0x" + Integer.toHexString(error));
                     }
                 }
-
-                // Clear the surface with black
                 GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
-                // Set viewport to the exact dimensions of our output surface
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                 GLES20.glViewport(0, 0, videoWidth, videoHeight);
-
-                // Apply a fixed rotation based on the initial orientation and sensor orientation
                 float[] rotationMatrix = new float[16];
-                Matrix.setIdentityM(rotationMatrix, 0);
-                
-                // Apply orientation based on requested video orientation
-                if ("portrait".equalsIgnoreCase(orientation)) {
-                    if (sensorOrientation == 90) { // Back camera
-                        Matrix.rotateM(rotationMatrix, 0, 270, 0, 0, 1.0f);
-                    } else if (sensorOrientation == 270) { // Front camera
-                        Matrix.rotateM(rotationMatrix, 0, 90, 0, 0, 1.0f);
-                    }
-                } 
-                // For landscape videos
-                else {
-                    if (sensorOrientation == 90) { // Back camera
-                        Matrix.rotateM(rotationMatrix, 0, 180, 0, 0, 1.0f);
-                    } else if (sensorOrientation == 270) { // Front camera
-                        Matrix.rotateM(rotationMatrix, 0, 0, 0, 0, 1.0f);
-                    }
-                }
-
-                // Apply the camera frame with fixed orientation
+                Matrix.setIdentityM(rotationMatrix, 0); // No rotation, no orientation logic
                 drawOESTexture(rotationMatrix);
-                
-                // Draw watermark if needed
                 if (watermarkEnabled) {
-                    drawWatermarkTexture();
+            drawWatermarkTexture();
                 }
-
-                // Ensure GL commands complete before presenting the frame
                 GLES20.glFinish();
-
-                // Present frame with timestamp
                 if (eglDisplay != null && eglDisplay != EGL14.EGL_NO_DISPLAY && 
                     eglSurface != null && eglSurface != EGL14.EGL_NO_SURFACE) {
                     try {
-                        // Use the actual frame timestamp for proper synchronization
                         long timestamp = cameraSurfaceTexture != null ? 
                             cameraSurfaceTexture.getTimestamp() : System.nanoTime();
-                            
                         EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, timestamp);
-                        
-                        if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
-                            Log.e(TAG, "eglSwapBuffers failed: " + EGL14.eglGetError());
-                        }
-                    } catch (Exception e) {
+            if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
+                Log.e(TAG, "eglSwapBuffers failed: " + EGL14.eglGetError());
+            }
+        } catch (Exception e) {
                         Log.e(TAG, "Exception in eglPresentationTime or eglSwapBuffers", e);
                     }
                 }
@@ -482,164 +452,44 @@ public class GLWatermarkRenderer {
      * Should be called from the render thread.
      */
     public void renderToPreview() {
-        // Double-check validity before acquiring lock to prevent deadlocks
         if (previewEglDisplay == null || previewEglSurface == null || 
             previewEglContext == null || currentPreviewSurface == null || 
             !currentPreviewSurface.isValid()) {
-            return;
-        }
-        
+                return;
+            }
         synchronized (previewRenderLock) {
-            // Skip if preview resources aren't initialized or being used by main renderer
             if (previewEglDisplay == null || previewEglSurface == null || 
                 previewEglContext == null || currentPreviewSurface == null || 
                 !currentPreviewSurface.isValid()) {
                 return;
             }
-            
-            // Mark the preview render as active to prevent release during rendering
             previewRenderActive = true;
-            
             try {
-                // Make EGL current for preview - if this fails, we'll just skip this frame
                 boolean result = EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, 
                         previewEglSurface, previewEglContext);
-                
                 if (!result) {
                     int error = EGL14.eglGetError();
                     Log.e(TAG, "eglMakeCurrent (preview) failed: " + error);
                     previewRenderActive = false;
                     return;
                 }
-                
-                // For preview rendering, ensure viewport is correctly set to the dimensions
-                // of our preview surface
-                int[] surfaceDims = new int[2];
-                
-                try {
-                    if (!EGL14.eglQuerySurface(previewEglDisplay, previewEglSurface, EGL14.EGL_WIDTH, surfaceDims, 0) ||
-                        !EGL14.eglQuerySurface(previewEglDisplay, previewEglSurface, EGL14.EGL_HEIGHT, surfaceDims, 1)) {
-                        Log.e(TAG, "Failed to query EGL surface dimensions");
-                        return;
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Error querying surface dimensions", e);
-                    return;
+                GLES20.glViewport(0, 0, videoWidth, videoHeight);
+                float[] rotationMatrix = new float[16];
+                Matrix.setIdentityM(rotationMatrix, 0); // No rotation, no orientation logic
+                drawOESTexture(rotationMatrix);
+                if (watermarkEnabled) {
+                    drawWatermarkTexture();
                 }
-                
-                // Safety check for valid dimensions
-                if (surfaceDims[0] <= 0 || surfaceDims[1] <= 0) {
-                    Log.e(TAG, "Invalid surface dimensions: " + surfaceDims[0] + "x" + surfaceDims[1]);
-                    return;
-                }
-                
-                GLES20.glViewport(0, 0, surfaceDims[0], surfaceDims[1]);
-                
-                // Clear the surface to black to ensure we see any render issues
-                GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black background 
-                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-                
-                // Check if camera texture is initialized
-                boolean textureReady = (cameraSurfaceTexture != null && oesTextureId != 0);
-                
-                if (!textureReady) {
-                    // Show a visual indicator that we're still waiting for the camera
-                    Log.d(TAG, "Preview: cameraSurfaceTexture null or texture not initialized - drawing placeholder");
-                
-                    try {
-                        // Draw a simple colored rectangle so we at least see something in the preview
-                        // even if the camera texture isn't ready
-                        if (simpleWatermarkProgram == 0) {
-                            setupSimpleWatermarkShader();
-                        }
-                        
-                        GLES20.glUseProgram(simpleWatermarkProgram);
-                        // No color uniform in this shader, it's a fixed color in the fragment shader
-                        vertexBuffer.position(0);
-                        GLES20.glVertexAttribPointer(simpleWatermarkPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
-                        GLES20.glEnableVertexAttribArray(simpleWatermarkPositionHandle);
-                        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-                        GLES20.glDisableVertexAttribArray(simpleWatermarkPositionHandle);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to draw placeholder in preview", e);
-                    }
-                } else {
-                    // Try to draw camera texture if available
-                    try {
-                        // Apply proper rotation matrices for preview
-                        float[] identityMatrix = new float[16];
-                        Matrix.setIdentityM(identityMatrix, 0);
-                        
-                        // For preview, apply a rotation based on the orientation just like we do for recording
-                        if ("portrait".equalsIgnoreCase(orientation)) {
-                            if (sensorOrientation == 90) { // Back camera
-                                Matrix.rotateM(identityMatrix, 0, 270, 0, 0, 1.0f);
-                            } else if (sensorOrientation == 270) { // Front camera
-                                Matrix.rotateM(identityMatrix, 0, 90, 0, 0, 1.0f);
-                            }
-                        } 
-                        // For landscape videos
-                        else {
-                            if (sensorOrientation == 90) { // Back camera
-                                Matrix.rotateM(identityMatrix, 0, 180, 0, 0, 1.0f);
-                            } else if (sensorOrientation == 270) { // Front camera
-                                Matrix.rotateM(identityMatrix, 0, 0, 0, 0, 1.0f);
-                            }
-                        }
-                        
-                        // Clear any texture binding errors first
-                        GLES20.glGetError(); // Clear any previous errors
-                        
-                        // Draw the camera frame
-                        GLES20.glUseProgram(oesProgram);
-                        
-                        // Use the default vertex positions - a full screen quad
-                        vertexBuffer.position(0);
-                        GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
-                        GLES20.glEnableVertexAttribArray(oesPositionHandle);
-                        
-                        // Apply texture coordinates
-                        texCoordBuffer.position(0);
-                        GLES20.glVertexAttribPointer(oesTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
-                        GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
-                        
-                        // Apply rotation
-                        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, identityMatrix, 0);
-                        
-                        // Apply the actual transform matrix from camera 
-                        GLES20.glUniformMatrix4fv(transformHandle, 1, false, transformMatrix, 0);
-                        
-                        // Bind texture and draw
-                        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-                        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
-                        GLES20.glUniform1i(oesTextureHandle, 0);
-                        
-                        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-                        
-                        // Cleanup
-                        GLES20.glDisableVertexAttribArray(oesPositionHandle);
-                        GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error drawing camera texture in preview", e);
-                    }
-                }
-                
-                // Swap buffers to show the result
+                GLES20.glFinish();
                 try {
                     if (!EGL14.eglSwapBuffers(previewEglDisplay, previewEglSurface)) {
-                        Log.e(TAG, "eglSwapBuffers (preview) failed: " + EGL14.eglGetError());
+                        Log.e(TAG, "eglSwapBuffers (preview) failed: " + EGL14.EGL_NO_DISPLAY);
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "Exception in eglSwapBuffers", e);
+        } catch (Exception e) {
+                    Log.e(TAG, "Exception in eglSwapBuffers (preview)", e);
                 }
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error rendering preview frame", e);
-            } finally {
+        } finally {
                 previewRenderActive = false;
-                
-                // IMPORTANT: Do NOT release the EGL context from this thread
-                // This allows the texture to remain bound for both preview and recording
             }
         }
     }
@@ -739,13 +589,10 @@ public class GLWatermarkRenderer {
                 "attribute vec4 aPosition;\n" +
                 "attribute vec2 aTexCoord;\n" +
                 "uniform mat4 uRotation;\n" +
-                "uniform mat4 uTransform;\n" +
                 "varying vec2 vTexCoord;\n" +
                 "void main() {\n" +
                 "    gl_Position = uRotation * aPosition;\n" +
-                "    vec4 texCoordVec = vec4(aTexCoord, 0.0, 1.0);\n" +
-                "    texCoordVec = uTransform * texCoordVec;\n" +
-                "    vTexCoord = texCoordVec.xy;\n" +
+                "    vTexCoord = aTexCoord;\n" +
                 "}";
 
         String fragmentShaderCode =
@@ -767,11 +614,8 @@ public class GLWatermarkRenderer {
         oesTexCoordHandle = GLES20.glGetAttribLocation(oesProgram, "aTexCoord");
         oesTextureHandle = GLES20.glGetUniformLocation(oesProgram, "uTexture");
         oesRotationHandle = GLES20.glGetUniformLocation(oesProgram, "uRotation");
-        transformHandle = GLES20.glGetUniformLocation(oesProgram, "uTransform");
         vertexBuffer = ByteBuffer.allocateDirect(VERTICES.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         vertexBuffer.put(VERTICES).position(0);
-        texCoordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        texCoordBuffer.put(TEXCOORDS).position(0);
     }
 
     private int loadShader(int type, String shaderCode) {
@@ -794,29 +638,47 @@ public class GLWatermarkRenderer {
     private void drawOESTexture(float[] rotationMatrix) {
         GLES20.glUseProgram(oesProgram);
 
+        // Clear any GL errors before proceeding
+        int clearError = GLES20.glGetError();
+        if (clearError != GLES20.GL_NO_ERROR) {
+            Log.w(TAG, "GL error before drawing: 0x" + Integer.toHexString(clearError));
+        }
+
+        // Apply rotation matrix for orientation
+        float[] finalMatrix = new float[16];
+        System.arraycopy(rotationMatrix, 0, finalMatrix, 0, 16);
+
         // Use the default vertex positions - a full screen quad
         vertexBuffer.position(0);
         GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
         GLES20.glEnableVertexAttribArray(oesPositionHandle);
 
-        // Apply fixed texture coordinates
+        // Make sure we've updated the texture coordinates for the current camera
+        // and orientation before rendering
+        setupTextureCoordinates();
+        
+        // Apply texture coordinates
         texCoordBuffer.position(0);
         GLES20.glVertexAttribPointer(oesTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
         GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
 
         // Apply rotation matrix for orientation
-        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, rotationMatrix, 0);
-        
-        // Apply the transformation matrix from the camera frame
-        // This ensures correct texture coordinates mapping from camera to screen
-        GLES20.glUniformMatrix4fv(transformHandle, 1, false, transformMatrix, 0);
+        GLES20.glUniformMatrix4fv(oesRotationHandle, 1, false, finalMatrix, 0);
 
         // Bind and draw texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
         GLES20.glUniform1i(oesTextureHandle, 0);
 
+        // Draw the texture to the screen
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        
+        // Check for errors after drawing
+        int error = GLES20.glGetError();
+        if (error != GLES20.GL_NO_ERROR) {
+            Log.e(TAG, "GL error after drawing: 0x" + Integer.toHexString(error));
+        }
+        
         GLES20.glDisableVertexAttribArray(oesPositionHandle);
         GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
     }
@@ -829,17 +691,17 @@ public class GLWatermarkRenderer {
         // For preview, apply a rotation based on the orientation just like we do for recording
         if ("portrait".equalsIgnoreCase(orientation)) {
             if (sensorOrientation == 90) { // Back camera
-                Matrix.rotateM(identityMatrix, 0, 270, 0, 0, 1.0f);
+                Matrix.rotateM(identityMatrix, 0, 180, 0, 0, 1.0f); // 180 degrees for back camera portrait
             } else if (sensorOrientation == 270) { // Front camera
-                Matrix.rotateM(identityMatrix, 0, 90, 0, 0, 1.0f);
+                Matrix.rotateM(identityMatrix, 0, 0, 0, 0, 1.0f); // No rotation for front camera portrait
             }
         } 
         // For landscape videos
         else {
             if (sensorOrientation == 90) { // Back camera
-                Matrix.rotateM(identityMatrix, 0, 180, 0, 0, 1.0f);
+                Matrix.rotateM(identityMatrix, 0, 90, 0, 0, 1.0f); // 90 for landscape back
             } else if (sensorOrientation == 270) { // Front camera
-                Matrix.rotateM(identityMatrix, 0, 0, 0, 0, 1.0f);
+                Matrix.rotateM(identityMatrix, 0, 270, 0, 0, 1.0f); // 270 for landscape front
             }
         }
         
@@ -893,13 +755,16 @@ public class GLWatermarkRenderer {
             setupOESShader();
             setupSimpleWatermarkShader();
             
-            // Step 3: Create and set up textures
+            // Step 3: Set up texture coordinates
+            setupTextureCoordinates();
+            
+            // Step 4: Create and set up textures
             setupOESTexture();
             
-            // Step 4: Now create camera surface texture using the OES texture
+            // Step 5: Now create camera surface texture using the OES texture
             createCameraSurfaceTexture();
             
-            // Step 5: Set up watermark textures after camera is initialized
+            // Step 6: Set up watermark textures after camera is initialized
             setupWatermarkTexture();
             setWatermarkText(watermarkText);
             
@@ -939,68 +804,40 @@ public class GLWatermarkRenderer {
                 Log.e(TAG, "Cannot create SurfaceTexture - EGL not initialized");
                 return;
             }
-            
-            // Release previous resources if they exist
-            if (cameraSurfaceTexture != null) {
-                cameraSurfaceTexture.release();
-                cameraSurfaceTexture = null;
-            }
-            
-            if (cameraInputSurface != null) {
-                cameraInputSurface.release();
-                cameraInputSurface = null;
-            }
-            
-            // Verify texture ID is still valid
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
-            int error = GLES20.glGetError();
-            if (error != GLES20.GL_NO_ERROR) {
-                Log.e(TAG, "Error binding texture before creating SurfaceTexture: 0x" + 
-                    Integer.toHexString(error));
-                return;
-            }
-            
-            // Create SurfaceTexture for camera input
+
+            // Create the SurfaceTexture and initialize it
             cameraSurfaceTexture = new SurfaceTexture(oesTextureId);
-            Log.d(TAG, "Created cameraSurfaceTexture with texture ID: " + oesTextureId);
             
-            // Set buffer size using videoWidth and videoHeight directly
-            // This is safer and avoids issues with aspect ratio and orientation
+            // Always use the selected resolution for buffer size, lock orientation and aspect ratio
             cameraSurfaceTexture.setDefaultBufferSize(videoWidth, videoHeight);
-            Log.d(TAG, "Setting camera texture buffer size: " + videoWidth + "x" + videoHeight);
             
-            // Important: Wait for texture to be fully initialized
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
+            // Set up texture coordinates based on orientation
+            setupTextureCoordinates();
             
-            // Important: Clear any existing GL errors before setting the listener
-            GLES20.glGetError(); // Clear any previous error
+            // Create the input surface for the camera
+            cameraInputSurface = new Surface(cameraSurfaceTexture);
             
+            // Set the frame listener to notify when new frames are available
             cameraSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                     synchronized (frameSyncObject) {
-                        frameAvailable = true;
-                        frameSyncObject.notifyAll();
+                        if (!frameAvailable) {
+                            frameAvailable = true;
+                            frameSyncObject.notifyAll();
+                        }
                     }
+                    
+                    // Also notify any external listener
                     if (externalFrameListener != null) {
                         externalFrameListener.onFrameAvailable();
                     }
                 }
             });
             
-            cameraInputSurface = new Surface(cameraSurfaceTexture);
-            if (cameraInputSurface == null || !cameraInputSurface.isValid()) {
-                Log.e(TAG, "Created camera input surface is null or invalid");
-                return;
-            }
-            
-            Log.d(TAG, "Camera input surface created successfully");
+            Log.d(TAG, "SurfaceTexture created successfully with buffer size: " + videoWidth + "x" + videoHeight);
         } catch (Exception e) {
-            Log.e(TAG, "Error creating camera surface texture", e);
+            Log.e(TAG, "Error creating SurfaceTexture", e);
         }
     }
 
@@ -1142,6 +979,44 @@ public class GLWatermarkRenderer {
                 Log.e(TAG, "Error setting up preview surface", e);
                 releasePreviewEGL(); // Clean up on error
             }
+        }
+    }
+
+    private void setupTextureCoordinates() {
+        // Always map the camera buffer directly, no orientation logic
+        float[] adjustedTexCoords = new float[] {
+            0.0f, 1.0f,  // Bottom left
+            1.0f, 1.0f,  // Bottom right
+            0.0f, 0.0f,  // Top left
+            1.0f, 0.0f   // Top right
+        };
+        texCoordBuffer = ByteBuffer.allocateDirect(adjustedTexCoords.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        texCoordBuffer.put(adjustedTexCoords).position(0);
+        Log.d(TAG, "Updated texture coordinates: direct mapping, no orientation logic");
+    }
+
+    /**
+     * Sets the current device orientation
+     * @param orientation 0=portrait, 1=landscape, 2=reverse portrait, 3=reverse landscape
+     */
+    public void setDeviceOrientation(int orientation) {
+        if (orientation >= 0 && orientation <= 3) {
+            this.deviceOrientation = orientation;
+            Log.d(TAG, "Device orientation set to: " + orientation);
+        }
+    }
+
+    /**
+     * Sets the surface dimensions for aspect ratio calculations
+     * @param width Width of the target surface
+     * @param height Height of the target surface
+     */
+    public void setSurfaceDimensions(int width, int height) {
+        if (width > 0 && height > 0) {
+            this.mSurfaceWidth = width;
+            this.mSurfaceHeight = height;
+            Log.d(TAG, "Surface dimensions set to: " + width + "x" + height);
         }
     }
 } 

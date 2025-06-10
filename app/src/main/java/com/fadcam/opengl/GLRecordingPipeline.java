@@ -254,8 +254,8 @@ public class GLRecordingPipeline {
 
     private void startRenderLoop() {
         if (renderThread == null) {
-            renderThread = new HandlerThread("GLRenderThread");
-            renderThread.start();
+        renderThread = new HandlerThread("GLRenderThread");
+        renderThread.start();
             handler = new Handler(renderThread.getLooper());
             
             // Give some time for resources to initialize
@@ -278,13 +278,13 @@ public class GLRecordingPipeline {
             if (!isRecording || glRenderer == null || videoEncoder == null) return;
             try {
                 // Render to encoder
-                glRenderer.renderFrame();
+            glRenderer.renderFrame();
                 
                 // We'll handle preview rendering in a dedicated thread
                 // to avoid conflicts with renderFrame - don't do it here anymore
                 
                 // Drain encoded frame data
-                drainEncoder();
+            drainEncoder();
                 
                 // No need to post another renderRunnable, as onFrameAvailable listener
                 // will schedule this again when a new frame is ready
@@ -399,18 +399,18 @@ public class GLRecordingPipeline {
             Log.d(TAG, ">> stopRecording sequence initiated. Current state: " + 
                 (isRecording ? "IN_PROGRESS" : "NONE"));
             
-            isRecording = false;
+        isRecording = false;
             
             // First stop all rendering threads to avoid accessing released resources
             stopPreviewRenderLoop();
             
             if (handler != null) {
                 handler.removeCallbacksAndMessages(null);
-            }
+        }
             
-            if (renderThread != null) {
+        if (renderThread != null) {
                 try {
-                    renderThread.quitSafely();
+            renderThread.quitSafely();
                     renderThread.join(500); // Wait up to 500ms for thread to finish
                 } catch (InterruptedException e) {
                     Log.w(TAG, "Interrupted while stopping render thread", e);
@@ -419,8 +419,8 @@ public class GLRecordingPipeline {
             
             // Stop encoder first before releasing renderer
             try {
-                if (videoEncoder != null) {
-                    videoEncoder.stop();
+        if (videoEncoder != null) {
+                videoEncoder.stop();
                     videoEncoder.release();
                     videoEncoder = null;
                 }
@@ -430,13 +430,13 @@ public class GLRecordingPipeline {
             
             // Now release the renderer
             if (glRenderer != null) {
-                try {
+            try {
                     // Final release of GL resources
                     glRenderer.release();
                     glRenderer = null;
-                } catch (Exception e) {
+            } catch (Exception e) {
                     Log.e(TAG, "Error releasing renderer", e);
-                }
+            }
             }
             
             renderThread = null;
@@ -508,7 +508,7 @@ public class GLRecordingPipeline {
             this.previewSurface = surface;
             
             // If there's a valid renderer, update its preview surface
-            if (glRenderer != null) {
+        if (glRenderer != null) {
                 try {
                     glRenderer.setPreviewSurface(surface);
                     
