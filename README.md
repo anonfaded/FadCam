@@ -1,6 +1,8 @@
 <div align="center">
     
-<img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >
+<!-- <img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >  this is the old banner -->
+
+<img src="https://github.com/user-attachments/assets/0539bee3-5d70-4486-adbd-b69c9420a19f" style="width: 900px; height: auto;" >
 
 <!-- https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365 -->
 
@@ -223,6 +225,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [ababtools.com](https://ababtools.com/?post=5528)
 - [0714.com](http://www.0714.com/soft/59753.htm)
 - [yeeach.com](https://yeeach.com/1685/%E5%BC%80%E6%BA%90android%E5%90%8E%E5%8F%B0%E5%BD%95%E9%9F%B3-%E5%BD%95%E5%83%8F%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB/)
+- [codegith.com](https://codegith.com/fadcam-open-source-background-video-recorder-for-android/)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
