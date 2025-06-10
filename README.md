@@ -111,10 +111,16 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
     <br>
     <em>apk icon</em> -->
     <br><br>
-    <img src="https://github.com/user-attachments/assets/f356225a-8b86-4a17-8414-fb24b6588a87" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/5062be4c-ccb6-471e-bbaf-f0ab0b5ea26b" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/168fab68-f4fc-45a2-8bba-b8126d572d00" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/05826459-c1bc-4add-96b2-24afb3c0b7cb" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/8.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/9.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/10.jpg" style="width: 200px; height: auto;" >
  <br>
 
 <!--     <br> -->
