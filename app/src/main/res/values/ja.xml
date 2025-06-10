@@ -419,6 +419,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- End Strings for Trash Auto-Delete Feature -->
     <string name="video_split_size_summary_mb">Current: %1$d MB</string>
     <string name="video_split_size_summary_gb">Current: %1$s GB</string>
+    <string name="video_splitting_title">Enable Video Splitting</string>
+    <string name="video_splitting_description">Automatically split recordings into smaller files (Disabled by default). Recommended: 2 GB for balance. Presets up to 4 GB and custom sizes are available. This helps manage large recordings and avoids device file size limits.</string>
     <string name="support_ko_fi">Support us on Ko-fi</string>
     <string name="kofi_description">Description will be set in code.</string>
     <string name="kofi_button_text">Buy me a Ko-fi</string>
@@ -488,6 +490,15 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_verification_canceled">Verification canceled</string>
     <string name="version_format">v%s</string>
     <string name="edit_with_faditorx">Edit with FaditorX</string>
+    <!-- Update Bottom Sheet Strings -->
+    <string name="update_sarcastic_heading">📦 Oh look, another update...</string>
+    <string name="update_visit_github">Visit GitHub</string>
+    <string name="update_version_arrow">  →  </string>
+    <!-- Update variations -->
+    <string name="update_variation_1">Still on &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;? That\'s... nostalgic.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is out there making waves. Time to catch up!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; is so last season.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is ready to impress with new features and bug fixes. Upgrade for a better ride!</string>
+    <string name="update_variation_3">Your app is living in the past with &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is the future—faster, smarter, and shinier. Why not join in?</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; has served you well, but &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is calling!&lt;br&gt;Enjoy the latest improvements and a smoother experience—just a tap away.</string>
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">App Icon</string>
     <string name="setting_app_icon_desc">Change the app\'s launcher icon and name</string>
@@ -500,4 +511,34 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_auto_update_check_title">Auto Update Check on Startup</string>
     <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
     <!-- Fix End: Add auto update check toggle strings -->
+    <!-- Storage Location Settings -->
+    <string name="storage_location_title">Storage Location</string>
+    <string name="storage_location_description">Choose where recordings are saved.</string>
+    <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
+    <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
+    <string name="storage_location_choose_folder">Choose Folder</string>
+    <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam.</string>
+    <string name="storage_icon_description">Storage Icon</string>
+    <string name="location_icon_description">Location Icon</string>
+    <string name="location_embedding_icon_description">Location Embedding Icon</string>
+    <!-- Onboarding Strings -->
+    <string name="onboarding_swipe_instruction">Swipe right to continue</string>
+    <string name="onboarding_select_language">Select your preferred app language.</string>
+    <string name="onboarding_camera">Camera</string>
+    <string name="onboarding_microphone">Microphone</string>
+    <string name="onboarding_storage">Storage</string>
+    <string name="onboarding_or">OR</string>
+    <string name="onboarding_and">AND</string>
+    <string name="onboarding_open_settings">Open Settings</string>
+    <string name="onboarding_intro_line1">Open source,</string>
+    <string name="onboarding_intro_line2">ad-free,</string>
+    <string name="onboarding_intro_line3">and built for you—not for advertisers.</string>
+    <!-- Records Options and Empty State Strings -->
+    <string name="sort_by">Sort By</string>
+    <string name="sort_latest_first">Latest First</string>
+    <string name="sort_oldest_first">Oldest First</string>
+    <string name="sort_smallest_first">Smallest Files First</string>
+    <string name="sort_largest_first">Largest Files First</string>
+    <string name="no_videos_found">No videos found</string>
+    <string name="no_recordings_yet">No Recordings Yet</string>
 </resources>
