@@ -552,4 +552,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
+    <string name="app_icon_minimal" translatable="false">Minimal</string>
+
 </resources>

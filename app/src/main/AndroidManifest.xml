@@ -328,6 +328,21 @@
             </intent-filter>
         </activity-alias>
         
+        <!-- Minimal App Icon (Activity Alias) -->
+        <activity-alias
+            android:name=".MainActivity.MinimalIcon"
+            android:enabled="false"
+            android:label="FadCam"
+            android:icon="@mipmap/ic_launcher_minimal"
+            android:roundIcon="@mipmap/ic_launcher_minimal_round"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        
         <activity
             android:name=".ui.VideoPlayerActivity"
             android:theme="@style/Base.Theme.FadCam" />

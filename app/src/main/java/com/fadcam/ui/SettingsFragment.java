@@ -4576,6 +4576,8 @@ public class SettingsFragment extends BaseFragment {
         // Set button text based on current icon
         if (currentIcon.equals(Constants.APP_ICON_DEFAULT)) {
             appIconChooseButton.setText(getString(R.string.app_icon_default));
+        } else if (currentIcon.equals(Constants.APP_ICON_MINIMAL)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_minimal));
         } else if (currentIcon.equals(Constants.APP_ICON_ALTERNATIVE)) {
             appIconChooseButton.setText(getString(R.string.app_icon_alternative));
         } else if (currentIcon.equals(Constants.APP_ICON_FADED)) {
@@ -4666,6 +4668,7 @@ public class SettingsFragment extends BaseFragment {
         ComponentName footballIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FootballIcon");
         ComponentName carIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.CarIcon");
         ComponentName jetIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.JetIcon");
+        ComponentName minimalIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.MinimalIcon");
         
         // Disable all icon activity-aliases first
         pm.setComponentEnabledSetting(defaultIcon, 
@@ -4714,6 +4717,9 @@ public class SettingsFragment extends BaseFragment {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(jetIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(minimalIcon, 
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         
@@ -4780,6 +4786,10 @@ public class SettingsFragment extends BaseFragment {
                     PackageManager.DONT_KILL_APP);
         } else if (Constants.APP_ICON_JET.equals(iconKey)) {
             pm.setComponentEnabledSetting(jetIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_MINIMAL.equals(iconKey)) {
+            pm.setComponentEnabledSetting(minimalIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
         }
