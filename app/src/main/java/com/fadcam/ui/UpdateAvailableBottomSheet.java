@@ -8,14 +8,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.animation.ObjectAnimator;
-import android.animation.AnimatorSet;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.fadcam.R;
@@ -102,22 +99,9 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
             tvNewVersion.setTextColor(Color.parseColor("#77DD77"));
         }
 
-        // Animate the update icon with a pulse
-        ImageView ivUpdateIcon = view.findViewById(R.id.ivUpdateIcon);
-        if (ivUpdateIcon != null) {
-            ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(ivUpdateIcon, "scaleX", 1f, 1.15f, 1f);
-            ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(ivUpdateIcon, "scaleY", 1f, 1.15f, 1f);
-            scaleUpX.setDuration(900);
-            scaleUpY.setDuration(900);
-            scaleUpX.setRepeatCount(ObjectAnimator.INFINITE);
-            scaleUpY.setRepeatCount(ObjectAnimator.INFINITE);
-            scaleUpX.setRepeatMode(ObjectAnimator.RESTART);
-            scaleUpY.setRepeatMode(ObjectAnimator.RESTART);
-            AnimatorSet pulseSet = new AnimatorSet();
-            pulseSet.playTogether(scaleUpX, scaleUpY);
-            pulseSet.setInterpolator(new AccelerateDecelerateInterpolator());
-            pulseSet.start();
-        }
+        // Use the Lottie animation for update icon
+        LottieAnimationView ivUpdateIcon = view.findViewById(R.id.ivUpdateIcon);
+        // The animation is auto-played by the XML attributes
 
         // Update button text
         TextView tvUpdateButtonText = view.findViewById(R.id.tvUpdateButtonText);

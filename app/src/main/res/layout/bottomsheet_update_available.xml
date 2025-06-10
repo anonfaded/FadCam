@@ -31,33 +31,37 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:paddingTop="36dp"
-            android:paddingBottom="32dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="16dp"
             android:gravity="center_horizontal"
             android:background="@android:color/transparent">
 
-            <ImageView
+            <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/ivUpdateIcon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@drawable/ic_update"
+                android:layout_width="match_parent"
+                android:layout_height="220dp"
                 android:contentDescription="@string/update_available_title"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="12dp"
-                android:tint="#FFD700" />
+                android:scaleType="fitCenter"
+                app:lottie_fileName="update_available_rocket_animation.json"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true" />
 
             <TextView
                 android:id="@+id/tvSarcasticMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Well, well, look who's outdated!"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
-                android:layout_marginBottom="12dp"
+                android:layout_marginTop="0dp"
+                android:layout_marginBottom="8dp"
+                android:paddingLeft="32dp"
+                android:paddingRight="32dp"
                 android:fontFamily="sans-serif-medium" />
 
             <TextView
@@ -65,13 +69,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="A new version is available!"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:gravity="start"
                 android:textAlignment="viewStart"
-                android:layout_marginBottom="18dp"
-                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="12dp"
+                android:lineSpacingExtra="2dp"
                 android:textColor="#FFFFFF"
                 android:lineSpacingMultiplier="1.2"
+                android:paddingLeft="32dp"
+                android:paddingRight="32dp"
                 android:autoLink="web"
                 android:linksClickable="true" />
 
@@ -82,7 +88,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginBottom="18dp">
+                android:layout_marginBottom="10dp">
 
                 <TextView
                     android:id="@+id/tvCurrentVersion"
@@ -91,7 +97,7 @@
                     android:text="v1.0.0"
                     android:textColor="#E43C3C"
                     android:textStyle="bold"
-                    android:textSize="20sp"
+                    android:textSize="16sp"
                     android:fontFamily="monospace" />
 
                 <TextView
@@ -100,7 +106,7 @@
                     android:layout_height="wrap_content"
                     android:text="  →  "
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -110,18 +116,19 @@
                     android:text="v2.0.0"
                     android:textColor="#77DD77"
                     android:textStyle="bold"
-                    android:textSize="20sp"
+                    android:textSize="16sp"
                     android:fontFamily="monospace" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/layoutUpdateButtonRow"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="40dp"
                 android:background="@drawable/kofi_button_bg"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:clickable="true"
@@ -144,7 +151,7 @@
                     android:text="@string/visit_github"
                     android:textColor="#222222"
                     android:textStyle="bold"
-                    android:textSize="18sp"
+                    android:textSize="14sp"
                     android:gravity="center_vertical"
                     android:singleLine="true"
                     android:maxLines="1"
