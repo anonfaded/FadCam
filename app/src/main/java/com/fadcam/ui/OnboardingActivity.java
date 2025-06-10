@@ -29,6 +29,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 import android.view.ViewGroup;
+import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,23 @@ public class OnboardingActivity extends AppIntro {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Make sure we don't have duplicate slides when changing language
+        // Clear any existing slides by removing them all first
+        try {
+            // Try to use reflection to clear slides since AppIntro doesn't expose a public method
+            java.lang.reflect.Field slidesField = com.github.appintro.AppIntro.class.getDeclaredField("fragments");
+            slidesField.setAccessible(true);
+            java.util.List<?> slides = (java.util.List<?>) slidesField.get(this);
+            if (slides != null) {
+                slides.clear();
+            }
+        } catch (Exception e) {
+            // If reflection fails, log and continue
+            android.util.Log.e("OnboardingActivity", "Could not clear slides: " + e.getMessage());
+        }
+        
+        // Add slides in the correct sequence
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_language_slide));
         addSlide(new OnboardingPermissionsFragment());
@@ -72,6 +90,17 @@ public class OnboardingActivity extends AppIntro {
         // Set fade transition effect between slides
         ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
         if (viewPager != null) {
+            // Force LTR layout direction for ViewPager regardless of locale
+            // This ensures that slides always navigate left-to-right even in RTL languages
+            viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            
+            // Force RTL-aware configuration settings
+            viewPager.setTextDirection(View.TEXT_DIRECTION_LTR);  // Ensure text direction is LTR regardless of locale
+            
+            // ViewPager2 would use viewPager.setUserInputEnabled(true);
+            viewPager.setEnabled(true);  // Ensure the ViewPager is enabled
+            
+            // Set page transformer
             viewPager.setPageTransformer(true, new FadePageTransformer());
             
             // Listen for page changes to update navigation buttons
@@ -86,6 +115,27 @@ public class OnboardingActivity extends AppIntro {
     
                 @Override
                 public void onPageScrollStateChanged(int state) {}
+            });
+            
+            // Add a post-layout action to double-check and enforce LTR direction
+            viewPager.post(() -> {
+                viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                
+                // For extra compatibility with RTL languages (like Arabic)
+                // Get current locale and enforce special handling if needed
+                java.util.Locale currentLocale = getResources().getConfiguration().getLocales().get(0);
+                if (currentLocale.toString().startsWith("ar") || 
+                    android.text.TextUtils.getLayoutDirectionFromLocale(currentLocale) == View.LAYOUT_DIRECTION_RTL) {
+                    
+                    // Take extra steps to ensure LTR navigation works even in Arabic
+                    viewPager.setRotationY(0); // Reset any possible RTL-induced flip
+                    
+                    // Force parent ViewGroups to respect LTR as well
+                    ViewGroup parent = (ViewGroup) viewPager.getParent();
+                    if (parent != null) {
+                        parent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                    }
+                }
             });
         }
         
@@ -136,9 +186,9 @@ public class OnboardingActivity extends AppIntro {
                         descView.setGravity(android.view.Gravity.START);
                         descView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                         final String[] lines = {
-                            "Open source,",
-                            "ad-free,",
-                            "and built for you—not for advertisers."
+                            getString(R.string.onboarding_intro_line1),
+                            getString(R.string.onboarding_intro_line2),
+                            getString(R.string.onboarding_intro_line3)
                         };
                         final String cursorChar = "▌";
                         final int rowFadeDuration = 220;
@@ -400,14 +450,291 @@ public class OnboardingActivity extends AppIntro {
     private void applyLanguage(String languageCode) {
         String currentLanguage = getResources().getConfiguration().locale.getLanguage();
         if (!languageCode.equals(currentLanguage)) {
+            // Save current position before applying language change
+            ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
+            final int currentPosition = viewPager != null ? viewPager.getCurrentItem() : 0;
+            
+            // Apply locale change
             java.util.Locale locale = new java.util.Locale(languageCode);
             java.util.Locale.setDefault(locale);
             android.content.res.Configuration config = new android.content.res.Configuration();
             config.setLocale(locale);
             getApplicationContext().createConfigurationContext(config);
             getResources().updateConfiguration(config, getResources().getDisplayMetrics());
-            recreate();
+            
+            // IMPORTANT: SKIP RECREATE() WHICH IS CAUSING THE SLIDE ORDERING ISSUES
+            // Instead manually update UI elements that need language change
+            
+            // Force immediate refresh of the current slide
+            if (viewPager != null && viewPager.getAdapter() != null) {
+                // Get current fragment and force invalidate its view
+                Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter)viewPager.getAdapter())
+                    .getItem(currentPosition);
+                View fragmentView = currentFragment.getView();
+                if (fragmentView != null) {
+                    // Force the fragment view to detach and reattach
+                    ViewGroup parent = (ViewGroup) fragmentView.getParent();
+                    if (parent != null) {
+                        int index = parent.indexOfChild(fragmentView);
+                        parent.removeViewAt(index);
+                        parent.addView(fragmentView, index);
+                    }
+                }
+            }
+            
+            // Add a small delay to ensure all resources are reloaded with the new locale
+            new Handler().postDelayed(() -> {
+                // Force refresh the current slide first
+                forceRefreshCurrentSlide();
+                
+                // Then update all slides
+                updateViewsAfterLanguageChange();
+                
+                // Force a final layout update on the entire view hierarchy
+                View rootView = findViewById(android.R.id.content);
+                if (rootView != null) {
+                    // Force immediate layout
+                    rootView.requestLayout();
+                    rootView.invalidate();
+                    
+                    // Also force a redraw of the entire window
+                    getWindow().getDecorView().requestLayout();
+                    getWindow().getDecorView().invalidate();
+                }
+            }, 100); // Small delay to ensure locale change is processed
+            
+            // Force LTR layout for ViewPager and slide navigation
+            if (viewPager != null) {
+                viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                
+                // For RTL languages like Arabic, apply additional safeguards
+                if (android.text.TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL) {
+                    ViewGroup parent = (ViewGroup) viewPager.getParent();
+                    if (parent != null) {
+                        parent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                    }
+                    
+                    // Manually force navigation controls to maintain LTR behavior
+                    View backButton = findViewById(com.github.appintro.R.id.back);
+                    View nextButton = findViewById(com.github.appintro.R.id.next);
+                    if (backButton != null) backButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                    if (nextButton != null) nextButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                }
+                
+                // Restore position after locale change if needed
+                if (viewPager.getCurrentItem() != currentPosition) {
+                    viewPager.setCurrentItem(currentPosition, false);
+                }
+            }
         }
+    }
+    
+    /**
+     * Force refresh the current visible slide with a more aggressive approach
+     */
+    private void forceRefreshCurrentSlide() {
+        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
+        if (viewPager == null || viewPager.getAdapter() == null) return;
+        
+        // Get current position and fragment
+        int position = viewPager.getCurrentItem();
+        
+        try {
+            // Get fragment from adapter
+            Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter)viewPager.getAdapter())
+                .getItem(position);
+                
+            // Force detach and reattach the fragment view to trigger a full redraw
+            View fragmentView = currentFragment.getView();
+            if (fragmentView != null) {
+                // Get all TextViews in the fragment and force text update
+                updateAllTextViewsAggressively(fragmentView);
+                
+                // Type-specific refresh for our custom fragments
+                if (currentFragment instanceof OnboardingHumanFragment) {
+                    ((OnboardingHumanFragment)currentFragment).refreshLanguage();
+                } else if (currentFragment instanceof OnboardingPermissionsFragment) {
+                    ((OnboardingPermissionsFragment)currentFragment).refreshLanguage();
+                }
+                
+                // Force layout
+                fragmentView.invalidate();
+                fragmentView.requestLayout();
+                
+                // Try to force a redraw by changing visibility momentarily
+                fragmentView.setVisibility(View.INVISIBLE);
+                fragmentView.postDelayed(() -> {
+                    fragmentView.setVisibility(View.VISIBLE);
+                    // After visibility change, force layout again
+                    fragmentView.invalidate();
+                    fragmentView.requestLayout();
+                }, 10);
+            }
+        } catch (Exception e) {
+            // Log error but continue
+            android.util.Log.e("OnboardingActivity", "Error refreshing current slide: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * More aggressive text view updating that forces locale reload
+     */
+    private void updateAllTextViewsAggressively(View view) {
+        if (view instanceof TextView) {
+            TextView textView = (TextView)view;
+            CharSequence currentText = textView.getText();
+            
+            // Force text refresh by clearing and resetting
+            textView.setText("");
+            textView.setText(currentText);
+            
+            // If it has a resource ID, try to reload from resources
+            if (textView.getId() != View.NO_ID) {
+                try {
+                    android.content.res.Resources resources = getResources();
+                    String resourceName = resources.getResourceEntryName(textView.getId());
+                    int resId = resources.getIdentifier(resourceName, "string", getPackageName());
+                    if (resId != 0) {
+                        textView.setText(resId); // Force reload from string resource
+                    }
+                } catch (Exception e) {
+                    // Ignore and continue with current text
+                }
+            }
+            
+            // Force layout of textView
+            textView.invalidate();
+            textView.requestLayout();
+        } else if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup)view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                updateAllTextViewsAggressively(group.getChildAt(i));
+            }
+        }
+    }
+    
+    /**
+     * Updates views after language change without recreating the activity
+     */
+    private void updateViewsAfterLanguageChange() {
+        // Update any text views or labels that need translation
+        // For most views, this isn't necessary since they'll use the updated resources automatically
+        
+        // Update indicator dots (they sometimes need manual refresh)
+        setIndicatorColor(
+            ContextCompat.getColor(this, R.color.white),
+            ContextCompat.getColor(this, R.color.gray500)
+        );
+        
+        // Force refresh ALL fragments, not just the current one
+        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
+        if (viewPager != null && viewPager.getAdapter() != null) {
+            final int currentPosition = viewPager.getCurrentItem();
+            final int totalSlides = viewPager.getAdapter().getCount();
+            
+            // First refresh visible fragments in ViewPager
+            refreshVisibleFragments(viewPager);
+            
+            // Then force load and refresh all other fragments
+            // This ensures all fragments are updated even if they're not yet visible
+            for (int i = 0; i < totalSlides; i++) {
+                if (i != currentPosition) { // We already refreshed the current one
+                    try {
+                        Fragment fragment = ((androidx.fragment.app.FragmentPagerAdapter)viewPager.getAdapter()).getItem(i);
+                        
+                        // Handle different fragment types
+                        if (fragment instanceof OnboardingHumanFragment) {
+                            ((OnboardingHumanFragment)fragment).refreshLanguage();
+                        } else if (fragment instanceof OnboardingPermissionsFragment) {
+                            // Find and update all text views within this fragment
+                            ((OnboardingPermissionsFragment)fragment).refreshLanguage();
+                        } else if (fragment instanceof AppIntroCustomLayoutFragment) {
+                            // For custom layout fragments, we need to find and update all TextViews
+                            View fragmentView = fragment.getView();
+                            if (fragmentView != null) {
+                                updateAllTextViewsInViewHierarchy(fragmentView);
+                            }
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("OnboardingActivity", "Failed to refresh fragment at position " + i + ": " + e.getMessage());
+                    }
+                }
+            }
+            
+            // Force layout refresh on main container
+            ViewGroup containerView = findViewById(android.R.id.content);
+            if (containerView != null) {
+                containerView.invalidate();
+                containerView.requestLayout();
+            }
+        }
+    }
+    
+    /**
+     * Refreshes fragments currently visible in the ViewPager
+     */
+    private void refreshVisibleFragments(ViewPager viewPager) {
+        if (viewPager == null || viewPager.getAdapter() == null) return;
+        
+        // Get the current position
+        int position = viewPager.getCurrentItem();
+        
+        // Get the currently visible fragment
+        Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter)viewPager.getAdapter())
+            .getItem(position);
+        
+        // Refresh the fragment based on its type
+        if (currentFragment instanceof OnboardingHumanFragment) {
+            ((OnboardingHumanFragment)currentFragment).refreshLanguage();
+        } else if (currentFragment instanceof OnboardingPermissionsFragment) {
+            ((OnboardingPermissionsFragment)currentFragment).refreshLanguage();
+        } else if (currentFragment instanceof AppIntroCustomLayoutFragment) {
+            // Force refresh all TextViews in custom layout fragments
+            View view = currentFragment.getView();
+            if (view != null) {
+                updateAllTextViewsInViewHierarchy(view);
+            }
+        }
+    }
+    
+    /**
+     * Recursively finds and updates all TextViews in a view hierarchy
+     */
+    private void updateAllTextViewsInViewHierarchy(View view) {
+        if (view instanceof TextView) {
+            // For TextViews, we can force a refresh by setting the text to its current value
+            // This will cause Android to re-look up the string resource with the new locale
+            TextView textView = (TextView) view;
+            if (textView.getId() != View.NO_ID) {
+                try {
+                    // Try to get the original string resource ID and reset it
+                    android.content.res.Resources resources = getResources();
+                    String resourceName = resources.getResourceEntryName(textView.getId());
+                    int resId = resources.getIdentifier(resourceName, "string", getPackageName());
+                    if (resId != 0) {
+                        textView.setText(resId);
+                    }
+                } catch (Exception e) {
+                    // If we can't get the resource ID, just force reload the current text
+                    CharSequence text = textView.getText();
+                    textView.setText(text);
+                }
+            } else {
+                // If there's no ID, just reset the current text
+                CharSequence text = textView.getText();
+                textView.setText(text);
+            }
+        } else if (view instanceof ViewGroup) {
+            // Recursively process all children of ViewGroups
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                updateAllTextViewsInViewHierarchy(viewGroup.getChildAt(i));
+            }
+        }
+        
+        // Force a layout update on this view
+        view.invalidate();
+        view.requestLayout();
     }
 
     /**

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_icon_description">为您的应用选择图标和名称。这将更改其在主屏幕上的显示方式。</string>
     <string name="check_for_updates">检查更新</string>
-    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方“查看源码”按钮</string>
+    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方"查看源码"按钮</string>
     <string name="app_description">\n    <![CDATA[
     FadCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
     <br/><br/>
@@ -35,7 +36,7 @@
         <item>8/11 | 在设置可以将视频水印设置为位置信息</item>
         <item>9/11 | 想用前摄来录像？在设置里改改吧</item>
         <item>10/11 | 你在软件里的设置不会留下任何痕迹</item>
-        <item>11/11 | 遇到困难了？去“关于”界面加入Discord服务器</item>
+        <item>11/11 | 遇到困难了？去"关于"界面加入Discord服务器</item>
     </string-array>
     <string name="mainpage_video_info">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>视频数量: </b></font>
@@ -64,7 +65,7 @@
     <string name="note_quailty">选择视频质量\n(默认: HD)</string>
     <string name="setting_watermark">水印</string>
     <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
-    <string name="note_watermark_extra">想让视频保存速度更快？选择“无水印”. 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
+    <string name="note_watermark_extra">想让视频保存速度更快？选择\"无水印\". 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
     <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
     <string name="note_location_extra">添加经纬度信息至视频水印需要打开手机的位置信息功能</string>
     <string name="button_setting_review">写个评论 🌟</string>
@@ -143,7 +144,6 @@
     <string name="toast_video_saved">视频已保存至Download目录的FadCam文件夹中</string>
     <string name="toast_video_save_fail">视频保存失败</string>
     <string name="rename_video_title">重命名视频</string>
-    <string name="universal_cancel">取消</string>
     <string name="toast_rename_name_empty">名称不可为空</string>
     <string name="toast_rename_failed">重命名失败</string>
     <string name="toast_rename_success">重命名成功</string>
@@ -169,4 +169,262 @@
     <string name="delete_all_videos_title">删除所有视频</string>
     <string name="delete_all_videos_description">您确定要删除所有视频吗？</string>
 
+    <string name="more_options">更多选项</string>
+    <string name="records_options_title">录像选项</string>
+    <string name="setting_theme_title">应用主题</string>
+    <string name="settings_option_theme">选择主题</string>
+    <string name="settings_theme_changed">主题已更改。正在应用更改...</string>
+    <string name="note_theme">选择您喜欢的应用主题</string>
+    
+    <!-- App Icon Strings -->
+    <string name="setting_app_icon_title">应用图标</string>
+    <string name="setting_app_icon_desc">为您的应用选择图标和名称。这将更改其在主屏幕上的显示方式。</string>
+    <string name="app_icon_dialog_title">选择应用图标</string>
+    <string name="app_icon_changed">应用图标已更改</string>
+    <string name="app_icon_preview">应用图标预览</string>
+    
+    <!-- Tab Lock Strings -->
+    <string name="setting_applock_title">标签锁</string>
+    <string name="setting_applock_desc">使用PIN码锁定录像标签页，保护您的视频。\n为了您的安全，当应用进入后台或关闭时，录像标签页将自动锁定。您返回时需要再次解锁</string>
+    <string name="setting_applock_configure">配置</string>
+    <string name="applock_dialog_title">标签锁选项</string>
+    <string name="applock_enable">启用标签锁</string>
+    <string name="applock_disable">禁用标签锁</string>
+    <string name="applock_set_pin">设置PIN码</string>
+    <string name="applock_change_pin">更改PIN码</string>
+    <string name="applock_remove_pin">移除PIN码</string>
+    <string name="applock_pin_created">PIN码创建成功</string>
+    <string name="applock_pin_removed">PIN码已移除</string>
+    
+    <!-- App Lock Verification Messages -->
+    <string name="applock_verify_to_enable">验证PIN码以启用标签锁</string>
+    <string name="applock_verify_to_disable">验证PIN码以禁用标签锁</string>
+    <string name="applock_verify_to_change">验证当前PIN码</string>
+    <string name="applock_verify_to_remove">验证PIN码以移除</string>
+    <string name="applock_verification_canceled">验证已取消</string>
+    
+    <!-- Camera Settings -->
+    <string name="setting_back_lens_title">后置摄像头镜头</string>
+    <string name="setting_back_lens_note">如果可用，请选择特定镜头，例如广角镜头\n(默认: 主镜头(0))</string>
+    <string name="setting_back_lens_info_single">仅有主镜头</string>
+    <string name="setting_back_lens_info_single_v2">仅检测到主后置摄像头</string>
+    
+    <!-- Video Settings -->
+    <string name="setting_framerate_title">视频帧率</string>
+    <string name="note_framerate">选择帧率\n(默认: %1$d)</string>
+    <string name="setting_codec_title">视频编码器</string>
+    <string name="note_codec">选择编码器\n(默认: %1$s)</string>
+    <string name="setting_video_bitrate_title">视频比特率</string>
+    <string name="button_video_bitrate_settings">设置比特率</string>
+    <string name="bitrate_mode_default">默认</string>
+    <string name="bitrate_mode_custom">自定义</string>
+    <string name="bitrate_custom_label">自定义比特率:</string>
+    <string name="bitrate_custom_hint">例如 16,000</string>
+    <string name="bitrate_reset_button">重置</string>
+    <string name="bitrate_helper_text">比特率控制视频质量和文件大小。更高 = 更好的质量，但文件更大。过高或过低可能导致录制错误或质量差。推荐范围取决于您的设备和选择的分辨率。上面的默认值基于您当前的设置。</string>
+    <string name="bitrate_info_default">默认: %d Mbps</string>
+    <string name="bitrate_info_custom">自定义: %d Mbps</string>
+    <string name="bitrate_info_warning_low">警告: 比特率太低。视频质量可能较差。</string>
+    <string name="bitrate_info_warning_high">警告: 比特率太高。录制可能失败或设备过热。</string>
+    <string name="bitrate_info_ok">比特率在推荐范围内。</string>
+    <string name="bitrate_invalid">无效的比特率。请输入 %1$d 到 %2$d Mbps 之间的值。</string>
+    <string name="bitrate_save_success">比特率保存成功。</string>
+    <string name="bitrate_reset_success">比特率已重置为默认值。</string>
+    <string name="bitrate_current">当前: %1$s Mbps</string>
+    <string name="bitrate_unit">Mbps</string>
+    <string name="bitrate_explanation">什么是比特率?</string>
+    <string name="bitrate_explanation_text">比特率是视频每秒使用的数据量。更高的比特率意味着更好的质量但文件更大。过高或过低都会导致问题。默认值基于专业摄像机标准。</string>
+    
+    <!-- Video Orientation -->
+    <string name="setting_video_orientation_title">视频方向</string>
+    <string name="setting_video_orientation_summary">选择您的视频方向。竖屏最适合社交媒体；横屏最适合YouTube、演示等。</string>
+    <string name="video_orientation_portrait">竖屏(默认)</string>
+    <string name="video_orientation_landscape">横屏</string>
+    
+    <!-- Video Splitting -->
+    <string name="video_split_size_summary_mb">当前: %1$d MB</string>
+    <string name="video_split_size_summary_gb">当前: %1$s GB</string>
+    <string name="video_splitting_title">启用视频分段</string>
+    <string name="video_splitting_description">自动将录制内容分割为更小的文件（默认禁用）。推荐：2 GB 以获得平衡。提供最高 4 GB 的预设和自定义大小选项。这有助于管理大型录制并避免设备文件大小限制。</string>
+    
+    <!-- Location Settings -->
+    <string name="setting_location_embed_title">在视频中嵌入位置</string>
+    <string name="note_location_embed">将GPS坐标添加到视频元数据(地理标记)。\n需要启用GPS\n(默认: 禁用)</string>
+    <string name="note_location_embed_extra">直接将位置数据添加到视频文件中，可被图库/地图应用使用以显示视频拍摄位置。</string>
+    <string name="location_embedding_enabled">位置嵌入已启用</string>
+    <string name="location_permission_granted_manual_toggle">权限已授予！现在您可以在设置中启用位置功能。</string>
+    <string name="allow_location_access">授予权限</string>
+    <string name="location_permission_message">需要位置权限才能将GPS坐标添加到您的视频中。请授予权限以使用此功能。</string>
+    
+    <!-- Audio Settings -->
+    <string name="setting_audio_title">音频录制</string>
+    <string name="note_audio">启用或禁用视频的音频录制。\n(默认: 启用)</string>
+    <string name="setting_audio_input_source_title">音频输入源</string>
+    <string name="setting_audio_input_source_status_default">当前使用: 手机麦克风</string>
+    <string name="setting_audio_input_source_status_wired">当前使用: 有线麦克风</string>
+    <string name="setting_audio_input_source_status_nowired">未检测到有线麦克风</string>
+    <string name="audio_input_source_phone">手机麦克风(默认)</string>
+    <string name="audio_input_source_wired">有线麦克风(如已连接)</string>
+    <string name="audio_input_source_wired_not_available">有线麦克风(未检测到)</string>
+    <string name="audio_input_source_note">选择用于音频录制的麦克风。如果没有连接有线麦克风，将自动使用手机麦克风。</string>
+    <string name="audio_input_source_wired_not_connected">未检测到有线麦克风。使用手机麦克风。</string>
+    <string name="audio_input_source_headphones_no_mic">检测到耳机(无麦克风)</string>
+    <string name="choose">选择</string>
+    
+    <!-- Audio Dialog Settings -->
+    <string name="button_audio_settings">音频设置</string>
+    <string name="dialog_audio_settings_title">音频设置</string>
+    <string name="dialog_audio_bitrate_label">音频比特率 (bps)</string>
+    <string name="dialog_audio_sampling_rate_label">采样率 (Hz)</string>
+    <string name="dialog_audio_reset">重置为默认</string>
+    <string name="dialog_audio_save">保存</string>
+    <string name="dialog_audio_cancel">取消</string>
+    <string name="dialog_audio_invalid_bitrate">比特率无效。请输入64000至384000之间的值。</string>
+    <string name="dialog_audio_invalid_sampling_rate">采样率无效。请输入44100或48000。</string>
+    <string name="dialog_audio_settings_summary">配置音频比特率和采样率以获得最佳质量。默认值：192000 bps，48000 Hz，立体声。</string>
+    <string name="dialog_audio_info_text">• 比特率 (bps) 控制音频质量和文件大小。较高的值意味着更好的质量但文件更大。192000对大多数用途来说是一个很好的默认值。\n• 采样率 (Hz) 是每秒捕获音频的次数。48000 Hz是视频的标准，44100 Hz是音频常用的。\n\n推荐：对大多数用户来说，192000 bps，48000 Hz。</string>
+    
+    <!-- Debug Settings -->
+    <string name="setting_debug_title">调试日志</string>
+    <string name="note_debug">启用调试日志文件生成\n(默认: 禁用)</string>
+    <string name="note_debug_extra">启用后，将在Downloads/FadCam文件夹中创建调试日志文件。这有助于诊断应用问题。</string>
+    
+    <!-- Onboarding Settings -->
+    <string name="setting_onboarding_title">下次启动时显示引导</string>
+    <string name="note_onboarding">启用后，下次打开FadCam时将看到应用介绍和权限指南。</string>
+    
+    <!-- Auto Update Settings -->
+    <string name="setting_auto_update_check_title">启动时自动检查更新</string>
+    <string name="note_auto_update_check">如果启用，FadCam将在您每次打开应用时检查更新。关闭以禁用启动时自动检查更新。\n(默认: 开)</string>
+    
+    <!-- Storage Location Settings -->
+    <string name="storage_location_title">存储位置</string>
+    <string name="storage_location_description">选择保存录像的位置。</string>
+    <string name="storage_location_internal">内部应用存储（默认，私有）</string>
+    <string name="storage_location_custom">自定义位置（SD卡/其他，相册可见）</string>
+    <string name="storage_location_choose_folder">选择文件夹</string>
+    <string name="storage_location_note">注意：使用自定义位置会使视频可被其他应用访问（例如，相册）。内部存储使视频对FadCam保持私有。</string>
+    <string name="storage_icon_description">存储图标</string>
+    <string name="location_icon_description">位置图标</string>
+    <string name="location_embedding_icon_description">位置嵌入图标</string>
+    
+    <!-- Camera Messages -->
+    <string name="camera_resources_cooldown">请稍等片刻再开始新的录制</string>
+    
+    <!-- Update Bottom Sheet Strings -->
+    <string name="update_sarcastic_heading">📦 哦，瞧，又有更新了...</string>
+    <string name="update_visit_github">访问 GitHub</string>
+    <string name="update_version_arrow">  →  </string>
+    <!-- Update variations -->
+    <string name="update_variation_1">还在使用&lt;font color=\'#E43C3C\'>v%1$s&lt;/font>？这很...怀旧。&lt;br>与此同时，&lt;font color=\'#77DD77\'>v%2$s&lt;/font>已经引起了轰动。是时候更新了！</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font>已经过时了。&lt;br>而&lt;font color=\'#77DD77\'>v%2$s&lt;/font>带着新功能和错误修复等待您的体验。升级以获得更好的体验！</string>
+    <string name="update_variation_3">您的应用正在使用过去的&lt;font color=\'#E43C3C\'>v%1$s&lt;/font>版本。&lt;br>而&lt;font color=\'#77DD77\'>v%2$s&lt;/font>代表着未来——更快、更智能、更闪亮。何不加入呢？</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font>已经很好地为您服务，但&lt;font color=\'#77DD77\'>v%2$s&lt;/font>正在召唤您！&lt;br>享受最新的改进和更流畅的体验——只需点击一下。</string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_swipe_instruction">右滑继续</string>
+    <string name="onboarding_select_language">选择您偏好的应用语言。</string>
+    <string name="onboarding_camera">相机</string>
+    <string name="onboarding_microphone">麦克风</string>
+    <string name="onboarding_storage">存储</string>
+    <string name="onboarding_or">或者</string>
+    <string name="onboarding_and">以及</string>
+    <string name="onboarding_open_settings">打开设置</string>
+    <string name="onboarding_intro_line1">开源软件，</string>
+    <string name="onboarding_intro_line2">无广告，</string>
+    <string name="onboarding_intro_line3">为您而设计，而非广告商。</string>
+
+    <string name="language_change_later_note">您可以稍后在设置中更改此项。</string>
+    
+    <string name="permissions_required">需要权限</string>
+    <string name="permissions_description">FadCam需要访问您的相机、麦克风和存储空间来录制和保存视频。</string>
+    <string name="grant_permissions">授予权限</string>
+    <string name="permissions_note">您必须授予所有权限才能继续。</string>
+    <string name="permissions_granted">所有权限已授予！</string>
+
+    <string name="open_settings">打开设置</string>
+
+    <string name="disable_battery_optimization">禁用电池优化</string>
+
+    <string name="onboarding_human_title">验证您是否为人类</string>
+    <string name="onboarding_human_desc">嗯... 好吧。这些规则是不可协商的。如果您不能同意，请立即卸载FadCam。</string>
+    <string name="onboarding_human_checkbox1">我不会使用FadCam违反任何法律、侵犯他人隐私或做令人不适的事情。如果我犯错，开发者概不负责。（那是我的责任。）</string>
+    <string name="onboarding_human_checkbox2">我在使用前就已经爱上了FadCam。（非可选）</string>
+    <string name="onboarding_human_button">让我进入！</string>
+
+    <!-- Records Options and Empty State Strings -->
+    <string name="sort_by">排序方式</string>
+    <string name="sort_latest_first">最新优先</string>
+    <string name="sort_oldest_first">最旧优先</string>
+    <string name="sort_smallest_first">最小文件优先</string>
+    <string name="sort_largest_first">最大文件优先</string>
+    <string name="no_videos_found">未找到视频</string>
+    <string name="no_recordings_yet">暂无录像</string>
+    
+    <!-- Remote Tab Strings -->
+    <string name="remote_access_title">远程访问/控制</string>
+    <string name="remote_toast_coming_soon">即将推出！In Sha Allah</string>
+    <string name="remote_coming_soon">FadCam的远程控制功能即将推出。</string>
+    <string name="remote_feature_description">使用二维码配对FadCam客户端，实现安全的本地网络远程控制：开始/停止录制、预览、缩放、切换摄像头等功能—全部采用端到端加密。</string>
+
+    <!-- Strings for TrashFragment -->
+    <string name="trash_auto_deleted_toast">已自动删除%1$d个旧项目。</string>
+    <string name="trash_empty_toast_message">没有项目可删除。</string>
+    <string name="trash_emptied_toast">已删除所有项目。</string>
+    <string name="trash_items_deleted_toast">已永久删除%1$d个项目。</string>
+    <string name="trash_error_deleting_items_toast">删除项目时出错。</string>
+    <string name="trash_dialog_empty_all_title">删除所有项目？</string>
+    <string name="trash_button_empty_all_action">删除全部</string>
+
+    <!-- For TrashFragment Dialogs -->
+    <string name="dialog_permanently_delete_title">永久删除？</string>
+    <string name="dialog_permanently_delete_message">您确定要永久删除选中的%1$d个项目吗？此操作无法撤销。</string>
+    <string name="dialog_empty_all_trash_message">您确定要永久删除所有项目吗？此操作无法撤销。</string>
+
+    <!-- Universal button texts -->
+    <string name="universal_cancel">取消</string>
+    <string name="universal_delete">删除</string>
+
+    <!-- For TrashFragment - Restore Action -->
+    <string name="trash_no_items_selected_toast">未选择任何项目。</string>
+    <string name="trash_dialog_restore_title">恢复所选项目？</string>
+    <string name="trash_dialog_restore_message">将%1$d个项目恢复到公共Downloads/FadCam/文件夹？</string>
+    <string name="trash_restore_success_toast">已恢复%1$d个项目。</string>
+    <string name="trash_restore_fail_toast">恢复项目时出错。某些文件可能未被恢复或相册可能未更新。请检查应用的存储权限。</string>
+    <string name="trash_restore_cancelled_toast">已取消恢复。</string>
+    <string name="trash_fragment_title_text">最近删除</string>
+    <string name="universal_restore">恢复</string>
+    <string name="deleted_item_thumbnail_description">已删除项目的缩略图</string>
+    <string name="trash_empty_icon_description">垃圾箱为空图标</string>
+    <string name="trash_empty_text">垃圾箱为空。</string>
+
+    <!-- Strings for Trash Auto-Delete Feature -->
+    <plurals name="trash_auto_delete_info_days">
+        <item quantity="other">项目将在%1$d天后自动删除。</item>
+    </plurals>
+    <plurals name="trash_auto_delete_info_hours">
+        <item quantity="other">项目将在%1$d小时后自动删除。</item>
+    </plurals>
+    <string name="trash_auto_delete_info_manual">垃圾箱中的项目永远不会自动删除，请手动删除视频。</string>
+    <plurals name="trash_item_remaining_days">
+        <item quantity="other">剩余%1$d天</item>
+    </plurals>
+    <plurals name="trash_item_remaining_hours">
+        <item quantity="other">剩余%1$d小时</item>
+    </plurals>
+    <string name="trash_item_remaining_soon">即将删除</string>
+    <string name="trash_menu_auto_delete_settings">自动删除设置</string>
+    <string name="auto_delete_dialog_title">设置自动删除时间</string>
+    <string name="auto_delete_1_hour">1小时后</string>
+    <string name="auto_delete_5_hours">5小时后</string>
+    <string name="auto_delete_10_hours">10小时后</string>
+    <string name="auto_delete_1_day">1天后</string>
+    <string name="auto_delete_7_days">7天后</string>
+    <string name="auto_delete_30_days">30天后（默认）</string>
+    <string name="auto_delete_60_days">60天后</string>
+    <string name="auto_delete_90_days">90天后</string>
+    <string name="auto_delete_never">永不（手动删除）</string>
+    <string name="auto_delete_save_setting">保存</string>
+    
+    <string name="trash_select_all">全选</string>
 </resources>

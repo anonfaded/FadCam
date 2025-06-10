@@ -15,7 +15,7 @@
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="@color/colorPrimary"
             android:paddingBottom="12dp"
-            android:text="Audio settings summary" />
+            android:text="@string/dialog_audio_settings_summary" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -28,14 +28,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Bitrate (bps)" />
+                android:text="@string/dialog_audio_bitrate_label" />
             <EditText
                 android:id="@+id/audio_bitrate_input"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:inputType="number"
                 android:maxLength="6"
-                android:hint="192000" />
+                android:hint="" />
         </LinearLayout>
         <TextView
             android:id="@+id/audio_bitrate_error"
@@ -44,7 +44,7 @@
             android:textColor="@android:color/holo_red_light"
             android:textSize="12sp"
             android:visibility="gone"
-            android:text="Error" />
+            android:text="@string/dialog_audio_invalid_bitrate" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -57,14 +57,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Sampling Rate (Hz)" />
+                android:text="@string/dialog_audio_sampling_rate_label" />
             <EditText
                 android:id="@+id/audio_sampling_rate_input"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:inputType="number"
                 android:maxLength="5"
-                android:hint="48000" />
+                android:hint="" />
         </LinearLayout>
         <TextView
             android:id="@+id/audio_sampling_rate_error"
@@ -73,13 +73,13 @@
             android:textColor="@android:color/holo_red_light"
             android:textSize="12sp"
             android:visibility="gone"
-            android:text="Error" />
+            android:text="@string/dialog_audio_invalid_sampling_rate" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/audio_reset_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Reset to Default"
+            android:text="@string/dialog_audio_reset"
             android:layout_gravity="end"
             android:layout_marginTop="16dp"
             style="?attr/materialButtonOutlinedStyle" />

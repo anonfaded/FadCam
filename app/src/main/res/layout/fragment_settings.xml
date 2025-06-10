@@ -718,7 +718,7 @@
                         android:textSize="16sp"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
-                        android:text="Enable Video Splitting"/> 
+                        android:text="@string/video_splitting_title"/> 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/video_splitting_description_textview"
                         android:layout_width="wrap_content"
@@ -726,7 +726,7 @@
                         android:textAppearance="@style/textAppearanceCaption"
                         android:textColor="?android:attr/textColorSecondary"
                         app:lineHeight="16sp"
-                        android:text="Automatically split recordings into smaller files (Disabled by default). Recommended: 2 GB for balance. Presets up to 4 GB and custom sizes are available. This helps manage large recordings and avoids device file size limits."/>
+                        android:text="@string/video_splitting_description"/>
                 </LinearLayout>
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/video_splitting_switch"
@@ -859,7 +859,7 @@
                         android:scaleType="centerInside"
                         android:src="@drawable/ic_custom_location"
                         app:tint="@color/white"
-                        android:contentDescription="Storage Icon"/>
+                        android:contentDescription="@string/storage_icon_description"/>
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -873,14 +873,14 @@
                             android:textColor="?attr/colorHeading"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:text="Storage Location"/>
+                            android:text="@string/storage_location_title"/>
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="@style/textAppearanceCaption"
                             android:textColor="?android:attr/textColorSecondary"
                             app:lineHeight="16sp"
-                            android:text="Choose where recordings are saved."/>
+                            android:text="@string/storage_location_description"/>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -895,14 +895,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:minHeight="48dp"
-                        android:text="Internal App Storage (Default, Private)"
+                        android:text="@string/storage_location_internal"
                         android:textColor="?attr/colorHeading"/>
                     <RadioButton
                         android:id="@+id/radio_custom_location"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:minHeight="48dp"
-                        android:text="Custom Location (SD Card/Other, Gallery Visible)"
+                        android:text="@string/storage_location_custom"
                         android:textColor="?attr/colorHeading"/>
                 </RadioGroup>
 
@@ -911,7 +911,7 @@
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Choose Folder"
+                    android:text="@string/storage_location_choose_folder"
                     android:layout_marginStart="32dp"
                     android:layout_marginTop="4dp"
                     android:visibility="gone"
@@ -931,7 +931,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam."
+                    android:text="@string/storage_location_note"
                     android:textAppearance="@style/textAppearanceCaption"
                     android:textColor="?attr/colorHeading"
                     android:background="#33CFBAFD"
@@ -961,7 +961,7 @@
                     android:layout_marginEnd="16dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_location"
-                    android:contentDescription="Location Icon"/>
+                    android:contentDescription="@string/location_icon_description"/>
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -1015,7 +1015,7 @@
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_navigation"
                     app:tint="@color/white"
-                    android:contentDescription="Location Embedding Icon"/>
+                    android:contentDescription="@string/location_embedding_icon_description"/>
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

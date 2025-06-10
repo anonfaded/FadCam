@@ -520,7 +520,16 @@ public class HomeFragment extends BaseFragment {
         updatePreviewVisibility();
 
         // ----- Fix Start for this method(onStart) -----
-        registerSegmentCompleteStatsReceiver(requireContext());
+        // Only register segment complete stats receiver if fragment is attached
+        if (isAdded() && !isDetached() && getActivity() != null && !getActivity().isFinishing()) {
+            try {
+                registerSegmentCompleteStatsReceiver(requireContext());
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "Failed to register segment complete stats receiver", e);
+            }
+        } else {
+            Log.d(TAG, "Skipping segment stats receiver registration - fragment not in valid state");
+        }
         // ----- Fix Ended for this method(onStart) -----
 
         // ----- Fix Start: Remove duplicate registration since it's now in registerBroadcastReceivers -----
@@ -557,8 +566,18 @@ public class HomeFragment extends BaseFragment {
                             final String finalLatestVersion = latestVersion;
                             final String finalTagUrl = tagUrl;
                             requireActivity().runOnUiThread(() -> {
-                                UpdateAvailableBottomSheet.newInstance(finalLatestVersion, changelog, finalTagUrl)
-                                    .show(getParentFragmentManager(), "UpdateAvailableBottomSheet");
+                                // Add safety check to ensure fragment is still attached when showing bottom sheet
+                                if (isAdded() && !isDetached() && getActivity() != null && !getActivity().isFinishing()) {
+                                    try {
+                                        UpdateAvailableBottomSheet.newInstance(finalLatestVersion, changelog, finalTagUrl)
+                                            .show(getParentFragmentManager(), "UpdateAvailableBottomSheet");
+                                    } catch (IllegalStateException e) {
+                                        // Log the error but don't crash - this can happen during language changes
+                                        Log.e(TAG, "Fragment not associated with fragment manager", e);
+                                    }
+                                } else {
+                                    Log.d(TAG, "Update check: Fragment not in valid state to show bottom sheet");
+                                }
                             });
                         }
                     } catch (Exception e) {
@@ -3673,31 +3692,40 @@ public class HomeFragment extends BaseFragment {
     // ----- Fix Start for this class (HomeFragment) -----
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void registerSegmentCompleteStatsReceiver(Context context) {
-        if (context == null) {
-            Log.e(TAG, "Context is null, cannot register segmentCompleteStatsReceiver");
-            // ----- Fix Start for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
+        // First check if fragment is attached to prevent IllegalStateException
+        if (!isAdded() || isDetached()) {
+            Log.e(TAG, "Fragment not attached or is detached, cannot register segmentCompleteStatsReceiver");
             isSegmentCompleteStatsReceiverRegistered = false;
             return;
-            // ----- Fix Ended for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
         }
-        initializeSegmentCompleteStatsReceiver(); // Ensure it's initialized
-
-        // ----- Fix Start for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
-        if (segmentCompleteStatsReceiver != null) {
-            IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
-            // Add receiver export flag for Android 13+
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(segmentCompleteStatsReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                context.registerReceiver(segmentCompleteStatsReceiver, filter);
-            }
-            isSegmentCompleteStatsReceiverRegistered = true;
-            Log.d(TAG, "Registered segmentCompleteStatsReceiver.");
-        } else {
+        
+        if (context == null) {
+            Log.e(TAG, "Context is null, cannot register segmentCompleteStatsReceiver");
             isSegmentCompleteStatsReceiverRegistered = false;
-            Log.e(TAG, "segmentCompleteStatsReceiver is null, not registering.");
+            return;
         }
-        // ----- Fix Ended for this method(registerSegmentCompleteStatsReceiver_set_flag)-----
+        
+        try {
+            initializeSegmentCompleteStatsReceiver(); // Ensure it's initialized
+
+            if (segmentCompleteStatsReceiver != null) {
+                IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
+                // Add receiver export flag for Android 13+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    context.registerReceiver(segmentCompleteStatsReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+                } else {
+                    context.registerReceiver(segmentCompleteStatsReceiver, filter);
+                }
+                isSegmentCompleteStatsReceiverRegistered = true;
+                Log.d(TAG, "Registered segmentCompleteStatsReceiver.");
+            } else {
+                isSegmentCompleteStatsReceiverRegistered = false;
+                Log.e(TAG, "segmentCompleteStatsReceiver is null, not registering.");
+            }
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "Fragment not associated with fragment manager", e);
+            isSegmentCompleteStatsReceiverRegistered = false;
+        }
     }
     // ----- Fix Ended for this class (HomeFragment) -----
 

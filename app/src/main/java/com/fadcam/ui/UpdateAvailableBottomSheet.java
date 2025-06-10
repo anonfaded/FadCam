@@ -52,7 +52,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
         // Sarcastic message
         TextView tvSarcastic = view.findViewById(R.id.tvSarcasticMessage);
         if (tvSarcastic != null) {
-            tvSarcastic.setText("\uD83D\uDCE6 Oh look, another update...");
+            tvSarcastic.setText(getString(R.string.update_sarcastic_heading));
             tvSarcastic.setTextColor(Color.WHITE);
             tvSarcastic.setAlpha(0f);
             tvSarcastic.animate().alpha(1f).setDuration(900).start();
@@ -65,13 +65,13 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
             String latestV = version;
             String[] variations = new String[] {
                 // Variation 1
-                "Still on <font color='#E43C3C'>v" + currentV + "</font>? That's... nostalgic.<br>Meanwhile, <font color='#77DD77'>v" + latestV + "</font> is out there making waves. Time to catch up!",
+                getString(R.string.update_variation_1, currentV, latestV),
                 // Variation 2
-                "<font color='#E43C3C'>v" + currentV + "</font> is so last season.<br>Meanwhile, <font color='#77DD77'>v" + latestV + "</font> is ready to impress with new features and bug fixes. Upgrade for a better ride!",
+                getString(R.string.update_variation_2, currentV, latestV),
                 // Variation 3
-                "Your app is living in the past with <font color='#E43C3C'>v" + currentV + "</font>.<br>Meanwhile, <font color='#77DD77'>v" + latestV + "</font> is the future—faster, smarter, and shinier. Why not join in?",
+                getString(R.string.update_variation_3, currentV, latestV),
                 // Variation 4
-                "<font color='#E43C3C'>v" + currentV + "</font> has served you well, but <font color='#77DD77'>v" + latestV + "</font> is calling!<br>Enjoy the latest improvements and a smoother experience—just a tap away."
+                getString(R.string.update_variation_4, currentV, latestV)
             };
             java.util.Random rand = new java.util.Random();
             int idx = rand.nextInt(variations.length);
@@ -91,7 +91,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
             tvCurrentVersion.setTextColor(Color.parseColor("#E43C3C"));
         }
         if (tvArrow != null) {
-            tvArrow.setText("  →  ");
+            tvArrow.setText(getString(R.string.update_version_arrow));
             tvArrow.setTextColor(Color.WHITE);
         }
         if (tvNewVersion != null) {
@@ -106,7 +106,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
         // Update button text
         TextView tvUpdateButtonText = view.findViewById(R.id.tvUpdateButtonText);
         if (tvUpdateButtonText != null) {
-            tvUpdateButtonText.setText("Visit GitHub");
+            tvUpdateButtonText.setText(getString(R.string.update_visit_github));
         }
         View layoutUpdateButtonRow = view.findViewById(R.id.layoutUpdateButtonRow);
         if (layoutUpdateButtonRow != null) {

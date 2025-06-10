@@ -53,7 +53,7 @@
                 android:id="@+id/tvSarcasticMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Well, well, look who's outdated!"
+                android:text="@string/update_sarcastic_heading"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
@@ -68,7 +68,7 @@
                 android:id="@+id/tvUpdateDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="A new version is available!"
+                android:text=""
                 android:textSize="14sp"
                 android:gravity="start"
                 android:textAlignment="viewStart"
@@ -104,10 +104,15 @@
                     android:id="@+id/tvArrow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="  →  "
+                    android:text="@string/update_version_arrow"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:includeFontPadding="true"
+                    android:ellipsize="none"
+                    android:singleLine="true"
+                    android:minWidth="40dp"
+                    android:gravity="center" />
 
                 <TextView
                     android:id="@+id/tvNewVersion"
