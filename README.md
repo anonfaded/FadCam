@@ -29,6 +29,7 @@
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 [![SourceForge Downloads](https://img.shields.io/sourceforge/dt/fadcam.svg?label=SourceForge%20Downloads&color=red)](https://sourceforge.net/projects/fadcam/files/latest/download)
+[<img src="https://shields.rbtlog.dev/simple/com.fadcam" alt="badge">](https://shields.rbtlog.dev/com.fadcam)
 
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
 
@@ -233,6 +234,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [0714.com](http://www.0714.com/soft/59753.htm)
 - [yeeach.com](https://yeeach.com/1685/%E5%BC%80%E6%BA%90android%E5%90%8E%E5%8F%B0%E5%BD%95%E9%9F%B3-%E5%BD%95%E5%83%8F%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB/)
 - [codegith.com](https://codegith.com/fadcam-open-source-background-video-recorder-for-android/)
+- [52pojie.cn](https://www.52pojie.cn/thread-2038164-1-1.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
