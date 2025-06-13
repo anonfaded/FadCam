@@ -642,4 +642,25 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_title_custom_default">Notification</string>
     <string name="notification_settings_saved">Notification settings saved</string>
 
+    <!-- Additional Notification Customization Strings -->
+    <!-- Adding notification appearance strings -->
+    <string name="setting_notification_appearance">Notification Appearance</string>
+    <string name="note_notification_appearance">Customize the appearance of the recording notification\n(Default: FadCam)</string>
+    <string name="hide_stop_button">Hide stop button</string>
+    <string name="note_hide_stop_button">Hide the stop button in the notification\n(Default: Disabled)</string>
+    <string name="notification_preview">Notification preview</string>
+    <string name="notification_stop">STOP</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (default)</item>
+        <item>System Update</item>
+        <item>Download</item>
+        <item>Syncing</item>
+        <item>Backup</item>
+        <item>Custom</item>
+    </string-array>
+    
+
+
+
 </resources>
