@@ -5,34 +5,26 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
-import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
-import android.preference.PreferenceManager;
-import android.provider.DocumentsContract;
 import android.util.Log; // Use standard Log
-import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 import android.widget.Toast;
@@ -51,7 +43,6 @@ import android.app.Service;
 import android.content.pm.ServiceInfo;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.Level;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
@@ -62,7 +53,6 @@ import com.fadcam.SharedPreferencesManager; // Use your manager
 import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
-import com.fadcam.ui.RecordsAdapter;
 import com.fadcam.ui.GeotagHelper;
 
 import java.io.File;
@@ -77,21 +67,16 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import android.content.Intent; // Add Intent import
-import android.net.Uri;       // Add Uri import
-import com.fadcam.Constants; // Import your Constants class
-import java.util.Set; // Add if needed
-import java.util.HashSet; // Add if needed
+// Add Intent import
+// Add Uri import
+// Import your Constants class
+// Add if needed
+// Add if needed
 
 // ----- Fix Start for this class (RecordingService_video_splitting_imports_and_fields) -----
-import android.media.MediaRecorder.OnInfoListener;
 // ----- Fix Ended for this class (RecordingService_video_splitting_imports_and_fields) -----
-
-import org.osmdroid.util.GeoPoint;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -100,7 +85,6 @@ import android.media.MediaMetadataRetriever;
 
 import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import com.fadcam.utils.DeviceHelper;
-import com.fadcam.utils.camera.FrameRateHelper;
 import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
@@ -295,10 +279,10 @@ public class RecordingService extends Service {
                 int splitSizeMb = sharedPreferencesManager.getVideoSplitSizeMb();
                 if (isVideoSplittingEnabled && splitSizeMb > 0) {
                     videoSplitSizeBytes = (long) splitSizeMb * 1024 * 1024; // Convert MB to Bytes
-                    Log.d(TAG, "Video splitting enabled. Size: " + splitSizeMb + "MB (" + videoSplitSizeBytes + " Bytes)");
+                    Log.i(TAG, "FFMPEG SPLIT: Video splitting enabled. Size: " + splitSizeMb + "MB (" + videoSplitSizeBytes + " Bytes)");
                 } else {
                     videoSplitSizeBytes = -1L; // Disable splitting if not enabled or invalid size
-                    Log.d(TAG, "Video splitting disabled or size invalid.");
+                    Log.i(TAG, "FFMPEG SPLIT: Video splitting disabled or size invalid.");
                 }
                 currentSegmentNumber = 1; // Always reset segment number on new recording start
                 
@@ -900,12 +884,13 @@ public class RecordingService extends Service {
     @Nullable
     private String buildFFmpegCommand(String inputPath, String outputPath) {
         String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+        String ffmpegCommand = null;
 
         if ("no_watermark".equals(watermarkOption)) {
             Log.d(TAG,"Building FFmpeg copy command (no watermark).");
             // When copying, no re-encoding happens, codec and pixel format don't matter.
             // Add -map_metadata 0 to preserve all metadata from the input file
-            return String.format(Locale.US, "-i %s -codec copy -map_metadata 0 -y %s", 
+            ffmpegCommand = String.format(Locale.US, "-i %s -codec copy -map_metadata 0 -y %s", 
                 escapeFFmpegPath(inputPath), escapeFFmpegPath(outputPath));
         } else {
             Log.d(TAG,"Building FFmpeg watermark command.");
@@ -915,10 +900,16 @@ public class RecordingService extends Service {
             Log.i(TAG,"Watermark enabled. Using processing codec: " + codecStringForProcessing);
 
             try {
-                // Existing logic to prepare watermark text, font, etc.
-                String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
-                File fontFile = new File(fontPath);
-                if(!fontFile.exists()){ Log.e(TAG,"Font file missing at: "+fontPath); return null;}
+                            // Existing logic to prepare watermark text, font, etc.
+            String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf";
+            File fontFile = new File(fontPath);
+            // Enhanced logging: Check and log font file details
+            if(!fontFile.exists()){ 
+                Log.e(TAG,"Font file missing at: "+fontPath); 
+                return null;
+            } else {
+                Log.i(TAG, "FFMPEG FONT: Found font file at " + fontPath + " (size: " + fontFile.length() + " bytes)");
+            }
 
                 String watermarkText;
                 boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
@@ -943,7 +934,7 @@ public class RecordingService extends Service {
                 // Build the command using the forced H.264 codec AND forced pixel format
                 // Order: Input -> Filters -> Output Codec -> Output Bitrate -> Pixel Format -> Audio Codec -> Output Path
                 // Added -map_metadata 0 to preserve all metadata from the input file
-                return String.format(Locale.US,
+                ffmpegCommand = String.format(Locale.US,
                         "-i %s -r %d -vf \"drawtext=text='%s':x=10:y=10:fontsize=%s:fontcolor=white:fontfile='%s'\" -q:v 0 -codec:v %s -b:v %d %s -map_metadata 0 -codec:a copy -y %s",
                         escapeFFmpegPath(inputPath),
                         frameRates,
@@ -956,10 +947,15 @@ public class RecordingService extends Service {
                         escapeFFmpegPath(outputPath)
                 );
             } catch (Exception e){
-                Log.e(TAG, "Error building watermark FFmpeg command",e);
+                Log.e(TAG, "Error building watermark FFmpeg command", e);
                 return null;
             }
         }
+        
+        // Enhanced logging: Log the full FFmpeg command for debugging
+        Log.i(TAG, "FFMPEG COMMAND: " + ffmpegCommand);
+        
+        return ffmpegCommand;
     }
 
     // Execute FFmpeg, saving result to final internal directory
@@ -989,7 +985,7 @@ public class RecordingService extends Service {
                     // Do NOT delete the input temp file on failure
                     sendRecordingCompleteBroadcast(false, Uri.fromFile(internalTempInput), null); // originalTempSafUri is null for internal
                 }
-        ); // ** End of executeFFmpegAsync call **
+        );
     }
 
     /**
@@ -1001,10 +997,12 @@ public class RecordingService extends Service {
      * @param onFailure Runnable to execute if FFmpeg fails.
      */
     // Centralized Async FFmpeg Execution
-    // Updated helper to run FFmpeg and broadcast completion
     // Updated helper to run FFmpeg and broadcast START/END processing states
     private void executeFFmpegAsync(String ffmpegCommand, File inputFile, Uri finalOutputUriIfKnown, Runnable onSuccess, Runnable onFailure) {
         Log.d(TAG, "executeFFmpegAsync: Starting FFmpeg processing for: " + inputFile.getName());
+        // Enhanced logging: Log the full FFmpeg command for debugging
+        Log.i(TAG, "FFMPEG COMMAND: " + ffmpegCommand);
+        
         // Make the service foreground again if it's not already in the foreground
 
         // ----- Fix Start for fixing FFmpeg foreground service crash -----
@@ -1078,17 +1076,24 @@ public class RecordingService extends Service {
                     
                 } else if (ReturnCode.isCancel(returnCode)) {
                     Log.w(TAG, "FFmpeg execution canceled for " + inputFile.getName());
+                    // Enhanced logging: Log the full stderr for debugging
+                    Log.w(TAG, "FFMPEG STDERR: " + session.getAllLogsAsString());
                     if (onFailure != null) onFailure.run();
                     isSegmentProcessingActive = false;
                     processNextSegmentInQueue();
                 } else {
                     Log.e(TAG, "FFmpeg execution failed for " + inputFile.getName() + " with state: " + session.getState() + " and return code: " + returnCode);
+                    // Enhanced logging: Log the full stderr for debugging
+                    Log.e(TAG, "FFMPEG STDERR OUTPUT: \n" + session.getAllLogsAsString());
+                    Log.e(TAG, "FFMPEG FAILED COMMAND: " + ffmpegCommand);
                     if (onFailure != null) onFailure.run();
                     isSegmentProcessingActive = false;
                     processNextSegmentInQueue();
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Exception in FFmpeg completion callback", e);
+                // Enhanced logging: Log the full stderr for debugging even in case of exception
+                Log.e(TAG, "FFMPEG STDERR (exception occurred): \n" + session.getAllLogsAsString());
                 if (onFailure != null) onFailure.run();
                 isSegmentProcessingActive = false;
                 processNextSegmentInQueue();
@@ -1108,18 +1113,15 @@ public class RecordingService extends Service {
             // Log handler - just log the message
             if (log != null && log.getMessage() != null) {
                 String message = log.getMessage();
-                // Truncate any long lines for log readability
-                if (message.length() > 1000) {
-                    message = message.substring(0, 997) + "...";
-                }
-                Log.d(TAG, "[FFmpeg] " + message);
+                // Enhanced logging: Don't truncate logs for better debugging
+                Log.d(TAG, "[FFMPEG LOG] " + message);
             }
         }, statistics -> {
             // Statistics handler - log periodically
             if (statistics != null && statistics.getTime() % 5000 < 500) { // Every 5s approx
                 try {
                     Log.d(TAG, String.format(Locale.US, 
-                        "[FFmpeg Stats] Time: %d ms, size: %d KB, speed: %.2f, bitrate: %.2f kbits/s",
+                        "[FFMPEG STATS] Time: %d ms, size: %d KB, speed: %.2f, bitrate: %.2f kbits/s",
                         statistics.getTime(), 
                         statistics.getSize() / 1024, 
                         statistics.getSpeed(), 
@@ -2251,6 +2253,13 @@ public class RecordingService extends Service {
             Log.d(TAG,"Applying watermark: " + watermarkOption);
             // Fetch watermark text and format it
             String fontPath = getFilesDir().getAbsolutePath() + "/ubuntu_regular.ttf"; // Ensure font exists
+            // Enhanced logging: Check and log font file details
+            File fontFile = new File(fontPath);
+            if(!fontFile.exists()){ 
+                Log.e(TAG,"FFMPEG ERROR: Font file missing at: "+fontPath); 
+            } else {
+                Log.i(TAG, "FFMPEG FONT: Found font file at " + fontPath + " (size: " + fontFile.length() + " bytes)");
+            }
             String watermarkText;
             boolean isLocationEnabled = sharedPreferencesManager.isLocalisationEnabled();
             String locationText = isLocationEnabled ? getLocationData() : "";
@@ -2284,6 +2293,8 @@ public class RecordingService extends Service {
                     bitratesEstimated,
                     outputUriOrPath
             );
+            // Enhanced logging: Log the full FFmpeg command for debugging
+            Log.i(TAG, "FFMPEG COMMAND (legacy watermark): " + ffmpegCommand);
             // ----- Fix Ended for this method(processLatestVideoFileWithWatermark_codec_fix)-----
         }
 
@@ -2374,7 +2385,8 @@ public class RecordingService extends Service {
 
     // ----- Fix Start for this method(executeFFmpegCommand_full_rewrite)-----
     private void executeFFmpegCommand(String ffmpegCommand, final String inputUriOrPath, final String outputUriOrPath) {
-        Log.d(TAG, "Executing FFmpeg: " + ffmpegCommand);
+        // Enhanced logging: Log the full FFmpeg command for debugging
+        Log.i(TAG, "FFMPEG COMMAND (legacy flow): " + ffmpegCommand);
         // This method appears to be part of an older/alternative processing flow.
         // It is NOT the primary path for segment processing, which uses executeFFmpegAsync.
         // If this method were to be activated and manage an FFmpeg task,
@@ -2386,18 +2398,19 @@ public class RecordingService extends Service {
         // Log.d(TAG, "FFmpeg task count incremented via executeFFmpegCommand for: " + inputUriOrPath);
 
         FFmpegKit.executeAsync(ffmpegCommand, session -> {
-            boolean success = ReturnCode.isSuccess(session.getReturnCode());
-            Log.d(TAG, "FFmpeg session (via executeFFmpegCommand) finished - Success: " + success + ", RC: " + session.getReturnCode());
+            ReturnCode returnCode = session.getReturnCode();
+            boolean success = ReturnCode.isSuccess(returnCode);
+            Log.d(TAG, "FFmpeg session (via executeFFmpegCommand) finished - Success: " + success + ", RC: " + returnCode);
 
             if (success) {
-                Log.d(TAG, "FFmpeg process successful (via executeFFmpegCommand). Output: " + outputUriOrPath);
+                Log.i(TAG, "FFmpeg process successful (via executeFFmpegCommand). Output: " + outputUriOrPath);
                 cleanupTemporaryFile(); // Delete the temp file (inputUriOrPath)
 
                 // Optional: Update records UI / Media Scanner if needed
             } else {
-                Log.e(TAG, "FFmpeg (via executeFFmpegCommand) failed! Logs:");
-                Log.e(TAG, session.getAllLogsAsString());
-                Log.e(TAG, "Command was: "+ffmpegCommand);
+                Log.e(TAG, "FFmpeg (via executeFFmpegCommand) failed! State: " + session.getState() + ", Return Code: " + returnCode);
+                Log.e(TAG, "FFMPEG STDERR OUTPUT (legacy flow): \n" + session.getAllLogsAsString());
+                Log.e(TAG, "FFMPEG FAILED COMMAND (legacy flow): " + ffmpegCommand);
                 Toast.makeText(this, "Error processing video (via executeFFmpegCommand)", Toast.LENGTH_LONG).show();
 
                 // Try to cleanup the FAILED output file if it was created via SAF
@@ -2957,11 +2970,13 @@ public class RecordingService extends Service {
                     } else {
                         // Internal storage mode
                         if (currentInternalTempFile != null && currentInternalTempFile.exists() && currentInternalTempFile.length() > 0) {
-                            Log.d(TAG, "[OnInfoListener] Queuing completed segment for FFmpeg: " + currentInternalTempFile.getAbsolutePath());
+                            Log.i(TAG, "FFMPEG SEGMENT: Queuing completed segment for processing: " + 
+                                 currentInternalTempFile.getAbsolutePath() + 
+                                 " (Size: " + (currentInternalTempFile.length() / 1024 / 1024) + " MB)");
                             segmentProcessingQueue.add(currentInternalTempFile);
                             processNextSegmentInQueue();
                         } else {
-                            Log.w(TAG, "[OnInfoListener] Previous segment file missing or empty, skipping FFmpeg queue.");
+                            Log.e(TAG, "FFMPEG ERROR: Previous segment file missing or empty, skipping FFmpeg queue.");
                         }
                     }
                     currentSegmentNumber++;
