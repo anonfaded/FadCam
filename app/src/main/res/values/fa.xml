@@ -545,4 +545,42 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="sort_largest_first">Largest Files First</string>
     <string name="no_videos_found">No videos found</string>
     <string name="no_recordings_yet">No Recordings Yet</string>
+    <!-- Notification Customization Strings -->
+    <string name="setting_notification_customization_title">Notification Customization</string>
+    <string name="setting_notification_customization_description">Customize the recording notification appearance</string>
+    <string name="notification_preset_title">Notification Preset</string>
+    <string name="notification_preset_description">Choose how the notification appears</string>
+    <string name="notification_preset_default">Default (Recording)</string>
+    <string name="notification_preset_system_update">System Update</string>
+    <string name="notification_preset_downloading">Downloading</string>
+    <string name="notification_preset_syncing">Syncing Data</string>
+    <string name="notification_preset_custom">Custom Text</string>
+    <string name="notification_hide_stop_button">Hide Stop Button</string>
+    <string name="notification_hide_stop_button_description">Remove the stop button from the notification</string>
+    <string name="notification_custom_title">Custom Title</string>
+    <string name="notification_custom_text">Custom Text</string>
+    <string name="notification_preview_title">Preview</string>
+    <string name="notification_setup_title">Notification Setup</string>
+    <string name="notification_setup_description">Customize how the recording notification appears</string>
+    <string name="notification_setup_save">Save</string>
+    <string name="notification_setup_cancel">Cancel</string>
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Recording</string>
+    <string name="notification_channel_system_updates">System Updates</string>
+    <string name="notification_channel_downloads">Downloads</string>
+    <string name="notification_channel_data_sync">Data Sync</string>
+    <string name="notification_channel_generic">Notification Service</string>
+    <string name="notification_channel_description">Service notifications</string>
+    <string name="notification_text_system_update_progress">Update in progress</string>
+    <string name="notification_text_system_update_paused">Update paused</string>
+    <string name="notification_text_downloading_progress">Download in progress</string>
+    <string name="notification_text_downloading_paused">Download paused</string>
+    <string name="notification_text_syncing_progress">Sync in progress</string>
+    <string name="notification_text_syncing_paused">Sync paused</string>
+    <string name="notification_text_custom_default">Process running</string>
+    <string name="notification_title_system_update">System Update</string>
+    <string name="notification_title_downloading">Downloading</string>
+    <string name="notification_title_syncing">Syncing Data</string>
+    <string name="notification_title_custom_default">Notification</string>
+    <string name="notification_settings_saved">Notification settings saved</string>
 </resources>
