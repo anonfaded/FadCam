@@ -427,4 +427,52 @@
     <string name="auto_delete_save_setting">保存</string>
     
     <string name="trash_select_all">全选</string>
+
+    <string name="torch_options_title">手电筒选项</string>
+    
+    <!-- Notification Customization Strings -->
+    <string name="setting_notification_customization_title">通知自定义</string>
+    <string name="setting_notification_customization_description">自定义录制通知的外观</string>
+    <string name="notification_preset_title">通知预设</string>
+    <string name="notification_preset_description">选择通知的显示方式</string>
+    <string name="notification_preset_default">默认（录制）</string>
+    <string name="notification_preset_system_update">系统更新</string>
+    <string name="notification_preset_downloading">下载中</string>
+    <string name="notification_preset_syncing">数据同步</string>
+    <string name="notification_preset_custom">自定义文本</string>
+    <string name="notification_hide_stop_button">隐藏停止按钮</string>
+    <string name="notification_hide_stop_button_description">从通知中移除停止按钮</string>
+    <string name="notification_custom_title">自定义标题</string>
+    <string name="notification_custom_text">自定义文本</string>
+    <string name="notification_preview">通知预览</string>
+    <string name="notification_preview_title">预览</string>
+    <string name="notification_video_recording">视频录制</string>
+    <string name="notification_video_recording_progress_description">录制进行中</string>
+    <string name="notification_video_recording_paused_description">录制已暂停</string>
+    <string name="notification_stop">停止</string>
+    <string name="notification_setup_title">通知设置</string>
+    <string name="notification_setup_description">自定义录制通知的显示方式</string>
+    <string name="notification_setup_save">保存</string>
+    <string name="notification_setup_cancel">取消</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s 录制</string>
+    <string name="notification_channel_system_updates">系统更新</string>
+    <string name="notification_channel_downloads">下载</string>
+    <string name="notification_channel_data_sync">数据同步</string>
+    <string name="notification_channel_generic">通知服务</string>
+    <string name="notification_channel_description">服务通知</string>
+    
+    <string name="notification_text_system_update_progress">更新进行中</string>
+    <string name="notification_text_system_update_paused">更新已暂停</string>
+    <string name="notification_text_downloading_progress">下载进行中</string>
+    <string name="notification_text_downloading_paused">下载已暂停</string>
+    <string name="notification_text_syncing_progress">同步进行中</string>
+    <string name="notification_text_syncing_paused">同步已暂停</string>
+    <string name="notification_text_custom_default">进程运行中</string>
+    <string name="notification_title_system_update">系统更新</string>
+    <string name="notification_title_downloading">下载中</string>
+    <string name="notification_title_syncing">数据同步</string>
+    <string name="notification_title_custom_default">通知</string>
+    <string name="notification_settings_saved">通知设置已保存</string>
 </resources>

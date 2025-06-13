@@ -533,6 +533,9 @@ public class SettingsFragment extends BaseFragment {
         videoSplitSizeLayout = view.findViewById(R.id.video_split_size_layout);
         videoSplitSizeValueTextView = view.findViewById(R.id.video_split_size_value_textview); // New TextView
         // ----- Fix Ended for this class (SettingsFragment_video_splitting_view_finding) -----
+        
+        // Find notification customization button
+        notificationCustomizationButton = view.findViewById(R.id.button_notification_customization);
 
         audioInputSourceStatus = view.findViewById(R.id.audio_input_source_status);
         setupAudioInputSourceSection();
@@ -654,6 +657,11 @@ public class SettingsFragment extends BaseFragment {
         setupThemeSpinner(view);
         setupOrientationSpinner();
         setupVideoSplittingSection();
+        
+        // Setup notification customization button
+        if (notificationCustomizationButton != null) {
+            setupNotificationCustomizationButton();
+        }
 
         locationHelper = new LocationHelper(getContext());
         
@@ -4801,4 +4809,289 @@ public class SettingsFragment extends BaseFragment {
         return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
     }
 
+    // For notification preview
+    private MaterialButton notificationCustomizationButton;
+
+    // ----- Fix Start for this class (SettingsFragment_notification_customization) -----
+    /**
+     * Sets up the notification customization button click listener
+     */
+    private void setupNotificationCustomizationButton() {
+        if (notificationCustomizationButton == null) {
+            return;
+        }
+        
+        notificationCustomizationButton.setOnClickListener(v -> {
+            vibrateTouch();
+            showNotificationCustomizationDialog();
+        });
+    }
+
+    /**
+     * Shows dialog for customizing notification appearance
+     */
+    private void showNotificationCustomizationDialog() {
+        final View customView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_notification_customization, null);
+        final AlertDialog dialog = themedDialogBuilder(requireContext())
+                .setTitle(R.string.notification_setup_title)
+                .setView(customView)
+                .setCancelable(true)
+                .create();
+        
+        // Initialize RadioGroup for presets
+        RadioGroup presetGroup = customView.findViewById(R.id.radiogroup_notification_preset);
+        RadioButton defaultPreset = customView.findViewById(R.id.radio_preset_default);
+        RadioButton systemUpdatePreset = customView.findViewById(R.id.radio_preset_system_update);
+        RadioButton downloadingPreset = customView.findViewById(R.id.radio_preset_downloading);
+        RadioButton syncingPreset = customView.findViewById(R.id.radio_preset_syncing);
+        RadioButton customPreset = customView.findViewById(R.id.radio_preset_custom);
+        
+        // Initialize custom text fields
+        LinearLayout customTextLayout = customView.findViewById(R.id.layout_custom_notification);
+        TextInputEditText customTitleInput = customView.findViewById(R.id.edit_custom_title);
+        TextInputEditText customTextInput = customView.findViewById(R.id.edit_custom_text);
+        
+        // Initialize hide stop button switch
+        MaterialSwitch hideStopButtonSwitch = customView.findViewById(R.id.switch_hide_stop_button);
+        
+        // Initialize preview components
+        View notificationPreview = customView.findViewById(R.id.notification_preview_card);
+        TextView previewTitle = customView.findViewById(R.id.notification_preview_title);
+        TextView previewText = customView.findViewById(R.id.notification_preview_text);
+        TextView previewStopButton = customView.findViewById(R.id.notification_preview_stop_button);
+        
+        // Initialize buttons
+        Button saveButton = customView.findViewById(R.id.button_save);
+        Button cancelButton = customView.findViewById(R.id.button_cancel);
+        
+        // Get current settings
+        String currentPreset = sharedPreferencesManager.getNotificationPreset();
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        
+        // Set initial values
+        switch (currentPreset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT:
+                defaultPreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                systemUpdatePreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                downloadingPreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                syncingPreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM:
+                customPreset.setChecked(true);
+                customTextLayout.setVisibility(View.VISIBLE);
+                break;
+        }
+        
+        // Set custom text values if available
+        String customTitle = sharedPreferencesManager.getCustomNotificationTitle();
+        String customText = sharedPreferencesManager.getCustomNotificationText();
+        
+        if (customTitle != null) {
+            customTitleInput.setText(customTitle);
+        }
+        if (customText != null) {
+            customTextInput.setText(customText);
+        }
+        
+        // Set hide stop button switch
+        hideStopButtonSwitch.setChecked(hideStopButton);
+        
+        // Update preview initially
+        updateNotificationPreview(
+            previewTitle,
+            previewText,
+            previewStopButton,
+            getSelectedPreset(presetGroup),
+            customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+            customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+            hideStopButtonSwitch.isChecked()
+        );
+        
+        // Set RadioGroup change listener
+        presetGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            // Show/hide custom text fields when custom preset is selected
+            if (checkedId == R.id.radio_preset_custom) {
+                customTextLayout.setVisibility(View.VISIBLE);
+            } else {
+                customTextLayout.setVisibility(View.GONE);
+            }
+            
+            // Update preview
+            updateNotificationPreview(
+                previewTitle,
+                previewText,
+                previewStopButton,
+                getSelectedPreset(presetGroup),
+                customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                hideStopButtonSwitch.isChecked()
+            );
+        });
+        
+        // Setup text change listeners for custom inputs
+        customTitleInput.addTextChangedListener(new SimpleTextWatcher(() -> {
+            if (customPreset.isChecked()) {
+                updateNotificationPreview(
+                    previewTitle,
+                    previewText,
+                    previewStopButton,
+                    SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM,
+                    customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                    customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                    hideStopButtonSwitch.isChecked()
+                );
+            }
+        }));
+        
+        customTextInput.addTextChangedListener(new SimpleTextWatcher(() -> {
+            if (customPreset.isChecked()) {
+                updateNotificationPreview(
+                    previewTitle,
+                    previewText,
+                    previewStopButton,
+                    SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM,
+                    customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                    customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                    hideStopButtonSwitch.isChecked()
+                );
+            }
+        }));
+        
+        // Setup hide stop button switch change listener
+        hideStopButtonSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateNotificationPreview(
+                previewTitle,
+                previewText,
+                previewStopButton,
+                getSelectedPreset(presetGroup),
+                customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                isChecked
+            );
+        });
+        
+        // Setup save button
+        saveButton.setOnClickListener(v -> {
+            // Save the selected preset
+            String selectedPreset = getSelectedPreset(presetGroup);
+            sharedPreferencesManager.setNotificationPreset(selectedPreset);
+            
+            // Save custom text if custom preset is selected
+            if (SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM.equals(selectedPreset)) {
+                String title = customTitleInput.getText() != null ? customTitleInput.getText().toString() : "";
+                String text = customTextInput.getText() != null ? customTextInput.getText().toString() : "";
+                sharedPreferencesManager.setCustomNotificationTitle(title);
+                sharedPreferencesManager.setCustomNotificationText(text);
+            }
+            
+            // Save hide stop button preference
+            sharedPreferencesManager.setNotificationStopButtonHidden(hideStopButtonSwitch.isChecked());
+            
+            dialog.dismiss();
+            Toast.makeText(requireContext(), getString(R.string.notification_settings_saved), Toast.LENGTH_SHORT).show();
+        });
+        
+        // Setup cancel button
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+        
+        // Show the dialog
+        dialog.show();
+        setDialogButtonColors(dialog);
+    }
+
+    /**
+     * Updates the notification preview in the dialog
+     */
+    private void updateNotificationPreview(
+            TextView titleView, 
+            TextView textView, 
+            View stopButton,
+            String preset, 
+            String customTitle, 
+            String customText, 
+            boolean hideStopButton) {
+        
+        String title;
+        String text;
+        
+        switch (preset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT:
+                title = getString(R.string.notification_video_recording);
+                text = getString(R.string.notification_video_recording_progress_description);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                title = "System Update";
+                text = "Update in progress";
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                title = "Downloading";
+                text = "Download in progress";
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                title = "Syncing Data";
+                text = "Sync in progress";
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM:
+                title = !customTitle.isEmpty() ? customTitle : "Notification";
+                text = !customText.isEmpty() ? customText : "Process running";
+                break;
+            default:
+                title = getString(R.string.notification_video_recording);
+                text = getString(R.string.notification_video_recording_progress_description);
+        }
+        
+        titleView.setText(title);
+        textView.setText(text);
+        stopButton.setVisibility(hideStopButton ? View.GONE : View.VISIBLE);
+    }
+
+    /**
+     * Gets the selected preset key from the RadioGroup
+     */
+    private String getSelectedPreset(RadioGroup radioGroup) {
+        int selectedId = radioGroup.getCheckedRadioButtonId();
+        
+        if (selectedId == R.id.radio_preset_default) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT;
+        } else if (selectedId == R.id.radio_preset_system_update) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE;
+        } else if (selectedId == R.id.radio_preset_downloading) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING;
+        } else if (selectedId == R.id.radio_preset_syncing) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING;
+        } else if (selectedId == R.id.radio_preset_custom) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM;
+        }
+        
+        return SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT;
+    }
+
+    /**
+     * Simple TextWatcher implementation that only requires onTextChanged
+     */
+    private static class SimpleTextWatcher implements TextWatcher {
+        private final Runnable onTextChanged;
+        
+        SimpleTextWatcher(Runnable onTextChanged) {
+            this.onTextChanged = onTextChanged;
+        }
+        
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            onTextChanged.run();
+        }
+        
+        @Override
+        public void afterTextChanged(Editable s) {}
+    }
+    // ----- Fix Ended for this class (SettingsFragment_notification_customization) -----
 }

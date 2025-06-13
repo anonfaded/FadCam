@@ -26,6 +26,9 @@ public class SharedPreferencesManager {
     private static SharedPreferencesManager instance;
     public final SharedPreferences sharedPreferences;
 
+    // Store context to use for string resources
+    private final Context context;
+
     // --- Opened Video Methods ---
     public Set<String> getOpenedVideoUris() {
         // Return a copy to prevent external modification
@@ -172,6 +175,7 @@ public class SharedPreferencesManager {
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
         this.sharedPreferences = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
+        this.context = context;
     }
 
     public static SharedPreferencesManager getInstance(Context context) {
@@ -496,5 +500,174 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(PREF_APP_LOCK_ENABLED, enabled).apply();
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_applock) -----
+
+    // ----- Fix Start for this class (SharedPreferencesManager_notification_customization) -----
+    // Notification customization constants
+    public static final String PREF_NOTIFICATION_PRESET = "notification_preset";
+    public static final String NOTIFICATION_PRESET_DEFAULT = "default"; // Default FadCam notification
+    public static final String NOTIFICATION_PRESET_SYSTEM_UPDATE = "system_update"; // System update notification
+    public static final String NOTIFICATION_PRESET_DOWNLOADING = "downloading"; // Downloading notification
+    public static final String NOTIFICATION_PRESET_SYNCING = "syncing"; // Syncing notification
+    public static final String NOTIFICATION_PRESET_CUSTOM = "custom"; // User's custom text
+
+    // Custom notification text preferences
+    public static final String PREF_CUSTOM_NOTIFICATION_TITLE = "custom_notification_title";
+    public static final String PREF_CUSTOM_NOTIFICATION_TEXT = "custom_notification_text";
+    public static final String PREF_HIDE_NOTIFICATION_STOP_BUTTON = "hide_notification_stop_button";
+
+    /**
+     * Gets the selected notification preset.
+     * @return The preset key, default is "default"
+     */
+    public String getNotificationPreset() {
+        return sharedPreferences.getString(PREF_NOTIFICATION_PRESET, NOTIFICATION_PRESET_DEFAULT);
+    }
+
+    /**
+     * Sets the notification preset.
+     * @param preset The preset key to use
+     */
+    public void setNotificationPreset(String preset) {
+        sharedPreferences.edit().putString(PREF_NOTIFICATION_PRESET, preset).apply();
+    }
+
+    /**
+     * Gets the custom notification title if set by user.
+     * @return The custom title or null if not set
+     */
+    public String getCustomNotificationTitle() {
+        return sharedPreferences.getString(PREF_CUSTOM_NOTIFICATION_TITLE, null);
+    }
+
+    /**
+     * Sets the custom notification title.
+     * @param title The custom title text
+     */
+    public void setCustomNotificationTitle(String title) {
+        sharedPreferences.edit().putString(PREF_CUSTOM_NOTIFICATION_TITLE, title).apply();
+    }
+
+    /**
+     * Gets the custom notification text if set by user.
+     * @return The custom text or null if not set
+     */
+    public String getCustomNotificationText() {
+        return sharedPreferences.getString(PREF_CUSTOM_NOTIFICATION_TEXT, null);
+    }
+
+    /**
+     * Sets the custom notification text.
+     * @param text The custom notification text
+     */
+    public void setCustomNotificationText(String text) {
+        sharedPreferences.edit().putString(PREF_CUSTOM_NOTIFICATION_TEXT, text).apply();
+    }
+
+    /**
+     * Checks if the stop button should be hidden in the notification.
+     * @return true if button should be hidden, false otherwise
+     */
+    public boolean isNotificationStopButtonHidden() {
+        return sharedPreferences.getBoolean(PREF_HIDE_NOTIFICATION_STOP_BUTTON, false);
+    }
+
+    /**
+     * Sets whether to hide the stop button in the notification.
+     * @param hide true to hide the button, false to show it
+     */
+    public void setNotificationStopButtonHidden(boolean hide) {
+        sharedPreferences.edit().putBoolean(PREF_HIDE_NOTIFICATION_STOP_BUTTON, hide).apply();
+    }
+
+    /**
+     * Gets the notification title based on the selected preset or custom text.
+     * @return The notification title to display
+     */
+    public String getNotificationTitle() {
+        String preset = getNotificationPreset();
+        
+        if (context == null) {
+            return null; // Return null if context is not available
+        }
+        
+        switch (preset) {
+            case NOTIFICATION_PRESET_DEFAULT:
+                return null; // Use default from strings.xml
+            case NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                return context.getString(R.string.notification_title_system_update);
+            case NOTIFICATION_PRESET_DOWNLOADING:
+                return context.getString(R.string.notification_title_downloading);
+            case NOTIFICATION_PRESET_SYNCING:
+                return context.getString(R.string.notification_title_syncing);
+            case NOTIFICATION_PRESET_CUSTOM:
+                String custom = getCustomNotificationTitle();
+                return (custom != null && !custom.isEmpty()) ? custom : context.getString(R.string.notification_title_custom_default);
+            default:
+                return null; // Use default from strings.xml
+        }
+    }
+    
+    /**
+     * Gets the notification channel name based on the selected preset
+     * @return The channel name to display
+     */
+    public String getNotificationChannelName() {
+        if (context == null) {
+            return null; // Return null if context is not available
+        }
+        
+        String preset = getNotificationPreset();
+        switch (preset) {
+            case NOTIFICATION_PRESET_DEFAULT:
+                return null; // Use default app name + " Recording"
+            case NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                return context.getString(R.string.notification_channel_system_updates);
+            case NOTIFICATION_PRESET_DOWNLOADING:
+                return context.getString(R.string.notification_channel_downloads);
+            case NOTIFICATION_PRESET_SYNCING:
+                return context.getString(R.string.notification_channel_data_sync);
+            case NOTIFICATION_PRESET_CUSTOM:
+                String custom = getCustomNotificationTitle();
+                return (custom != null && !custom.isEmpty()) ? custom : context.getString(R.string.notification_channel_generic);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Gets the notification text based on the selected preset or custom text.
+     * @param isRecordingPaused Whether recording is currently paused
+     * @return The notification text to display
+     */
+    public String getNotificationText(boolean isRecordingPaused) {
+        if (context == null) {
+            return null; // Return null if context is not available
+        }
+        
+        String preset = getNotificationPreset();
+        switch (preset) {
+            case NOTIFICATION_PRESET_DEFAULT:
+                return null; // Use default from strings.xml
+            case NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                return isRecordingPaused ? 
+                    context.getString(R.string.notification_text_system_update_paused) : 
+                    context.getString(R.string.notification_text_system_update_progress);
+            case NOTIFICATION_PRESET_DOWNLOADING:
+                return isRecordingPaused ? 
+                    context.getString(R.string.notification_text_downloading_paused) : 
+                    context.getString(R.string.notification_text_downloading_progress);
+            case NOTIFICATION_PRESET_SYNCING:
+                return isRecordingPaused ? 
+                    context.getString(R.string.notification_text_syncing_paused) : 
+                    context.getString(R.string.notification_text_syncing_progress);
+            case NOTIFICATION_PRESET_CUSTOM:
+                String custom = getCustomNotificationText();
+                return (custom != null && !custom.isEmpty()) ? custom : 
+                    context.getString(R.string.notification_text_custom_default);
+            default:
+                return null; // Use default from strings.xml
+        }
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_notification_customization) -----
 
 }

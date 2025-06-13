@@ -2596,13 +2596,21 @@ public class RecordingService extends Service {
     // --- Notifications ---
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.app_name) + " Recording";
-            String description = "Notifications for FadCam recording service";
+            // ----- Fix Start for this method(createNotificationChannel) -----
+            // Get the custom channel name or use a generic name
+            String channelName = sharedPreferencesManager.getNotificationChannelName();
+            CharSequence name = (channelName != null) ? 
+                channelName : 
+                getString(R.string.notification_channel_recording, getString(R.string.app_name));
+            
+            // Use a generic description that doesn't reveal the app's purpose
+            String description = getString(R.string.notification_channel_description);
             int importance = NotificationManager.IMPORTANCE_LOW; // Low importance to be less intrusive
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
             channel.setSound(null, null); // No sound
             channel.enableVibration(false); // No vibration
+            // ----- Fix Ended for this method(createNotificationChannel) -----
 
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
@@ -2615,6 +2623,7 @@ public class RecordingService extends Service {
     }
 
     private void setupRecordingInProgressNotification() {
+        // ----- Fix Start for this method(setupRecordingInProgressNotification) -----
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification setup.");
             // If Android Tiramisu or higher, START_FOREGROUND without notification IS allowed if user denies permission
@@ -2636,54 +2645,109 @@ public class RecordingService extends Service {
             }
         }
 
+        // Get custom notification text if set
+        String notificationText = sharedPreferencesManager.getNotificationText(false);
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(getString(R.string.notification_video_recording_progress_description))
-                // Use STOP action
-                .clearActions() // Remove previous actions
-                .addAction(new NotificationCompat.Action(
+                .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_progress_description));
+        
+        // Add stop action only if not hidden
+        if (!hideStopButton) {
+            builder.clearActions() // Remove previous actions
+                  .addAction(new NotificationCompat.Action(
                         R.drawable.ic_stop,
                         getString(R.string.button_stop),
                         createStopRecordingIntent()));
+        }
 
         startForeground(NOTIFICATION_ID, builder.build());
         Log.d(TAG, "Foreground notification updated for IN_PROGRESS.");
+        // ----- Fix Ended for this method(setupRecordingInProgressNotification) -----
     }
 
 
     private void setupRecordingResumeNotification() { // Notification shown when PAUSED
+        // ----- Fix Start for this method(setupRecordingResumeNotification) -----
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification update.");
             return; // Don't crash if user denied permission after start
         }
 
+        // Get custom notification text if set
+        String notificationText = sharedPreferencesManager.getNotificationText(true);
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(getString(R.string.notification_video_recording_paused_description))
-                // Use RESUME action
-                .clearActions() // Remove previous actions
-                .addAction(new NotificationCompat.Action(
-                        R.drawable.ic_play, // Use Play icon for Resume action
-                        getString(R.string.button_resume),
-                        createResumeRecordingIntent()))
-                .addAction(new NotificationCompat.Action( // Keep STOP action available
-                        R.drawable.ic_stop,
-                        getString(R.string.button_stop),
-                        createStopRecordingIntent()));
-
+                .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_paused_description))
+                .clearActions(); // Remove previous actions
+        
+        // Add resume action
+        builder.addAction(new NotificationCompat.Action(
+                R.drawable.ic_play, // Use Play icon for Resume action
+                getString(R.string.button_resume),
+                createResumeRecordingIntent()));
+                
+        // Add stop action only if not hidden
+        if (!hideStopButton) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_stop,
+                    getString(R.string.button_stop),
+                    createStopRecordingIntent()));
+        }
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.notify(NOTIFICATION_ID, builder.build()); // Just update existing notification
         Log.d(TAG, "Foreground notification updated for PAUSED.");
+        // ----- Fix Ended for this method(setupRecordingResumeNotification) -----
     }
 
 
     private NotificationCompat.Builder createBaseNotificationBuilder() {
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.notification_video_recording))
-                .setSmallIcon(R.drawable.ic_notification_icon) // Replace with actual suitable small icon
-                .setContentIntent(createOpenAppIntent()) // Tap notification -> open app
+        // ----- Fix Start for this method(createBaseNotificationBuilder) -----
+        // Get custom notification title if set
+        String notificationTitle = sharedPreferencesManager.getNotificationTitle();
+        String preset = sharedPreferencesManager.getNotificationPreset();
+        
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(notificationTitle != null ? notificationTitle : getString(R.string.notification_video_recording))
                 .setOngoing(true) // Makes it non-dismissible
                 .setSilent(true) // Suppress sound/vibration defaults
                 .setPriority(NotificationCompat.PRIORITY_LOW);
+        
+        // Choose appropriate icon based on notification preset
+        int smallIconResId;
+        switch (preset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                smallIconResId = android.R.drawable.stat_sys_download;
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                smallIconResId = android.R.drawable.stat_sys_download;
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                smallIconResId = android.R.drawable.stat_notify_sync;
+                break;
+            default:
+                smallIconResId = R.drawable.ic_notification_icon;
+                break;
+        }
+        
+        builder.setSmallIcon(smallIconResId);
+        
+        // Set a generic content intent that doesn't reveal the app
+        if (!SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT.equals(preset)) {
+            // For non-default presets, use a blank PendingIntent that does nothing
+            Intent emptyIntent = new Intent();
+            PendingIntent emptyPendingIntent = PendingIntent.getActivity(this, 0, emptyIntent, 
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.setContentIntent(emptyPendingIntent);
+        } else {
+            // For default preset, use normal app opening intent
+            builder.setContentIntent(createOpenAppIntent());
+        }
+                
+        return builder;
+        // ----- Fix Ended for this method(createBaseNotificationBuilder) -----
     }
 
     private void cancelNotification() {

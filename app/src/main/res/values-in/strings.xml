@@ -440,4 +440,64 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="auto_delete_save_setting">Simpan</string>
     
     <string name="trash_select_all">Pilih Semua</string>
+
+    <!-- Adding notification customization strings -->
+    <string name="setting_notification_appearance">Tampilan Notifikasi</string>
+    <string name="note_notification_appearance">Sesuaikan tampilan notifikasi perekaman\n(Default: FadCam)</string>
+    <string name="hide_stop_button">Sembunyikan tombol berhenti</string>
+    <string name="note_hide_stop_button">Sembunyikan tombol berhenti di notifikasi\n(Default: Dinonaktifkan)</string>
+    <string name="notification_preview">Pratinjau notifikasi</string>
+    <string name="notification_preview_title">Pratinjau</string>
+    <string name="notification_video_recording">Perekaman video</string>
+    <string name="notification_video_recording_paused_description">Perekaman dijeda</string>
+    <string name="notification_video_recording_progress_description">Perekaman sedang berlangsung</string>
+    <string name="notification_stop">HENTIKAN</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (default)</item>
+        <item>Pembaruan Sistem</item>
+        <item>Mengunduh</item>
+        <item>Sinkronisasi</item>
+        <item>Cadangan</item>
+        <item>Kustom</item>
+    </string-array>
+
+    <string name="setting_notification_customization_title">Kustomisasi Notifikasi</string>
+    <string name="setting_notification_customization_description">Sesuaikan tampilan notifikasi perekaman</string>
+    <string name="notification_preset_title">Preset Notifikasi</string>
+    <string name="notification_preset_description">Pilih bagaimana notifikasi ditampilkan</string>
+    <string name="notification_preset_default">Default (Perekaman)</string>
+    <string name="notification_preset_system_update">Pembaruan Sistem</string>
+    <string name="notification_preset_downloading">Mengunduh</string>
+    <string name="notification_preset_syncing">Sinkronisasi Data</string>
+    <string name="notification_preset_custom">Teks Kustom</string>
+    <string name="notification_hide_stop_button">Sembunyikan Tombol Berhenti</string>
+    <string name="notification_hide_stop_button_description">Hapus tombol berhenti dari notifikasi</string>
+    <string name="notification_custom_title">Judul Kustom</string>
+    <string name="notification_custom_text">Teks Kustom</string>
+    <string name="notification_setup_title">Pengaturan Notifikasi</string>
+    <string name="notification_setup_description">Sesuaikan bagaimana notifikasi perekaman ditampilkan</string>
+    <string name="notification_setup_save">Simpan</string>
+    <string name="notification_setup_cancel">Batal</string>
+    <string name="notification_settings_saved">Pengaturan notifikasi disimpan</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Perekaman</string>
+    <string name="notification_channel_system_updates">Pembaruan Sistem</string>
+    <string name="notification_channel_downloads">Unduhan</string>
+    <string name="notification_channel_data_sync">Sinkronisasi Data</string>
+    <string name="notification_channel_generic">Layanan Notifikasi</string>
+    <string name="notification_channel_description">Notifikasi layanan</string>
+    
+    <string name="notification_text_system_update_progress">Pembaruan sedang berlangsung</string>
+    <string name="notification_text_system_update_paused">Pembaruan dijeda</string>
+    <string name="notification_text_downloading_progress">Pengunduhan sedang berlangsung</string>
+    <string name="notification_text_downloading_paused">Pengunduhan dijeda</string>
+    <string name="notification_text_syncing_progress">Sinkronisasi sedang berlangsung</string>
+    <string name="notification_text_syncing_paused">Sinkronisasi dijeda</string>
+    <string name="notification_text_custom_default">Proses sedang berjalan</string>
+    <string name="notification_title_system_update">Pembaruan Sistem</string>
+    <string name="notification_title_downloading">Mengunduh</string>
+    <string name="notification_title_syncing">Sinkronisasi Data</string>
+    <string name="notification_title_custom_default">Notifikasi</string>
 </resources>

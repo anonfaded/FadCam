@@ -451,4 +451,61 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="auto_delete_save_setting">Enregistrer</string>
     
     <string name="trash_select_all">Tout sélectionner</string>
+
+    <!-- Adding notification customization strings -->
+    <string name="setting_notification_appearance">Apparence de la notification</string>
+    <string name="note_notification_appearance">Personnaliser l\'apparence de la notification d\'enregistrement\n(Par défaut: FadCam)</string>
+    <string name="hide_stop_button">Masquer le bouton d\'arrêt</string>
+    <string name="note_hide_stop_button">Masquer le bouton d\'arrêt dans la notification\n(Par défaut: Désactivé)</string>
+    <string name="notification_preview">Aperçu de la notification</string>
+    <string name="notification_preview_title">Aperçu</string>
+    <string name="notification_stop">ARRÊTER</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (par défaut)</item>
+        <item>Mise à jour système</item>
+        <item>Téléchargement</item>
+        <item>Synchronisation</item>
+        <item>Sauvegarde</item>
+        <item>Personnalisé</item>
+    </string-array>
+
+    <string name="setting_notification_customization_title">Personnalisation des notifications</string>
+    <string name="setting_notification_customization_description">Personnaliser l\'apparence de la notification d\'enregistrement</string>
+    <string name="notification_preset_title">Préréglage de notification</string>
+    <string name="notification_preset_description">Choisir comment la notification apparaît</string>
+    <string name="notification_preset_default">Par défaut (Enregistrement)</string>
+    <string name="notification_preset_system_update">Mise à jour système</string>
+    <string name="notification_preset_downloading">Téléchargement</string>
+    <string name="notification_preset_syncing">Synchronisation des données</string>
+    <string name="notification_preset_custom">Texte personnalisé</string>
+    <string name="notification_hide_stop_button">Masquer le bouton d\'arrêt</string>
+    <string name="notification_hide_stop_button_description">Retirer le bouton d\'arrêt de la notification</string>
+    <string name="notification_custom_title">Titre personnalisé</string>
+    <string name="notification_custom_text">Texte personnalisé</string>
+    <string name="notification_setup_title">Configuration de la notification</string>
+    <string name="notification_setup_description">Personnaliser l\'apparence de la notification d\'enregistrement</string>
+    <string name="notification_setup_save">Enregistrer</string>
+    <string name="notification_setup_cancel">Annuler</string>
+    <string name="notification_settings_saved">Paramètres de notification enregistrés</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Enregistrement</string>
+    <string name="notification_channel_system_updates">Mises à jour système</string>
+    <string name="notification_channel_downloads">Téléchargements</string>
+    <string name="notification_channel_data_sync">Synchronisation de données</string>
+    <string name="notification_channel_generic">Service de notification</string>
+    <string name="notification_channel_description">Notifications de service</string>
+    
+    <string name="notification_text_system_update_progress">Mise à jour en cours</string>
+    <string name="notification_text_system_update_paused">Mise à jour en pause</string>
+    <string name="notification_text_downloading_progress">Téléchargement en cours</string>
+    <string name="notification_text_downloading_paused">Téléchargement en pause</string>
+    <string name="notification_text_syncing_progress">Synchronisation en cours</string>
+    <string name="notification_text_syncing_paused">Synchronisation en pause</string>
+    <string name="notification_text_custom_default">Processus en cours</string>
+    <string name="notification_title_system_update">Mise à jour système</string>
+    <string name="notification_title_downloading">Téléchargement</string>
+    <string name="notification_title_syncing">Synchronisation des données</string>
+    <string name="notification_title_custom_default">Notification</string>
 </resources>

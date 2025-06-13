@@ -187,7 +187,6 @@
     <string name="delete_all_videos_description">Vuoi davvero eliminare tutti i video? ?</string>
     <string name="switched_front_camera">Passato alla fotocamera frontale</string>
     <string name="switched_rear_camera">Passato alla telecamera posteriore</string>
-    <string name="notification_video_recording">Registrazione video</string>
     <string name="notification_video_recording_paused_description">Registrazione in pausa</string>
     <string name="notification_video_recording_progress_description">Registrazione in corso</string>
     <string name="torch_options_title">Opzioni torcia elettrica</string>
@@ -371,4 +370,62 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="onboarding_human_checkbox1">Non userò FadCam per violare leggi, invadere la privacy di nessuno o comportarmi in modo inquietante. Lo sviluppatore non è responsabile se commetto errori. (È responsabilità mia.)</string>
     <string name="onboarding_human_checkbox2">Amo già FadCam ancor prima di usarla. (Non opzionale)</string>
     <string name="onboarding_human_button">Fammi entrare!</string>
+
+    <!-- Adding notification customization strings -->
+    <string name="setting_notification_appearance">Aspetto della notifica</string>
+    <string name="note_notification_appearance">Personalizza l\'aspetto della notifica di registrazione\n(Predefinito: FadCam)</string>
+    <string name="hide_stop_button">Nascondi il pulsante di arresto</string>
+    <string name="note_hide_stop_button">Nascondi il pulsante di arresto nella notifica\n(Predefinito: Disabilitato)</string>
+    <string name="notification_preview">Anteprima notifica</string>
+    <string name="notification_preview_title">Anteprima</string>
+    <string name="notification_stop">FERMA</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (predefinito)</item>
+        <item>Aggiornamento di sistema</item>
+        <item>Download</item>
+        <item>Sincronizzazione</item>
+        <item>Backup</item>
+        <item>Personalizzato</item>
+    </string-array>
+
+    <string name="setting_notification_customization_title">Personalizzazione notifiche</string>
+    <string name="setting_notification_customization_description">Personalizza l\'aspetto della notifica di registrazione</string>
+    <string name="notification_preset_title">Preset notifica</string>
+    <string name="notification_preset_description">Scegli come appare la notifica</string>
+    <string name="notification_preset_default">Predefinito (Registrazione)</string>
+    <string name="notification_preset_system_update">Aggiornamento di sistema</string>
+    <string name="notification_preset_downloading">Download</string>
+    <string name="notification_preset_syncing">Sincronizzazione dati</string>
+    <string name="notification_preset_custom">Testo personalizzato</string>
+    <string name="notification_hide_stop_button">Nascondi pulsante di arresto</string>
+    <string name="notification_hide_stop_button_description">Rimuovi il pulsante di arresto dalla notifica</string>
+    <string name="notification_custom_title">Titolo personalizzato</string>
+    <string name="notification_custom_text">Testo personalizzato</string>
+    <string name="notification_setup_title">Configurazione notifica</string>
+    <string name="notification_setup_description">Personalizza come appare la notifica di registrazione</string>
+    <string name="notification_setup_save">Salva</string>
+    <string name="notification_setup_cancel">Annulla</string>
+    <string name="notification_video_recording">Registrazione video</string>
+    <string name="notification_settings_saved">Impostazioni notifica salvate</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Registrazione</string>
+    <string name="notification_channel_system_updates">Aggiornamenti di sistema</string>
+    <string name="notification_channel_downloads">Download</string>
+    <string name="notification_channel_data_sync">Sincronizzazione dati</string>
+    <string name="notification_channel_generic">Servizio di notifica</string>
+    <string name="notification_channel_description">Notifiche di servizio</string>
+    
+    <string name="notification_text_system_update_progress">Aggiornamento in corso</string>
+    <string name="notification_text_system_update_paused">Aggiornamento in pausa</string>
+    <string name="notification_text_downloading_progress">Download in corso</string>
+    <string name="notification_text_downloading_paused">Download in pausa</string>
+    <string name="notification_text_syncing_progress">Sincronizzazione in corso</string>
+    <string name="notification_text_syncing_paused">Sincronizzazione in pausa</string>
+    <string name="notification_text_custom_default">Processo in esecuzione</string>
+    <string name="notification_title_system_update">Aggiornamento di sistema</string>
+    <string name="notification_title_downloading">Download</string>
+    <string name="notification_title_syncing">Sincronizzazione dati</string>
+    <string name="notification_title_custom_default">Notifica</string>
 </resources>

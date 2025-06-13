@@ -448,4 +448,52 @@
     <string name="auto_delete_save_setting">حفظ</string>
     
     <string name="trash_select_all">تحديد الكل</string>
+
+    <string name="torch_options_title">خيارات الفلاش</string>
+    
+    <!-- Notification Customization Strings -->
+    <string name="setting_notification_customization_title">تخصيص الإشعارات</string>
+    <string name="setting_notification_customization_description">تخصيص مظهر إشعار التسجيل</string>
+    <string name="notification_preset_title">إعداد مسبق للإشعار</string>
+    <string name="notification_preset_description">اختر كيفية ظهور الإشعار</string>
+    <string name="notification_preset_default">الافتراضي (تسجيل)</string>
+    <string name="notification_preset_system_update">تحديث النظام</string>
+    <string name="notification_preset_downloading">جاري التنزيل</string>
+    <string name="notification_preset_syncing">مزامنة البيانات</string>
+    <string name="notification_preset_custom">نص مخصص</string>
+    <string name="notification_hide_stop_button">إخفاء زر الإيقاف</string>
+    <string name="notification_hide_stop_button_description">إزالة زر الإيقاف من الإشعار</string>
+    <string name="notification_custom_title">عنوان مخصص</string>
+    <string name="notification_custom_text">نص مخصص</string>
+    <string name="notification_preview">معاينة الإشعار</string>
+    <string name="notification_preview_title">معاينة</string>
+    <string name="notification_video_recording">تسجيل فيديو</string>
+    <string name="notification_video_recording_progress_description">التسجيل قيد التقدم</string>
+    <string name="notification_video_recording_paused_description">تم إيقاف التسجيل مؤقتًا</string>
+    <string name="notification_stop">إيقاف</string>
+    <string name="notification_setup_title">إعداد الإشعار</string>
+    <string name="notification_setup_description">تخصيص كيفية ظهور إشعار التسجيل</string>
+    <string name="notification_setup_save">حفظ</string>
+    <string name="notification_setup_cancel">إلغاء</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s تسجيل</string>
+    <string name="notification_channel_system_updates">تحديثات النظام</string>
+    <string name="notification_channel_downloads">التنزيلات</string>
+    <string name="notification_channel_data_sync">مزامنة البيانات</string>
+    <string name="notification_channel_generic">خدمة الإشعارات</string>
+    <string name="notification_channel_description">إشعارات الخدمة</string>
+    
+    <string name="notification_text_system_update_progress">التحديث قيد التقدم</string>
+    <string name="notification_text_system_update_paused">تم إيقاف التحديث مؤقتًا</string>
+    <string name="notification_text_downloading_progress">التنزيل قيد التقدم</string>
+    <string name="notification_text_downloading_paused">تم إيقاف التنزيل مؤقتًا</string>
+    <string name="notification_text_syncing_progress">المزامنة قيد التقدم</string>
+    <string name="notification_text_syncing_paused">تم إيقاف المزامنة مؤقتًا</string>
+    <string name="notification_text_custom_default">العملية قيد التشغيل</string>
+    <string name="notification_title_system_update">تحديث النظام</string>
+    <string name="notification_title_downloading">جاري التنزيل</string>
+    <string name="notification_title_syncing">مزامنة البيانات</string>
+    <string name="notification_title_custom_default">إشعار</string>
+    <string name="notification_settings_saved">تم حفظ إعدادات الإشعار</string>
 </resources>

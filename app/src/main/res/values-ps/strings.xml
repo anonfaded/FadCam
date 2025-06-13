@@ -448,4 +448,64 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="auto_delete_save_setting">Sabt Ka</string>
     
     <string name="trash_select_all">Tol Khwakhara Ka</string>
+
+    <!-- Adding notification customization strings -->
+    <string name="setting_notification_appearance">Da Notification Zaher</string>
+    <string name="note_notification_appearance">Da recording notification zaher badal kai\n(Default: FadCam)</string>
+    <string name="hide_stop_button">Da bandawalo button pat kai</string>
+    <string name="note_hide_stop_button">Pa notification ke da bandawalo button pat kai\n(Default: Disabled)</string>
+    <string name="notification_preview">Da notification namoona</string>
+    <string name="notification_preview_title">Namoona</string>
+    <string name="notification_video_recording">Video recording</string>
+    <string name="notification_video_recording_paused_description">Recording lag odrawa sho</string>
+    <string name="notification_video_recording_progress_description">Recording rawan de</string>
+    <string name="notification_stop">BAND</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (default)</item>
+        <item>Da system update</item>
+        <item>Download kawol</item>
+        <item>Sync kawol</item>
+        <item>Backup</item>
+        <item>Custom</item>
+    </string-array>
+
+    <string name="setting_notification_customization_title">Da Notification Tanzimaat</string>
+    <string name="setting_notification_customization_description">Da recording notification zaher badal ka</string>
+    <string name="notification_preset_title">Da Notification Preset</string>
+    <string name="notification_preset_description">Da notification zaher tsanga wi entekhab ka</string>
+    <string name="notification_preset_default">Default (Recording)</string>
+    <string name="notification_preset_system_update">Da System Update</string>
+    <string name="notification_preset_downloading">Download Kawol</string>
+    <string name="notification_preset_syncing">Data Sync Kawol</string>
+    <string name="notification_preset_custom">Custom Text</string>
+    <string name="notification_hide_stop_button">Da Band Kawalo Button Pat Ka</string>
+    <string name="notification_hide_stop_button_description">Da notification na da band kawalo button lari ka</string>
+    <string name="notification_custom_title">Custom Sarlaik</string>
+    <string name="notification_custom_text">Custom Text</string>
+    <string name="notification_setup_title">Da Notification Tanzim</string>
+    <string name="notification_setup_description">Da recording notification tsanga zaher kegi tanzim ka</string>
+    <string name="notification_setup_save">Sabt Ka</string>
+    <string name="notification_setup_cancel">Laghwa Ka</string>
+    <string name="notification_settings_saved">Da notification tanzimaat sabt shwal</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Recording</string>
+    <string name="notification_channel_system_updates">Da System Updates</string>
+    <string name="notification_channel_downloads">Downloads</string>
+    <string name="notification_channel_data_sync">Data Sync</string>
+    <string name="notification_channel_generic">Da Notification Service</string>
+    <string name="notification_channel_description">Da service notification</string>
+    
+    <string name="notification_text_system_update_progress">Update rawan de</string>
+    <string name="notification_text_system_update_paused">Update lag odrawa sho</string>
+    <string name="notification_text_downloading_progress">Download rawan de</string>
+    <string name="notification_text_downloading_paused">Download lag odrawa sho</string>
+    <string name="notification_text_syncing_progress">Sync rawan de</string>
+    <string name="notification_text_syncing_paused">Sync lag odrawa sho</string>
+    <string name="notification_text_custom_default">Amal rawan de</string>
+    <string name="notification_title_system_update">Da System Update</string>
+    <string name="notification_title_downloading">Download Kawol</string>
+    <string name="notification_title_syncing">Data Sync Kawol</string>
+    <string name="notification_title_custom_default">Notification</string>
 </resources>

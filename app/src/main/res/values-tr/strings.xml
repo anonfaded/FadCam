@@ -509,4 +509,48 @@
     
 
     <string name="trash_select_all">Tümünü Seç</string>
+
+    <!-- Notification Customization Strings -->
+    <string name="setting_notification_customization_title">Bildirim Özelleştirme</string>
+    <string name="setting_notification_customization_description">Kayıt bildiriminin görünümünü özelleştirin</string>
+    <string name="notification_preset_title">Bildirim Ön Ayarı</string>
+    <string name="notification_preset_description">Bildirimin nasıl görüneceğini seçin</string>
+    <string name="notification_preset_default">Varsayılan (Kayıt)</string>
+    <string name="notification_preset_system_update">Sistem Güncellemesi</string>
+    <string name="notification_preset_downloading">İndiriliyor</string>
+    <string name="notification_preset_syncing">Veri Senkronizasyonu</string>
+    <string name="notification_preset_custom">Özel Metin</string>
+    <string name="notification_hide_stop_button">Durdurma Düğmesini Gizle</string>
+    <string name="notification_hide_stop_button_description">Bildirimden durdurma düğmesini kaldır</string>
+    <string name="notification_custom_title">Özel Başlık</string>
+    <string name="notification_custom_text">Özel Metin</string>
+    <string name="notification_preview">Bildirim önizlemesi</string>
+    <string name="notification_preview_title">Önizleme</string>
+    <string name="notification_setup_title">Bildirim Ayarı</string>
+    <string name="notification_setup_description">Kayıt bildiriminin nasıl görüneceğini özelleştirin</string>
+    <string name="notification_setup_save">Kaydet</string>
+    <string name="notification_setup_cancel">İptal</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Kaydı</string>
+    <string name="notification_channel_system_updates">Sistem Güncellemeleri</string>
+    <string name="notification_channel_downloads">İndirmeler</string>
+    <string name="notification_channel_data_sync">Veri Senkronizasyonu</string>
+    <string name="notification_channel_generic">Bildirim Servisi</string>
+    <string name="notification_channel_description">Servis bildirimleri</string>
+    
+    <string name="notification_text_system_update_progress">Güncelleme devam ediyor</string>
+    <string name="notification_text_system_update_paused">Güncelleme duraklatıldı</string>
+    <string name="notification_text_downloading_progress">İndirme devam ediyor</string>
+    <string name="notification_text_downloading_paused">İndirme duraklatıldı</string>
+    <string name="notification_text_syncing_progress">Senkronizasyon devam ediyor</string>
+    <string name="notification_text_syncing_paused">Senkronizasyon duraklatıldı</string>
+    <string name="notification_text_custom_default">İşlem çalışıyor</string>
+    <string name="notification_title_system_update">Sistem Güncellemesi</string>
+    <string name="notification_title_downloading">İndiriliyor</string>
+    <string name="notification_title_syncing">Veri Senkronizasyonu</string>
+    <string name="notification_title_custom_default">Bildirim</string>
+    <string name="notification_settings_saved">Bildirim ayarları kaydedildi</string>
+    
+
 </resources>
