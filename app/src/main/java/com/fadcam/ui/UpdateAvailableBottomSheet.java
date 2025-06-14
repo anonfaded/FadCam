@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -46,6 +48,33 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottomsheet_update_available, container, false);
+
+        // Set up close button
+        ImageButton btnCloseSheet = view.findViewById(R.id.btnCloseSheet);
+        if (btnCloseSheet != null) {
+            btnCloseSheet.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        Log.d(TAG, "Close button clicked, attempting to dismiss");
+                        dismissAllowingStateLoss();
+                        Log.d(TAG, "Bottom sheet dismissed");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error dismissing bottom sheet", e);
+                        // Try alternative dismiss methods
+                        try {
+                            if (getDialog() != null) {
+                                getDialog().dismiss();
+                            } else {
+                                dismiss();
+                            }
+                        } catch (Exception ex) {
+                            Log.e(TAG, "All dismiss methods failed", ex);
+                        }
+                    }
+                }
+            });
+        }
 
         // Set icon rain to use unknown_icon3
         UpdateRainView updateRainView = view.findViewById(R.id.updateRainView);
