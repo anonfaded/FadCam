@@ -4,7 +4,10 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,11 +19,18 @@ import com.airbnb.lottie.LottieAnimationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.fadcam.R;
+import com.fadcam.utils.ChangelogParser;
+
+import java.util.Random;
 
 public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
+    private static final String TAG = "UpdateBottomSheet";
     private static final String ARG_VERSION = "version";
     private static final String ARG_CHANGELOG = "changelog";
     private static final String ARG_TAG_URL = "tag_url";
+    
+    // Store the original variation HTML
+    private String originalVariationHtml = "";
 
     public static UpdateAvailableBottomSheet newInstance(String version, String changelog, String tagUrl) {
         UpdateAvailableBottomSheet fragment = new UpdateAvailableBottomSheet();
@@ -73,12 +83,14 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
                 // Variation 4
                 getString(R.string.update_variation_4, currentV, latestV)
             };
-            java.util.Random rand = new java.util.Random();
+            Random rand = new Random();
             int idx = rand.nextInt(variations.length);
-            String descHtml = variations[idx] +
-                    (changelog.isEmpty() ? "" : ("<br><br><b>" + getString(R.string.changelog_label) + ":</b><br>" + changelog.replace("\n", "<br>")));
-            tvUpdateDescription.setText(android.text.Html.fromHtml(descHtml));
+            originalVariationHtml = variations[idx]; // Store the original HTML
+            tvUpdateDescription.setText(fromHtml(originalVariationHtml));
             tvUpdateDescription.setTextColor(Color.WHITE);
+            
+            // Fetch changelog from GitHub
+            fetchAndDisplayChangelog(tvUpdateDescription);
         }
 
         // Version row: current version (red), arrow, new version (green)
@@ -119,6 +131,43 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
         }
 
         return view;
+    }
+    
+    /**
+     * Fetches the changelog from GitHub and displays it in the TextView
+     * @param tvUpdateDescription TextView to display the changelog
+     */
+    private void fetchAndDisplayChangelog(TextView tvUpdateDescription) {
+        ChangelogParser.fetchChangelog().thenAccept(changelogHtml -> {
+            if (getActivity() == null || !isAdded()) return;
+            
+            requireActivity().runOnUiThread(() -> {
+                if (!changelogHtml.isEmpty()) {
+                    // Use the original HTML string we stored earlier
+                    String updatedText = originalVariationHtml + 
+                        "<br><br><font color='#E43C3C'><b>" + 
+                        getString(R.string.changelog_label) + 
+                        ":</b></font><br>" + changelogHtml;
+                    tvUpdateDescription.setText(fromHtml(updatedText));
+                }
+            });
+        }).exceptionally(e -> {
+            Log.e(TAG, "Error fetching changelog", e);
+            return null;
+        });
+    }
+    
+    /**
+     * Helper method to handle HTML formatting with backward compatibility
+     * @param html HTML string to format
+     * @return Formatted CharSequence
+     */
+    private CharSequence fromHtml(String html) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        } else {
+            return Html.fromHtml(html);
+        }
     }
 
     // Helper to get the current app version for the version row
