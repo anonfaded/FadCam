@@ -10,7 +10,7 @@ android {
         abi {
             isEnable = true
             reset()
-            include("x86", "x86_64", "armeabi-v7a", "arm64-v8a") // Adjust as needed
+            include("armeabi-v7a", "arm64-v8a") // Adjust as needed
             isUniversalApk = true // This is key for your universal APK
         }
     }
@@ -18,10 +18,10 @@ android {
 
     defaultConfig {
         applicationId = "com.fadcam"
-        minSdk = 24
+        minSdk = 28
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.3.0"
+        versionCode = 12
+        versionName = "1.4.0"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
