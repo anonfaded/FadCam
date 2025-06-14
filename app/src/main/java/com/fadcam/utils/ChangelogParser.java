@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  */
 public class ChangelogParser {
     private static final String TAG = "ChangelogParser";
-    private static final String CHANGELOG_URL = "https://raw.githubusercontent.com/anonfaded/FadCam/master/CHANGELOG.md";
+    private static final String CHANGELOG_URL = "https://raw.githubusercontent.com/anonfaded/FadCam/refs/heads/master/CHANGELOG.md";
     private static final String HEADER_COLOR = "#E43C3C"; // Red color for headers
 
     /**
