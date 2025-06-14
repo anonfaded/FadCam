@@ -8,7 +8,8 @@ FORMAT GUIDELINES:
 <!-- This is a comment -->
 
 # New Features
-- This CHANGELOG will appear in this bottom sheet with the new release
+- Added option to customize the text shown in the notification during recording
+- This CHANGELOG will appear in this bottom sheet with every new release
 
-# Fixes
-- Some optimizations
+<!-- # Fixes
+- Some optimizations -->
