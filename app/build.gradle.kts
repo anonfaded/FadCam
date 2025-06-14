@@ -10,11 +10,10 @@ android {
         abi {
             isEnable = true
             reset()
-            include("armeabi-v7a", "arm64-v8a") // Adjust as needed
-            isUniversalApk = true // This is key for your universal APK
+            include("armeabi-v7a", "arm64-v8a") // Only include the architectures you need
+            isUniversalApk = true // Create a universal APK with all architectures
         }
     }
-
 
     defaultConfig {
         applicationId = "com.fadcam"
@@ -24,14 +23,21 @@ android {
         versionName = "1.4.0"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Enable vector drawable support
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
         release {
-            // Disable R8/ProGuard completely for testing
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Enable R8 optimization with custom rules
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            
+            // More aggressive optimizations for release
+            isDebuggable = false
+            isCrunchPngs = true // Aggressively optimize PNG files
         }
     }
     
@@ -48,6 +54,7 @@ android {
     
     // Proper resource handling
     android.aaptOptions.noCompress += listOf("xml")
+    android.aaptOptions.cruncherEnabled = true // Enable PNG cruncher
     
     // Generate R class for the AppLock library
     android.namespace = "com.fadcam"
@@ -62,9 +69,45 @@ android {
         getByName("test").java.srcDirs("none")
         getByName("androidTest").java.srcDirs("none")
     }
+    
+    // Exclude specific ABIs from the FFmpeg library to reduce size
+    packagingOptions {
+        // Exclude unnecessary architectures
+        jniLibs {
+            excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
+        }
+        
+        // Exclude unnecessary files from the APK
+        resources {
+            excludes += listOf(
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/DEPENDENCIES",
+                "META-INF/*.kotlin_module",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "**/*.kotlin_metadata",
+                "**/*.kotlin_builtins",
+                "**/*.proto"
+            )
+        }
+    }
+    
+    // Enable resource optimization
+    androidResources {
+        additionalParameters += listOf("--no-version-vectors")
+    }
+    
+    // Enable build config optimization
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
+    // Use implementation instead of api for all dependencies to reduce APK size
 
     implementation(libs.appcompat)
     implementation(libs.material)

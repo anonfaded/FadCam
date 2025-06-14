@@ -5,6 +5,14 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
+# Aggressive optimization settings
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*,!code/allocation/variable
+-optimizationpasses 7
+-allowaccessmodification
+-dontusemixedcaseclassnames
+-dontskipnonpubliclibraryclasses
+-verbose
+
 # If your project uses WebView with JS, uncomment the following
 # and specify the fully qualified class name to the JavaScript interface
 # class:
@@ -26,33 +34,45 @@
 -keep class com.fadcam.data.** { <fields>; }
 -keep class com.fadcam.trash.** { <fields>; }
 
-# Keep menu resources and drawables
--keep class **.R$drawable
--keep class **.R$menu
--keep class **.R$layout
--keep class **.R$id
--keepclassmembers class **.R$* {
-    public static <fields>;
+# Keep only necessary resources - this is critical for icons to display properly
+# Instead of keeping all resources, keep only what's needed
+-keep class **.R$drawable { *; }
+-keep class **.R$mipmap { *; }
+-keep class **.R$id { *; }
+-keep class **.R$menu { *; }
+-keep class **.R$layout { *; }
+-keep class **.R$string { *; }
+-keep class **.R$style { *; }
+-keep class **.R$styleable { *; }
+-keep class **.R$color { *; }
+-keep class **.R$dimen { *; }
+-keep class **.R$attr { *; }
+-keep class **.R$bool { *; }
+-keep class **.R$integer { *; }
+-keep class **.R$array { *; }
+-keep class **.R$raw { *; }
+-keep class **.R$xml { *; }
+
+# FFmpeg specific rules - more aggressive
+-keep class com.arthenica.ffmpegkit.FFmpegKit { *; }
+-keep class com.arthenica.ffmpegkit.FFmpegKitConfig { *; }
+-keep class com.arthenica.ffmpegkit.FFprobeKit { *; }
+-keep class com.arthenica.ffmpegkit.MediaInformation { *; }
+-keep class com.arthenica.ffmpegkit.MediaInformationSession { *; }
+-keep class com.arthenica.ffmpegkit.ReturnCode { *; }
+-keep class com.arthenica.ffmpegkit.Session { *; }
+-keep class com.arthenica.ffmpegkit.SessionState { *; }
+-keep class com.arthenica.ffmpegkit.Statistics { *; }
+-keep class com.arthenica.smartexception.java.Exceptions { *; }
+-dontwarn com.arthenica.ffmpegkit.**
+-keep class com.fadcam.utils.FFmpegUtil { *; }
+
+# Keep only essential drawable resources
+-keep public class * extends android.graphics.drawable.Drawable {
+    public <init>(...);
 }
 
-# More specific rules for preserving resources referenced in XML
--keepclasseswithmembers class **.R$drawable {
-    public static final int ic_*;
-}
-
-# Keep all drawable resources
--keep public class * extends android.graphics.drawable.Drawable
--keepclassmembers class * extends android.graphics.drawable.Drawable {
-    <init>(...);
-}
-
-# Keep all menu-related resources and layouts
--keep public class * extends android.view.Menu
--keep public class * extends android.view.MenuItem
--keep public class * extends android.widget.PopupMenu
--keep public class * extends android.view.ContextMenu
-
-# Keep custom views
+# Keep only essential view methods
 -keep public class * extends android.view.View {
     public <init>(android.content.Context);
     public <init>(android.content.Context, android.util.AttributeSet);
@@ -65,80 +85,73 @@
     native <methods>;
 }
 
-# Keep all resources referenced from XML layouts
--keepclasseswithmembers class * {
-    public <init>(android.content.Context, android.util.AttributeSet);
+# Keep only essential AndroidX components
+-keep class androidx.appcompat.widget.** { *; }
+-keep class androidx.appcompat.app.** { *; }
+-keep class androidx.core.widget.** { *; }
+-keep class androidx.fragment.app.** { *; }
+-keep class androidx.recyclerview.widget.** { *; }
+-keep class androidx.viewpager2.widget.** { *; }
+-keep class androidx.constraintlayout.widget.** { *; }
+-keep class androidx.coordinatorlayout.widget.** { *; }
+-keep class androidx.swiperefreshlayout.widget.** { *; }
+-keep class androidx.camera.** { *; }
+-dontwarn androidx.**
+
+# Keep Material components - only essential ones
+-keep class com.google.android.material.bottomsheet.** { *; }
+-keep class com.google.android.material.bottomnavigation.** { *; }
+-keep class com.google.android.material.navigation.** { *; }
+-keep class com.google.android.material.floatingactionbutton.** { *; }
+-keep class com.google.android.material.snackbar.** { *; }
+-keep class com.google.android.material.tabs.** { *; }
+-dontwarn com.google.android.material.**
+
+# Preserve attributes for Android runtime - only essential ones
+-keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,InnerClasses,EnclosingMethod
+
+# Keep Lottie animations - only essential classes
+-keep class com.airbnb.lottie.LottieAnimationView { *; }
+-keep class com.airbnb.lottie.LottieDrawable { *; }
+-keep class com.airbnb.lottie.LottieComposition { *; }
+-keep class com.airbnb.lottie.LottieCompositionFactory { *; }
+-keep class com.airbnb.lottie.LottieResult { *; }
+-dontwarn com.airbnb.lottie.**
+
+# Keep ExoPlayer - only essential classes
+-keep class com.google.android.exoplayer2.ExoPlayer { *; }
+-keep class com.google.android.exoplayer2.SimpleExoPlayer { *; }
+-keep class com.google.android.exoplayer2.ui.** { *; }
+-keep class com.google.android.exoplayer2.source.** { *; }
+-keep class com.google.android.exoplayer2.extractor.** { *; }
+-keep class com.google.android.exoplayer2.upstream.** { *; }
+-keep class com.google.android.exoplayer2.decoder.** { *; }
+-keep class com.google.android.exoplayer2.Format { *; }
+-keep class com.google.android.exoplayer2.MediaItem { *; }
+-dontwarn com.google.android.exoplayer2.**
+
+# Keep OSMDroid - only essential classes
+-keep class org.osmdroid.views.** { *; }
+-keep class org.osmdroid.tileprovider.** { *; }
+-keep class org.osmdroid.util.** { *; }
+-dontwarn org.osmdroid.**
+
+# Remove Android logging code
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
 }
 
--keepclasseswithmembers class * {
-    public <init>(android.content.Context, android.util.AttributeSet, int);
+# Remove System.out/err
+-assumenosideeffects class java.io.PrintStream {
+    public void println(...);
+    public void print(...);
 }
 
-# Preserve the special static fields of all resource classes in the R class
--keepclassmembers class **.R$* {
-    public static <fields>;
-}
-
-# Prevent stripping off any resources/attributes referenced in XML
--keep public class * extends android.content.res.Resources$Theme
--keepclassmembers class * extends android.content.res.Resources$Theme {
-   <methods>;
-}
-
-# Preserve the special static methods that are called by the Android runtime
--keepclassmembers class * {
-    void <init>(android.content.Context);
-}
-
-# Preserve attributes for Android runtime
--keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
-# Keep all model classes used with Gson
--keep class com.faded.fadcam.model.** { *; }
-
-# Keep Gson stuff
--keep class com.google.gson.** { *; }
--keep class com.google.gson.reflect.** { *; }
--keepattributes Signature
--keepattributes *Annotation*
-
-# Keep R classes - prevents resource stripping issues
--keep class **.R
--keep class **.R$* {
-    <fields>;
-}
-
-# Keep drawables
--keep class **.R$drawable
-
-# Keep menus
--keep class **.R$menu
-
-# Keep layouts
--keep class **.R$layout
-
-# Keep AndroidX stuff
--keep class androidx.** { *; }
--keep interface androidx.** { *; }
--keep public class * extends androidx.**
-
-# Keep native methods
--keepclasseswithmembernames class * {
-    native <methods>;
-}
-
-# Keep view stuff
--keep public class * extends android.view.View {
-    public <init>(android.content.Context);
-    public <init>(android.content.Context, android.util.AttributeSet);
-    public <init>(android.content.Context, android.util.AttributeSet, int);
-    public void set*(...);
-}
-
-# Only optimize the app minimally
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
--optimizationpasses 2
+# Aggressive optimization settings
+-repackageclasses ''
+-flattenpackagehierarchy ''
+-mergeinterfacesaggressively
