@@ -100,7 +100,10 @@ dependencies {
 //    implementation("com.github.anonfaded:ffmpeg-kit:main-SNAPSHOT")
     implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
 
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    // Replace JAR files with Maven dependency
+    implementation(libs.smart.exception.java)
+
+    // Keep only AAR files
     implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
 
     implementation(libs.appintro.v631)
