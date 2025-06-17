@@ -443,7 +443,7 @@
     <string name="disable_battery_optimization">Απενεργοποίηση Βελτιστοποίησης Μπαταρίας</string>
     <string name="onboarding_human_title">Επαλήθευση εάν είστε άνθρωπος</string>
     <string name="onboarding_human_desc">Χμ... εντάξει. Αυτοί οι κανόνες είναι αδιαπραγμάτευτοι. Αν δεν μπορείτε να συμφωνήσετε, απεγκαταστήστε το FadCam τώρα.</string>
-    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το FadCam για να παραβιάσω νόμους, να εισβάλλω στην ιδιωτική ζωή κανενός ή να γίνω ανατριχιαστικός. Ο προγραμματιστής δεν φέρει ευθύνη αν τα χαλάσω. (Αυτό είναι δική μου ευθύνη.)</string>
+    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το FadCam για να παραβιάσω νόμους, να εισβάλλω στην ιδιωτική ζωή κανενός ή να γίνω ανατριχιαστικός. Ο προγραμματιστής δεν φέρει ευθύνη αν χρησιμοποιήσω την εφαρμογή για λάθος σκοπούς. (Αυτό είναι δική μου ευθύνη.)</string>
     <string name="onboarding_human_checkbox2">Ήδη λατρεύω το FadCam πριν καν το χρησιμοποιήσω. (Όχι προαιρετικό)</string>
     <string name="onboarding_human_button">Επιτρέψτε μου να μπω!</string>
     <string name="camera_resources_cooldown">Παρακαλώ περιμένετε λίγο πριν ξεκινήσετε νέα εγγραφή</string>
