@@ -288,6 +288,7 @@ Or:
 - **Video Renaming:** Rename recordings directly in-app.
 - **Storage Indicator:** Real-time storage info with estimated record time.
 - **Clock Widget:** Customizable date/time widget with color options.
+- **Custom Notification:** Use presets or create a custom title and description for recordings.
 - **7+ App Themes & 15+ Icons:** AMOLED, Light, System, and more.
 - **Localization:** Italian language support.
 - **No Ads:** 100% free and ad-free.
