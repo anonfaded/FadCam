@@ -18,7 +18,9 @@ import java.nio.ByteBuffer;
 
 /**
  * GLRecordingPipeline manages the OpenGL pipeline for real-time watermarking and video encoding.
- * It connects Camera2 output to GLWatermarkRenderer and encodes the result to a file.
+ *
+ * This pipeline always uses the fixed videoWidth/videoHeight for recording output,
+ * and ignores device rotation. Only the preview may use letterboxing for user experience.
  */
 public class GLRecordingPipeline {
     private static final String TAG = "GLRecordingPipeline";
@@ -46,6 +48,13 @@ public class GLRecordingPipeline {
     private Surface previewSurface;
     private final String orientation;
     private final int sensorOrientation;
+    
+    // Surface dimensions for aspect ratio calculations
+    private int mSurfaceWidth;
+    private int mSurfaceHeight;
+    
+    // Target aspect ratio (width/height) for maintaining consistent dimensions
+    private float targetAspectRatio;
 
     // Callback interface for segment rollover
     public interface SegmentCallback {
@@ -98,6 +107,17 @@ public class GLRecordingPipeline {
         this.currentOutputFd = null;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
+        
+        // Initialize surface dimensions with video dimensions as default
+        this.mSurfaceWidth = videoWidth;
+        this.mSurfaceHeight = videoHeight;
+        
+        // Calculate target aspect ratio based on the fixed dimensions
+        this.targetAspectRatio = (float) videoWidth / videoHeight;
+        
+        Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " + 
+              videoWidth + "x" + videoHeight + " in " + orientation + 
+              " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
     }
 
     // Updated constructor for FileDescriptor (SAF)
@@ -117,6 +137,17 @@ public class GLRecordingPipeline {
         this.currentOutputFd = outputFd;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
+        
+        // Initialize surface dimensions with video dimensions as default
+        this.mSurfaceWidth = videoWidth;
+        this.mSurfaceHeight = videoHeight;
+        
+        // Calculate target aspect ratio based on the fixed dimensions
+        this.targetAspectRatio = (float) videoWidth / videoHeight;
+        
+        Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " + 
+              videoWidth + "x" + videoHeight + " in " + orientation + 
+              " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
     }
 
     /**
@@ -243,12 +274,41 @@ public class GLRecordingPipeline {
         videoEncoder = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
         videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         encoderInputSurface = videoEncoder.createInputSurface();
+        
+        // DEBUG: Log MediaCodec surface dimensions
+        try {
+            Log.d("DEBUG_RECORDING", "MediaCodec configured for: " + videoWidth + "x" + videoHeight);
+            
+            // Note: We can't directly query Surface dimensions, but we can verify
+            // through the MediaFormat that was actually configured
+            MediaFormat configuredFormat = format;
+            int configuredWidth = configuredFormat.getInteger(MediaFormat.KEY_WIDTH);
+            int configuredHeight = configuredFormat.getInteger(MediaFormat.KEY_HEIGHT);
+            
+            Log.d("MEDIACODEC_VERIFY", "Requested: " + videoWidth + "x" + videoHeight);
+            Log.d("MEDIACODEC_VERIFY", "Configured: " + configuredWidth + "x" + configuredHeight);
+            
+            if (configuredWidth != videoWidth || configuredHeight != videoHeight) {
+                Log.e("MEDIACODEC_ERROR", "MediaCodec dimensions don't match request!");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error verifying MediaCodec dimensions", e);
+        }
+        
         videoEncoder.start();
         if (currentOutputFd != null) {
             mediaMuxer = new MediaMuxer(currentOutputFd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         } else {
             mediaMuxer = new MediaMuxer(currentOutputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         }
+        // --- Set orientation hint for correct playback ---
+        int orientationHint = 0;
+        if ("portrait".equalsIgnoreCase(orientation)) {
+            if (sensorOrientation == 90) orientationHint = 90;
+            else if (sensorOrientation == 270) orientationHint = 270;
+        }
+        mediaMuxer.setOrientationHint(orientationHint);
+        // --- End orientation hint ---
         muxerStarted = false;
     }
 
@@ -278,13 +338,18 @@ public class GLRecordingPipeline {
             if (!isRecording || glRenderer == null || videoEncoder == null) return;
             try {
                 // Render to encoder
-            glRenderer.renderFrame();
+                glRenderer.renderFrame();
                 
                 // We'll handle preview rendering in a dedicated thread
                 // to avoid conflicts with renderFrame - don't do it here anymore
                 
                 // Drain encoded frame data
-            drainEncoder();
+                drainEncoder();
+                
+                // Check if we need to split the segment due to size
+                if (shouldSplitSegment()) {
+                    rolloverSegment();
+                }
                 
                 // No need to post another renderRunnable, as onFrameAvailable listener
                 // will schedule this again when a new frame is ready
@@ -490,7 +555,10 @@ public class GLRecordingPipeline {
         this.currentOutputFd = fd;
     }
 
-    // Allow updating preview surface at runtime
+    /**
+     * Sets the preview surface for rendering the camera feed.
+     * @param surface The Surface to render the preview on.
+     */
     public void setPreviewSurface(Surface surface) {
         if (this.previewSurface != surface) {
             Log.d(TAG, "Setting preview surface: " + (surface != null));
@@ -508,9 +576,15 @@ public class GLRecordingPipeline {
             this.previewSurface = surface;
             
             // If there's a valid renderer, update its preview surface
-        if (glRenderer != null) {
+            if (glRenderer != null) {
                 try {
                     glRenderer.setPreviewSurface(surface);
+                    
+                    // Force fixed dimensions to ensure consistent aspect ratio
+                    forceFixedDimensions();
+                    
+                    // Debug preview vs recording dimensions
+                    debugPreviewVsRecording();
                     
                     // Wait for preview surface to be fully set up
                     try {
@@ -550,6 +624,8 @@ public class GLRecordingPipeline {
                         
                         try {
                             if (previewSurface != null && previewSurface.isValid()) {
+                                // Ensure camera buffer size is correct before rendering
+                                forceFixedDimensions();
                                 glRenderer.renderToPreview();
                             }
                         } catch (Exception e) {
@@ -596,5 +672,48 @@ public class GLRecordingPipeline {
 
     public int getSensorOrientation() {
         return sensorOrientation;
+    }
+
+    /**
+     * Forces a consistent aspect ratio and dimensions by setting the
+     * camera's default buffer size to match our target dimensions.
+     */
+    private void forceFixedDimensions() {
+        if (glRenderer != null) {
+            // Update the camera screen nail size to match our fixed dimensions
+            glRenderer.setSurfaceDimensions(videoWidth, videoHeight);
+            
+            // Debug aspect ratio information
+            float recordingAspectRatio = (float)videoWidth / videoHeight;
+            Log.d("DEBUG_ASPECT", "Recording dimensions: " + videoWidth + "x" + videoHeight);
+            Log.d("DEBUG_ASPECT", "Recording aspect ratio: " + recordingAspectRatio);
+            Log.d("DEBUG_ASPECT", "Forcing fixed dimensions: " + videoWidth + "x" + videoHeight +
+                  " with aspect ratio " + targetAspectRatio);
+            
+            // Compare with the target aspect ratio
+            if (Math.abs(recordingAspectRatio - targetAspectRatio) > 0.01f) {
+                Log.w("DEBUG_ASPECT", "Recording aspect ratio doesn't match target aspect ratio!");
+            }
+        }
+    }
+    
+    /**
+     * Debug method to compare preview and recording dimensions and aspect ratios.
+     */
+    private void debugPreviewVsRecording() {
+        Log.d("DEBUG_COMPARISON", "Preview surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
+        Log.d("DEBUG_COMPARISON", "Recording surface: " + videoWidth + "x" + videoHeight);
+        
+        float previewAspectRatio = (float)mSurfaceWidth / mSurfaceHeight;
+        float recordingAspectRatio = (float)videoWidth / videoHeight;
+        
+        Log.d("DEBUG_COMPARISON", "Preview aspect ratio: " + previewAspectRatio);
+        Log.d("DEBUG_COMPARISON", "Recording aspect ratio: " + recordingAspectRatio);
+        
+        if (Math.abs(previewAspectRatio - recordingAspectRatio) > 0.01f) {
+            Log.w("DEBUG_COMPARISON", "Preview and recording aspect ratios don't match!");
+        } else {
+            Log.d("DEBUG_COMPARISON", "Preview and recording aspect ratios match.");
+        }
     }
 } 

@@ -2907,12 +2907,9 @@ public class RecordingService extends Service {
             String orientation = sharedPreferencesManager.getVideoOrientation();
             int videoWidth = resolution.getWidth();
             int videoHeight = resolution.getHeight();
-            if ("portrait".equals(orientation) && videoWidth > videoHeight) {
-                // Swap for portrait
-                int tmp = videoWidth;
-                videoWidth = videoHeight;
-                videoHeight = tmp;
-            }
+            // ----- Fix Start: Remove width/height swap for portrait -----
+            // Do NOT swap width/height for portrait. Always use the selected resolution as-is.
+            // ----- Fix End: Remove width/height swap for portrait -----
             // Get sensor orientation
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
             CameraType cameraType = sharedPreferencesManager.getCameraSelection();
