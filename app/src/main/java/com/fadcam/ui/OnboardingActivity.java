@@ -425,6 +425,7 @@ public class OnboardingActivity extends AppIntro {
             case "ps": return 5;
             case "in": return 6;
             case "it": return 7;
+            case "el": return 8; // Added for Greek
             default: return 0;
         }
     }
@@ -441,6 +442,7 @@ public class OnboardingActivity extends AppIntro {
             case 5: return "ps";
             case 6: return "in";
             case 7: return "it";
+            case 8: return "el"; // Added for Greek
             default: return "en";
         }
     }

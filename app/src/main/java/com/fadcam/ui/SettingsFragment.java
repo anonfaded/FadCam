@@ -2339,6 +2339,7 @@ public class SettingsFragment extends BaseFragment {
             case "ps": return 5;
             case "in": return 6;
             case "it": return 7; // Added for Italian
+            case "el": return 8; // Added for Greek
             default: return 0; // Default to English if unknown
         }
     }
@@ -2354,6 +2355,7 @@ public class SettingsFragment extends BaseFragment {
             case 5: return "ps";
             case 6: return "in";
             case 7: return "it"; // Added for Italian
+            case 8: return "el"; // Added for Greek
             default: return "en"; // Default to English on error
         }
     }

@@ -1,0 +1,598 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_icon_description">Επιλέξτε ένα εικονίδιο και όνομα για την εφαρμογή σας. Αυτό θα αλλάξει την εμφάνισή της στην αρχική σας οθόνη.</string>
+    <string name="check_for_updates">Έλεγχος για Ενημερώσεις</string>
+    <string name="fadsec_info">Το FadCam είναι μέρος της σουίτας FadSec Lab. Για περισσότερες πληροφορίες, κάντε κλικ στην επιλογή «προβολή πηγαίου κώδικα» παρακάτω.</string>
+    <string name="app_description">
+    <![CDATA[
+    Το FadCam είναι μια εφαρμογή εγγραφής βίντεο ανοιχτού κώδικα, χωρίς διαφημίσεις, που δίνει προτεραιότητα στην ιδιωτικότητα, καθώς δεν παρακολουθεί ούτε συλλέγει δεδομένα. Είναι διαθέσιμο αποκλειστικά στο GitHub και μέσω των επίσημων συνδέσμων που αναφέρονται στο README.
+    <br/><br/>
+    Το FadCam έχει παρουσιαστεί σε δημοφιλή κανάλια YouTube όπως τα <font color="#cfbafd">HowToMen</font> και <font color="#cfbafd">Xtream Droid</font>, καθώς και συζητήθηκε στα <font color="#cfbafd">GrapheneOS</font> και σε 55+ άλλα αξιόλογα σημεία.
+    ]]>
+</string>
+    <string name="view_source_code">Προβολή Πηγαίου Κώδικα</string>
+    <string name="buy_me_a_coffee">Κέρασέ με έναν καφέ ☕</string>
+    <string name="contact">Επικοινωνία</string>
+    <string name="send_email">Αποστολή email</string>
+    <string name="join_community">Εγγραφείτε στην κοινότητα για βοήθεια, κοινή χρήση ιδεών και μελλοντικές ενημερώσεις εφαρμογών</string>
+    <string name="privacy_information">Πληροφορίες Ιδιωτικότητας</string>
+    <string name="copyright_info"> 2024-2025 https://fadedhood.github.io/fadcam\nLicensed under GPL-3.0</string>
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item> <!-- 8K -->
+        <item>3840x2160</item> <!-- 4K -->
+        <item>2560x1440</item> <!-- 2K -->
+        <item>1920x1080</item> <!-- FHD -->
+        <item>1280x720</item> <!-- HD -->
+        <item>640x480</item> <!-- SD -->
+        <item>720x480</item> <!-- SD -->
+        <item>480x360</item> <!-- SD -->
+    </string-array>
+    <string-array name="video_resolutions_values">
+        <item>8K</item>  <!-- 8K -->
+        <item>4K</item>  <!-- 4K -->
+        <item>2K</item>  <!-- 2K -->
+        <item>FHD</item> <!-- Full HD -->
+        <item>HD</item>  <!-- High Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+        <item>SD</item>  <!-- Standard Definition -->
+    </string-array>
+    <integer-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </integer-array>
+    <string name="mainpage_storage_indicator">
+    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Διαθέσιμος:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Εκτιμ. χρόνος εγγραφής:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Χρόνος που πέρασε:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Χρόνος που απομένει:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>
+</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Πατήστε παρατεταμένα την προεπισκόπηση για να την απενεργοποιήσετε.</item>
+        <item>2/11 | Πατήστε παρατεταμένα το widget ώρας για να επιλέξετε την εμφάνιση ρολογιού.</item>
+        <item>3/11 | Το widget αποθήκευσης ενημερώνει τον χώρο εγγραφής σε πραγματικό χρόνο.</item>
+        <item>4/11 | Το widget στατιστικών εμφανίζει τον συνολικό αριθμό βίντεο και τον χρησιμοποιούμενο χώρο.</item>
+        <item>5/11 | Αλλάξτε την ποιότητα βίντεο στις ρυθμίσεις (HD, SD, FHD).</item>
+        <item>6/11 | Έχετε λίγο χώρο; Προσαρμόστε την ποιότητα βίντεο για περισσότερο χρόνο εγγραφής.</item>
+        <item>7/11 | Προσθέστε υδατογράφημα στα βίντεο στις ρυθμίσεις.</item>
+        <item>8/11 | Ενσωματώστε ακριβή τοποθεσία στο υδατογράφημα μέσω των ρυθμίσεων.</item>
+        <item>9/11 | Εγγραφή με την μπροστινή κάμερα; Επιλέξτε στις ρυθμίσεις.</item>
+        <item>10/11 | Οι προτιμήσεις σας αποθηκεύονται και εφαρμόζονται απρόσκοπτα.</item>
+        <item>11/11 | Χρειάζεστε βοήθεια; Εγγραφείτε στο Discord μας μέσω της ενότητας Σχετικά.</item>
+    </string-array>
+    <string name="mainpage_video_info">
+    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Βίντεο: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Χρησιμοποιούμενος χώρος:</b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>
+</string>
+    <string name="button_start">Έναρξη</string>
+    <string name="button_pause">Παύση</string>
+    <string name="button_stop">Διακοπή</string>
+    <string name="button_resume">Συνέχιση</string>
+    <string name="video_recording_started">Η εγγραφή ξεκίνησε</string>
+    <string name="video_recording_stopped">Η εγγραφή σταμάτησε</string>
+    <string name="video_recording_paused">Η εγγραφή τέθηκε σε παύση</string>
+    <string name="video_recording_resumed">Η εγγραφή συνεχίστηκε</string>
+    <string name="current_camera">Τρέχουσα κάμερα</string>
+    <string name="back">Πίσω</string>
+    <string name="front">Μπροστά</string>
+    <string name="video_menu_del">Διαγραφή</string>
+    <string name="video_menu_save">Αποθήκευση στη Συλλογή</string>
+    <string name="video_menu_rename">Μετονομασία</string>
+    <string name="video_menu_info">Πληροφορίες</string>
+    <string name="video_menu_copy_filename">Αντιγραφή Ονόματος Αρχείου</string>
+    <string name="video_menu_mark_viewed">Σήμανση ως Θεαμένο</string>
+    <string name="video_menu_mark_unviewed">Σήμανση ως Μη Θεαμένο</string>
+    <string name="records_title">Εγγραφές</string>
+    <string name="nav_home">Αρχική</string>
+    <string name="nav_records">Εγγραφές</string>
+    <string name="nav_settings">Ρυθμίσεις</string>
+    <string name="nav_about">Σχετικά</string>
+    <string name="nav_remote">Απομακρυσμένη</string>
+    <string name="button_settings_readme">Διαβάστε με</string>
+    <string name="setting_cam_title">Επιλογή Κάμερας</string>
+    <string name="note_cam_sele">Επιλέξτε κάμερα\n(Προεπιλογή: Πίσω)</string>
+    <string name="button_settings_cam_back">Πίσω</string>
+    <string name="button_settings_cam_front">Μπροστά</string>
+    <string name="setting_quailty_title">Ποιότητα Βίντεο</string>
+    <string name="setting_framerate_title">Ρυθμός Καρέ Βίντεο</string>
+    <string name="note_quailty">Επιλέξτε ποιότητα\n(Προεπιλογή: HD)</string>
+    <string name="note_framerate">Επιλέξτε ρυθμό καρέ\n(Προεπιλογή: %1$d)</string>
+    <string name="setting_codec_title">Κωδικοποιητής Βίντεο</string>
+    <string name="note_codec">Επιλέξτε κωδικοποιητή\n(Προεπιλογή: %1$s)</string>
+    <string name="setting_watermark">Υδατογράφημα</string>
+    <string name="note_watermark">Επιλέξτε επιλογή υδατογραφήματος\n(Προεπιλογή: Σφραγίδα χρόνου με FadCam)</string>
+    <string name="note_watermark_extra">Για γρήγορη αποθήκευση, επιλέξτε \'Χωρίς Υδατογράφημα\'. Προσθέτετε υδατογράφημα; Αξίζει η αναμονή, λίγο περισσότερο για επεξεργασία!</string>
+    <string name="setting_location_title">Δεδομένα Τοποθεσίας</string>
+    <string name="note_location">Συμπεριλάβετε δεδομένα τοποθεσίας στο υδατογράφημα.\nΑπαιτείται ενεργοποιημένο GPS\n(Προεπιλογή: Απενεργοποιημένο)</string>
+    <string name="note_location_extra">Ενεργοποιήστε το GPS του τηλεφώνου για προσθήκη δεδομένων γεωγραφικού πλάτους και μήκους στο υδατογράφημα.</string>
+    <string name="setting_location_embed_title">Ενσωμάτωση Τοποθεσίας στα Βίντεο</string>
+    <string name="note_location_embed">Προσθήκη συντεταγμένων GPS στα μεταδεδομένα βίντεο (geotags).\nΑπαιτείται ενεργοποιημένο GPS\n(Προεπιλογή: Απενεργοποιημένο)</string>
+    <string name="note_location_embed_extra">Προσθέτει δεδομένα τοποθεσίας απευθείας στα αρχεία βίντεο, τα οποία μπορούν να χρησιμοποιηθούν από εφαρμογές συλλογής/χάρτη για να δείξουν πού τραβήχτηκαν τα βίντεο.</string>
+    <string name="button_setting_review">Γράψτε μια Αξιολόγηση 🌟</string>
+    <string name="dialog_clock_title">Επιλογή Εμφάνισης Ρολογιού</string>
+    <string name="dialog_clock_timeonly">Μόνο Ώρα</string>
+    <string name="dialog_clock_englishtime">Αγγλική Ημερομηνία με Ώρα</string>
+    <string name="dialog_clock_Islamic_calendar" translatable="false">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Περιοχή Προεπισκόπησης</string>
+    <string name="preview_enabled">Η προεπισκόπηση είναι ενεργοποιημένη</string>
+    <string name="preview_disabled">Η προεπισκόπηση είναι απενεργοποιημένη</string>
+    <string-array name="easter_eggs_array">
+        <item>Προσοχή! Αυτή είναι μια περιοχή περιορισμένης πρόσβασης. Ξεκινήστε την εγγραφή για να αποκτήσετε πρόσβαση.</item>
+        <item>Βρήκατε το μυστικό κουμπί! Δεν κάνει τίποτα χαχαχα</item>
+        <item>Γρήγορα! Το σύστημα πρόκειται να εκραγεί… ή μήπως χρειάζεται απλώς μια εγγραφή για να ηρεμήσει.</item>
+        <item>Λοιπόν, αυτό είναι άβολο τώρα…</item>
+        <item>Τι χρώμα είναι η Bugatti σου;</item>
+        <item>Δεν προγραμματίστηκα να κάνω αυτό που κάνετε. Περιμένετε, προσπαθείτε να με χακάρετε;</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>ΑΠΟΠΟΙΗΣΗ ΕΥΘΥΝΩΝ</item>
+        <item>Συλλέγει το FadCam δεδομένα χρήστη;</item>
+        <item>Υπάρχουν διαφημίσεις στο FadCam;</item>
+        <item>Γιατί το FadCam ζητάει πρόσβαση στην τοποθεσία;</item>
+        <item>Συνδέεται το FadCam στο διαδίκτυο;</item>
+        <item>Αποθηκεύονται δεδομένα σε εξωτερικούς διακομιστές;</item>
+        <item>Τι συμβαίνει με τα βίντεό μου μετά την εγγραφή;</item>
+        <item>Κοινοποιεί το FadCam τα δεδομένα μου σε τρίτους;</item>
+        <item> </item>
+        <item> </item>
+        <item>Γενικά</item>
+        <item>Γιατί η προσθήκη υδατογραφήματος παίρνει τόσο χρόνο;</item>
+        <item>Γιατί υπάρχει ένα \'temp\' βίντεο;</item>
+        <item>Πώς μπορώ να αλλάξω την ποιότητα βίντεο;</item>
+        <item>Μπορώ να απενεργοποιήσω την προεπισκόπηση;</item>
+        <item>Πώς μπορώ να ενσωματώσω την τοποθεσία μου στο υδατογράφημα;</item>
+        <item>Αποθηκεύονται οι προτιμήσεις μου;</item>
+        <item>Μπορώ να προγραμματίσω εγγραφές;</item>
+        <item>Πώς ενημερώνω την εφαρμογή;</item>
+        <item> </item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>Το FadCam δεν επιτρέπει ούτε υποστηρίζει οποιαδήποτε ανήθικη ή παράνομη χρήση αυτού του λογισμικού. Η κακή χρήση, όπως μη εξουσιοδοτημένη παρακολούθηση ή εισβολή στην ιδιωτικότητα, είναι αυστηρά αντίθετη με τις οδηγίες μας. Οι δημιουργοί δεν ευθύνονται για οποιαδήποτε κακή χρήση της εφαρμογής.
+        </item>
+        <item>Όχι, το FadCam δεν συλλέγει δεδομένα χρήστη.</item>
+        <item>Όχι, το FadCam είναι εντελώς δωρεάν από διαφημίσεις.</item>
+        <item>Για προσθήκη πληροφοριών τοποθεσίας στα υδατογραφήματά σας.</item>
+        <item>Όχι, το FadCam δεν συνδέεται στο διαδίκτυο.</item>
+        <item>Όχι, όλα τα δεδομένα αποθηκεύονται στη συσκευή σας.</item>
+        <item>Τα βίντεό σας αποθηκεύονται τοπικά στη συσκευή σας.</item>
+        <item>Όχι, το FadCam δεν μοιράζεται ούτε συλλέγει δεδομένα.</item>
+        <item> </item>
+        <item> </item>
+        <item> </item>
+        <item>Το υδατογράφημα ενσωματώνεται σε κάθε καρέ του βίντεο. Όσο μεγαλύτερο είναι το βίντεο, τόσο περισσότερο χρόνο θα χρειαστεί.</item>
+        <item>Το \'temp\' βίντεο είναι η αρχική σας εγγραφή. Διαγράφεται αυτόματα μετά την προσθήκη υδατογραφήματος. Εάν αποτύχει η προσθήκη υδατογραφήματος, το αρχείο \'temp\' παραμένει ως αντίγραφο ασφαλείας.</item>
+        <item>Αλλάξτε την ποιότητα βίντεο στις ρυθμίσεις: HD, SD, ή FHD.</item>
+        <item>Πατήστε παρατεταμένα την περιοχή προεπισκόπησης για να την απενεργοποιήσετε.</item>
+        <item>Ενεργοποιήστε την τοποθεσία στις ρυθμίσεις για δεδομένα τοποθεσίας στο υδατογράφημα. Θα ενσωματώσει το ακριβές γεωγραφικό μήκος και πλάτος.</item>
+        <item>Ναι, οι προτιμήσεις και όλες οι ρυθμίσεις αποθηκεύονται και εφαρμόζονται απρόσκοπτα.</item>
+        <item>Αυτή η λειτουργία θα είναι διαθέσιμη σύντομα.</item>
+        <item>Ελέγξτε το επίσημο αποθετήριο GitHub για ενημερώσεις.</item>
+        <item> </item>
+    </string-array>
+    <string name="dialog_welcome_title">Καλώς ήρθατε στο FadCam!</string>
+    <string name="note_under_dev">Σημαντικό: Αυτή η εφαρμογή βρίσκεται υπό ανάπτυξη. Προστίθενται τακτικά νέες λειτουργίες.</string>
+    <string name="rencent_updates_title">Πρόσφατες Ενημερώσεις:</string>
+    <string name="upcoming_features_title">Προσεχείς Λειτουργίες:</string>
+    <string name="stay_updated_title">Μείνετε Ενημερωμένοι:</string>
+    <string name="button_readme_github">Αποθετήριο GitHub</string>
+    <string name="community_title">Εγγραφείτε στην Κοινότητά μας:</string>
+    <string name="discord_title">Διακομιστής Discord</string>
+    <string name="thankyou_msg">Ευχαριστούμε που χρησιμοποιείτε το FadCam!</string>
+    <string name="settings_title">Ρυθμίσεις</string>
+    <string name="array_watermark_time_fadcam">Ώρα με Fadcam</string>
+    <string name="array_watermark_timeonly">Σφραγίδα Ώρας</string>
+    <string name="array_watermark_nomark">Χωρίς Υδατογράφημα</string>
+    <string name="recent_features" translatable="false">• Audio toggle, bitrate &amp; input source options\n• Video bitrate, orientation, FPS (60/90), and splitting\n• Wide-angle detection &amp; swipe-to-refresh\n• Thumbnails show index, duration, and size\n• Sorting by date/size + bottom sheet redesign\n• "Video Info" option in 3-dot menu\n• Time-ago labels, "New"/"Temp" badges, empty state UI\n• Trash bin with playback, restore &amp; auto-delete\n• "Select All" in Trash\n• Onboarding slides for new users\n• Video geotagging (location in metadata)\n• Improved animations\n• Fixed back button crash/blank screen\n• AMOLED black &amp; 7+ more themes &amp; 15+ new icons</string>
+    <string name="upcoming_features" translatable="false">• Auto-scheduled recordings\n• Auto-uploading to Google Drive\n• Custom app icons\n• In-app video editor (FaditorX - coming soon)\n• Remote tab with cross-device controls\n• Livestreaming of Video Recording\n• And many more exciting features!</string>
+    <string name="toast_video_not_found">Σφάλμα: Το βίντεο δεν βρέθηκε</string>
+    <string name="toast_video_saved">Το βίντεο αποθηκεύτηκε στον φάκελο FadCam στις Λήψεις</string>
+    <string name="toast_video_save_fail">Αποτυχία αποθήκευσης βίντεο</string>
+    <string name="rename_video_title">Μετονομασία Βίντεο</string>
+    <string name="rename_video_hint">Εισάγετε νέο όνομα</string>
+    <string name="universal_ok">OK</string>
+    <string name="toast_rename_name_empty">Το όνομα δεν μπορεί να είναι κενό</string>
+    <string name="toast_rename_failed">Αποτυχία μετονομασίας βίντεο</string>
+    <string name="toast_rename_success">Το βίντεο μετονομάστηκε επιτυχώς</string>
+    <string name="toast_rename_bad_video">Μη έγκυρη θέση ή η λίστα βίντεο είναι null</string>
+    <string name="toast_rename_with_copy">Μετονομάστηκε σε %1$s (διπλό όνομα)</string>
+    <string name="dialog_del_title">Οριστική Διαγραφή;</string>
+    <string name="dialog_del_notice">Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το βίντεο;</string>
+    <string name="dialog_del_confirm">Διαγραφή</string>
+    <string name="dialog_multi_video_del_title">Εξαλείψεις Βίντεο;</string>
+    <string name="dialog_multi_video_del_note">Είστε απολύτως, σίγουρα θετικά βέβαιοι ότι θέλετε να εξαφανίσετε αυτά τα βίντεο από την ύπαρξη;</string>
+    <string name="dialog_multi_video_del_yes">Ναι, Εξαλείψεις!</string>
+    <string name="dialog_multi_video_del_no">Όχι, Κράτησέ τα!</string>
+    <string name="setting_language_title">Γλώσσα Εφαρμογής</string>
+    <string name="note_language">Επιλέξτε από το αναπτυσσόμενο μενού.\n(Προεπιλογή: Αγγλικά)</string>
+    <string name="location_permission_title">Άδεια Τοποθεσίας</string>
+    <string name="location_permission_description">Αυτή η εφαρμογή χρειάζεται άδεια τοποθεσίας για προσθήκη δεδομένων τοποθεσίας στα βίντεο. Παραχωρήστε την άδεια.</string>
+    <string name="location_permission_denied">Άδεια τοποθεσίας αρνήθηκε. Οι λειτουργίες τοποθεσίας θα απενεργοποιηθούν.</string>
+    <string name="up_to_date">Ενήμερο</string>
+    <string name="up_to_date_description">Χρησιμοποιείτε ήδη την πιο πρόσφατη έκδοση.</string>
+    <string name="up_to_date_loading">Έλεγχος για ενημερώσεις…</string>
+    <string name="update_available_title">Νέα Έκδοση Διαθέσιμη</string>
+    <string name="update_available_message">Μια φρεσκοψημένη ενημέρωση είναι έτοιμη! Είστε στην έκδοση v%1$s, η πιο πρόσφατη είναι η v%2$s. Απολαύστε νέες λειτουργίες και βελτιώσεις.</string>
+    <string name="visit_fdroid">Επισκεφτείτε το F-Droid</string>
+    <string name="visit_github">Επισκεφτείτε το GitHub</string>
+    <string name="delete_all_videos_title">Διαγραφή Όλων των Βίντεο</string>
+    <string name="delete_all_videos_description">Είστε σίγουροι ότι θέλετε να διαγράψετε όλα τα βίντεο;</string>
+    <string name="switched_front_camera">Μετάβαση στην μπροστινή κάμερα</string>
+    <string name="switched_rear_camera">Μετάβαση στην πίσω κάμερα</string>
+    <string name="notification_video_recording">Εγγραφή βίντεο</string>
+    <string name="notification_video_recording_progress_description">Η εγγραφή βρίσκεται σε εξέλιξη</string>
+    <string name="notification_video_recording_paused_description">Η εγγραφή έχει τεθεί σε παύση</string>
+    <string name="torch_options_title">Επιλογές Φακού</string>
+    <string name="torch_select_source">Επιλέξτε Πηγή Φακού:</string>
+    <string name="torch_back">Πίσω Φακός</string>
+    <string name="torch_front">Μπροστά Φακός</string>
+    <string name="torch_apply">Εφαρμογή</string>
+    <string name="torch_cancel">Ακύρωση</string>
+    <string name="torch_recording_note">Δεν μπορείτε να αλλάξετε τον φακό κατά την εγγραφή</string>
+    <string name="torch_both">Και οι Δύο Φακοί</string>
+    <string name="setting_debug_title">Καταγραφή Εντοπισμού Σφαλμάτων</string>
+    <string name="note_debug">Ενεργοποίηση δημιουργίας αρχείου καταγραφής εντοπισμού σφαλμάτων\n(Προεπιλογή: Απενεργοποιημένο)</string>
+    <string name="note_debug_extra">Όταν είναι ενεργοποιημένη, ένα αρχείο καταγραφής εντοπισμού σφαλμάτων θα δημιουργηθεί στο φάκελο Downloads/FadCam. Αυτό μπορεί να βοηθήσει στη διάγνωση προβλημάτων εφαρμογής.</string>
+    <string name="torch_shortcut_short_label">Φακός</string>
+    <string name="torch_shortcut_long_label">Εναλλαγή Φακού</string>
+    <string name="torch_shortcut_disabled">Η εναλλαγή φακού είναι προς το παρόν μη διαθέσιμη</string>
+    <string-array name="torch_error_messages">
+        <item>Ο φακός μεταγλωττίζεται... παρακαλώ μην περιμένετε 🖥️</item>
+        <item>Η κάμερα λέει: Χωρίς φλας σήμερα 🚦</item>
+        <item>Το Torch.exe δεν αποκρίνεται 🔦</item>
+        <item>Διόρθωση σε αναμονή... Ο προγραμματιστής έφτασε σε σημείο διακοπής λογικής χαχαχα 🧠</item>
+        <item>Patch σύντομα™... Ο προγραμματιστής διορθώνει τη ζωή 🐛</item>
+    </string-array>
+    <string name="more_options">Περισσότερες Επιλογές</string>
+    <string name="records_options_title">Επιλογές Εγγραφών</string>
+    <string name="setting_theme_title">Θέμα Εφαρμογής</string>
+    <string name="settings_option_theme">Επιλογή Θέματος</string>
+    <string name="settings_theme_changed">Το θέμα άλλαξε. Εφαρμογή αλλαγών...</string>
+    <string name="note_theme">Επιλέξτε το προτιμώμενο θέμα εφαρμογής σας</string>
+    <string name="start_recording">Έναρξη</string>
+    <string name="stop_recording">Διακοπή</string>
+    <string name="warning_temp_file_detail">
+        <![CDATA[
+        <b>ΣΗΜΑΝΤΙΚΗ ΣΗΜΕΙΩΣΗ:</b><br/>
+        Αυτό είναι ένα <b>μη επεξεργασμένο προσωρινό αρχείο</b>. Η επεξεργασία βίντεο (όπως προσθήκη υδατογραφήματος) ενδέχεται να έχει αποτύχει ή διακοπεί.<br/><br/>
+        <b>Προτεινόμενη Ενέργεια:</b><br/>
+        <b>1. Μετονομάστε</b> αυτό το αρχείο τώρα (χρησιμοποιώντας το μενού).<br/>
+        <b>2. Αποθηκεύστε</b> το στη Συλλογή σας (χρησιμοποιώντας το μενού).<br/><br/>
+        Αυτό ασφαλίζει την εγγραφή σας. Αφού επιβεβαιώσετε ότι αποθηκεύτηκε σωστά στην εφαρμογή συλλογής σας, μπορείτε να <b>διαγράψετε με ασφάλεια αυτό το προσωρινό αρχείο</b> από αυτή τη λίστα Εγγραφών, εάν το επιθυμείτε.<br/><br/>
+        Η συνέχιση της εγγραφής χωρίς αποθήκευση μπορεί να οδηγήσει σε απώλεια αυτού του αρχείου, εάν η κρυφή μνήμη της εφαρμογής εκκαθαριστεί απροσδόκητα.
+        ]]>
+</string>
+    <string name="recording_already_active">Η εγγραφή είναι ήδη σε εξέλιξη ή σε παύση.</string>
+    <string name="setting_back_lens_title">Φακός Πίσω Κάμερας</string>
+    <string name="setting_back_lens_note">Επιλέξτε συγκεκριμένο φακό εάν διατίθεται, π.χ. Φακός Ευρείας Γωνίας\n(Προεπιλογή: Κύριος (0))</string>
+    <string name="setting_back_lens_info_single">Μόνο κύριος φακός</string>
+    <string name="setting_back_lens_info_single_v2">Εντοπίστηκε μόνο κύρια πίσω κάμερα</string>
+    <string-array name="theme_options">
+        <item>Μεσοχώρι του Μεσονυχτίου</item>
+        <item>Αχνή Νύχτα</item>
+        <item>Βαθυκόκκινο Άνθος</item>
+        <item>Σιωπηλό Δάσος</item>
+        <item>Κράμα Σκιάς</item>
+        <item>Ροζουλί Πουκάμισο</item>
+        <item>Πέπλο Χιονιού</item>
+    </string-array>
+    <string name="theme_red">Βαθυκόκκινο Άνθος</string>
+    <string name="theme_gold">Premium Χρυσό</string>
+    <string name="theme_silentforest">Σιωπηλό Δάσος</string>
+    <string name="theme_shadowalloy">Κράμα Σκιάς</string>
+    <string name="theme_pookiepink">Ροζουλί Πουκάμισο</string>
+    <string name="theme_snowveil">Πέπλο Χιονιού</string>
+    <string name="remote_access_title">Απομακρυσμένη Πρόσβαση/Έλεγχος</string>
+    <string name="remote_toast_coming_soon">Έρχεται σύντομα! In Sha Allah</string>
+    <string name="remote_coming_soon">Η απομακρυσμένη ρύθμιση για το FadCam θα είναι διαθέσιμη σύντομα.</string>
+    <string name="remote_feature_description">Συνδυάστε πελάτες FadCam χρησιμοποιώντας κωδικό QR για ασφαλή, τοπικού δικτύου απομακρυσμένο έλεγχο: έναρξη/διακοπή εγγραφής, προεπισκόπηση, ζουμ, αλλαγή κάμερας και πολλά άλλα—όλα με κρυπτογράφηση από άκρο σε άκρο.</string>
+    <string name="setting_audio_title">Ηχογράφηση</string>
+    <string name="note_audio">Ενεργοποιήστε ή απενεργοποιήστε την ηχογράφηση για βίντεο.\n(Προεπιλογή: Ενεργοποιημένο)</string>
+    <string name="button_audio_settings">Ρυθμίσεις Ήχου</string>
+    <string name="dialog_audio_settings_title">Ρυθμίσεις Ήχου</string>
+    <string name="dialog_audio_bitrate_label">Ρυθμός Μεταφοράς Ήχου (bps)</string>
+    <string name="dialog_audio_sampling_rate_label">Ρυθμός Δειγματοληψίας (Hz)</string>
+    <string name="dialog_audio_reset">Επαναφορά στις Προεπιλογές</string>
+    <string name="dialog_audio_save">Αποθήκευση</string>
+    <string name="dialog_audio_cancel">Ακύρωση</string>
+    <string name="dialog_audio_invalid_bitrate">Μη έγκυρος ρυθμός μεταφοράς. Εισάγετε μια τιμή μεταξύ 64000 και 384000.</string>
+    <string name="dialog_audio_invalid_sampling_rate">Μη έγκυρος ρυθμός δειγματοληψίας. Εισάγετε 44100 ή 48000.</string>
+    <string name="dialog_audio_settings_summary">Ρυθμίστε τον ρυθμό μεταφοράς ήχου και τον ρυθμό δειγματοληψίας για βέλτιστη ποιότητα. Προεπιλογή: 192000 bps, 48000 Hz, Στερεοφωνικός.</string>
+    <string name="dialog_audio_info_text">
+    <![CDATA[
+    • Ο ρυθμός μεταφοράς (bps) ελέγχει την ποιότητα ήχου και το μέγεθος αρχείου. Υψηλότερες τιμές σημαίνουν καλύτερη ποιότητα αλλά μεγαλύτερα αρχεία. Ο 192000 είναι μια καλή προεπιλογή για τις περισσότερες χρήσεις.<br>
+    • Ο ρυθμός δειγματοληψίας (Hz) είναι ο αριθμός δειγμάτων ανά δευτερόλεπτο. Ο 48000 Hz είναι πρότυπο για βίντεο, ο 44100 Hz είναι συνηθισμένος για ήχο.<br><br>
+    Συνιστώμενες ρυθμίσεις: 192000 bps, 48000 Hz για τους περισσότερους χρήστες.
+    ]]>
+</string>
+    <string name="setting_video_orientation_title">Προσανατολισμός Βίντεο</string>
+    <string name="setting_video_orientation_summary">Επιλέξτε τον προσανατολισμό για τα βίντεό σας. Ο κατακόρυφος είναι καλύτερος για τα μέσα κοινωνικής δικτύωσης. Ο οριζόντιος είναι καλύτερος για το YouTube, παρουσιάσεις κ.λπ.</string>
+    <string name="video_orientation_portrait">Κατακόρυφος (προεπιλογή)</string>
+    <string name="video_orientation_landscape">Οριζόντιος</string>
+    <string name="setting_video_bitrate_title">Ρυθμός Μεταφοράς Βίντεο</string>
+    <string name="button_video_bitrate_settings">Ρύθμιση Ρυθμού Μεταφοράς</string>
+    <string name="bitrate_mode_default">Προεπιλογή</string>
+    <string name="bitrate_mode_custom">Προσαρμοσμένο</string>
+    <string name="bitrate_custom_label">Προσαρμοσμένος Ρυθμός Μεταφοράς:</string>
+    <string name="bitrate_custom_hint">π.χ. 16,000</string>
+    <string name="bitrate_reset_button">Επαναφορά</string>
+    <string name="bitrate_helper_text">Ο ρυθμός μεταφοράς ελέγχει την ποιότητα βίντεο και το μέγεθος αρχείου. Υψηλότερος = καλύτερη ποιότητα, αλλά μεγαλύτερα αρχεία. Πολύ υψηλός ή πολύ χαμηλός μπορεί να προκαλέσει σφάλματα εγγραφής ή χαμηλή ποιότητα. Το συνιστώμενο εύρος εξαρτάται από τη συσκευή σας και την επιλεγμένη ανάλυση. Η προεπιλεγμένη τιμή παραπάνω βασίζεται στις τρέχουσες ρυθμίσεις σας.</string>
+    <string name="bitrate_info_default">Προεπιλογή: %d Mbps</string>
+    <string name="bitrate_info_custom">Προσαρμοσμένο: %d Mbps</string>
+    <string name="bitrate_info_warning_low">Προειδοποίηση: Ο ρυθμός μεταφοράς είναι πολύ χαμηλός. Η ποιότητα βίντεο ενδέχεται να είναι χαμηλή.</string>
+    <string name="bitrate_info_warning_high">Προειδοποίηση: Ο ρυθμός μεταφοράς είναι πολύ υψηλός. Η εγγραφή ενδέχεται να αποτύχει ή να υπερθερμάνει τη συσκευή.</string>
+    <string name="bitrate_info_ok">Ο ρυθμός μεταφοράς βρίσκεται στο συνιστώμενο εύρος.</string>
+    <string name="bitrate_invalid">Μη έγκυρος ρυθμός μεταφοράς. Εισάγετε μια τιμή μεταξύ %1$d και %2$d Mbps.</string>
+    <string name="bitrate_save_success">Ο ρυθμός μεταφοράς αποθηκεύτηκε επιτυχώς.</string>
+    <string name="bitrate_reset_success">Ο ρυθμός μεταφοράς επαναφέρθηκε στην προεπιλογή.</string>
+    <string name="bitrate_current">Τρέχον: %1$s Mbps</string>
+    <string name="bitrate_unit" translatable="false">Mbps</string>
+    <string name="bitrate_explanation">Τι είναι ο ρυθμός μεταφοράς;</string>
+    <string name="bitrate_explanation_text">Ο ρυθμός μεταφοράς είναι η ποσότητα δεδομένων που χρησιμοποιείται ανά δευτερόλεπτο βίντεο. Υψηλότερος ρυθμός μεταφοράς σημαίνει καλύτερη ποιότητα αλλά μεγαλύτερα αρχεία. Πολύ υψηλός ή πολύ χαμηλός μπορεί να προκαλέσει προβλήματα. Οι προεπιλεγμένες τιμές βασίζονται σε πρότυπα επαγγελματικών καμερών.</string>
+    <string name="delete_video_dialog_title">Διαγραφή Βίντεο;</string>
+    <string name="delete_video_dialog_message">Είστε σίγουροι ότι θέλετε να διαγράψετε το %1$s;</string>
+    <string name="delete_video_progress">Διαγραφή %1$s...</string>
+    <string name="delete_video_success_toast">Το \'%1$s\' διαγράφηκε.</string>
+    <string name="delete_video_fail_toast">Αποτυχία διαγραφής \'%1$s\'.</string>
+    <string name="delete_video_cancelled_toast">Η διαγραφή ακυρώθηκε.</string>
+    <string name="delete_video_error_null_toast">Σφάλμα: Δεν είναι δυνατή η διαγραφή στοιχείου null.</string>
+    <string name="delete_videos_success_toast">Όλα τα %1$d βίντεο διαγράφηκαν.</string>
+    <string name="delete_videos_partial_success_toast">%1$d βίντεο διαγράφηκαν. Αποτυχία διαγραφής %2$d.</string>
+    <string name="delete_videos_log">Διαγραφή %1$d επιλεγμένων βίντεο…</string>
+    <string name="trash_auto_deleted_toast">%1$d παλαιότερο(α) στοιχείο(α) διαγράφηκε(αν) αυτόματα.</string>
+    <string name="trash_empty_toast_message">Δεν υπάρχουν στοιχεία για διαγραφή.</string>
+    <string name="trash_emptied_toast">Όλα τα στοιχεία διαγράφηκαν.</string>
+    <string name="trash_items_deleted_toast">%1$d στοιχείο(α) διαγράφηκε(αν) οριστικά.</string>
+    <string name="trash_error_deleting_items_toast">Σφάλμα κατά τη διαγραφή στοιχείων.</string>
+    <string name="trash_dialog_empty_all_title">Διαγραφή Όλων των Στοιχείων;</string>
+    <string name="trash_button_empty_all_action">Διαγραφή Όλων</string>
+    <string name="universal_deleted">Διαγράφηκε</string>
+    <string name="universal_delete_failed">Η διαγραφή απέτυχε</string>
+    <string name="dialog_permanently_delete_title">Οριστική Διαγραφή;</string>
+    <string name="dialog_permanently_delete_message">Είστε σίγουροι ότι θέλετε να διαγράψετε οριστικά %1$d επιλεγμένο(α) στοιχείο(α); Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.</string>
+    <string name="dialog_empty_all_trash_message">Είστε σίγουροι ότι θέλετε να διαγράψετε οριστικά όλα τα στοιχεία; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.</string>
+    <string name="universal_cancel">Ακύρωση</string>
+    <string name="universal_delete">Διαγραφή</string>
+    <string name="trash_no_items_selected_toast">Δεν επιλέχθηκε κανένα στοιχείο.</string>
+    <string name="trash_dialog_restore_title">Επαναφορά Επιλεγμένων;</string>
+    <string name="trash_dialog_restore_message">Επαναφορά %1$d στοιχείου(ων) στον δημόσιο φάκελο Downloads/FadCam/;</string>
+    <string name="trash_restore_success_toast">%1$d στοιχείο(α) επαναφέρθηκε(αν).</string>
+    <string name="trash_restore_fail_toast">Σφάλμα επαναφοράς στοιχείων. Ορισμένα αρχεία ενδέχεται να μην έχουν επαναφερθεί ή η συλλογή ενδέχεται να μην ενημερώθηκε. Ελέγξτε τις άδειες εφαρμογών για τον χώρο αποθήκευσης.</string>
+    <string name="trash_restore_cancelled_toast">Η επαναφορά ακυρώθηκε.</string>
+    <string name="trash_fragment_title_text">Πρόσφατα Διαγραφέντα</string>
+    <string name="universal_restore">Επαναφορά</string>
+    <string name="deleted_item_thumbnail_description">Μικρογραφία διαγραμμένου στοιχείου</string>
+    <string name="trash_empty_icon_description">Εικονίδιο άδειου κάδου απορριμμάτων</string>
+    <string name="trash_empty_text">Ο κάδος απορριμμάτων είναι άδειος.</string>
+    <string name="essential_permissions_missing">Λείπουν βασικές άδειες. Παραχωρήστε τις για να συνεχίσετε.</string>
+    <string name="records_search_hint">Αναζήτηση εγγραφών…</string>
+    <string name="saf_permission_missing_dialog_instructions">Λείπει η άδεια SAF. Παραχωρήστε πρόσβαση στον επιλεγμένο φάκελο.</string>
+    <string name="saf_permission_missing_dialog_title">Απαιτείται Άδεια SAF</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">Για να αποθηκεύσετε τις εγγραφές σε προσαρμοσμένη τοποθεσία, το FadCam χρειάζεται άδεια πρόσβασης στον επιλεγμένο φάκελο. Παραχωρήστε πρόσβαση όταν σας ζητηθεί.</string>
+    <string name="grant_permission_button">Παραχώρηση Άδειας</string>
+    <plurals name="trash_auto_delete_info_days">
+        <item quantity="one">Τα στοιχεία διαγράφονται αυτόματα μετά από %1$d ημέρα.</item>
+        <item quantity="other">Τα στοιχεία διαγράφονται αυτόματα μετά από %1$d ημέρες.</item>
+    </plurals>
+    <plurals name="trash_auto_delete_info_hours">
+        <item quantity="one">Τα στοιχεία διαγράφονται αυτόματα μετά από %1$d ώρα.</item>
+        <item quantity="other">Τα στοιχεία διαγράφονται αυτόματα μετά από %1$d ώρες.</item>
+    </plurals>
+    <string name="trash_auto_delete_info_manual">Τα στοιχεία στον κάδο απορριμμάτων δεν διαγράφονται ποτέ, διαγράψτε τα βίντεο χειροκίνητα.</string>
+    <plurals name="trash_item_remaining_days">
+        <item quantity="one">Απομένει %1$d ημέρα</item>
+        <item quantity="other">Απομένουν %1$d ημέρες</item>
+    </plurals>
+    <plurals name="trash_item_remaining_hours">
+        <item quantity="one">Απομένει %1$d ώρα</item>
+        <item quantity="other">Απομένουν %1$d ώρες</item>
+    </plurals>
+    <string name="trash_item_remaining_soon">Διαγράφεται πολύ σύντομα</string>
+    <string name="trash_menu_auto_delete_settings">Ρυθμίσεις Αυτόματης Διαγραφής</string>
+    <string name="auto_delete_dialog_title">Ορισμός Διάρκειας Αυτόματης Διαγραφής</string>
+    <string name="auto_delete_1_hour">Μετά από 1 Ώρα</string>
+    <string name="auto_delete_5_hours">Μετά από 5 Ώρες</string>
+    <string name="auto_delete_10_hours">Μετά από 10 Ώρες</string>
+    <string name="auto_delete_1_day">Μετά από 1 Ημέρα</string>
+    <string name="auto_delete_7_days">Μετά από 7 Ημέρες</string>
+    <string name="auto_delete_30_days">Μετά από 30 Ημέρες (Προεπιλογή)</string>
+    <string name="auto_delete_60_days">Μετά από 60 Ημέρες</string>
+    <string name="auto_delete_90_days">Μετά από 90 Ημέρες</string>
+    <string name="auto_delete_never">Ποτέ (Χειροκίνητη Διαγραφή)</string>
+    <string name="auto_delete_save_setting">Αποθήκευση</string>
+    <string name="video_split_size_summary_mb">Τρέχον: %1$d MB</string>
+    <string name="video_split_size_summary_gb">Τρέχον: %1$s GB</string>
+    <string name="video_splitting_title">Ενεργοποίηση Διαχωρισμού Βίντεο</string>
+    <string name="video_splitting_description">Αυτόματος διαχωρισμός εγγραφών σε μικρότερα αρχεία (Απενεργοποιημένο από προεπιλογή). Συνιστώμενο: 2 GB για ισορροπία. Προκαθορισμένες τιμές έως 4 GB και προσαρμοσμένα μεγέθη είναι διαθέσιμα. Αυτό βοηθά στη διαχείριση μεγάλων εγγραφών και αποφεύγει τους περιορισμούς μεγέθους αρχείων της συσκευής.</string>
+    <string name="support_ko_fi">Υποστηρίξτε μας στο Ko-fi</string>
+    <string name="kofi_description">Η περιγραφή θα οριστεί στον κώδικα.</string>
+    <string name="kofi_button_text">Κερασέ με ένα Ko-fi</string>
+    <string name="kofi_footer_text">Δημιουργήθηκε με ❤️ στο FadSec Lab στην 🌍</string>
+    <string name="setting_audio_input_source_title">Πηγή Εισόδου Ήχου</string>
+    <string name="setting_audio_input_source_status_default">Τρέχουσα χρήση: Μικρόφωνο Τηλεφώνου</string>
+    <string name="setting_audio_input_source_status_wired">Τρέχουσα χρήση: Ενσύρματο Μικρόφωνο</string>
+    <string name="setting_audio_input_source_status_nowired">Δεν ανιχνεύτηκε ενσύρματο μικρόφωνο</string>
+    <string name="audio_input_source_phone">Μικρόφωνο Τηλεφώνου (Προεπιλογή)</string>
+    <string name="audio_input_source_wired">Ενσύρματο Μικρόφωνο (εάν συνδεδεμένο)</string>
+    <string name="audio_input_source_wired_not_available">Ενσύρματο Μικρόφωνο (δεν ανιχνεύτηκε)</string>
+    <string name="audio_input_source_note">Επιλέξτε ποιο μικρόφωνο θα χρησιμοποιηθεί για ηχογράφηση. Εάν δεν είναι συνδεδεμένο ενσύρματο μικρόφωνο, θα χρησιμοποιηθεί αυτόματα το μικρόφωνο του τηλεφώνου.</string>
+    <string name="audio_input_source_wired_not_connected">Δεν ανιχνεύτηκε ενσύρματο μικρόφωνο. Χρήση μικροφώνου τηλεφώνου.</string>
+    <string name="choose">Επιλέξτε</string>
+    <string name="audio_input_source_headphones_no_mic">Ανιχνεύτηκαν ακουστικά (χωρίς μικρόφωνο)</string>
+    <string name="setting_onboarding_title">Εμφάνιση Οδηγού κατά την Επόμενη Εκκίνηση</string>
+    <string name="note_onboarding">Ενεργοποιήστε για να δείτε την εισαγωγή της εφαρμογής και τον οδηγό αδειών την επόμενη φορά που θα ανοίξετε το FadCam.</string>
+    <string name="choose_language">Επιλέξτε Γλώσσα</string>
+    <string name="language_change_later_note">Μπορείτε να το αλλάξετε αργότερα στις Ρυθμίσεις.</string>
+    <string name="permissions_required">Απαιτούνται Άδειες</string>
+    <string name="permissions_description">Το FadCam χρειάζεται πρόσβαση στην κάμερα, το μικρόφωνο και τον χώρο αποθήκευσης για εγγραφή και αποθήκευση βίντεο.</string>
+    <string name="grant_permissions">Παραχώρηση Αδειών</string>
+    <string name="permissions_note">Πρέπει να παραχωρήσετε όλες τις άδειες για να συνεχίσετε.</string>
+    <string name="permissions_granted">Όλες οι άδειες παραχωρήθηκαν!</string>
+    <string name="open_settings">Άνοιγμα Ρυθμίσεων</string>
+    <string name="disable_battery_optimization">Απενεργοποίηση Βελτιστοποίησης Μπαταρίας</string>
+    <string name="onboarding_human_title">Επαλήθευση εάν είστε άνθρωπος</string>
+    <string name="onboarding_human_desc">Χμ... εντάξει. Αυτοί οι κανόνες είναι αδιαπραγμάτευτοι. Αν δεν μπορείτε να συμφωνήσετε, απεγκαταστήστε το FadCam τώρα.</string>
+    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το FadCam για να παραβιάσω νόμους, να εισβάλλω στην ιδιωτική ζωή κανενός ή να γίνω ανατριχιαστικός. Ο προγραμματιστής δεν φέρει ευθύνη αν τα χαλάσω. (Αυτό είναι δική μου ευθύνη.)</string>
+    <string name="onboarding_human_checkbox2">Ήδη λατρεύω το FadCam πριν καν το χρησιμοποιήσω. (Όχι προαιρετικό)</string>
+    <string name="onboarding_human_button">Επιτρέψτε μου να μπω!</string>
+    <string name="camera_resources_cooldown">Παρακαλώ περιμένετε λίγο πριν ξεκινήσετε νέα εγγραφή</string>
+    <string name="trash_select_all">Επιλογή Όλων</string>
+    <string name="location_permission_granted_manual_toggle">Άδεια παραχωρήθηκε! Μπορείτε τώρα να ενεργοποιήσετε λειτουργίες τοποθεσίας στις ρυθμίσεις.</string>
+    <string name="location_embedding_enabled">Ενσωμάτωση τοποθεσίας ενεργοποιημένη</string>
+    <string name="allow_location_access">Παραχώρηση Άδειας</string>
+    <string name="location_permission_message">Απαιτείται άδεια τοποθεσίας για προσθήκη συντεταγμένων GPS στα βίντεό σας. Παραχωρήστε άδεια για χρήση αυτής της λειτουργίας.</string>
+    <string name="setting_applock_title">Κλείδωμα Καρτέλας</string>
+    <string name="setting_applock_desc">Ασφαλίστε τα βίντεό σας με κλείδωμα PIN για την καρτέλα Εγγραφές.\nΓια την ασφάλειά σας, η καρτέλα Εγγραφές θα κλειδώνει αυτόματα κάθε φορά που η εφαρμογή πηγαίνει στο παρασκήνιο ή κλείνει. Θα πρέπει να ξεκλειδώσετε ξανά όταν επιστρέψετε</string>
+    <string name="setting_applock_configure">Ρύθμιση</string>
+    <string name="applock_dialog_title">Επιλογές Κλειδώματος Καρτέλας</string>
+    <string name="applock_enable">Ενεργοποίηση Κλειδώματος Καρτέλας</string>
+    <string name="applock_disable">Απενεργοποίηση Κλειδώματος Καρτέλας</string>
+    <string name="applock_set_pin">Ορισμός PIN</string>
+    <string name="applock_change_pin">Αλλαγή PIN</string>
+    <string name="applock_remove_pin">Αφαίρεση PIN</string>
+    <string name="applock_pin_created">Το PIN δημιουργήθηκε επιτυχώς</string>
+    <string name="applock_pin_removed">Το PIN αφαιρέθηκε επιτυχώς</string>
+    <string name="applock_verify_to_enable">Επαλήθευση PIN για Ενεργοποίηση Κλειδώματος Καρτέλας</string>
+    <string name="applock_verify_to_disable">Επαλήθευση PIN για Απενεργοποίηση Κλειδώματος Καρτέλας</string>
+    <string name="applock_verify_to_change">Επαλήθευση Τρέχοντος PIN</string>
+    <string name="applock_verify_to_remove">Επαλήθευση PIN για Αφαίρεση</string>
+    <string name="applock_verification_canceled">Η επαλήθευση ακυρώθηκε</string>
+    <string name="version_format" translatable="false">v%s</string>
+    <string name="edit_with_faditorx">Επεξεργασία με FaditorX</string>
+    <string name="update_sarcastic_heading">📦 Κοίτα να δεις, άλλη μια ενημέρωση...</string>
+    <string name="update_visit_github">Επισκεφτείτε το GitHub</string>
+    <string name="update_version_arrow" translatable="false"> → </string>
+    <string name="update_variation_1">
+    <![CDATA[
+    Ακόμα στην <font color=\'#E43C3C\'>v%1$s</font>; Αυτό είναι... νοσταλγικό.<br>Εν τω μεταξύ, η <font color=\'#77DD77\'>v%2$s</font> είναι εδώ και κάνει θραύση. Ώρα να ανανεωθείτε!
+    ]]>
+</string>
+    <string name="update_variation_2">
+    <![CDATA[
+    Η <font color=\'#E43C3C\'>v%1$s</font> είναι παλιά ιστορία.<br>Εν τω μεταξύ, η <font color=\'#77DD77\'>v%2$s</font> είναι έτοιμη να εντυπωσιάσει με νέες λειτουργίες και διορθώσεις σφαλμάτων. Αναβαθμίστε για μια καλύτερη εμπειρία!
+    ]]>
+</string>
+    <string name="update_variation_3">
+    <![CDATA[
+    Η εφαρμογή σας ζει στο παρελθόν με την <font color=\'#E43C3C\'>v%1$s</font>.<br>Εν τω μεταξύ, η <font color=\'#77DD77\'>v%2$s</font> είναι το μέλλον - πιο γρήγορη, πιο έξυπνη και πιο λαμπερή. Γιατί να μην συμμετέχετε;
+    ]]>
+</string>
+    <string name="update_variation_4">
+    <![CDATA[
+    Η <font color=\'#E43C3C\'>v%1$s</font> σας έχει εξυπηρετήσει καλά, αλλά η <font color=\'#77DD77\'>v%2$s</font> σας καλεί!<br>Απολαύστε τις πιο πρόσφατες βελτιώσεις και μια ομαλότερη εμπειρία - μόλις ένα πάτημα μακριά.
+    ]]>
+</string>
+    <string name="setting_app_icon_title">Εικονίδιο Εφαρμογής</string>
+    <string name="setting_app_icon_desc">Αλλάξτε το εικονίδιο εκκίνησης και το όνομα της εφαρμογής</string>
+    <string name="app_icon_dialog_title">Επιλογή Εικονιδίου Εφαρμογής</string>
+    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_alternative" translatable="false">Camera</string>
+    <string name="app_icon_faded" translatable="false">0xFF0000</string>
+    <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
+    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
+    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
+    <string name="app_icon_notes" translatable="false">Notes</string>
+    <string name="app_icon_calculator" translatable="false">Calculator</string>
+    <string name="app_icon_clock" translatable="false">Clock</string>
+    <string name="app_icon_weather" translatable="false">Weather</string>
+    <string name="app_icon_football" translatable="false">FootballX 2024</string>
+    <string name="app_icon_car" translatable="false">ClutchX</string>
+    <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
+    <string name="app_icon_changed">Το εικονίδιο της εφαρμογής άλλαξε</string>
+    <string name="app_icon_preview">Προεπισκόπηση εικονιδίου εφαρμογής</string>
+    <string name="changelog_label">Τι Νέο</string>
+    <string name="setting_auto_update_check_title">Αυτόματος Έλεγχος Ενημερώσεων κατά την Εκκίνηση</string>
+    <string name="note_auto_update_check">Εάν είναι ενεργοποιημένο, το FadCam θα ελέγχει για ενημερώσεις κάθε φορά που ανοίγετε την εφαρμογή. Απενεργοποιήστε το για απενεργοποίηση των αυτόματων ελέγχων ενημέρωσης κατά την εκκίνηση.\n(Προεπιλογή: Ενεργό)</string>
+    <string name="storage_location_title">Θέση Αποθήκευσης</string>
+    <string name="storage_location_description">Επιλέξτε πού αποθηκεύονται οι εγγραφές.</string>
+    <string name="storage_location_internal">Εσωτερική Αποθήκευση Εφαρμογής (Προεπιλογή, Ιδιωτική)</string>
+    <string name="storage_location_custom">Προσαρμοσμένη Τοποθεσία (Κάρτα SD/Άλλο, Ορατή στη Συλλογή)</string>
+    <string name="storage_location_choose_folder">Επιλέξτε Φάκελο</string>
+    <string name="storage_location_note">Σημείωση: Η χρήση προσαρμοσμένων τοποθεσιών καθιστά τα βίντεο προσβάσιμα από άλλες εφαρμογές (π.χ., Συλλογή). Η εσωτερική αποθήκευση τα διατηρεί ιδιωτικά στο FadCam.</string>
+    <string name="storage_icon_description">Εικονίδιο Αποθήκευσης</string>
+    <string name="location_icon_description">Εικονίδιο Τοποθεσίας</string>
+    <string name="location_embedding_icon_description">Εικονίδιο Ενσωμάτωσης Τοποθεσίας</string>
+    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="onboarding_swipe_instruction">Σύρετε δεξιά για να συνεχίσετε</string>
+    <string name="onboarding_select_language">Επιλέξτε την προτιμώμενη γλώσσα της εφαρμογής σας.</string>
+    <string name="onboarding_camera">Κάμερα</string>
+    <string name="onboarding_microphone">Μικρόφωνο</string>
+    <string name="onboarding_storage">Αποθήκευση</string>
+    <string name="onboarding_or">Ή</string>
+    <string name="onboarding_and">ΚΑΙ</string>
+    <string name="onboarding_open_settings">Άνοιγμα Ρυθμίσεων</string>
+    <string name="onboarding_intro_line1">Ανοιχτού κώδικα,</string>
+    <string name="onboarding_intro_line2">χωρίς διαφημίσεις,</string>
+    <string name="onboarding_intro_line3">και φτιαγμένο για εσάς—όχι για διαφημιστές.</string>
+    <string name="sort_by">Ταξινόμηση Κατά</string>
+    <string name="sort_latest_first">Πιο Πρόσφατα Πρώτα</string>
+    <string name="sort_oldest_first">Παλαιότερα Πρώτα</string>
+    <string name="sort_smallest_first">Μικρότερα Αρχεία Πρώτα</string>
+    <string name="sort_largest_first">Μεγαλύτερα Αρχεία Πρώτα</string>
+    <string name="no_videos_found">Δεν βρέθηκαν βίντεο</string>
+    <string name="no_recordings_yet">Δεν υπάρχουν ακόμη Εγγραφές</string>
+    <string name="setting_notification_customization_title">Προσαρμογή Ειδοποιήσεων</string>
+    <string name="setting_notification_customization_description">Προσαρμόστε την εμφάνιση της ειδοποίησης εγγραφής</string>
+    <string name="notification_preset_title">Προκαθορισμένη Ειδοποίηση</string>
+    <string name="notification_preset_description">Επιλέξτε πώς εμφανίζεται η ειδοποίηση</string>
+    <string name="notification_preset_default">Προεπιλογή (Εγγραφή)</string>
+    <string name="notification_preset_system_update">Ενημέρωση Συστήματος</string>
+    <string name="notification_preset_downloading">Λήψη</string>
+    <string name="notification_preset_syncing">Συγχρονισμός Δεδομένων</string>
+    <string name="notification_preset_custom">Προσαρμοσμένο Κείμενο</string>
+    <string name="notification_hide_stop_button">Απόκρυψη Κουμπιού Διακοπής</string>
+    <string name="notification_hide_stop_button_description">Αφαιρέστε το κουμπί διακοπής από την ειδοποίηση</string>
+    <string name="notification_custom_title">Προσαρμοσμένος Τίτλος</string>
+    <string name="notification_custom_text">Προσαρμοσμένο Κείμενο</string>
+    <string name="notification_preview_title">Προεπισκόπηση</string>
+    <string name="notification_setup_title">Ρύθμιση Ειδοποιήσεων</string>
+    <string name="notification_setup_description">Προσαρμόστε πώς εμφανίζεται η ειδοποίηση εγγραφής</string>
+    <string name="notification_setup_save">Αποθήκευση</string>
+    <string name="notification_setup_cancel">Ακύρωση</string>
+    <string name="notification_channel_recording">%s Εγγραφή</string>
+    <string name="notification_channel_system_updates">Ενημερώσεις Συστήματος</string>
+    <string name="notification_channel_downloads">Λήψεις</string>
+    <string name="notification_channel_data_sync">Συγχρονισμός Δεδομένων</string>
+    <string name="notification_channel_generic">Υπηρεσία Ειδοποιήσεων</string>
+    <string name="notification_channel_description">Ειδοποιήσεις υπηρεσίας</string>
+    <string name="notification_text_system_update_progress">Ενημέρωση σε εξέλιξη</string>
+    <string name="notification_text_system_update_paused">Η ενημέρωση έχει τεθεί σε παύση</string>
+    <string name="notification_text_downloading_progress">Λήψη σε εξέλιξη</string>
+    <string name="notification_text_downloading_paused">Η λήψη τέθηκε σε παύση</string>
+    <string name="notification_text_syncing_progress">Ο συγχρονισμός σε εξέλιξη</string>
+    <string name="notification_text_syncing_paused">Ο συγχρονισμός τέθηκε σε παύση</string>
+    <string name="notification_text_custom_default">Διαδικασία σε εξέλιξη</string>
+    <string name="notification_title_system_update">Ενημέρωση Συστήματος</string>
+    <string name="notification_title_downloading">Λήψη</string>
+    <string name="notification_title_syncing">Συγχρονισμός Δεδομένων</string>
+    <string name="notification_title_custom_default">Ειδοποίηση</string>
+    <string name="notification_settings_saved">Οι ρυθμίσεις ειδοποιήσεων αποθηκεύτηκαν</string>
+    <string name="setting_notification_appearance">Εμφάνιση Ειδοποίησης</string>
+    <string name="note_notification_appearance">Προσαρμόστε την εμφάνιση της ειδοποίησης εγγραφής\n(Προεπιλογή: FadCam)</string>
+    <string name="hide_stop_button">Απόκρυψη κουμπιού διακοπής</string>
+    <string name="note_hide_stop_button">Απόκρυψη του κουμπιού διακοπής στην ειδοποίηση\n(Προεπιλογή: Απενεργοποιημένο)</string>
+    <string name="notification_preview">Προεπισκόπηση ειδοποίησης</string>
+    <string name="notification_stop">ΔΙΑΚΟΠΗ</string>
+    <string-array name="notification_appearance_options">
+        <item>FadCam (προεπιλογή)</item>
+        <item>Ενημέρωση Συστήματος</item>
+        <item>Λήψη</item>
+        <item>Συγχρονισμός</item>
+        <item>Αντίγραφο ασφαλείας</item>
+        <item>Προσαρμοσμένο</item>
+    </string-array>
+</resources>
