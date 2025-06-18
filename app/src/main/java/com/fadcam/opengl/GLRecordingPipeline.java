@@ -304,8 +304,13 @@ public class GLRecordingPipeline {
         // --- Set orientation hint for correct playback ---
         int orientationHint = 0;
         if ("portrait".equalsIgnoreCase(orientation)) {
-            if (sensorOrientation == 90) orientationHint = 90;
-            else if (sensorOrientation == 270) orientationHint = 270;
+            if (sensorOrientation == 270) {
+                // Front camera portrait
+                orientationHint = 270;
+            } else if (sensorOrientation == 90) {
+                // Back camera portrait: set to 270 to rotate upright
+                orientationHint = 270;
+            }
         }
         mediaMuxer.setOrientationHint(orientationHint);
         // --- End orientation hint ---

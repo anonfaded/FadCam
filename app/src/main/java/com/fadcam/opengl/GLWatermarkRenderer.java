@@ -1306,19 +1306,39 @@ public class GLWatermarkRenderer {
         // Use the shader program
         GLES20.glUseProgram(oesProgram);
         
-        // Standard full screen quad
+        // Standard vertex positions for quad (these don't change)
         float[] vertices = {
             -1.0f, -1.0f,  // bottom left
              1.0f, -1.0f,  // bottom right
             -1.0f,  1.0f,  // top left
              1.0f,  1.0f   // top right
         };
-        float[] texCoords = {
-            0.0f, 0.0f,  // bottom left
-            1.0f, 0.0f,  // bottom right
-            0.0f, 1.0f,  // top left
-            1.0f, 1.0f   // top right
-        };
+        
+        // For back camera in portrait mode, we need to flip texture coordinates horizontally
+        // to fix mirroring issue (front camera is handled correctly)
+        boolean isBackCamera = sensorOrientation == 90;
+        boolean isPortraitMode = "portrait".equalsIgnoreCase(orientation);
+        float[] texCoords;
+        
+        if (isBackCamera && isPortraitMode) {
+            // Flip texture coordinates horizontally for back camera in portrait mode 
+            // to fix the mirroring issue
+            texCoords = new float[] {
+                1.0f, 0.0f,  // Bottom right (flipped from bottom left)
+                0.0f, 0.0f,  // Bottom left (flipped from bottom right)
+                1.0f, 1.0f,  // Top right (flipped from top left)
+                0.0f, 1.0f   // Top left (flipped from top right)
+            };
+            Log.d(TAG, "Using flipped texture coordinates for back camera to fix mirroring");
+        } else {
+            // Standard texture coordinates for all other cases
+            texCoords = new float[] {
+                0.0f, 0.0f,  // bottom left
+                1.0f, 0.0f,  // bottom right
+                0.0f, 1.0f,  // top left
+                1.0f, 1.0f   // top right
+            };
+        }
         
         FloatBuffer vertexBuffer = ByteBuffer.allocateDirect(vertices.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
