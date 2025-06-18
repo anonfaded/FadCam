@@ -37,6 +37,7 @@ public class GLRecordingPipeline {
     private Surface encoderInputSurface;
     private Surface cameraInputSurface;
     private boolean isRecording = false;
+    private boolean isStopped = false;
     private HandlerThread renderThread;
     private Handler handler;
     private final int videoWidth;
@@ -71,7 +72,6 @@ public class GLRecordingPipeline {
     private String currentOutputFilePath;
     private FileDescriptor currentOutputFd;
     private boolean muxerStarted = false;
-    private boolean isStopped = false;
 
     private HandlerThread previewRenderThread;
     private Handler previewRenderHandler;
@@ -187,7 +187,7 @@ public class GLRecordingPipeline {
                 // Allow time for the renderer to initialize completely before getting camera surface
                 try {
                     Log.d(TAG, "Waiting for GL resources to initialize");
-                    Thread.sleep(300); // Increased delay to ensure texture is initialized
+                    Thread.sleep(500); // Increased delay to ensure texture is initialized
                 } catch (InterruptedException e) {
                     // Ignore
                 }
@@ -457,61 +457,93 @@ public class GLRecordingPipeline {
     }
 
     /**
-     * Stops and releases all resources for the recording pipeline.
+     * Stops recording and releases all resources.
      */
     public void stopRecording() {
-        if (isRecording) {
-            Log.d(TAG, ">> stopRecording sequence initiated. Current state: " + 
-                (isRecording ? "IN_PROGRESS" : "NONE"));
-            
+        Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+        
+        if (isStopped) {
+            Log.d(TAG, "stopRecording: Already stopped, ignoring duplicate call");
+            return;
+        }
+        
+        isStopped = true;
         isRecording = false;
-            
-            // First stop all rendering threads to avoid accessing released resources
-            stopPreviewRenderLoop();
-            
-            if (handler != null) {
-                handler.removeCallbacksAndMessages(null);
+        
+        // First stop the render loops to prevent further frame processing
+        stopPreviewRenderLoop();
+        
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
         }
-            
+        
         if (renderThread != null) {
-                try {
-            renderThread.quitSafely();
-                    renderThread.join(500); // Wait up to 500ms for thread to finish
-                } catch (InterruptedException e) {
-                    Log.w(TAG, "Interrupted while stopping render thread", e);
-                }
-            }
-            
-            // Stop encoder first before releasing renderer
             try {
-        if (videoEncoder != null) {
-                videoEncoder.stop();
-                    videoEncoder.release();
-                    videoEncoder = null;
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error stopping encoder", e);
+                renderThread.quitSafely();
+                renderThread.join(300); // Wait for render thread to exit
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Interrupted while waiting for render thread to exit", e);
+                Thread.currentThread().interrupt();
             }
-            
-            // Now release the renderer
-            if (glRenderer != null) {
-            try {
-                    // Final release of GL resources
-                    glRenderer.release();
-                    glRenderer = null;
-            } catch (Exception e) {
-                    Log.e(TAG, "Error releasing renderer", e);
-            }
-            }
-            
             renderThread = null;
-            handler = null;
-            previewSurface = null;
-            encoderInputSurface = null;
-            cameraInputSurface = null;
-            
-            Log.d(TAG, "GLRecordingPipeline stopped and released.");
         }
+        
+        // Stop and release the video encoder
+        if (videoEncoder != null) {
+            try {
+                Log.d(TAG, "Stopping video encoder");
+                videoEncoder.stop();
+                videoEncoder.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping video encoder", e);
+            } finally {
+                videoEncoder = null;
+            }
+        }
+        
+        // Stop and release the media muxer
+        if (mediaMuxer != null && muxerStarted) {
+            try {
+                Log.d(TAG, "Stopping media muxer");
+                mediaMuxer.stop();
+                mediaMuxer.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping media muxer", e);
+            } finally {
+                mediaMuxer = null;
+                muxerStarted = false;
+            }
+        }
+        
+        // Release encoder input surface
+        if (encoderInputSurface != null) {
+            try {
+                encoderInputSurface.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing encoder input surface", e);
+            } finally {
+                encoderInputSurface = null;
+            }
+        }
+        
+        // Release GL renderer last to ensure proper cleanup of OpenGL resources
+        if (glRenderer != null) {
+            try {
+                Log.d(TAG, "Releasing GL renderer");
+                glRenderer.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing renderer", e);
+            } finally {
+                glRenderer = null;
+            }
+        }
+        
+        // Clear references to other surfaces
+        handler = null;
+        previewSurface = null;
+        cameraInputSurface = null;
+        
+        Log.d(TAG, "GLRecordingPipeline stopped and released.");
     }
 
     /**

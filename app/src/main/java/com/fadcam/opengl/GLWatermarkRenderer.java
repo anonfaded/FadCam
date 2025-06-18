@@ -539,42 +539,84 @@ public class GLWatermarkRenderer {
         Log.d(TAG, "GLWatermarkRenderer release() called");
         synchronized (renderLock) {
             synchronized (previewRenderLock) {
-        releasePreviewEGL();
+                // First ensure we're not in the middle of preview rendering
+                previewRenderActive = false;
                 
-        if (watermarkBitmap != null) {
-            watermarkBitmap.recycle();
-            watermarkBitmap = null;
-        }
-                
-        // Release EGL/GL resources for encoder
-                if (eglDisplay != null) {
-                    // Make sure we're not using the context
-                    EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, 
-                            EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                try {
+                    // First release preview EGL resources
+                    releasePreviewEGL();
+                    
+                    // Release watermark bitmap
+                    if (watermarkBitmap != null) {
+                        watermarkBitmap.recycle();
+                        watermarkBitmap = null;
+                    }
+                    
+                    // Release Surface and SurfaceTexture in the correct order
+                    if (cameraInputSurface != null) {
+                        try {
+                            Log.d(TAG, "Releasing camera input surface");
+                            cameraInputSurface.release();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error releasing camera input surface", e);
+                        } finally {
+                            cameraInputSurface = null;
+                        }
+                    }
+                    
+                    // Wait a bit before releasing SurfaceTexture
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    
+                    // Release SurfaceTexture
+                    if (cameraSurfaceTexture != null) {
+                        try {
+                            Log.d(TAG, "Releasing camera surface texture");
+                            cameraSurfaceTexture.release();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error releasing camera surface texture", e);
+                        } finally {
+                            cameraSurfaceTexture = null;
+                        }
+                    }
+                    
+                    // Release EGL resources for encoder
+                    if (eglDisplay != null) {
+                        try {
+                            // Make sure we're not using the context
+                            EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, 
+                                    EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                                    
+                            // Destroy surface first
+                            if (eglSurface != null && eglSurface != EGL14.EGL_NO_SURFACE) {
+                                EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                                eglSurface = null;
+                            }
                             
-                    if (eglSurface != null && eglSurface != EGL14.EGL_NO_SURFACE) {
-            EGL14.eglDestroySurface(eglDisplay, eglSurface);
-            eglSurface = null;
-        }
-                    if (eglContext != null && eglContext != EGL14.EGL_NO_CONTEXT) {
-            EGL14.eglDestroyContext(eglDisplay, eglContext);
-            eglContext = null;
-        }
-            EGL14.eglTerminate(eglDisplay);
-            eglDisplay = null;
-        }
-                
-        if (cameraSurfaceTexture != null) {
-            cameraSurfaceTexture.release();
-            cameraSurfaceTexture = null;
-        }
-                
-        if (cameraInputSurface != null) {
-            cameraInputSurface.release();
-            cameraInputSurface = null;
+                            // Then destroy context
+                            if (eglContext != null && eglContext != EGL14.EGL_NO_CONTEXT) {
+                                EGL14.eglDestroyContext(eglDisplay, eglContext);
+                                eglContext = null;
+                            }
+                            
+                            // Finally terminate display
+                            EGL14.eglTerminate(eglDisplay);
+                            eglDisplay = null;
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error releasing EGL resources", e);
+                        }
+                    }
+                    
+                    // Reset initialization flag
+                    initialized = false;
+                    
+                    Log.d(TAG, "GLWatermarkRenderer resources fully released");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error during GLWatermarkRenderer release", e);
                 }
-                
-                Log.d(TAG, "GLWatermarkRenderer resources fully released");
             }
         }
     }
@@ -788,40 +830,37 @@ public class GLWatermarkRenderer {
      * This must be called before any rendering operations.
      */
     public void initializeEGL() {
-        if (!initialized) {
-            // Step 1: Set up EGL first
-            setupEGL();
-            
-            // Step 2: Set up shaders after EGL is initialized
-            setupOESShader();
-            setupSimpleWatermarkShader();
-            
-            // Step 3: Set up texture coordinates
-            setupTextureCoordinates();
-            
-            // Step 4: Create and set up textures
-            setupOESTexture();
-            
-            // Step 5: Now create camera surface texture using the OES texture
-            createCameraSurfaceTexture();
-            
-            // Step 6: Set up watermark textures after camera is initialized
-            setupWatermarkTexture();
-            setWatermarkText(watermarkText);
-            
-            // Mark renderer as initialized
-            initialized = true;
-            
-            // Set filtering parameters for smoother preview
-            if (oesTextureId != 0) {
-                GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
-                // Use NEAREST filter instead of LINEAR for better performance
-                GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-                GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-                GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-                GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            }
-        }
+        Log.d(TAG, "Initializing EGL context and resources");
+        
+        // First release any existing resources
+        releasePreviewEGL();
+        
+        // Setup main EGL for encoder
+        setupEGL();
+        
+        // Setup OES texture for camera input
+        setupOESTexture();
+        
+        // Create the SurfaceTexture that will feed the encoder
+        createCameraSurfaceTexture();
+        
+        // Setup shaders for rendering
+        setupOESShader();
+        setupSimpleWatermarkShader();
+        
+        // Setup vertex buffers
+        setupVertexBuffer();
+        
+        // Setup texture coordinates
+        setupTextureCoordinates();
+        
+        // Create watermark texture
+        setupWatermarkTexture();
+        
+        // Mark as initialized
+        initialized = true;
+        
+        Log.d(TAG, "EGL context and resources initialized successfully");
     }
 
     /**
@@ -843,60 +882,73 @@ public class GLWatermarkRenderer {
      * Create the camera surface texture from the OES texture ID
      */
     private void createCameraSurfaceTexture() {
+        Log.d(TAG, "Creating SurfaceTexture for camera input");
+        
+        // First ensure we don't have any existing SurfaceTexture
+        if (cameraSurfaceTexture != null) {
+            try {
+                Log.d(TAG, "Releasing existing SurfaceTexture before creating a new one");
+                cameraSurfaceTexture.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing existing SurfaceTexture", e);
+            } finally {
+                cameraSurfaceTexture = null;
+            }
+        }
+        
+        // Also release any existing Surface to avoid leaks
+        if (cameraInputSurface != null) {
+            try {
+                Log.d(TAG, "Releasing existing camera input Surface before creating a new one");
+                cameraInputSurface.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing existing camera input Surface", e);
+            } finally {
+                cameraInputSurface = null;
+            }
+        }
+        
         try {
-            if (oesTextureId == 0) {
-                Log.e(TAG, "Cannot create SurfaceTexture, oesTextureId is 0");
-                return;
-            }
-
-            // Make sure EGL context is current
-            if (eglDisplay != null && eglContext != null && eglSurface != null) {
-                if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-                    Log.e(TAG, "Failed to make EGL context current for SurfaceTexture creation: " + 
-                        EGL14.eglGetError());
-                    return;
-                }
-            } else {
-                Log.e(TAG, "Cannot create SurfaceTexture - EGL not initialized");
-                return;
-            }
-
-            // Create a new SurfaceTexture for camera preview
+            // Create new SurfaceTexture with our OES texture
             cameraSurfaceTexture = new SurfaceTexture(oesTextureId);
             
-            // ALWAYS use the exact dimensions of our target resolution
-            // Regardless of device orientation or surface dimensions
+            // Set default buffer size to match our recording dimensions
             cameraSurfaceTexture.setDefaultBufferSize(videoWidth, videoHeight);
             
-            Log.d(TAG, "Camera SurfaceTexture created with fixed dimensions: " + 
-                videoWidth + "x" + videoHeight + " (aspect ratio: " + 
-                ((float)videoWidth/videoHeight) + ")");
-            
-            // Create the input surface for the camera
+            // Create Surface from the SurfaceTexture
             cameraInputSurface = new Surface(cameraSurfaceTexture);
             
-            // Set the frame listener to notify when new frames are available
+            // Set up frame available listener
             cameraSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                     synchronized (frameSyncObject) {
-                        if (!frameAvailable) {
-                            frameAvailable = true;
-                            frameSyncObject.notifyAll();
-                        }
+                        frameAvailable = true;
+                        frameSyncObject.notifyAll();
                     }
                     
-                    // Also notify any external listener
                     if (externalFrameListener != null) {
                         externalFrameListener.onFrameAvailable();
                     }
                 }
             });
             
-            // Verify the buffer size was set correctly
-            verifyBufferSize();
+            Log.d(TAG, "Successfully created SurfaceTexture and Surface for camera input");
         } catch (Exception e) {
             Log.e(TAG, "Error creating SurfaceTexture", e);
+            if (cameraSurfaceTexture != null) {
+                try {
+                    cameraSurfaceTexture.release();
+                } catch (Exception ex) {
+                    // Ignore
+                }
+                cameraSurfaceTexture = null;
+            }
+            if (cameraInputSurface != null) {
+                cameraInputSurface.release();
+                cameraInputSurface = null;
+            }
+            throw new RuntimeException("Failed to create camera SurfaceTexture", e);
         }
     }
 

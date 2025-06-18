@@ -787,6 +787,13 @@ public class HomeFragment extends BaseFragment {
         } catch (Exception e) {
             Log.e(TAG, "Error in onRecordingStopped", e);
         }
+
+        // Check if the service is actually running
+        if (!isMyServiceRunning(RecordingService.class)) {
+            Log.d(TAG, "RecordingService is not running, force setting recordingState to NONE");
+            recordingState = RecordingState.NONE;
+            updateStartButtonAvailability();
+        }
         // ----- Fix End: Restructure for better state management -----
     }
 
@@ -1966,11 +1973,21 @@ public class HomeFragment extends BaseFragment {
 
     private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
-                if (recordingState.equals(RecordingState.NONE)) {
-                    startRecording();
-                } else {
-                    stopRecording();
-                    updateStats();
+            // ----- Fix Start: Add debug logs and ensure recordingState is correct -----
+            Log.d(TAG, "Start/Stop button clicked. recordingState=" + recordingState + ", enabled=" + buttonStartStop.isEnabled());
+            
+            // If service is not running, force recordingState to NONE
+            if (!isMyServiceRunning(RecordingService.class)) {
+                Log.d(TAG, "Service not running, forcing recordingState to NONE");
+                recordingState = RecordingState.NONE;
+            }
+            // ----- Fix End: Add debug logs and ensure recordingState is correct -----
+            
+            if (recordingState.equals(RecordingState.NONE)) {
+                startRecording();
+            } else {
+                stopRecording();
+                updateStats();
             }
         });
 
@@ -1998,6 +2015,12 @@ public class HomeFragment extends BaseFragment {
         }
         performHapticFeedback();
         // Permission checks removed; handled by onboarding
+
+        // Force reset recording state if service is not running
+        if (!isMyServiceRunning(RecordingService.class)) {
+            Log.d(TAG, "Service not running, forcing recordingState to NONE");
+            recordingState = RecordingState.NONE;
+        }
 
         if (isMyServiceRunning(RecordingService.class)) {
             Log.w(TAG, "Start requested, but service appears to be already running or starting. Current state: " + recordingState);

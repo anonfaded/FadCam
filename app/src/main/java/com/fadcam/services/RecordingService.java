@@ -256,8 +256,10 @@ public class RecordingService extends Service {
                 // Begin camera/recording setup
                 if (cameraDevice == null) {
                     pendingStartRecording = true;
+                    Log.d(TAG, "Setting pendingStartRecording=true, will start recording after camera opens");
                     openCamera();
                 } else {
+                    Log.d(TAG, "Camera already open, starting recording directly");
                     startRecording();
                 }
                 
@@ -418,31 +420,121 @@ public class RecordingService extends Service {
 
     // --- Core Recording Logic ---
     private void stopRecording() {
-        if (isStopping) return;
+        if (isStopping) {
+            Log.w(TAG, "stopRecording: Already in stopping process, ignoring duplicate call");
+            return;
+        }
+        
         isStopping = true;
         Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
+        
         if (recordingState == RecordingState.NONE) {
+            Log.d(TAG, "stopRecording called but state is already NONE, just cleaning up");
             sharedPreferencesManager.setRecordingInProgress(false);
             if (!isWorkingInProgress()) stopSelf();
             if (recordingWakeLock != null && recordingWakeLock.isHeld()) recordingWakeLock.release();
+            isStopping = false; // Reset stopping flag if we're already stopped
             return;
         }
+        
+        // First update the state to prevent any new operations
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
 
-        if (glRecordingPipeline != null) {
-            glRecordingPipeline.stopRecording();
-            glRecordingPipeline = null;
-            Log.d(TAG, "GLRecordingPipeline stopped and released.");
-        }
+        // Stop foreground service and cancel notification early to improve responsiveness
         stopForeground(true);
         cancelNotification();
-        try { if (captureSession != null) { captureSession.close(); } } catch (Exception e) { } finally { captureSession = null; }
-        try { if (cameraDevice != null) { cameraDevice.close(); } } catch (Exception e) { } finally { cameraDevice = null; }
-        setCameraResourcesReleasing(true);
-        broadcastOnRecordingStopped();
-        checkIfServiceCanStop();
-        if (recordingWakeLock != null && recordingWakeLock.isHeld()) recordingWakeLock.release();
+        
+        // Use a background thread for resource cleanup to avoid blocking the main thread
+        new Thread(() -> {
+            try {
+                // Set camera resources as releasing and broadcast early
+                setCameraResourcesReleasing(true);
+                broadcastOnRecordingStopped();
+                
+                // First stop the capture session
+                if (captureSession != null) {
+                    try {
+                        Log.d(TAG, "Stopping repeating request and closing capture session");
+                        captureSession.stopRepeating();
+                        captureSession.close();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error closing capture session", e);
+                    } finally {
+                        captureSession = null;
+                    }
+                }
+                
+                // Give some time for the session to close
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // Stop and release the GL pipeline
+                if (glRecordingPipeline != null) {
+                    try {
+                        Log.d(TAG, "Stopping GLRecordingPipeline");
+                        glRecordingPipeline.stopRecording();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error stopping GLRecordingPipeline", e);
+                    } finally {
+                        glRecordingPipeline = null;
+                    }
+                }
+                
+                // Give some time for the GL pipeline to release resources
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // Close the camera device last
+                if (cameraDevice != null) {
+                    try {
+                        Log.d(TAG, "Closing camera device");
+                        cameraDevice.close();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error closing camera device", e);
+                    } finally {
+                        cameraDevice = null;
+                        isCameraOpen = false;
+                    }
+                }
+                
+                // Final cleanup on the main thread
+                mainHandler.post(() -> {
+                    // Release wake lock if held
+                    if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
+                        try {
+                            recordingWakeLock.release();
+                            Log.d(TAG, "Recording wake lock released");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error releasing wake lock", e);
+                        }
+                    }
+                    
+                    // Check if service can stop
+                    checkIfServiceCanStop();
+                    
+                    // Reset stopping flag
+                    isStopping = false;
+                    
+                    // Clear any pending recording start flag
+                    pendingStartRecording = false;
+                    
+                    Log.d(TAG, "stopRecording sequence completed successfully");
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error in stopRecording cleanup thread", e);
+                mainHandler.post(() -> {
+                    isStopping = false;
+                    pendingStartRecording = false;
+                });
+            }
+        }, "RecordingStopThread").start();
     }
 
     private void pauseRecording() {
@@ -951,91 +1043,138 @@ public class RecordingService extends Service {
     private final CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
-            Log.d(TAG, "Camera " + camera.getId() + " opened.");
+            Log.d(TAG, "Camera device opened successfully");
             cameraDevice = camera;
             isCameraOpen = true;
-            // Only start recording here, not createCameraPreviewSession
+            
+            // Check if we have a pending recording start request
             if (pendingStartRecording) {
-                pendingStartRecording = false;
-                startRecording();
-            }
-        }
-        @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
-            if (isStopping) return;
-            Log.w(TAG, "Camera " + camera.getId() + " disconnected.");
-            // ----- Fix Start for this method(onDisconnected_handle_rollover_flag) -----
-            // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
-            // ----- Fix Ended for this method(onDisconnected_handle_rollover_flag) -----
-            releaseRecordingResources(); // Cleanup everything if camera disconnects
-            // ----- Fix Start for this method(onDisconnected)-----
-            if (recordingState == RecordingState.STARTING) {
-                recordingState = RecordingState.NONE;
-            }
-            // ----- Fix Ended for this method(onDisconnected)-----
-            // Possibly notify UI or attempt restart? For now, just stop.
-            stopSelf();
-        }
-        @Override
-        public void onError(@NonNull CameraDevice camera, int error) {
-            if (isStopping) return;
-            Log.e(TAG, "Camera " + camera.getId() + " error: " + error);
-            // ----- Fix Start for this method(onError_handle_rollover_flag) -----
-            // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
-            // ----- Fix Ended for this method(onError_handle_rollover_flag) -----
-            releaseRecordingResources(); // Cleanup on error
-            // ----- Fix Start for this method(onError)-----
-            if (recordingState == RecordingState.STARTING) {
-                recordingState = RecordingState.NONE;
-            }
-            // ----- Fix Ended for this method(onError)-----
-            Toast.makeText(RecordingService.this,"Camera error: "+error, Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
-        @Override
-        public void onClosed(@NonNull CameraDevice camera) {
-            if (isStopping) return;
-            // ----- Fix Start for this method(onClosed_handle_rollover_callback) -----
-            String closedCameraId = camera.getId();
-            // Restore the logging of isRolloverClosingOldSession as the field will now be declared
-            Log.d(TAG,"CameraDevice.onClosed for " + closedCameraId + ". Current recordingState: " + recordingState + ", isRolloverClosingOldSession: " + isRolloverClosingOldSession);
-
-            if (RecordingService.this.cameraDevice == camera) {
-                RecordingService.this.cameraDevice = null;
-                Log.d(TAG, "RecordingService.cameraDevice field nulled for " + closedCameraId);
-            } else if (RecordingService.this.cameraDevice != null) {
-                Log.w(TAG, "CameraDevice.onClosed received for camera " + closedCameraId +
-                           " but RecordingService.this.cameraDevice is " + RecordingService.this.cameraDevice.getId() +
-                           ". Not nulling the field based on this specific event.");
-                } else {
-                 Log.d(TAG, "CameraDevice.onClosed received for camera " + closedCameraId +
-                           " but RecordingService.this.cameraDevice was already null.");
-            }
-
-            if (isRolloverClosingOldSession) {
-                 Log.w(TAG, "Camera " + closedCameraId + " closed, but isRolloverClosingOldSession was true. " +
-                            "This is unexpected for the keep-open-rollover strategy. Attempting full stop.");
-                 isRolloverClosingOldSession = false; 
-                 new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(RecordingService.this, "Camera unexpectedly closed during segment change. Stopping.", Toast.LENGTH_LONG).show();
-                    stopRecording();
-                 });
-            } else if (recordingState != RecordingState.NONE) {
-                Log.w(TAG, "Camera " + closedCameraId + " closed. RecordingState is " + recordingState +
-                           " (not NONE) and not in active session rollover. This might be an unexpected closure or " +
-                           "part of a stop sequence. Initiating stopRecording sequence to ensure cleanup.");
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    // Avoid double toasts if another part of the system (e.g. onError) already showed one.
-                    // Toast.makeText(RecordingService.this, "Camera " + closedCameraId + " disconnected. Stopping recording.", Toast.LENGTH_LONG).show();
-                    stopRecording();
+                Log.d(TAG, "Found pendingStartRecording=true, starting recording now");
+                pendingStartRecording = false; // Reset the flag
+                
+                // Start recording on main thread to avoid threading issues
+                mainHandler.post(() -> {
+                    try {
+                        if (recordingState == RecordingState.STARTING) {
+                            Log.d(TAG, "Starting recording from camera onOpened callback");
+                            startRecording();
+                        } else {
+                            Log.w(TAG, "Camera opened but recording state changed to " + recordingState);
+                            // If state changed while camera was opening, handle accordingly
+                            if (recordingState == RecordingState.NONE) {
+                                Log.d(TAG, "Recording state is NONE, releasing camera");
+                                if (cameraDevice != null) {
+                                    cameraDevice.close();
+                                    cameraDevice = null;
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error starting recording from camera callback", e);
+                        stopRecording();
+                    }
                 });
             } else {
-                Log.d(TAG, "Camera " + closedCameraId + " closed. RecordingState is NONE and not in session rollover. Normal closure observed.");
+                Log.d(TAG, "Camera opened but no pending recording start");
+                // If we're not starting recording, create a preview session
+                if (previewSurface != null) {
+                    try {
+                        createCameraPreviewSession();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error creating preview session", e);
+                    }
+                }
             }
-            // ----- Fix Ended for this method(onClosed_handle_rollover_callback) -----
         }
-    }; // End of cameraStateCallback
 
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            Log.d(TAG, "Camera device disconnected");
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+            
+            // Reset the pending flag if camera disconnected
+            if (pendingStartRecording) {
+                Log.w(TAG, "Camera disconnected while pendingStartRecording=true, resetting flag");
+                pendingStartRecording = false;
+            }
+            
+            // If we were recording, stop it
+            if (recordingState != RecordingState.NONE) {
+                Log.w(TAG, "Camera disconnected during recording, stopping recording");
+                stopRecording();
+            }
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            Log.e(TAG, "Camera device error: " + error);
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+            
+            // Reset the pending flag if camera error
+            if (pendingStartRecording) {
+                Log.w(TAG, "Camera error while pendingStartRecording=true, resetting flag");
+                pendingStartRecording = false;
+            }
+            
+            // If we were recording, stop it
+            if (recordingState != RecordingState.NONE) {
+                Log.w(TAG, "Camera error during recording, stopping recording");
+                stopRecording();
+            }
+            
+            // Show error to user
+            String errorMsg;
+            switch (error) {
+                case CameraDevice.StateCallback.ERROR_CAMERA_IN_USE:
+                    errorMsg = getString(R.string.camera_error_in_use);
+                    break;
+                case CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE:
+                    errorMsg = getString(R.string.camera_error_max_cameras);
+                    break;
+                case CameraDevice.StateCallback.ERROR_CAMERA_DISABLED:
+                    errorMsg = getString(R.string.camera_error_disabled);
+                    break;
+                case CameraDevice.StateCallback.ERROR_CAMERA_DEVICE:
+                    errorMsg = getString(R.string.camera_error_device);
+                    break;
+                case CameraDevice.StateCallback.ERROR_CAMERA_SERVICE:
+                    errorMsg = getString(R.string.camera_error_service);
+                    break;
+                default:
+                    errorMsg = getString(R.string.camera_error_unknown) + " (" + error + ")";
+            }
+            
+            final String finalErrorMsg = errorMsg;
+            mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg, Toast.LENGTH_LONG).show());
+        }
+
+        @Override
+        public void onClosed(@NonNull CameraDevice camera) {
+            Log.d(TAG, "Camera device closed");
+            isCameraOpen = false;
+            
+            // If we were in segment rollover, continue with the rollover process
+            if (isRolloverClosingOldSession) {
+                Log.d(TAG, "Camera closed during segment rollover, proceeding with rollover");
+                isRolloverClosingOldSession = false;
+                proceedWithRolloverAfterOldSessionClosed();
+            }
+            
+            // Reset the pending flag if camera closed
+            if (pendingStartRecording) {
+                Log.w(TAG, "Camera closed while pendingStartRecording=true, resetting flag");
+                pendingStartRecording = false;
+            }
+        }
+    };
 
     private void createCameraPreviewSession() {
         if (cameraDevice == null) {
@@ -2929,6 +3068,12 @@ public class RecordingService extends Service {
             long splitSizeBytes = sharedPreferencesManager.getVideoSplitSizeBytes();
             int initialSegmentNumber = 1;
             GLSegmentCallback segmentCallback = new GLSegmentCallback();
+            
+            Log.d(TAG, "Creating GLRecordingPipeline with: " +
+                  "width=" + videoWidth + ", height=" + videoHeight + 
+                  ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate +
+                  ", orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
+            
             String storageMode = sharedPreferencesManager.getStorageMode();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
@@ -2963,6 +3108,7 @@ public class RecordingService extends Service {
                         stopSelf();
                         return;
                     }
+                    Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
                     glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, pfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
                 } catch (Exception e) {
                     Log.e(TAG, "Exception opening PFD for SAF URI", e);
@@ -2972,10 +3118,17 @@ public class RecordingService extends Service {
                 }
             } else {
                 File outputFile = getFinalOutputFile();
+                Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
             }
+            
+            Log.d(TAG, "Preparing GLRecordingPipeline surfaces");
             glRecordingPipeline.prepareSurfaces();
+            
+            Log.d(TAG, "Creating camera preview session");
             createCameraPreviewSession();
+            
+            Log.d(TAG, "Recording setup complete");
         } catch (Exception e) {
             Log.e(TAG, "Exception in startRecording", e);
             recordingState = RecordingState.NONE;
