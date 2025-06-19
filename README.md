@@ -23,7 +23,7 @@
     
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
 
-# FadCam
+# `>_` FadCam
 
 **Seamless background video recorder for Android – ad-free and open-source, with customizable options.**
 
@@ -93,7 +93,7 @@
 
 ---
 
-## Purpose
+## `>_` Purpose
 
 FadCam is developed with the goal of providing a powerful, privacy-focused tool for recording videos in the background on Android devices. This app is intended for **ethical use** only, such as personal security, monitoring, or recording important events privately and discreetly.
 
@@ -106,7 +106,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 > **Misuse Disclaimer:** <br>
 > The developers of FadCam do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
 
-## 📱 Screenshots
+## `>_` 📱 Screenshots
 
 <div align="center">
 <!--     <img src="https://github.com/anonfaded/FadCam/assets/124708903/4a93c111-fc67-4d75-94b1-fa4e01822998" style="width: 50px; height: auto;" >
@@ -138,12 +138,12 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
         <img src="/img/5.png" style="width: 700px; height: auto;" >
     </details> -->
 
-## Featured On
+## `>_` Featured On
 
-### Featured Audio Podcast
+### `>_` Featured Audio Podcast
 - [closednetwork.io](https://closednetwork.io/podcast/episode-42-deepseek-ai-oh-my/) at `1:15:22` timestamp
 
-### Featured Videos
+### `>_` Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [HowToMen 2nd feature :) ](https://youtu.be/3pOoU5JjfnE?si=JMwoHfGyocXuvkC7&t=520)
 - [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
@@ -179,7 +179,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 <!-- [Police recording with FadCam](https://www.facebook.com/joseph.anthony.emaikwu/videos/fadcam/3206531569486276/) -->
 
-### Articles and Listings
+### `>_` Articles and Listings
 - [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
 - [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
 - [appteka.com](https://appteka.store/app/bcdr185175)
@@ -242,7 +242,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 
 
 
-## ⬇️ Download
+## `>_` ⬇️ Download
 
 Download the latest `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
 
@@ -271,7 +271,7 @@ Or:
 - 10k -> 21 Aug 2024 (6th week)
 - 15k -> 8 Sep 2024 (9th week) -->
 
-## Features:
+## `>_` Features:
 
 - **Background Video Recording:** Record discreetly even with the screen off.
 - **Modern UI:** Clean, Material-inspired design with bottom sheet actions.
@@ -295,7 +295,7 @@ Or:
 - **Localization:** Italian language support.
 - **No Ads:** 100% free and ad-free.
 
-## Upcoming Features:
+## `>_` Upcoming Features:
 
 - **Scheduled Recording:** Automatically start/stop recordings at set times.
 - **Google Drive Auto-Upload:** Seamless cloud backup for videos.
@@ -306,20 +306,20 @@ Or:
 
 
 
-## Join Community
+## `>_` Join Community
 Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek help, or connect with other users. Your feedback and contributions are welcome!
 
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
 
-## Support
+## `>_` Support
 
 <a href='https://ko-fi.com/D1D510FNSV' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-## Contributions
+## `>_` Contributions
 
 We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
 
-### How to Contribute
+### `>_` How to Contribute
 1. **Check Issues**: Browse the [issues](https://github.com/anonfaded/FadCam/issues) to see where you can help.
 2. **Fork the Repo**: Fork the repository to make your changes.
 3. **Submit a PR**: Create a pull request with a clear description of your changes.
@@ -327,11 +327,11 @@ We welcome any contributions to improve this project! Whether it's bug fixes or 
 We look forward to your contributions!
 
 
-## Credits:
-The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator</a>.
+### `>_` 🙌 Contributions & Credits
 
-<a target="_blank" href="https://icons8.com/icon/13057/stack">Storage</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+- 🖼️ App screenshots and banner design by [T010](https://ko-fi.com/t010nl)
+- The 3D text in icon is from <a href="https://www.textstudio.com/">Font generator</a>.
+- Icons used in app by <a target="_blank" href="https://icons8.com">Icons8</a> and <a target="_blank" href="https://www.flaticon.com/">Flaticon</a>.
 
-<a target="_blank" href="https://icons8.com/icon/47773/idea">Idea</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
 
-<a target="_blank" href="https://icons8.com/icon/c2AXPLZ3iVEU/file-folder">File Folder</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
