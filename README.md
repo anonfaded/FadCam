@@ -237,6 +237,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [codegith.com](https://codegith.com/fadcam-open-source-background-video-recorder-for-android/)
 - [52pojie.cn](https://www.52pojie.cn/thread-2038164-1-1.html)
 - [anfensi.com](https://www.anfensi.com/down/429430.html)
+- [fy6b.com](https://www.fy6b.com/fadcam.html)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
