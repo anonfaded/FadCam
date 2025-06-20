@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_icon_description">Choose an icon and name for your app. This will change how it appears on your home screen.</string>
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
+    <string name="app_description"><![CDATA[    FadCam is an ad-free, open-source video recording app that prioritizes privacy by not tracking or collecting any data. It is available exclusively on GitHub and through the official links mentioned in the README.
+    <br/><br/>
+    FadCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and 55+ other notable spots.
+    ]]></string>
+    <string name="view_source_code">View Source Code</string>
+    <string name="buy_me_a_coffee">Buy me a coffee ☕</string>
+    <string name="contact">Contact</string>
+    <string name="send_email">Send email</string>
+    <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
+    <string name="privacy_information">Privacy Information</string>
+    <string name="copyright_info"> 2024-2025 https://fadedhood.github.io/fadcam\nLicensed under GPL-3.0</string>
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item>
+        <!-- 8K -->
+        <item>3840x2160</item>
+        <!-- 4K -->
+        <item>2560x1440</item>
+        <!-- 2K -->
+        <item>1920x1080</item>
+        <!-- FHD -->
+        <item>1280x720</item>
+        <!-- HD -->
+        <item>640x480</item>
+        <!-- SD -->
+        <item>720x480</item>
+        <!-- SD -->
+        <item>480x360</item>
+        <!-- SD -->
+    </string-array>
+    <string-array name="video_resolutions_values">
+        <item>8K</item>
+        <!-- 8K -->
+        <item>4K</item>
+        <!-- 4K -->
+        <item>2K</item>
+        <!-- 2K -->
+        <item>FHD</item>
+        <!-- Full HD -->
+        <item>HD</item>
+        <!-- High Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+    </string-array>
+    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Record time (est.):</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Elapsed time:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Remaining time:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Long press preview to disable it.</item>
+        <item>2/11 | Long press date widget to select clock display.</item>
+        <item>3/11 | Storage widget updates recording space in real-time.</item>
+        <item>4/11 | Stats widget shows total videos and space used.</item>
+        <item>5/11 | Change video quality in settings (HD, SD, FHD).</item>
+        <item>6/11 | Low on space? Adjust video quality for more recording time.</item>
+        <item>7/11 | Add watermark to videos in settings.</item>
+        <item>8/11 | Embed precise location in watermark via settings.</item>
+        <item>9/11 | Record with front camera? Choose in settings.</item>
+        <item>10/11 | Your preferences are saved and applied seamlessly.</item>
+        <item>11/11 | Need help? Join our Discord via the About section.</item>
+    </string-array>
+    <string name="mainpage_video_info">\n    <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used Space:</font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+    <string name="button_start">Start</string>
+    <string name="button_pause">Pause</string>
+    <string name="button_stop">Stop</string>
+    <string name="button_resume">Resume</string>
+    <string name="video_recording_started">Recording started</string>
+    <string name="video_recording_stopped">Recording stopped</string>
+    <string name="video_recording_paused">Recording paused</string>
+    <string name="video_recording_resumed">Recording resumed</string>
+    <string name="current_camera">Current camera</string>
+    <string name="back">Back</string>
+    <string name="front">Front</string>
+    <string name="video_menu_del">Delete</string>
+    <string name="video_menu_save">Save to Gallery</string>
+    <string name="video_menu_rename">Rename</string>
+    <string name="video_menu_info">Info</string>
+    <string name="video_menu_copy_filename">Copy Filename</string>
+    <string name="video_menu_mark_viewed">Mark as Viewed</string>
+    <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
+    <string name="records_title">Recordings</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_records">Records</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_about">About</string>
+    <string name="nav_remote">Remote</string>
+    <string name="button_settings_readme">Read Me</string>
+    <string name="setting_cam_title">Camera Selection</string>
+    <string name="note_cam_sele">Select camera \n(Default: Back)</string>
+    <string name="button_settings_cam_back">Back</string>
+    <string name="button_settings_cam_front">Front</string>
+    <string name="setting_quailty_title">Video Quality</string>
+    <string name="setting_framerate_title">Video Framerate</string>
+    <string name="note_quailty">Choose quality\n(Default: HD)</string>
+    <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
+    <string name="setting_codec_title">Video Codec</string>
+    <string name="note_codec">Choose codec\n(Default: %1$s)</string>
+    <string name="setting_watermark">Watermark</string>
+    <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
+    <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It\'s worth the wait, just a little longer to process!</string>
+    <string name="setting_location_title">Location Data</string>
+    <string name="note_location">Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)</string>
+    <string name="note_location_extra">Enable phone\'s GPS for adding latitude and longitude data to the watermark.</string>
+    <string name="setting_location_embed_title">Embed Location in Videos</string>
+    <string name="note_location_embed">Add GPS coordinates to video metadata (geotags). \nRequires GPS enabled \n(Default: Disabled)</string>
+    <string name="note_location_embed_extra">Adds location data directly to video files, which can be used by gallery/map apps to show where videos were taken.</string>
+    <string name="button_setting_review">Write a Review 🌟</string>
+    <string name="dialog_clock_title">Choose Clock Display</string>
+    <string name="dialog_clock_timeonly">Time Only</string>
+    <string name="dialog_clock_englishtime">English Date with time</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Preview Area</string>
+    <string name="preview_enabled">Preview enabled</string>
+    <string name="preview_disabled">Preview disabled</string>
+    <string-array name="easter_eggs_array">
+        <item>Alert! This is a restricted area. Start recording to gain access.</item>
+        <item>You\'ve found the secret button! It does nothing lol</item>
+        <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
+        <item>Well, this is awkward now…</item>
+        <item>What color is your Bugatti?</item>
+        <item>I was not programmed to do what you are doing. Wait, are you trying to hack me?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>DISCLAIMER</item>
+        <item>Does FadCam collect any user data?</item>
+        <item>Are there any ads in FadCam?</item>
+        <item>Why does FadCam request location access?</item>
+        <item>Does FadCam connect to the internet?</item>
+        <item>Is any data stored on external servers?</item>
+        <item>What happens to my videos after recording?</item>
+        <item>Does FadCam share my data with third parties?</item>
+        <item></item>
+        <item></item>
+        <item>General</item>
+        <item>Why does watermarking take so long?</item>
+        <item>Why is there a \'temp\' video?</item>
+        <item>How can I change the video quality?</item>
+        <item>Can I disable the preview?</item>
+        <item>How do I embed my location in the watermark?</item>
+        <item>Are my preferences saved?</item>
+        <item>Can I schedule recordings?</item>
+        <item>How do I update the app?</item>
+        <item></item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+        </item>
+        <item>No, FadCam does not collect any user data.</item>
+        <item>No, FadCam is completely ad-free.</item>
+        <item>For adding location info to your watermarks.</item>
+        <item>No, FadCam does not connect to the internet.</item>
+        <item>No, all data is stored on your device.</item>
+        <item>Your videos are saved locally on your device.</item>
+        <item>No, FadCam does not share or collect any data.</item>
+        <item></item>
+        <item></item>
+        <item></item>
+        <item>The watermark is embedded in each frame of the video. The longer the video, the more time it will take.</item>
+        <item>The \'temp\' video is your original recording. It\'s auto-deleted after watermarking. If watermarking fails, the \'temp\' file stays as a backup.</item>
+        <item>Change video quality in settings: HD, SD, or FHD.</item>
+        <item>Long-press the preview area to disable it.</item>
+        <item>Enable location in settings for location data in the watermark. It will embed the precise longitude and latitude.</item>
+        <item>Yes, preferences and all settings are saved and applied seamlessly.</item>
+        <item>This feature is coming soon.</item>
+        <item>Check the official GitHub repo for updates.</item>
+        <item></item>
+    </string-array>
+    <string name="dialog_welcome_title">Welcome to FadCam!</string>
+    <string name="note_under_dev">Important: This app is currently under development. New features are being added regularly.</string>
+    <string name="rencent_updates_title">Recent Updates:</string>
+    <string name="upcoming_features_title">Upcoming Features:</string>
+    <string name="stay_updated_title">Stay Updated:</string>
+    <string name="button_readme_github">GitHub Repository</string>
+    <string name="community_title">Join our Community:</string>
+    <string name="discord_title">Discord Server</string>
+    <string name="thankyou_msg">Thank you for using FadCam!</string>
+    <string name="settings_title">Settings</string>
+    <string name="array_watermark_time_fadcam">Time with Fadcam</string>
+    <string name="array_watermark_timeonly">Timestamp</string>
+    <string name="array_watermark_nomark">No Watermark</string>
+    <string name="toast_video_not_found">Error: Video not found</string>
+    <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
+    <string name="toast_video_save_fail">Failed to save video</string>
+    <string name="rename_video_title">Rename Video</string>
+    <string name="rename_video_hint">Enter new name</string>
+    <string name="universal_ok">OK</string>
+    <string name="toast_rename_name_empty">Name cannot be empty</string>
+    <string name="toast_rename_failed">Failed to rename video</string>
+    <string name="toast_rename_success">Video renamed successfully</string>
+    <string name="toast_rename_bad_video">Invalid position or video list is null</string>
+    <string name="toast_rename_with_copy">Renamed to %1$s (duplicate name)</string>
+    <string name="dialog_del_title">Delete Forever?</string>
+    <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
+    <string name="dialog_del_confirm">Delete</string>
+    <string name="dialog_multi_video_del_title">Eradicate Video(s)? </string>
+    <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? </string>
+    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! </string>
+    <string name="dialog_multi_video_del_no">No, Keep \'Em! </string>
+    <string name="setting_language_title">App\'s Language</string>
+    <string name="note_language">Select from dropdown.\n(Default: English)</string>
+    <string name="location_permission_title">Location Permission</string>
+    <string name="location_permission_description">This app needs location permission to add location data to videos. Please grant the permission.</string>
+    <string name="location_permission_denied">Location permission denied. Location features will be disabled.</string>
+    <string name="up_to_date">Up To Date</string>
+    <string name="up_to_date_description">You are already using the latest version.</string>
+    <string name="up_to_date_loading">Checking for updates…</string>
+    <string name="update_available_title">New Version Available</string>
+    <string name="update_available_message">A freshly baked update is ready! You\'re on v%1$s, latest is v%2$s. Enjoy new features and improvements.</string>
+    <string name="visit_fdroid">Visit F-Droid</string>
+    <string name="visit_github">Visit GitHub</string>
+    <string name="delete_all_videos_title">Delete All Videos</string>
+    <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
+    <string name="switched_front_camera">Switched to front camera</string>
+    <string name="switched_rear_camera">Switched to rear camera</string>
+    <string name="notification_video_recording">Video recording</string>
+    <string name="notification_video_recording_progress_description">Recording is in progress</string>
+    <string name="notification_video_recording_paused_description">Recording is paused</string>
+    <string name="torch_options_title">Torch Options</string>
+    <string name="torch_select_source">Select Torch Source:</string>
+    <string name="torch_back">Back Torch</string>
+    <string name="torch_front">Front Torch</string>
+    <string name="torch_apply">Apply</string>
+    <string name="torch_cancel">Cancel</string>
+    <string name="torch_recording_note">Cannot change torch while recording</string>
+    <string name="torch_both">Both Torches</string>
+    <string name="setting_debug_title">Debug Logging</string>
+    <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
+    <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
+    <string name="torch_shortcut_short_label">Torch</string>
+    <string name="torch_shortcut_long_label">Toggle Torch</string>
+    <string name="torch_shortcut_disabled">Torch toggle is currently unavailable</string>
+    <!-- Torch Error Messages -->
+    <string-array name="torch_error_messages">
+        <item>Torch is compiling... please don\'t wait 🖥️</item>
+        <item>Camera says: No flash today 🚦</item>
+        <item>Torch.exe not responding 🔦</item>
+        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
+        <item>Patch coming soon™... Developer is debugging life 🐛</item>
+    </string-array>
+    <string name="more_options">More Options</string>
+    <string name="records_options_title">Records Options</string>
+    <string name="setting_theme_title">App Theme</string>
+    <string name="settings_option_theme">Choose Theme</string>
+    <string name="settings_theme_changed">Theme changed. Applying changes...</string>
+    <string name="note_theme">Choose your preferred app theme</string>
+    <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
+    <string name="start_recording">Start</string>
+    <string name="stop_recording">Stop</string>
+    <string name="warning_temp_file_detail"><![CDATA[        <b>IMPORTANT NOTE:</b><br/>
+        This is an <b>unprocessed temporary file</b>. Video processing (like adding a watermark) may have failed or been interrupted.<br/><br/>
+        <b>Recommended Action:</b><br/>
+        <b>1. Rename</b> this file now (using the menu).<br/>
+        <b>2. Save</b> it to your Gallery (using the menu).<br/><br/>
+        This secures your recording. After confirming it saved correctly in your gallery app, you can safely <b>delete this temporary file</b> from this Records list if you wish.<br/><br/>
+        Continuing to record without saving may risk losing this file if the app cache is cleared unexpectedly.
+        ]]></string>
+    <string name="recording_already_active">Recording is already in progress or paused.</string>
+    <string name="setting_back_lens_title">Back Camera Lens</string>
+    <string name="setting_back_lens_note">Select specific lens if available e.g. Wide Angle Lens\n(Default: Main (0))</string>
+    <string name="setting_back_lens_info_single">Main lens only</string>
+    <string name="setting_back_lens_info_single_v2">Only main back camera detected</string>
+    <string-array name="theme_options">
+        <item>Midnight Dusk</item>
+        <item>Faded Night</item>
+        <item>Crimson Bloom</item>
+        <item>Silent Forest</item>
+        <item>Shadow Alloy</item>
+        <item>Pookie Pink</item>
+        <item>Snow Veil</item>
+    </string-array>
+    <string name="theme_red">Crimson Bloom</string>
+    <string name="theme_gold">Premium Gold</string>
+    <string name="theme_silentforest">Silent Forest</string>
+    <string name="theme_shadowalloy">Shadow Alloy</string>
+    <string name="theme_pookiepink">Pookie Pink</string>
+    <string name="theme_snowveil">Snow Veil</string>
+    <string name="remote_access_title">Remote Access/Control</string>
+    <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
+    <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
+    <string name="remote_feature_description">Pair FadCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
+    <string name="setting_audio_title">Audio Recording</string>
+    <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
+    <string name="button_audio_settings">Audio Settings</string>
+    <string name="dialog_audio_settings_title">Audio Settings</string>
+    <string name="dialog_audio_bitrate_label">Audio Bitrate (bps)</string>
+    <string name="dialog_audio_sampling_rate_label">Sampling Rate (Hz)</string>
+    <string name="dialog_audio_reset">Reset to Default</string>
+    <string name="dialog_audio_save">Save</string>
+    <string name="dialog_audio_cancel">Cancel</string>
+    <string name="dialog_audio_invalid_bitrate">Invalid bitrate. Enter a value between 64000 and 384000.</string>
+    <string name="dialog_audio_invalid_sampling_rate">Invalid sampling rate. Enter 44100 or 48000.</string>
+    <string name="dialog_audio_settings_summary">Configure audio bitrate and sampling rate for best quality. Default: 192000 bps, 48000 Hz, Stereo.</string>
+    <string name="dialog_audio_info_text">• Bitrate (bps) controls audio quality and file size. Higher values mean better quality but larger files. 192000 is a good default for most uses.
+• Sampling Rate (Hz) is how many times per second audio is captured. 48000 Hz is standard for video, 44100 Hz is common for audio.
+
+Recommended: 192000 bps, 48000 Hz for most users.</string>
+    <string name="setting_video_orientation_title">Video Orientation</string>
+    <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
+    <string name="video_orientation_portrait">Portrait (default)</string>
+    <string name="video_orientation_landscape">Landscape</string>
+    <!-- Video Bitrate Settings -->
+    <string name="setting_video_bitrate_title">Video Bitrate</string>
+    <string name="button_video_bitrate_settings">Set Bitrate</string>
+    <string name="bitrate_mode_default">Default</string>
+    <string name="bitrate_mode_custom">Custom</string>
+    <string name="bitrate_custom_label">Custom Bitrate:</string>
+    <string name="bitrate_custom_hint">e.g. 16,000</string>
+    <string name="bitrate_reset_button">Reset</string>
+    <string name="bitrate_helper_text">Bitrate controls video quality and file size. Higher = better quality, but larger files. Too high or too low may cause recording errors or poor quality. The recommended range depends on your device and selected resolution. The default value above is based on your current settings.</string>
+    <string name="bitrate_info_default">Default: %d Mbps</string>
+    <string name="bitrate_info_custom">Custom: %d Mbps</string>
+    <string name="bitrate_info_warning_low">Warning: Bitrate is very low. Video quality may be poor.</string>
+    <string name="bitrate_info_warning_high">Warning: Bitrate is very high. Recording may fail or overheat device.</string>
+    <string name="bitrate_info_ok">Bitrate is in recommended range.</string>
+    <string name="bitrate_invalid">Invalid bitrate. Please enter a value between %1$d and %2$d Mbps.</string>
+    <string name="bitrate_save_success">Bitrate saved successfully.</string>
+    <string name="bitrate_reset_success">Bitrate reset to default.</string>
+    <string name="bitrate_current">Current: %1$s Mbps</string>
+    <string name="bitrate_unit">Mbps</string>
+    <string name="bitrate_explanation">What is bitrate?</string>
+    <string name="bitrate_explanation_text">Bitrate is the amount of data used per second of video. Higher bitrate means better quality but larger files. Too high or too low can cause problems. Default values are based on professional camera standards.</string>
+    <!-- Strings for RecordsFragment - Delete Action -->
+    <string name="delete_video_dialog_title">Delete Video?</string>
+    <string name="delete_video_dialog_message">Are you sure you want to delete %1$s?</string>
+    <string name="delete_video_progress">Deleting %1$s...</string>
+    <string name="delete_video_success_toast">\'%1$s\' deleted.</string>
+    <string name="delete_video_fail_toast">Failed to delete \'%1$s\'.</string>
+    <string name="delete_video_cancelled_toast">Deletion cancelled.</string>
+    <string name="delete_video_error_null_toast">Error: Cannot delete null item.</string>
+    <!-- Strings for RecordsFragment - Batch Delete Action -->
+    <string name="delete_videos_success_toast">All %1$d videos deleted.</string>
+    <string name="delete_videos_partial_success_toast">%1$d video(s) deleted. Failed to delete %2$d.</string>
+    <string name="delete_videos_log">Deleting %1$d selected videos…</string>
+    <!-- Strings for TrashFragment -->
+    <string name="trash_auto_deleted_toast">%1$d old item(s) auto-deleted.</string>
+    <string name="trash_empty_toast_message">No items to delete.</string>
+    <string name="trash_emptied_toast">All items deleted.</string>
+    <string name="trash_items_deleted_toast">%1$d item(s) deleted permanently.</string>
+    <string name="trash_error_deleting_items_toast">Error deleting items.</string>
+    <string name="trash_dialog_empty_all_title">Delete All Items?</string>
+    <string name="trash_button_empty_all_action">Delete All</string>
+    <!-- General -->
+    <string name="universal_deleted">Deleted</string>
+    <string name="universal_delete_failed">Delete failed</string>
+    <!-- Fix Start for this file (strings.xml) -->
+    <!-- For TrashFragment Dialogs -->
+    <string name="dialog_permanently_delete_title">Delete Permanently?</string>
+    <string name="dialog_permanently_delete_message">Are you sure you want to permanently delete %1$d selected item(s)? This action cannot be undone.</string>
+    <string name="dialog_empty_all_trash_message">Are you sure you want to permanently delete all items? This action cannot be undone.</string>
+    <!-- Universal button texts -->
+    <string name="universal_cancel">Cancel</string>
+    <string name="universal_delete">Delete</string>
+    <!-- Fix Ended for this file (strings.xml)  -->
+    <!-- For TrashFragment - Restore Action -->
+    <string name="trash_no_items_selected_toast">No items selected.</string>
+    <string name="trash_dialog_restore_title">Restore Selected?</string>
+    <string name="trash_dialog_restore_message">Restore %1$d item(s) to the public Downloads/FadCam/ folder?</string>
+    <string name="trash_restore_success_toast">%1$d item(s) restored.</string>
+    <string name="trash_restore_fail_toast">Error restoring items. Some files might not have been restored or gallery might not be updated. Check app permissions for storage.</string>
+    <string name="trash_restore_cancelled_toast">Restore cancelled.</string>
+    <string name="trash_fragment_title_text">Recently Deleted</string>
+    <string name="universal_restore">Restore</string>
+    <string name="deleted_item_thumbnail_description">Deleted item thumbnail</string>
+    <string name="trash_empty_icon_description">Trash is empty icon</string>
+    <string name="trash_empty_text">Trash is empty.</string>
+    <string name="essential_permissions_missing">Essential permissions are missing. Please grant them to proceed.</string>
+    <string name="records_search_hint">Search recordings…</string>
+    <string name="saf_permission_missing_dialog_instructions">SAF permission missing. Please grant access to the chosen folder.</string>
+    <string name="saf_permission_missing_dialog_title">SAF Permission Required</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">To save recordings to a custom location, FadCam needs permission to access the selected folder. Please grant access when prompted.</string>
+    <string name="grant_permission_button">Grant Permission</string>
+    <!-- Strings for Trash Auto-Delete Feature -->
+    <plurals name="trash_auto_delete_info_days">
+        <item quantity="zero">Items are automatically deleted after %1$d days.</item>
+        <item quantity="one">Items are automatically deleted after %1$d day.</item>
+        <item quantity="two">Items are automatically deleted after %1$d days.</item>
+        <item quantity="few">Items are automatically deleted after %1$d days.</item>
+        <item quantity="many">Items are automatically deleted after %1$d days.</item>
+        <item quantity="other">Items are automatically deleted after %1$d days.</item>
+    </plurals>
+    <plurals name="trash_auto_delete_info_hours">
+        <item quantity="zero">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="one">Items are automatically deleted after %1$d hour.</item>
+        <item quantity="two">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="few">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="many">Items are automatically deleted after %1$d hours.</item>
+        <item quantity="other">Items are automatically deleted after %1$d hours.</item>
+    </plurals>
+    <string name="trash_auto_delete_info_manual">Items in trash are never deleted, delete the 
+    videos manually.</string>
+    <plurals name="trash_item_remaining_days">
+        <item quantity="zero">%1$d days left</item>
+        <item quantity="one">%1$d day left</item>
+        <item quantity="two">%1$d days left</item>
+        <item quantity="few">%1$d days left</item>
+        <item quantity="many">%1$d days left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <plurals name="trash_item_remaining_hours">
+        <item quantity="zero">%1$d hours left</item>
+        <item quantity="one">%1$d hour left</item>
+        <item quantity="two">%1$d hours left</item>
+        <item quantity="few">%1$d hours left</item>
+        <item quantity="many">%1$d hours left</item>
+        <item quantity="other">%1$d hours left</item>
+    </plurals>
+    <string name="trash_item_remaining_soon">Deletes very soon</string>
+    <string name="trash_menu_auto_delete_settings">Auto-Delete Settings</string>
+    <string name="auto_delete_dialog_title">Set Auto-Delete Duration</string>
+    <string name="auto_delete_1_hour">After 1 Hour</string>
+    <string name="auto_delete_5_hours">After 5 Hours</string>
+    <string name="auto_delete_10_hours">After 10 Hours</string>
+    <string name="auto_delete_1_day">After 1 Day</string>
+    <string name="auto_delete_7_days">After 7 Days</string>
+    <string name="auto_delete_30_days">After 30 Days (Default)</string>
+    <string name="auto_delete_60_days">After 60 Days</string>
+    <string name="auto_delete_90_days">After 90 Days</string>
+    <string name="auto_delete_never">Never (Manual Deletion)</string>
+    <string name="auto_delete_save_setting">Save</string>
+    <!-- End Strings for Trash Auto-Delete Feature -->
+    <string name="video_split_size_summary_mb">Current: %1$d MB</string>
+    <string name="video_split_size_summary_gb">Current: %1$s GB</string>
+    <string name="video_splitting_title">Enable Video Splitting</string>
+    <string name="video_splitting_description">Automatically split recordings into smaller files (Disabled by default). Recommended: 2 GB for balance. Presets up to 4 GB and custom sizes are available. This helps manage large recordings and avoids device file size limits.</string>
+    <string name="support_ko_fi">Support us on Ko-fi</string>
+    <string name="kofi_description">Description will be set in code.</string>
+    <string name="kofi_button_text">Buy me a Ko-fi</string>
+    <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
+    <string name="setting_audio_input_source_title">Audio Input Source</string>
+    <string name="setting_audio_input_source_status_default">Currently using: Phone Microphone</string>
+    <string name="setting_audio_input_source_status_wired">Currently using: Wired Microphone</string>
+    <string name="setting_audio_input_source_status_nowired">No wired mic detected</string>
+    <string name="audio_input_source_phone">Phone Microphone (Default)</string>
+    <string name="audio_input_source_wired">Wired Microphone (if connected)</string>
+    <string name="audio_input_source_wired_not_available">Wired Microphone (not detected)</string>
+    <string name="audio_input_source_note">Select which microphone to use for audio recording. If a wired mic is not connected, the phone mic will be used automatically.</string>
+    <string name="audio_input_source_wired_not_connected">No wired mic detected. Using phone mic.</string>
+    <string name="choose">Choose</string>
+    <string name="audio_input_source_headphones_no_mic">Headphones detected (no mic)</string>
+    <!-- Fix Start: Add onboarding toggle strings -->
+    <string name="setting_onboarding_title">Show Onboarding on Next Launch</string>
+    <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open FadCam.</string>
+    <!-- Fix End: Add onboarding toggle strings -->
+    <string name="choose_language">Choose Language</string>
+    <string name="language_change_later_note">You can change this later in Settings.</string>
+    <string name="permissions_required">Permissions Required</string>
+    <string name="permissions_description">FadCam needs access to your camera, microphone, and storage to record and save videos.</string>
+    <string name="grant_permissions">Grant Permissions</string>
+    <string name="permissions_note">You must grant all permissions to continue.</string>
+    <string name="permissions_granted">All permissions granted!</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="disable_battery_optimization">Disable Battery Optimization</string>
+    <string name="onboarding_human_title">Verify if you are a human</string>
+    <string name="onboarding_human_desc">Hmmmm... alright. These rules are non-negotiable. If you can\'t agree, please uninstall FadCam right now.</string>
+    <string name="onboarding_human_checkbox1">I won\'t use FadCam to break any laws, invade anyone\'s privacy, or be a creep. The dev\'s out of the picture if I mess up. (That\'s on me.)</string>
+    <string name="onboarding_human_checkbox2">I already love FadCam before even using it. (Not optional)</string>
+    <string name="onboarding_human_button">Let me in!</string>
+    <!-- Fix Start: Add camera cooldown message -->
+    <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
+    <!-- Fix End: Add camera cooldown message -->
+    <string name="trash_select_all">Select All</string>
+    <!-- Fix Start: Update location permission message -->
+    <string name="location_permission_granted_manual_toggle">Permission granted! You can now enable location features in settings.</string>
+    <!-- Fix End: Update location permission message -->
+    <!-- Fix Start: Add location embedding enabled message -->
+    <string name="location_embedding_enabled">Location embedding enabled</string>
+    <!-- Fix End: Add location embedding enabled message -->
+    <!-- Fix Start: Add allow_location_access string -->
+    <string name="allow_location_access">Grant Permission</string>
+    <!-- Fix End: Add allow_location_access string -->
+    <!-- Fix Start: Add location_permission_message string -->
+    <string name="location_permission_message">Location permission is needed to add GPS coordinates to your videos. Please grant permission to use this feature.</string>
+    <!-- Fix End: Add location_permission_message string -->
+    <!-- App Lock Strings -->
+    <string name="setting_applock_title">Tab Lock</string>
+    <string name="setting_applock_desc">Secure your videos with PIN lock for Records tab. \nFor your security, the Records tab will auto-lock whenever the app goes to the background or is closed. You will need to unlock again when you return</string>
+    <string name="setting_applock_configure">Configure</string>
+    <string name="applock_dialog_title">Tab Lock Options</string>
+    <string name="applock_enable">Enable Tab Lock</string>
+    <string name="applock_disable">Disable Tab Lock</string>
+    <string name="applock_set_pin">Set PIN</string>
+    <string name="applock_change_pin">Change PIN</string>
+    <string name="applock_remove_pin">Remove PIN</string>
+    <string name="applock_pin_created">PIN successfully created</string>
+    <string name="applock_pin_removed">PIN successfully removed</string>
+    <!-- App Lock Verification Messages -->
+    <string name="applock_verify_to_enable">Verify PIN to Enable Tab Lock</string>
+    <string name="applock_verify_to_disable">Verify PIN to Disable Tab Lock</string>
+    <string name="applock_verify_to_change">Verify Current PIN</string>
+    <string name="applock_verify_to_remove">Verify PIN to Remove</string>
+    <string name="applock_verification_canceled">Verification canceled</string>
+    <string name="version_format">v%s</string>
+    <string name="edit_with_faditorx">Edit with FaditorX</string>
+    <!-- Update Bottom Sheet Strings -->
+    <string name="update_sarcastic_heading">📦 Oh look, another update...</string>
+    <string name="update_visit_github">Visit GitHub</string>
+    <string name="update_version_arrow">  →  </string>
+    <!-- Update variations -->
+    <string name="update_variation_1">Still on &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;? That\'s... nostalgic.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is out there making waves. Time to catch up!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; is so last season.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is ready to impress with new features and bug fixes. Upgrade for a better ride!</string>
+    <string name="update_variation_3">Your app is living in the past with &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is the future—faster, smarter, and shinier. Why not join in?</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; has served you well, but &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; is calling!&lt;br&gt;Enjoy the latest improvements and a smoother experience—just a tap away.</string>
+    <!-- App Icon Strings -->
+    <string name="setting_app_icon_title">App Icon</string>
+    <string name="setting_app_icon_desc">Change the app\'s launcher icon and name</string>
+    <string name="app_icon_dialog_title">Choose App Icon</string>
+    <string name="app_icon_changed">App icon changed</string>
+    <string name="app_icon_preview">App icon preview</string>
+    <!-- Misc -->
+    <string name="changelog_label">What\'s New</string>
+    <!-- Fix Start: Add auto update check toggle strings -->
+    <string name="setting_auto_update_check_title">Auto Update Check on Startup</string>
+    <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
+    <!-- Fix End: Add auto update check toggle strings -->
+    <!-- Storage Location Settings -->
+    <string name="storage_location_title">Storage Location</string>
+    <string name="storage_location_description">Choose where recordings are saved.</string>
+    <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
+    <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
+    <string name="storage_location_choose_folder">Choose Folder</string>
+    <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam.</string>
+    <string name="storage_icon_description">Storage Icon</string>
+    <string name="location_icon_description">Location Icon</string>
+    <string name="location_embedding_icon_description">Location Embedding Icon</string>
+    <!-- Onboarding Strings -->
+    <string name="onboarding_swipe_instruction">Swipe right to continue</string>
+    <string name="onboarding_select_language">Select your preferred app language.</string>
+    <string name="onboarding_camera">Camera</string>
+    <string name="onboarding_microphone">Microphone</string>
+    <string name="onboarding_storage">Storage</string>
+    <string name="onboarding_or">OR</string>
+    <string name="onboarding_and">AND</string>
+    <string name="onboarding_open_settings">Open Settings</string>
+    <string name="onboarding_intro_line1">Open source,</string>
+    <string name="onboarding_intro_line2">ad-free,</string>
+    <string name="onboarding_intro_line3">and built for you—not for advertisers.</string>
+    <!-- Records Options and Empty State Strings -->
+    <string name="sort_by">Sort By</string>
+    <string name="sort_latest_first">Latest First</string>
+    <string name="sort_oldest_first">Oldest First</string>
+    <string name="sort_smallest_first">Smallest Files First</string>
+    <string name="sort_largest_first">Largest Files First</string>
+    <string name="no_videos_found">No videos found</string>
+    <string name="no_recordings_yet">No Recordings Yet</string>
+    <!-- Notification Customization Strings -->
+    <string name="setting_notification_customization_title">Notification Customization</string>
+    <string name="setting_notification_customization_description">Customize the recording notification appearance</string>
+    <string name="notification_preset_title">Notification Preset</string>
+    <string name="notification_preset_description">Choose how the notification appears</string>
+    <string name="notification_preset_default">Default (Recording)</string>
+    <string name="notification_preset_system_update">System Update</string>
+    <string name="notification_preset_downloading">Downloading</string>
+    <string name="notification_preset_syncing">Syncing Data</string>
+    <string name="notification_preset_custom">Custom Text</string>
+    <string name="notification_hide_stop_button">Hide Stop Button</string>
+    <string name="notification_hide_stop_button_description">Remove the stop button from the notification</string>
+    <string name="notification_custom_title">Custom Title</string>
+    <string name="notification_custom_text">Custom Text</string>
+    <string name="notification_preview_title">Preview</string>
+    <string name="notification_setup_title">Notification Setup</string>
+    <string name="notification_setup_description">Customize how the recording notification appears</string>
+    <string name="notification_setup_save">Save</string>
+    <string name="notification_setup_cancel">Cancel</string>
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Recording</string>
+    <string name="notification_channel_system_updates">System Updates</string>
+    <string name="notification_channel_downloads">Downloads</string>
+    <string name="notification_channel_data_sync">Data Sync</string>
+    <string name="notification_channel_generic">Notification Service</string>
+    <string name="notification_channel_description">Service notifications</string>
+    <string name="notification_text_system_update_progress">Update in progress</string>
+    <string name="notification_text_system_update_paused">Update paused</string>
+    <string name="notification_text_downloading_progress">Download in progress</string>
+    <string name="notification_text_downloading_paused">Download paused</string>
+    <string name="notification_text_syncing_progress">Sync in progress</string>
+    <string name="notification_text_syncing_paused">Sync paused</string>
+    <string name="notification_text_custom_default">Process running</string>
+    <string name="notification_title_system_update">System Update</string>
+    <string name="notification_title_downloading">Downloading</string>
+    <string name="notification_title_syncing">Syncing Data</string>
+    <string name="notification_title_custom_default">Notification</string>
+    <string name="notification_settings_saved">Notification settings saved</string>
+    <!-- Additional Notification Customization Strings -->
+    <!-- Adding notification appearance strings -->
+    <string name="setting_notification_appearance">Notification Appearance</string>
+    <string name="note_notification_appearance">Customize the appearance of the recording notification\n(Default: FadCam)</string>
+    <string name="hide_stop_button">Hide stop button</string>
+    <string name="note_hide_stop_button">Hide the stop button in the notification\n(Default: Disabled)</string>
+    <string name="notification_preview">Notification preview</string>
+    <string name="notification_stop">STOP</string>
+    <string-array name="notification_appearance_options">
+        <item>FadCam (default)</item>
+        <item>System Update</item>
+        <item>Download</item>
+        <item>Syncing</item>
+        <item>Backup</item>
+        <item>Custom</item>
+    </string-array>
+</resources>
