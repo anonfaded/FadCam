@@ -22,6 +22,7 @@ import android.opengl.EGLExt;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 /**
  * GLWatermarkRenderer handles OpenGL rendering for video recording and preview.
@@ -422,8 +423,14 @@ public class GLWatermarkRenderer {
                     }
                 }
                 
-                // Minimal rendering for recording
-                renderMinimal();
+                float[] stMatrix = new float[16];
+                if (cameraSurfaceTexture != null) {
+                    cameraSurfaceTexture.getTransformMatrix(stMatrix);
+                } else {
+                    Matrix.setIdentityM(stMatrix, 0);
+                }
+                Log.d(TAG, "Recording: Passing SurfaceTexture matrix to shader: " + Arrays.toString(stMatrix));
+                renderMinimalWithMatrix(stMatrix);
                 
                 GLES20.glFinish();
                 
@@ -454,8 +461,8 @@ public class GLWatermarkRenderer {
         if (previewEglDisplay == null || previewEglSurface == null || 
             previewEglContext == null || currentPreviewSurface == null || 
             !currentPreviewSurface.isValid()) {
-                return;
-            }
+            return;
+        }
         synchronized (previewRenderLock) {
             if (previewEglDisplay == null || previewEglSurface == null || 
                 previewEglContext == null || currentPreviewSurface == null || 
@@ -473,14 +480,20 @@ public class GLWatermarkRenderer {
                     return;
                 }
                 
-                // Clear the whole surface first
                 GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                 
-                // For preview, you may apply rotation/letterboxing for user experience if desired
                 int[] viewport = calculatePreservedViewport(mSurfaceWidth, mSurfaceHeight);
                 GLES20.glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-                renderMinimal();
+                
+                float[] stMatrix = new float[16];
+                if (cameraSurfaceTexture != null) {
+                    cameraSurfaceTexture.getTransformMatrix(stMatrix);
+                } else {
+                    Matrix.setIdentityM(stMatrix, 0);
+                }
+                Log.d(TAG, "Preview: Passing SurfaceTexture matrix to shader: " + Arrays.toString(stMatrix));
+                renderMinimalWithMatrix(stMatrix);
                 
                 GLES20.glFinish();
                 try {
@@ -629,40 +642,33 @@ public class GLWatermarkRenderer {
     }
 
     private void setupOESShader() {
-        // Define the absolute minimal vertex shader
         String vertexShaderCode =
-                "attribute vec4 aPosition;\n" +
-                "attribute vec2 aTexCoord;\n" +
-                "varying vec2 vTexCoord;\n" +
-                "void main() {\n" +
-                "    gl_Position = aPosition;\n" +
-                "    vTexCoord = aTexCoord;\n" +
-                "}\n";
-
-        // Define the absolute minimal fragment shader
+            "attribute vec4 aPosition;\n" +
+            "attribute vec2 aTexCoord;\n" +
+            "uniform mat4 uTexMatrix;\n" +
+            "varying vec2 vTexCoord;\n" +
+            "void main() {\n" +
+            "    gl_Position = aPosition;\n" +
+            "    vTexCoord = (uTexMatrix * vec4(aTexCoord, 0, 1)).xy;\n" +
+            "}\n";
         String fragmentShaderCode =
-                "#extension GL_OES_EGL_image_external : require\n" +
-                "precision mediump float;\n" +
-                "varying vec2 vTexCoord;\n" +
-                "uniform samplerExternalOES uTexture;\n" +
-                "void main() {\n" +
-                "    gl_FragColor = texture2D(uTexture, vTexCoord);\n" +
-                "}\n";
-
+            "#extension GL_OES_EGL_image_external : require\n" +
+            "precision mediump float;\n" +
+            "varying vec2 vTexCoord;\n" +
+            "uniform samplerExternalOES uTexture;\n" +
+            "void main() {\n" +
+            "    gl_FragColor = texture2D(uTexture, vTexCoord);\n" +
+            "}\n";
         int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode);
         int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode);
-        
         if (vertexShader == 0 || fragmentShader == 0) {
             Log.e(TAG, "Failed to compile shaders");
             return;
         }
-        
         oesProgram = GLES20.glCreateProgram();
         GLES20.glAttachShader(oesProgram, vertexShader);
         GLES20.glAttachShader(oesProgram, fragmentShader);
         GLES20.glLinkProgram(oesProgram);
-        
-        // Check link status
         int[] linkStatus = new int[1];
         GLES20.glGetProgramiv(oesProgram, GLES20.GL_LINK_STATUS, linkStatus, 0);
         if (linkStatus[0] != GLES20.GL_TRUE) {
@@ -670,13 +676,11 @@ public class GLWatermarkRenderer {
             GLES20.glDeleteProgram(oesProgram);
             return;
         }
-        
-        // Get attribute and uniform locations - only the absolute essentials
         oesPositionHandle = GLES20.glGetAttribLocation(oesProgram, "aPosition");
         oesTexCoordHandle = GLES20.glGetAttribLocation(oesProgram, "aTexCoord");
         oesTextureHandle = GLES20.glGetUniformLocation(oesProgram, "uTexture");
-        
-        Log.d(TAG, "Using absolute minimal shader - no transformations");
+        texMatrixHandle = GLES20.glGetUniformLocation(oesProgram, "uTexMatrix");
+        Log.d(TAG, "Shader setup complete with uTexMatrix handle: " + texMatrixHandle);
     }
 
     private void setupVertexBuffer() {
@@ -1275,37 +1279,75 @@ public class GLWatermarkRenderer {
      * @return Rotation angle in degrees
      */
     private int calculateRequiredRotation() {
-        boolean isFrontCamera = sensorOrientation == 270;
-        
-        if ("portrait".equalsIgnoreCase(orientation)) {
-            if (isFrontCamera) {
-                return (sensorOrientation == 270) ? 0 : 180;
-            } else {
-                return (sensorOrientation == 90) ? 0 : 180;
-            }
-        } else { // landscape
-            if (isFrontCamera) {
-                return (sensorOrientation == 270) ? 90 : 270;
-            } else {
-                return (sensorOrientation == 90) ? 270 : 90;
-            }
+        int displayRotation = getDisplayRotation();
+        int cameraRotation = sensorOrientation;
+        int rotation;
+        if (isFrontCamera()) {
+            rotation = (cameraRotation + displayRotation) % 360;
+            rotation = (360 - rotation) % 360;
+        } else {
+            rotation = (cameraRotation - displayRotation + 360) % 360;
         }
+        Log.d("GLRenderer", "Preview rotation calculated: " + rotation);
+        return rotation;
     }
 
-    /**
-     * Minimal rendering for recording: always use camera's output width/height as provided.
-     */
-    private void renderMinimal() {
-        // Use the camera's output width/height as provided
-        GLES20.glViewport(0, 0, videoWidth, videoHeight);
-        
-        // Clear the screen
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        
-        // Use the shader program
+    private int getDisplayRotation() {
+        // TODO: Implement this to get the actual display rotation from the Activity/Fragment
+        // 0=portrait, 90=landscape, 180=upside down, 270=reverse landscape
+        return 0;
+    }
+
+    private boolean isFrontCamera() {
+        // TODO: Implement this based on your camera selection logic
+        return false;
+    }
+
+    private float[] calculatePreviewTransformMatrix() {
+        float[] matrix = new float[16];
+        Matrix.setIdentityM(matrix, 0);
+        float[] stMatrix = new float[16];
+        if (cameraSurfaceTexture != null) {
+            cameraSurfaceTexture.getTransformMatrix(stMatrix);
+        } else {
+            Matrix.setIdentityM(stMatrix, 0);
+        }
+        Matrix.multiplyMM(matrix, 0, matrix, 0, stMatrix, 0);
+        int previewRotation = calculatePreviewRotation();
+        if (previewRotation != 0) {
+            Matrix.rotateM(matrix, 0, previewRotation, 0, 0, 1);
+        }
+        return matrix;
+    }
+
+    private int calculatePreviewRotation() {
+        // TODO: Make this dynamic based on orientation/sensor if needed
+        return 270;
+    }
+
+    private float[] calculateRecordingTransformMatrix() {
+        float[] matrix = new float[16];
+        Matrix.setIdentityM(matrix, 0);
+        float[] stMatrix = new float[16];
+        if (cameraSurfaceTexture != null) {
+            cameraSurfaceTexture.getTransformMatrix(stMatrix);
+        } else {
+            Matrix.setIdentityM(stMatrix, 0);
+        }
+        Matrix.multiplyMM(matrix, 0, matrix, 0, stMatrix, 0);
+        int recordingRotation = calculateRecordingRotation();
+        if (recordingRotation != 0) {
+            Matrix.rotateM(matrix, 0, recordingRotation, 0, 0, 1);
+        }
+        return matrix;
+    }
+
+    private int calculateRecordingRotation() {
+        return calculateRequiredRotation();
+    }
+
+    private void renderMinimalWithMatrix(float[] transformMatrix) {
         GLES20.glUseProgram(oesProgram);
-        
         // Standard vertex positions for quad (these don't change)
         float[] vertices = {
             -1.0f, -1.0f,  // bottom left
@@ -1313,16 +1355,10 @@ public class GLWatermarkRenderer {
             -1.0f,  1.0f,  // top left
              1.0f,  1.0f   // top right
         };
-        
-        // For back camera in portrait mode, we need to flip texture coordinates horizontally
-        // to fix mirroring issue (front camera is handled correctly)
         boolean isBackCamera = sensorOrientation == 90;
         boolean isPortraitMode = "portrait".equalsIgnoreCase(orientation);
         float[] texCoords;
-        
         if (isBackCamera && isPortraitMode) {
-            // Flip texture coordinates horizontally for back camera in portrait mode 
-            // to fix the mirroring issue
             texCoords = new float[] {
                 1.0f, 0.0f,  // Bottom right (flipped from bottom left)
                 0.0f, 0.0f,  // Bottom left (flipped from bottom right)
@@ -1331,7 +1367,6 @@ public class GLWatermarkRenderer {
             };
             Log.d(TAG, "Using flipped texture coordinates for back camera to fix mirroring");
         } else {
-            // Standard texture coordinates for all other cases
             texCoords = new float[] {
                 0.0f, 0.0f,  // bottom left
                 1.0f, 0.0f,  // bottom right
@@ -1339,26 +1374,36 @@ public class GLWatermarkRenderer {
                 1.0f, 1.0f   // top right
             };
         }
-        
         FloatBuffer vertexBuffer = ByteBuffer.allocateDirect(vertices.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         vertexBuffer.put(vertices).position(0);
         FloatBuffer texCoordBuffer = ByteBuffer.allocateDirect(texCoords.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         texCoordBuffer.put(texCoords).position(0);
-        
         GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
         GLES20.glEnableVertexAttribArray(oesPositionHandle);
         GLES20.glVertexAttribPointer(oesTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
         GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
-        
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
         GLES20.glUniform1i(oesTextureHandle, 0);
-        
+        if (texMatrixHandle >= 0) {
+            GLES20.glUniformMatrix4fv(texMatrixHandle, 1, false, transformMatrix, 0);
+        }
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        
         GLES20.glDisableVertexAttribArray(oesPositionHandle);
         GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
+    }
+
+    private void debugRotationInfo() {
+        Log.d("GLRenderer", "=== Rotation Debug Info ===");
+        Log.d("GLRenderer", "Device orientation: " + deviceOrientation);
+        Log.d("GLRenderer", "Sensor orientation: " + sensorOrientation);
+        Log.d("GLRenderer", "Selected orientation: " + orientation);
+        Log.d("GLRenderer", "Calculated required rotation: " + calculateRequiredRotation());
+        Log.d("GLRenderer", "Preview surface size: " + mSurfaceWidth + "x" + mSurfaceHeight);
+        Log.d("GLRenderer", "Video dimensions: " + videoWidth + "x" + videoHeight);
+        float[] matrix = calculateCombinedTransformMatrix();
+        Log.d("GLRenderer", "Transform matrix: " + Arrays.toString(matrix));
     }
 } 
