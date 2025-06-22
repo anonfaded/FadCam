@@ -89,6 +89,8 @@ import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
 
+import android.graphics.SurfaceTexture;
+
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
@@ -407,6 +409,9 @@ public class RecordingService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy: Service being destroyed...");
+        
+        // Make sure dummy surface is released
+        releaseDummyBackgroundSurface();
         
         // Ensure all location services are properly stopped
         if (geotagHelper != null) {
@@ -770,6 +775,10 @@ public class RecordingService extends Service {
     /** Ensures ALL hardware resources related to recording are released. */
     private void releaseRecordingResources() {
         Log.d(TAG, "Releasing ALL recording resources (Camera, Session, Recorder)...");
+        
+        // Release dummy background surface first
+        releaseDummyBackgroundSurface();
+        
         // Order: Session -> Device -> Recorder
         try { if (captureSession != null) { captureSession.close(); Log.d(TAG,"Rel: CaptureSession closed."); } } catch (Exception e) { Log.w(TAG,"Err close CaptureSession",e); } finally { captureSession = null; }
         try { if (cameraDevice != null) { cameraDevice.close(); Log.d(TAG,"Rel: CameraDevice closed."); } } catch (Exception e) { Log.w(TAG,"Err close CameraDevice",e); } finally { cameraDevice = null; }
@@ -1909,8 +1918,19 @@ public class RecordingService extends Service {
             surfaces.add(recorderSurface);
             
             // Add preview surface if available
-            if (previewSurface != null) {
+            boolean previewSurfaceAdded = false;
+            if (previewSurface != null && previewSurface.isValid()) {
                 surfaces.add(previewSurface);
+                previewSurfaceAdded = true;
+                Log.d(TAG, "Using valid preview surface from UI");
+            }             else if (dummyBackgroundSurface != null && dummyBackgroundSurface.isValid()) {
+                // Use dummy surface when UI surface is gone (app backgrounded)
+                // to prevent recording issues like green frames
+                surfaces.add(dummyBackgroundSurface);
+                Log.d(TAG, "Using dummy surface (app backgrounded) to maintain stable recording");
+                previewSurfaceAdded = true;
+            } else {
+                Log.d(TAG, "No valid preview or dummy surface available");
             }
             
             // Get camera characteristics for frame rate handling
@@ -1933,6 +1953,9 @@ public class RecordingService extends Service {
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
             
+            // Continue with existing code...
+            // Rest of the method stays the same
+
             // For high frame rates, evaluate if we should use high-speed session
             if (isHighFrameRate && characteristics != null) {
                 // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
@@ -2486,9 +2509,23 @@ public class RecordingService extends Service {
 
     // --- Helper Methods ---
     private void setupSurfaceTexture(Intent intent) {
+        Surface oldPreviewSurface = previewSurface; // Store old surface to check for changes
+        
         if(intent != null) {
             previewSurface = intent.getParcelableExtra("SURFACE");
-            Log.d(TAG, "Preview surface updated: " + (previewSurface != null && previewSurface.isValid()));
+            
+            // Check if we've lost a valid preview surface (app going to background)
+            boolean validOldSurface = oldPreviewSurface != null && oldPreviewSurface.isValid();
+            boolean validNewSurface = previewSurface != null && previewSurface.isValid();
+            
+            if (validOldSurface && !validNewSurface && isRecordingOrPaused()) {
+                // We had a valid surface but now we don't
+                // This is likely the app being backgrounded - create dummy surface to prevent green screen
+                Log.d(TAG, "Surface lost while recording - creating dummy surface to prevent recording issues");
+                createDummyBackgroundSurface();
+            }
+            
+            Log.d(TAG, "Preview surface updated: " + validNewSurface);
         }
     }
 
@@ -2852,6 +2889,13 @@ public class RecordingService extends Service {
 
     public boolean isPaused() {
         return recordingState == RecordingState.PAUSED;
+    }
+
+    /**
+     * Combined helper to check if recording is active or paused
+     */
+    public boolean isRecordingOrPaused() {
+        return isRecording() || isPaused();
     }
 
     // Combined status check
@@ -3690,6 +3734,52 @@ public class RecordingService extends Service {
             // Handle paused state
             Log.d(TAG, "Session configured while in PAUSED state");
             setupRecordingResumeNotification();
+        }
+    }
+
+    // Add this field to the class
+    private Surface dummyBackgroundSurface = null; // Used as fallback when app is backgrounded
+    private SurfaceTexture dummySurfaceTexture = null; // Used to create dummy surface
+
+    // Add this method to create a dummy surface
+    private void createDummyBackgroundSurface() {
+        // Release any existing dummy resources
+        releaseDummyBackgroundSurface();
+        
+        try {
+            // Create a 1x1 SurfaceTexture (minimal size/resources)
+            dummySurfaceTexture = new SurfaceTexture(0);
+            dummySurfaceTexture.setDefaultBufferSize(1, 1);
+            dummyBackgroundSurface = new Surface(dummySurfaceTexture);
+            
+            Log.d(TAG, "Created dummy background surface to prevent green screen on Samsung");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create dummy background surface", e);
+            dummySurfaceTexture = null;
+            dummyBackgroundSurface = null;
+        }
+    }
+
+    // Add this method to release the dummy surface
+    private void releaseDummyBackgroundSurface() {
+        if (dummyBackgroundSurface != null) {
+            try {
+                dummyBackgroundSurface.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing dummyBackgroundSurface", e);
+            } finally {
+                dummyBackgroundSurface = null;
+            }
+        }
+        
+        if (dummySurfaceTexture != null) {
+            try {
+                dummySurfaceTexture.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing dummySurfaceTexture", e);
+            } finally {
+                dummySurfaceTexture = null;
+            }
         }
     }
 
