@@ -1788,6 +1788,16 @@ public class RecordingService extends Service {
         if(intent != null) {
             previewSurface = intent.getParcelableExtra("SURFACE");
             Log.d(TAG, "Preview surface updated: " + (previewSurface != null && previewSurface.isValid()));
+            
+            // Check if we have surface dimensions
+            int width = intent.getIntExtra("SURFACE_WIDTH", -1);
+            int height = intent.getIntExtra("SURFACE_HEIGHT", -1);
+            
+            // Update the GL pipeline with the new dimensions if available
+            if (width > 0 && height > 0 && glRecordingPipeline != null) {
+                Log.d(TAG, "Updating GL pipeline with surface dimensions: " + width + "x" + height);
+                glRecordingPipeline.updateSurfaceDimensions(width, height);
+            }
         }
     }
 

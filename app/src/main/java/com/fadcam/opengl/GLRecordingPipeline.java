@@ -73,11 +73,6 @@ public class GLRecordingPipeline {
     private FileDescriptor currentOutputFd;
     private boolean muxerStarted = false;
 
-    private HandlerThread previewRenderThread;
-    private Handler previewRenderHandler;
-    private volatile boolean isPreviewActive = false;
-    private final Object previewStateLock = new Object();
-
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
@@ -257,7 +252,6 @@ public class GLRecordingPipeline {
             if (!isRecording) {
                 isRecording = true;
                 startRenderLoop();
-                startPreviewRenderLoop();
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to start recording pipeline", e);
@@ -266,7 +260,11 @@ public class GLRecordingPipeline {
     }
 
     private void setupEncoder() throws IOException {
-        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, videoWidth, videoHeight);
+        boolean isPortrait = "portrait".equalsIgnoreCase(orientation) && videoWidth > videoHeight;
+        int encoderWidth = isPortrait ? videoHeight : videoWidth;
+        int encoderHeight = isPortrait ? videoWidth : videoHeight;
+
+        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, encoderWidth, encoderHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
@@ -301,19 +299,6 @@ public class GLRecordingPipeline {
         } else {
             mediaMuxer = new MediaMuxer(currentOutputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         }
-        // --- Set orientation hint for correct playback ---
-        int orientationHint = 0;
-        if ("portrait".equalsIgnoreCase(orientation)) {
-            if (sensorOrientation == 270) {
-                // Front camera portrait
-                orientationHint = 270;
-            } else if (sensorOrientation == 90) {
-                // Back camera portrait: set to 270 to rotate upright
-                orientationHint = 270;
-            }
-        }
-        mediaMuxer.setOrientationHint(orientationHint);
-        // --- End orientation hint ---
         muxerStarted = false;
     }
 
@@ -345,9 +330,6 @@ public class GLRecordingPipeline {
                 // Render to encoder
                 glRenderer.renderFrame();
                 
-                // We'll handle preview rendering in a dedicated thread
-                // to avoid conflicts with renderFrame - don't do it here anymore
-                
                 // Drain encoded frame data
                 drainEncoder();
                 
@@ -355,9 +337,6 @@ public class GLRecordingPipeline {
                 if (shouldSplitSegment()) {
                     rolloverSegment();
                 }
-                
-                // No need to post another renderRunnable, as onFrameAvailable listener
-                // will schedule this again when a new frame is ready
                 
             } catch (Exception e) {
                 Log.e(TAG, "Exception in render loop", e);
@@ -475,9 +454,6 @@ public class GLRecordingPipeline {
         isStopped = true;
         isRecording = false;
         
-        // First stop the render loops to prevent further frame processing
-        stopPreviewRenderLoop();
-        
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
@@ -593,22 +569,22 @@ public class GLRecordingPipeline {
     }
 
     /**
+     * Updates the device orientation for the renderer to adjust the preview.
+     * @param deviceOrientation The current orientation of the device (e.g., Surface.ROTATION_0).
+     */
+    public void setDeviceOrientation(int deviceOrientation) {
+        if (glRenderer != null) {
+            glRenderer.setDeviceOrientation(deviceOrientation);
+        }
+    }
+
+    /**
      * Sets the preview surface for rendering the camera feed.
      * @param surface The Surface to render the preview on.
      */
     public void setPreviewSurface(Surface surface) {
         if (this.previewSurface != surface) {
             Log.d(TAG, "Setting preview surface: " + (surface != null));
-            
-            // Stop the preview render thread before changing surfaces
-            stopPreviewRenderLoop();
-            
-            // Wait for main rendering to complete a frame to avoid conflicts
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
             
             this.previewSurface = surface;
             
@@ -617,22 +593,11 @@ public class GLRecordingPipeline {
                 try {
                     glRenderer.setPreviewSurface(surface);
                     
-                    // Force fixed dimensions to ensure consistent aspect ratio
-                    forceFixedDimensions();
-                    
-                    // Debug preview vs recording dimensions
-                    debugPreviewVsRecording();
-                    
-                    // Wait for preview surface to be fully set up
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        // Ignore
-                    }
-                    
-                    // If we're recording, restart the preview loop with the new surface
-                    if (isRecording && surface != null && surface.isValid()) {
-                        startPreviewRenderLoop();
+                    // Update surface dimensions if we have valid dimensions
+                    if (surface != null && mSurfaceWidth > 0 && mSurfaceHeight > 0) {
+                        Log.d(TAG, "Updating renderer surface dimensions to " + 
+                              mSurfaceWidth + "x" + mSurfaceHeight);
+                        glRenderer.setSurfaceDimensions(mSurfaceWidth, mSurfaceHeight);
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Error setting preview surface", e);
@@ -641,65 +606,22 @@ public class GLRecordingPipeline {
         }
     }
 
-    private void startPreviewRenderLoop() {
-        if (previewRenderThread == null && glRenderer != null && previewSurface != null && previewSurface.isValid()) {
-            // Use normal thread priority instead of MAX_PRIORITY
-            previewRenderThread = new HandlerThread("PreviewRenderThread");
-            previewRenderThread.start();
-            previewRenderHandler = new Handler(previewRenderThread.getLooper());
+    /**
+     * Updates the surface dimensions and informs the renderer.
+     * This should be called whenever the preview surface size changes.
+     *
+     * @param width The width of the surface
+     * @param height The height of the surface
+     */
+    public void updateSurfaceDimensions(int width, int height) {
+        if (width > 0 && height > 0 && (mSurfaceWidth != width || mSurfaceHeight != height)) {
+            Log.d(TAG, "Surface dimensions changed: " + width + "x" + height);
+            mSurfaceWidth = width;
+            mSurfaceHeight = height;
             
-            synchronized (previewStateLock) {
-                isPreviewActive = true;
+            if (glRenderer != null) {
+                glRenderer.setSurfaceDimensions(width, height);
             }
-            
-            // Add a slight delay before starting the preview rendering to ensure setup completes
-            previewRenderHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (previewStateLock) {
-                        if (!isPreviewActive || glRenderer == null) return;
-                        
-                        try {
-                            if (previewSurface != null && previewSurface.isValid()) {
-                                // Ensure camera buffer size is correct before rendering
-                                forceFixedDimensions();
-                                glRenderer.renderToPreview();
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error in preview render loop", e);
-                        }
-                        
-                        // Check if we're still active before scheduling next frame
-                        if (isPreviewActive && previewRenderHandler != null && glRenderer != null) {
-                            previewRenderHandler.postDelayed(this, PREVIEW_RENDER_INTERVAL_MS);
-                        }
-                    }
-                }
-            }, 500); // Longer initial delay to ensure everything is set up
-        }
-    }
-    
-    private void stopPreviewRenderLoop() {
-        // Stop the rendering loop first
-        synchronized (previewStateLock) {
-            isPreviewActive = false;
-        }
-        
-        // Then clean up resources
-        if (previewRenderHandler != null) {
-            previewRenderHandler.removeCallbacksAndMessages(null);
-            previewRenderHandler = null;
-        }
-        
-        // Give thread a bit more time to finish any processing
-        if (previewRenderThread != null) {
-            try {
-                previewRenderThread.quitSafely();
-                previewRenderThread.join(200); // Slightly longer timeout for cleanup
-            } catch (InterruptedException e) {
-                Log.w(TAG, "Interrupted while stopping preview render thread", e);
-            }
-            previewRenderThread = null;
         }
     }
 
