@@ -8,8 +8,10 @@ import android.view.View;
 
 import com.guardanis.applock.AppLock;
 import com.fadcam.R;
+import com.guardanis.applock.password.PasswordInputController;
 import com.guardanis.applock.pin.PINInputController;
 import com.guardanis.applock.services.FingerprintLockService;
+import com.guardanis.applock.services.PasswordLockService;
 import com.guardanis.applock.services.PINLockService;
 
 import java.lang.ref.WeakReference;
@@ -19,7 +21,7 @@ import androidx.core.hardware.fingerprint.FingerprintManagerCompat;
 import androidx.core.os.CancellationSignal;
 
 public class LockCreationViewController extends AppLockViewController
-        implements PINInputController.InputEventListener, FingerprintLockService.AuthenticationDelegate {
+        implements PINInputController.InputEventListener, PasswordInputController.InputEventListener, FingerprintLockService.AuthenticationDelegate {
 
     public interface Delegate {
         public void onLockCreated();
@@ -30,6 +32,8 @@ public class LockCreationViewController extends AppLockViewController
         CHOOSER,
         PIN_CREATION,
         PIN_CONFIRMATION,
+        PASSWORD_CREATION,
+        PASSWORD_CONFIRMATION,
         FINGERPRINT_AUTHENTICATION
     }
 
@@ -39,6 +43,7 @@ public class LockCreationViewController extends AppLockViewController
     protected WeakReference<View> chooserParent;
 
     protected String pinFirst;
+    protected String passwordFirst;
 
     public LockCreationViewController(Activity activity, View parent) {
         super(activity, parent);
@@ -76,6 +81,7 @@ public class LockCreationViewController extends AppLockViewController
 
         hide(fingerprintAuthImageView);
         hide(pinInputView);
+        hide(passwordInputView);
         hide(actionSettings);
 
         show(chooserParent);
@@ -94,6 +100,13 @@ public class LockCreationViewController extends AppLockViewController
                     }
                 });
 
+        parent.findViewById(R.id.pin__create_option_password)
+                .setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View view) {
+                        setupPasswordCreation();
+                    }
+                });
+
         parent.findViewById(R.id.pin__create_option_fingerprint)
                 .setOnClickListener(new View.OnClickListener() {
                     public void onClick(View view) {
@@ -107,6 +120,7 @@ public class LockCreationViewController extends AppLockViewController
 
         hide(fingerprintAuthImageView);
         hide(chooserParent);
+        hide(passwordInputView);
         hide(actionSettings);
 
         show(pinInputView);
@@ -117,11 +131,28 @@ public class LockCreationViewController extends AppLockViewController
         pinInputController.setInputEventListener(this);
     }
 
+    protected void setupPasswordCreation() {
+        this.displayVariant = DisplayVariant.PASSWORD_CREATION;
+
+        hide(fingerprintAuthImageView);
+        hide(chooserParent);
+        hide(pinInputView);
+        hide(actionSettings);
+
+        show(passwordInputView);
+
+        setDescription(R.string.applock__description_create_password);
+
+        passwordInputController.ensureKeyboardVisible();
+        passwordInputController.setInputEventListener(this);
+    }
+
     protected void setupPINConfirmation() {
         this.displayVariant = DisplayVariant.PIN_CONFIRMATION;
 
         hide(fingerprintAuthImageView);
         hide(chooserParent);
+        hide(passwordInputView);
         hide(actionSettings);
 
         show(pinInputView);
@@ -132,40 +163,101 @@ public class LockCreationViewController extends AppLockViewController
         pinInputController.setInputEventListener(this);
     }
 
+    protected void setupPasswordConfirmation() {
+        this.displayVariant = DisplayVariant.PASSWORD_CONFIRMATION;
+
+        hide(fingerprintAuthImageView);
+        hide(chooserParent);
+        hide(pinInputView);
+        hide(actionSettings);
+
+        show(passwordInputView);
+
+        setDescription(R.string.applock__description_confirm);
+        
+        // Clear the input field for confirmation
+        if (passwordInputView.get() != null) {
+            passwordInputView.get().reset();
+        }
+
+        // Ensure keyboard is visible and focused
+        passwordInputController.ensureKeyboardVisible();
+        passwordInputController.setInputEventListener(this);
+    }
+
     @Override
     public void onInputEntered(String input) {
         switch (displayVariant) {
             case PIN_CREATION:
                 if(!pinInputController.matchesRequiredPINLength(input)) {
                     setDescription(R.string.applock__unlock_error_insufficient_selection);
-
                     return;
                 }
 
                 this.pinFirst = input;
-
                 setupPINConfirmation();
-
                 break;
+                
+            case PASSWORD_CREATION:
+                if(!passwordInputController.matchesMinimumPasswordLength(input)) {
+                    int minLength = passwordInputView.get().getResources().getInteger(R.integer.applock__input_password_min_length);
+                    String message = String.format(
+                        passwordInputView.get().getResources().getString(R.string.applock__password_validation_min_length),
+                        minLength);
+                    setDescription(message);
+                    return;
+                }
+                
+                if(!passwordInputController.matchesRequiredPasswordComplexity(input)) {
+                    setDescription(R.string.applock__password_complexity_requirement);
+                    return;
+                }
+
+                this.passwordFirst = input;
+                setupPasswordConfirmation();
+                break;
+                
             case PIN_CONFIRMATION:
                 if(!pinInputController.matchesRequiredPINLength(input)) {
                     setDescription(R.string.applock__unlock_error_insufficient_selection);
-
                     return;
                 }
 
                 if(!input.equals(pinFirst)) {
                     this.pinFirst = null;
-
                     setupPINCreation();
                     setDescription(R.string.applock__description_create_pin_reattempt);
-
                     return;
                 }
 
                 createPINLock(input);
-
                 break;
+                
+            case PASSWORD_CONFIRMATION:
+                if(!passwordInputController.matchesMinimumPasswordLength(input)) {
+                    int minLength = passwordInputView.get().getResources().getInteger(R.integer.applock__input_password_min_length);
+                    String message = String.format(
+                        passwordInputView.get().getResources().getString(R.string.applock__password_validation_min_length),
+                        minLength);
+                    setDescription(message);
+                    return;
+                }
+                
+                if(!passwordInputController.matchesRequiredPasswordComplexity(input)) {
+                    setDescription(R.string.applock__password_complexity_requirement);
+                    return;
+                }
+
+                if(!input.equals(passwordFirst)) {
+                    this.passwordFirst = null;
+                    setupPasswordCreation();
+                    setDescription(R.string.applock__description_create_password_reattempt);
+                    return;
+                }
+
+                createPasswordLock(input);
+                break;
+                
             default:
                 break;
         }
@@ -177,8 +269,29 @@ public class LockCreationViewController extends AppLockViewController
         if (activity == null)
             return;
 
+        // Invalidate other authentication methods before enrolling PIN
+        AppLock.getInstance(activity).getLockService(PasswordLockService.class).invalidateEnrollments(activity);
+        AppLock.getInstance(activity).getLockService(FingerprintLockService.class).invalidateEnrollments(activity);
+
         AppLock.getInstance(activity)
                 .getLockService(PINLockService.class)
+                .enroll(activity, input);
+
+        handleLockCreated();
+    }
+
+    protected void createPasswordLock(String input) {
+        Activity activity = this.activity.get();
+
+        if (activity == null)
+            return;
+
+        // Invalidate other authentication methods before enrolling password
+        AppLock.getInstance(activity).getLockService(PINLockService.class).invalidateEnrollments(activity);
+        AppLock.getInstance(activity).getLockService(FingerprintLockService.class).invalidateEnrollments(activity);
+
+        AppLock.getInstance(activity)
+                .getLockService(PasswordLockService.class)
                 .enroll(activity, input);
 
         handleLockCreated();
@@ -188,6 +301,7 @@ public class LockCreationViewController extends AppLockViewController
         this.displayVariant = DisplayVariant.FINGERPRINT_AUTHENTICATION;
 
         hide(pinInputView);
+        hide(passwordInputView);
         hide(chooserParent);
         hide(actionSettings);
 
@@ -236,6 +350,14 @@ public class LockCreationViewController extends AppLockViewController
 
     @Override
     public void onAuthenticationSuccess(FingerprintManagerCompat.AuthenticationResult result) {
+        Activity activity = this.activity.get();
+        
+        if (activity != null) {
+            // Invalidate other authentication methods before enrolling fingerprint
+            AppLock.getInstance(activity).getLockService(PINLockService.class).invalidateEnrollments(activity);
+            AppLock.getInstance(activity).getLockService(PasswordLockService.class).invalidateEnrollments(activity);
+        }
+        
         handleLockCreated();
     }
 
@@ -261,7 +383,8 @@ public class LockCreationViewController extends AppLockViewController
             return;
 
         AppLock.getInstance(activity)
-                .cancelPendingAuthentications();
+                .getLockService(FingerprintLockService.class)
+                .cancelPendingAuthentications(activity);
 
         if (displayVariant == DisplayVariant.FINGERPRINT_AUTHENTICATION)
             setDescription(R.string.applock__description_create_fingerprint_paused);
@@ -277,7 +400,6 @@ public class LockCreationViewController extends AppLockViewController
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.USE_FINGERPRINT) != PackageManager.PERMISSION_GRANTED) {
             setDescription(R.string.applock__fingerprint_error_permission_multiple);
             updateActionSettings(AppLock.ERROR_CODE_FINGERPRINTS_PERMISSION_REQUIRED);
-
             return;
         }
 
