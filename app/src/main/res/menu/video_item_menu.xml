@@ -20,6 +20,16 @@
             android:title="Edit with FaditorX"
         />
         <item
+            android:id="@+id/action_upload_youtube"
+            android:icon="@drawable/ic_youtube"
+            android:title="@string/video_menu_upload_youtube"
+        />
+        <item
+            android:id="@+id/action_upload_drive"
+            android:icon="@drawable/ic_drive"
+            android:title="@string/video_menu_upload_drive"
+        />
+        <item
             android:id="@+id/action_delete"
             android:icon="@drawable/ic_delete_red"
             android:title="Delete"

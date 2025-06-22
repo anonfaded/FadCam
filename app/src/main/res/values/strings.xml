@@ -94,6 +94,10 @@
     <string name="video_menu_copy_filename">Copy Filename</string>
     <string name="video_menu_mark_viewed">Mark as Viewed</string>
     <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
+    <string name="video_menu_upload_youtube">Upload to YouTube</string>
+    <string name="video_menu_upload_drive">Upload to  Google Drive</string>
+    <string name="toast_no_youtube_app">YouTube app not found</string>
+    <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>
@@ -660,7 +664,5 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
         <item>Custom</item>
     </string-array>
     
-
-
 
 </resources>

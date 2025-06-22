@@ -66,6 +66,10 @@
 
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
 
+    <!-- Permission to query all installed packages -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" 
+                     tools:ignore="QueryAllPackagesPermission" />
+
     <application
         android:name=".FadCamApplication"
         android:allowBackup="false"
