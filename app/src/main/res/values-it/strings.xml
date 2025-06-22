@@ -428,4 +428,9 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="notification_title_downloading">Download</string>
     <string name="notification_title_syncing">Sincronizzazione dati</string>
     <string name="notification_title_custom_default">Notifica</string>
+
+    <string name="video_menu_upload_youtube">Carica su YouTube</string>
+    <string name="video_menu_upload_drive">Carica su Google Drive</string>
+    <string name="toast_no_youtube_app">App YouTube non trovata</string>
+    <string name="toast_no_drive_app">App Google Drive non trovata</string>
 </resources>

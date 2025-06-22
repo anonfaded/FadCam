@@ -552,5 +552,9 @@
     <string name="notification_title_custom_default">Bildirim</string>
     <string name="notification_settings_saved">Bildirim ayarları kaydedildi</string>
     
+    <string name="video_menu_upload_youtube">YouTube\'a yükle</string>
+    <string name="video_menu_upload_drive">Google Drive\'a yükle</string>
+    <string name="toast_no_youtube_app">YouTube uygulaması bulunamadı</string>
+    <string name="toast_no_drive_app">Google Drive uygulaması bulunamadı</string>
 
 </resources>

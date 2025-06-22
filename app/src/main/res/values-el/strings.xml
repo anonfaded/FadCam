@@ -318,7 +318,7 @@
 </string>
     <string name="setting_video_orientation_title">Προσανατολισμός Βίντεο</string>
     <string name="setting_video_orientation_summary">Επιλέξτε τον προσανατολισμό για τα βίντεό σας. Ο κατακόρυφος είναι καλύτερος για τα μέσα κοινωνικής δικτύωσης. Ο οριζόντιος είναι καλύτερος για το YouTube, παρουσιάσεις κ.λπ.</string>
-    <string name="video_orientation_portrait">Κατακόρυφος (προεπιλογή)</string>
+    <string name="video_orientation_portrait">Κατακόρυφος</string>
     <string name="video_orientation_landscape">Οριζόντιος</string>
     <string name="setting_video_bitrate_title">Ρυθμός Μεταφοράς Βίντεο</string>
     <string name="button_video_bitrate_settings">Ρύθμιση Ρυθμού Μεταφοράς</string>
@@ -595,4 +595,9 @@
         <item>Αντίγραφο ασφαλείας</item>
         <item>Προσαρμοσμένο</item>
     </string-array>
+
+    <string name="video_menu_upload_youtube">Μεταφόρτωση στο YouTube</string>
+    <string name="video_menu_upload_drive">Μεταφόρτωση στο Google Drive</string>
+    <string name="toast_no_youtube_app">Η εφαρμογή YouTube δεν βρέθηκε</string>
+    <string name="toast_no_drive_app">Η εφαρμογή Google Drive δεν βρέθηκε</string>
 </resources>

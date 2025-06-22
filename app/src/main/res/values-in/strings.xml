@@ -500,4 +500,9 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="notification_title_downloading">Mengunduh</string>
     <string name="notification_title_syncing">Sinkronisasi Data</string>
     <string name="notification_title_custom_default">Notifikasi</string>
+
+    <string name="video_menu_upload_youtube">Upload ke YouTube</string>
+    <string name="video_menu_upload_drive">Upload ke Google Drive</string>
+    <string name="toast_no_youtube_app">Aplikasi YouTube tidak ditemukan</string>
+    <string name="toast_no_drive_app">Aplikasi Google Drive tidak ditemukan</string>
 </resources>

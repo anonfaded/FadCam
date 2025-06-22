@@ -508,4 +508,9 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_title_downloading">Download Kawol</string>
     <string name="notification_title_syncing">Data Sync Kawol</string>
     <string name="notification_title_custom_default">Notification</string>
+
+    <string name="video_menu_upload_youtube">YouTube ta porta krray</string>
+    <string name="video_menu_upload_drive">Google Drive ta porta krray</string>
+    <string name="toast_no_youtube_app">Da YouTube application o na mundal sho</string>
+    <string name="toast_no_drive_app">Da Google Drive application o na mundal sho</string>
 </resources>

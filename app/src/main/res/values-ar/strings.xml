@@ -496,4 +496,9 @@
     <string name="notification_title_syncing">مزامنة البيانات</string>
     <string name="notification_title_custom_default">إشعار</string>
     <string name="notification_settings_saved">تم حفظ إعدادات الإشعار</string>
+
+    <string name="video_menu_upload_youtube">تحميل على YouTube</string>
+    <string name="video_menu_upload_drive">تحميل على Google Drive</string>
+    <string name="toast_no_youtube_app">لم يتم العثور على تطبيق YouTube</string>
+    <string name="toast_no_drive_app">لم يتم العثور على تطبيق Google Drive</string>
 </resources>

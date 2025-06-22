@@ -475,4 +475,9 @@
     <string name="notification_title_syncing">数据同步</string>
     <string name="notification_title_custom_default">通知</string>
     <string name="notification_settings_saved">通知设置已保存</string>
+
+    <string name="video_menu_upload_youtube">上传到 YouTube</string>
+    <string name="video_menu_upload_drive">上传到 Google Drive</string>
+    <string name="toast_no_youtube_app">未找到 YouTube 应用</string>
+    <string name="toast_no_drive_app">未找到 Google Drive 应用</string>
 </resources>
