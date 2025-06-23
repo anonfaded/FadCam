@@ -3046,8 +3046,14 @@ public class RecordingService extends Service {
                     String watermarkOption = sharedPreferencesManager.getWatermarkOption();
                     String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
                     switch (watermarkOption) {
-                        case "timestamp": return getCurrentTimestamp() + locationText;
-                        default: return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                        case "timestamp_fadcam":
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                        case "timestamp":
+                            return getCurrentTimestamp() + locationText;
+                        case "no_watermark":
+                            return "";
+                        default:
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
                     }
                 }
             };

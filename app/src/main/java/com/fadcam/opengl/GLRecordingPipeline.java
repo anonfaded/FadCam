@@ -358,6 +358,9 @@ public class GLRecordingPipeline {
         public void run() {
             if (!isRecording || glRenderer == null || videoEncoder == null) return;
             try {
+                // ----- Fix Start for live watermark update -----
+                updateWatermark();
+                // ----- Fix End for live watermark update -----
                 // Render to encoder
                 glRenderer.renderFrame();
                 

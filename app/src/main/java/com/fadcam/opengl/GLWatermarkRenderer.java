@@ -25,8 +25,8 @@ import java.nio.FloatBuffer;
 
 public class GLWatermarkRenderer {
     private static final String TAG = "GLWatermarkRenderer";
-    private static final int WATERMARK_BITMAP_WIDTH = 1024;
-    private static final int WATERMARK_BITMAP_HEIGHT = 128;
+    private static final int WATERMARK_BITMAP_WIDTH = 2400;
+    private static final int WATERMARK_BITMAP_HEIGHT = 160;
 
     private EGLDisplay eglDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext eglContext = EGL14.EGL_NO_CONTEXT;
@@ -74,8 +74,20 @@ public class GLWatermarkRenderer {
     private int simpleWatermarkProgram;
     private int simpleWatermarkPositionHandle;
     private FloatBuffer watermarkRectBuffer;
-    private static final float[] WATERMARK_RECT_VERTICES = { 0.7f, -0.8f, 1.0f, -0.8f, 0.7f, -1.0f, 1.0f, -1.0f };
+    private static final float[] WATERMARK_RECT_VERTICES = {
+        -1.0f, 1.0f,    // Top left
+        -0.5f, 1.0f,    // Top right (left half)
+        -1.0f, 0.85f,   // Bottom left (top bar height)
+        -0.5f, 0.85f    // Bottom right
+    };
 
+    // Add fields for watermark texture shader
+    private int watermarkProgram;
+    private int watermarkPositionHandle;
+    private int watermarkTexCoordHandle;
+    private int watermarkSamplerHandle;
+    private FloatBuffer watermarkTexCoordBuffer;
+    private static final float[] WATERMARK_TEXCOORDS = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
 
     private final int sensorOrientation;
     private final int videoWidth;
@@ -111,6 +123,19 @@ public class GLWatermarkRenderer {
     public void setUserOrientationSetting(String orientation) {
         this.userOrientationSetting = orientation;
     }
+
+    private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight) {
+        // Top left corner at (-1, 1), width ndcWidth, height ndcHeight
+        return new float[] {
+            -1.0f, 1.0f,                 // Top left
+            -1.0f + ndcWidth, 1.0f,      // Top right
+            -1.0f, 1.0f - ndcHeight,     // Bottom left
+            -1.0f + ndcWidth, 1.0f - ndcHeight // Bottom right
+        };
+    }
+
+    private int dynamicBitmapWidth = 0;
+    private int dynamicBitmapHeight = 48; // Fixed small height for dashcam style
 
     public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation, int videoWidth, int videoHeight) {
         this.context = context;
@@ -302,12 +327,54 @@ public class GLWatermarkRenderer {
     }
 
     private void updateWatermarkTexture() {
-        if (watermarkBitmap == null) return;
+        // Use a much smaller font for dashcam style
+        watermarkPaint.setTextSize(28);
+        watermarkPaint.setAntiAlias(true);
+        watermarkPaint.setARGB(255, 255, 255, 255);
+        watermarkPaint.setShadowLayer(1.5f, 0f, 1.5f, Color.BLACK);
+        watermarkPaint.setLetterSpacing(0.08f);
+        watermarkPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT_BOLD, android.graphics.Typeface.BOLD));
+        String text = watermarkText;
+        int padding = 32;
+        int maxBitmapWidth = 800; // Fixed max width for dashcam style
+        int minBitmapWidth = 120;
+        android.text.TextPaint textPaint = new android.text.TextPaint(watermarkPaint);
+        float textWidth = textPaint.measureText(text);
+        int bitmapWidth = (int)Math.ceil(textWidth + padding);
+        if (bitmapWidth < minBitmapWidth) bitmapWidth = minBitmapWidth;
+        if (bitmapWidth > maxBitmapWidth) bitmapWidth = maxBitmapWidth;
+        dynamicBitmapWidth = bitmapWidth;
+        if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
+            watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
+        }
         Canvas canvas = new Canvas(watermarkBitmap);
-        canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-        canvas.drawText(watermarkText, 32, WATERMARK_BITMAP_HEIGHT / 2f + 20, watermarkPaint);
+        canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
+        int maxWidth = dynamicBitmapWidth - padding;
+        android.text.StaticLayout staticLayout = new android.text.StaticLayout(
+            text, textPaint, maxWidth, android.text.Layout.Alignment.ALIGN_NORMAL, 1.0f, 0f, false);
+        int textHeight = staticLayout.getHeight();
+        int rectHeight = textHeight + 8; // 4px top/bottom padding
+        if (rectHeight > dynamicBitmapHeight) rectHeight = dynamicBitmapHeight;
+        // Draw text at top left with padding
+        canvas.save();
+        float textX = padding / 2f;
+        float textY = 4; // 4px top padding
+        canvas.translate(textX, textY);
+        staticLayout.draw(canvas);
+        canvas.restore();
+        // Flip the bitmap vertically before uploading to OpenGL
+        android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
+        flipMatrix.preScale(1.0f, -1.0f);
+        Bitmap flippedBitmap = Bitmap.createBitmap(watermarkBitmap, 0, 0, watermarkBitmap.getWidth(), watermarkBitmap.getHeight(), flipMatrix, true);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, watermarkBitmap, 0);
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
+        flippedBitmap.recycle();
+        // Set OpenGL rectangle to match bitmap width/height in NDC
+        float ndcWidth = 2.0f * dynamicBitmapWidth / (float)videoWidth;
+        float ndcHeight = 2.0f * dynamicBitmapHeight / (float)videoHeight;
+        float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight);
+        watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        watermarkRectBuffer.put(rectVerts).position(0);
     }
 
     public Surface getCameraInputSurface() {
@@ -391,19 +458,53 @@ public class GLWatermarkRenderer {
     }
 
     private void setupSimpleWatermarkShader() {
-        String vertexShaderCode = "attribute vec4 aPosition;\nvoid main() { gl_Position = aPosition; }";
-        String fragmentShaderCode = "precision mediump float; \nvoid main() { gl_FragColor = vec4(1.0, 1.0, 1.0, 0.7); }";
-        simpleWatermarkProgram = createProgram(vertexShaderCode, fragmentShaderCode);
-        simpleWatermarkPositionHandle = GLES20.glGetAttribLocation(simpleWatermarkProgram, "aPosition");
+        // Vertex and fragment shader for rendering watermark bitmap as a texture
+        String vertexShaderCode =
+            "attribute vec4 aPosition;\n" +
+            "attribute vec2 aTexCoord;\n" +
+            "varying vec2 vTexCoord;\n" +
+            "void main() {\n" +
+            "  gl_Position = aPosition;\n" +
+            "  vTexCoord = aTexCoord;\n" +
+            "}";
+        String fragmentShaderCode =
+            "precision mediump float;\n" +
+            "uniform sampler2D uTexture;\n" +
+            "varying vec2 vTexCoord;\n" +
+            "void main() {\n" +
+            "  vec4 color = texture2D(uTexture, vTexCoord);\n" +
+            "  if (color.a < 0.01) discard;\n" +
+            "  gl_FragColor = color;\n" +
+            "}";
+        watermarkProgram = createProgram(vertexShaderCode, fragmentShaderCode);
+        watermarkPositionHandle = GLES20.glGetAttribLocation(watermarkProgram, "aPosition");
+        watermarkTexCoordHandle = GLES20.glGetAttribLocation(watermarkProgram, "aTexCoord");
+        watermarkSamplerHandle = GLES20.glGetUniformLocation(watermarkProgram, "uTexture");
+        // Setup texcoord buffer
+        watermarkTexCoordBuffer = ByteBuffer.allocateDirect(WATERMARK_TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        watermarkTexCoordBuffer.put(WATERMARK_TEXCOORDS).position(0);
     }
 
     private void drawWatermark() {
-        GLES20.glUseProgram(simpleWatermarkProgram);
-        GLES20.glEnableVertexAttribArray(simpleWatermarkPositionHandle);
-        GLES20.glVertexAttribPointer(simpleWatermarkPositionHandle, 2, GLES20.GL_FLOAT, false, 0, watermarkRectBuffer);
+        if (watermarkText == null || watermarkText.isEmpty()) {
+            // Do not draw any watermark if text is empty (no watermark option)
+            return;
+        }
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES20.glUseProgram(watermarkProgram);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
+        GLES20.glEnableVertexAttribArray(watermarkPositionHandle);
+        GLES20.glVertexAttribPointer(watermarkPositionHandle, 2, GLES20.GL_FLOAT, false, 0, watermarkRectBuffer);
+        GLES20.glEnableVertexAttribArray(watermarkTexCoordHandle);
+        GLES20.glVertexAttribPointer(watermarkTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, watermarkTexCoordBuffer);
+        GLES20.glUniform1i(watermarkSamplerHandle, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        GLES20.glDisableVertexAttribArray(simpleWatermarkPositionHandle);
+        GLES20.glDisableVertexAttribArray(watermarkPositionHandle);
+        GLES20.glDisableVertexAttribArray(watermarkTexCoordHandle);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glUseProgram(0);
+        GLES20.glDisable(GLES20.GL_BLEND);
     }
     
     private int createProgram(String vertexSource, String fragmentSource) {
