@@ -508,4 +508,12 @@ public class SharedPreferencesManager {
     }
     // ----- Fix Ended for this method(getVideoSplitSizeBytes)-----
 
+    public static final String PREF_AUDIO_NOISE_SUPPRESSION = "audio_noise_suppression";
+    public boolean isNoiseSuppressionEnabled() {
+        return sharedPreferences.getBoolean(PREF_AUDIO_NOISE_SUPPRESSION, false);
+    }
+    public void setNoiseSuppressionEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_AUDIO_NOISE_SUPPRESSION, enabled).apply();
+    }
+
 }

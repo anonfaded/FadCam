@@ -796,7 +796,8 @@ public class GLRecordingPipeline {
                     audioSampleRate,
                     channelConfig,
                     android.media.AudioFormat.ENCODING_PCM_16BIT);
-            int bufferSize = Math.max(minBufferSize, audioSampleRate * audioChannelCount);
+            // Use 2x the minimum buffer size for best reliability
+            int bufferSize = Math.max(minBufferSize * 2, audioSampleRate * audioChannelCount);
             audioRecord = new android.media.AudioRecord(
                     audioSource,
                     audioSampleRate,
@@ -806,6 +807,19 @@ public class GLRecordingPipeline {
             if (audioRecord.getState() != android.media.AudioRecord.STATE_INITIALIZED) {
                 throw new RuntimeException("AudioRecord initialization failed");
             }
+            // ----- Fix Start for this method(setupAudio)-----
+            boolean noiseSuppression = com.fadcam.SharedPreferencesManager.getInstance(context).isNoiseSuppressionEnabled();
+            if (noiseSuppression && android.media.audiofx.NoiseSuppressor.isAvailable()) {
+                android.media.audiofx.NoiseSuppressor ns = android.media.audiofx.NoiseSuppressor.create(audioRecord.getAudioSessionId());
+                if (ns != null) {
+                    Log.i(TAG, "NoiseSuppressor enabled for AudioRecord");
+                } else {
+                    Log.w(TAG, "Failed to enable NoiseSuppressor (create returned null)");
+                }
+            } else if (noiseSuppression) {
+                Log.w(TAG, "NoiseSuppressor requested but not available on this device");
+            }
+            // ----- Fix Ended for this method(setupAudio)-----
         } catch (Exception e) {
             Log.e(TAG, "Audio setup failed", e);
             audioRecordingEnabled = false;

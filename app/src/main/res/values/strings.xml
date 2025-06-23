@@ -552,5 +552,5 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_error_service">Camera service error</string>
     <string name="camera_error_unknown">Unknown camera error</string>
     <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
-
+    <string name="dialog_audio_noise_suppression_label">Noise Suppression</string>
 </resources>
