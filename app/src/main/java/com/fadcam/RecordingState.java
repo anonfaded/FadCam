@@ -6,5 +6,6 @@ public enum RecordingState implements Serializable {
     STARTING,
     IN_PROGRESS,
     PAUSED,
-    NONE
+    NONE,
+    WAITING_FOR_CAMERA
 }

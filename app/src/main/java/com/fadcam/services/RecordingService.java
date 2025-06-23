@@ -410,6 +410,9 @@ public class RecordingService extends Service {
     public void onDestroy() {
         Log.d(TAG, "onDestroy: Service being destroyed...");
         
+        // Stop any active reconnection attempts
+        stopReconnectionAttempts();
+        
         // Make sure dummy surface is released
         releaseDummyBackgroundSurface();
         
@@ -1812,6 +1815,7 @@ public class RecordingService extends Service {
         public void onOpened(@NonNull CameraDevice camera) {
             Log.d(TAG, "Camera " + camera.getId() + " opened.");
             cameraDevice = camera;
+            isCameraOpen = true;
 
             // ----- Fix Start for this method(onOpened_setup_recorder_before_session)-----
             // MediaRecorder setup is now handled by startRecording() for the initial start,
@@ -1821,38 +1825,221 @@ public class RecordingService extends Service {
             Log.d(TAG, "onOpened: Camera device opened. Proceeding to createCameraPreviewSession. MediaRecorder should be ready.");
             // ----- Fix Ended for this method(onOpened_setup_recorder_before_session)-----
 
-            // Start the capture session now that camera is open
-            createCameraPreviewSession();
+            // Check if we need to resume recording after camera reconnection
+            if (pendingCameraReconnect && recordingState == RecordingState.WAITING_FOR_CAMERA) {
+                Log.i(TAG, "Camera reconnected after interruption, attempting to resume recording");
+                stopReconnectionAttempts();
+                
+                // Show reconnection notification
+                NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                    .setContentTitle(getString(R.string.camera_reconnected_title))
+                    .setContentText(getString(R.string.video_recording_started)); // Change message to indicate new recording
+                NotificationManagerCompat.from(RecordingService.this).notify(NOTIFICATION_ID, builder.build());
+                
+                // Send broadcast to UI that camera reconnected
+                Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_RECONNECTED);
+                sendBroadcast(broadcastIntent);
+                
+                // We need to start a new recording since the previous MediaRecorder is no longer valid
+                pendingCameraReconnect = false;
+                
+                try {
+                    // Wait a moment for camera to stabilize
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        if (cameraDevice != null) {
+                            Log.d(TAG, "Camera reconnected, starting a new recording segment");
+                            
+                            // Setup a new MediaRecorder first
+                            try {
+                                setupMediaRecorder();
+                                
+                                // Then create a capture session with the new MediaRecorder
+                                createCameraPreviewSession();
+                                
+                                // Change state to STARTING to trigger recording start in handleSessionConfigured
+                                recordingState = RecordingState.STARTING;
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error setting up new recording after camera reconnection", e);
+                                stopRecording();
+                            }
+                        }
+                    }, 1000);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error preparing new recording after camera reconnection", e);
+                    // If we can't restart, revert to stopped state
+                    stopRecording();
+                }
+            } else {
+                // Normal camera opening - start the capture session
+                createCameraPreviewSession();
+            }
         }
+        
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
             Log.w(TAG, "Camera " + camera.getId() + " disconnected.");
-            // ----- Fix Start for this method(onDisconnected_handle_rollover_flag) -----
-            // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
-            // ----- Fix Ended for this method(onDisconnected_handle_rollover_flag) -----
-            releaseRecordingResources(); // Cleanup everything if camera disconnects
-            // ----- Fix Start for this method(onDisconnected)-----
-            if (recordingState == RecordingState.STARTING) {
-                recordingState = RecordingState.NONE;
+            String cameraId = camera.getId();
+            isCameraOpen = false;
+            
+            // Check if we were actively recording
+            if (isRecording() || isPaused()) {
+                Log.i(TAG, "Camera disconnected while recording. Will try to reconnect.");
+                
+                // Instead of pausing the MediaRecorder (which might fail if camera is already disconnected),
+                // we need to release it and recreate it when the camera becomes available again.
+                // First, save the file that we have so far, if we were recording
+                File tempFile = currentInternalTempFile;
+                Uri safUri = currentRecordingSafUri;
+                DocumentFile docFile = currentRecordingDocFile;
+                
+                boolean wasRecording = isRecording();
+                if (wasRecording) {
+                    try {
+                        // Note: We can't call pauseRecording() here as that depends on MediaRecorder
+                        // which requires a valid camera session
+                        Log.d(TAG, "Camera disconnected while recording. Saving current segment.");
+                        
+                        // Try to stop the recorder gently to preserve the file
+                        try {
+                            if (mediaRecorder != null) {
+                                mediaRecorder.stop();
+                                Log.d(TAG, "MediaRecorder stopped successfully after camera disconnection");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error stopping MediaRecorder after camera disconnection", e);
+                            // Continue with cleanup even if stop fails
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error handling recording during camera disconnection", e);
+                    }
+                }
+                
+                // Save MediaRecorder state for reconnection
+                recordingState = RecordingState.WAITING_FOR_CAMERA;
+                pendingCameraReconnect = true;
+                
+                // Show notification to user
+                NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                    .setContentTitle(getString(R.string.camera_interrupted_title))
+                    .setContentText(getString(R.string.camera_interrupted_description));
+                NotificationManagerCompat.from(RecordingService.this).notify(NOTIFICATION_ID, builder.build());
+                
+                // Send broadcast to UI that camera was interrupted
+                Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_INTERRUPTED);
+                sendBroadcast(broadcastIntent);
+                
+                // Close the camera device
+                try {
+                    if (captureSession != null) {
+                        captureSession.close();
+                        captureSession = null;
+                    }
+                    camera.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing camera after disconnection", e);
+                }
+                cameraDevice = null;
+                
+                // Start reconnection attempts
+                startCameraReconnectionAttempts(cameraId);
+            } else {
+                // Not recording, just clean up
+                // ----- Fix Start for this method(onDisconnected_handle_rollover_flag) -----
+                // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
+                // ----- Fix Ended for this method(onDisconnected_handle_rollover_flag) -----
+                releaseRecordingResources(); // Cleanup everything if camera disconnects
+                // ----- Fix Start for this method(onDisconnected)-----
+                if (recordingState == RecordingState.STARTING) {
+                    recordingState = RecordingState.NONE;
+                }
+                // ----- Fix Ended for this method(onDisconnected)-----
+                // Possibly notify UI or attempt restart? For now, just stop.
+                stopSelf();
             }
-            // ----- Fix Ended for this method(onDisconnected)-----
-            // Possibly notify UI or attempt restart? For now, just stop.
-            stopSelf();
         }
+        
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {
             Log.e(TAG, "Camera " + camera.getId() + " error: " + error);
-            // ----- Fix Start for this method(onError_handle_rollover_flag) -----
-            // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
-            // ----- Fix Ended for this method(onError_handle_rollover_flag) -----
-            releaseRecordingResources(); // Cleanup on error
-            // ----- Fix Start for this method(onError)-----
-            if (recordingState == RecordingState.STARTING) {
-                recordingState = RecordingState.NONE;
+            String cameraId = camera.getId();
+            isCameraOpen = false;
+            
+            // For camera in use errors, we want to try reconnecting
+            // Error code 1 is CameraDevice.CAMERA_IN_USE or CameraDevice.ERROR_CAMERA_IN_USE depending on API level
+            if (error == 1 && (isRecording() || isPaused())) {
+                Log.i(TAG, "Camera error: Camera in use by another app. Will try to reconnect.");
+                
+                // Instead of pausing the MediaRecorder (which might fail if camera is already disconnected),
+                // we need to release it and recreate it when the camera becomes available again.
+                // First, save the file that we have so far, if we were recording
+                File tempFile = currentInternalTempFile;
+                Uri safUri = currentRecordingSafUri;
+                DocumentFile docFile = currentRecordingDocFile;
+                
+                boolean wasRecording = isRecording();
+                if (wasRecording) {
+                    try {
+                        // Note: We can't call pauseRecording() here as that depends on MediaRecorder
+                        // which requires a valid camera session
+                        Log.d(TAG, "Camera error while recording. Saving current segment.");
+                        
+                        // Try to stop the recorder gently to preserve the file
+                        try {
+                            if (mediaRecorder != null) {
+                                mediaRecorder.stop();
+                                Log.d(TAG, "MediaRecorder stopped successfully after camera error");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error stopping MediaRecorder after camera error", e);
+                            // Continue with cleanup even if stop fails
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error handling recording during camera error", e);
+                    }
+                }
+                
+                // Save MediaRecorder state for reconnection
+                recordingState = RecordingState.WAITING_FOR_CAMERA;
+                pendingCameraReconnect = true;
+                
+                // Show notification to user
+                NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                    .setContentTitle(getString(R.string.camera_interrupted_title))
+                    .setContentText(getString(R.string.camera_interrupted_description));
+                NotificationManagerCompat.from(RecordingService.this).notify(NOTIFICATION_ID, builder.build());
+                
+                // Send broadcast to UI that camera was interrupted
+                Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_INTERRUPTED);
+                sendBroadcast(broadcastIntent);
+                
+                // Close the camera device
+                try {
+                    if (captureSession != null) {
+                        captureSession.close();
+                        captureSession = null;
+                    }
+                    camera.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing camera after error", e);
+                }
+                cameraDevice = null;
+                
+                // Start reconnection attempts
+                startCameraReconnectionAttempts(cameraId);
+            } else {
+                // For other errors, just clean up
+                // ----- Fix Start for this method(onError_handle_rollover_flag) -----
+                // isRolloverInProgressJustClosedDevice assignment removed as the flag is obsolete.
+                // ----- Fix Ended for this method(onError_handle_rollover_flag) -----
+                releaseRecordingResources(); // Cleanup on error
+                // ----- Fix Start for this method(onError)-----
+                if (recordingState == RecordingState.STARTING) {
+                    recordingState = RecordingState.NONE;
+                }
+                // ----- Fix Ended for this method(onError)-----
+                Toast.makeText(RecordingService.this,"Camera error: "+error, Toast.LENGTH_LONG).show();
+                stopSelf();
             }
-            // ----- Fix Ended for this method(onError)-----
-            Toast.makeText(RecordingService.this,"Camera error: "+error, Toast.LENGTH_LONG).show();
-            stopSelf();
         }
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
@@ -2895,7 +3082,7 @@ public class RecordingService extends Service {
      * Combined helper to check if recording is active or paused
      */
     public boolean isRecordingOrPaused() {
-        return isRecording() || isPaused();
+        return isRecording() || isPaused() || recordingState == RecordingState.WAITING_FOR_CAMERA;
     }
 
     // Combined status check
@@ -2917,7 +3104,8 @@ public class RecordingService extends Service {
         return ffmpegProcessingTaskCount.get() > 0 || 
                recordingState == RecordingState.IN_PROGRESS || 
                recordingState == RecordingState.PAUSED || 
-               recordingState == RecordingState.STARTING;
+               recordingState == RecordingState.STARTING ||
+               recordingState == RecordingState.WAITING_FOR_CAMERA;
     }
     // --- End Status Check ---
 
@@ -3783,4 +3971,136 @@ public class RecordingService extends Service {
         }
     }
 
+    // ----- Fix Start for camera interruption handling -----
+    // Flag to track if we need to automatically resume recording after camera interruption
+    private boolean pendingCameraReconnect = false;
+    private static final int MAX_RECONNECT_ATTEMPTS = 15; // Maximum number of reconnection attempts
+    private static final long RECONNECT_RETRY_DELAY_MS = 2000; // 2 seconds between reconnection attempts
+    private Handler reconnectHandler = new Handler(Looper.getMainLooper());
+    private int reconnectAttempts = 0;
+    private Runnable reconnectRunnable;
+// ----- Fix End for camera interruption handling -----
+
+    // ----- Fix Start for camera interruption handling -----
+    /**
+     * Starts periodic attempts to reconnect to the camera
+     * 
+     * @param cameraId The ID of the camera to reconnect to
+     */
+    private void startCameraReconnectionAttempts(String cameraId) {
+        Log.d(TAG, "Starting camera reconnection attempts");
+        reconnectAttempts = 0;
+        
+        // Stop any existing reconnection attempts
+        stopReconnectionAttempts();
+        
+        // Create new reconnection runnable
+        reconnectRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (recordingState == RecordingState.WAITING_FOR_CAMERA && 
+                    pendingCameraReconnect && 
+                    reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    
+                    reconnectAttempts++;
+                    Log.d(TAG, "Attempting to reconnect to camera (attempt " + reconnectAttempts + "/" + MAX_RECONNECT_ATTEMPTS + ")");
+                    
+                    // Update notification to show reconnection attempt
+                    NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                        .setContentTitle(getString(R.string.camera_interrupted_title))
+                        .setContentText(getString(R.string.camera_reconnection_attempts));
+                    NotificationManagerCompat.from(RecordingService.this).notify(NOTIFICATION_ID, builder.build());
+                    
+                    // Try to open the camera
+                    tryReconnectCamera(cameraId);
+                    
+                    // Schedule next attempt if we haven't reached the limit
+                    if (recordingState == RecordingState.WAITING_FOR_CAMERA && 
+                        pendingCameraReconnect && 
+                        reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        reconnectHandler.postDelayed(this, RECONNECT_RETRY_DELAY_MS);
+                    } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                        // We've reached the maximum number of attempts
+                        Log.w(TAG, "Maximum reconnection attempts reached. Stopping recording.");
+                        pendingCameraReconnect = false;
+                        recordingState = RecordingState.NONE;
+                        stopRecording(); // Give up and stop recording
+                    }
+                }
+            }
+        };
+        
+        // Start the first attempt immediately
+        reconnectHandler.post(reconnectRunnable);
+    }
+    
+    /**
+     * Attempts to reconnect to the camera
+     * 
+     * @param cameraId The ID of the camera to reconnect to
+     */
+    private void tryReconnectCamera(String cameraId) {
+        if (cameraManager == null) {
+            Log.e(TAG, "Cannot reconnect to camera - cameraManager is null");
+            return;
+        }
+        
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "Cannot reconnect to camera - permission denied");
+            return;
+        }
+        
+        // Ensure MediaRecorder is completely released
+        releaseMediaRecorderSafely();
+        
+        // Ensure existing camera resources are properly cleaned up
+        if (cameraDevice != null) {
+            try {
+                cameraDevice.close();
+            } catch (Exception e) {
+                Log.w(TAG, "Error closing existing camera device during reconnection", e);
+            }
+            cameraDevice = null;
+        }
+        
+        if (captureSession != null) {
+            try {
+                captureSession.close();
+            } catch (Exception e) {
+                Log.w(TAG, "Error closing existing capture session during reconnection", e);
+            }
+            captureSession = null;
+        }
+        
+        try {
+            // Check if the camera is available by attempting to open it
+            cameraManager.openCamera(cameraId, cameraStateCallback, backgroundHandler);
+        } catch (CameraAccessException e) {
+            // Camera is still not available
+            int reason = e.getReason();
+            if (reason == CameraAccessException.CAMERA_DISABLED || 
+                reason == 1) { // 1 is CAMERA_IN_USE
+                Log.d(TAG, "Camera still not available (reason: " + reason + ")");
+            } else {
+                Log.e(TAG, "Error reconnecting to camera (reason: " + reason + ")", e);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error reconnecting to camera", e);
+        }
+    }
+    
+    /**
+     * Stops any ongoing camera reconnection attempts
+     */
+    private void stopReconnectionAttempts() {
+        if (reconnectRunnable != null) {
+            reconnectHandler.removeCallbacks(reconnectRunnable);
+            Log.d(TAG, "Stopped camera reconnection attempts");
+        }
+        
+        // Reset related flags
+        pendingCameraReconnect = false;
+        reconnectAttempts = 0;
+    }
+    // ----- Fix End for camera interruption handling -----
 }

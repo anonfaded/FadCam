@@ -664,5 +664,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
         <item>Custom</item>
     </string-array>
     
+    <string name="camera_resource_cooldown">Camera resources are being released</string>
+    <string name="camera_interrupted_title">Recording paused (camera in use)</string>
+    <string name="camera_interrupted_description">Another app is using the camera. Recording will resume automatically when the camera is available.</string>
+    <string name="camera_reconnected_title">Camera reconnected</string>
+    <string name="camera_reconnected_description">Recording resumed automatically</string>
+    <string name="camera_reconnection_attempts">Attempting to reconnect to camera...</string>
 
 </resources>

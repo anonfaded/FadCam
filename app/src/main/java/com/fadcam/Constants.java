@@ -134,6 +134,10 @@ public abstract class Constants {
     // Add the location reinitialize intent action
     public static final String INTENT_ACTION_REINITIALIZE_LOCATION = "com.fadcam.INTENT_ACTION_REINITIALIZE_LOCATION";
     
+    // Camera interruption broadcasts
+    public static final String BROADCAST_ON_CAMERA_INTERRUPTED = "com.fadcam.ON_CAMERA_INTERRUPTED";
+    public static final String BROADCAST_ON_CAMERA_RECONNECTED = "com.fadcam.ON_CAMERA_RECONNECTED";
+    
     // ----- App Icon Preference -----
     public static final String PREF_APP_ICON = "app_icon";
     public static final String APP_ICON_DEFAULT = "default"; // Original icon
