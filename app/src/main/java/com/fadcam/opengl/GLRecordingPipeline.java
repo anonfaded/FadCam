@@ -77,16 +77,33 @@ public class GLRecordingPipeline {
     private int encoderHeight;
     private int deviceOrientation = android.view.Surface.ROTATION_0;
 
+    // Audio recording/encoding fields
+    private android.media.AudioRecord audioRecord;
+    private MediaCodec audioEncoder;
+    private Thread audioThread;
+    private int audioTrackIndex = -1;
+    private boolean audioEncoderStarted = false;
+    private boolean audioRecordingEnabled = false;
+    private boolean audioThreadRunning = false;
+    private final Object audioLock = new Object();
+    // Audio settings (always set from preferences or app defaults)
+    private int audioSource;
+    private int audioSampleRate;
+    private int audioBitrate;
+    private int audioChannelCount;
+
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
         this.previewSurface = previewSurface;
+        initAudioSettings();
     }
 
     // Updated constructor for FileDescriptor (SAF)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFd, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
         this.previewSurface = previewSurface;
+        initAudioSettings();
     }
 
     // Updated constructor for file path (internal storage)
@@ -117,6 +134,7 @@ public class GLRecordingPipeline {
         Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " + 
               videoWidth + "x" + videoHeight + " in " + orientation + 
               " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
+        initAudioSettings();
     }
 
     // Updated constructor for FileDescriptor (SAF)
@@ -147,6 +165,7 @@ public class GLRecordingPipeline {
         Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " + 
               videoWidth + "x" + videoHeight + " in " + orientation + 
               " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
+        initAudioSettings();
     }
 
     /**
@@ -253,7 +272,12 @@ public class GLRecordingPipeline {
     public void startRecording() {
         try {
             if (!isRecording) {
+                initAudioSettings();
                 isRecording = true;
+                setupAudio();
+                if (audioRecordingEnabled) {
+                    startAudioThread();
+                }
                 startRenderLoop();
             }
         } catch (Exception e) {
@@ -372,8 +396,15 @@ public class GLRecordingPipeline {
                     }
                     MediaFormat newFormat = videoEncoder.getOutputFormat();
                     int videoTrackIndex = mediaMuxer.addTrack(newFormat);
-                    mediaMuxer.start();
-                    muxerStarted = true;
+                    // Wait for audio track if enabled
+                    if (audioRecordingEnabled && audioTrackIndex == -1 && audioEncoder != null) {
+                        // Wait for audio format to be ready
+                        drainAudioEncoder();
+                    }
+                    if (!muxerStarted && (!audioRecordingEnabled || audioTrackIndex != -1)) {
+                        mediaMuxer.start();
+                        muxerStarted = true;
+                    }
                 } else if (outputBufferIndex >= 0) {
                     ByteBuffer encodedData = videoEncoder.getOutputBuffer(outputBufferIndex);
                     if (encodedData == null) {
@@ -392,6 +423,10 @@ public class GLRecordingPipeline {
                         break;
                     }
                 }
+            }
+            // Drain audio encoder regularly
+            if (audioRecordingEnabled) {
+                drainAudioEncoder();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error draining encoder", e);
@@ -534,6 +569,29 @@ public class GLRecordingPipeline {
         handler = null;
         previewSurface = null;
         cameraInputSurface = null;
+        
+        // Clean up audio resources
+        audioThreadRunning = false;
+        if (audioThread != null) {
+            try { audioThread.join(300); } catch (Exception ignored) {}
+            audioThread = null;
+        }
+        if (audioEncoder != null) {
+            try {
+                audioEncoder.stop();
+                audioEncoder.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping audio encoder", e);
+            } finally {
+                audioEncoder = null;
+            }
+        }
+        if (audioRecord != null) {
+            try { audioRecord.release(); } catch (Exception ignored) {}
+            audioRecord = null;
+        }
+        audioTrackIndex = -1;
+        audioEncoderStarted = false;
         
         Log.d(TAG, "GLRecordingPipeline stopped and released.");
     }
@@ -685,6 +743,157 @@ public class GLRecordingPipeline {
             Log.w("DEBUG_COMPARISON", "Preview and recording aspect ratios don't match!");
         } else {
             Log.d("DEBUG_COMPARISON", "Preview and recording aspect ratios match.");
+        }
+    }
+
+    /**
+     * Initializes audio settings from SharedPreferencesManager.
+     * This should be called before starting audio recording/encoding.
+     */
+    private void initAudioSettings() {
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
+        this.audioRecordingEnabled = prefs.isRecordAudioEnabled();
+        this.audioBitrate = prefs.getAudioBitrate();
+        this.audioSampleRate = prefs.getAudioSamplingRate();
+        // Always use stereo (2 channels) for best quality
+        this.audioChannelCount = 2;
+        // Audio source selection logic (default to MIC)
+        String audioInputSource = null;
+        try {
+            audioInputSource = prefs.getAudioInputSource();
+        } catch (Exception ignored) {}
+        if (audioInputSource != null && audioInputSource.equals(com.fadcam.SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED)) {
+            // Wired mic: use CAMCORDER if available, else fallback to MIC
+            this.audioSource = android.media.MediaRecorder.AudioSource.CAMCORDER;
+        } else {
+            this.audioSource = android.media.MediaRecorder.AudioSource.MIC;
+        }
+    }
+
+    /**
+     * Sets up the audio encoder and AudioRecord for AAC audio capture.
+     * Call before starting audio thread.
+     */
+    private void setupAudio() {
+        if (!audioRecordingEnabled) return;
+        try {
+            // Configure MediaCodec for AAC
+            MediaFormat audioFormat = MediaFormat.createAudioFormat(
+                    android.media.MediaFormat.MIMETYPE_AUDIO_AAC,
+                    audioSampleRate,
+                    audioChannelCount);
+            audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+            audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, audioBitrate);
+            audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384);
+            audioEncoder = MediaCodec.createEncoderByType(android.media.MediaFormat.MIMETYPE_AUDIO_AAC);
+            audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            audioEncoder.start();
+            audioEncoderStarted = true;
+
+            // Setup AudioRecord
+            int channelConfig = audioChannelCount == 2 ? android.media.AudioFormat.CHANNEL_IN_STEREO : android.media.AudioFormat.CHANNEL_IN_MONO;
+            int minBufferSize = android.media.AudioRecord.getMinBufferSize(
+                    audioSampleRate,
+                    channelConfig,
+                    android.media.AudioFormat.ENCODING_PCM_16BIT);
+            int bufferSize = Math.max(minBufferSize, audioSampleRate * audioChannelCount);
+            audioRecord = new android.media.AudioRecord(
+                    audioSource,
+                    audioSampleRate,
+                    channelConfig,
+                    android.media.AudioFormat.ENCODING_PCM_16BIT,
+                    bufferSize);
+            if (audioRecord.getState() != android.media.AudioRecord.STATE_INITIALIZED) {
+                throw new RuntimeException("AudioRecord initialization failed");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Audio setup failed", e);
+            audioRecordingEnabled = false;
+        }
+    }
+
+    /**
+     * Starts the audio thread to read PCM and feed the encoder.
+     */
+    private void startAudioThread() {
+        if (!audioRecordingEnabled || audioThreadRunning) return;
+        audioThreadRunning = true;
+        audioThread = new Thread(() -> {
+            try {
+                audioRecord.startRecording();
+                ByteBuffer inputBuffer = ByteBuffer.allocateDirect(4096);
+                while (audioThreadRunning) {
+                    int read = audioRecord.read(inputBuffer, inputBuffer.capacity());
+                    if (read > 0) {
+                        int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
+                        if (inputBufferIndex >= 0) {
+                            ByteBuffer codecInput = audioEncoder.getInputBuffer(inputBufferIndex);
+                            codecInput.clear();
+                            inputBuffer.rewind();
+                            codecInput.put(inputBuffer.array(), 0, read);
+                            long pts = System.nanoTime() / 1000L;
+                            audioEncoder.queueInputBuffer(inputBufferIndex, 0, read, pts, 0);
+                        }
+                    }
+                }
+                // Signal EOS
+                int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
+                if (inputBufferIndex >= 0) {
+                    audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, System.nanoTime() / 1000L, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Audio thread error", e);
+            } finally {
+                try { audioRecord.stop(); } catch (Exception ignored) {}
+                try { audioRecord.release(); } catch (Exception ignored) {}
+            }
+        }, "AudioThread");
+        audioThread.start();
+    }
+
+    /**
+     * Drains the audio encoder and writes samples to the muxer.
+     * Call this regularly from the render loop or a timer.
+     */
+    private void drainAudioEncoder() {
+        if (!audioRecordingEnabled || audioEncoder == null || (!muxerStarted && mediaMuxer == null)) return;
+        MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+        try {
+            while (true) {
+                int outputBufferIndex = audioEncoder.dequeueOutputBuffer(bufferInfo, 0);
+                if (outputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                    break;
+                } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    if (audioTrackIndex != -1) {
+                        throw new IllegalStateException("Audio format changed twice");
+                    }
+                    MediaFormat newFormat = audioEncoder.getOutputFormat();
+                    audioTrackIndex = mediaMuxer.addTrack(newFormat);
+                    if (!muxerStarted && videoEncoder != null) {
+                        // Wait for video track to be added before starting muxer
+                        // (muxerStarted will be set in video drainEncoder)
+                    }
+                } else if (outputBufferIndex >= 0) {
+                    ByteBuffer encodedData = audioEncoder.getOutputBuffer(outputBufferIndex);
+                    if (encodedData == null) {
+                        throw new RuntimeException("audioEncoderOutputBuffer " + outputBufferIndex + " was null");
+                    }
+                    if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        bufferInfo.size = 0;
+                    }
+                    if (bufferInfo.size != 0 && muxerStarted && audioTrackIndex != -1) {
+                        encodedData.position(bufferInfo.offset);
+                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                        mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
+                    }
+                    audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
+                    if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error draining audio encoder", e);
         }
     }
 } 
