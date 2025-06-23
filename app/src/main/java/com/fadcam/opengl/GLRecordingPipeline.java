@@ -42,7 +42,7 @@ public class GLRecordingPipeline {
     private Handler handler;
     private final int videoWidth;
     private final int videoHeight;
-    private final int videoBitrate;
+    private int videoBitrate;
     private final int videoFramerate;
     private final String outputFilePath;
     private final FileDescriptor outputFd;
@@ -93,26 +93,25 @@ public class GLRecordingPipeline {
     private int audioChannelCount;
 
     // Updated constructor for file path (internal storage)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
-        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
+        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
         this.previewSurface = previewSurface;
         initAudioSettings();
     }
 
     // Updated constructor for FileDescriptor (SAF)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
-        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFd, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
+        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFd, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
         this.previewSurface = previewSurface;
         initAudioSettings();
     }
 
     // Updated constructor for file path (internal storage)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation) {
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation) {
         this.context = context;
         this.watermarkInfoProvider = watermarkInfoProvider;
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
-        this.videoBitrate = videoBitrate;
         this.videoFramerate = videoFramerate;
         this.outputFilePath = outputFilePath;
         this.outputFd = null;
@@ -123,14 +122,13 @@ public class GLRecordingPipeline {
         this.currentOutputFd = null;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
-        
+        // Fetch video bitrate from SharedPreferencesManager
+        this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
         // Initialize surface dimensions with video dimensions as default
         this.mSurfaceWidth = videoWidth;
         this.mSurfaceHeight = videoHeight;
-        
         // Calculate target aspect ratio based on the fixed dimensions
         this.targetAspectRatio = (float) videoWidth / videoHeight;
-        
         Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " + 
               videoWidth + "x" + videoHeight + " in " + orientation + 
               " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
@@ -138,12 +136,11 @@ public class GLRecordingPipeline {
     }
 
     // Updated constructor for FileDescriptor (SAF)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation) {
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation) {
         this.context = context;
         this.watermarkInfoProvider = watermarkInfoProvider;
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
-        this.videoBitrate = videoBitrate;
         this.videoFramerate = videoFramerate;
         this.outputFilePath = null;
         this.outputFd = outputFd;
@@ -154,14 +151,13 @@ public class GLRecordingPipeline {
         this.currentOutputFd = outputFd;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
-        
+        // Fetch video bitrate from SharedPreferencesManager
+        this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
         // Initialize surface dimensions with video dimensions as default
         this.mSurfaceWidth = videoWidth;
         this.mSurfaceHeight = videoHeight;
-        
         // Calculate target aspect ratio based on the fixed dimensions
         this.targetAspectRatio = (float) videoWidth / videoHeight;
-        
         Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " + 
               videoWidth + "x" + videoHeight + " in " + orientation + 
               " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);

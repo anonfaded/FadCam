@@ -3119,7 +3119,7 @@ public class RecordingService extends Service {
                         return;
                     }
                     Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
-                    glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, pfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+                    glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, pfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
                 } catch (Exception e) {
                     Log.e(TAG, "Exception opening PFD for SAF URI", e);
                     Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
@@ -3129,7 +3129,7 @@ public class RecordingService extends Service {
             } else {
                 File outputFile = getFinalOutputFile();
                 Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
-                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
             }
             
             Log.d(TAG, "Preparing GLRecordingPipeline surfaces");

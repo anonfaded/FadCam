@@ -516,4 +516,18 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(PREF_AUDIO_NOISE_SUPPRESSION, enabled).apply();
     }
 
+    /**
+     * Returns the current video bitrate in bps, using custom or default as set in preferences.
+     */
+    public int getCurrentBitrate() {
+        if (sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
+            return sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored as kbps, use bps
+        } else {
+            // Estimate based on resolution and framerate
+            android.util.Size resolution = getCameraResolution();
+            int frameRate = getVideoFrameRate();
+            return com.fadcam.Utils.estimateBitrate(resolution, frameRate);
+        }
+    }
+
 }
