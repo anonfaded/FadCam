@@ -238,6 +238,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [52pojie.cn](https://www.52pojie.cn/thread-2038164-1-1.html)
 - [anfensi.com](https://www.anfensi.com/down/429430.html)
 - [fy6b.com](https://www.fy6b.com/fadcam.html)
+- [xatakandroid.com](https://www.xatakandroid.com/aplicaciones-android/esta-app-convierte-tu-movil-camara-discreta-graba-video-encender-pantalla)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
