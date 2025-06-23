@@ -93,6 +93,10 @@ public class GLWatermarkRenderer {
     private int mSurfaceWidth = 0;
     private int mSurfaceHeight = 0;
 
+    // Add fields for encoder dimensions
+    private int encoderWidth;
+    private int encoderHeight;
+
     public interface OnFrameAvailableListener {
         void onFrameAvailable();
     }
@@ -100,6 +104,13 @@ public class GLWatermarkRenderer {
 
     // Add this field to track the FullFrameRect instance
     private com.fadcam.opengl.grafika.FullFrameRect mFullFrameBlit = null;
+
+    // Add a field for user orientation setting
+    private String userOrientationSetting = "portrait";
+    // Add a setter for user orientation
+    public void setUserOrientationSetting(String orientation) {
+        this.userOrientationSetting = orientation;
+    }
 
     public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation, int videoWidth, int videoHeight) {
         this.context = context;
@@ -151,35 +162,51 @@ public class GLWatermarkRenderer {
                 }
                 frameAvailable = false;
             }
-            
+            float[] texMatrix = new float[16];
             cameraSurfaceTexture.updateTexImage();
             cameraSurfaceTexture.getTransformMatrix(texMatrix);
-            
             updateMatrices(); // Recalculate matrices on every frame
-            
             EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, cameraSurfaceTexture.getTimestamp());
-            
-            // --- Render to Recording Surface ---
-            drawOESTexture(recordingMvpMatrix, texMatrix);
+            boolean isLandscape = false;
+            // Determine if current orientation is landscape
+            // Prefer userOrientationSetting if available, else use deviceOrientation
+            if (userOrientationSetting != null) {
+                isLandscape = "landscape".equalsIgnoreCase(userOrientationSetting);
+            } else {
+                // Fallback: deviceOrientation 90 or 270 is landscape
+                isLandscape = (deviceOrientation == 1 || deviceOrientation == 3); // Surface.ROTATION_90 or ROTATION_270
+            }
+            float[] encoderTexMatrix;
+            if (isLandscape) {
+                // ----- Apply vertical flip for landscape only -----
+                float[] fixedTexMatrix = new float[16];
+                Matrix.setIdentityM(fixedTexMatrix, 0);
+                Matrix.scaleM(fixedTexMatrix, 0, 1f, -1f, 1f);
+                Matrix.translateM(fixedTexMatrix, 0, 0f, -1f, 0f);
+                Log.d("FAD-FINAL", "Landscape: Applying vertical flip to correct orientation");
+                encoderTexMatrix = fixedTexMatrix;
+            } else {
+                // ----- Portrait: use original texMatrix -----
+                Log.d("FAD-FINAL", "Portrait: Using original texMatrix (no flip)");
+                encoderTexMatrix = texMatrix;
+            }
+            drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
             drawWatermark();
             EGL14.eglSwapBuffers(eglDisplay, eglSurface);
-
-            // --- Render to Preview Surface ---
-            renderToPreview();
+            // Preview draw
+            renderToPreviewWithMatrix(texMatrix);
         }
     }
 
-    public void renderToPreview() {
+    // Add a helper to draw preview with a given texMatrix
+    private void renderToPreviewWithMatrix(float[] texMatrix) {
         synchronized (previewRenderLock) {
             if (!initialized || currentPreviewSurface == null || !currentPreviewSurface.isValid() || previewEglDisplay == EGL14.EGL_NO_DISPLAY) return;
             if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
                 Log.w(TAG, "renderToPreview: eglMakeCurrent failed");
                 return;
             }
-            
-            // Texture is already updated from renderFrame(), just draw with the preview matrix.
             drawOESTexture(previewMvpMatrix, texMatrix);
-            
             EGL14.eglSwapBuffers(previewEglDisplay, previewEglSurface);
         }
     }
@@ -486,67 +513,55 @@ public class GLWatermarkRenderer {
         }
     }
 
+    // Add a setter for encoder dimensions
+    public void setEncoderDimensions(int width, int height) {
+        this.encoderWidth = width;
+        this.encoderHeight = height;
+    }
+
     private void updateMatrices() {
-        // Calculate correct rotation based on sensor orientation and device orientation
         int rotationDegrees = getRequiredRotation();
         Log.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees + 
               ", deviceOrientation=" + deviceOrientation +
               ", sensorOrientation=" + sensorOrientation);
+        Log.d("FAD-MATRIX", "Applying rotation: " + rotationDegrees);
 
-        // Recording matrix: only applies rotation to make the video upright
+        // ----- Fix Start: Use required rotation for encoder output -----
         Matrix.setIdentityM(recordingMvpMatrix, 0);
-        Matrix.rotateM(recordingMvpMatrix, 0, rotationDegrees, 0, 0, 1);
+        Matrix.rotateM(recordingMvpMatrix, 0, rotationDegrees, 0f, 0f, 1f);
+        // ----- Fix End: Use required rotation for encoder output -----
 
         // Preview matrix: handles rotation, mirroring, and aspect ratio
         Matrix.setIdentityM(previewMvpMatrix, 0);
         Matrix.rotateM(previewMvpMatrix, 0, rotationDegrees, 0, 0, 1);
-        
-        // Mirror front camera preview properly (horizontally)
         if (isFrontCamera()) {
             Matrix.scaleM(previewMvpMatrix, 0, -1, 1, 1);
         }
-
         // Properly handle aspect ratio to avoid stretching/squeezing
         if (mSurfaceWidth <= 0 || mSurfaceHeight <= 0) {
             // Can't calculate aspect ratio yet, return early
             return;
         }
 
-        // CRITICAL: For Grafika-style correct preview rendering, we need to:
-        // 1. Determine the orientation-aware dimensions
-        // 2. Calculate the correct aspect ratio
-        // 3. Use letterboxing/pillarboxing to maintain the aspect ratio
-        
-        boolean isPortrait = (rotationDegrees % 180 != 0);
-        int orientedVideoWidth, orientedVideoHeight;
-        
-        if (isPortrait) {
-            // In portrait mode, swap the video dimensions
-            orientedVideoWidth = videoHeight;
-            orientedVideoHeight = videoWidth;
-            Log.d(TAG, "Portrait orientation - swapping dimensions for calculation");
-        } else {
-            orientedVideoWidth = videoWidth;
-            orientedVideoHeight = videoHeight;
-            Log.d(TAG, "Landscape orientation - using original dimensions");
-        }
-        
-        // Calculate correct aspect ratios
+        // Use actual encoder dimensions for aspect ratio
+        int orientedVideoWidth = encoderWidth > 0 ? encoderWidth : videoWidth;
+        int orientedVideoHeight = encoderHeight > 0 ? encoderHeight : videoHeight;
+
         float videoAspectRatio = (float) orientedVideoWidth / orientedVideoHeight;
         float previewAspectRatio = (float) mSurfaceWidth / mSurfaceHeight;
-        
+
         Log.d(TAG, "Aspect ratios - video: " + videoAspectRatio + 
               ", preview: " + previewAspectRatio +
               ", orientedVideoWidth: " + orientedVideoWidth +
               ", orientedVideoHeight: " + orientedVideoHeight +
               ", surfaceWidth: " + mSurfaceWidth +
-              ", surfaceHeight: " + mSurfaceHeight +
-              ", isPortrait: " + isPortrait);
+              ", surfaceHeight: " + mSurfaceHeight);
+        Log.d("FAD-MATRIX", "Surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
+        Log.d("FAD-MATRIX", "Encoder: " + orientedVideoWidth + "x" + orientedVideoHeight);
 
-        // Apply Grafika-style letterbox/pillarbox to maintain aspect ratio
         float scaleX = 1.0f;
         float scaleY = 1.0f;
-        
+
         if (Math.abs(previewAspectRatio - videoAspectRatio) > 0.01f) {
             if (previewAspectRatio > videoAspectRatio) {
                 // Preview is wider than video: pillarbox (scale X down)
@@ -558,9 +573,9 @@ public class GLWatermarkRenderer {
                 Log.d(TAG, "Applying letterbox with scaleY = " + scaleY);
             }
         }
-        
-        // Apply the scaling to maintain aspect ratio (this is the Grafika approach)
+        Log.d("FAD-MATRIX", String.format("ScaleX: %.2f  ScaleY: %.2f", scaleX, scaleY));
         Matrix.scaleM(previewMvpMatrix, 0, scaleX, scaleY, 1.0f);
+        Log.d("FAD-MATRIX", "recordingMvpMatrix: " + java.util.Arrays.toString(recordingMvpMatrix));
     }
 
     private int getDisplayRotation() {
@@ -574,15 +589,14 @@ public class GLWatermarkRenderer {
     }
 
     private int getRequiredRotation() {
-        // Calculate rotation correctly based on sensor orientation and device orientation
-        int displayRotation = getDisplayRotation();
-        
+        // ----- Fix Start: Standard camera app rotation logic -----
+        int rotation = (sensorOrientation - deviceOrientation + 360) % 360;
         if (isFrontCamera()) {
-            int rotation = (sensorOrientation + displayRotation) % 360;
-            return (360 - rotation) % 360;  // Compensate for front camera mirroring
-        } else {
-            return (sensorOrientation - displayRotation + 360) % 360;
+            rotation = (360 - rotation) % 360;
         }
+        Log.d("FAD-ROT", "Device: " + deviceOrientation + " Sensor: " + sensorOrientation + " ➜ Rotation = " + rotation);
+        return rotation;
+        // ----- Fix End: Standard camera app rotation logic -----
     }
 
     private boolean isFrontCamera() {

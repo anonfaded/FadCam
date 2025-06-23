@@ -73,6 +73,10 @@ public class GLRecordingPipeline {
     private FileDescriptor currentOutputFd;
     private boolean muxerStarted = false;
 
+    private int encoderWidth;
+    private int encoderHeight;
+    private int deviceOrientation = android.view.Surface.ROTATION_0;
+
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoBitrate, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoBitrate, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
@@ -174,8 +178,7 @@ public class GLRecordingPipeline {
             if (glRenderer == null) {
                 Log.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation, videoWidth, videoHeight);
-                
-                // Initialize the renderer's EGL context
+                glRenderer.setUserOrientationSetting(orientation);
                 Log.d(TAG, "Initializing renderer EGL context");
                 glRenderer.initializeEGL();
                 
@@ -260,10 +263,15 @@ public class GLRecordingPipeline {
     }
 
     private void setupEncoder() throws IOException {
-        boolean isPortrait = "portrait".equalsIgnoreCase(orientation) && videoWidth > videoHeight;
-        int encoderWidth = isPortrait ? videoHeight : videoWidth;
-        int encoderHeight = isPortrait ? videoWidth : videoHeight;
-
+        // Use app's orientation setting, not device rotation
+        boolean appWantsPortrait = "portrait".equalsIgnoreCase(orientation);
+        boolean isSensorPortrait = videoHeight > videoWidth;
+        boolean needsSwap = appWantsPortrait != isSensorPortrait;
+        encoderWidth = needsSwap ? videoHeight : videoWidth;
+        encoderHeight = needsSwap ? videoWidth : videoHeight;
+        Log.d("FAD-ENCODER", "Orientation setting: " + orientation);
+        Log.d("FAD-ENCODER", "Original resolution: " + videoWidth + "x" + videoHeight);
+        Log.d("FAD-ENCODER", "Final encoder resolution: " + encoderWidth + "x" + encoderHeight);
         MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, encoderWidth, encoderHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
@@ -300,6 +308,9 @@ public class GLRecordingPipeline {
             mediaMuxer = new MediaMuxer(currentOutputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         }
         muxerStarted = false;
+        if (glRenderer != null) {
+            glRenderer.setEncoderDimensions(encoderWidth, encoderHeight);
+        }
     }
 
     private void startRenderLoop() {
@@ -573,6 +584,7 @@ public class GLRecordingPipeline {
      * @param deviceOrientation The current orientation of the device (e.g., Surface.ROTATION_0).
      */
     public void setDeviceOrientation(int deviceOrientation) {
+        this.deviceOrientation = deviceOrientation;
         if (glRenderer != null) {
             glRenderer.setDeviceOrientation(deviceOrientation);
         }
