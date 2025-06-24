@@ -22,6 +22,7 @@ public class OnboardingHumanFragment extends Fragment {
     private MaterialButton continueButton;
     private ImageView icon1, icon2;
     private TextView label1, label2;
+    private TextView titleText, descText;
 
     @Nullable
     @Override
@@ -35,6 +36,8 @@ public class OnboardingHumanFragment extends Fragment {
         label1 = v.findViewById(R.id.checkbox_label_1);
         label2 = v.findViewById(R.id.checkbox_label_2);
         continueButton = v.findViewById(R.id.btn_human_continue);
+        titleText = v.findViewById(R.id.tvHumanTitle);
+        descText = v.findViewById(R.id.tvHumanDesc);
         
         // Find the PalestineRainView and prevent it from intercepting touch events
         View palestineRainView = v.findViewById(R.id.palestineRainView);
@@ -105,5 +108,42 @@ public class OnboardingHumanFragment extends Fragment {
         });
 
         return v;
+    }
+    
+    /**
+     * Called to refresh language-specific UI elements when the language has changed
+     * without recreating the entire fragment
+     */
+    public void refreshLanguage() {
+        if (titleText != null) {
+            titleText.setText(R.string.onboarding_human_title);
+        }
+        if (descText != null) {
+            descText.setText(R.string.onboarding_human_desc);
+        }
+        if (label1 != null) {
+            label1.setText(R.string.onboarding_human_checkbox1);
+        }
+        if (label2 != null) {
+            label2.setText(R.string.onboarding_human_checkbox2);
+        }
+        if (continueButton != null) {
+            continueButton.setText(R.string.onboarding_human_button);
+            
+            // Important: Force LTR layout direction for the button
+            continueButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            continueButton.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            
+            // Reset button state to match current checkbox status
+            continueButton.setEnabled(checked1 && checked2);
+            continueButton.setAlpha((checked1 && checked2) ? 1f : 0.6f);
+        }
+        
+        // Force layout refresh to fix any RTL/LTR issues
+        View view = getView();
+        if (view != null) {
+            view.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            view.requestLayout();
+        }
     }
 } 

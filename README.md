@@ -2,10 +2,10 @@
     
 <!-- <img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >  this is the old banner -->
 
-<img src="https://github.com/user-attachments/assets/0539bee3-5d70-4486-adbd-b69c9420a19f" style="width: 900px; height: auto;" >
-
+<img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/tvBanner.jpg" style="width: 900px; height: auto;" >
 
 <!-- https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365 -->
+
 
 <br>
 </div>
@@ -23,12 +23,13 @@
     
 <img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
 
-# FadCam
+# `>_` FadCam
 
 **Seamless background video recorder for Android – ad-free and open-source, with customizable options.**
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 [![SourceForge Downloads](https://img.shields.io/sourceforge/dt/fadcam.svg?label=SourceForge%20Downloads&color=red)](https://sourceforge.net/projects/fadcam/files/latest/download)
+[<img src="https://shields.rbtlog.dev/simple/com.fadcam" alt="badge">](https://shields.rbtlog.dev/com.fadcam)
 
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
 
@@ -92,7 +93,7 @@
 
 ---
 
-## Purpose
+## `>_` Purpose
 
 FadCam is developed with the goal of providing a powerful, privacy-focused tool for recording videos in the background on Android devices. This app is intended for **ethical use** only, such as personal security, monitoring, or recording important events privately and discreetly.
 
@@ -105,17 +106,23 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 > **Misuse Disclaimer:** <br>
 > The developers of FadCam do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
 
-## 📱 Screenshots
+## `>_` 📱 Screenshots
 
 <div align="center">
 <!--     <img src="https://github.com/anonfaded/FadCam/assets/124708903/4a93c111-fc67-4d75-94b1-fa4e01822998" style="width: 50px; height: auto;" >
     <br>
     <em>apk icon</em> -->
     <br><br>
-    <img src="https://github.com/user-attachments/assets/f356225a-8b86-4a17-8414-fb24b6588a87" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/5062be4c-ccb6-471e-bbaf-f0ab0b5ea26b" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/168fab68-f4fc-45a2-8bba-b8126d572d00" style="width: 200px; height: auto;" >
-    <img src="https://github.com/user-attachments/assets/05826459-c1bc-4add-96b2-24afb3c0b7cb" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/8.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/9.jpg" style="width: 200px; height: auto;" >
+    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/10.jpg" style="width: 200px; height: auto;" >
  <br>
 
 <!--     <br> -->
@@ -131,12 +138,12 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
         <img src="/img/5.png" style="width: 700px; height: auto;" >
     </details> -->
 
-## Featured On
+## `>_` Featured On
 
-### Featured Audio Podcast
+### `>_` Featured Audio Podcast
 - [closednetwork.io](https://closednetwork.io/podcast/episode-42-deepseek-ai-oh-my/) at `1:15:22` timestamp
 
-### Featured Videos
+### `>_` Featured Videos
 - [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
 - [HowToMen 2nd feature :) ](https://youtu.be/3pOoU5JjfnE?si=JMwoHfGyocXuvkC7&t=520)
 - [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
@@ -166,12 +173,13 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Tech OverWatch on TikTok](https://www.tiktok.com/@tech_overwatch/video/7506821012655181062)
 - [tech_overwatch on Insta](https://www.instagram.com/reel/DJ6Nn5uNHxq/)
 - [Wuincy Tran on YouTube](https://youtu.be/gLY1SstSwgo?si=_h3eyb0Zh3oo14jK)
+- [El Androide Feliz on YouTube](https://youtu.be/5SCl5X_miTc?si=E44ej0ZfPGTz3HfR)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
 <!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
 <!-- [Police recording with FadCam](https://www.facebook.com/joseph.anthony.emaikwu/videos/fadcam/3206531569486276/) -->
 
-### Articles and Listings
+### `>_` Articles and Listings
 - [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
 - [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
 - [appteka.com](https://appteka.store/app/bcdr185175)
@@ -226,11 +234,16 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [ababtools.com](https://ababtools.com/?post=5528)
 - [0714.com](http://www.0714.com/soft/59753.htm)
 - [yeeach.com](https://yeeach.com/1685/%E5%BC%80%E6%BA%90android%E5%90%8E%E5%8F%B0%E5%BD%95%E9%9F%B3-%E5%BD%95%E5%83%8F%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB/)
+- [codegith.com](https://codegith.com/fadcam-open-source-background-video-recorder-for-android/)
+- [52pojie.cn](https://www.52pojie.cn/thread-2038164-1-1.html)
+- [anfensi.com](https://www.anfensi.com/down/429430.html)
+- [fy6b.com](https://www.fy6b.com/fadcam.html)
+- [xatakandroid.com](https://www.xatakandroid.com/aplicaciones-android/esta-app-convierte-tu-movil-camara-discreta-graba-video-encender-pantalla)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
 
-## ⬇️ Download
+## `>_` ⬇️ Download
 
 Download the latest `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
 
@@ -259,46 +272,55 @@ Or:
 - 10k -> 21 Aug 2024 (6th week)
 - 15k -> 8 Sep 2024 (9th week) -->
 
-## Features:
+## `>_` Features:
 
-- **Background Video Recording:** Record with screen off.
-- **Material Design UI:** Modern and easy-to-use.
-- **No ads:** Completely ad-free.
-- **Internal Storage Options:** Save videos internally or to the gallery.
-- **Inbuilt Videoplayer** ExoPlayer integration; play videos in-app.
-- **Dynamic Watermarks:** Timestamp, logo, location options.
-- **Real-time Storage Updates:** Inspect remaining storage with estimated recording times.
-- **Video Quality Selection:** SD, HD, FHD options.
-- **Video Renaming:** Rename videos in-app.
-- **Location Data in Watermarks:** Precise location in watermarks.
-- **Long Press Haptic Feedback:** Haptic feedback with animations.
-- **Date and Time Widget:** Customizable widget.
+- **Background Video Recording:** Record discreetly even with the screen off.
+- **Modern UI:** Clean, Material-inspired design with bottom sheet actions.
+- **Audio Controls:** Toggle audio, choose bitrate, and select mic input (wired/Bluetooth).
+- **Video Settings:** Configure orientation, bitrate, and fixed framerate (60/90fps supported).
+- **Auto Video Splitting:** Automatically split large recordings based on size.
+- **Geotagging:** Embed location data into video metadata.
+- **Wide-Angle Detection:** Auto-detect wide-angle camera support.
+- **Sorting & Filters:** Sort videos by date, size, and more.
+- **Enhanced Thumbnails:** Show index, duration, and file size.
+- **Trash Bin:** Restore deleted videos or auto-delete after a set time.
+- **Select All in Trash:** Bulk actions made easier.
+- **Inbuilt Video Player:** Smooth playback using ExoPlayer.
+- **Dynamic Watermarks:** Add timestamp, logo, and GPS watermark options.
+- **Video Info View:** View details like resolution, size, and duration.
+- **Video Renaming:** Rename recordings directly in-app.
+- **Storage Indicator:** Real-time storage info with estimated record time.
+- **Clock Widget:** Customizable date/time widget with color options.
+- **Custom Notification:** Use presets or create a custom title and description for recordings.
+- **7+ App Themes & 15+ Icons:** AMOLED, Light, System, and more.
+- **Localization:** Italian language support.
+- **No Ads:** 100% free and ad-free.
+
+## `>_` Upcoming Features:
+
+- **Scheduled Recording:** Automatically start/stop recordings at set times.
+- **Google Drive Auto-Upload:** Seamless cloud backup for videos.
+- **Custom Icons & Themes:** Expand personalization even further.
+- **In-App Video Editor:** Quick trim/edit with FaditorX (coming soon).
+- **Remote Tab:** Connect and control recordings across devices.
+- **Custom Save Paths:** Set your preferred video storage location.
 
 
-## Upcoming Features:
 
-- **Scheduled Recording:** Automatic start and stop at set times.
-- **Google Drive Auto-Upload:** Auto-upload videos to Google Drive.
-- **Custom Icon:** Personalize with custom app icons.
-- **Custom Notifications:** Custom messages for discreet notifications.
-- **App Lock:** Secure the app with an applock.
-- **Custom Saving:** Provide custom location saving option.
-
-
-## Join Community
+## `>_` Join Community
 Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek help, or connect with other users. Your feedback and contributions are welcome!
 
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
 
-## Support
+## `>_` Support
 
 <a href='https://ko-fi.com/D1D510FNSV' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-## Contributions
+## `>_` Contributions
 
 We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
 
-### How to Contribute
+### `>_` How to Contribute
 1. **Check Issues**: Browse the [issues](https://github.com/anonfaded/FadCam/issues) to see where you can help.
 2. **Fork the Repo**: Fork the repository to make your changes.
 3. **Submit a PR**: Create a pull request with a clear description of your changes.
@@ -306,11 +328,11 @@ We welcome any contributions to improve this project! Whether it's bug fixes or 
 We look forward to your contributions!
 
 
-## Credits:
-The 3D text of icon is from <a href="https://www.textstudio.com/">Font generator</a>.
+### `>_` 🙌 Contributions & Credits
 
-<a target="_blank" href="https://icons8.com/icon/13057/stack">Storage</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+- 🖼️ App screenshots and banner design by [T010](https://ko-fi.com/t010nl)
+- The 3D text in icon is from <a href="https://www.textstudio.com/">Font generator</a>.
+- Icons used in app by <a target="_blank" href="https://icons8.com">Icons8</a> and <a target="_blank" href="https://www.flaticon.com/">Flaticon</a>.
 
-<a target="_blank" href="https://icons8.com/icon/47773/idea">Idea</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
 
-<a target="_blank" href="https://icons8.com/icon/c2AXPLZ3iVEU/file-folder">File Folder</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+

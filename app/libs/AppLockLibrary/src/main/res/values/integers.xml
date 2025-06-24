@@ -4,6 +4,8 @@
     <integer name="applock__max_retry_count">5</integer>
     <integer name="applock__failure_retry_delay">5</integer>
 
-    <integer name="applock__activity_lock_reenable_minutes">15</integer>
+    <integer name="applock__activity_lock_reenable_minutes">1</integer>
+
+    <integer name="applock__input_password_min_length">6</integer>
 
 </resources>

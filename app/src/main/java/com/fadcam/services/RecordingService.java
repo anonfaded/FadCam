@@ -5,34 +5,26 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
-import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
-import android.preference.PreferenceManager;
-import android.provider.DocumentsContract;
 import android.util.Log; // Use standard Log
-import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 import android.widget.Toast;
@@ -59,7 +51,6 @@ import com.fadcam.SharedPreferencesManager; // Use your manager
 import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
-import com.fadcam.ui.RecordsAdapter;
 import com.fadcam.ui.GeotagHelper;
 
 import java.io.File;
@@ -74,15 +65,13 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import android.content.Intent; // Add Intent import
-import android.net.Uri;       // Add Uri import
-import com.fadcam.Constants; // Import your Constants class
-import java.util.Set; // Add if needed
-import java.util.HashSet; // Add if needed
+// Add Intent import
+// Add Uri import
+// Import your Constants class
+// Add if needed
+// Add if needed
 
 
 import android.media.MediaRecorder.OnInfoListener;
@@ -97,7 +86,6 @@ import android.media.MediaMetadataRetriever;
 
 import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import com.fadcam.utils.DeviceHelper;
-import com.fadcam.utils.camera.FrameRateHelper;
 import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
@@ -364,6 +352,12 @@ public class RecordingService extends Service {
     public void onDestroy() {
         Log.d(TAG, "onDestroy: Service being destroyed...");
         
+        // Stop any active reconnection attempts
+        stopReconnectionAttempts();
+        
+        // Make sure dummy surface is released
+        releaseDummyBackgroundSurface();
+        
         // Ensure all location services are properly stopped
         if (geotagHelper != null) {
             try {
@@ -558,6 +552,10 @@ public class RecordingService extends Service {
 
     private void releaseRecordingResources() {
         if (isStopping) return;
+        
+        // Release dummy background surface first
+        releaseDummyBackgroundSurface();
+        
         isStopping = true;
         try { if (captureSession != null) { captureSession.close(); } } catch (Exception e) { } finally { captureSession = null; }
         try { if (cameraDevice != null) { cameraDevice.close(); } } catch (Exception e) { } finally { cameraDevice = null; }
@@ -967,6 +965,16 @@ public class RecordingService extends Service {
             }
             if (previewSurface != null) {
                 surfaces.add(previewSurface);
+                previewSurfaceAdded = true;
+                Log.d(TAG, "Using valid preview surface from UI");
+            }             else if (dummyBackgroundSurface != null && dummyBackgroundSurface.isValid()) {
+                // Use dummy surface when UI surface is gone (app backgrounded)
+                // to prevent recording issues like green frames
+                surfaces.add(dummyBackgroundSurface);
+                Log.d(TAG, "Using dummy surface (app backgrounded) to maintain stable recording");
+                previewSurfaceAdded = true;
+            } else {
+                Log.d(TAG, "No valid preview or dummy surface available");
             }
             
             // Get camera characteristics for frame rate handling
@@ -989,6 +997,9 @@ public class RecordingService extends Service {
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
             
+            // Continue with existing code...
+            // Rest of the method stays the same
+
             // For high frame rates, evaluate if we should use high-speed session
             if (isHighFrameRate && characteristics != null) {
                 // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
@@ -1287,9 +1298,23 @@ public class RecordingService extends Service {
 
     // --- Helper Methods ---
     private void setupSurfaceTexture(Intent intent) {
+        Surface oldPreviewSurface = previewSurface; // Store old surface to check for changes
+        
         if(intent != null) {
             previewSurface = intent.getParcelableExtra("SURFACE");
-            Log.d(TAG, "Preview surface updated: " + (previewSurface != null && previewSurface.isValid()));
+            
+            // Check if we've lost a valid preview surface (app going to background)
+            boolean validOldSurface = oldPreviewSurface != null && oldPreviewSurface.isValid();
+            boolean validNewSurface = previewSurface != null && previewSurface.isValid();
+            
+            if (validOldSurface && !validNewSurface && isRecordingOrPaused()) {
+                // We had a valid surface but now we don't
+                // This is likely the app being backgrounded - create dummy surface to prevent green screen
+                Log.d(TAG, "Surface lost while recording - creating dummy surface to prevent recording issues");
+                createDummyBackgroundSurface();
+            }
+            
+            Log.d(TAG, "Preview surface updated: " + validNewSurface);
             
             // Check if we have surface dimensions
             int width = intent.getIntExtra("SURFACE_WIDTH", -1);
@@ -1302,6 +1327,8 @@ public class RecordingService extends Service {
             }
         }
     }
+
+
 
 
 
@@ -1411,13 +1438,21 @@ public class RecordingService extends Service {
     // --- Notifications ---
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.app_name) + " Recording";
-            String description = "Notifications for FadCam recording service";
+            // ----- Fix Start for this method(createNotificationChannel) -----
+            // Get the custom channel name or use a generic name
+            String channelName = sharedPreferencesManager.getNotificationChannelName();
+            CharSequence name = (channelName != null) ? 
+                channelName : 
+                getString(R.string.notification_channel_recording, getString(R.string.app_name));
+            
+            // Use a generic description that doesn't reveal the app's purpose
+            String description = getString(R.string.notification_channel_description);
             int importance = NotificationManager.IMPORTANCE_LOW; // Low importance to be less intrusive
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
             channel.setSound(null, null); // No sound
             channel.enableVibration(false); // No vibration
+            // ----- Fix Ended for this method(createNotificationChannel) -----
 
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
@@ -1430,6 +1465,7 @@ public class RecordingService extends Service {
     }
 
     private void setupRecordingInProgressNotification() {
+        // ----- Fix Start for this method(setupRecordingInProgressNotification) -----
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification setup.");
             // If Android Tiramisu or higher, START_FOREGROUND without notification IS allowed if user denies permission
@@ -1451,54 +1487,109 @@ public class RecordingService extends Service {
             }
         }
 
+        // Get custom notification text if set
+        String notificationText = sharedPreferencesManager.getNotificationText(false);
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(getString(R.string.notification_video_recording_progress_description))
-                // Use STOP action
-                .clearActions() // Remove previous actions
-                .addAction(new NotificationCompat.Action(
+                .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_progress_description));
+        
+        // Add stop action only if not hidden
+        if (!hideStopButton) {
+            builder.clearActions() // Remove previous actions
+                  .addAction(new NotificationCompat.Action(
                         R.drawable.ic_stop,
                         getString(R.string.button_stop),
                         createStopRecordingIntent()));
+        }
 
         startForeground(NOTIFICATION_ID, builder.build());
         Log.d(TAG, "Foreground notification updated for IN_PROGRESS.");
+        // ----- Fix Ended for this method(setupRecordingInProgressNotification) -----
     }
 
 
     private void setupRecordingResumeNotification() { // Notification shown when PAUSED
+        // ----- Fix Start for this method(setupRecordingResumeNotification) -----
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification update.");
             return; // Don't crash if user denied permission after start
         }
 
+        // Get custom notification text if set
+        String notificationText = sharedPreferencesManager.getNotificationText(true);
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(getString(R.string.notification_video_recording_paused_description))
-                // Use RESUME action
-                .clearActions() // Remove previous actions
-                .addAction(new NotificationCompat.Action(
-                        R.drawable.ic_play, // Use Play icon for Resume action
-                        getString(R.string.button_resume),
-                        createResumeRecordingIntent()))
-                .addAction(new NotificationCompat.Action( // Keep STOP action available
-                        R.drawable.ic_stop,
-                        getString(R.string.button_stop),
-                        createStopRecordingIntent()));
-
+                .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_paused_description))
+                .clearActions(); // Remove previous actions
+        
+        // Add resume action
+        builder.addAction(new NotificationCompat.Action(
+                R.drawable.ic_play, // Use Play icon for Resume action
+                getString(R.string.button_resume),
+                createResumeRecordingIntent()));
+                
+        // Add stop action only if not hidden
+        if (!hideStopButton) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_stop,
+                    getString(R.string.button_stop),
+                    createStopRecordingIntent()));
+        }
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.notify(NOTIFICATION_ID, builder.build()); // Just update existing notification
         Log.d(TAG, "Foreground notification updated for PAUSED.");
+        // ----- Fix Ended for this method(setupRecordingResumeNotification) -----
     }
 
 
     private NotificationCompat.Builder createBaseNotificationBuilder() {
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.notification_video_recording))
-                .setSmallIcon(R.drawable.ic_notification_icon) // Replace with actual suitable small icon
-                .setContentIntent(createOpenAppIntent()) // Tap notification -> open app
+        // ----- Fix Start for this method(createBaseNotificationBuilder) -----
+        // Get custom notification title if set
+        String notificationTitle = sharedPreferencesManager.getNotificationTitle();
+        String preset = sharedPreferencesManager.getNotificationPreset();
+        
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(notificationTitle != null ? notificationTitle : getString(R.string.notification_video_recording))
                 .setOngoing(true) // Makes it non-dismissible
                 .setSilent(true) // Suppress sound/vibration defaults
                 .setPriority(NotificationCompat.PRIORITY_LOW);
+        
+        // Choose appropriate icon based on notification preset
+        int smallIconResId;
+        switch (preset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                smallIconResId = android.R.drawable.stat_sys_download;
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                smallIconResId = android.R.drawable.stat_sys_download;
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                smallIconResId = android.R.drawable.stat_notify_sync;
+                break;
+            default:
+                smallIconResId = R.drawable.ic_notification_icon;
+                break;
+        }
+        
+        builder.setSmallIcon(smallIconResId);
+        
+        // Set a generic content intent that doesn't reveal the app
+        if (!SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT.equals(preset)) {
+            // For non-default presets, use a blank PendingIntent that does nothing
+            Intent emptyIntent = new Intent();
+            PendingIntent emptyPendingIntent = PendingIntent.getActivity(this, 0, emptyIntent, 
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.setContentIntent(emptyPendingIntent);
+        } else {
+            // For default preset, use normal app opening intent
+            builder.setContentIntent(createOpenAppIntent());
+        }
+                
+        return builder;
+        // ----- Fix Ended for this method(createBaseNotificationBuilder) -----
     }
 
     private void cancelNotification() {
@@ -1592,6 +1683,13 @@ public class RecordingService extends Service {
         return recordingState == RecordingState.PAUSED;
     }
 
+    /**
+     * Combined helper to check if recording is active or paused
+     */
+    public boolean isRecordingOrPaused() {
+        return isRecording() || isPaused() || recordingState == RecordingState.WAITING_FOR_CAMERA;
+    }
+
     // Combined status check
     public boolean isWorkingInProgress() {
 
@@ -1611,7 +1709,8 @@ public class RecordingService extends Service {
         return ffmpegProcessingTaskCount.get() > 0 || 
                recordingState == RecordingState.IN_PROGRESS || 
                recordingState == RecordingState.PAUSED || 
-               recordingState == RecordingState.STARTING;
+               recordingState == RecordingState.STARTING ||
+               recordingState == RecordingState.WAITING_FOR_CAMERA;
     }
 
 
@@ -2404,4 +2503,182 @@ public class RecordingService extends Service {
         }
     }
 
+    // Add this field to the class
+    private Surface dummyBackgroundSurface = null; // Used as fallback when app is backgrounded
+    private SurfaceTexture dummySurfaceTexture = null; // Used to create dummy surface
+
+    // Add this method to create a dummy surface
+    private void createDummyBackgroundSurface() {
+        // Release any existing dummy resources
+        releaseDummyBackgroundSurface();
+        
+        try {
+            // Create a 1x1 SurfaceTexture (minimal size/resources)
+            dummySurfaceTexture = new SurfaceTexture(0);
+            dummySurfaceTexture.setDefaultBufferSize(1, 1);
+            dummyBackgroundSurface = new Surface(dummySurfaceTexture);
+            
+            Log.d(TAG, "Created dummy background surface to prevent green screen on Samsung");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create dummy background surface", e);
+            dummySurfaceTexture = null;
+            dummyBackgroundSurface = null;
+        }
+    }
+
+    // Add this method to release the dummy surface
+    private void releaseDummyBackgroundSurface() {
+        if (dummyBackgroundSurface != null) {
+            try {
+                dummyBackgroundSurface.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing dummyBackgroundSurface", e);
+            } finally {
+                dummyBackgroundSurface = null;
+            }
+        }
+        
+        if (dummySurfaceTexture != null) {
+            try {
+                dummySurfaceTexture.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing dummySurfaceTexture", e);
+            } finally {
+                dummySurfaceTexture = null;
+            }
+        }
+    }
+
+    // ----- Fix Start for camera interruption handling -----
+    // Flag to track if we need to automatically resume recording after camera interruption
+    private boolean pendingCameraReconnect = false;
+    private static final int MAX_RECONNECT_ATTEMPTS = 15; // Maximum number of reconnection attempts
+    private static final long RECONNECT_RETRY_DELAY_MS = 2000; // 2 seconds between reconnection attempts
+    private Handler reconnectHandler = new Handler(Looper.getMainLooper());
+    private int reconnectAttempts = 0;
+    private Runnable reconnectRunnable;
+// ----- Fix End for camera interruption handling -----
+
+    // ----- Fix Start for camera interruption handling -----
+    /**
+     * Starts periodic attempts to reconnect to the camera
+     * 
+     * @param cameraId The ID of the camera to reconnect to
+     */
+    private void startCameraReconnectionAttempts(String cameraId) {
+        Log.d(TAG, "Starting camera reconnection attempts");
+        reconnectAttempts = 0;
+        
+        // Stop any existing reconnection attempts
+        stopReconnectionAttempts();
+        
+        // Create new reconnection runnable
+        reconnectRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (recordingState == RecordingState.WAITING_FOR_CAMERA && 
+                    pendingCameraReconnect && 
+                    reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    
+                    reconnectAttempts++;
+                    Log.d(TAG, "Attempting to reconnect to camera (attempt " + reconnectAttempts + "/" + MAX_RECONNECT_ATTEMPTS + ")");
+                    
+                    // Update notification to show reconnection attempt
+                    NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                        .setContentTitle(getString(R.string.camera_interrupted_title))
+                        .setContentText(getString(R.string.camera_reconnection_attempts));
+                    NotificationManagerCompat.from(RecordingService.this).notify(NOTIFICATION_ID, builder.build());
+                    
+                    // Try to open the camera
+                    tryReconnectCamera(cameraId);
+                    
+                    // Schedule next attempt if we haven't reached the limit
+                    if (recordingState == RecordingState.WAITING_FOR_CAMERA && 
+                        pendingCameraReconnect && 
+                        reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        reconnectHandler.postDelayed(this, RECONNECT_RETRY_DELAY_MS);
+                    } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                        // We've reached the maximum number of attempts
+                        Log.w(TAG, "Maximum reconnection attempts reached. Stopping recording.");
+                        pendingCameraReconnect = false;
+                        recordingState = RecordingState.NONE;
+                        stopRecording(); // Give up and stop recording
+                    }
+                }
+            }
+        };
+        
+        // Start the first attempt immediately
+        reconnectHandler.post(reconnectRunnable);
+    }
+    
+    /**
+     * Attempts to reconnect to the camera
+     * 
+     * @param cameraId The ID of the camera to reconnect to
+     */
+    private void tryReconnectCamera(String cameraId) {
+        if (cameraManager == null) {
+            Log.e(TAG, "Cannot reconnect to camera - cameraManager is null");
+            return;
+        }
+        
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "Cannot reconnect to camera - permission denied");
+            return;
+        }
+        
+        // Ensure MediaRecorder is completely released
+        releaseMediaRecorderSafely();
+        
+        // Ensure existing camera resources are properly cleaned up
+        if (cameraDevice != null) {
+            try {
+                cameraDevice.close();
+            } catch (Exception e) {
+                Log.w(TAG, "Error closing existing camera device during reconnection", e);
+            }
+            cameraDevice = null;
+        }
+        
+        if (captureSession != null) {
+            try {
+                captureSession.close();
+            } catch (Exception e) {
+                Log.w(TAG, "Error closing existing capture session during reconnection", e);
+            }
+            captureSession = null;
+        }
+        
+        try {
+            // Check if the camera is available by attempting to open it
+            cameraManager.openCamera(cameraId, cameraStateCallback, backgroundHandler);
+        } catch (CameraAccessException e) {
+            // Camera is still not available
+            int reason = e.getReason();
+            if (reason == CameraAccessException.CAMERA_DISABLED || 
+                reason == 1) { // 1 is CAMERA_IN_USE
+                Log.d(TAG, "Camera still not available (reason: " + reason + ")");
+            } else {
+                Log.e(TAG, "Error reconnecting to camera (reason: " + reason + ")", e);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error reconnecting to camera", e);
+        }
+    }
+    
+    /**
+     * Stops any ongoing camera reconnection attempts
+     */
+    private void stopReconnectionAttempts() {
+        if (reconnectRunnable != null) {
+            reconnectHandler.removeCallbacks(reconnectRunnable);
+            Log.d(TAG, "Stopped camera reconnection attempts");
+        }
+        
+        // Reset related flags
+        pendingCameraReconnect = false;
+        reconnectAttempts = 0;
+    }
+    // ----- Fix End for camera interruption handling -----
 }

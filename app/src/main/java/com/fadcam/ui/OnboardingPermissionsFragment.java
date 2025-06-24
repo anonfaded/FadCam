@@ -10,6 +10,7 @@ import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.widget.TextView;
 
@@ -143,7 +144,7 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
         new androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle(R.string.permissions_required)
             .setMessage(R.string.permissions_description)
-            .setPositiveButton("Open Settings", (dialog, which) -> {
+            .setPositiveButton(R.string.onboarding_open_settings, (dialog, which) -> {
                 Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                 intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
                 startActivity(intent);
@@ -201,6 +202,104 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
         showPermissionStatus(R.string.permissions_note, false);
         if (grantButton != null) {
             grantButton.performClick();
+        }
+    }
+
+    /**
+     * Called to refresh language-specific UI elements when the language has changed
+     * without recreating the entire fragment
+     */
+    public void refreshLanguage() {
+        View view = getView();
+        if (view == null) return;
+        
+        // Update all text elements with their string resources
+        TextView titleText = view.findViewById(R.id.permissionsTitle);
+        if (titleText != null) {
+            titleText.setText(R.string.permissions_required);
+        }
+        
+        TextView descText = view.findViewById(R.id.permissionsDescription);
+        if (descText != null) {
+            descText.setText(R.string.permissions_description);
+        }
+        
+        if (grantButton != null) {
+            if (permissionsGranted) {
+                grantButton.setText(R.string.permissions_granted);
+            } else {
+                grantButton.setText(R.string.grant_permissions);
+            }
+        }
+        
+        MaterialButton batteryOptButton = view.findViewById(R.id.disable_battery_optimization_button);
+        if (batteryOptButton != null) {
+            batteryOptButton.setText(R.string.disable_battery_optimization);
+        }
+        
+        TextView settingsLink = view.findViewById(R.id.open_settings_link);
+        if (settingsLink != null) {
+            settingsLink.setText(R.string.open_settings);
+        }
+        
+        TextView noteText = view.findViewById(R.id.permissionsNote);
+        if (noteText != null) {
+            noteText.setText(R.string.permissions_note);
+        }
+        
+        // Find and update text in permission icons section
+        // These are in nested LinearLayouts inside permissionsListContainer
+        LinearLayout permissionsListContainer = view.findViewById(R.id.permissionsListContainer);
+        if (permissionsListContainer != null && permissionsListContainer.getChildCount() >= 3) {
+            // Camera text
+            LinearLayout cameraLayout = (LinearLayout) permissionsListContainer.getChildAt(0);
+            if (cameraLayout != null && cameraLayout.getChildCount() >= 2) {
+                TextView cameraText = (TextView) cameraLayout.getChildAt(1);
+                if (cameraText != null) {
+                    cameraText.setText(R.string.onboarding_camera);
+                }
+            }
+            
+            // Mic text
+            LinearLayout micLayout = (LinearLayout) permissionsListContainer.getChildAt(1);
+            if (micLayout != null && micLayout.getChildCount() >= 2) {
+                TextView micText = (TextView) micLayout.getChildAt(1);
+                if (micText != null) {
+                    micText.setText(R.string.onboarding_microphone);
+                }
+            }
+            
+            // Storage text
+            LinearLayout storageLayout = (LinearLayout) permissionsListContainer.getChildAt(2);
+            if (storageLayout != null && storageLayout.getChildCount() >= 2) {
+                TextView storageText = (TextView) storageLayout.getChildAt(1);
+                if (storageText != null) {
+                    storageText.setText(R.string.onboarding_storage);
+                }
+            }
+        }
+        
+        TextView andText = view.findViewById(R.id.and_text);
+        if (andText != null) {
+            andText.setText(R.string.onboarding_and);
+        }
+        
+        TextView orText = view.findViewById(R.id.or_text);
+        if (orText != null) {
+            orText.setText(R.string.onboarding_or);
+        }
+        
+        // If we had shown a status message, update it
+        if (permissionStatusText != null && permissionStatusText.getVisibility() == View.VISIBLE) {
+            // Re-check permissions and update UI
+            checkPermissionsAndUpdateUI();
+        }
+        
+        // Force layout refresh on all controls
+        if (view instanceof ViewGroup) {
+            ViewGroup root = (ViewGroup) view;
+            root.invalidate();
+            root.requestLayout();
         }
     }
 } 

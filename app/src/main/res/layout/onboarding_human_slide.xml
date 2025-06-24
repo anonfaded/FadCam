@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/amoled_surface"
+    android:layoutDirection="ltr"
     android:fillViewport="true">
 
     <RelativeLayout
@@ -20,6 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:layoutDirection="ltr"
             android:layout_marginTop="120dp"
             android:paddingTop="@dimen/onboarding_nav_margin"
             android:paddingBottom="@dimen/onboarding_nav_margin">
@@ -54,7 +56,7 @@
                 android:text="@string/onboarding_human_desc"
                 android:textSize="@dimen/onboarding_desc_size"
                 android:fontFamily="monospace"
-                android:textColor="?android:attr/textColorSecondary"
+                android:textColor="@color/white"
                 android:gravity="center"
                 android:layout_marginTop="@dimen/onboarding_margin"
                 android:layout_marginLeft="@dimen/onboarding_margin"
@@ -83,7 +85,8 @@
                     android:src="@drawable/placeholder_checkbox_outline"
                     android:contentDescription="@string/onboarding_human_checkbox1"
                     android:layout_marginRight="12dp"
-                    android:padding="2dp"/>
+                    android:padding="2dp"
+                    android:tint="@color/white"/>
 
                 <TextView
                     android:id="@+id/checkbox_label_1"
@@ -119,7 +122,8 @@
                     android:src="@drawable/placeholder_checkbox_outline"
                     android:contentDescription="@string/onboarding_human_checkbox2"
                     android:layout_marginRight="12dp"
-                    android:padding="2dp"/>
+                    android:padding="2dp"
+                    android:tint="@color/white"/>
 
                 <TextView
                     android:id="@+id/checkbox_label_2"

@@ -76,7 +76,7 @@
         <item name="android:gravity">center</item>
         <item name="android:paddingTop">@dimen/applock__chooser_text_padding_top</item>
         <item name="android:textColor">@color/applock__description_text</item>
-        <item name="android:textSize">@dimen/applock__description_text</item>
+        <item name="android:textSize">14dp</item>
     </style>
 
     <style name="applock__action_settings">
@@ -88,6 +88,17 @@
         <item name="android:text">@string/applock__action_settings</item>
         <item name="android:textColor">@color/applock__action_settings</item>
         <item name="android:textSize">@dimen/applock__action_settings</item>
+    </style>
+
+    <style name="applock__input_password_view">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+        <item name="android:layout_marginTop">32dp</item>
+        <item name="android:layout_marginLeft">32dp</item>
+        <item name="android:layout_marginRight">32dp</item>
+        <item name="android:paddingBottom">32dp</item>
+        <item name="android:visibility">gone</item>
     </style>
 
 </resources>

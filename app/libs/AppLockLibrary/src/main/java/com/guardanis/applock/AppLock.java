@@ -9,6 +9,7 @@ import com.fadcam.R;
 import com.guardanis.applock.activities.UnlockActivity;
 import com.guardanis.applock.services.FingerprintLockService;
 import com.guardanis.applock.services.LockService;
+import com.guardanis.applock.services.PasswordLockService;
 import com.guardanis.applock.services.PINLockService;
 
 import java.util.HashMap;
@@ -60,6 +61,7 @@ public class AppLock {
 
         this.lockServices.put(PINLockService.class, new PINLockService());
         this.lockServices.put(FingerprintLockService.class, new FingerprintLockService());
+        this.lockServices.put(PasswordLockService.class, new PasswordLockService());
     }
 
     /**
@@ -155,6 +157,35 @@ public class AppLock {
 
         getLockService(PINLockService.class)
                 .authenticate(context, pin, delegate);
+    }
+
+    public void attemptPasswordUnlock(String password, final UnlockDelegate eventListener) {
+        if (handleFailureBlocking(eventListener))
+            return;
+
+        PasswordLockService.AuthenticationDelegate delegate = new PasswordLockService.AuthenticationDelegate() {
+            @Override
+            public void onNoPassword() {
+                onUnlockFailed(context.getString(R.string.applock__unlock_error_no_matching_password_found));
+            }
+
+            @Override
+            public void onPasswordDoesNotMatch() {
+                onUnlockFailed(context.getString(R.string.applock__unlock_error_match_failed));
+            }
+
+            @Override
+            public void onPasswordMatches() {
+                onUnlockSuccessful(eventListener);
+            }
+
+            private void onUnlockFailed(String message) {
+                handleUnlockFailure(message, eventListener);
+            }
+        };
+
+        getLockService(PasswordLockService.class)
+                .authenticate(context, password, delegate);
     }
 
     /**

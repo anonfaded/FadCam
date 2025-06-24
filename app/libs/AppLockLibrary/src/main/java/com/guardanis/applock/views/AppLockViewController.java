@@ -9,6 +9,8 @@ import android.widget.TextView;
 
 import com.guardanis.applock.AppLock;
 import com.fadcam.R;
+import com.guardanis.applock.password.PasswordInputController;
+import com.guardanis.applock.password.PasswordInputView;
 import com.guardanis.applock.pin.PINInputController;
 import com.guardanis.applock.pin.PINInputView;
 import com.guardanis.applock.utils.LifeCycleUtils;
@@ -21,11 +23,13 @@ import androidx.core.app.ActivityCompat;
 public abstract class AppLockViewController implements LifeCycleUtils.AppLockActivityLifeCycleCallbacks.Delegate {
 
     protected PINInputController pinInputController;
+    protected PasswordInputController passwordInputController;
 
     protected WeakReference<Activity> activity;
     protected WeakReference<View> parent;
 
     protected WeakReference<PINInputView> pinInputView;
+    protected WeakReference<PasswordInputView> passwordInputView;
     protected WeakReference<AppCompatImageView> fingerprintAuthImageView;
 
     protected WeakReference<TextView> descriptionView;
@@ -42,6 +46,7 @@ public abstract class AppLockViewController implements LifeCycleUtils.AppLockAct
         this.actionSettings = new WeakReference<View>(parent.findViewById(R.id.pin__action_settings));
 
         this.pinInputView = new WeakReference((PINInputView) parent.findViewById(R.id.pin__input_view));
+        this.passwordInputView = new WeakReference((PasswordInputView) parent.findViewById(R.id.pin__password_input_view));
         this.fingerprintAuthImageView = new WeakReference(parent.findViewById(R.id.pin__fingerprint_image));
 
         int inputViewsCount = parent.getResources()
@@ -53,6 +58,8 @@ public abstract class AppLockViewController implements LifeCycleUtils.AppLockAct
         this.pinInputController = new PINInputController(pinInputView.get())
                 .setInputNumbersCount(inputViewsCount)
                 .setPasswordCharactersEnabled(passwordCharsEnabled);
+                
+        this.passwordInputController = new PasswordInputController(passwordInputView.get());
 
         this.activityLifecycleCallbacks = LifeCycleUtils.attach(activity, this);
     }
@@ -78,6 +85,9 @@ public abstract class AppLockViewController implements LifeCycleUtils.AppLockAct
     }
 
     protected <T extends View> void hide(WeakReference<T> weakView) {
+        if (weakView == null)
+            return;
+            
         final T view = weakView.get();
 
         if (view == null)
@@ -87,6 +97,9 @@ public abstract class AppLockViewController implements LifeCycleUtils.AppLockAct
     }
 
     protected <T extends View> void show(WeakReference<T> weakView) {
+        if (weakView == null)
+            return;
+            
         final T view = weakView.get();
 
         if (view == null)

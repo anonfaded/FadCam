@@ -7,7 +7,7 @@
     <string name="app_description">"
     <![CDATA[
     FadCam è un\'app di registrazione video open source e senza pubblicità che dà priorità alla privacy non tracciando né raccogliendo alcun dato. È disponibile esclusivamente su GitHub e tramite i link ufficiali menzionati nel README.    <br/><br/>
-    FadCam è stato presentato in canali YouTube popolari come <font color="#cfbafd">HowToMen</font> e <font color="#cfbafd">Xtream Droid</font>, anche discusso in <font color="#cfbafd">GrapheneOS</font>e altri diciotto luoghi degni di nota.
+    FadCam è stato presentato in canali YouTube popolari come <font color="#cfbafd">HowToMen</font> e <font color="#cfbafd">Xtream Droid</font>, anche discusso in <font color="#cfbafd">GrapheneOS</font> e altri 55+ luoghi degni di nota.
     ]]>
 </string>
 
@@ -72,10 +72,9 @@
     <string name="button_settings_cam_back">Posteriore</string>
     <string name="button_settings_cam_front">Frontale</string>
     <string name="setting_quailty_title">Qualità video</string>
-    <string name="setting_framerate_title">Frequenza video</string>
     <string name="note_quailty">Scelta di qualità\n(Predefinita: HD)</string>
-    <string name="note_framerate">Selezione della frequenza\n(Predefinita: %1$d)</string>
-    <string name="note_codec">Selezione codec\n(Predefinito: %1$s)</string>
+    <string name="setting_codec_title">Codec Video</string>
+    <string name="note_codec">Scegli codec\n(Predefinito: %1$s)</string>
     <string name="setting_watermark">Filigrana</string>
     <string name="note_watermark">Seleziona l\'opzione filigrana (predefinita: timestamp con Fadcam)</string>
     <string name="note_watermark_extra">Per un backup rapido, seleziona \'Nessuno\'. Aggiungere una filigrana? Vale la pena aspettare, solo un po\' più a lungo per l\'elaborazione !</string>
@@ -188,7 +187,6 @@
     <string name="delete_all_videos_description">Vuoi davvero eliminare tutti i video? ?</string>
     <string name="switched_front_camera">Passato alla fotocamera frontale</string>
     <string name="switched_rear_camera">Passato alla telecamera posteriore</string>
-    <string name="notification_video_recording">Registrazione video</string>
     <string name="notification_video_recording_paused_description">Registrazione in pausa</string>
     <string name="notification_video_recording_progress_description">Registrazione in corso</string>
     <string name="torch_options_title">Opzioni torcia elettrica</string>
@@ -200,5 +198,239 @@
     <string name="torch_recording_note">Impossibile modificare le opzioni della torcia durante la registrazione</string>
     <string name="torch_both">Le due torce elettriche</string>
     <string name="back">Indietro</string>
-    <string name="setting_codec_title">Codec video</string>
+    
+    <string name="more_options">Altre Opzioni</string>
+    <string name="records_options_title">Opzioni Registrazioni</string>
+    <string name="setting_theme_title">Tema dell\'App</string>
+    <string name="settings_option_theme">Scegli Tema</string>
+    <string name="settings_theme_changed">Tema modificato. Applicazione delle modifiche...</string>
+    <string name="note_theme">Scegli il tuo tema preferito</string>
+    
+    <!-- App Icon Strings -->
+    <string name="setting_app_icon_title">Icona dell\'App</string>
+    <string name="setting_app_icon_desc">Cambia l\'icona e il nome dell\'app nel launcher</string>
+    <string name="app_icon_dialog_title">Scegli Icona App</string>
+    <string name="app_icon_changed">Icona app modificata</string>
+    <string name="app_icon_preview">Anteprima icona app</string>
+    
+    <!-- Tab Lock Strings -->
+    <string name="setting_applock_title">Blocco Scheda</string>
+    <string name="setting_applock_desc">Proteggi i tuoi video con un blocco PIN per la scheda Registrazioni. \nPer la tua sicurezza, la scheda Registrazioni si bloccherà automaticamente quando l\'app va in background o viene chiusa. Dovrai sbloccarla nuovamente quando ritorni</string>
+    <string name="setting_applock_configure">Configura</string>
+    <string name="applock_dialog_title">Opzioni Blocco Scheda</string>
+    <string name="applock_enable">Attiva Blocco Scheda</string>
+    <string name="applock_disable">Disattiva Blocco Scheda</string>
+    <string name="applock_set_pin">Imposta PIN</string>
+    <string name="applock_change_pin">Cambia PIN</string>
+    <string name="applock_remove_pin">Rimuovi PIN</string>
+    <string name="applock_pin_created">PIN creato con successo</string>
+    <string name="applock_pin_removed">PIN rimosso con successo</string>
+    
+    <!-- App Lock Verification Messages -->
+    <string name="applock_verify_to_enable">Verifica PIN per Attivare il Blocco Scheda</string>
+    <string name="applock_verify_to_disable">Verifica PIN per Disattivare il Blocco Scheda</string>
+    <string name="applock_verify_to_change">Verifica PIN Attuale</string>
+    <string name="applock_verify_to_remove">Verifica PIN per Rimuovere</string>
+    <string name="applock_verification_canceled">Verifica annullata</string>
+    
+    <!-- Camera Settings -->
+    <string name="setting_back_lens_title">Lente Fotocamera Posteriore</string>
+    <string name="setting_back_lens_note">Seleziona una lente specifica se disponibile, ad es. Lente Grandangolare\n(Predefinito: Principale (0))</string>
+    <string name="setting_back_lens_info_single">Solo lente principale</string>
+    <string name="setting_back_lens_info_single_v2">Rilevata solo fotocamera posteriore principale</string>
+    
+    <!-- Video Settings -->
+    <string name="setting_framerate_title">Framerate Video</string>
+    <string name="note_framerate">Scegli framerate\n(Predefinito: %1$d)</string>
+    <string name="setting_video_bitrate_title">Bitrate Video</string>
+    <string name="button_video_bitrate_settings">Imposta Bitrate</string>
+    <string name="bitrate_mode_default">Predefinito</string>
+    <string name="bitrate_mode_custom">Personalizzato</string>
+    <string name="bitrate_custom_label">Bitrate Personalizzato:</string>
+    <string name="bitrate_custom_hint">es. 16.000</string>
+    <string name="bitrate_reset_button">Ripristina</string>
+    <string name="bitrate_helper_text">Il bitrate controlla la qualità video e la dimensione del file. Più alto = qualità migliore, ma file più grandi. Troppo alto o troppo basso può causare errori di registrazione o scarsa qualità. L\'intervallo consigliato dipende dal dispositivo e dalla risoluzione selezionata. Il valore predefinito sopra è basato sulle impostazioni correnti.</string>
+    <string name="bitrate_info_default">Predefinito: %d Mbps</string>
+    <string name="bitrate_info_custom">Personalizzato: %d Mbps</string>
+    <string name="bitrate_info_warning_low">Attenzione: Il bitrate è molto basso. La qualità video potrebbe essere scarsa.</string>
+    <string name="bitrate_info_warning_high">Attenzione: Il bitrate è molto alto. La registrazione potrebbe fallire o surriscaldare il dispositivo.</string>
+    <string name="bitrate_info_ok">Il bitrate è nell\'intervallo consigliato.</string>
+    <string name="bitrate_invalid">Bitrate non valido. Inserisci un valore tra %1$d e %2$d Mbps.</string>
+    <string name="bitrate_save_success">Bitrate salvato con successo.</string>
+    <string name="bitrate_reset_success">Bitrate ripristinato ai valori predefiniti.</string>
+    <string name="bitrate_current">Attuale: %1$s Mbps</string>
+    <string name="bitrate_unit">Mbps</string>
+    <string name="bitrate_explanation">Cos\'è il bitrate?</string>
+    <string name="bitrate_explanation_text">Il bitrate è la quantità di dati utilizzati al secondo per il video. Un bitrate più alto significa qualità migliore ma file più grandi. Troppo alto o troppo basso può causare problemi. I valori predefiniti si basano su standard professionali.</string>
+    
+    <!-- Video Orientation -->
+    <string name="setting_video_orientation_title">Orientamento Video</string>
+    <string name="setting_video_orientation_summary">Scegli l\'orientamento per i tuoi video. Verticale è ideale per social media; Orizzontale è ideale per YouTube, presentazioni, ecc.</string>
+    <string name="video_orientation_portrait">Verticale (predefinito)</string>
+    <string name="video_orientation_landscape">Orizzontale</string>
+    
+    <!-- Video Splitting -->
+    <string name="video_split_size_summary_mb">Attuale: %1$d MB</string>
+    <string name="video_split_size_summary_gb">Attuale: %1$s GB</string>
+    <string name="video_splitting_title">Attiva Divisione Video</string>
+    <string name="video_splitting_description">Divide automaticamente le registrazioni in file più piccoli (Disattivato per impostazione predefinita). Consigliato: 2 GB per un buon equilibrio. Sono disponibili preset fino a 4 GB e dimensioni personalizzate. Questo aiuta a gestire registrazioni ampie ed evita limiti di dimensione dei file del dispositivo.</string>
+    
+    <!-- Location Settings -->
+    <string name="setting_location_embed_title">Incorpora Posizione nei Video</string>
+    <string name="note_location_embed">Aggiungi coordinate GPS ai metadati video (geotag). \nRichiede GPS attivo \n(Predefinito: Disattivato)</string>
+    <string name="note_location_embed_extra">Aggiunge dati di posizione direttamente ai file video, utilizzabili da app galleria/mappe per mostrare dove sono stati registrati i video.</string>
+    <string name="location_embedding_enabled">Incorporamento posizione attivato</string>
+    <string name="location_permission_granted_manual_toggle">Permesso concesso! Ora puoi attivare le funzionalità di posizione nelle impostazioni.</string>
+    <string name="allow_location_access">Concedi Permesso</string>
+    <string name="location_permission_message">È necessario il permesso di localizzazione per aggiungere coordinate GPS ai tuoi video. Concedi il permesso per utilizzare questa funzione.</string>
+    
+    <!-- Audio Settings -->
+    <string name="setting_audio_title">Registrazione Audio</string>
+    <string name="note_audio">Attiva o disattiva la registrazione audio per i video.\n(Predefinito: Attivato)</string>
+    <string name="button_audio_settings">Impostazioni Audio</string>
+    <string name="dialog_audio_settings_title">Impostazioni Audio</string>
+    <string name="dialog_audio_bitrate_label">Bitrate Audio (bps)</string>
+    <string name="dialog_audio_sampling_rate_label">Frequenza di Campionamento (Hz)</string>
+    <string name="dialog_audio_reset">Ripristina Predefiniti</string>
+    <string name="dialog_audio_save">Salva</string>
+    <string name="dialog_audio_cancel">Annulla</string>
+    <string name="dialog_audio_invalid_bitrate">Bitrate non valido. Inserisci un valore tra 64000 e 384000.</string>
+    <string name="dialog_audio_invalid_sampling_rate">Frequenza di campionamento non valida. Inserisci 44100 o 48000.</string>
+    <string name="dialog_audio_settings_summary">Configura bitrate audio e frequenza di campionamento per la migliore qualità. Predefinito: 192000 bps, 48000 Hz, Stereo.</string>
+    <string name="dialog_audio_info_text">• Il Bitrate (bps) controlla la qualità audio e la dimensione del file. Valori più alti significano qualità migliore ma file più grandi. 192000 è un buon valore predefinito per la maggior parte degli usi.
+• La Frequenza di Campionamento (Hz) è quante volte al secondo l\'audio viene catturato. 48000 Hz è standard per video, 44100 Hz è comune per l\'audio.
+
+Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
+    <string name="setting_audio_input_source_title">Fonte Input Audio</string>
+    <string name="setting_audio_input_source_status_default">In uso attualmente: Microfono Telefono</string>
+    <string name="setting_audio_input_source_status_wired">In uso attualmente: Microfono Cablato</string>
+    <string name="setting_audio_input_source_status_nowired">Nessun microfono cablato rilevato</string>
+    <string name="audio_input_source_phone">Microfono Telefono (Predefinito)</string>
+    <string name="audio_input_source_wired">Microfono Cablato (se collegato)</string>
+    <string name="audio_input_source_wired_not_available">Microfono Cablato (non rilevato)</string>
+    <string name="audio_input_source_note">Seleziona quale microfono utilizzare per la registrazione audio. Se non è collegato un microfono cablato, verrà utilizzato automaticamente il microfono del telefono.</string>
+    <string name="audio_input_source_wired_not_connected">Nessun microfono cablato rilevato. Utilizzo del microfono del telefono.</string>
+    <string name="audio_input_source_headphones_no_mic">Cuffie rilevate (senza microfono)</string>
+    <string name="choose">Scegli</string>
+    
+    <!-- Debug Settings -->
+    <string name="setting_debug_title">Logging di Debug</string>
+    <string name="note_debug">Attiva la generazione di file di log di debug \n(Predefinito: Disattivato)</string>
+    <string name="note_debug_extra">Quando attivato, verrà creato un file di log di debug nella cartella Downloads/FadCam. Questo può aiutare a diagnosticare problemi dell\'app.</string>
+    
+    <!-- Onboarding Settings -->
+    <string name="setting_onboarding_title">Mostra Introduzione al Prossimo Avvio</string>
+    <string name="note_onboarding">Attiva per vedere l\'introduzione dell\'app e la guida ai permessi la prossima volta che apri FadCam.</string>
+    
+    <!-- Auto Update Settings -->
+    <string name="setting_auto_update_check_title">Controllo Automatico Aggiornamenti all\'Avvio</string>
+    <string name="note_auto_update_check">Se attivato, FadCam controllerà gli aggiornamenti ogni volta che apri l\'app. Disattiva per disabilitare i controlli automatici degli aggiornamenti all\'avvio.\n(Predefinito: Attivato)</string>
+    
+    <!-- Storage Location Settings -->
+    <string name="storage_location_title">Posizione di Archiviazione</string>
+    <string name="storage_location_description">Scegli dove salvare le registrazioni.</string>
+    <string name="storage_location_internal">Memoria Interna App (Predefinito, Privato)</string>
+    <string name="storage_location_custom">Posizione Personalizzata (Scheda SD/Altro, Visibile nella Galleria)</string>
+    <string name="storage_location_choose_folder">Scegli Cartella</string>
+    <string name="storage_location_note">Nota: L\'utilizzo di posizioni personalizzate rende i video accessibili ad altre app (es. Galleria). La memoria interna mantiene i video privati per FadCam.</string>
+    <string name="storage_icon_description">Icona Archiviazione</string>
+    <string name="location_icon_description">Icona Posizione</string>
+    <string name="location_embedding_icon_description">Icona Incorporamento Posizione</string>
+    
+    <!-- Camera Messages -->
+    <string name="camera_resources_cooldown">Attendi un momento prima di iniziare una nuova registrazione</string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_swipe_instruction">Scorri verso destra per continuare</string>
+    <string name="onboarding_select_language">Seleziona la lingua preferita per l\'app.</string>
+    <string name="onboarding_camera">Fotocamera</string>
+    <string name="onboarding_microphone">Microfono</string>
+    <string name="onboarding_storage">Archiviazione</string>
+    <string name="onboarding_or">OPPURE</string>
+    <string name="onboarding_and">E</string>
+    <string name="onboarding_open_settings">Apri Impostazioni</string>
+    <string name="onboarding_intro_line1">Open source,</string>
+    <string name="onboarding_intro_line2">senza pubblicità,</string>
+    <string name="onboarding_intro_line3">e creata per te—non per gli inserzionisti.</string>
+
+    <string name="language_change_later_note">Puoi modificare questa impostazione in seguito nelle Impostazioni.</string>
+    
+    <string name="permissions_required">Permessi Richiesti</string>
+    <string name="permissions_description">FadCam necessita dell\'accesso alla fotocamera, al microfono e allo spazio di archiviazione per registrare e salvare i video.</string>
+    <string name="grant_permissions">Concedi Permessi</string>
+    <string name="permissions_note">Devi concedere tutti i permessi per continuare.</string>
+    <string name="permissions_granted">Tutti i permessi concessi!</string>
+
+    <string name="open_settings">Apri Impostazioni</string>
+
+    <string name="disable_battery_optimization">Disattiva Ottimizzazione Batteria</string>
+
+    <string name="onboarding_human_title">Verifica se sei un umano</string>
+    <string name="onboarding_human_desc">Hmmmm... va bene. Queste regole sono non negoziabili. Se non puoi accettare, disinstalla FadCam adesso.</string>
+    <string name="onboarding_human_checkbox1">Non userò FadCam per violare leggi, invadere la privacy di nessuno o comportarmi in modo inquietante. Lo sviluppatore non è responsabile se commetto errori. (È responsabilità mia.)</string>
+    <string name="onboarding_human_checkbox2">Amo già FadCam ancor prima di usarla. (Non opzionale)</string>
+    <string name="onboarding_human_button">Fammi entrare!</string>
+
+    <!-- Adding notification customization strings -->
+    <string name="setting_notification_appearance">Aspetto della notifica</string>
+    <string name="note_notification_appearance">Personalizza l\'aspetto della notifica di registrazione\n(Predefinito: FadCam)</string>
+    <string name="hide_stop_button">Nascondi il pulsante di arresto</string>
+    <string name="note_hide_stop_button">Nascondi il pulsante di arresto nella notifica\n(Predefinito: Disabilitato)</string>
+    <string name="notification_preview">Anteprima notifica</string>
+    <string name="notification_preview_title">Anteprima</string>
+    <string name="notification_stop">FERMA</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (predefinito)</item>
+        <item>Aggiornamento di sistema</item>
+        <item>Download</item>
+        <item>Sincronizzazione</item>
+        <item>Backup</item>
+        <item>Personalizzato</item>
+    </string-array>
+
+    <string name="setting_notification_customization_title">Personalizzazione notifiche</string>
+    <string name="setting_notification_customization_description">Personalizza l\'aspetto della notifica di registrazione</string>
+    <string name="notification_preset_title">Preset notifica</string>
+    <string name="notification_preset_description">Scegli come appare la notifica</string>
+    <string name="notification_preset_default">Predefinito (Registrazione)</string>
+    <string name="notification_preset_system_update">Aggiornamento di sistema</string>
+    <string name="notification_preset_downloading">Download</string>
+    <string name="notification_preset_syncing">Sincronizzazione dati</string>
+    <string name="notification_preset_custom">Testo personalizzato</string>
+    <string name="notification_hide_stop_button">Nascondi pulsante di arresto</string>
+    <string name="notification_hide_stop_button_description">Rimuovi il pulsante di arresto dalla notifica</string>
+    <string name="notification_custom_title">Titolo personalizzato</string>
+    <string name="notification_custom_text">Testo personalizzato</string>
+    <string name="notification_setup_title">Configurazione notifica</string>
+    <string name="notification_setup_description">Personalizza come appare la notifica di registrazione</string>
+    <string name="notification_setup_save">Salva</string>
+    <string name="notification_setup_cancel">Annulla</string>
+    <string name="notification_video_recording">Registrazione video</string>
+    <string name="notification_settings_saved">Impostazioni notifica salvate</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Registrazione</string>
+    <string name="notification_channel_system_updates">Aggiornamenti di sistema</string>
+    <string name="notification_channel_downloads">Download</string>
+    <string name="notification_channel_data_sync">Sincronizzazione dati</string>
+    <string name="notification_channel_generic">Servizio di notifica</string>
+    <string name="notification_channel_description">Notifiche di servizio</string>
+    
+    <string name="notification_text_system_update_progress">Aggiornamento in corso</string>
+    <string name="notification_text_system_update_paused">Aggiornamento in pausa</string>
+    <string name="notification_text_downloading_progress">Download in corso</string>
+    <string name="notification_text_downloading_paused">Download in pausa</string>
+    <string name="notification_text_syncing_progress">Sincronizzazione in corso</string>
+    <string name="notification_text_syncing_paused">Sincronizzazione in pausa</string>
+    <string name="notification_text_custom_default">Processo in esecuzione</string>
+    <string name="notification_title_system_update">Aggiornamento di sistema</string>
+    <string name="notification_title_downloading">Download</string>
+    <string name="notification_title_syncing">Sincronizzazione dati</string>
+    <string name="notification_title_custom_default">Notifica</string>
+
+    <string name="video_menu_upload_youtube">Carica su YouTube</string>
+    <string name="video_menu_upload_drive">Carica su Google Drive</string>
+    <string name="toast_no_youtube_app">App YouTube non trovata</string>
+    <string name="toast_no_drive_app">App Google Drive non trovata</string>
 </resources>

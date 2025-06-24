@@ -44,9 +44,9 @@
             android:id="@+id/languageNote"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Select your preferred app language."
+            android:text="@string/onboarding_select_language"
             android:textSize="15sp"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/white"
             android:fontFamily="monospace"
             android:layout_marginBottom="18dp" />
 
@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:text="@string/language_change_later_note"
             android:textSize="13sp"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/white"
             android:fontFamily="monospace"
             android:layout_marginTop="8dp" />
     </LinearLayout>

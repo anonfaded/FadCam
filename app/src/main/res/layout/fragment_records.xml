@@ -50,13 +50,13 @@
             android:layout_height="80dp"
             android:src="@drawable/ic_no_videos"
             app:tint="#80FFFFFF"
-            android:contentDescription="No videos found"
+            android:contentDescription="@string/no_videos_found"
             android:layout_marginBottom="16dp"/>
         <TextView
             android:id="@+id/empty_state_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No Recordings Yet"
+            android:text="@string/no_recordings_yet"
             android:textSize="18sp"
             android:textColor="#80FFFFFF"
             android:gravity="center"/>

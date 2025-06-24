@@ -5,6 +5,10 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -73,6 +77,9 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import androidx.recyclerview.widget.DiffUtil;
 import android.graphics.drawable.GradientDrawable;
+import androidx.core.app.ShareCompat;
+import android.content.ContentResolver;
+import androidx.core.content.FileProvider;
 
 // Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -644,6 +651,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             } else if (id == R.id.action_delete) {
                 if (actionListener != null) actionListener.onDeleteVideo(videoItem);
                 return true;
+            } else if (id == R.id.action_upload_youtube) {
+                openVideoInYouTube(videoItem);
+                return true;
+            } else if (id == R.id.action_upload_drive) {
+                openVideoInGoogleDrive(videoItem);
+                return true;
             }
             return false;
         });
@@ -1143,7 +1156,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         long durationMs = getVideoDuration(videoUri);
         String resolution = getVideoResolution(videoUri);
         String formattedDuration = formatVideoDuration(durationMs);
-
+        
         // 4. Populate UI Text Views
         tvFileName.setText(fileName);
         tvFileSize.setText(formattedFileSize);
@@ -1180,7 +1193,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         String videoInfo = String.format(Locale.US,
                 "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s\n%s",
                 fileName, formattedFileSize, filePathDisplay, formattedLastModified, formattedDuration, resolution, clipboardText.trim());
-
+        
         // The actual warning text is set via R.string.warning_temp_file_detail in the XML layout
 
 
@@ -1210,6 +1223,188 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Apply Snow Veil button colors after dialog is shown
         setSnowVeilButtonColors(dialog);
     } // End of showVideoInfoDialog
+
+    /**
+     * Opens the selected video directly in the YouTube app for uploading
+     * @param videoItem The video to upload to YouTube
+     */
+    private void openVideoInYouTube(VideoItem videoItem) {
+        if (context == null || videoItem == null || videoItem.uri == null) return;
+        
+        Log.d(TAG, "===== START YOUTUBE UPLOAD DEBUG =====");
+        Log.d(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
+        Log.d(TAG, "Video URI: " + videoItem.uri);
+        
+        try {
+            // Get proper content:// URI that can be shared with other apps
+            Uri shareUri = getShareableUri(videoItem.uri);
+            Log.d(TAG, "Converted share URI: " + shareUri);
+            
+            // Direct YouTube upload intent
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("video/*");
+            intent.putExtra(Intent.EXTRA_STREAM, shareUri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setPackage("com.google.android.youtube");
+            
+            // Check if the YouTube app is available
+            PackageManager packageManager = context.getPackageManager();
+            List<ResolveInfo> activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            
+            if (!activities.isEmpty()) {
+                Log.d(TAG, "YouTube app found, sending video");
+                context.startActivity(intent);
+            } else {
+                // Try alternative YouTube package (YouTube Go)
+                intent.setPackage("com.google.android.apps.youtube.mango");
+                activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                
+                if (!activities.isEmpty()) {
+                    Log.d(TAG, "YouTube Go app found, sending video");
+                    context.startActivity(intent);
+                } else {
+                    // Fallback to generic sharing dialog with a hint
+                    Log.d(TAG, "YouTube app not found, falling back to generic share");
+                    Intent chooserIntent = Intent.createChooser(
+                            new Intent(Intent.ACTION_SEND)
+                                    .setType("video/*")
+                                    .putExtra(Intent.EXTRA_STREAM, shareUri)
+                                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                            "Upload to YouTube"
+                    );
+                    context.startActivity(chooserIntent);
+                    Toast.makeText(context, R.string.toast_no_youtube_app, Toast.LENGTH_LONG).show();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening YouTube upload: " + videoItem.uri + " (" + e.getMessage() + ")", e);
+            
+            // Fallback to generic share intent
+            try {
+                Uri shareUri = getShareableUri(videoItem.uri);
+                Intent chooserIntent = Intent.createChooser(
+                        new Intent(Intent.ACTION_SEND)
+                                .setType("video/*")
+                                .putExtra(Intent.EXTRA_STREAM, shareUri)
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                        "Upload to YouTube"
+                );
+                context.startActivity(chooserIntent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
+                Toast.makeText(context, "Could not share video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
+        
+        Log.d(TAG, "===== END YOUTUBE UPLOAD DEBUG =====");
+    }
+    
+    /**
+     * Opens the selected video directly in the Google Drive app for uploading
+     * @param videoItem The video to upload to Google Drive
+     */
+    private void openVideoInGoogleDrive(VideoItem videoItem) {
+        if (context == null || videoItem == null || videoItem.uri == null) return;
+        
+        Log.d(TAG, "===== START DRIVE UPLOAD DEBUG =====");
+        Log.d(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
+        Log.d(TAG, "Video URI: " + videoItem.uri);
+        
+        try {
+            // Get proper content:// URI that can be shared with other apps
+            Uri shareUri = getShareableUri(videoItem.uri);
+            Log.d(TAG, "Converted share URI: " + shareUri);
+            
+            // Use ShareCompat to create the intent as recommended
+            Intent intent = ShareCompat.IntentBuilder.from((Activity)context)
+                    .setStream(shareUri)
+                    .setType("video/*")
+                    .getIntent()
+                    .setPackage("com.google.android.apps.docs")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            // Check if Google Drive is available
+            PackageManager packageManager = context.getPackageManager();
+            List<ResolveInfo> activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            
+            if (!activities.isEmpty()) {
+                Log.d(TAG, "Google Drive app found, sending video");
+                context.startActivity(intent);
+            } else {
+                // Try alternative Drive package
+                intent.setPackage("com.google.android.apps.docs.editors.docs");
+                activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                
+                if (!activities.isEmpty()) {
+                    Log.d(TAG, "Alternative Google Drive app found, sending video");
+                    context.startActivity(intent);
+                } else {
+                    // Fallback to generic sharing dialog with a hint
+                    Log.d(TAG, "Google Drive app not found, falling back to generic share");
+                    Intent chooserIntent = Intent.createChooser(
+                            ShareCompat.IntentBuilder.from((Activity)context)
+                                    .setStream(shareUri)
+                                    .setType("video/*")
+                                    .getIntent()
+                                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                            "Upload to Drive"
+                    );
+                    context.startActivity(chooserIntent);
+                    Toast.makeText(context, R.string.toast_no_drive_app, Toast.LENGTH_LONG).show();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening Google Drive: " + videoItem.uri + " (" + e.getMessage() + ")", e);
+            
+            // Fallback to generic share intent
+            try {
+                Uri shareUri = getShareableUri(videoItem.uri);
+                Intent chooserIntent = Intent.createChooser(
+                        new Intent(Intent.ACTION_SEND)
+                                .setType("video/*")
+                                .putExtra(Intent.EXTRA_STREAM, shareUri)
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                        "Upload to Drive"
+                );
+                context.startActivity(chooserIntent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
+                Toast.makeText(context, "Could not share video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
+        
+        Log.d(TAG, "===== END DRIVE UPLOAD DEBUG =====");
+    }
+    
+    /**
+     * Converts a URI to a shareable content:// URI if needed
+     * @param uri The original URI to convert
+     * @return A shareable URI
+     */
+    private Uri getShareableUri(Uri uri) {
+        if (uri == null) return null;
+        
+        // If it's already a content:// URI, we can use it directly
+        if (ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
+            return uri;
+        }
+        
+        // If it's a file:// URI, we need to convert it using FileProvider
+        if (ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
+            try {
+                File file = new File(uri.getPath());
+                return FileProvider.getUriForFile(
+                    context, 
+                    context.getApplicationContext().getPackageName() + ".provider", 
+                    file
+                );
+            } catch (Exception e) {
+                Log.e(TAG, "Error converting file URI to content URI: " + e.getMessage(), e);
+            }
+        }
+        
+        return uri; // Return original if conversion failed
+    }
 
     // --- NEW Helper to get resolution (refactored from info dialog) ---
     private String getVideoResolution(Uri videoUri) {

@@ -19,10 +19,13 @@ android {
         applicationId = "com.fadcam"
         minSdk = 28
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.5.0-beta"
+        versionCode = 16
+        versionName = "1.5.0"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Enable vector drawable support
+        vectorDrawables.useSupportLibrary = true
 
         // Enable vector drawable support
         vectorDrawables.useSupportLibrary = true
@@ -34,7 +37,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-
+            
             // More aggressive optimizations for release
             isDebuggable = false
             isCrunchPngs = true // Aggressively optimize PNG files
@@ -55,7 +58,7 @@ android {
     // Proper resource handling
     android.aaptOptions.noCompress += listOf("xml")
     android.aaptOptions.cruncherEnabled = true // Enable PNG cruncher
-
+    
     // Generate R class for the AppLock library
     android.namespace = "com.fadcam"
 
@@ -69,14 +72,14 @@ android {
         getByName("test").java.srcDirs("none")
         getByName("androidTest").java.srcDirs("none")
     }
-
+    
     // Exclude specific ABIs from the FFmpeg library to reduce size
     packagingOptions {
         // Exclude unnecessary architectures
         jniLibs {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
         }
-
+        
         // Exclude unnecessary files from the APK
         resources {
             excludes += listOf(
@@ -94,12 +97,12 @@ android {
             )
         }
     }
-
+    
     // Enable resource optimization
     androidResources {
         additionalParameters += listOf("--no-version-vectors")
     }
-
+    
     // Enable build config optimization
     buildFeatures {
         buildConfig = true

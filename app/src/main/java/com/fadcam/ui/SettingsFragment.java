@@ -4,8 +4,6 @@ import static android.content.ContentValues.TAG;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -15,7 +13,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.content.res.Configuration;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -28,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.provider.DocumentsContract;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Html;
@@ -38,8 +34,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LayoutAnimationController;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -58,14 +52,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
@@ -89,7 +79,6 @@ import com.google.android.material.textview.MaterialTextView;
 import com.guardanis.applock.AppLock;
 import com.guardanis.applock.dialogs.LockCreationDialogBuilder;
 import com.guardanis.applock.dialogs.UnlockDialogBuilder;
-import com.guardanis.applock.services.PINLockService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,19 +89,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
 import android.util.Range; // Make sure this import is present
 import java.util.TreeSet; // Used for sorting and uniqueness
 import java.util.Set;     // Used for intermediate storage
-import java.util.stream.IntStream; // For easy array conversion
-import java.util.Comparator; // For sorting camera IDs
+// For easy array conversion
+// For sorting camera IDs
 import java.util.concurrent.ExecutorService; // Make sure this import exists
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-import android.content.Intent; // Add Intent import
-import androidx.localbroadcastmanager.content.LocalBroadcastManager; // OR use ContextCompat if not using LocalBroadcastManager
-import androidx.core.content.ContextCompat; // If using standard broadcast
+// Add Intent import
+// OR use ContextCompat if not using LocalBroadcastManager
+// If using standard broadcast
 
 // ----- Fix Start for this class (SettingsFragment_video_splitting_imports) -----
 import android.text.Editable;
@@ -122,8 +110,7 @@ import android.text.TextWatcher;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
+
 import com.fadcam.utils.DeviceHelper;
 
 public class SettingsFragment extends BaseFragment {
@@ -151,10 +138,12 @@ public class SettingsFragment extends BaseFragment {
     private MaterialSwitch locationEmbedSwitch; // Declare location embedding switch
     private MaterialSwitch debugSwitch; // Declare debugSwitch
     private MaterialSwitch audioSwitch; // Declare audioSwitch
+    private MaterialSwitch autoUpdateCheckSwitch; // Declare auto update check switch
     
     // App Lock
     private MaterialButton appLockConfigureButton;
     private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
+    private static final String PREF_AUTO_UPDATE_CHECK = "auto_update_check_enabled";
 
     // App Icon
     private MaterialButton appIconChooseButton;
@@ -544,6 +533,9 @@ public class SettingsFragment extends BaseFragment {
         videoSplitSizeLayout = view.findViewById(R.id.video_split_size_layout);
         videoSplitSizeValueTextView = view.findViewById(R.id.video_split_size_value_textview); // New TextView
         // ----- Fix Ended for this class (SettingsFragment_video_splitting_view_finding) -----
+        
+        // Find notification customization button
+        notificationCustomizationButton = view.findViewById(R.id.button_notification_customization);
 
         audioInputSourceStatus = view.findViewById(R.id.audio_input_source_status);
         setupAudioInputSourceSection();
@@ -665,6 +657,11 @@ public class SettingsFragment extends BaseFragment {
         setupThemeSpinner(view);
         setupOrientationSpinner();
         setupVideoSplittingSection();
+        
+        // Setup notification customization button
+        if (notificationCustomizationButton != null) {
+            setupNotificationCustomizationButton();
+        }
 
         locationHelper = new LocationHelper(getContext());
         
@@ -2342,6 +2339,7 @@ public class SettingsFragment extends BaseFragment {
             case "ps": return 5;
             case "in": return 6;
             case "it": return 7; // Added for Italian
+            case "el": return 8; // Added for Greek
             default: return 0; // Default to English if unknown
         }
     }
@@ -2357,6 +2355,7 @@ public class SettingsFragment extends BaseFragment {
             case 5: return "ps";
             case 6: return "in";
             case 7: return "it"; // Added for Italian
+            case 8: return "el"; // Added for Greek
             default: return "en"; // Default to English on error
         }
     }
@@ -4403,6 +4402,16 @@ public class SettingsFragment extends BaseFragment {
         }
         
         // ... rest of existing code ...
+
+        // --- Auto Update Check Toggle ---
+        autoUpdateCheckSwitch = view.findViewById(R.id.auto_update_check_toggle);
+        boolean isAutoUpdateCheckEnabled = sharedPreferencesManager.sharedPreferences.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
+        autoUpdateCheckSwitch.setChecked(isAutoUpdateCheckEnabled);
+        autoUpdateCheckSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferencesManager.sharedPreferences.edit().putBoolean(PREF_AUTO_UPDATE_CHECK, isChecked).apply();
+            vibrateTouch();
+        });
+        // ... existing code ...
     }
     
     // New method to handle Snow Veil theme UI adjustments
@@ -4582,6 +4591,8 @@ public class SettingsFragment extends BaseFragment {
         // Set button text based on current icon
         if (currentIcon.equals(Constants.APP_ICON_DEFAULT)) {
             appIconChooseButton.setText(getString(R.string.app_icon_default));
+        } else if (currentIcon.equals(Constants.APP_ICON_MINIMAL)) {
+            appIconChooseButton.setText(getString(R.string.app_icon_minimal));
         } else if (currentIcon.equals(Constants.APP_ICON_ALTERNATIVE)) {
             appIconChooseButton.setText(getString(R.string.app_icon_alternative));
         } else if (currentIcon.equals(Constants.APP_ICON_FADED)) {
@@ -4672,6 +4683,7 @@ public class SettingsFragment extends BaseFragment {
         ComponentName footballIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FootballIcon");
         ComponentName carIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.CarIcon");
         ComponentName jetIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.JetIcon");
+        ComponentName minimalIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.MinimalIcon");
         
         // Disable all icon activity-aliases first
         pm.setComponentEnabledSetting(defaultIcon, 
@@ -4720,6 +4732,9 @@ public class SettingsFragment extends BaseFragment {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(jetIcon, 
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(minimalIcon, 
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
                 PackageManager.DONT_KILL_APP);
         
@@ -4788,8 +4803,302 @@ public class SettingsFragment extends BaseFragment {
             pm.setComponentEnabledSetting(jetIcon, 
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
                     PackageManager.DONT_KILL_APP);
+        } else if (Constants.APP_ICON_MINIMAL.equals(iconKey)) {
+            pm.setComponentEnabledSetting(minimalIcon, 
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 
+                    PackageManager.DONT_KILL_APP);
         }
     }
 
+    // Utility method for other fragments to check if auto update is enabled
+    public static boolean isAutoUpdateCheckEnabled(Context context) {
+        SharedPreferences prefs = SharedPreferencesManager.getInstance(context).sharedPreferences;
+        return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
+    }
 
+    // For notification preview
+    private MaterialButton notificationCustomizationButton;
+
+    // ----- Fix Start for this class (SettingsFragment_notification_customization) -----
+    /**
+     * Sets up the notification customization button click listener
+     */
+    private void setupNotificationCustomizationButton() {
+        if (notificationCustomizationButton == null) {
+            return;
+        }
+        
+        notificationCustomizationButton.setOnClickListener(v -> {
+            vibrateTouch();
+            showNotificationCustomizationDialog();
+        });
+    }
+
+    /**
+     * Shows dialog for customizing notification appearance
+     */
+    private void showNotificationCustomizationDialog() {
+        final View customView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_notification_customization, null);
+        final AlertDialog dialog = themedDialogBuilder(requireContext())
+                .setTitle(R.string.notification_setup_title)
+                .setView(customView)
+                .setCancelable(true)
+                .create();
+        
+        // Initialize RadioGroup for presets
+        RadioGroup presetGroup = customView.findViewById(R.id.radiogroup_notification_preset);
+        RadioButton defaultPreset = customView.findViewById(R.id.radio_preset_default);
+        RadioButton systemUpdatePreset = customView.findViewById(R.id.radio_preset_system_update);
+        RadioButton downloadingPreset = customView.findViewById(R.id.radio_preset_downloading);
+        RadioButton syncingPreset = customView.findViewById(R.id.radio_preset_syncing);
+        RadioButton customPreset = customView.findViewById(R.id.radio_preset_custom);
+        
+        // Initialize custom text fields
+        LinearLayout customTextLayout = customView.findViewById(R.id.layout_custom_notification);
+        TextInputEditText customTitleInput = customView.findViewById(R.id.edit_custom_title);
+        TextInputEditText customTextInput = customView.findViewById(R.id.edit_custom_text);
+        
+        // Initialize hide stop button switch
+        MaterialSwitch hideStopButtonSwitch = customView.findViewById(R.id.switch_hide_stop_button);
+        
+        // Initialize preview components
+        View notificationPreview = customView.findViewById(R.id.notification_preview_card);
+        TextView previewTitle = customView.findViewById(R.id.notification_preview_title);
+        TextView previewText = customView.findViewById(R.id.notification_preview_text);
+        TextView previewStopButton = customView.findViewById(R.id.notification_preview_stop_button);
+        
+        // Initialize buttons
+        Button saveButton = customView.findViewById(R.id.button_save);
+        Button cancelButton = customView.findViewById(R.id.button_cancel);
+        
+        // Get current settings
+        String currentPreset = sharedPreferencesManager.getNotificationPreset();
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        
+        // Set initial values
+        switch (currentPreset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT:
+                defaultPreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                systemUpdatePreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                downloadingPreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                syncingPreset.setChecked(true);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM:
+                customPreset.setChecked(true);
+                customTextLayout.setVisibility(View.VISIBLE);
+                break;
+        }
+        
+        // Set custom text values if available
+        String customTitle = sharedPreferencesManager.getCustomNotificationTitle();
+        String customText = sharedPreferencesManager.getCustomNotificationText();
+        
+        if (customTitle != null) {
+            customTitleInput.setText(customTitle);
+        }
+        if (customText != null) {
+            customTextInput.setText(customText);
+        }
+        
+        // Set hide stop button switch
+        hideStopButtonSwitch.setChecked(hideStopButton);
+        
+        // Update preview initially
+        updateNotificationPreview(
+            previewTitle,
+            previewText,
+            previewStopButton,
+            getSelectedPreset(presetGroup),
+            customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+            customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+            hideStopButtonSwitch.isChecked()
+        );
+        
+        // Set RadioGroup change listener
+        presetGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            // Show/hide custom text fields when custom preset is selected
+            if (checkedId == R.id.radio_preset_custom) {
+                customTextLayout.setVisibility(View.VISIBLE);
+            } else {
+                customTextLayout.setVisibility(View.GONE);
+            }
+            
+            // Update preview
+            updateNotificationPreview(
+                previewTitle,
+                previewText,
+                previewStopButton,
+                getSelectedPreset(presetGroup),
+                customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                hideStopButtonSwitch.isChecked()
+            );
+        });
+        
+        // Setup text change listeners for custom inputs
+        customTitleInput.addTextChangedListener(new SimpleTextWatcher(() -> {
+            if (customPreset.isChecked()) {
+                updateNotificationPreview(
+                    previewTitle,
+                    previewText,
+                    previewStopButton,
+                    SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM,
+                    customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                    customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                    hideStopButtonSwitch.isChecked()
+                );
+            }
+        }));
+        
+        customTextInput.addTextChangedListener(new SimpleTextWatcher(() -> {
+            if (customPreset.isChecked()) {
+                updateNotificationPreview(
+                    previewTitle,
+                    previewText,
+                    previewStopButton,
+                    SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM,
+                    customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                    customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                    hideStopButtonSwitch.isChecked()
+                );
+            }
+        }));
+        
+        // Setup hide stop button switch change listener
+        hideStopButtonSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateNotificationPreview(
+                previewTitle,
+                previewText,
+                previewStopButton,
+                getSelectedPreset(presetGroup),
+                customTitleInput.getText() != null ? customTitleInput.getText().toString() : "",
+                customTextInput.getText() != null ? customTextInput.getText().toString() : "",
+                isChecked
+            );
+        });
+        
+        // Setup save button
+        saveButton.setOnClickListener(v -> {
+            // Save the selected preset
+            String selectedPreset = getSelectedPreset(presetGroup);
+            sharedPreferencesManager.setNotificationPreset(selectedPreset);
+            
+            // Save custom text if custom preset is selected
+            if (SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM.equals(selectedPreset)) {
+                String title = customTitleInput.getText() != null ? customTitleInput.getText().toString() : "";
+                String text = customTextInput.getText() != null ? customTextInput.getText().toString() : "";
+                sharedPreferencesManager.setCustomNotificationTitle(title);
+                sharedPreferencesManager.setCustomNotificationText(text);
+            }
+            
+            // Save hide stop button preference
+            sharedPreferencesManager.setNotificationStopButtonHidden(hideStopButtonSwitch.isChecked());
+            
+            dialog.dismiss();
+            Toast.makeText(requireContext(), getString(R.string.notification_settings_saved), Toast.LENGTH_SHORT).show();
+        });
+        
+        // Setup cancel button
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+        
+        // Show the dialog
+        dialog.show();
+        setDialogButtonColors(dialog);
+    }
+
+    /**
+     * Updates the notification preview in the dialog
+     */
+    private void updateNotificationPreview(
+            TextView titleView, 
+            TextView textView, 
+            View stopButton,
+            String preset, 
+            String customTitle, 
+            String customText, 
+            boolean hideStopButton) {
+        
+        String title;
+        String text;
+        
+        switch (preset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT:
+                title = getString(R.string.notification_video_recording);
+                text = getString(R.string.notification_video_recording_progress_description);
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                title = "System Update";
+                text = "Update in progress";
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                title = "Downloading";
+                text = "Download in progress";
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                title = "Syncing Data";
+                text = "Sync in progress";
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM:
+                title = !customTitle.isEmpty() ? customTitle : "Notification";
+                text = !customText.isEmpty() ? customText : "Process running";
+                break;
+            default:
+                title = getString(R.string.notification_video_recording);
+                text = getString(R.string.notification_video_recording_progress_description);
+        }
+        
+        titleView.setText(title);
+        textView.setText(text);
+        stopButton.setVisibility(hideStopButton ? View.GONE : View.VISIBLE);
+    }
+
+    /**
+     * Gets the selected preset key from the RadioGroup
+     */
+    private String getSelectedPreset(RadioGroup radioGroup) {
+        int selectedId = radioGroup.getCheckedRadioButtonId();
+        
+        if (selectedId == R.id.radio_preset_default) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT;
+        } else if (selectedId == R.id.radio_preset_system_update) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE;
+        } else if (selectedId == R.id.radio_preset_downloading) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING;
+        } else if (selectedId == R.id.radio_preset_syncing) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING;
+        } else if (selectedId == R.id.radio_preset_custom) {
+            return SharedPreferencesManager.NOTIFICATION_PRESET_CUSTOM;
+        }
+        
+        return SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT;
+    }
+
+    /**
+     * Simple TextWatcher implementation that only requires onTextChanged
+     */
+    private static class SimpleTextWatcher implements TextWatcher {
+        private final Runnable onTextChanged;
+        
+        SimpleTextWatcher(Runnable onTextChanged) {
+            this.onTextChanged = onTextChanged;
+        }
+        
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            onTextChanged.run();
+        }
+        
+        @Override
+        public void afterTextChanged(Editable s) {}
+    }
+    // ----- Fix Ended for this class (SettingsFragment_notification_customization) -----
 }

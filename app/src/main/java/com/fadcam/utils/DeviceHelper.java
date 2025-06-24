@@ -1,5 +1,6 @@
 package com.fadcam.utils;
 
+import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
@@ -93,5 +94,24 @@ public class DeviceHelper {
         Log.d(TAG, "  Product: " + Build.PRODUCT);
         Log.d(TAG, "  Android Version: " + Build.VERSION.RELEASE);
         Log.d(TAG, "  SDK Level: " + Build.VERSION.SDK_INT);
+    }
+
+    /**
+     * Check if the device has an active internet connection
+     * @param context Context
+     * @return true if internet is available, false otherwise
+     */
+    public static boolean isInternetAvailable(Context context) {
+        if (context == null) return false;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                return activeNetwork != null && activeNetwork.isConnected();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking internet connectivity", e);
+        }
+        return false;
     }
 } 

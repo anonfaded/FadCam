@@ -55,7 +55,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sort By"
+                android:text="@string/sort_by"
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:textColor="#CCCCCC"
@@ -71,28 +71,28 @@
                     android:id="@+id/sort_latest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Latest First"
+                    android:text="@string/sort_latest_first"
                     android:textColor="#FFFFFF"/>
 
                 <RadioButton
                     android:id="@+id/sort_oldest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Oldest First"
+                    android:text="@string/sort_oldest_first"
                     android:textColor="#FFFFFF"/>
 
                 <RadioButton
                     android:id="@+id/sort_smallest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Smallest Files First"
+                    android:text="@string/sort_smallest_first"
                     android:textColor="#FFFFFF"/>
 
                 <RadioButton
                     android:id="@+id/sort_largest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Largest Files First"
+                    android:text="@string/sort_largest_first"
                     android:textColor="#FFFFFF"/>
             </RadioGroup>
 

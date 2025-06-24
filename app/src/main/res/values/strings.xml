@@ -9,7 +9,7 @@
     <![CDATA[
     FadCam is an ad-free, open-source video recording app that prioritizes privacy by not tracking or collecting any data. It is available exclusively on GitHub and through the official links mentioned in the README.
     <br/><br/>
-    FadCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and thirty one other notable spots.
+    FadCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and 55+ other notable spots.
     ]]>
 </string>
 
@@ -94,6 +94,10 @@
     <string name="video_menu_copy_filename">Copy Filename</string>
     <string name="video_menu_mark_viewed">Mark as Viewed</string>
     <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
+    <string name="video_menu_upload_youtube">Upload to YouTube</string>
+    <string name="video_menu_upload_drive">Upload to  Google Drive</string>
+    <string name="toast_no_youtube_app">YouTube app not found</string>
+    <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>
@@ -194,8 +198,8 @@
     <string name="array_watermark_time_fadcam">Time with Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
-    <string name="recent_features" translatable="false">• Added 3 new shortcuts: Start, Stop Recording, and Torch Toggle (long press app icon to access)\n• Thumbnails now show hours, minutes, and seconds\n• Torch works seamlessly during recording\n• Enhanced video management with sorting options\n• Refreshed flashlight shortcut icon\n• AMOLED black theme for better visuals\n• Improved renaming functionality and crash fixes</string>
-    <string name="upcoming_features" translatable="false">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
+    <string name="recent_features" translatable="false">• Audio toggle, bitrate &amp; input source options\n• Video bitrate, orientation, FPS (60/90), and splitting\n• Wide-angle detection &amp; swipe-to-refresh\n• Thumbnails show index, duration, and size\n• Sorting by date/size + bottom sheet redesign\n• "Video Info" option in 3-dot menu\n• Time-ago labels, "New"/"Temp" badges, empty state UI\n• Trash bin with playback, restore &amp; auto-delete\n• "Select All" in Trash\n• Onboarding slides for new users\n• Video geotagging (location in metadata)\n• Improved animations\n• Fixed back button crash/blank screen\n• AMOLED black &amp; 7+ more themes &amp; 15+ new icons</string>
+    <string name="upcoming_features" translatable="false">• Auto-scheduled recordings\n• Auto-uploading to Google Drive\n• Custom app icons\n• In-app video editor (FaditorX - coming soon)\n• Remote tab with cross-device controls\n• Livestreaming of Video Recording\n• And many more exciting features!</string>
     <string name="toast_video_not_found">Error: Video not found</string>
     <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
     <string name="toast_video_save_fail">Failed to save video</string>
@@ -222,8 +226,8 @@
     <string name="up_to_date">Up To Date</string>
     <string name="up_to_date_description">You are already using the latest version.</string>
     <string name="up_to_date_loading">Checking for updates…</string>
-    <string name="update_available_title">Update Available</string>
-    <string name="update_available_message">A new version (%1$s) is available. To update, please visit the F-Droid store or our GitHub repository for more details.</string>
+    <string name="update_available_title">New Version Available</string>
+    <string name="update_available_message">A freshly baked update is ready! You\'re on v%1$s, latest is v%2$s. Enjoy new features and improvements.</string>
     <string name="visit_fdroid">Visit F-Droid</string>
     <string name="visit_github">Visit GitHub</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
@@ -434,6 +438,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <string name="video_split_size_summary_mb">Current: %1$d MB</string>
     <string name="video_split_size_summary_gb">Current: %1$s GB</string>
+    <string name="video_splitting_title">Enable Video Splitting</string>
+    <string name="video_splitting_description">Automatically split recordings into smaller files (Disabled by default). Recommended: 2 GB for balance. Presets up to 4 GB and custom sizes are available. This helps manage large recordings and avoids device file size limits.</string>
     <string name="support_ko_fi">Support us on Ko-fi</string>
     <string name="kofi_description">Description will be set in code.</string>
     <string name="kofi_button_text">Buy me a Ko-fi</string>
@@ -518,6 +524,18 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="version_format">v%s</string>
 
     <string name="edit_with_faditorx">Edit with FaditorX</string>
+    
+    <!-- Update Bottom Sheet Strings -->
+    <string name="update_sarcastic_heading">📦 Oh look, another update...</string>
+    <string name="update_visit_github">Visit GitHub</string>
+    <string name="update_version_arrow">  →  </string>
+    <!-- Update variations -->
+    <string name="update_variation_1">Still on &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>? That\'s... nostalgic.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is out there making waves. Time to catch up!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> is so last season.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is ready to impress with new features and bug fixes. Upgrade for a better ride!</string>
+    <string name="update_variation_3">Your app is living in the past with &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is the future—faster, smarter, and shinier. Why not join in?</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> has served you well, but &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is calling!&lt;br>Enjoy the latest improvements and a smoother experience—just a tap away.</string>
+    
+
 
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">App Icon</string>
@@ -543,6 +561,113 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_preview">App icon preview</string>
     
     <!-- Misc -->
+    <string name="changelog_label">What\'s New</string>
+
+    <!-- Fix Start: Add auto update check toggle strings -->
+    <string name="setting_auto_update_check_title">Auto Update Check on Startup</string>
+    <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
+    <!-- Fix End: Add auto update check toggle strings -->
+    
+    <!-- Storage Location Settings -->
+    <string name="storage_location_title">Storage Location</string>
+    <string name="storage_location_description">Choose where recordings are saved.</string>
+    <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
+    <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
+    <string name="storage_location_choose_folder">Choose Folder</string>
+    <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam.</string>
+    <string name="storage_icon_description">Storage Icon</string>
+    <string name="location_icon_description">Location Icon</string>
+    <string name="location_embedding_icon_description">Location Embedding Icon</string>
+
+    <string name="app_icon_minimal" translatable="false">Minimal</string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_swipe_instruction">Swipe right to continue</string>
+    <string name="onboarding_select_language">Select your preferred app language.</string>
+    <string name="onboarding_camera">Camera</string>
+    <string name="onboarding_microphone">Microphone</string>
+    <string name="onboarding_storage">Storage</string>
+    <string name="onboarding_or">OR</string>
+    <string name="onboarding_and">AND</string>
+    <string name="onboarding_open_settings">Open Settings</string>
+    <string name="onboarding_intro_line1">Open source,</string>
+    <string name="onboarding_intro_line2">ad-free,</string>
+    <string name="onboarding_intro_line3">and built for you—not for advertisers.</string>
+
+    <!-- Records Options and Empty State Strings -->
+    <string name="sort_by">Sort By</string>
+    <string name="sort_latest_first">Latest First</string>
+    <string name="sort_oldest_first">Oldest First</string>
+    <string name="sort_smallest_first">Smallest Files First</string>
+    <string name="sort_largest_first">Largest Files First</string>
+    <string name="no_videos_found">No videos found</string>
+    <string name="no_recordings_yet">No Recordings Yet</string>
+
+    <!-- Notification Customization Strings -->
+    <string name="setting_notification_customization_title">Notification Customization</string>
+    <string name="setting_notification_customization_description">Customize the recording notification appearance</string>
+    <string name="notification_preset_title">Notification Preset</string>
+    <string name="notification_preset_description">Choose how the notification appears</string>
+    <string name="notification_preset_default">Default (Recording)</string>
+    <string name="notification_preset_system_update">System Update</string>
+    <string name="notification_preset_downloading">Downloading</string>
+    <string name="notification_preset_syncing">Syncing Data</string>
+    <string name="notification_preset_custom">Custom Text</string>
+    <string name="notification_hide_stop_button">Hide Stop Button</string>
+    <string name="notification_hide_stop_button_description">Remove the stop button from the notification</string>
+    <string name="notification_custom_title">Custom Title</string>
+    <string name="notification_custom_text">Custom Text</string>
+    <string name="notification_preview_title">Preview</string>
+    <string name="notification_setup_title">Notification Setup</string>
+    <string name="notification_setup_description">Customize how the recording notification appears</string>
+    <string name="notification_setup_save">Save</string>
+    <string name="notification_setup_cancel">Cancel</string>
+    
+    <!-- Additional Notification Customization Strings -->
+    <string name="notification_channel_recording">%s Recording</string>
+    <string name="notification_channel_system_updates">System Updates</string>
+    <string name="notification_channel_downloads">Downloads</string>
+    <string name="notification_channel_data_sync">Data Sync</string>
+    <string name="notification_channel_generic">Notification Service</string>
+    <string name="notification_channel_description">Service notifications</string>
+    
+    <string name="notification_text_system_update_progress">Update in progress</string>
+    <string name="notification_text_system_update_paused">Update paused</string>
+    <string name="notification_text_downloading_progress">Download in progress</string>
+    <string name="notification_text_downloading_paused">Download paused</string>
+    <string name="notification_text_syncing_progress">Sync in progress</string>
+    <string name="notification_text_syncing_paused">Sync paused</string>
+    <string name="notification_text_custom_default">Process running</string>
+    <string name="notification_title_system_update">System Update</string>
+    <string name="notification_title_downloading">Downloading</string>
+    <string name="notification_title_syncing">Syncing Data</string>
+    <string name="notification_title_custom_default">Notification</string>
+    <string name="notification_settings_saved">Notification settings saved</string>
+
+    <!-- Additional Notification Customization Strings -->
+    <!-- Adding notification appearance strings -->
+    <string name="setting_notification_appearance">Notification Appearance</string>
+    <string name="note_notification_appearance">Customize the appearance of the recording notification\n(Default: FadCam)</string>
+    <string name="hide_stop_button">Hide stop button</string>
+    <string name="note_hide_stop_button">Hide the stop button in the notification\n(Default: Disabled)</string>
+    <string name="notification_preview">Notification preview</string>
+    <string name="notification_stop">STOP</string>
+    
+    <string-array name="notification_appearance_options">
+        <item>FadCam (default)</item>
+        <item>System Update</item>
+        <item>Download</item>
+        <item>Syncing</item>
+        <item>Backup</item>
+        <item>Custom</item>
+    </string-array>
+    
+    <string name="camera_resource_cooldown">Camera resources are being released</string>
+    <string name="camera_interrupted_title">Recording paused (camera in use)</string>
+    <string name="camera_interrupted_description">Another app is using the camera. Recording will resume automatically when the camera is available.</string>
+    <string name="camera_reconnected_title">Camera reconnected</string>
+    <string name="camera_reconnected_description">Recording resumed automatically</string>
+    <string name="camera_reconnection_attempts">Attempting to reconnect to camera...</string>
 
     <!-- Camera error messages -->
     <string name="camera_error_in_use">Camera is in use by another app</string>

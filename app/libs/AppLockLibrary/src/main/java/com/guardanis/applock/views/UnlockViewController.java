@@ -4,19 +4,22 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.fadcam.R;
 import com.guardanis.applock.AppLock;
+import com.guardanis.applock.password.PasswordInputController;
 import com.guardanis.applock.pin.PINInputController;
 import com.guardanis.applock.services.FingerprintLockService;
+import com.guardanis.applock.services.PasswordLockService;
 
 import java.lang.ref.WeakReference;
 
 import androidx.core.content.ContextCompat;
 
-public class UnlockViewController extends AppLockViewController implements AppLock.UnlockDelegate, PINInputController.InputEventListener {
+public class UnlockViewController extends AppLockViewController implements AppLock.UnlockDelegate, PINInputController.InputEventListener, PasswordInputController.InputEventListener {
 
     public interface Delegate {
         public void onUnlockSuccessful();
@@ -25,6 +28,7 @@ public class UnlockViewController extends AppLockViewController implements AppLo
     public enum DisplayVariant {
         NONE,
         PIN_UNLOCK,
+        PASSWORD_UNLOCK,
         FINGERPRINT_AUTHENTICATION
     }
 
@@ -51,17 +55,27 @@ public class UnlockViewController extends AppLockViewController implements AppLo
 
         FingerprintLockService fingerprintService = AppLock.getInstance(parent.getContext())
                 .getLockService(FingerprintLockService.class);
-
-        if (fingerprintService.isEnrolled(parent.getContext()))
+        
+        PasswordLockService passwordService = AppLock.getInstance(parent.getContext())
+                .getLockService(PasswordLockService.class);
+        
+        // Try authenticating in order: Fingerprint -> Password -> PIN
+        if (fingerprintService.isEnrolled(parent.getContext())) {
             setupFingerprintUnlock();
-        else
+        } 
+        else if (passwordService.isEnrolled(parent.getContext())) {
+            setupPasswordUnlock();
+        }
+        else {
             setupPINUnlock();
+        }
     }
 
     protected void setupPINUnlock() {
         this.displayVariant = DisplayVariant.PIN_UNLOCK;
 
         hide(fingerprintAuthImageView);
+        hide(passwordInputView);
         hide(actionSettings);
         show(pinInputView);
 
@@ -71,15 +85,42 @@ public class UnlockViewController extends AppLockViewController implements AppLo
         pinInputController.setInputEventListener(this);
     }
 
+    protected void setupPasswordUnlock() {
+        this.displayVariant = DisplayVariant.PASSWORD_UNLOCK;
+
+        hide(fingerprintAuthImageView);
+        hide(pinInputView);
+        hide(actionSettings);
+        
+        // Check if password view exists before showing it (might be null in some dialog layouts)
+        if (passwordInputView != null && passwordInputView.get() != null) {
+            show(passwordInputView);
+            passwordInputController.ensureKeyboardVisible();
+            passwordInputController.setInputEventListener(this);
+            setDescription(R.string.applock__description_unlock_password);
+        } else {
+            // Fallback to PIN if password view is not available
+            Log.w("UnlockViewController", "Password input view not available, falling back to PIN");
+            setupPINUnlock();
+        }
+    }
+
     @Override
     public void onInputEntered(String input) {
-        if(!pinInputController.matchesRequiredPINLength(input)) {
-            setDescription(R.string.applock__unlock_error_insufficient_selection);
-
-            return;
+        if (displayVariant == DisplayVariant.PIN_UNLOCK) {
+            if(!pinInputController.matchesRequiredPINLength(input)) {
+                setDescription(R.string.applock__unlock_error_insufficient_selection);
+                return;
+            }
+            attemptPINUnlock(input);
+        } 
+        else if (displayVariant == DisplayVariant.PASSWORD_UNLOCK) {
+            if(!passwordInputController.matchesMinimumPasswordLength(input)) {
+                setDescription(R.string.applock__unlock_error_insufficient_selection);
+                return;
+            }
+            attemptPasswordUnlock(input);
         }
-
-        attemptPINUnlock(input);
     }
 
     protected void attemptPINUnlock(String input) {
@@ -91,11 +132,22 @@ public class UnlockViewController extends AppLockViewController implements AppLo
         AppLock.getInstance(activity)
                 .attemptPINUnlock(input, this);
     }
+    
+    protected void attemptPasswordUnlock(String input) {
+        Activity activity = this.activity.get();
+
+        if (activity == null)
+            return;
+
+        AppLock.getInstance(activity)
+                .attemptPasswordUnlock(input, this);
+    }
 
     protected void setupFingerprintUnlock() {
         this.displayVariant = DisplayVariant.FINGERPRINT_AUTHENTICATION;
 
         hide(pinInputView);
+        hide(passwordInputView);
         hide(actionSettings);
         show(fingerprintAuthImageView);
 

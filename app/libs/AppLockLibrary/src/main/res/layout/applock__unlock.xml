@@ -29,6 +29,10 @@
             android:id="@+id/pin__input_view"
             style="@style/applock__input_pin_view"/>
 
+        <com.guardanis.applock.password.PasswordInputView
+            android:id="@+id/pin__password_input_view"
+            style="@style/applock__input_password_view"/>
+
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/pin__action_settings"
             style="@style/applock__action_settings"/>

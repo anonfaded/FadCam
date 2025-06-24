@@ -700,41 +700,12 @@ public class RecordsFragment extends BaseFragment implements
 // ** In RecordsFragment.java **
 
     private void setupRecyclerView() {
+        Log.d(TAG, "Setting up RecyclerView...");
+        
+        // Initialize view components
         emptyStateContainer = getView().findViewById(R.id.empty_state_container);
         recyclerView = getView().findViewById(R.id.recycler_view_records);
         loadingIndicator = getView().findViewById(R.id.loading_indicator);
-        
-        if (recordsAdapter == null) {
-            // Create new adapter if needed
-                    recordsAdapter = new RecordsAdapter(
-                    requireContext(),
-                    videoItems,
-                    executorService,
-                    sharedPreferencesManager,
-                    this,
-                    this,
-                    this
-            );
-            Log.d(TAG, "Creating NEW adapter instance in setupRecyclerView");
-        } else {
-            // Update existing adapter with current items
-            recordsAdapter.updateRecords(videoItems);
-            Log.d(TAG, "UPDATING existing adapter in setupRecyclerView");
-        }
-        
-        // ----- Fix Start: Set Snow Veil theme flag on adapter -----
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
-        Log.d(TAG, "Set Snow Veil theme flag on adapter: " + isSnowVeilTheme);
-        // ----- Fix End: Set Snow Veil theme flag on adapter -----
-        
-        // Create a debouncer for loading more items to avoid rapid triggers
-        loadMoreDebouncer = new DebouncedRunnable(() -> {
-            if (hasMoreItems && !isLoadingMore) {
-                loadMoreItems();
-            }
-        }, 150); // 150ms delay
         
         // Apply optimized layout settings
         recyclerView.setItemViewCacheSize(20); // Increase view cache size
@@ -742,53 +713,73 @@ public class RecordsFragment extends BaseFragment implements
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
         recyclerView.setHasFixedSize(true); // Use if all items have the same size
         
-        recyclerView.setAdapter(recordsAdapter);
+        recyclerView.addItemDecoration(itemDecoration = new SpacesItemDecoration(4)); // Default spacing
         
-        // Set layout manager
+        // Create RecordsAdapter and setup
+        recordsAdapter = new RecordsAdapter(
+                getContext(),
+                videoItems,
+                executorService,
+                sharedPreferencesManager,
+                this,  // OnVideoClickListener
+                this,  // OnVideoLongClickListener
+                this   // RecordActionListener
+        );
+        
+        // Set any theme preferences the adapter needs
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(
+                com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
+        recordsAdapter.setSnowVeilTheme("Snow Veil".equals(currentTheme));
+        
+        // Set the layout manager
         setLayoutManager();
         
-        // Add scroll state listener to improve thumbnail loading performance
+        // Set adapter
+        recyclerView.setAdapter(recordsAdapter);
+        
+        // Setup RecyclerView scroll listener for optimized loading
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                // When scrolling, use low quality images, when stopped use high quality
+                super.onScrollStateChanged(recyclerView, newState);
+                boolean wasScrolling = isScrolling;
+                
+                // Update scrolling state for efficient thumbnail loading
                 isScrolling = newState != RecyclerView.SCROLL_STATE_IDLE;
-                if (!isScrolling && recordsAdapter != null) {
-                    // When scrolling stops, refresh visible items for better quality
-                    recordsAdapter.setScrolling(false);
-                    // Update thumbnails for visible items to high quality
-                    refreshVisibleItems();
-                } else if (recordsAdapter != null) {
-                    recordsAdapter.setScrolling(true);
+                if (recordsAdapter != null) {
+                    recordsAdapter.setScrolling(isScrolling);
                 }
-        }
-
-        @Override
+                
+                // When scrolling stops, refresh visible items for better quality thumbnails
+                if (wasScrolling && !isScrolling) {
+                    refreshVisibleItems();
+                }
+            }
+            
+            @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 
-                // Only trigger loading more when scrolling down
-                if (dy > 0) {
-                    RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-                    if (layoutManager == null) return;
-                    
-                    int visibleItemCount = layoutManager.getChildCount();
-                    int totalItemCount = layoutManager.getItemCount();
-                    int firstVisibleItemPosition = 0;
-                    
-                    if (layoutManager instanceof LinearLayoutManager) {
-                        firstVisibleItemPosition = ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
-                    } else if (layoutManager instanceof GridLayoutManager) {
-                        firstVisibleItemPosition = ((GridLayoutManager) layoutManager).findFirstVisibleItemPosition();
-                    }
-                    
-                    // Prefetch when we're close to the end
-                    if ((visibleItemCount + firstVisibleItemPosition + PRELOAD_DISTANCE) >= totalItemCount 
-                            && firstVisibleItemPosition >= 0
-                            && totalItemCount >= PAGE_SIZE) {
-                        loadMoreDebouncer.run();
-                    }
+                // Don't do any loading if we're in selection mode or search mode
+                if (isInSelectionMode() || isSearchActive() || isLoading) {
+                    return;
                 }
+                
+                // Get layout manager and last visible position
+                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+                if (layoutManager == null) return;
+                
+                int lastVisibleItemPosition;
+                int totalItemCount = layoutManager.getItemCount();
+                
+                if (layoutManager instanceof GridLayoutManager) {
+                    lastVisibleItemPosition = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
+                } else {
+                    lastVisibleItemPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+                }
+                
+                // If we're close to the end of the list, load more items (no action needed for this approach)
+                // We've eliminated paging, so all items are already loaded
             }
         });
         
@@ -798,209 +789,35 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
     
-    // Add method to refresh visible items
+    /**
+     * Refreshes the thumbnails of currently visible items for better quality
+     * when scrolling stops
+     */
     private void refreshVisibleItems() {
-        if (recyclerView == null || recyclerView.getLayoutManager() == null) return;
-
+        if (recyclerView == null || recordsAdapter == null || getContext() == null) return;
+        
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-        int first = 0, last = 0;
+        if (layoutManager == null) return;
         
-        if (layoutManager instanceof LinearLayoutManager) {
-            LinearLayoutManager llm = (LinearLayoutManager) layoutManager;
-            first = llm.findFirstVisibleItemPosition();
-            last = llm.findLastVisibleItemPosition();
-        } else if (layoutManager instanceof GridLayoutManager) {
-            GridLayoutManager glm = (GridLayoutManager) layoutManager;
-            first = glm.findFirstVisibleItemPosition();
-            last = glm.findLastVisibleItemPosition();
-        }
-        
-        if (last >= first && recordsAdapter != null) {
-            // Just notify these items changed to refresh thumbnails
-            recordsAdapter.notifyItemRangeChanged(first, last - first + 1, "QUALITY_CHANGE");
-        }
-    }
-
-    // Update load more items for better performance
-    private void loadMoreItems() {
-        if (!hasMoreItems || isLoadingMore) return;
-        
-        isLoadingMore = true;
-        currentPage++;
-        Log.d(TAG, "Loading more items, page: " + currentPage);
-        
-        List<VideoItem> nextPageItems = getNextPage(currentPage);
-        if (!nextPageItems.isEmpty()) {
-            int prevSize = videoItems.size();
-            videoItems.addAll(nextPageItems);
-            
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    if (recordsAdapter != null) {
-                        recordsAdapter.notifyItemRangeInserted(prevSize, nextPageItems.size());
-                        Log.d(TAG, "Loaded more items: " + nextPageItems.size() + ", total now: " + videoItems.size());
-                    }
-                    isLoadingMore = false;
-                });
-            } else {
-                isLoadingMore = false;
-            }
+        int firstVisible, lastVisible;
+        if (layoutManager instanceof GridLayoutManager) {
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) layoutManager;
+            firstVisible = gridLayoutManager.findFirstVisibleItemPosition();
+            lastVisible = gridLayoutManager.findLastVisibleItemPosition();
         } else {
-            isLoadingMore = false;
-            Log.d(TAG, "No more items to load");
+            LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+            firstVisible = linearLayoutManager.findFirstVisibleItemPosition();
+            lastVisible = linearLayoutManager.findLastVisibleItemPosition();
         }
-    }
-
-    // Improve the loadRecordsList method for more efficient data loading
-    @SuppressLint("NotifyDataSetChanged")
-    private void loadRecordsList() {
-        Log.i(TAG, "LOG_LOAD_RECORDS: loadRecordsList START. Current sort: " + currentSortOption);
-        if (loadingIndicator != null) {
-            loadingIndicator.setVisibility(View.VISIBLE);
-            Log.d(TAG, "LOG_LOAD_RECORDS: Loading indicator VISIBLE.");
-        }
-        if (recyclerView != null) {
-            recyclerView.setVisibility(View.GONE);
-            Log.d(TAG, "LOG_LOAD_RECORDS: RecyclerView GONE.");
-        }
-        if (emptyStateContainer != null) {
-            emptyStateContainer.setVisibility(View.GONE);
-            Log.d(TAG, "LOG_LOAD_RECORDS: Empty state GONE.");
-        }
-
-        // Reset pagination state when doing a full reload
-        currentPage = 0;
-        allLoadedItems.clear();
-        hasMoreItems = true;
-        videoItemPositionCache.clear();
         
-        // Clear the adapter's cache to ensure fresh rendering of all items
-        if (recordsAdapter != null) {
-            recordsAdapter.clearCaches();
+        // Limit the range to valid indices
+        if (firstVisible < 0) firstVisible = 0;
+        if (lastVisible >= recordsAdapter.getItemCount()) lastVisible = recordsAdapter.getItemCount() - 1;
+        
+        // Notify these items to refresh their thumbnails
+        if (lastVisible >= firstVisible) {
+            recordsAdapter.notifyItemRangeChanged(firstVisible, lastVisible - firstVisible + 1, "refreshThumbnail");
         }
-
-        executorService.execute(() -> {
-            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Background execution START.");
-            
-            // Optimize the loading strategy by parallelizing the loading tasks
-            // Create separate threads for different data sources
-            List<VideoItem> tempCacheVideos = getTempCacheRecordsList();
-            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Fetched " + tempCacheVideos.size() + " temp cache videos.");
-            
-            // Show temp videos first for better responsiveness
-            if (!tempCacheVideos.isEmpty() && getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    videoItems.clear();
-                    videoItems.addAll(tempCacheVideos);
-                    if (recordsAdapter != null) {
-                        recordsAdapter.updateRecords(videoItems);
-                        if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
-                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: Initial update with temp cache items: " + tempCacheVideos.size());
-                    }
-                });
-            }
-
-            // Continue loading other videos
-            List<VideoItem> combinedItems = new ArrayList<>(tempCacheVideos);
-
-            String safUriString = sharedPreferencesManager.getCustomStorageUri();
-            boolean loadedFromSaf = false;
-
-            if (safUriString != null) {
-                Log.d(TAG, "LOG_LOAD_RECORDS_BG: SAF URI configured: " + safUriString);
-                try {
-                    Uri treeUri = Uri.parse(safUriString);
-                    if (hasSafPermission(treeUri)) {
-                        Log.i(TAG, "LOG_LOAD_RECORDS_BG: Valid SAF custom location. Loading ONLY from SAF.");
-                        List<VideoItem> safVideos = getSafRecordsList(treeUri);
-                        Log.d(TAG, "LOG_LOAD_RECORDS_BG: Fetched " + safVideos.size() + " SAF videos.");
-                        combinedItems.addAll(safVideos);
-                        loadedFromSaf = true;
-                    } else {
-                        Log.w(TAG, "LOG_LOAD_RECORDS_BG: No persistent permission for SAF URI: " + safUriString + ". Falling back to internal storage.");
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "LOG_LOAD_RECORDS_BG: Error processing SAF URI: " + safUriString + ". Falling back to internal storage.", e);
-                }
-            } else {
-                Log.d(TAG, "LOG_LOAD_RECORDS_BG: No SAF URI configured. Using internal storage.");
-            }
-
-            if (!loadedFromSaf) {
-                Log.i(TAG, "LOG_LOAD_RECORDS_BG: Loading from internal storage.");
-                List<VideoItem> internalVideos = getInternalRecordsList();
-                Log.d(TAG, "LOG_LOAD_RECORDS_BG: Fetched " + internalVideos.size() + " internal videos.");
-                combinedItems.addAll(internalVideos);
-            }
-            
-            // Deduplicate videos based on URI
-            List<VideoItem> uniqueItems = new ArrayList<>();
-            Set<Uri> uniqueUris = new HashSet<>();
-            for (VideoItem item : combinedItems) {
-                if (item != null && item.uri != null && uniqueUris.add(item.uri)) {
-                    uniqueItems.add(item);
-                }
-            }
-
-            // Sort all items
-            sortItems(uniqueItems, currentSortOption);
-            allLoadedItems.clear(); // Clear again to be safe
-            allLoadedItems.addAll(uniqueItems);
-            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Total unique items after sort: " + allLoadedItems.size());
-
-            // Extract just the first page
-            final List<VideoItem> firstPageItems = getNextPage(0);
-
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    Log.i(TAG, "LOG_LOAD_RECORDS_UI: Updating UI on main thread. First page item count: " + firstPageItems.size() + ", Total available: " + allLoadedItems.size());
-                    
-                    // Completely clear the existing items
-                    videoItems.clear();
-                    
-                    // Add the new items
-                    videoItems.addAll(firstPageItems);
-                    
-                    // Update the adapter with the new list and force a complete refresh
-                    if (recordsAdapter != null) {
-                        // Use notifyDataSetChanged to force a complete redraw with correct serial numbers
-                        recordsAdapter.updateRecords(videoItems);
-                        recordsAdapter.notifyDataSetChanged();
-                        Log.d(TAG, "LOG_LOAD_RECORDS_UI: Adapter fully refreshed with first page. Adapter item count: " + recordsAdapter.getItemCount());
-                    }
-                    
-                    updateUiVisibility();
-                    if (loadingIndicator != null) {
-                        loadingIndicator.setVisibility(View.GONE);
-                    }
-                    if (swipeRefreshLayout != null) {
-                        swipeRefreshLayout.setRefreshing(false);
-                    }
-                    
-                    isLoadingMore = false;
-                });
-            }
-            Log.d(TAG, "LOG_LOAD_RECORDS_BG: Background execution END.");
-        });
-    }
-
-    // Add methods for efficient thumbnail loading
-    public RequestOptions getOptimizedGlideOptions() {
-        return new RequestOptions()
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .skipMemoryCache(false)
-            .centerCrop()
-            .override(200, 200) // Standardized thumbnail size
-            .placeholder(R.drawable.ic_video_placeholder); // Make sure you have this drawable
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (loadMoreDebouncer != null) {
-            loadMoreDebouncer.cancel();
-        }
-        clearResources();
     }
 
     // --- End Implementation of RecordActionListener ---
@@ -1053,6 +870,7 @@ public class RecordsFragment extends BaseFragment implements
 
 // ** In RecordsFragment.java **
 
+    // --- Remove the paging related fields ---
     private static final int PAGE_SIZE = 30; // Number of videos to load per page
     private static final int PRELOAD_DISTANCE = 10; // Number of items to preload ahead
     private boolean isLoadingMore = false;
@@ -1061,6 +879,16 @@ public class RecordsFragment extends BaseFragment implements
     private final List<VideoItem> allLoadedItems = new ArrayList<>();
     private final SparseArray<String> videoItemPositionCache = new SparseArray<>();
     private DebouncedRunnable loadMoreDebouncer;
+
+    // --- Replace with lazy loading related fields ---
+    private static final int BATCH_SIZE = 15; // Load items in smaller batches
+    private static final int SCROLL_THRESHOLD = 8; // Load more when user is this many items from the end
+    private boolean isLoading = false;
+    private boolean isInitialLoad = true;
+    private int totalItems = 0; // Track the total number of items
+    private final List<VideoItem> cachedInternalItems = new ArrayList<>(); // Cache internal items
+    private final List<VideoItem> cachedSafItems = new ArrayList<>(); // Cache SAF items
+    private final List<VideoItem> cachedTempItems = new ArrayList<>(); // Cache temp items
 
     // --- Listing Helpers ---
 
@@ -2141,10 +1969,7 @@ public class RecordsFragment extends BaseFragment implements
 
     // Restore this important method that was removed
     private void setLayoutManager() {
-        boolean currentlyGrid = (recyclerView.getLayoutManager() instanceof GridLayoutManager);
-
-        // Only change if the desired state is different or no layout manager set yet
-        if (isGridView != currentlyGrid || recyclerView.getLayoutManager() == null) {
+        if (recyclerView != null) {
             RecyclerView.LayoutManager layoutManager = isGridView ?
                     new GridLayoutManager(getContext(), 2) : // 2 columns for grid
                     new LinearLayoutManager(getContext());
@@ -2160,11 +1985,15 @@ public class RecordsFragment extends BaseFragment implements
             hasMoreItems = false;
             return new ArrayList<>();
         }
-        
+
         int endIndex = Math.min(startIndex + PAGE_SIZE, allLoadedItems.size());
         List<VideoItem> pageItems = new ArrayList<>(allLoadedItems.subList(startIndex, endIndex));
         
-        hasMoreItems = endIndex < allLoadedItems.size();
+        // If this is the last page, set hasMoreItems to false
+        if (endIndex >= allLoadedItems.size()) {
+            hasMoreItems = false;
+        }
+        
         return pageItems;
     }
 
@@ -2334,5 +2163,219 @@ public class RecordsFragment extends BaseFragment implements
                 setTextColorsRecursive(vg.getChildAt(i), primary, secondary);
             }
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        clearResources();
+    }
+
+    /**
+     * Updates only the visible area of the RecyclerView
+     * This is more efficient than notifying the entire dataset changed
+     */
+    private void updateVisibleArea() {
+        if (recyclerView == null || recordsAdapter == null) return;
+        
+        RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+        if (layoutManager == null) return;
+        
+        int firstVisible, lastVisible;
+        if (layoutManager instanceof GridLayoutManager) {
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) layoutManager;
+            firstVisible = gridLayoutManager.findFirstVisibleItemPosition();
+            lastVisible = gridLayoutManager.findLastVisibleItemPosition();
+        } else {
+            LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+            firstVisible = linearLayoutManager.findFirstVisibleItemPosition();
+            lastVisible = linearLayoutManager.findLastVisibleItemPosition();
+        }
+        
+        // Extend the range slightly to preload adjacent items
+        firstVisible = Math.max(0, firstVisible - 2);
+        lastVisible = Math.min(recordsAdapter.getItemCount() - 1, lastVisible + 2);
+        
+        if (lastVisible >= firstVisible) {
+            recordsAdapter.notifyItemRangeChanged(firstVisible, lastVisible - firstVisible + 1);
+            Log.d(TAG, "updateVisibleArea: Updated items " + firstVisible + " to " + lastVisible);
+        }
+    }
+
+    /**
+     * Creates optimized Glide options for efficient thumbnail loading
+     * @return RequestOptions for Glide
+     */
+    public RequestOptions getOptimizedGlideOptions() {
+        return new RequestOptions()
+            .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache both original & resized images
+            .skipMemoryCache(false) // Use memory cache for faster loading
+            .centerCrop() // Crop images to fit the view
+            .override(200, 200) // Standardized thumbnail size for all items
+            .placeholder(R.drawable.ic_video_placeholder); // Show placeholder while loading
+    }
+
+    /**
+     * Loads the list of videos from all sources and updates the UI
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    private void loadRecordsList() {
+        Log.i(TAG, "loadRecordsList: Starting load with efficient lazy loading");
+        
+        // Show loading indicators
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisibility(View.VISIBLE);
+        }
+        if (recyclerView != null) {
+            recyclerView.setVisibility(View.GONE);
+        }
+        if (emptyStateContainer != null) {
+            emptyStateContainer.setVisibility(View.GONE);
+        }
+
+        // Reset state
+        isLoading = true;
+        isInitialLoad = true;
+        totalItems = 0;
+        
+        // Clear caches
+        cachedInternalItems.clear();
+        cachedSafItems.clear();
+        cachedTempItems.clear();
+        
+        // Clear the adapter's cache
+        if (recordsAdapter != null) {
+            recordsAdapter.clearCaches();
+        }
+
+        executorService.execute(() -> {
+            try {
+                // Step 1: Load temporary videos first (these are fast to load and show immediate feedback)
+                cachedTempItems.clear();
+                cachedTempItems.addAll(getTempCacheRecordsList());
+                
+                // Show temp videos immediately for better responsiveness
+                updateUiWithVideos(new ArrayList<>(cachedTempItems), true);
+                
+                // Step 2: Load videos from either SAF or internal storage based on preference
+                boolean loadedFromSaf = false;
+                String safUriString = sharedPreferencesManager.getCustomStorageUri();
+
+                if (safUriString != null) {
+                    try {
+                        Uri treeUri = Uri.parse(safUriString);
+                        if (hasSafPermission(treeUri)) {
+                            // Load videos from SAF in background
+                            cachedSafItems.clear();
+                            cachedSafItems.addAll(getSafRecordsList(treeUri));
+                            loadedFromSaf = true;
+                        } else {
+                            Log.w(TAG, "No persistent permission for SAF URI: " + safUriString);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error processing SAF URI", e);
+                    }
+                }
+
+                // If not using SAF, load from internal storage
+                if (!loadedFromSaf) {
+                    cachedInternalItems.clear();
+                    cachedInternalItems.addAll(getInternalRecordsList());
+                }
+
+                // Step 3: Combine all unique videos
+                List<VideoItem> combinedVideos = new ArrayList<>();
+                
+                // Add videos in order of priority (temp first, then others)
+                combinedVideos.addAll(cachedTempItems);
+                
+                if (loadedFromSaf) {
+                    combinedVideos.addAll(cachedSafItems);
+                } else {
+                    combinedVideos.addAll(cachedInternalItems);
+                }
+                
+                // Deduplicate videos based on URI
+                List<VideoItem> uniqueItems = new ArrayList<>();
+                Set<Uri> uniqueUris = new HashSet<>();
+                for (VideoItem item : combinedVideos) {
+                    if (item != null && item.uri != null && uniqueUris.add(item.uri)) {
+                        uniqueItems.add(item);
+                    }
+                }
+
+                // Step 4: Sort all items
+                sortItems(uniqueItems, currentSortOption);
+                totalItems = uniqueItems.size();
+                
+                // Step 5: Update UI with all items
+                updateUiWithVideos(uniqueItems, false);
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading videos", e);
+                // Ensure we reset loading state even on error
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        isLoading = false;
+                        updateUiVisibility();
+                        if (loadingIndicator != null) {
+                            loadingIndicator.setVisibility(View.GONE);
+                        }
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    /**
+     * Updates the UI with a list of videos, either completely replacing the current list
+     * or appending to it.
+     * 
+     * @param newVideos The list of videos to display
+     * @param isPartial Whether this is a partial update (true) or complete update (false)
+     */
+    private void updateUiWithVideos(final List<VideoItem> newVideos, boolean isPartial) {
+        if (getActivity() == null) return;
+        
+        Log.d(TAG, "updateUiWithVideos: Updating UI with " + newVideos.size() + " videos, isPartial=" + isPartial);
+        
+        getActivity().runOnUiThread(() -> {
+            if (isPartial) {
+                // For partial updates (e.g., just temp videos), we want to show them right away
+                videoItems.clear();
+                videoItems.addAll(newVideos);
+                
+                if (recordsAdapter != null) {
+                    recordsAdapter.updateRecords(videoItems);
+                    if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+                }
+                // Don't hide loading indicator yet for partial updates
+            } else {
+                // For complete updates, replace everything
+                videoItems.clear();
+                videoItems.addAll(newVideos);
+                
+                if (recordsAdapter != null) {
+                    recordsAdapter.updateRecords(videoItems);
+                }
+                
+                updateUiVisibility();
+                if (loadingIndicator != null) {
+                    loadingIndicator.setVisibility(View.GONE);
+                }
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+                if (recyclerView != null) {
+                    recyclerView.setVisibility(View.VISIBLE);
+                }
+            }
+            
+            isLoading = false;
+            isInitialLoad = false;
+        });
     }
 }
