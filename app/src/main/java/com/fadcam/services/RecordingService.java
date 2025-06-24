@@ -2628,8 +2628,7 @@ public class RecordingService extends Service {
             return;
         }
         
-        // Ensure MediaRecorder is completely released
-        releaseMediaRecorderSafely();
+
         
         // Ensure existing camera resources are properly cleaned up
         if (cameraDevice != null) {
