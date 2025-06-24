@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -107,6 +108,7 @@ public class RecordingService extends Service {
     private CameraCaptureSession captureSession;
     private CaptureRequest.Builder captureRequestBuilder;
     private Surface previewSurface; // Surface from UI if preview enabled
+    private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
 
     private LocationHelper locationHelper;
     private GeotagHelper geotagHelper;

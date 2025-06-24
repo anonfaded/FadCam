@@ -64,8 +64,22 @@ public class GLWatermarkRenderer {
     private FloatBuffer vertexBuffer;
     private FloatBuffer texCoordBuffer;
 
-    private static final float[] VERTICES = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-    private static final float[] TEXCOORDS = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
+    // Using matrices in real-time for the first time in this app!
+    // These 2x4 matrices define the vertex coordinates and texture mapping
+    private static final float[] VERTICES = {
+        // 2D coordinate matrix for vertex positions
+        -1.0f, -1.0f,    // Row 1: Bottom left vertex  (x1, y1)
+         1.0f, -1.0f,    // Row 2: Bottom right vertex (x2, y2)
+        -1.0f,  1.0f,    // Row 3: Top left vertex     (x3, y3)  
+         1.0f,  1.0f     // Row 4: Top right vertex    (x4, y4)
+    };
+    private static final float[] TEXCOORDS = {
+        // 2D coordinate matrix for texture mapping
+         0.0f,  0.0f,    // Row 1: Bottom left UV  (u1, v1) 
+         1.0f,  0.0f,    // Row 2: Bottom right UV (u2, v2)
+         0.0f,  1.0f,    // Row 3: Top left UV     (u3, v3)
+         1.0f,  1.0f     // Row 4: Top right UV    (u4, v4)
+    };
 
     private volatile boolean frameAvailable = false;
     private final Object frameSyncObject = new Object();
