@@ -333,7 +333,14 @@ public class GLWatermarkRenderer {
         watermarkPaint.setARGB(255, 255, 255, 255);
         watermarkPaint.setShadowLayer(1.5f, 0f, 1.5f, Color.BLACK);
         watermarkPaint.setLetterSpacing(0.08f);
-        watermarkPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT_BOLD, android.graphics.Typeface.BOLD));
+        // Set Ubuntu font for watermark text
+        try {
+            android.graphics.Typeface ubuntuTypeface = android.graphics.Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf");
+            watermarkPaint.setTypeface(ubuntuTypeface);
+        } catch (Exception e) {
+            // Fallback to default bold if Ubuntu font is not found
+            watermarkPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT_BOLD, android.graphics.Typeface.BOLD));
+        }
         String text = watermarkText;
         int padding = 32;
         int maxBitmapWidth = 800; // Fixed max width for dashcam style
