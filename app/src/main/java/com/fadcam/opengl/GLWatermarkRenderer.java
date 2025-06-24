@@ -369,9 +369,24 @@ public class GLWatermarkRenderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
         flippedBitmap.recycle();
-        // Set OpenGL rectangle to match bitmap width/height in NDC
-        float ndcWidth = 2.0f * dynamicBitmapWidth / (float)videoWidth;
-        float ndcHeight = 2.0f * dynamicBitmapHeight / (float)videoHeight;
+        // Use orientation from SharedPreferencesManager
+        String orientationPref = com.fadcam.SharedPreferencesManager.getInstance(context).getVideoOrientation();
+        boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
+        float ndcWidth, ndcHeight;
+        float bitmapAspect = (float)dynamicBitmapWidth / (float)dynamicBitmapHeight;
+        if (isPortrait) {
+            // Portrait: use previously working logic (scale by width)
+            float targetFractionOfWidth = 0.8f;
+            ndcWidth = targetFractionOfWidth * 2.0f;
+            ndcHeight = ndcWidth / bitmapAspect;
+            ndcHeight = ndcHeight / 1.7f; // Make height much smaller in portrait
+        } else {
+            // Landscape: scale by width, but use a smaller fraction (e.g., 0.7)
+            float targetFractionOfWidth = 0.7f;
+            ndcWidth = targetFractionOfWidth * 2.0f;
+            ndcHeight = ndcWidth / bitmapAspect;
+            ndcHeight = ndcHeight * 1.7f; // Make height much bigger in landscape
+        }
         float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight);
         watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         watermarkRectBuffer.put(rectVerts).position(0);
@@ -622,6 +637,15 @@ public class GLWatermarkRenderer {
 
     private void updateMatrices() {
         int rotationDegrees = getRequiredRotation();
+        boolean isPortrait = (videoHeight > videoWidth && (rotationDegrees == 90 || rotationDegrees == 270)) ||
+                            (videoWidth > videoHeight && (rotationDegrees == 0 || rotationDegrees == 180));
+        if (isPortrait) {
+            dynamicBitmapWidth = 1200;
+            dynamicBitmapHeight = 36;
+        } else {
+            dynamicBitmapWidth = 800;
+            dynamicBitmapHeight = 48;
+        }
         Log.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees + 
               ", deviceOrientation=" + deviceOrientation +
               ", sensorOrientation=" + sensorOrientation);
