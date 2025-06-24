@@ -1839,7 +1839,7 @@ public class RecordingService extends Service {
 
 
     private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy HH:mm:ss", Locale.ENGLISH); // Include seconds
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH); // 12-hour format with AM/PM
         return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
 

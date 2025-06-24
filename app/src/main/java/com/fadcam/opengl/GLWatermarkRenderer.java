@@ -145,7 +145,7 @@ public class GLWatermarkRenderer {
         this.videoHeight = videoHeight;
 
         watermarkPaint = new Paint();
-        watermarkPaint.setTextSize(48);
+        watermarkPaint.setTextSize(20);
         watermarkPaint.setAntiAlias(true);
         watermarkPaint.setARGB(255, 255, 255, 255);
         watermarkPaint.setShadowLayer(1f, 0f, 1f, Color.BLACK);
@@ -327,8 +327,11 @@ public class GLWatermarkRenderer {
     }
 
     private void updateWatermarkTexture() {
-        // Use a much smaller font for dashcam style
-        watermarkPaint.setTextSize(28);
+        // Use a smaller font for dashcam style
+        watermarkPaint.setTextSize(20);
+        // Restore isPortrait for NDC scaling
+        String orientationPref = com.fadcam.SharedPreferencesManager.getInstance(context).getVideoOrientation();
+        boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
         watermarkPaint.setAntiAlias(true);
         watermarkPaint.setARGB(255, 255, 255, 255);
         watermarkPaint.setShadowLayer(1.5f, 0f, 1.5f, Color.BLACK);
@@ -343,14 +346,9 @@ public class GLWatermarkRenderer {
         }
         String text = watermarkText;
         int padding = 32;
-        int maxBitmapWidth = 800; // Fixed max width for dashcam style
-        int minBitmapWidth = 120;
+        // Use a fixed bitmap width for all watermark options
+        dynamicBitmapWidth = 800;
         android.text.TextPaint textPaint = new android.text.TextPaint(watermarkPaint);
-        float textWidth = textPaint.measureText(text);
-        int bitmapWidth = (int)Math.ceil(textWidth + padding);
-        if (bitmapWidth < minBitmapWidth) bitmapWidth = minBitmapWidth;
-        if (bitmapWidth > maxBitmapWidth) bitmapWidth = maxBitmapWidth;
-        dynamicBitmapWidth = bitmapWidth;
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
         }
@@ -377,8 +375,6 @@ public class GLWatermarkRenderer {
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
         flippedBitmap.recycle();
         // Use orientation from SharedPreferencesManager
-        String orientationPref = com.fadcam.SharedPreferencesManager.getInstance(context).getVideoOrientation();
-        boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
         float ndcWidth, ndcHeight;
         float bitmapAspect = (float)dynamicBitmapWidth / (float)dynamicBitmapHeight;
         if (isPortrait) {
