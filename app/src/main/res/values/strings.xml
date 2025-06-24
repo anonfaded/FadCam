@@ -481,9 +481,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_human_checkbox2">I already love FadCam before even using it. (Not optional)</string>
     <string name="onboarding_human_button">Let me in!</string>
 
-    <!-- Fix Start: Add camera cooldown message -->
-    <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
-    <!-- Fix End: Add camera cooldown message -->
+
 
     <string name="trash_select_all">Select All</string>
 
@@ -671,4 +669,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_reconnected_description">Recording resumed automatically</string>
     <string name="camera_reconnection_attempts">Attempting to reconnect to camera...</string>
 
+    <!-- Camera error messages -->
+    <string name="camera_error_in_use">Camera is in use by another app</string>
+    <string name="camera_error_max_cameras">Maximum number of cameras in use</string>
+    <string name="camera_error_disabled">Camera is disabled</string>
+    <string name="camera_error_device">Camera device error</string>
+    <string name="camera_error_service">Camera service error</string>
+    <string name="camera_error_unknown">Unknown camera error</string>
+    <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
+    <string name="dialog_audio_noise_suppression_label">Noise Suppression</string>
 </resources>

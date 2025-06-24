@@ -670,4 +670,37 @@ public class SharedPreferencesManager {
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_notification_customization) -----
 
+    // ----- Fix Start for this method(getVideoSplitSizeBytes)-----
+    /**
+     * Returns the video split size in bytes, based on the value in MB.
+     * @return Split size in bytes
+     */
+    public long getVideoSplitSizeBytes() {
+        int mb = getVideoSplitSizeMb();
+        return mb > 0 ? mb * 1024L * 1024L : 0L;
+    }
+    // ----- Fix Ended for this method(getVideoSplitSizeBytes)-----
+
+    public static final String PREF_AUDIO_NOISE_SUPPRESSION = "audio_noise_suppression";
+    public boolean isNoiseSuppressionEnabled() {
+        return sharedPreferences.getBoolean(PREF_AUDIO_NOISE_SUPPRESSION, false);
+    }
+    public void setNoiseSuppressionEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_AUDIO_NOISE_SUPPRESSION, enabled).apply();
+    }
+
+    /**
+     * Returns the current video bitrate in bps, using custom or default as set in preferences.
+     */
+    public int getCurrentBitrate() {
+        if (sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
+            return sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored as kbps, use bps
+        } else {
+            // Estimate based on resolution and framerate
+            android.util.Size resolution = getCameraResolution();
+            int frameRate = getVideoFrameRate();
+            return com.fadcam.Utils.estimateBitrate(resolution, frameRate);
+        }
+    }
+
 }

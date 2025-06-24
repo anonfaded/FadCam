@@ -56,4 +56,3 @@ viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpag
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-

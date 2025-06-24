@@ -849,6 +849,13 @@ public class HomeFragment extends BaseFragment {
         } catch (Exception e) {
             Log.e(TAG, "Error in onRecordingStopped", e);
         }
+
+        // Check if the service is actually running
+        if (!isMyServiceRunning(RecordingService.class)) {
+            Log.d(TAG, "RecordingService is not running, force setting recordingState to NONE");
+            recordingState = RecordingState.NONE;
+            updateStartButtonAvailability();
+        }
         // ----- Fix End: Restructure for better state management -----
     }
 
@@ -1979,9 +1986,8 @@ public class HomeFragment extends BaseFragment {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
-                Log.d(TAG, "onSurfaceTextureAvailable: SurfaceTexture is now available.");
+                Log.d(TAG, "onSurfaceTextureAvailable: SurfaceTexture is now available. Size: " + width + "x" + height);
                 
-                // ----- Fix Start for this method(onSurfaceTextureAvailable)-----
                 // Clean up any existing surface
                 if (textureViewSurface != null) {
                     textureViewSurface.release();
@@ -1994,20 +2000,26 @@ public class HomeFragment extends BaseFragment {
                 // If we're currently recording and preview is enabled, send the surface to service
                 if (isPreviewEnabled && isRecordingOrPaused()) {
                     Log.d(TAG, "onSurfaceTextureAvailable: Recording in progress, sending surface to service");
-                    updateServiceWithCurrentSurface(textureViewSurface);
+                    updateServiceWithCurrentSurface(textureViewSurface, width, height);
                 } else {
                     Log.d(TAG, "onSurfaceTextureAvailable: Not recording or preview disabled, surface ready for later use");
                 }
-                // ----- Fix Ended for this method(onSurfaceTextureAvailable)-----
             }
 
             @Override
-            public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {}
+            public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
+                Log.d(TAG, "onSurfaceTextureSizeChanged: Size changed to " + width + "x" + height);
+                
+                // If we're currently recording and preview is enabled, update the surface dimensions
+                if (isPreviewEnabled && isRecordingOrPaused() && textureViewSurface != null && textureViewSurface.isValid()) {
+                    Log.d(TAG, "onSurfaceTextureSizeChanged: Updating surface dimensions");
+                    updateServiceWithCurrentSurface(textureViewSurface, width, height);
+                }
+            }
 
             @Override
             public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
                 Log.d(TAG, "onSurfaceTextureDestroyed: SurfaceTexture is being destroyed.");
-                // ----- Fix Start for this method(onSurfaceTextureDestroyed)-----
                 if (textureViewSurface != null) {
                     if (isRecordingOrPaused()) {
                         Log.d(TAG, "onSurfaceTextureDestroyed: Recording active, sending null surface to service.");
@@ -2017,22 +2029,33 @@ public class HomeFragment extends BaseFragment {
                     textureViewSurface = null;
                     Log.d(TAG, "onSurfaceTextureDestroyed: Released local textureViewSurface.");
                 }
-                // ----- Fix Ended for this method(onSurfaceTextureDestroyed)-----
                 return true; // Surface is released by the listener
             }
 
             @Override
-            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {}
+            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
+                // This gets called every frame, so don't log here
+            }
         });
     }
 
     private void setupButtonListeners() {
         buttonStartStop.setOnClickListener(v -> {
-                if (recordingState.equals(RecordingState.NONE)) {
-                    startRecording();
-                } else {
-                    stopRecording();
-                    updateStats();
+            // ----- Fix Start: Add debug logs and ensure recordingState is correct -----
+            Log.d(TAG, "Start/Stop button clicked. recordingState=" + recordingState + ", enabled=" + buttonStartStop.isEnabled());
+            
+            // If service is not running, force recordingState to NONE
+            if (!isMyServiceRunning(RecordingService.class)) {
+                Log.d(TAG, "Service not running, forcing recordingState to NONE");
+                recordingState = RecordingState.NONE;
+            }
+            // ----- Fix End: Add debug logs and ensure recordingState is correct -----
+            
+            if (recordingState.equals(RecordingState.NONE)) {
+                startRecording();
+            } else {
+                stopRecording();
+                updateStats();
             }
         });
 
@@ -2060,6 +2083,12 @@ public class HomeFragment extends BaseFragment {
         }
         performHapticFeedback();
         // Permission checks removed; handled by onboarding
+
+        // Force reset recording state if service is not running
+        if (!isMyServiceRunning(RecordingService.class)) {
+            Log.d(TAG, "Service not running, forcing recordingState to NONE");
+            recordingState = RecordingState.NONE;
+        }
 
         if (isMyServiceRunning(RecordingService.class)) {
             Log.w(TAG, "Start requested, but service appears to be already running or starting. Current state: " + recordingState);
@@ -3491,6 +3520,10 @@ public class HomeFragment extends BaseFragment {
     // ----- Fix Start for this method(updateServiceWithCurrentSurface)-----
     // This method replaces/refines the old updateRecordingSurface
     private void updateServiceWithCurrentSurface(@Nullable Surface surfaceToUse) {
+        updateServiceWithCurrentSurface(surfaceToUse, -1, -1);
+    }
+    
+    private void updateServiceWithCurrentSurface(@Nullable Surface surfaceToUse, int width, int height) {
         if (!isAdded() || getContext() == null) {
             Log.w(TAG, "updateServiceWithCurrentSurface: Fragment not added or context is null, cannot send surface update.");
             return;
@@ -3500,11 +3533,20 @@ public class HomeFragment extends BaseFragment {
         intent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
         if (surfaceToUse != null && surfaceToUse.isValid()) {
             intent.putExtra("SURFACE", surfaceToUse);
-            Log.d(TAG, "updateServiceWithCurrentSurface: Sending new VALID surface to RecordingService.");
+            
+            // Also send surface dimensions if available
+            if (width > 0 && height > 0) {
+                intent.putExtra("SURFACE_WIDTH", width);
+                intent.putExtra("SURFACE_HEIGHT", height);
+                Log.d(TAG, "updateServiceWithCurrentSurface: Sending new VALID surface to RecordingService with dimensions " + width + "x" + height);
+            } else {
+                Log.d(TAG, "updateServiceWithCurrentSurface: Sending new VALID surface to RecordingService.");
+            }
         } else {
             intent.putExtra("SURFACE", (Surface) null); 
             Log.d(TAG, "updateServiceWithCurrentSurface: Sending NULL surface to RecordingService (preview disabled or surface invalid/destroyed).");
         }
+        
         // Use requireContext() for starting service if preferred and appropriate for fragment version
         Context context = getContext();
         if (context != null) {

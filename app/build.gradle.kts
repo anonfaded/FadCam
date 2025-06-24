@@ -26,6 +26,9 @@ android {
         
         // Enable vector drawable support
         vectorDrawables.useSupportLibrary = true
+
+        // Enable vector drawable support
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -40,7 +43,7 @@ android {
             isCrunchPngs = true // Aggressively optimize PNG files
         }
     }
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -51,14 +54,14 @@ android {
         // Disables dependency metadata when building Android App Bundles.
         includeInBundle = false
     }
-    
+
     // Proper resource handling
     android.aaptOptions.noCompress += listOf("xml")
     android.aaptOptions.cruncherEnabled = true // Enable PNG cruncher
     
     // Generate R class for the AppLock library
     android.namespace = "com.fadcam"
-    
+
     // Add the sourceSets for the AppLockLibrary
     sourceSets {
         getByName("main") {
@@ -117,7 +120,7 @@ dependencies {
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.gson)
-    
+
     // CameraX dependencies
     implementation(libs.camerax.core)
     implementation(libs.camerax.camera2)
