@@ -926,14 +926,70 @@ public class GLRecordingPipeline {
      * Pauses the recording pipeline (no-op, for API compatibility).
      */
     public void pauseRecording() {
-        // No-op: Not implemented. Add logic if you want to support pause/resume.
+        if (!isRecording || isStopped) {
+            Log.w(TAG, "Cannot pause recording - recording is not active");
+            return;
+        }
+        
+        Log.d(TAG, "Pausing recording");
+        
+        // Simply set the recording flag to false to stop encoding new frames
+        isRecording = false;
+        
+        // Pause audio recording if enabled
+        if (audioRecordingEnabled && audioRecord != null) {
+            try {
+                if (audioRecord.getRecordingState() == android.media.AudioRecord.RECORDSTATE_RECORDING) {
+                    audioRecord.stop();
+                    Log.d(TAG, "Audio recording paused");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error pausing audio recording", e);
+            }
+        }
+        
+        Log.d(TAG, "Recording paused successfully");
     }
 
     /**
      * Resumes the recording pipeline (no-op, for API compatibility).
      */
     public void resumeRecording() {
-        // No-op: Not implemented. Add logic if you want to support pause/resume.
+        if (isRecording || isStopped) {
+            Log.w(TAG, "Cannot resume recording - recording is either already active or has been stopped");
+            return;
+        }
+        
+        Log.d(TAG, "Resuming recording");
+        
+        // Resume audio recording if enabled
+        if (audioRecordingEnabled && audioRecord != null) {
+            try {
+                if (audioRecord.getRecordingState() != android.media.AudioRecord.RECORDSTATE_RECORDING) {
+                    audioRecord.startRecording();
+                    Log.d(TAG, "Audio recording resumed");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error resuming audio recording", e);
+            }
+        }
+        
+        // Set recording flag to true to resume encoding frames
+        isRecording = true;
+        
+        // Force a frame render to ensure we have a valid frame after resuming
+        if (glRenderer != null && handler != null) {
+            handler.post(() -> {
+                try {
+                    glRenderer.renderFrame();
+                    Log.d(TAG, "Forced a frame render after resuming");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error rendering frame after resume", e);
+                }
+            });
+        }
+        
+        Log.d(TAG, "Recording resumed successfully");
     }
 
     /**
