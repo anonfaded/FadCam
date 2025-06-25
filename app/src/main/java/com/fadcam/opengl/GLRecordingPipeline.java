@@ -226,12 +226,33 @@ public class GLRecordingPipeline {
                 if (previewSurface != null && previewSurface.isValid()) {
                     Log.d(TAG, "Setting preview surface during prepareSurfaces");
                     glRenderer.setPreviewSurface(previewSurface);
-                    
-                    // Wait a bit longer to ensure the preview surface is fully initialized
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        // Ignore
+                } else {
+                    Log.d(TAG, "No valid preview surface available, recording will continue without preview");
+                    // Create a dummy surface for initialization if needed
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                        try {
+                            Log.d(TAG, "Creating dummy surface for initialization");
+                            android.util.DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+                            int width = Math.min(metrics.widthPixels, 320);
+                            int height = Math.min(metrics.heightPixels, 240);
+                            
+                            android.media.ImageReader imageReader = android.media.ImageReader.newInstance(
+                                width, height, android.graphics.PixelFormat.RGBA_8888, 1);
+                            Surface dummySurface = imageReader.getSurface();
+                            
+                            try {
+                                // Just initialize the preview surface but don't use it for rendering
+                                glRenderer.initializePreviewSurfaceOnly(dummySurface);
+                                Log.d(TAG, "Dummy surface initialized successfully");
+                            } finally {
+                                if (dummySurface != null) {
+                                    dummySurface.release();
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed to create dummy surface", e);
+                            // Continue without preview - recording should still work
+                        }
                     }
                 }
                 
@@ -268,13 +289,36 @@ public class GLRecordingPipeline {
     public void startRecording() {
         try {
             if (!isRecording) {
+                Log.d(TAG, "Starting recording pipeline");
+                
+                // Make sure we have a valid renderer and surfaces
+                if (glRenderer == null || encoderInputSurface == null) {
+                    Log.d(TAG, "Preparing surfaces before starting recording");
+                    prepareSurfaces();
+                }
+                
+                if (glRenderer == null) {
+                    throw new RuntimeException("Failed to create renderer");
+                }
+                
+                if (encoderInputSurface == null) {
+                    throw new RuntimeException("Failed to create encoder input surface");
+                }
+                
+                // Initialize audio settings
                 initAudioSettings();
+                
+                // Mark as recording and set up audio
                 isRecording = true;
                 setupAudio();
                 if (audioRecordingEnabled) {
                     startAudioThread();
                 }
+                
+                // Start the render loop
                 startRenderLoop();
+                
+                Log.d(TAG, "Recording pipeline started successfully");
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to start recording pipeline", e);
@@ -282,16 +326,28 @@ public class GLRecordingPipeline {
         }
     }
 
-    private void setupEncoder() throws IOException {
+    /**
+     * Initializes the encoder and input surface once at the beginning.
+     * This should be called only once during the recording session.
+     */
+    private void initializeEncoder() throws IOException {
         // Use app's orientation setting, not device rotation
         boolean appWantsPortrait = "portrait".equalsIgnoreCase(orientation);
         boolean isSensorPortrait = videoHeight > videoWidth;
         boolean needsSwap = appWantsPortrait != isSensorPortrait;
+        
+        // Store the original dimensions before any swapping
+        int originalWidth = videoWidth;
+        int originalHeight = videoHeight;
+        
+        // Calculate encoder dimensions based on orientation
         encoderWidth = needsSwap ? videoHeight : videoWidth;
         encoderHeight = needsSwap ? videoWidth : videoHeight;
+        
         Log.d("FAD-ENCODER", "Orientation setting: " + orientation);
-        Log.d("FAD-ENCODER", "Original resolution: " + videoWidth + "x" + videoHeight);
+        Log.d("FAD-ENCODER", "Original resolution: " + originalWidth + "x" + originalHeight);
         Log.d("FAD-ENCODER", "Final encoder resolution: " + encoderWidth + "x" + encoderHeight);
+        
         MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, encoderWidth, encoderHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
@@ -303,7 +359,7 @@ public class GLRecordingPipeline {
         
         // DEBUG: Log MediaCodec surface dimensions
         try {
-            Log.d("DEBUG_RECORDING", "MediaCodec configured for: " + videoWidth + "x" + videoHeight);
+            Log.d("DEBUG_RECORDING", "MediaCodec configured for: " + originalWidth + "x" + originalHeight);
             
             // Note: We can't directly query Surface dimensions, but we can verify
             // through the MediaFormat that was actually configured
@@ -311,10 +367,10 @@ public class GLRecordingPipeline {
             int configuredWidth = configuredFormat.getInteger(MediaFormat.KEY_WIDTH);
             int configuredHeight = configuredFormat.getInteger(MediaFormat.KEY_HEIGHT);
             
-            Log.d("MEDIACODEC_VERIFY", "Requested: " + videoWidth + "x" + videoHeight);
+            Log.d("MEDIACODEC_VERIFY", "Requested: " + encoderWidth + "x" + encoderHeight);
             Log.d("MEDIACODEC_VERIFY", "Configured: " + configuredWidth + "x" + configuredHeight);
             
-            if (configuredWidth != videoWidth || configuredHeight != videoHeight) {
+            if (configuredWidth != encoderWidth || configuredHeight != encoderHeight) {
                 Log.e("MEDIACODEC_ERROR", "MediaCodec dimensions don't match request!");
             }
         } catch (Exception e) {
@@ -322,15 +378,74 @@ public class GLRecordingPipeline {
         }
         
         videoEncoder.start();
-        if (currentOutputFd != null) {
-            mediaMuxer = new MediaMuxer(currentOutputFd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-        } else {
-            mediaMuxer = new MediaMuxer(currentOutputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-        }
-        muxerStarted = false;
+        
         if (glRenderer != null) {
             glRenderer.setEncoderDimensions(encoderWidth, encoderHeight);
         }
+    }
+
+    /**
+     * Sets up the media muxer for the current output file.
+     * This is called for each segment.
+     */
+    private void setupMuxer() throws IOException {
+        if (currentOutputFd != null) {
+            mediaMuxer = new MediaMuxer(currentOutputFd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            Log.d(TAG, "Created MediaMuxer with file descriptor");
+        } else {
+            mediaMuxer = new MediaMuxer(currentOutputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            Log.d(TAG, "Created MediaMuxer with path: " + currentOutputFilePath);
+        }
+        
+        // Get format from encoder and add tracks to muxer
+        if (videoEncoder != null) {
+            try {
+                // Force the encoder to output its format
+                MediaFormat videoFormat = videoEncoder.getOutputFormat();
+                int videoTrackIndex = mediaMuxer.addTrack(videoFormat);
+                Log.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
+                
+                // If audio is enabled, add audio track
+                if (audioRecordingEnabled && audioEncoder != null) {
+                    try {
+                        MediaFormat audioFormat = audioEncoder.getOutputFormat();
+                        audioTrackIndex = mediaMuxer.addTrack(audioFormat);
+                        Log.d(TAG, "Added audio track with index " + audioTrackIndex + " to muxer");
+                    } catch (IllegalStateException e) {
+                        Log.w(TAG, "Audio format not available yet, will be added later", e);
+                        // We'll add the audio track later when the format becomes available
+                    }
+                }
+                
+                // Start the muxer
+                mediaMuxer.start();
+                muxerStarted = true;
+                Log.d(TAG, "Started muxer immediately after creation");
+            } catch (IllegalStateException e) {
+                Log.w(TAG, "Format not available yet from encoder, will be started later", e);
+                // The format isn't available yet, it will be started in drainEncoder when format becomes available
+                muxerStarted = false;
+            }
+        } else {
+            Log.e(TAG, "Video encoder is null when setting up muxer!");
+            muxerStarted = false;
+        }
+    }
+
+    private void setupEncoder() throws IOException {
+        // Initialize encoder if not already done
+        if (videoEncoder == null || encoderInputSurface == null) {
+            initializeEncoder();
+        }
+        
+        // Set up the muxer
+        setupMuxer();
+        
+        // Log encoder and muxer status
+        Log.d(TAG, "Encoder setup complete. Encoder: " + (videoEncoder != null ? "valid" : "null") + 
+              ", EncoderSurface: " + (encoderInputSurface != null ? "valid" : "null") +
+              ", Muxer: " + (mediaMuxer != null ? "valid" : "null") +
+              ", MuxerStarted: " + muxerStarted);
     }
 
     private void startRenderLoop() {
@@ -354,35 +469,116 @@ public class GLRecordingPipeline {
 
     // Only render when a new frame is available (signaled by renderer)
     private final Runnable renderRunnable = new Runnable() {
+        // Track consecutive failures to implement backoff strategy
+        private int consecutiveRenderFailures = 0;
+        private static final int MAX_CONSECUTIVE_FAILURES = 5;
+        
         @Override
         public void run() {
-            if (!isRecording || glRenderer == null || videoEncoder == null) return;
+            if (!isRecording || videoEncoder == null) {
+                Log.d(TAG, "Skipping render: recording=" + isRecording + 
+                      ", encoder=" + (videoEncoder != null));
+                return;
+            }
+            
+            // If renderer is null, try to recreate it
+            if (glRenderer == null) {
+                try {
+                    Log.d(TAG, "Renderer is null, attempting to recreate");
+                    prepareSurfaces();
+                    if (glRenderer == null) {
+                        Log.e(TAG, "Failed to recreate renderer");
+                        scheduleRetry();
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error recreating renderer", e);
+                    scheduleRetry();
+                    return;
+                }
+            }
+            
             try {
-                // ----- Fix Start for live watermark update -----
+                // Update watermark text from provider
                 updateWatermark();
-                // ----- Fix End for live watermark update -----
-                // Render to encoder
-                glRenderer.renderFrame();
                 
-                // Drain encoded frame data
-                drainEncoder();
+                // Render to encoder - even if preview is not available
+                // This is critical for background recording
+                boolean renderSuccess = false;
+                try {
+                    glRenderer.renderToEncoder();
+                    renderSuccess = true;
+                    // Reset failure counter on success
+                    consecutiveRenderFailures = 0;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error rendering to encoder", e);
+                    consecutiveRenderFailures++;
+                    
+                    // If we've had too many consecutive failures, try to recreate the renderer
+                    if (consecutiveRenderFailures >= MAX_CONSECUTIVE_FAILURES) {
+                        Log.w(TAG, "Too many consecutive render failures, attempting to recreate renderer");
+                        try {
+                            if (glRenderer != null) {
+                                glRenderer.release();
+                            }
+                            prepareSurfaces();
+                            consecutiveRenderFailures = 0;
+                        } catch (Exception ex) {
+                            Log.e(TAG, "Failed to recreate renderer after failures", ex);
+                        }
+                    }
+                }
                 
-                // Check if we need to split the segment due to size
-                if (shouldSplitSegment()) {
-                    rolloverSegment();
+                // Only drain encoder if rendering was successful
+                if (renderSuccess) {
+                    // Drain encoded frame data
+                    drainEncoder();
+                    
+                    // Check if we need to split the segment due to size
+                    if (shouldSplitSegment()) {
+                        Log.d(TAG, "Size limit reached, rolling over segment");
+                        rolloverSegment();
+                    }
+                }
+                
+                // Try to update preview if available, but don't let it affect recording
+                try {
+                    glRenderer.renderToPreview();
+                } catch (Exception e) {
+                    // Just log the error but don't let it affect recording
+                    Log.w(TAG, "Preview rendering failed, but continuing recording", e);
+                }
+                
+                // Always schedule next frame
+                if (isRecording && handler != null && renderThread != null && renderThread.isAlive()) {
+                    handler.post(this);
                 }
                 
             } catch (Exception e) {
                 Log.e(TAG, "Exception in render loop", e);
-                if (isRecording && handler != null && renderThread != null && renderThread.isAlive()) {
-                    handler.postDelayed(this, RENDER_RETRY_DELAY_MS);
-                }
+                scheduleRetry();
+            }
+        }
+        
+        private void scheduleRetry() {
+            if (isRecording && handler != null && renderThread != null && renderThread.isAlive()) {
+                // Use exponential backoff for retries
+                int delay = Math.min(RENDER_RETRY_DELAY_MS * (1 << Math.min(consecutiveRenderFailures, 4)), 1000);
+                handler.postDelayed(this, delay);
             }
         }
     };
 
     private void drainEncoder() {
-        if (videoEncoder == null || (mediaMuxer == null && !muxerStarted)) return;
+        if (videoEncoder == null) {
+            Log.d(TAG, "Encoder is null, skipping drainEncoder");
+            return;
+        }
+        if (mediaMuxer == null) {
+            Log.d(TAG, "Muxer is null, skipping drainEncoder");
+            return;
+        }
+        
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         try {
             while (true) {
@@ -390,41 +586,82 @@ public class GLRecordingPipeline {
                 if (outputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                     break;
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    if (muxerStarted) {
-                        throw new IllegalStateException("Format changed after muxer started");
-                    }
                     MediaFormat newFormat = videoEncoder.getOutputFormat();
-                    int videoTrackIndex = mediaMuxer.addTrack(newFormat);
-                    // Wait for audio track if enabled
-                    if (audioRecordingEnabled && audioTrackIndex == -1 && audioEncoder != null) {
-                        // Wait for audio format to be ready
-                        drainAudioEncoder();
-                    }
-                    if (!muxerStarted && (!audioRecordingEnabled || audioTrackIndex != -1)) {
-                        mediaMuxer.start();
-                        muxerStarted = true;
+                    Log.d(TAG, "Encoder output format changed: " + newFormat);
+                    
+                    if (muxerStarted) {
+                        Log.w(TAG, "Format changed after muxer started - this is unusual but we'll handle it");
+                        // We can't add tracks after muxer is started, so we'll need to restart it
+                        // This should be extremely rare
+                        try {
+                            mediaMuxer.stop();
+                            mediaMuxer.release();
+                            setupMuxer(); // This will add tracks and start the muxer
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed to restart muxer after format change", e);
+                        }
+                    } else {
+                        // Normal case - add track and potentially start muxer
+                        int videoTrackIndex = mediaMuxer.addTrack(newFormat);
+                        Log.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
+                        
+                        // Check if we can start the muxer now
+                        if (!audioRecordingEnabled || audioTrackIndex != -1) {
+                            mediaMuxer.start();
+                            muxerStarted = true;
+                            Log.d(TAG, "Started muxer after receiving video format");
+                        } else {
+                            Log.d(TAG, "Waiting for audio track before starting muxer");
+                        }
                     }
                 } else if (outputBufferIndex >= 0) {
                     ByteBuffer encodedData = videoEncoder.getOutputBuffer(outputBufferIndex);
                     if (encodedData == null) {
-                        throw new RuntimeException("encoderOutputBuffer " + outputBufferIndex + " was null");
+                        Log.e(TAG, "encoderOutputBuffer " + outputBufferIndex + " was null");
+                        videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
+                        continue;
                     }
+                    
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        // Codec config data - we don't write this to the muxer
                         bufferInfo.size = 0;
                     }
-                    if (bufferInfo.size != 0 && muxerStarted) {
-                        encodedData.position(bufferInfo.offset);
-                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                        mediaMuxer.writeSampleData(0, encodedData, bufferInfo);
+                    
+                    // Check for valid data before writing to muxer
+                    if (bufferInfo.size > 0 && muxerStarted) {
+                        // Ensure we have valid data in the buffer
+                        if (encodedData.remaining() < bufferInfo.size) {
+                            Log.w(TAG, "Buffer size mismatch: remaining=" + encodedData.remaining() + 
+                                  ", bufferInfo.size=" + bufferInfo.size + 
+                                  " - adjusting size to prevent error");
+                            bufferInfo.size = encodedData.remaining();
+                        }
+                        
+                        // Only write if we have valid data and muxer is still valid
+                        if (bufferInfo.size > 0 && mediaMuxer != null && muxerStarted) {
+                            try {
+                                encodedData.position(bufferInfo.offset);
+                                encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                mediaMuxer.writeSampleData(0, encodedData, bufferInfo);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error writing video frame to muxer", e);
+                                // Continue processing other frames
+                            }
+                        }
+                    } else if (bufferInfo.size > 0 && !muxerStarted) {
+                        Log.d(TAG, "Dropping encoded frame because muxer isn't started yet");
                     }
+                    
                     videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        Log.d(TAG, "End of stream reached in video encoder");
                         break;
                     }
                 }
             }
+            
             // Drain audio encoder regularly
-            if (audioRecordingEnabled) {
+            if (audioRecordingEnabled && audioEncoder != null) {
                 drainAudioEncoder();
             }
         } catch (Exception e) {
@@ -433,18 +670,56 @@ public class GLRecordingPipeline {
     }
 
     private boolean shouldSplitSegment() {
+        // First check if video splitting is enabled (maxFileSizeBytes > 0)
+        if (maxFileSizeBytes <= 0) {
+            // No need to log every time as this is called frequently
+            return false; // Video splitting is disabled
+        }
+        
         try {
             if (currentOutputFilePath != null) {
                 File f = new File(currentOutputFilePath);
-                return f.exists() && f.length() >= maxFileSizeBytes;
+                if (f.exists()) {
+                    long currentSize = f.length();
+                    // Log periodically (e.g., every 10MB) to avoid log spam
+                    if (currentSize % (10 * 1024 * 1024) < 100 * 1024) { // Log every ~10MB
+                        Log.d(TAG, String.format("Current file size: %.2f MB / %.2f MB (%.1f%%)", 
+                                currentSize / (1024.0 * 1024.0), 
+                                maxFileSizeBytes / (1024.0 * 1024.0),
+                                (currentSize * 100.0) / maxFileSizeBytes));
+                    }
+                    
+                    if (currentSize >= maxFileSizeBytes) {
+                        Log.i(TAG, String.format("File size limit reached: %.2f MB >= %.2f MB, triggering segment rollover", 
+                                currentSize / (1024.0 * 1024.0), 
+                                maxFileSizeBytes / (1024.0 * 1024.0)));
+                        return true;
+                    }
+                }
+                return false;
             } else if (currentOutputFd != null) {
                 // For SAF, try to get file size via FileDescriptor (not always possible)
                 // This is a best-effort; may not work on all devices/URIs
                 try {
                     RandomAccessFile raf = new RandomAccessFile("/proc/self/fd/" + currentOutputFd, "r");
-                    long size = raf.length();
+                    long currentSize = raf.length();
                     raf.close();
-                    return size >= maxFileSizeBytes;
+                    
+                    // Log periodically to avoid log spam
+                    if (currentSize % (10 * 1024 * 1024) < 100 * 1024) { // Log every ~10MB
+                        Log.d(TAG, String.format("Current SAF file size: %.2f MB / %.2f MB (%.1f%%)", 
+                                currentSize / (1024.0 * 1024.0), 
+                                maxFileSizeBytes / (1024.0 * 1024.0),
+                                (currentSize * 100.0) / maxFileSizeBytes));
+                    }
+                    
+                    if (currentSize >= maxFileSizeBytes) {
+                        Log.i(TAG, String.format("SAF file size limit reached: %.2f MB >= %.2f MB, triggering segment rollover", 
+                                currentSize / (1024.0 * 1024.0), 
+                                maxFileSizeBytes / (1024.0 * 1024.0)));
+                        return true;
+                    }
+                    return false;
                 } catch (Exception e) {
                     // Fallback: skip splitting if we can't get size
                     Log.w(TAG, "Unable to check SAF file size for splitting", e);
@@ -459,26 +734,62 @@ public class GLRecordingPipeline {
     private void rolloverSegment() {
         try {
             Log.i(TAG, "Auto-splitting: segment size limit reached, rolling over to next segment");
-            // Stop and release current muxer
+            Log.d(TAG, "Current segment number: " + segmentNumber + ", rolling over to " + (segmentNumber + 1));
+            
+            // First, request the next segment file/descriptor from callback
+            // This is done first to ensure we have a valid output before stopping the current muxer
+            segmentNumber++;
+            Log.d(TAG, "Increment segment number to: " + segmentNumber);
+            
+            if (segmentCallback != null) {
+                Log.d(TAG, "Calling segment callback for next segment");
+                segmentCallback.onSegmentRollover(segmentNumber);
+            } else {
+                Log.e(TAG, "Segment callback is null, cannot continue rollover");
+                throw new IllegalStateException("Segment callback is null");
+            }
+            
+            // Check if callback set the new output
+            if (currentOutputFilePath == null && currentOutputFd == null) {
+                Log.e(TAG, "Segment callback did not set new output path or descriptor");
+                throw new IllegalStateException("No output path or descriptor set after callback");
+            }
+            
+            // Now we can safely stop and release the current muxer
             if (mediaMuxer != null) {
                 try {
                     if (muxerStarted) {
+                        Log.d(TAG, "Stopping current muxer");
                         mediaMuxer.stop();
                     }
+                    Log.d(TAG, "Releasing current muxer");
                     mediaMuxer.release();
                 } catch (Exception e) {
                     Log.e(TAG, "Error releasing muxer during rollover", e);
                 }
                 mediaMuxer = null;
+                muxerStarted = false;
             }
-            segmentNumber++;
-            // Request next file/descriptor from callback
-            if (segmentCallback != null) {
-                segmentCallback.onSegmentRollover(segmentNumber);
+            
+            // Reset track indices
+            audioTrackIndex = -1;
+            
+            try {
+                // Create new muxer for the next segment
+                setupMuxer();
+                
+                // Force a frame render to ensure the encoder has valid data for the new segment
+                if (glRenderer != null) {
+                    glRenderer.renderFrame();
+                    Log.d(TAG, "Forced a frame render for the new segment");
+                }
+                
+                Log.i(TAG, "Started new segment: " + segmentNumber + 
+                      (currentOutputFilePath != null ? " at path: " + currentOutputFilePath : " with file descriptor"));
+            } catch (Exception e) {
+                Log.e(TAG, "Error setting up muxer for new segment", e);
+                throw e; // Re-throw to be caught by outer try-catch
             }
-            // The callback should set currentOutputFilePath/currentOutputFd to the new output
-            setupEncoder();
-            Log.i(TAG, "Started new segment: " + segmentNumber);
         } catch (Exception e) {
             Log.e(TAG, "Error during segment rollover", e);
             stopRecording();
@@ -869,7 +1180,13 @@ public class GLRecordingPipeline {
      * Call this regularly from the render loop or a timer.
      */
     private void drainAudioEncoder() {
-        if (!audioRecordingEnabled || audioEncoder == null || (!muxerStarted && mediaMuxer == null)) return;
+        if (!audioRecordingEnabled || audioEncoder == null) {
+            return;
+        }
+        if (mediaMuxer == null) {
+            return; // Skip if muxer is not available
+        }
+        
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         try {
             while (true) {
@@ -877,36 +1194,148 @@ public class GLRecordingPipeline {
                 if (outputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                     break;
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    if (audioTrackIndex != -1) {
-                        throw new IllegalStateException("Audio format changed twice");
-                    }
                     MediaFormat newFormat = audioEncoder.getOutputFormat();
-                    audioTrackIndex = mediaMuxer.addTrack(newFormat);
-                    if (!muxerStarted && videoEncoder != null) {
-                        // Wait for video track to be added before starting muxer
-                        // (muxerStarted will be set in video drainEncoder)
+                    Log.d(TAG, "Audio encoder output format changed: " + newFormat);
+                    
+                    if (audioTrackIndex != -1) {
+                        Log.w(TAG, "Audio format changed after track was added - this is unusual");
+                        // We can't add a new track if muxer is already started
+                        if (!muxerStarted) {
+                            // If muxer isn't started yet, we can replace the track
+                            audioTrackIndex = mediaMuxer.addTrack(newFormat);
+                            Log.d(TAG, "Replaced audio track with index " + audioTrackIndex);
+                        }
+                    } else {
+                        // Normal case - add track and potentially start muxer
+                        try {
+                            audioTrackIndex = mediaMuxer.addTrack(newFormat);
+                            Log.d(TAG, "Added audio track with index " + audioTrackIndex + " to muxer");
+                            
+                            // Check if we should start the muxer now
+                            if (!muxerStarted) {
+                                try {
+                                    mediaMuxer.start();
+                                    muxerStarted = true;
+                                    Log.d(TAG, "Started muxer after receiving audio format");
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Failed to start muxer after adding audio track", e);
+                                    // Continue without starting the muxer - we'll try again later
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error adding audio track to muxer", e);
+                            // If we fail to add the audio track, we should still try to start the muxer for video-only recording
+                            if (!muxerStarted) {
+                                try {
+                                    mediaMuxer.start();
+                                    muxerStarted = true;
+                                    Log.d(TAG, "Started muxer for video-only recording (audio track failed)");
+                                } catch (Exception e2) {
+                                    Log.e(TAG, "Failed to start muxer for video-only recording", e2);
+                                }
+                            }
+                        }
                     }
                 } else if (outputBufferIndex >= 0) {
                     ByteBuffer encodedData = audioEncoder.getOutputBuffer(outputBufferIndex);
                     if (encodedData == null) {
-                        throw new RuntimeException("audioEncoderOutputBuffer " + outputBufferIndex + " was null");
+                        Log.e(TAG, "audioEncoderOutputBuffer " + outputBufferIndex + " was null");
+                        audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
+                        continue;
                     }
+                    
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        // Codec config data - we don't write this to the muxer
                         bufferInfo.size = 0;
                     }
-                    if (bufferInfo.size != 0 && muxerStarted && audioTrackIndex != -1) {
-                        encodedData.position(bufferInfo.offset);
-                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                        mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
+                    
+                    // Check for valid data before writing to muxer
+                    if (bufferInfo.size > 0 && muxerStarted && audioTrackIndex != -1) {
+                        // Ensure we have valid data in the buffer
+                        if (encodedData.remaining() < bufferInfo.size) {
+                            Log.w(TAG, "Audio buffer size mismatch: remaining=" + encodedData.remaining() + 
+                                  ", bufferInfo.size=" + bufferInfo.size + 
+                                  " - adjusting size to prevent error");
+                            bufferInfo.size = encodedData.remaining();
+                        }
+                        
+                        // Only write if we have valid data and muxer is still valid
+                        if (bufferInfo.size > 0 && mediaMuxer != null && muxerStarted) {
+                            try {
+                                encodedData.position(bufferInfo.offset);
+                                encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error writing audio frame to muxer", e);
+                                // Continue processing other frames
+                            }
+                        }
+                    } else if (bufferInfo.size > 0 && (!muxerStarted || audioTrackIndex == -1)) {
+                        // We have data but can't write it yet
+                        if (audioTrackIndex == -1) {
+                            // If audio track is not set but we have data, try to get the format and add the track
+                            try {
+                                MediaFormat format = audioEncoder.getOutputFormat();
+                                audioTrackIndex = mediaMuxer.addTrack(format);
+                                Log.d(TAG, "Added delayed audio track with index " + audioTrackIndex);
+                                
+                                // Start muxer if needed
+                                if (!muxerStarted) {
+                                    mediaMuxer.start();
+                                    muxerStarted = true;
+                                    Log.d(TAG, "Started muxer after adding delayed audio track");
+                                    
+                                    // Try to write this frame now that we have a track
+                                    encodedData.position(bufferInfo.offset);
+                                    encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                    mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error adding delayed audio track", e);
+                                Log.d(TAG, "Dropping audio frame because track index is not set");
+                            }
+                        } else {
+                            Log.d(TAG, "Dropping audio frame because muxer isn't started yet");
+                        }
                     }
+                    
                     audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        Log.d(TAG, "End of stream reached in audio encoder");
                         break;
                     }
                 }
             }
         } catch (Exception e) {
             Log.e(TAG, "Error draining audio encoder", e);
+        }
+    }
+
+    /**
+     * Call this method when the app comes back to the foreground to ensure the preview is properly set up.
+     * This should be called from the activity's onResume or when the app becomes visible again.
+     * Recording should continue uninterrupted regardless of app foreground/background state.
+     */
+    public void handleAppForeground() {
+        if (!isRecording) return;
+        
+        Log.d(TAG, "App returned to foreground, updating preview surface");
+        
+        // If we have a valid preview surface, make sure it's set on the renderer
+        if (previewSurface != null && previewSurface.isValid() && glRenderer != null) {
+            try {
+                // Update the preview surface
+                glRenderer.setPreviewSurface(previewSurface);
+                
+                // Update surface dimensions if needed
+                if (mSurfaceWidth > 0 && mSurfaceHeight > 0) {
+                    glRenderer.setSurfaceDimensions(mSurfaceWidth, mSurfaceHeight);
+                }
+                
+                Log.d(TAG, "Preview surface updated successfully");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to update preview surface", e);
+            }
         }
     }
 } 

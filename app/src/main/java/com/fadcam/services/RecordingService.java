@@ -1625,7 +1625,7 @@ public class RecordingService extends Service {
         return PendingIntent.getService(this, 2, resumeIntent, flags); // Use unique request code (2)
     }
 
-    // --- End Notifications ---
+
 
     // --- Toast Helpers ---
     private void showRecordingResumedToast() {
@@ -1639,7 +1639,7 @@ public class RecordingService extends Service {
 
     // --- Torch Logic ---
 
-    // Re-introduce toggleRecordingTorch method
+
     private void toggleRecordingTorch() {
         if (captureRequestBuilder != null && captureSession != null && cameraDevice != null) {
             if (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED) {
@@ -1725,64 +1725,10 @@ public class RecordingService extends Service {
     }
 
 
-    /**
-     * Copies the content of a SAF URI to a new temporary file in the app's external cache.
-     * This is useful when FFmpeg processing needs a direct file path for an input that was originally a SAF URI.
-     *
-     * @param context The application context.
-     * @param safUri The SAF URI of the file to copy.
-     * @param originalFilename The desired filename for the temporary cached file (e.g., "temp_segment_001.mp4").
-     * @return The File object of the created temporary cache file, or null if copying failed.
-     */
-    @Nullable
-    private File copySafUriToTempCacheForProcessing(@NonNull Context context, @NonNull Uri safUri, @NonNull String originalFilename) {
-        Log.d(TAG, "copySafUriToTempCacheForProcessing: Attempting to copy SAF URI " + safUri + " to cache with name " + originalFilename);
-        File cacheDir = context.getExternalCacheDir();
-        if (cacheDir == null) {
-            Log.w(TAG, "copySafUriToTempCacheForProcessing: External cache dir null, using internal cache.");
-            cacheDir = new File(context.getCacheDir(), "ffmpeg_saf_temp");
-        } else {
-            cacheDir = new File(cacheDir, "ffmpeg_saf_temp"); // Subdir in external cache
-        }
 
-        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            Log.e(TAG, "copySafUriToTempCacheForProcessing: Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
-            return null;
-        }
-
-        File tempCachedFile = new File(cacheDir, originalFilename);
-
-        try (InputStream inputStream = context.getContentResolver().openInputStream(safUri);
-             OutputStream outputStream = new FileOutputStream(tempCachedFile)) {
-
-            if (inputStream == null) {
-                Log.e(TAG, "copySafUriToTempCacheForProcessing: Failed to open InputStream for SAF URI: " + safUri);
-                return null;
-            }
-
-            byte[] buffer = new byte[8192]; // 8KB buffer
-            int bytesRead;
-            long totalBytesCopied = 0;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-                totalBytesCopied += bytesRead;
-            }
-            Log.i(TAG, "copySafUriToTempCacheForProcessing: Successfully copied " + totalBytesCopied + " bytes from SAF URI to temp cache file: " + tempCachedFile.getAbsolutePath());
-            return tempCachedFile;
-
-        } catch (IOException e) {
-            Log.e(TAG, "copySafUriToTempCacheForProcessing: IOException while copying SAF URI to temp cache", e);
-            if (tempCachedFile.exists() && !tempCachedFile.delete()) {
-                Log.w(TAG, "copySafUriToTempCacheForProcessing: Failed to delete partially copied temp file: " + tempCachedFile.getName());
-            }
-            return null;
-        } catch (SecurityException se) {
-            Log.e(TAG, "copySafUriToTempCacheForProcessing: SecurityException, likely no permission for SAF URI: " + safUri, se);
-            return null;
-        }
-    }
 
     private File createNextSegmentOutputFile(int nextSegmentNumber) {
+        // ----- Fix Start for this method(createNextSegmentOutputFile)-----
         String storageMode = sharedPreferencesManager.getStorageMode();
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/DocumentFile mode
@@ -1799,14 +1745,15 @@ public class RecordingService extends Service {
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-            DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, tempBaseFilename);
+            // Use FadCam prefix for consistent naming
+            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+            DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, baseFilename);
             if (nextDocFile == null || !nextDocFile.exists()) {
-                Log.e(TAG, "createNextSegmentOutputFile: Failed to create DocumentFile in SAF: " + tempBaseFilename);
+                Log.e(TAG, "createNextSegmentOutputFile: Failed to create DocumentFile in SAF: " + baseFilename);
                 return null;
             }
             try {
-                // Open a ParcelFileDescriptor for the next segment (no longer tracked by nextSegmentPfd)
+                // Open a ParcelFileDescriptor for the next segment
                 ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(nextDocFile.getUri(), "w");
                 if (pfd == null) {
                     Log.e(TAG, "createNextSegmentOutputFile: Failed to open ParcelFileDescriptor for next SAF URI: " + nextDocFile.getUri());
@@ -1818,74 +1765,31 @@ public class RecordingService extends Service {
                 return null;
             }
             Log.i(TAG, "Next segment SAF file created: " + nextDocFile.getUri());
-//            nextRecordingDocFile = nextDocFile;
             return null;
         } else {
-            // Internal storage mode
+            // Internal storage mode - Use same directory and naming as first segment
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            String tempBaseFilename = "temp_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-            File cacheDir = getExternalCacheDir();
-            if (cacheDir == null) {
-                Log.w(TAG, "External cache dir null, using internal cache for temp file.");
-                cacheDir = new File(getCacheDir(), "recording_temp");
-            } else {
-                cacheDir = new File(cacheDir, "recording_temp");
-            }
-            if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                Log.e(TAG, "Cannot create temp cache directory: " + cacheDir.getAbsolutePath());
-                Toast.makeText(this, "Error creating temp cache directory", Toast.LENGTH_LONG).show();
+            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+            
+            // Use the same directory as the first segment (app's external files directory)
+            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
+            if (!videoDir.exists() && !videoDir.mkdirs()) {
+                Log.e(TAG, "Cannot create recording directory: " + videoDir.getAbsolutePath());
+                Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
                 return null;
             }
-            File nextTempFile = new File(cacheDir, tempBaseFilename);
-            Log.i(TAG, "Next segment temp file created: " + nextTempFile.getAbsolutePath());
-            return nextTempFile;
+            
+            // Create the file directly in the final directory
+            File nextFile = new File(videoDir, baseFilename);
+            Log.i(TAG, "Next segment file created: " + nextFile.getAbsolutePath());
+            return nextFile;
         }
-    }
-
-    // Queue to hold completed segment files for FFmpeg processing
-    private final ConcurrentLinkedQueue<Object> segmentProcessingQueue = new ConcurrentLinkedQueue<>();
-    private boolean isSegmentProcessingActive = false;
-
-    /**
-     * Processes the next segment in the queue through FFmpeg, if not already processing.
-     */
-    private synchronized void processNextSegmentInQueue() {
-        if (isSegmentProcessingActive) {
-            Log.d(TAG, "processNextSegmentInQueue: Already processing a segment, will process next after current.");
-            return;
-        }
-        Object nextSegment = segmentProcessingQueue.poll();
-        if (nextSegment == null) {
-            Log.d(TAG, "processNextSegmentInQueue: No segment in queue to process.");
-            return;
-        }
-        isSegmentProcessingActive = true;
-        if (nextSegment instanceof File) {
-            Log.i(TAG, "processNextSegmentInQueue: Starting FFmpeg processing for: " + ((File) nextSegment).getAbsolutePath());
-//            processAndMoveVideo((File) nextSegment, null);
-        } else if (nextSegment instanceof DocumentFile) {
-            Log.i(TAG, "processNextSegmentInQueue: Starting FFmpeg processing for SAF: " + ((DocumentFile) nextSegment).getUri());
-            processAndMoveSafVideo((DocumentFile) nextSegment);
-        } else {
-            Log.e(TAG, "processNextSegmentInQueue: Unknown segment type: " + nextSegment.getClass().getName());
-            isSegmentProcessingActive = false;
-            processNextSegmentInQueue();
-        }
+        // ----- Fix Ended for this method(createNextSegmentOutputFile)-----
     }
 
 
-    private void processAndMoveSafVideo(@NonNull DocumentFile safDocFile) {
-        // Copy SAF file to temp cache, then process as normal
-        File tempCacheFile = copySafUriToTempCacheForProcessing(getApplicationContext(), safDocFile.getUri(), safDocFile.getName());
-        if (tempCacheFile != null && tempCacheFile.exists()) {
-//            processAndMoveVideo(tempCacheFile, safDocFile.getUri());
-        } else {
-            Log.e(TAG, "processAndMoveSafVideo: Failed to copy SAF file to temp cache for processing: " + safDocFile.getUri());
-            isSegmentProcessingActive = false;
-            processNextSegmentInQueue();
-        }
-    }
+
 
     // Helper to check if a wired mic is connected
     private boolean isWiredMicConnected() {
@@ -2254,7 +2158,7 @@ public class RecordingService extends Service {
         if (recordingState == RecordingState.STARTING) {
             try {
                 // Start the MediaRecorder
-//                mediaRecorder.start();
+
                 recordingState = RecordingState.IN_PROGRESS;
                 
 
@@ -2308,8 +2212,11 @@ public class RecordingService extends Service {
     private class GLSegmentCallback implements com.fadcam.opengl.GLRecordingPipeline.SegmentCallback {
         @Override
         public void onSegmentRollover(int nextSegmentNumber) {
+            // ----- Fix Start for this method(onSegmentRollover)-----
+            Log.d(TAG, "GLSegmentCallback.onSegmentRollover called for segment " + nextSegmentNumber);
             String storageMode = sharedPreferencesManager.getStorageMode();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+                Log.d(TAG, "Using custom storage mode (SAF) for segment rollover");
                 // SAF: create new file and open new ParcelFileDescriptor
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
                 if (customUriString == null) {
@@ -2327,6 +2234,7 @@ public class RecordingService extends Service {
                 String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
                 String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
                 String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + ".mp4";
+                Log.d(TAG, "Creating new segment file: " + baseFilename);
                 androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
                 if (videoFile == null) {
                     Log.e(TAG, "Segment rollover: Failed to create SAF file");
@@ -2340,14 +2248,19 @@ public class RecordingService extends Service {
                         stopRecording();
                         return;
                     }
+                    Log.d(TAG, "Successfully created new segment file with SAF: " + videoFile.getName());
                     if (glRecordingPipeline != null) {
                         glRecordingPipeline.setNextOutput(null, pfd.getFileDescriptor());
+                        Log.d(TAG, "Set next output to file descriptor for segment " + nextSegmentNumber);
+                    } else {
+                        Log.e(TAG, "glRecordingPipeline is null, cannot set next output");
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Segment rollover: Exception opening PFD for SAF URI", e);
                     stopRecording();
                 }
             } else {
+                Log.d(TAG, "Using internal storage for segment rollover");
                 // Internal: use createNextSegmentOutputFile()
                 File nextFile = createNextSegmentOutputFile(nextSegmentNumber);
                 if (nextFile == null) {
@@ -2355,10 +2268,15 @@ public class RecordingService extends Service {
                     stopRecording();
                     return;
                 }
+                Log.d(TAG, "Successfully created new segment file: " + nextFile.getAbsolutePath());
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
+                    Log.d(TAG, "Set next output to path: " + nextFile.getAbsolutePath() + " for segment " + nextSegmentNumber);
+                } else {
+                    Log.e(TAG, "glRecordingPipeline is null, cannot set next output");
                 }
             }
+            // ----- Fix Ended for this method(onSegmentRollover)-----
         }
     }
 
@@ -2433,7 +2351,16 @@ public class RecordingService extends Service {
             }
             int videoBitrate = getVideoBitrate();
             int videoFramerate = sharedPreferencesManager.getVideoFrameRate();
-            long splitSizeBytes = sharedPreferencesManager.getVideoSplitSizeBytes();
+            // ----- Fix Start for video splitting -----
+            // Set splitSizeBytes to 0 if video splitting is disabled
+            long splitSizeBytes = 0;
+            if (sharedPreferencesManager.isVideoSplittingEnabled()) {
+                splitSizeBytes = sharedPreferencesManager.getVideoSplitSizeBytes();
+                Log.d(TAG, "Video splitting enabled with size: " + splitSizeBytes + " bytes");
+            } else {
+                Log.d(TAG, "Video splitting disabled");
+            }
+            // ----- Fix Ended for video splitting -----
             int initialSegmentNumber = 1;
             GLSegmentCallback segmentCallback = new GLSegmentCallback();
             

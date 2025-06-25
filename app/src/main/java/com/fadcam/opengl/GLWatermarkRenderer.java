@@ -179,19 +179,177 @@ public class GLWatermarkRenderer {
     }
 
     public void renderFrame() {
+        try {
+            // First render to encoder (critical for recording)
+            renderToEncoder();
+            
+            // Then try to render to preview (non-critical)
+            try {
+                renderToPreview();
+            } catch (Exception e) {
+                Log.w(TAG, "Preview rendering failed in renderFrame", e);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in renderFrame", e);
+        }
+    }
+
+    /**
+     * Renders only to the encoder surface for recording.
+     * This method should be used for background recording when the app is not visible.
+     */
+    public void renderToEncoder() {
         synchronized (renderLock) {
-            if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY) return;
-            if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-                Log.e(TAG, "eglMakeCurrent failed for encoding surface");
-                return;
+            // Check if we need to initialize or reinitialize EGL
+            if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY) {
+                Log.e(TAG, "EGL not initialized, attempting to reinitialize");
+                try {
+                    setupEGL();
+                    Log.d(TAG, "Successfully reinitialized EGL");
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to reinitialize EGL", e);
+                    throw new IllegalStateException("EGL not initialized and reinitialization failed");
+                }
             }
             
+            // Check if surface is valid and recreate if needed
+            if (eglSurface == EGL14.EGL_NO_SURFACE || outputSurface == null) {
+                Log.e(TAG, "EGL surface is invalid, attempting to recreate");
+                try {
+                    if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                        EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                        eglSurface = EGL14.EGL_NO_SURFACE;
+                    }
+                    
+                    if (outputSurface != null) {
+                        int[] surfaceAttribs = { EGL14.EGL_NONE };
+                        EGLConfig eglConfig = getEglConfig(eglDisplay);
+                        if (eglConfig != null) {
+                            eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
+                            if (eglSurface == EGL14.EGL_NO_SURFACE) {
+                                throw new RuntimeException("Failed to create EGL surface");
+                            }
+                        } else {
+                            throw new RuntimeException("Failed to get EGL config");
+                        }
+                    } else {
+                        throw new RuntimeException("Output surface is null");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to recreate EGL surface", e);
+                    throw new IllegalStateException("Failed to recreate EGL surface");
+                }
+            }
+            
+            // Try to make the EGL context current, with retry mechanism
+            boolean madeCurrentSuccessfully = false;
+            for (int attempt = 0; attempt < 3 && !madeCurrentSuccessfully; attempt++) {
+                try {
+                    if (EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                        madeCurrentSuccessfully = true;
+                    } else {
+                        int error = EGL14.eglGetError();
+                        Log.e(TAG, "eglMakeCurrent failed with error " + error + ", attempt " + (attempt + 1));
+                        
+                        // If we get EGL_BAD_SURFACE, try recreating the surface
+                        if (error == EGL14.EGL_BAD_SURFACE) {
+                            Log.d(TAG, "EGL_BAD_SURFACE detected, recreating surface");
+                            try {
+                                if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                                    EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                                    eglSurface = EGL14.EGL_NO_SURFACE;
+                                }
+                                
+                                if (outputSurface != null) {
+                                    int[] surfaceAttribs = { EGL14.EGL_NONE };
+                                    EGLConfig eglConfig = getEglConfig(eglDisplay);
+                                    eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
+                                    
+                                    if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                                        Log.d(TAG, "Successfully recreated EGL surface");
+                                    } else {
+                                        Log.e(TAG, "Failed to recreate EGL surface");
+                                    }
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error recreating surface", e);
+                            }
+                        }
+                        // For EGL_BAD_ACCESS, try recreating the entire context
+                        else if (error == EGL14.EGL_BAD_ACCESS && attempt < 2) {
+                            Log.d(TAG, "Trying to recover from EGL_BAD_ACCESS by releasing and recreating EGL");
+                            try {
+                                // Release current EGL resources
+                                EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                                if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                                    EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                                    eglSurface = EGL14.EGL_NO_SURFACE;
+                                }
+                                if (eglContext != EGL14.EGL_NO_CONTEXT) {
+                                    EGL14.eglDestroyContext(eglDisplay, eglContext);
+                                    eglContext = EGL14.EGL_NO_CONTEXT;
+                                }
+                                
+                                // Recreate EGL resources
+                                int[] attribList = { 
+                                    EGL14.EGL_RED_SIZE, 8, 
+                                    EGL14.EGL_GREEN_SIZE, 8, 
+                                    EGL14.EGL_BLUE_SIZE, 8, 
+                                    EGL14.EGL_ALPHA_SIZE, 8, 
+                                    EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, 
+                                    EGL14.EGL_NONE 
+                                };
+                                EGLConfig[] configs = new EGLConfig[1];
+                                int[] numConfigs = new int[1];
+                                EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0);
+                                EGLConfig eglConfig = configs[0];
+                                
+                                int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
+                                eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
+                                
+                                int[] surfaceAttribs = { EGL14.EGL_NONE };
+                                eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
+                                
+                                // Try again with the new context
+                                Thread.sleep(50); // Short delay to let things settle
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error during EGL recovery", e);
+                            }
+                        } else {
+                            // For other errors, just wait a bit and retry
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Exception during eglMakeCurrent", e);
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            
+            if (!madeCurrentSuccessfully) {
+                throw new IllegalStateException("Failed to make EGL context current after multiple attempts");
+            }
+            
+            // Check if cameraSurfaceTexture is still valid
+            if (cameraSurfaceTexture == null) {
+                throw new IllegalStateException("cameraSurfaceTexture is null");
+            }
+            
+            // Wait for a new frame if needed
             synchronized (frameSyncObject) {
                 while (!frameAvailable) {
                     try {
                         frameSyncObject.wait(100);
                         if (!frameAvailable) {
-                             Log.w(TAG, "renderFrame: frame wait timed out");
+                            Log.w(TAG, "renderToEncoder: frame wait timed out");
                             return;
                         }
                     } catch (InterruptedException e) {
@@ -201,53 +359,157 @@ public class GLWatermarkRenderer {
                 }
                 frameAvailable = false;
             }
+            
+            // Update texture image
             float[] texMatrix = new float[16];
-            cameraSurfaceTexture.updateTexImage();
-            cameraSurfaceTexture.getTransformMatrix(texMatrix);
-            updateMatrices(); // Recalculate matrices on every frame
-            EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, cameraSurfaceTexture.getTimestamp());
+            try {
+                cameraSurfaceTexture.updateTexImage();
+                cameraSurfaceTexture.getTransformMatrix(texMatrix);
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating texture image", e);
+                return;
+            }
+            
+            // Update matrices for correct orientation
+            updateMatrices();
+            
+            // Set presentation time
+            try {
+                EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, cameraSurfaceTexture.getTimestamp());
+            } catch (Exception e) {
+                Log.e(TAG, "Error setting presentation time", e);
+                // Continue anyway
+            }
+            
+            // Determine correct texture matrix based on orientation
             boolean isLandscape = false;
-            // Determine if current orientation is landscape
-            // Prefer userOrientationSetting if available, else use deviceOrientation
             if (userOrientationSetting != null) {
                 isLandscape = "landscape".equalsIgnoreCase(userOrientationSetting);
             } else {
-                // Fallback: deviceOrientation 90 or 270 is landscape
-                isLandscape = (deviceOrientation == 1 || deviceOrientation == 3); // Surface.ROTATION_90 or ROTATION_270
+                isLandscape = (deviceOrientation == 1 || deviceOrientation == 3);
             }
+            
             float[] encoderTexMatrix;
             if (isLandscape) {
-                // ----- Apply vertical flip for landscape only -----
+                // Apply vertical flip for landscape only
                 float[] fixedTexMatrix = new float[16];
                 Matrix.setIdentityM(fixedTexMatrix, 0);
                 Matrix.scaleM(fixedTexMatrix, 0, 1f, -1f, 1f);
                 Matrix.translateM(fixedTexMatrix, 0, 0f, -1f, 0f);
-                Log.d("FAD-FINAL", "Landscape: Applying vertical flip to correct orientation");
                 encoderTexMatrix = fixedTexMatrix;
             } else {
-                // ----- Portrait: use original texMatrix -----
-                Log.d("FAD-FINAL", "Portrait: Using original texMatrix (no flip)");
+                // Portrait: use original texMatrix
                 encoderTexMatrix = texMatrix;
             }
-            drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
-            drawWatermark();
-            EGL14.eglSwapBuffers(eglDisplay, eglSurface);
-            // Preview draw
-            renderToPreviewWithMatrix(texMatrix);
+            
+            // Draw to encoder
+            try {
+                drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+                drawWatermark();
+                
+                // Swap buffers to complete the frame
+                if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
+                    int error = EGL14.eglGetError();
+                    
+                    // If we get EGL_BAD_SURFACE, mark the surface as invalid for next time
+                    if (error == EGL14.EGL_BAD_SURFACE) {
+                        Log.e(TAG, "eglSwapBuffers failed with EGL_BAD_SURFACE, marking surface for recreation");
+                        if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                            try {
+                                EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error destroying bad surface", e);
+                            }
+                            eglSurface = EGL14.EGL_NO_SURFACE;
+                        }
+                    } else {
+                        Log.e(TAG, "eglSwapBuffers failed with error " + error);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error during drawing or buffer swap", e);
+            }
         }
     }
 
-    // Add a helper to draw preview with a given texMatrix
-    private void renderToPreviewWithMatrix(float[] texMatrix) {
+    /**
+     * Renders only to the preview surface.
+     * This method can be called separately from renderToEncoder to update the preview
+     * when the app is in the foreground.
+     */
+    public void renderToPreview() {
+        // ----- Fix Start for this method(renderToPreview)-----
+        // Quick check before acquiring lock to avoid unnecessary synchronization
+        if (!initialized || 
+            currentPreviewSurface == null || 
+            !currentPreviewSurface.isValid() || 
+            previewEglDisplay == EGL14.EGL_NO_DISPLAY ||
+            previewEglContext == EGL14.EGL_NO_CONTEXT) {
+            // No valid preview surface, just return silently
+            return;
+        }
+        
         synchronized (previewRenderLock) {
-            if (!initialized || currentPreviewSurface == null || !currentPreviewSurface.isValid() || previewEglDisplay == EGL14.EGL_NO_DISPLAY) return;
-            if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
-                Log.w(TAG, "renderToPreview: eglMakeCurrent failed");
+            // Double-check conditions inside the lock
+            if (!initialized || 
+                currentPreviewSurface == null || 
+                !currentPreviewSurface.isValid() || 
+                previewEglDisplay == EGL14.EGL_NO_DISPLAY ||
+                previewEglContext == EGL14.EGL_NO_CONTEXT) {
                 return;
             }
-            drawOESTexture(previewMvpMatrix, texMatrix);
-            EGL14.eglSwapBuffers(previewEglDisplay, previewEglSurface);
+            
+            // Check if we need to create a surface
+            if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
+                try {
+                    int[] surfaceAttribs = { EGL14.EGL_NONE };
+                    previewEglSurface = EGL14.eglCreateWindowSurface(previewEglDisplay, 
+                                                                    previewEglConfig, 
+                                                                    currentPreviewSurface, 
+                                                                    surfaceAttribs, 0);
+                    if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
+                        Log.e(TAG, "Failed to create preview EGL surface");
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error creating preview surface", e);
+                    return;
+                }
+            }
+            
+            // Make the preview EGL context current
+            try {
+                if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
+                    Log.w(TAG, "renderToPreview: eglMakeCurrent failed");
+                    return;
+                }
+                
+                // Get the current texture matrix
+                float[] texMatrix = new float[16];
+                if (cameraSurfaceTexture != null) {
+                    cameraSurfaceTexture.getTransformMatrix(texMatrix);
+                } else {
+                    Matrix.setIdentityM(texMatrix, 0);
+                }
+                
+                // Draw to preview
+                drawOESTexture(previewMvpMatrix, texMatrix);
+                
+                // Swap buffers to complete the frame
+                if (!EGL14.eglSwapBuffers(previewEglDisplay, previewEglSurface)) {
+                    int error = EGL14.eglGetError();
+                    Log.w(TAG, "Preview eglSwapBuffers failed: " + error);
+                    
+                    // If surface is bad, release preview EGL resources
+                    if (error == EGL14.EGL_BAD_SURFACE) {
+                        releasePreviewEGL();
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error in renderToPreview", e);
+            }
         }
+        // ----- Fix Ended for this method(renderToPreview)-----
     }
 
     private void setupEGL() {
@@ -440,53 +702,129 @@ public class GLWatermarkRenderer {
     }
 
     private void drawOESTexture(float[] mvpMatrix, float[] texMatrix) {
-        if (mFullFrameBlit != null) {
-            // Use Google's Grafika rendering mechanism for better texture handling
-            // Apply the MVP matrix first - need to modify the program's matrix
-            com.fadcam.opengl.grafika.Texture2dProgram program = mFullFrameBlit.getProgram();
-            if (program != null) {
-                // Save the current program
-                int[] currentProgramArray = new int[1];
-                GLES20.glGetIntegerv(GLES20.GL_CURRENT_PROGRAM, currentProgramArray, 0);
-                int currentProgram = currentProgramArray[0];
-                
-                // Use the program and set the MVP matrix
-                int programHandle = program.getProgramHandle();
-                GLES20.glUseProgram(programHandle);
-                int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");
-                if (mvpLoc >= 0) {
-                    GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+        // ----- Fix Start for this method(drawOESTexture)-----
+        try {
+            // Check if texture is valid before drawing
+            int[] textureArray = new int[1];
+            GLES20.glGetIntegerv(GLES11Ext.GL_TEXTURE_BINDING_EXTERNAL_OES, textureArray, 0);
+            if (textureArray[0] == 0) {
+                Log.w(TAG, "No external texture bound, attempting to rebind");
+                try {
+                    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
+                    // Clear any existing GL errors
+                    int error = GLES20.glGetError();
+                    if (error != GLES20.GL_NO_ERROR) {
+                        Log.w(TAG, "Cleared GL error when binding texture: 0x" + Integer.toHexString(error));
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error rebinding texture", e);
+                    return;
                 }
-                
-                // Restore previous program
-                GLES20.glUseProgram(currentProgram);
             }
             
-            // Now draw the frame with the texture matrix
-            mFullFrameBlit.drawFrame(oesTextureId, texMatrix);
-        } else {
-            // Fallback to original method
+            // Clear any existing GL errors before drawing
+            int error = GLES20.glGetError();
+            if (error != GLES20.GL_NO_ERROR) {
+                Log.w(TAG, "Clearing GL error before drawing: 0x" + Integer.toHexString(error));
+            }
+            
+            if (mFullFrameBlit != null) {
+                try {
+                    // Use Google's Grafika rendering mechanism for better texture handling
+                    // Apply the MVP matrix first - need to modify the program's matrix
+                    com.fadcam.opengl.grafika.Texture2dProgram program = mFullFrameBlit.getProgram();
+                    if (program != null) {
+                        try {
+                            // Save the current program
+                            int[] currentProgramArray = new int[1];
+                            GLES20.glGetIntegerv(GLES20.GL_CURRENT_PROGRAM, currentProgramArray, 0);
+                            int currentProgram = currentProgramArray[0];
+                            
+                            // Use the program and set the MVP matrix
+                            int programHandle = program.getProgramHandle();
+                            GLES20.glUseProgram(programHandle);
+                            int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");
+                            if (mvpLoc >= 0) {
+                                GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+                            }
+                            
+                            // Restore previous program
+                            GLES20.glUseProgram(currentProgram);
+                            
+                            // Clear any errors that might have occurred during matrix setup
+                            error = GLES20.glGetError();
+                            if (error != GLES20.GL_NO_ERROR) {
+                                Log.w(TAG, "Cleared GL error after matrix setup: 0x" + Integer.toHexString(error));
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error setting MVP matrix", e);
+                        }
+                    }
+                    
+                    // Now draw the frame with the texture matrix
+                    try {
+                        mFullFrameBlit.drawFrame(oesTextureId, texMatrix);
+                    } catch (RuntimeException e) {
+                        // If we get a GL error during drawing, try the fallback method
+                        Log.e(TAG, "Error with mFullFrameBlit, trying fallback method", e);
+                        drawWithFallbackMethod(mvpMatrix, texMatrix);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in mFullFrameBlit drawing", e);
+                    drawWithFallbackMethod(mvpMatrix, texMatrix);
+                }
+            } else {
+                // Use fallback method directly
+                drawWithFallbackMethod(mvpMatrix, texMatrix);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in drawOESTexture", e);
+        }
+        // ----- Fix Ended for this method(drawOESTexture)-----
+    }
+    
+    /**
+     * Fallback drawing method when the primary method fails
+     */
+    private void drawWithFallbackMethod(float[] mvpMatrix, float[] texMatrix) {
+        // ----- Fix Start for this method(drawWithFallbackMethod)-----
+        try {
+            // Clear any existing errors
+            int error = GLES20.glGetError();
+            if (error != GLES20.GL_NO_ERROR) {
+                Log.w(TAG, "Clearing GL error before fallback: 0x" + Integer.toHexString(error));
+            }
+            
+            // Use the basic shader program
             GLES20.glUseProgram(oesProgram);
-
+            
+            // Set the matrices
             GLES20.glUniformMatrix4fv(oesMvpMatrixHandle, 1, false, mvpMatrix, 0);
             GLES20.glUniformMatrix4fv(oesTexMatrixHandle, 1, false, texMatrix, 0);
-
+            
+            // Set up vertex attributes
             GLES20.glEnableVertexAttribArray(oesPositionHandle);
             GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
             GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
             GLES20.glVertexAttribPointer(oesTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
             
+            // Set up texture
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
             GLES20.glUniform1i(oesTextureHandle, 0);
-
+            
+            // Draw
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
+            
+            // Clean up
             GLES20.glDisableVertexAttribArray(oesPositionHandle);
             GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
             GLES20.glUseProgram(0);
+        } catch (Exception e) {
+            Log.e(TAG, "Error in fallback drawing method", e);
         }
+        // ----- Fix Ended for this method(drawWithFallbackMethod)-----
     }
 
     private void setupSimpleWatermarkShader() {
@@ -652,6 +990,86 @@ public class GLWatermarkRenderer {
         this.encoderHeight = height;
     }
 
+    /**
+     * Updates the encoder output surface after a segment rollover.
+     * This method should be called when a new MediaCodec encoder is created during segment rollover.
+     * 
+     * @param newSurface The new encoder input surface from the MediaCodec
+     */
+    public void updateEncoderSurface(Surface newSurface) {
+        if (newSurface == null) {
+            Log.e(TAG, "Cannot update encoder surface with null surface");
+            return;
+        }
+        
+        synchronized (renderLock) {
+            Log.d(TAG, "Updating encoder output surface");
+            
+            // Save the new surface
+            this.outputSurface = newSurface;
+            
+            // We need to update our EGL surface to point to the new encoder surface
+            if (eglDisplay != EGL14.EGL_NO_DISPLAY && eglContext != EGL14.EGL_NO_CONTEXT) {
+                try {
+                    // First make sure we're not using the current surface
+                    EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, eglContext);
+                    
+                    // Destroy the old surface if it exists
+                    if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                        EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                        eglSurface = EGL14.EGL_NO_SURFACE;
+                    }
+                    
+                    // Create a new EGL surface with the new encoder surface
+                    int[] surfaceAttribs = { EGL14.EGL_NONE };
+                    eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, 
+                                                             getEglConfig(eglDisplay), 
+                                                             outputSurface, 
+                                                             surfaceAttribs, 0);
+                    
+                    if (eglSurface == EGL14.EGL_NO_SURFACE) {
+                        Log.e(TAG, "Failed to create new EGL surface for encoder");
+                        return;
+                    }
+                    
+                    // Make the new surface current
+                    if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                        Log.e(TAG, "Failed to make new encoder surface current");
+                        return;
+                    }
+                    
+                    Log.d(TAG, "Successfully updated encoder EGL surface");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error updating encoder surface", e);
+                }
+            } else {
+                Log.d(TAG, "EGL not initialized yet, just updating surface reference");
+            }
+        }
+    }
+    
+    // Helper method to get a compatible EGL config
+    private EGLConfig getEglConfig(EGLDisplay eglDisplay) {
+        int[] configAttribs = {
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_GREEN_SIZE, 8,
+            EGL14.EGL_BLUE_SIZE, 8,
+            EGL14.EGL_ALPHA_SIZE, 8,
+            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+            EGL14.EGL_NONE
+        };
+        
+        EGLConfig[] configs = new EGLConfig[1];
+        int[] numConfigs = new int[1];
+        
+        if (!EGL14.eglChooseConfig(eglDisplay, configAttribs, 0, configs, 0, 1, numConfigs, 0)) {
+            Log.e(TAG, "eglChooseConfig failed");
+            return null;
+        }
+        
+        return configs[0];
+    }
+
     private void updateMatrices() {
         int rotationDegrees = getRequiredRotation();
         boolean isPortrait = (videoHeight > videoWidth && (rotationDegrees == 90 || rotationDegrees == 270)) ||
@@ -663,10 +1081,10 @@ public class GLWatermarkRenderer {
             dynamicBitmapWidth = 800;
             dynamicBitmapHeight = 48;
         }
-        Log.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees + 
-              ", deviceOrientation=" + deviceOrientation +
-              ", sensorOrientation=" + sensorOrientation);
-        Log.d("FAD-MATRIX", "Applying rotation: " + rotationDegrees);
+        // Log.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees + 
+        //       ", deviceOrientation=" + deviceOrientation +
+        //       ", sensorOrientation=" + sensorOrientation);
+        // Log.d("FAD-MATRIX", "Applying rotation: " + rotationDegrees);
 
         // ----- Fix Start: Use required rotation for encoder output -----
         Matrix.setIdentityM(recordingMvpMatrix, 0);
@@ -692,14 +1110,14 @@ public class GLWatermarkRenderer {
         float videoAspectRatio = (float) orientedVideoWidth / orientedVideoHeight;
         float previewAspectRatio = (float) mSurfaceWidth / mSurfaceHeight;
 
-        Log.d(TAG, "Aspect ratios - video: " + videoAspectRatio + 
-              ", preview: " + previewAspectRatio +
-              ", orientedVideoWidth: " + orientedVideoWidth +
-              ", orientedVideoHeight: " + orientedVideoHeight +
-              ", surfaceWidth: " + mSurfaceWidth +
-              ", surfaceHeight: " + mSurfaceHeight);
-        Log.d("FAD-MATRIX", "Surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
-        Log.d("FAD-MATRIX", "Encoder: " + orientedVideoWidth + "x" + orientedVideoHeight);
+        // Log.d(TAG, "Aspect ratios - video: " + videoAspectRatio + 
+        //       ", preview: " + previewAspectRatio +
+        //       ", orientedVideoWidth: " + orientedVideoWidth +
+        //       ", orientedVideoHeight: " + orientedVideoHeight +
+        //       ", surfaceWidth: " + mSurfaceWidth +
+        //       ", surfaceHeight: " + mSurfaceHeight);
+        // Log.d("FAD-MATRIX", "Surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
+        // Log.d("FAD-MATRIX", "Encoder: " + orientedVideoWidth + "x" + orientedVideoHeight);
 
         float scaleX = 1.0f;
         float scaleY = 1.0f;
@@ -708,16 +1126,16 @@ public class GLWatermarkRenderer {
             if (previewAspectRatio > videoAspectRatio) {
                 // Preview is wider than video: pillarbox (scale X down)
                 scaleX = videoAspectRatio / previewAspectRatio;
-                Log.d(TAG, "Applying pillarbox with scaleX = " + scaleX);
+                // Log.d(TAG, "Applying pillarbox with scaleX = " + scaleX);
             } else {
                 // Preview is taller than video: letterbox (scale Y down)
                 scaleY = previewAspectRatio / videoAspectRatio;
-                Log.d(TAG, "Applying letterbox with scaleY = " + scaleY);
+                // Log.d(TAG, "Applying letterbox with scaleY = " + scaleY);
             }
         }
-        Log.d("FAD-MATRIX", String.format("ScaleX: %.2f  ScaleY: %.2f", scaleX, scaleY));
+        // Log.d("FAD-MATRIX", String.format("ScaleX: %.2f  ScaleY: %.2f", scaleX, scaleY));
         Matrix.scaleM(previewMvpMatrix, 0, scaleX, scaleY, 1.0f);
-        Log.d("FAD-MATRIX", "recordingMvpMatrix: " + java.util.Arrays.toString(recordingMvpMatrix));
+        // Log.d("FAD-MATRIX", "recordingMvpMatrix: " + java.util.Arrays.toString(recordingMvpMatrix));
     }
 
     private int getDisplayRotation() {
@@ -736,7 +1154,7 @@ public class GLWatermarkRenderer {
         if (isFrontCamera()) {
             rotation = (360 - rotation) % 360;
         }
-        Log.d("FAD-ROT", "Device: " + deviceOrientation + " Sensor: " + sensorOrientation + " ➜ Rotation = " + rotation);
+        // Log.d("FAD-ROT", "Device: " + deviceOrientation + " Sensor: " + sensorOrientation + " ➜ Rotation = " + rotation);
         return rotation;
         // ----- Fix End: Standard camera app rotation logic -----
     }
@@ -746,6 +1164,96 @@ public class GLWatermarkRenderer {
         // For now, we'll go with the common case of front camera having 
         // a sensor orientation of 270 degrees
         return sensorOrientation == 270;
+    }
+
+    /**
+     * Initializes only the preview EGL context with a dummy surface.
+     * This is used when starting recording without a preview surface.
+     * The dummy surface is not used for actual rendering.
+     * 
+     * @param dummySurface A temporary surface to use for EGL initialization
+     */
+    public void initializePreviewSurfaceOnly(Surface dummySurface) {
+        // ----- Fix Start for this method(initializePreviewSurfaceOnly)-----
+        synchronized (previewRenderLock) {
+            if (dummySurface == null || !dummySurface.isValid()) {
+                Log.e(TAG, "Cannot initialize with invalid dummy surface");
+                return;
+            }
+            
+            // Release any existing preview EGL resources
+            releasePreviewEGL();
+            
+            try {
+                // Initialize preview EGL display
+                previewEglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+                if (previewEglDisplay == EGL14.EGL_NO_DISPLAY) {
+                    Log.e(TAG, "Failed to get EGL display for preview");
+                    return;
+                }
+                
+                // Initialize EGL
+                int[] version = new int[2];
+                if (!EGL14.eglInitialize(previewEglDisplay, version, 0, version, 1)) {
+                    Log.e(TAG, "Failed to initialize EGL for preview");
+                    releasePreviewEGL();
+                    return;
+                }
+                
+                // Get EGL config
+                previewEglConfig = getEglConfig(previewEglDisplay);
+                if (previewEglConfig == null) {
+                    Log.e(TAG, "Failed to get EGL config for preview");
+                    releasePreviewEGL();
+                    return;
+                }
+                
+                // Create EGL context that shares with the main context
+                int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
+                previewEglContext = EGL14.eglCreateContext(previewEglDisplay, previewEglConfig, 
+                                                          eglContext, // Share with main context
+                                                          contextAttribs, 0);
+                if (previewEglContext == EGL14.EGL_NO_CONTEXT) {
+                    Log.e(TAG, "Failed to create EGL context for preview");
+                    releasePreviewEGL();
+                    return;
+                }
+                
+                // Create dummy surface just to complete initialization
+                int[] surfaceAttribs = { EGL14.EGL_NONE };
+                previewEglSurface = EGL14.eglCreateWindowSurface(previewEglDisplay, 
+                                                                previewEglConfig, 
+                                                                dummySurface, 
+                                                                surfaceAttribs, 0);
+                if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
+                    Log.e(TAG, "Failed to create EGL surface for preview");
+                    releasePreviewEGL();
+                    return;
+                }
+                
+                // Make current briefly to complete initialization
+                if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
+                    Log.e(TAG, "Failed to make EGL context current for preview");
+                    releasePreviewEGL();
+                    return;
+                }
+                
+                // Immediately release the current context since we don't need it right now
+                EGL14.eglMakeCurrent(previewEglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                
+                // We keep the display and context but destroy the temporary surface
+                if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
+                    EGL14.eglDestroySurface(previewEglDisplay, previewEglSurface);
+                    previewEglSurface = EGL14.EGL_NO_SURFACE;
+                }
+                
+                Log.d(TAG, "Preview EGL context initialized successfully with dummy surface");
+            } catch (Exception e) {
+                Log.e(TAG, "Error initializing preview EGL with dummy surface", e);
+                releasePreviewEGL();
+            }
+        }
+        // ----- Fix Ended for this method(initializePreviewSurfaceOnly)-----
     }
 }
 
