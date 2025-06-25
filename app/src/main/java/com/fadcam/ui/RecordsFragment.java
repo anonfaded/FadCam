@@ -1365,7 +1365,9 @@ public class RecordsFragment extends BaseFragment implements
     }
     private void confirmDeleteAll() {
         vibrate();
-        int totalVideoCount = allLoadedItems.size();
+        // ----- Fix Start for this method(confirmDeleteAll)-----
+        int totalVideoCount = videoItems.size();
+        // ----- Fix Ended for this method(confirmDeleteAll)-----
         if (totalVideoCount == 0){
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
@@ -1406,14 +1408,17 @@ public class RecordsFragment extends BaseFragment implements
 
     // Inside RecordsFragment.java
     private void deleteAllVideos() {
-        // Use allLoadedItems instead of videoItems to delete ALL videos, not just the current page
-        List<VideoItem> itemsToTrash = new ArrayList<>(allLoadedItems);
-        if (itemsToTrash.isEmpty()) {
-             if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
-             return;
+        // ----- Fix Start for this method(deleteAllVideos)-----
+        // Check if videoItems has content, if not show toast
+        if (videoItems.isEmpty()) {
+            if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
+        // Create a copy of videoItems to avoid concurrent modification issues
+        List<VideoItem> itemsToTrash = new ArrayList<>(videoItems);
         Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
+        // ----- Fix Ended for this method(deleteAllVideos)-----
         
         // Show progress dialog for deleting all videos with count information
         onMoveToTrashStarted("all " + itemsToTrash.size() + " videos");
