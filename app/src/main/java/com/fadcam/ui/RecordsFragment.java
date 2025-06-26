@@ -1411,8 +1411,8 @@ public class RecordsFragment extends BaseFragment implements
         // ----- Fix Start for this method(deleteAllVideos)-----
         // Check if videoItems has content, if not show toast
         if (videoItems.isEmpty()) {
-            if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
-            return;
+             if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
+             return;
         }
 
         // Create a copy of videoItems to avoid concurrent modification issues

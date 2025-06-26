@@ -423,6 +423,14 @@ public class RecordingService extends Service {
         isStopping = true;
         Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
         
+        // ----- Fix Start for this method(stopRecording)-----
+        // Stop black frame rendering if active
+        stopBlackFrameRendering();
+        
+        // Stop reconnection attempts if active
+        stopReconnectionAttempts();
+        // ----- Fix Ended for this method(stopRecording)-----
+        
         if (recordingState == RecordingState.NONE) {
             Log.d(TAG, "stopRecording called but state is already NONE, just cleaning up");
             sharedPreferencesManager.setRecordingInProgress(false);
@@ -777,6 +785,42 @@ public class RecordingService extends Service {
             cameraDevice = camera;
             isCameraOpen = true;
             
+            // Check if we're waiting for camera to resume normal recording
+            if (recordingState == RecordingState.WAITING_FOR_CAMERA && pendingCameraReconnect) {
+                Log.d(TAG, "Camera reconnected after interruption, resuming normal recording");
+                pendingCameraReconnect = false;
+                stopReconnectionAttempts();
+                
+                // First pause any ongoing work with black frames
+                final boolean wasRenderingBlackFrames = isRenderingBlackFrames;
+                
+                // Use a longer delay between stopping black frames and starting camera session
+                // to ensure all GL resources are properly cleaned up
+                mainHandler.post(() -> {
+                    try {
+                        // First, stop black frame rendering to free up GL resources
+                        if (wasRenderingBlackFrames) {
+                            stopBlackFrameRendering();
+                            
+                            // Add a delay to ensure cleanup is complete
+                            Log.d(TAG, "Waiting for black frame renderer cleanup before reconnecting camera");
+                            
+                            // Resume camera session after delay
+                            mainHandler.postDelayed(() -> resumeCameraAfterReconnection(), 1500);
+                        } else {
+                            // If we weren't rendering black frames, proceed immediately
+                            resumeCameraAfterReconnection();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error during camera reconnection sequence", e);
+                        // Fall back to black frame rendering
+                        recordingState = RecordingState.WAITING_FOR_CAMERA;
+                        startBlackFrameRendering();
+                    }
+                });
+                return;
+            }
+            
             // Check if we have a pending recording start request
             if (pendingStartRecording) {
                 Log.d(TAG, "Found pendingStartRecording=true, starting recording now");
@@ -815,11 +859,18 @@ public class RecordingService extends Service {
                     }
                 }
             }
+            // ----- Fix Ended for this method(onOpened)-----
         }
 
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
+            // ----- Fix Start for this method(onDisconnected)-----
             Log.d(TAG, "Camera device disconnected");
+            
+            // Store camera state before closing
+            boolean wasRecording = (recordingState == RecordingState.IN_PROGRESS);
+            
+            // Close camera device
             if (cameraDevice != null) {
                 cameraDevice.close();
                 cameraDevice = null;
@@ -832,16 +883,30 @@ public class RecordingService extends Service {
                 pendingStartRecording = false;
             }
             
-            // If we were recording, stop it
-            if (recordingState != RecordingState.NONE) {
-                Log.w(TAG, "Camera disconnected during recording, stopping recording");
+            // If we were recording, switch to black frame mode
+            if (wasRecording) {
+                Log.w(TAG, "Camera disconnected during recording, switching to black frame mode");
+                
+                // Use a small delay to avoid race conditions with camera state changes
+                mainHandler.postDelayed(() -> {
+                    handleCameraInterruption();
+                }, 300);
+            } else if (recordingState != RecordingState.NONE && recordingState != RecordingState.WAITING_FOR_CAMERA) {
+                // For other states like PAUSED, just stop recording
+                Log.w(TAG, "Camera disconnected while in state " + recordingState + ", stopping recording");
                 stopRecording();
             }
+            // ----- Fix Ended for this method(onDisconnected)-----
         }
 
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {
+            // ----- Fix Start for this method(onError)-----
             Log.e(TAG, "Camera device error: " + error);
+            
+            // Store camera state before closing
+            boolean wasRecording = (recordingState == RecordingState.IN_PROGRESS);
+            
             if (cameraDevice != null) {
                 cameraDevice.close();
                 cameraDevice = null;
@@ -854,8 +919,19 @@ public class RecordingService extends Service {
                 pendingStartRecording = false;
             }
             
-            // If we were recording, stop it
-            if (recordingState != RecordingState.NONE) {
+            // If error is camera in use and we were recording, switch to black frame mode
+            if ((error == CameraDevice.StateCallback.ERROR_CAMERA_IN_USE || 
+                 error == CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE) && 
+                wasRecording) {
+                Log.w(TAG, "Camera in use error during recording, switching to black frame mode");
+                
+                // Use a small delay to avoid race conditions with camera state changes
+                mainHandler.postDelayed(() -> {
+                    handleCameraInterruption();
+                }, 300);
+            } 
+            // For other errors or states, stop recording
+            else if (recordingState != RecordingState.NONE && recordingState != RecordingState.WAITING_FOR_CAMERA) {
                 Log.w(TAG, "Camera error during recording, stopping recording");
                 stopRecording();
             }
@@ -884,6 +960,7 @@ public class RecordingService extends Service {
             
             final String finalErrorMsg = errorMsg;
             mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg, Toast.LENGTH_LONG).show());
+            // ----- Fix Ended for this method(onError)-----
         }
 
         @Override
@@ -905,6 +982,49 @@ public class RecordingService extends Service {
             }
         }
     };
+
+    /**
+     * Helper method to resume normal recording after camera reconnection.
+     * This is called after any black frame rendering has been properly stopped.
+     */
+    private void resumeCameraAfterReconnection() {
+        try {
+            Log.d(TAG, "Resuming normal camera recording after reconnection");
+            
+            // Create camera session first
+            createCameraPreviewSession();
+            
+            // Wait a moment for the session to be fully configured
+            mainHandler.postDelayed(() -> {
+                try {
+                    // Update recording state
+                    recordingState = RecordingState.IN_PROGRESS;
+                    
+                    // Show notification about recording resumed
+                    setupRecordingInProgressNotification();
+                    
+                    // Show toast to user
+                    Toast.makeText(RecordingService.this, 
+                            R.string.camera_reconnection_success, 
+                            Toast.LENGTH_SHORT).show();
+                    
+                    Log.i(TAG, "Normal recording resumed after camera reconnection");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error finalizing camera reconnection", e);
+                    // If we fail at this stage, fall back to black frames
+                    if (recordingState == RecordingState.IN_PROGRESS) {
+                        recordingState = RecordingState.WAITING_FOR_CAMERA;
+                        startBlackFrameRendering();
+                    }
+                }
+            }, 1000); // Longer delay to ensure session is ready
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating camera session after reconnection", e);
+            // Continue with black frames if we can't resume normal recording
+            recordingState = RecordingState.WAITING_FOR_CAMERA;
+            startBlackFrameRendering();
+        }
+    }
 
     private void createCameraPreviewSession() {
         if (cameraDevice == null) {
@@ -1001,7 +1121,7 @@ public class RecordingService extends Service {
             
             // Continue with existing code...
             // Rest of the method stays the same
-
+            
             // For high frame rates, evaluate if we should use high-speed session
             if (isHighFrameRate && characteristics != null) {
                 // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
@@ -1492,14 +1612,14 @@ public class RecordingService extends Service {
         // Get custom notification text if set
         String notificationText = sharedPreferencesManager.getNotificationText(false);
         boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
-        
+
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
                 .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_progress_description));
         
         // Add stop action only if not hidden
         if (!hideStopButton) {
             builder.clearActions() // Remove previous actions
-                  .addAction(new NotificationCompat.Action(
+                .addAction(new NotificationCompat.Action(
                         R.drawable.ic_stop,
                         getString(R.string.button_stop),
                         createStopRecordingIntent()));
@@ -1521,23 +1641,23 @@ public class RecordingService extends Service {
         // Get custom notification text if set
         String notificationText = sharedPreferencesManager.getNotificationText(true);
         boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
-        
+
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
                 .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_paused_description))
                 .clearActions(); // Remove previous actions
         
         // Add resume action
         builder.addAction(new NotificationCompat.Action(
-                R.drawable.ic_play, // Use Play icon for Resume action
-                getString(R.string.button_resume),
+                        R.drawable.ic_play, // Use Play icon for Resume action
+                        getString(R.string.button_resume),
                 createResumeRecordingIntent()));
                 
         // Add stop action only if not hidden
         if (!hideStopButton) {
             builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_stop,
-                    getString(R.string.button_stop),
-                    createStopRecordingIntent()));
+                        R.drawable.ic_stop,
+                        getString(R.string.button_stop),
+                        createStopRecordingIntent()));
         }
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
@@ -2481,10 +2601,8 @@ public class RecordingService extends Service {
     // ----- Fix Start for camera interruption handling -----
     // Flag to track if we need to automatically resume recording after camera interruption
     private boolean pendingCameraReconnect = false;
-    private static final int MAX_RECONNECT_ATTEMPTS = 15; // Maximum number of reconnection attempts
     private static final long RECONNECT_RETRY_DELAY_MS = 2000; // 2 seconds between reconnection attempts
     private Handler reconnectHandler = new Handler(Looper.getMainLooper());
-    private int reconnectAttempts = 0;
     private Runnable reconnectRunnable;
 // ----- Fix End for camera interruption handling -----
 
@@ -2495,50 +2613,25 @@ public class RecordingService extends Service {
      * @param cameraId The ID of the camera to reconnect to
      */
     private void startCameraReconnectionAttempts(String cameraId) {
-        Log.d(TAG, "Starting camera reconnection attempts");
-        reconnectAttempts = 0;
-        
-        // Stop any existing reconnection attempts
-        stopReconnectionAttempts();
-        
-        // Create new reconnection runnable
+        if (reconnectRunnable != null) {
+            reconnectHandler.removeCallbacks(reconnectRunnable);
+        }
         reconnectRunnable = new Runnable() {
             @Override
             public void run() {
-                if (recordingState == RecordingState.WAITING_FOR_CAMERA && 
-                    pendingCameraReconnect && 
-                    reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                    
-                    reconnectAttempts++;
-                    Log.d(TAG, "Attempting to reconnect to camera (attempt " + reconnectAttempts + "/" + MAX_RECONNECT_ATTEMPTS + ")");
-                    
-                    // Update notification to show reconnection attempt
-                    NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                        .setContentTitle(getString(R.string.camera_interrupted_title))
-                        .setContentText(getString(R.string.camera_reconnection_attempts));
-                    NotificationManagerCompat.from(RecordingService.this).notify(NOTIFICATION_ID, builder.build());
-                    
-                    // Try to open the camera
-                    tryReconnectCamera(cameraId);
-                    
-                    // Schedule next attempt if we haven't reached the limit
-                    if (recordingState == RecordingState.WAITING_FOR_CAMERA && 
-                        pendingCameraReconnect && 
-                        reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                        reconnectHandler.postDelayed(this, RECONNECT_RETRY_DELAY_MS);
-                    } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                        // We've reached the maximum number of attempts
-                        Log.w(TAG, "Maximum reconnection attempts reached. Stopping recording.");
-                        pendingCameraReconnect = false;
-                        recordingState = RecordingState.NONE;
-                        stopRecording(); // Give up and stop recording
-                    }
+                if (!pendingCameraReconnect) {
+                    Log.d(TAG, "Camera reconnection attempts stopped by flag");
+                    return;
+                }
+                tryReconnectCamera(cameraId);
+                // Always schedule the next attempt as long as pendingCameraReconnect is true
+                if (pendingCameraReconnect) {
+                    reconnectHandler.postDelayed(this, RECONNECT_RETRY_DELAY_MS);
                 }
             }
         };
-        
-        // Start the first attempt immediately
         reconnectHandler.post(reconnectRunnable);
+        Log.d(TAG, "Started camera reconnection attempts (infinite)");
     }
     
     /**
@@ -2547,66 +2640,201 @@ public class RecordingService extends Service {
      * @param cameraId The ID of the camera to reconnect to
      */
     private void tryReconnectCamera(String cameraId) {
-        if (cameraManager == null) {
-            Log.e(TAG, "Cannot reconnect to camera - cameraManager is null");
-            return;
-        }
-        
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "Cannot reconnect to camera - permission denied");
-            return;
-        }
-        
-
-        
-        // Ensure existing camera resources are properly cleaned up
-        if (cameraDevice != null) {
-            try {
-                cameraDevice.close();
-            } catch (Exception e) {
-                Log.w(TAG, "Error closing existing camera device during reconnection", e);
-            }
-            cameraDevice = null;
-        }
-        
-        if (captureSession != null) {
-            try {
-                captureSession.close();
-            } catch (Exception e) {
-                Log.w(TAG, "Error closing existing capture session during reconnection", e);
-            }
-            captureSession = null;
-        }
-        
         try {
-            // Check if the camera is available by attempting to open it
+            Log.d(TAG, "Attempting to reconnect camera: " + cameraId);
             cameraManager.openCamera(cameraId, cameraStateCallback, backgroundHandler);
-        } catch (CameraAccessException e) {
-            // Camera is still not available
-            int reason = e.getReason();
-            if (reason == CameraAccessException.CAMERA_DISABLED || 
-                reason == 1) { // 1 is CAMERA_IN_USE
-                Log.d(TAG, "Camera still not available (reason: " + reason + ")");
-            } else {
-                Log.e(TAG, "Error reconnecting to camera (reason: " + reason + ")", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error reconnecting to camera", e);
+        }
+    }
+    // ----- Fix End for camera interruption handling -----
+
+    /**
+     * Handles camera interruptions by continuing to record with black frames.
+     * This is called when the camera is disconnected or encounters an error during recording.
+     */
+    private void handleCameraInterruption() {
+        // ----- Fix Start for this method(handleCameraInterruption)-----
+        if (recordingState != RecordingState.IN_PROGRESS) {
+            Log.w(TAG, "handleCameraInterruption called but not in IN_PROGRESS state, current state: " + recordingState);
+            return;
+        }
+        
+        Log.i(TAG, "Camera interrupted during recording - switching to black frame mode");
+        
+        // Save the current camera ID for reconnection
+        String cameraToReconnect = null;
+        try {
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            cameraToReconnect = getCameraId(cameraManager, cameraType);
+            if (cameraToReconnect == null) {
+                Log.e(TAG, "Could not determine camera ID for reconnection");
+                cameraToReconnect = "0"; // Default to first camera
             }
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error reconnecting to camera", e);
+            Log.e(TAG, "Error determining camera ID for reconnection", e);
+            cameraToReconnect = "0"; // Default to first camera
         }
+        
+        // Update recording state to a special state
+        recordingState = RecordingState.WAITING_FOR_CAMERA;
+        
+        // Show notification about camera interruption
+        setupCameraInterruptionNotification();
+        
+        // Start camera reconnection attempts
+        pendingCameraReconnect = true;
+        
+        // Start a thread to render black frames while the camera is unavailable
+        startBlackFrameRendering();
+        
+        // Start camera reconnection attempts
+        startCameraReconnectionAttempts(cameraToReconnect);
+        
+        Log.i(TAG, "Recording continuing with black frames, attempting camera reconnection");
+        // ----- Fix Ended for this method(handleCameraInterruption)-----
+    }
+    
+    private Handler blackFrameHandler;
+    private HandlerThread blackFrameThread;
+    private boolean isRenderingBlackFrames = false;
+    private static final int BLACK_FRAME_INTERVAL_MS = 33; // ~30fps
+    
+    /**
+     * Starts rendering black frames to keep the recording going when camera is unavailable.
+     */
+    private void startBlackFrameRendering() {
+        if (isRenderingBlackFrames) {
+            Log.d(TAG, "Already rendering black frames");
+            return;
+        }
+        
+        if (glRecordingPipeline == null) {
+            Log.e(TAG, "Cannot start black frame rendering - pipeline is null");
+            return;
+        }
+        
+        // Create a dedicated thread for rendering black frames
+        blackFrameThread = new HandlerThread("BlackFrameRenderer");
+        blackFrameThread.start();
+        blackFrameHandler = new Handler(blackFrameThread.getLooper());
+        
+        isRenderingBlackFrames = true;
+        
+        // Create a runnable that renders black frames at regular intervals
+        Runnable blackFrameRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isRenderingBlackFrames || recordingState != RecordingState.WAITING_FOR_CAMERA) {
+                    Log.d(TAG, "Stopping black frame rendering");
+                    stopBlackFrameRendering();
+                    return;
+                }
+                
+                // Render a black frame - don't try to recreate renderer if it fails
+                if (glRecordingPipeline != null) {
+                    try {
+                        glRecordingPipeline.renderBlackFrame();
+                    } catch (Exception e) {
+                        // Expected during camera disconnection - log at debug level
+                        Log.d(TAG, "Expected exception rendering black frame during camera disconnection");
+                    }
+                }
+                
+                // Schedule the next frame - even if this one failed
+                // The video will just have some dropped frames, which is better than stopping
+                if (isRenderingBlackFrames && blackFrameHandler != null) {
+                    blackFrameHandler.postDelayed(this, BLACK_FRAME_INTERVAL_MS);
+                }
+            }
+        };
+        
+        // Start rendering black frames
+        blackFrameHandler.post(blackFrameRunnable);
+        Log.d(TAG, "Started rendering black frames");
     }
     
     /**
-     * Stops any ongoing camera reconnection attempts
+     * Stops rendering black frames.
      */
-    private void stopReconnectionAttempts() {
-        if (reconnectRunnable != null) {
-            reconnectHandler.removeCallbacks(reconnectRunnable);
-            Log.d(TAG, "Stopped camera reconnection attempts");
+    private void stopBlackFrameRendering() {
+        // Set flag first to prevent new frames from being scheduled
+        isRenderingBlackFrames = false;
+        Log.d(TAG, "Stopping black frame rendering");
+        
+        // Cancel all pending messages in handler
+        if (blackFrameHandler != null) {
+            blackFrameHandler.removeCallbacksAndMessages(null);
         }
         
-        // Reset related flags
-        pendingCameraReconnect = false;
-        reconnectAttempts = 0;
+        // Stop the thread safely
+        final HandlerThread threadToCleanup = blackFrameThread; // Local reference for cleanup
+        blackFrameThread = null; // Clear reference immediately to prevent new usage
+        
+        // Clean up the thread on a background thread to avoid blocking
+        new Thread(() -> {
+            try {
+                if (threadToCleanup != null) {
+                    threadToCleanup.quitSafely();
+                    try {
+                        // Wait with timeout for thread to exit
+                        threadToCleanup.join(1000);
+                    } catch (InterruptedException e) {
+                        Log.w(TAG, "Interrupted while waiting for black frame thread to exit", e);
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error cleaning up black frame thread", e);
+            }
+        }, "BlackFrameCleanupThread").start();
+        
+        // Clear handler reference
+        blackFrameHandler = null;
+        
+        Log.d(TAG, "Stopped rendering black frames");
     }
-    // ----- Fix End for camera interruption handling -----
+
+    /**
+     * Sets up a notification to inform the user that recording is continuing with black frames
+     * due to camera interruption.
+     */
+    private void setupCameraInterruptionNotification() {
+        // ----- Fix Start for this method(setupCameraInterruptionNotification)-----
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification update.");
+            return;
+        }
+
+        NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                .setContentTitle(getString(R.string.camera_interrupted_title))
+                .setContentText(getString(R.string.camera_interrupted_description))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(getString(R.string.camera_interrupted_description)))
+                .clearActions();
+        
+        // Add stop action
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        if (!hideStopButton) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_stop,
+                    getString(R.string.button_stop),
+                    createStopRecordingIntent()));
+        }
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
+        Log.d(TAG, "Camera interruption notification displayed");
+        // ----- Fix Ended for this method(setupCameraInterruptionNotification)-----
+    }
+
+    /**
+     * Stops any ongoing camera reconnection attempts.
+     */
+    private void stopReconnectionAttempts() {
+        pendingCameraReconnect = false;
+        if (reconnectHandler != null && reconnectRunnable != null) {
+            reconnectHandler.removeCallbacks(reconnectRunnable);
+        }
+        Log.d(TAG, "Camera reconnection attempts stopped");
+    }
 }

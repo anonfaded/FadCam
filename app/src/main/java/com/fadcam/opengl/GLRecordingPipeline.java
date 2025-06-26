@@ -92,6 +92,8 @@ public class GLRecordingPipeline {
     private int audioBitrate;
     private int audioChannelCount;
 
+    private boolean released = false;
+
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
@@ -424,7 +426,7 @@ public class GLRecordingPipeline {
             } catch (IllegalStateException e) {
                 Log.w(TAG, "Format not available yet from encoder, will be started later", e);
                 // The format isn't available yet, it will be started in drainEncoder when format becomes available
-                muxerStarted = false;
+        muxerStarted = false;
             }
         } else {
             Log.e(TAG, "Video encoder is null when setting up muxer!");
@@ -531,20 +533,20 @@ public class GLRecordingPipeline {
                 
                 // Only drain encoder if rendering was successful
                 if (renderSuccess) {
-                    // Drain encoded frame data
-                    drainEncoder();
-                    
-                    // Check if we need to split the segment due to size
-                    if (shouldSplitSegment()) {
+                // Drain encoded frame data
+                drainEncoder();
+                
+                // Check if we need to split the segment due to size
+                if (shouldSplitSegment()) {
                         Log.d(TAG, "Size limit reached, rolling over segment");
-                        rolloverSegment();
+                    rolloverSegment();
                     }
                 }
                 
                 // Try to update preview if available, but don't let it affect recording
                 try {
                     glRenderer.renderToPreview();
-                } catch (Exception e) {
+            } catch (Exception e) {
                     // Just log the error but don't let it affect recording
                     Log.w(TAG, "Preview rendering failed, but continuing recording", e);
                 }
@@ -602,13 +604,13 @@ public class GLRecordingPipeline {
                         }
                     } else {
                         // Normal case - add track and potentially start muxer
-                        int videoTrackIndex = mediaMuxer.addTrack(newFormat);
+                    int videoTrackIndex = mediaMuxer.addTrack(newFormat);
                         Log.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
                         
                         // Check if we can start the muxer now
                         if (!audioRecordingEnabled || audioTrackIndex != -1) {
-                            mediaMuxer.start();
-                            muxerStarted = true;
+                        mediaMuxer.start();
+                        muxerStarted = true;
                             Log.d(TAG, "Started muxer after receiving video format");
                         } else {
                             Log.d(TAG, "Waiting for audio track before starting muxer");
@@ -640,13 +642,13 @@ public class GLRecordingPipeline {
                         // Only write if we have valid data and muxer is still valid
                         if (bufferInfo.size > 0 && mediaMuxer != null && muxerStarted) {
                             try {
-                                encodedData.position(bufferInfo.offset);
-                                encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                                mediaMuxer.writeSampleData(0, encodedData, bufferInfo);
+                        encodedData.position(bufferInfo.offset);
+                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                        mediaMuxer.writeSampleData(0, encodedData, bufferInfo);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error writing video frame to muxer", e);
                                 // Continue processing other frames
-                            }
+                    }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
                         Log.d(TAG, "Dropping encoded frame because muxer isn't started yet");
@@ -782,7 +784,7 @@ public class GLRecordingPipeline {
                 if (glRenderer != null) {
                     glRenderer.renderFrame();
                     Log.d(TAG, "Forced a frame render for the new segment");
-                }
+            }
                 
                 Log.i(TAG, "Started new segment: " + segmentNumber + 
                       (currentOutputFilePath != null ? " at path: " + currentOutputFilePath : " with file descriptor"));
@@ -801,13 +803,12 @@ public class GLRecordingPipeline {
      */
     public void stopRecording() {
         Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
-        
-        if (isStopped) {
-            Log.d(TAG, "stopRecording: Already stopped, ignoring duplicate call");
+        if (isStopped || released) {
+            Log.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
             return;
         }
-        
         isStopped = true;
+        released = true;
         isRecording = false;
         
         if (handler != null) {
@@ -1264,7 +1265,7 @@ public class GLRecordingPipeline {
                     } else {
                         // Normal case - add track and potentially start muxer
                         try {
-                            audioTrackIndex = mediaMuxer.addTrack(newFormat);
+                    audioTrackIndex = mediaMuxer.addTrack(newFormat);
                             Log.d(TAG, "Added audio track with index " + audioTrackIndex + " to muxer");
                             
                             // Check if we should start the muxer now
@@ -1318,9 +1319,9 @@ public class GLRecordingPipeline {
                         // Only write if we have valid data and muxer is still valid
                         if (bufferInfo.size > 0 && mediaMuxer != null && muxerStarted) {
                             try {
-                                encodedData.position(bufferInfo.offset);
-                                encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                                mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
+                        encodedData.position(bufferInfo.offset);
+                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                        mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error writing audio frame to muxer", e);
                                 // Continue processing other frames
@@ -1392,6 +1393,38 @@ public class GLRecordingPipeline {
             } catch (Exception e) {
                 Log.e(TAG, "Failed to update preview surface", e);
             }
+        }
+    }
+
+    /**
+     * Renders a black frame to keep the recording going when camera is unavailable.
+     * This ensures the recording pipeline stays active even when camera input is lost.
+     * 
+     * Note: We do NOT attempt to recreate the renderer or EGL context if it's lost.
+     * We simply use the existing renderer if it's available, and rely on the encoder
+     * to handle gaps in frames gracefully.
+     */
+    public void renderBlackFrame() {
+        if (!isRecording || released) {
+            // Don't try to render if we're not recording or after release
+            return;
+        }
+        
+        // Only use the existing renderer, don't try to recreate it
+        if (glRenderer != null && encoderInputSurface != null && encoderInputSurface.isValid()) {
+            try {
+                Log.d(TAG, "Rendering black frame to maintain recording pipeline");
+                glRenderer.renderBlackFrame();
+                try {
+                    drainEncoder();
+                } catch (Exception e) {
+                    Log.d(TAG, "Error draining encoder after black frame - continuing");
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Could not render black frame - this is expected during camera disconnection");
+            }
+        } else {
+            Log.d(TAG, "Cannot render black frame - renderer or surface is null/invalid");
         }
     }
 } 

@@ -151,6 +151,8 @@ public class GLWatermarkRenderer {
     private int dynamicBitmapWidth = 0;
     private int dynamicBitmapHeight = 48; // Fixed small height for dashcam style
 
+    private boolean released = false;
+
     public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation, int videoWidth, int videoHeight) {
         this.context = context;
         this.outputSurface = outputSurface;
@@ -273,7 +275,7 @@ public class GLWatermarkRenderer {
                                 }
                             } catch (Exception e) {
                                 Log.e(TAG, "Error recreating surface", e);
-                            }
+            }
                         }
                         // For EGL_BAD_ACCESS, try recreating the entire context
                         else if (error == EGL14.EGL_BAD_ACCESS && attempt < 2) {
@@ -363,8 +365,8 @@ public class GLWatermarkRenderer {
             // Update texture image
             float[] texMatrix = new float[16];
             try {
-                cameraSurfaceTexture.updateTexImage();
-                cameraSurfaceTexture.getTransformMatrix(texMatrix);
+            cameraSurfaceTexture.updateTexImage();
+            cameraSurfaceTexture.getTransformMatrix(texMatrix);
             } catch (Exception e) {
                 Log.e(TAG, "Error updating texture image", e);
                 return;
@@ -375,7 +377,7 @@ public class GLWatermarkRenderer {
             
             // Set presentation time
             try {
-                EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, cameraSurfaceTexture.getTimestamp());
+            EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, cameraSurfaceTexture.getTimestamp());
             } catch (Exception e) {
                 Log.e(TAG, "Error setting presentation time", e);
                 // Continue anyway
@@ -404,8 +406,8 @@ public class GLWatermarkRenderer {
             
             // Draw to encoder
             try {
-                drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
-                drawWatermark();
+            drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+            drawWatermark();
                 
                 // Swap buffers to complete the frame
                 if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
@@ -479,10 +481,10 @@ public class GLWatermarkRenderer {
             
             // Make the preview EGL context current
             try {
-                if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
-                    Log.w(TAG, "renderToPreview: eglMakeCurrent failed");
-                    return;
-                }
+            if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
+                Log.w(TAG, "renderToPreview: eglMakeCurrent failed");
+                return;
+            }
                 
                 // Get the current texture matrix
                 float[] texMatrix = new float[16];
@@ -493,7 +495,7 @@ public class GLWatermarkRenderer {
                 }
                 
                 // Draw to preview
-                drawOESTexture(previewMvpMatrix, texMatrix);
+            drawOESTexture(previewMvpMatrix, texMatrix);
                 
                 // Swap buffers to complete the frame
                 if (!EGL14.eglSwapBuffers(previewEglDisplay, previewEglSurface)) {
@@ -503,7 +505,7 @@ public class GLWatermarkRenderer {
                     // If surface is bad, release preview EGL resources
                     if (error == EGL14.EGL_BAD_SURFACE) {
                         releasePreviewEGL();
-                    }
+        }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error in renderToPreview", e);
@@ -728,28 +730,28 @@ public class GLWatermarkRenderer {
                 Log.w(TAG, "Clearing GL error before drawing: 0x" + Integer.toHexString(error));
             }
             
-            if (mFullFrameBlit != null) {
+        if (mFullFrameBlit != null) {
                 try {
-                    // Use Google's Grafika rendering mechanism for better texture handling
-                    // Apply the MVP matrix first - need to modify the program's matrix
-                    com.fadcam.opengl.grafika.Texture2dProgram program = mFullFrameBlit.getProgram();
-                    if (program != null) {
+            // Use Google's Grafika rendering mechanism for better texture handling
+            // Apply the MVP matrix first - need to modify the program's matrix
+            com.fadcam.opengl.grafika.Texture2dProgram program = mFullFrameBlit.getProgram();
+            if (program != null) {
                         try {
-                            // Save the current program
-                            int[] currentProgramArray = new int[1];
-                            GLES20.glGetIntegerv(GLES20.GL_CURRENT_PROGRAM, currentProgramArray, 0);
-                            int currentProgram = currentProgramArray[0];
-                            
-                            // Use the program and set the MVP matrix
-                            int programHandle = program.getProgramHandle();
-                            GLES20.glUseProgram(programHandle);
-                            int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");
-                            if (mvpLoc >= 0) {
-                                GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
-                            }
-                            
-                            // Restore previous program
-                            GLES20.glUseProgram(currentProgram);
+                // Save the current program
+                int[] currentProgramArray = new int[1];
+                GLES20.glGetIntegerv(GLES20.GL_CURRENT_PROGRAM, currentProgramArray, 0);
+                int currentProgram = currentProgramArray[0];
+                
+                // Use the program and set the MVP matrix
+                int programHandle = program.getProgramHandle();
+                GLES20.glUseProgram(programHandle);
+                int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");
+                if (mvpLoc >= 0) {
+                    GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+                }
+                
+                // Restore previous program
+                GLES20.glUseProgram(currentProgram);
                             
                             // Clear any errors that might have occurred during matrix setup
                             error = GLES20.glGetError();
@@ -759,11 +761,11 @@ public class GLWatermarkRenderer {
                         } catch (Exception e) {
                             Log.e(TAG, "Error setting MVP matrix", e);
                         }
-                    }
-                    
-                    // Now draw the frame with the texture matrix
+            }
+            
+            // Now draw the frame with the texture matrix
                     try {
-                        mFullFrameBlit.drawFrame(oesTextureId, texMatrix);
+            mFullFrameBlit.drawFrame(oesTextureId, texMatrix);
                     } catch (RuntimeException e) {
                         // If we get a GL error during drawing, try the fallback method
                         Log.e(TAG, "Error with mFullFrameBlit, trying fallback method", e);
@@ -773,7 +775,7 @@ public class GLWatermarkRenderer {
                     Log.e(TAG, "Error in mFullFrameBlit drawing", e);
                     drawWithFallbackMethod(mvpMatrix, texMatrix);
                 }
-            } else {
+        } else {
                 // Use fallback method directly
                 drawWithFallbackMethod(mvpMatrix, texMatrix);
             }
@@ -797,11 +799,11 @@ public class GLWatermarkRenderer {
             
             // Use the basic shader program
             GLES20.glUseProgram(oesProgram);
-            
+
             // Set the matrices
             GLES20.glUniformMatrix4fv(oesMvpMatrixHandle, 1, false, mvpMatrix, 0);
             GLES20.glUniformMatrix4fv(oesTexMatrixHandle, 1, false, texMatrix, 0);
-            
+
             // Set up vertex attributes
             GLES20.glEnableVertexAttribArray(oesPositionHandle);
             GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
@@ -812,10 +814,10 @@ public class GLWatermarkRenderer {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
             GLES20.glUniform1i(oesTextureHandle, 0);
-            
+
             // Draw
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-            
+
             // Clean up
             GLES20.glDisableVertexAttribArray(oesPositionHandle);
             GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
@@ -945,27 +947,25 @@ public class GLWatermarkRenderer {
     
     public void release() {
         synchronized (renderLock) {
-            synchronized (previewRenderLock) {
-                releasePreviewEGL();
-                if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
-                    EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-                    EGL14.eglDestroySurface(eglDisplay, eglSurface);
-                    EGL14.eglDestroyContext(eglDisplay, eglContext);
-                    EGL14.eglTerminate(eglDisplay);
-                }
-                eglDisplay = EGL14.EGL_NO_DISPLAY;
-                eglContext = EGL14.EGL_NO_CONTEXT;
-                eglSurface = EGL14.EGL_NO_SURFACE;
-                
-                if (mFullFrameBlit != null) {
-                    mFullFrameBlit.release();
-                    mFullFrameBlit = null;
-                }
-                
-                if (cameraInputSurface != null) cameraInputSurface.release();
-                if (cameraSurfaceTexture != null) cameraSurfaceTexture.release();
-                initialized = false;
+            if (released) {
+                Log.d(TAG, "release called more than once; ignoring");
+                return;
             }
+            released = true;
+            try {
+                releaseEGLResources();
+            } catch (Exception e) {
+                Log.e(TAG, "Exception during releaseEGLResources", e);
+            }
+            // Null out all references
+            outputSurface = null;
+            cameraInputSurface = null;
+            cameraSurfaceTexture = null;
+            watermarkBitmap = null;
+            watermarkTextureId = 0;
+            mFullFrameBlit = null;
+            // ... any other fields that should be nulled ...
+                initialized = false;
         }
     }
     
@@ -1254,6 +1254,87 @@ public class GLWatermarkRenderer {
             }
         }
         // ----- Fix Ended for this method(initializePreviewSurfaceOnly)-----
+    }
+
+    /**
+     * Renders a black frame to the encoder surface.
+     * Used when camera input is unavailable but we want to keep recording.
+     */
+    public void renderBlackFrame() {
+        synchronized (renderLock) {
+            if (released) {
+                Log.d(TAG, "renderBlackFrame called after release; ignoring");
+                return;
+            }
+            // Don't try to reinitialize if existing EGL resources are lost
+            // Just use the existing context if it's valid
+            if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY || 
+                eglContext == EGL14.EGL_NO_CONTEXT || eglSurface == EGL14.EGL_NO_SURFACE) {
+                Log.d(TAG, "Cannot render black frame - EGL not initialized and we won't reinitialize");
+                return;
+            }
+            boolean contextMadeCurrent = false;
+            try {
+                if (EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                    contextMadeCurrent = true;
+                    GLES20.glViewport(0, 0, encoderWidth > 0 ? encoderWidth : videoWidth, 
+                                     encoderHeight > 0 ? encoderHeight : videoHeight);
+                    GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+                    EGL14.eglSwapBuffers(eglDisplay, eglSurface);
+                    return;
+                } else {
+                    int error = EGL14.eglGetError();
+                    Log.d(TAG, "Could not make EGL context current: 0x" + Integer.toHexString(error) + 
+                             " - this is expected during camera disconnection");
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Exception rendering black frame - this is expected during camera disconnection");
+            } finally {
+                if (!contextMadeCurrent) {
+                    Log.d(TAG, "Black frame was not rendered - will try again on next frame");
+                }
+            }
+        }
+    }
+    
+    /**
+     * Helper method to safely release EGL resources
+     */
+    private void releaseEGLResources() {
+        try {
+            if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
+                try {
+                    EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                } catch (Exception e) {
+                    Log.w(TAG, "Error releasing current context", e);
+                }
+                if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                    try {
+                        EGL14.eglDestroySurface(eglDisplay, eglSurface);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error destroying surface", e);
+                    }
+                    eglSurface = EGL14.EGL_NO_SURFACE;
+                }
+                if (eglContext != EGL14.EGL_NO_CONTEXT) {
+                    try {
+                        EGL14.eglDestroyContext(eglDisplay, eglContext);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error destroying context", e);
+                    }
+                    eglContext = EGL14.EGL_NO_CONTEXT;
+                }
+                try {
+                    EGL14.eglTerminate(eglDisplay);
+                } catch (Exception e) {
+                    Log.w(TAG, "Error terminating display", e);
+                }
+                eglDisplay = EGL14.EGL_NO_DISPLAY;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error releasing EGL resources", e);
+        }
     }
 }
 
