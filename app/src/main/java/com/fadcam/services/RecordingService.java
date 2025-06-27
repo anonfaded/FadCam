@@ -194,14 +194,36 @@ public class RecordingService extends Service {
             return START_STICKY;
         }
         Log.d(TAG, "onStartCommand received: Action=" + intent.getAction());
-        
         String action = intent.getAction();
         if (action == null) {
             Log.w(TAG, "onStartCommand: Action is null.");
-            if (!isWorkingInProgress()) stopSelf();
-            return START_NOT_STICKY;
+            return START_STICKY;
         }
-
+        // ----- Fix Start: Handle global app background/foreground actions -----
+        if ("ACTION_APP_BACKGROUND".equals(action)) {
+            Log.d(TAG, "Received ACTION_APP_BACKGROUND: releasing preview EGL/GL resources");
+            if (glRecordingPipeline != null) {
+                try {
+                    glRecordingPipeline.releasePreviewResources(); // Only release preview EGL/GL
+                } catch (Exception e) {
+                    Log.e(TAG, "Error releasing preview EGL/GL on app background", e);
+                }
+            }
+            return START_STICKY;
+        } else if ("ACTION_APP_FOREGROUND".equals(action)) {
+            Log.d(TAG, "Received ACTION_APP_FOREGROUND: re-initializing pipeline if recording in progress");
+            if (sharedPreferencesManager != null && sharedPreferencesManager.isRecordingInProgress()) {
+                // Defensive: only re-initialize if not already running
+                if (glRecordingPipeline == null) {
+                    // Recreate pipeline and surfaces (minimal, actual re-init logic may be more complex)
+                    // You may want to trigger the same logic as when starting recording
+                    // For now, just log and rely on UI/fragment to trigger full re-init
+                    Log.d(TAG, "App foregrounded and recording in progress, pipeline will be re-initialized by UI");
+                }
+            }
+            return START_STICKY;
+        }
+        // ----- Fix End: Handle global app background/foreground actions -----
         if (Constants.INTENT_ACTION_START_RECORDING.equals(action)) {
             // ----- Check for camera resource cooldown -----
             // Check if camera resources are still being released
@@ -277,11 +299,14 @@ public class RecordingService extends Service {
             // Handle surface changes for preview
             setupSurfaceTexture(intent);
             if (glRecordingPipeline != null) {
+                // Only update the preview surface, never re-initialize or re-prepare the pipeline
                 glRecordingPipeline.setPreviewSurface(previewSurface);
             }
+            // Only reconfigure the camera session if recording or paused
             if (isRecording() || isPaused()) {
                 createCameraPreviewSession();
             }
+            Log.d(TAG, "ACTION_CHANGE_SURFACE handled: preview surface updated, camera session reconfigured if needed. No pipeline re-init.");
             return START_STICKY;
         } else if (Constants.BROADCAST_ON_RECORDING_STATE_REQUEST.equals(action)) {
             // Handle UI state sync requests
@@ -1420,34 +1445,32 @@ public class RecordingService extends Service {
 
     // --- Helper Methods ---
     private void setupSurfaceTexture(Intent intent) {
+        // ----- Fix Start for this method(setupSurfaceTexture)-----
         Surface oldPreviewSurface = previewSurface; // Store old surface to check for changes
-        
         if(intent != null) {
             previewSurface = intent.getParcelableExtra("SURFACE");
-            
-            // Check if we've lost a valid preview surface (app going to background)
             boolean validOldSurface = oldPreviewSurface != null && oldPreviewSurface.isValid();
             boolean validNewSurface = previewSurface != null && previewSurface.isValid();
-            
+            if (glRecordingPipeline != null) {
+                if (validNewSurface) {
+                    glRecordingPipeline.setPreviewSurface(previewSurface);
+                } else {
+                    glRecordingPipeline.setPreviewSurface(null);
+                }
+            }
             if (validOldSurface && !validNewSurface && isRecordingOrPaused()) {
-                // We had a valid surface but now we don't
-                // This is likely the app being backgrounded - create dummy surface to prevent green screen
                 Log.d(TAG, "Surface lost while recording - creating dummy surface to prevent recording issues");
                 createDummyBackgroundSurface();
             }
-            
             Log.d(TAG, "Preview surface updated: " + validNewSurface);
-            
-            // Check if we have surface dimensions
             int width = intent.getIntExtra("SURFACE_WIDTH", -1);
             int height = intent.getIntExtra("SURFACE_HEIGHT", -1);
-            
             // Update the GL pipeline with the new dimensions if available
-            if (width > 0 && height > 0 && glRecordingPipeline != null) {
-                Log.d(TAG, "Updating GL pipeline with surface dimensions: " + width + "x" + height);
+            if (glRecordingPipeline != null && validNewSurface && width > 0 && height > 0) {
                 glRecordingPipeline.updateSurfaceDimensions(width, height);
             }
         }
+        // ----- Fix Ended for this method(setupSurfaceTexture)-----
     }
 
 

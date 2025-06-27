@@ -1020,25 +1020,12 @@ public class GLRecordingPipeline {
      * @param surface The Surface to render the preview on.
      */
     public void setPreviewSurface(Surface surface) {
-        if (this.previewSurface != surface) {
-            Log.d(TAG, "Setting preview surface: " + (surface != null));
-            
-            this.previewSurface = surface;
-            
-            // If there's a valid renderer, update its preview surface
-            if (glRenderer != null) {
-                try {
-                    glRenderer.setPreviewSurface(surface);
-                    
-                    // Update surface dimensions if we have valid dimensions
-                    if (surface != null && mSurfaceWidth > 0 && mSurfaceHeight > 0) {
-                        Log.d(TAG, "Updating renderer surface dimensions to " + 
-                              mSurfaceWidth + "x" + mSurfaceHeight);
-                        glRenderer.setSurfaceDimensions(mSurfaceWidth, mSurfaceHeight);
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Error setting preview surface", e);
-                }
+        this.previewSurface = surface;
+        if (glRenderer != null) {
+            if (surface == null || !surface.isValid()) {
+                glRenderer.releasePreviewEGL();
+            } else {
+                glRenderer.setPreviewSurface(surface);
             }
         }
     }
@@ -1425,6 +1412,15 @@ public class GLRecordingPipeline {
             }
         } else {
             Log.d(TAG, "Cannot render black frame - renderer or surface is null/invalid");
+        }
+    }
+
+    /**
+     * Releases only the preview EGL/GL resources (not the encoder or recording pipeline).
+     */
+    public void releasePreviewResources() {
+        if (glRenderer != null) {
+            glRenderer.releasePreviewEGL();
         }
     }
 } 

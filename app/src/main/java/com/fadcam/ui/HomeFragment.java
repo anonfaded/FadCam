@@ -1472,16 +1472,14 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onPause() {
         super.onPause();
-        //locationHelper.stopLocationUpdates();
         Log.d(TAG, "HomeFragment paused.");
-
         // ----- Fix Start for this method(onPause)-----
-        // When pausing, explicitly release the surface reference to avoid stale frames on resume
         if (textureViewSurface != null) {
             Log.d(TAG, "onPause: Explicitly sending null surface to service");
             updateServiceWithCurrentSurface(null);
         }
         // ----- Fix Ended for this method(onPause)-----
+        //locationHelper.stopLocationUpdates();
         
         // Only unregister if receiver exists
         if (torchReceiver != null) {
@@ -1987,17 +1985,11 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
                 Log.d(TAG, "onSurfaceTextureAvailable: SurfaceTexture is now available. Size: " + width + "x" + height);
-                
-                // Clean up any existing surface
                 if (textureViewSurface != null) {
                     textureViewSurface.release();
                 }
-                
-                // Create a new surface from the available texture
                 textureViewSurface = new Surface(surfaceTexture);
                 Log.d(TAG, "onSurfaceTextureAvailable: Created new surface from texture");
-                
-                // If we're currently recording and preview is enabled, send the surface to service
                 if (isPreviewEnabled && isRecordingOrPaused()) {
                     Log.d(TAG, "onSurfaceTextureAvailable: Recording in progress, sending surface to service");
                     updateServiceWithCurrentSurface(textureViewSurface, width, height);
@@ -2005,18 +1997,14 @@ public class HomeFragment extends BaseFragment {
                     Log.d(TAG, "onSurfaceTextureAvailable: Not recording or preview disabled, surface ready for later use");
                 }
             }
-
             @Override
             public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
                 Log.d(TAG, "onSurfaceTextureSizeChanged: Size changed to " + width + "x" + height);
-                
-                // If we're currently recording and preview is enabled, update the surface dimensions
                 if (isPreviewEnabled && isRecordingOrPaused() && textureViewSurface != null && textureViewSurface.isValid()) {
                     Log.d(TAG, "onSurfaceTextureSizeChanged: Updating surface dimensions");
                     updateServiceWithCurrentSurface(textureViewSurface, width, height);
                 }
             }
-
             @Override
             public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
                 Log.d(TAG, "onSurfaceTextureDestroyed: SurfaceTexture is being destroyed.");
@@ -2031,7 +2019,6 @@ public class HomeFragment extends BaseFragment {
                 }
                 return true; // Surface is released by the listener
             }
-
             @Override
             public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
                 // This gets called every frame, so don't log here
@@ -3776,22 +3763,8 @@ public class HomeFragment extends BaseFragment {
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
         Log.d(TAG, "onHiddenChanged: Fragment " + (hidden ? "hidden" : "shown"));
-        
-        // If fragment is becoming visible (not hidden)
+        // ----- Fix Start for this method(onHiddenChanged)-----
         if (!hidden) {
-            // Same logic as in onResume to ensure preview state is correctly applied
-            if (sharedPreferencesManager == null) {
-                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-            }
-            
-            // Re-load preview state from SharedPreferences
-            isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
-            Log.d(TAG, "onHiddenChanged: Loaded isPreviewEnabled state = " + isPreviewEnabled);
-            
-            // Update UI based on loaded state
-            updatePreviewVisibility();
-            
-            // Update the surface accordingly
             if (isPreviewEnabled && isRecordingOrPaused() && textureViewSurface != null && textureViewSurface.isValid()) {
                 Log.d(TAG, "onHiddenChanged: Preview enabled, sending valid surface to service");
                 updateServiceWithCurrentSurface(textureViewSurface);
@@ -3800,13 +3773,12 @@ public class HomeFragment extends BaseFragment {
                 updateServiceWithCurrentSurface(null);
             }
         } else {
-            // If fragment is being hidden, we should release the surface from the service
-            // to prevent any lingering frames when coming back
             if (isRecordingOrPaused()) {
                 Log.d(TAG, "onHiddenChanged: Fragment hidden while recording, sending null surface");
                 updateServiceWithCurrentSurface(null);
             }
         }
+        // ----- Fix Ended for this method(onHiddenChanged)-----
     }
     // ----- Fix Ended for this method(onHiddenChanged)-----
 
