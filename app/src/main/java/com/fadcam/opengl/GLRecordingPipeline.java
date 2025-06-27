@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
+import com.fadcam.VideoCodec;
+
 /**
  * GLRecordingPipeline manages the OpenGL pipeline for real-time watermarking and video encoding.
  *
@@ -94,22 +96,24 @@ public class GLRecordingPipeline {
 
     private boolean released = false;
 
+    private final VideoCodec videoCodec;
+
     // Updated constructor for file path (internal storage)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
-        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation, VideoCodec videoCodec) {
+        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation, videoCodec);
         this.previewSurface = previewSurface;
         initAudioSettings();
     }
 
     // Updated constructor for FileDescriptor (SAF)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation) {
-        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFd, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation);
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation, VideoCodec videoCodec) {
+        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFd, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation, videoCodec);
         this.previewSurface = previewSurface;
         initAudioSettings();
     }
 
     // Updated constructor for file path (internal storage)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation) {
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation, VideoCodec videoCodec) {
         this.context = context;
         this.watermarkInfoProvider = watermarkInfoProvider;
         this.videoWidth = videoWidth;
@@ -124,6 +128,7 @@ public class GLRecordingPipeline {
         this.currentOutputFd = null;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
+        this.videoCodec = videoCodec;
         // Fetch video bitrate from SharedPreferencesManager
         this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
         // Initialize surface dimensions with video dimensions as default
@@ -138,7 +143,7 @@ public class GLRecordingPipeline {
     }
 
     // Updated constructor for FileDescriptor (SAF)
-    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation) {
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, String orientation, int sensorOrientation, VideoCodec videoCodec) {
         this.context = context;
         this.watermarkInfoProvider = watermarkInfoProvider;
         this.videoWidth = videoWidth;
@@ -153,6 +158,7 @@ public class GLRecordingPipeline {
         this.currentOutputFd = outputFd;
         this.orientation = orientation;
         this.sensorOrientation = sensorOrientation;
+        this.videoCodec = videoCodec;
         // Fetch video bitrate from SharedPreferencesManager
         this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
         // Initialize surface dimensions with video dimensions as default
@@ -350,12 +356,13 @@ public class GLRecordingPipeline {
         Log.d("FAD-ENCODER", "Original resolution: " + originalWidth + "x" + originalHeight);
         Log.d("FAD-ENCODER", "Final encoder resolution: " + encoderWidth + "x" + encoderHeight);
         
-        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, encoderWidth, encoderHeight);
+        String mimeType = videoCodec.getMimeType();
+        MediaFormat format = MediaFormat.createVideoFormat(mimeType, encoderWidth, encoderHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
-        videoEncoder = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
+        videoEncoder = MediaCodec.createEncoderByType(mimeType);
         videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         encoderInputSurface = videoEncoder.createInputSurface();
         

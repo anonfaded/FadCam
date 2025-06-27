@@ -2391,6 +2391,7 @@ public class RecordingService extends Service {
             // ----- Fix Start for this method(onSegmentRollover)-----
             Log.d(TAG, "GLSegmentCallback.onSegmentRollover called for segment " + nextSegmentNumber);
             String storageMode = sharedPreferencesManager.getStorageMode();
+            VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
                 Log.d(TAG, "Using custom storage mode (SAF) for segment rollover");
                 // SAF: create new file and open new ParcelFileDescriptor
@@ -2546,6 +2547,7 @@ public class RecordingService extends Service {
                   ", orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
             
             String storageMode = sharedPreferencesManager.getStorageMode();
+            VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
                 if (customUriString == null) {
@@ -2581,12 +2583,12 @@ public class RecordingService extends Service {
                     return;
                 }
                 Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
-                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec);
                 // ----- Fix End: Open PFD and keep it open for the duration of recording -----
             } else {
                 File outputFile = getFinalOutputFile();
                 Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
-                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec);
             }
             
             Log.d(TAG, "Preparing GLRecordingPipeline surfaces");

@@ -2782,15 +2782,12 @@ public class SettingsFragment extends BaseFragment {
             return Constants.DEFAULT_VIDEO_CODEC; // Should not happen if list isn't empty
         }
 
-        // Simple priority check (can be made more complex if needed)
-        VideoCodec highestPriorityCodec = compatibleCodecs.get(0); // Start with first
-        for (VideoCodec videoCodec : compatibleCodecs) {
-            // Assuming lower integer value means higher priority if getPriority defined that way
-            if (videoCodec.getPriority() < highestPriorityCodec.getPriority()) {
-                highestPriorityCodec = videoCodec;
-            }
+        // ----- Fix Start: Prefer HEVC (H.265) as default if supported -----
+        for (VideoCodec codec : compatibleCodecs) {
+            if (codec == VideoCodec.HEVC) return codec;
         }
-        return highestPriorityCodec;
+        return compatibleCodecs.get(0); // fallback to first compatible
+        // ----- Fix Ended: Prefer HEVC (H.265) as default if supported -----
     }
 
 
