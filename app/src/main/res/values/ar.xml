@@ -622,6 +622,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_reconnected_title">Camera reconnected</string>
     <string name="camera_reconnected_description">Recording resumed automatically</string>
     <string name="camera_reconnection_attempts">Attempting to reconnect to camera...</string>
+    <string name="camera_reconnection_success">Camera reconnected, resuming recording</string>
+    <string name="camera_reconnection_failed">Failed to reconnect to camera, continuing with black frames</string>
     <!-- Camera error messages -->
     <string name="camera_error_in_use">Camera is in use by another app</string>
     <string name="camera_error_max_cameras">Maximum number of cameras in use</string>
