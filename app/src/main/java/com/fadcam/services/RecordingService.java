@@ -461,6 +461,17 @@ public class RecordingService extends Service {
             sharedPreferencesManager.setRecordingInProgress(false);
             if (!isWorkingInProgress()) stopSelf();
             if (recordingWakeLock != null && recordingWakeLock.isHeld()) recordingWakeLock.release();
+            // ----- Fix Start: Close SAF ParcelFileDescriptor if open -----
+            if (safRecordingPfd != null) {
+                try {
+                    safRecordingPfd.close();
+                    Log.d(TAG, "Closed SAF ParcelFileDescriptor after recording");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing SAF ParcelFileDescriptor", e);
+                }
+                safRecordingPfd = null;
+            }
+            // ----- Fix End: Close SAF ParcelFileDescriptor if open -----
             isStopping = false; // Reset stopping flag if we're already stopped
             return;
         }
@@ -544,6 +555,17 @@ public class RecordingService extends Service {
                         }
                     }
                     
+                    // ----- Fix Start: Close SAF ParcelFileDescriptor if open (background thread) -----
+                    if (safRecordingPfd != null) {
+                        try {
+                            safRecordingPfd.close();
+                            Log.d(TAG, "Closed SAF ParcelFileDescriptor after recording (background thread)");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error closing SAF ParcelFileDescriptor (background thread)", e);
+                        }
+                        safRecordingPfd = null;
+                    }
+                    // ----- Fix End: Close SAF ParcelFileDescriptor if open (background thread) -----
                     // Check if service can stop
                     checkIfServiceCanStop();
                     
@@ -595,6 +617,17 @@ public class RecordingService extends Service {
         try { if (captureSession != null) { captureSession.close(); } } catch (Exception e) { } finally { captureSession = null; }
         try { if (cameraDevice != null) { cameraDevice.close(); } } catch (Exception e) { } finally { cameraDevice = null; }
         if (glRecordingPipeline != null) { glRecordingPipeline.stopRecording(); glRecordingPipeline = null; }
+        // ----- Fix Start: Close SAF ParcelFileDescriptor if open (resource cleanup) -----
+        if (safRecordingPfd != null) {
+            try {
+                safRecordingPfd.close();
+                Log.d(TAG, "Closed SAF ParcelFileDescriptor after resource cleanup");
+            } catch (Exception e) {
+                Log.e(TAG, "Error closing SAF ParcelFileDescriptor (resource cleanup)", e);
+            }
+            safRecordingPfd = null;
+        }
+        // ----- Fix End: Close SAF ParcelFileDescriptor if open (resource cleanup) -----
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
     }
@@ -2539,21 +2572,17 @@ public class RecordingService extends Service {
                     return;
                 }
                 Uri safUri = videoFile.getUri();
-                try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w")) {
-                    if (pfd == null) {
-                        Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
-                        Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
-                        stopSelf();
-                        return;
-                    }
-                    Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
-                    glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, pfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
-                } catch (Exception e) {
-                    Log.e(TAG, "Exception opening PFD for SAF URI", e);
+                // ----- Fix Start: Open PFD and keep it open for the duration of recording -----
+                safRecordingPfd = getContentResolver().openFileDescriptor(safUri, "w");
+                if (safRecordingPfd == null) {
+                    Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
                     Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 }
+                Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation);
+                // ----- Fix End: Open PFD and keep it open for the duration of recording -----
             } else {
                 File outputFile = getFinalOutputFile();
                 Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
@@ -2860,4 +2889,7 @@ public class RecordingService extends Service {
         }
         Log.d(TAG, "Camera reconnection attempts stopped");
     }
+
+    // Add this field to the class
+    private ParcelFileDescriptor safRecordingPfd = null;
 }
