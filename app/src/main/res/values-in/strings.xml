@@ -237,7 +237,9 @@
     
     <!-- Video Settings -->
     <string name="setting_codec_title">Codec Video</string>
-    <string name="note_codec">Pilih codec\n(Default: %1$s)</string>
+    <string name="note_codec">Pilih codec
+(Default: %1$s)
+Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264 untuk kualitas yang sama. Contoh: Untuk FHD, gunakan 8 Mbps, bukan 16 Mbps.</string>
     <string name="setting_video_bitrate_title">Bitrate Video</string>
     <string name="button_video_bitrate_settings">Atur Bitrate</string>
     <string name="bitrate_mode_default">Default</string>
@@ -505,4 +507,6 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="video_menu_upload_drive">Upload ke Google Drive</string>
     <string name="toast_no_youtube_app">Aplikasi YouTube tidak ditemukan</string>
     <string name="toast_no_drive_app">Aplikasi Google Drive tidak ditemukan</string>
+
+    <string name="dialog_audio_noise_suppression_label">Penekanan Kebisingan</string>
 </resources>

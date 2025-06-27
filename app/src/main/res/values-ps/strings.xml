@@ -237,7 +237,9 @@
     <string name="setting_framerate_title">Da Video Framerate</string>
     <string name="note_framerate">Framerate entekhab ka\n(Default: %1$d)</string>
     <string name="setting_codec_title">Video Codec</string>
-    <string name="note_codec">Codec entekhab ka\n(Default: %1$s)</string>
+    <string name="note_codec">Codec entekhab ka
+(Default: %1$s)
+Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitrate warkaawi ao quality ba hum agha we. Misal: da FHD lapara, 8 Mbps warkaawi pr zay da 16 Mbps.</string>
     <string name="setting_video_bitrate_title">Da Video Bitrate</string>
     <string name="button_video_bitrate_settings">Bitrate Tanzim Ka</string>
     <string name="bitrate_mode_default">Default</string>
@@ -310,6 +312,7 @@
 • Sampling Rate (Hz) har second ke da tso zala ghag akhestelo shmair de. 48000 Hz da video lapara standard de, 44100 Hz da ghag lapara aam de.
 
 Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
+    <string name="dialog_audio_noise_suppression_label">Shor kamawalo</string>
     
     <!-- Debug Settings -->
     <string name="setting_debug_title">Debug Logging</string>

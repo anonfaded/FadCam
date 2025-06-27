@@ -75,7 +75,9 @@
     <string name="setting_framerate_title">Fréquence d\'Images Vidéo</string>
     <string name="note_quailty">Choix de la qualité\n(Défaut: HD)</string>
     <string name="note_framerate">Choisir la fréquence d\'images\n(Par défaut: %1$d)</string>
-    <string name="note_codec">Choisir le codec\n(Par défaut: %1$s)</string>
+    <string name="note_codec">Choisir le codec
+(Par défaut: %1$s)
+Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de H.264 pour une qualité équivalente. Exemple : Pour FHD, utilisez 8 Mbps au lieu de 16 Mbps.</string>
     <string name="setting_watermark">Filigrane</string>
     <string name="note_watermark">Sélectionner l\'option filigrane\n(Défaut: Horodatage avec Fadcam)</string>
     <string name="note_watermark_extra">Pour une sauvegarde rapide, choisissez \'Aucun\'. Ajouter un filigrane ? Ça vaut la peine d\'attendre, juste un peu plus pour traiter !</string>
@@ -513,4 +515,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="video_menu_upload_drive">Importer sur Google Drive</string>
     <string name="toast_no_youtube_app">Application YouTube introuvable</string>
     <string name="toast_no_drive_app">Application Google Drive introuvable</string>
+
+    <string name="dialog_audio_noise_suppression_label">Suppression du bruit</string>
 </resources>

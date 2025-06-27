@@ -110,7 +110,9 @@
     <string name="note_quailty">Επιλέξτε ποιότητα\n(Προεπιλογή: HD)</string>
     <string name="note_framerate">Επιλέξτε ρυθμό καρέ\n(Προεπιλογή: %1$d)</string>
     <string name="setting_codec_title">Κωδικοποιητής Βίντεο</string>
-    <string name="note_codec">Επιλέξτε κωδικοποιητή\n(Προεπιλογή: %1$s)</string>
+    <string name="note_codec">Επιλέξτε κωδικοποιητή
+(Προεπιλογή: %1$s)
+Συμβουλή: Με το H.265 (HEVC), μπορείτε να χρησιμοποιήσετε περίπου το μισό bitrate του H.264 για ίδια ποιότητα. Παράδειγμα: Για FHD, χρησιμοποιήστε 8 Mbps αντί για 16 Mbps.</string>
     <string name="setting_watermark">Υδατογράφημα</string>
     <string name="note_watermark">Επιλέξτε επιλογή υδατογραφήματος\n(Προεπιλογή: Σφραγίδα χρόνου με FadCam)</string>
     <string name="note_watermark_extra">Για γρήγορη αποθήκευση, επιλέξτε \'Χωρίς Υδατογράφημα\'. Προσθέτετε υδατογράφημα; Αξίζει η αναμονή, λίγο περισσότερο για επεξεργασία!</string>
@@ -600,4 +602,5 @@
     <string name="video_menu_upload_drive">Μεταφόρτωση στο Google Drive</string>
     <string name="toast_no_youtube_app">Η εφαρμογή YouTube δεν βρέθηκε</string>
     <string name="toast_no_drive_app">Η εφαρμογή Google Drive δεν βρέθηκε</string>
+    <string name="dialog_audio_noise_suppression_label">Καταστολή Θορύβου</string>
 </resources>

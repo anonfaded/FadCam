@@ -336,7 +336,9 @@
     <string name="setting_framerate_title">Video Kare Hızı</string>
     <string name="note_framerate">Kare hızı seçin\n(Varsayılan: %1$d)</string>
     <string name="setting_codec_title">Video Kodeği</string>
-    <string name="note_codec">Kodek seçin\n(Varsayılan: %1$s)</string>
+    <string name="note_codec">Kodek seçin
+(Varsayılan: %1$s)
+İpucu: H.265 (HEVC) ile, aynı kalite için H.264'ün yaklaşık yarısı kadar bitrate kullanabilirsiniz. Örnek: FHD için 16 Mbps yerine 8 Mbps kullanın.</string>
 
 
 
@@ -556,5 +558,7 @@
     <string name="video_menu_upload_drive">Google Drive\'a yükle</string>
     <string name="toast_no_youtube_app">YouTube uygulaması bulunamadı</string>
     <string name="toast_no_drive_app">Google Drive uygulaması bulunamadı</string>
+
+    <string name="dialog_audio_noise_suppression_label">Gürültü Bastırma</string>
 
 </resources>

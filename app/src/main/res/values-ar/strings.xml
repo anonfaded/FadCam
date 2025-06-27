@@ -213,7 +213,9 @@
     <string name="setting_framerate_title">معدل إطارات الفيديو</string>
     <string name="note_framerate">اختر معدل الإطارات\n(الافتراضي: %1$d)</string>
     <string name="setting_codec_title">ترميز الفيديو</string>
-    <string name="note_codec">اختر الترميز\n(الافتراضي: %1$s)</string>
+    <string name="note_codec">اختر الترميز
+(الافتراضي: %1$s)
+ملاحظة: مع H.265 (HEVC)، يمكنك استخدام نصف معدل البت تقريبًا مقارنةً بـ H.264 لنفس الجودة. مثال: للفيديو FHD، استخدم 8 ميجابت/ثانية بدلاً من 16 ميجابت/ثانية.</string>
     <string name="setting_video_bitrate_title">معدل البت للفيديو</string>
     <string name="button_video_bitrate_settings">تعيين معدل البت</string>
     <string name="bitrate_mode_default">افتراضي</string>
@@ -501,4 +503,6 @@
     <string name="video_menu_upload_drive">تحميل على Google Drive</string>
     <string name="toast_no_youtube_app">لم يتم العثور على تطبيق YouTube</string>
     <string name="toast_no_drive_app">لم يتم العثور على تطبيق Google Drive</string>
+
+    <string name="dialog_audio_noise_suppression_label">تثبيط الضوضاء</string>
 </resources>

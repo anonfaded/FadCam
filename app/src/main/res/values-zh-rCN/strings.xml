@@ -213,7 +213,9 @@
     <string name="setting_framerate_title">视频帧率</string>
     <string name="note_framerate">选择帧率\n(默认: %1$d)</string>
     <string name="setting_codec_title">视频编码器</string>
-    <string name="note_codec">选择编码器\n(默认: %1$s)</string>
+    <string name="note_codec">选择编码器
+(默认: %1$s)
+提示：使用 H.265 (HEVC) 时，可以用大约 H.264 一半的码率获得相同画质。例如：FHD 建议用 8 Mbps 而不是 16 Mbps。</string>
     <string name="setting_video_bitrate_title">视频比特率</string>
     <string name="button_video_bitrate_settings">设置比特率</string>
     <string name="bitrate_mode_default">默认</string>
@@ -283,6 +285,7 @@
     <string name="dialog_audio_invalid_sampling_rate">采样率无效。请输入44100或48000。</string>
     <string name="dialog_audio_settings_summary">配置音频比特率和采样率以获得最佳质量。默认值：192000 bps，48000 Hz，立体声。</string>
     <string name="dialog_audio_info_text">• 比特率 (bps) 控制音频质量和文件大小。较高的值意味着更好的质量但文件更大。192000对大多数用途来说是一个很好的默认值。\n• 采样率 (Hz) 是每秒捕获音频的次数。48000 Hz是视频的标准，44100 Hz是音频常用的。\n\n推荐：对大多数用户来说，192000 bps，48000 Hz。</string>
+    <string name="dialog_audio_noise_suppression_label">降噪</string>
     
     <!-- Debug Settings -->
     <string name="setting_debug_title">调试日志</string>
