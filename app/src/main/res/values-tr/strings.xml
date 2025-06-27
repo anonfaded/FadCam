@@ -338,7 +338,7 @@
     <string name="setting_codec_title">Video Kodeği</string>
     <string name="note_codec">Kodek seçin
 (Varsayılan: %1$s)
-İpucu: H.265 (HEVC) ile, aynı kalite için H.264'ün yaklaşık yarısı kadar bitrate kullanabilirsiniz. Örnek: FHD için 16 Mbps yerine 8 Mbps kullanın.</string>
+İpucu: H.265 (HEVC) ile, aynı kalite için H.264\'ün yaklaşık yarısı kadar bitrate kullanabilirsiniz. Örnek: FHD için 16 Mbps yerine 8 Mbps kullanın.</string>
 
 
 

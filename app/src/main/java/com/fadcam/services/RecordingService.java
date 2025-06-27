@@ -1017,7 +1017,7 @@ public class RecordingService extends Service {
             }
             
             final String finalErrorMsg = errorMsg;
-            mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg, Toast.LENGTH_LONG).show());
+            // mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg, Toast.LENGTH_LONG).show());
             // ----- Fix Ended for this method(onError)-----
         }
 
@@ -1062,9 +1062,9 @@ public class RecordingService extends Service {
                     setupRecordingInProgressNotification();
                     
                     // Show toast to user
-                    Toast.makeText(RecordingService.this, 
-                            R.string.camera_reconnection_success, 
-                            Toast.LENGTH_SHORT).show();
+                    // Toast.makeText(RecordingService.this, 
+                    //         R.string.camera_reconnection_success, 
+                    //         Toast.LENGTH_SHORT).show();
                     
                     Log.i(TAG, "Normal recording resumed after camera reconnection");
                 } catch (Exception e) {

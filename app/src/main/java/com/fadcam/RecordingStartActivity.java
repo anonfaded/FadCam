@@ -19,7 +19,7 @@ public class RecordingStartActivity extends Activity {
             SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
             // Check if recording is already in progress
             if (sharedPreferencesManager.isRecordingInProgress()) {
-                // Toast.makeText(this, R.string.video_recording_started, Toast.LENGTH_SHORT).show();
+                // Utils.showQuickToast(this, R.string.video_recording_started);
                 Utils.showQuickToast(this, R.string.video_recording_started);
 
                 finish();

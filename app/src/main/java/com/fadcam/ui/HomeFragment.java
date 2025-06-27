@@ -1123,7 +1123,7 @@ public class HomeFragment extends BaseFragment {
                     // Handle the toast
                     if(isAdded() && getContext() != null) { 
                        vibrateTouch();
-                       Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
+                       // Toast.makeText(getContext(), R.string.video_recording_started, Toast.LENGTH_SHORT).show();
                     }
                 }
             };
