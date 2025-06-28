@@ -516,4 +516,17 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="video_menu_upload_drive">Google Drive ta porta krray</string>
     <string name="toast_no_youtube_app">Da YouTube application o na mundal sho</string>
     <string name="toast_no_drive_app">Da Google Drive application o na mundal sho</string>
+    <string name="fix_video_menu_title">Video Repair Ka (Playback Sahi Ka)</string>
+    <string name="fix_video_repairing">Repair kigi… Da lag seconds wakhli shay.</string>
+    <string name="fix_video_success">Video repair sho! Da save sho da num sara: %1$s</string>
+    <string name="fix_video_fail">Repair fail sho. Tafseeli maloomat da logs ki ogora.</string>
+    <string name="fix_video_invalid">Ghalat video file dai.</string>
+    <string name="fix_video_file_not_exist">File mojood nadi.</string>
+    <string name="fix_video_fixed_exists">FIXED_ file pehla na mojood dai.</string>
+    <string name="fix_video_internal_only">Repair sirf da internal ya accessible files la support dai.</string>
+    <string name="fix_video_saf_copy_fail">SAF video copy kolo ke fail sho repair da para.</string>
+    <string name="fix_video_saf_write_fail">Repaired file SAF folder ta likh nashu. Da app storage ki save sho.</string>
+    <string name="fix_video_saf_success">Video repair sho! Save sho da num sara: %1$s.</string>
+    <string name="fix_video_saf_export">Repaired file da app storage na export ya share kawalai shay.</string>
+
 </resources>

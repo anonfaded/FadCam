@@ -208,7 +208,7 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="records_options_title">Options d\'Enregistrements</string>
     <string name="setting_theme_title">Thème de l\'Application</string>
     <string name="settings_option_theme">Choisir le Thème</string>
-    <string name="settings_theme_changed">Thème modifié. Application des changements...</string>
+    <string name="settings_theme_changed">Thème modifié. Application des changements…</string>
     <string name="note_theme">Choisissez votre thème d\'application préféré</string>
     
     <!-- App Icon Strings -->
@@ -369,7 +369,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="disable_battery_optimization">Désactiver l\'Optimisation de la Batterie</string>
 
     <string name="onboarding_human_title">Vérifier si vous êtes humain</string>
-    <string name="onboarding_human_desc">Hmmmm... d\'accord. Ces règles sont non-négociables. Si vous ne pouvez pas accepter, veuillez désinstaller FadCam maintenant.</string>
+    <string name="onboarding_human_desc">Hmmmm… d\'accord. Ces règles sont non-négociables. Si vous ne pouvez pas accepter, veuillez désinstaller FadCam maintenant.</string>
     <string name="onboarding_human_checkbox1">Je n\'utiliserai pas FadCam pour enfreindre des lois, envahir la vie privée de quiconque, ou avoir un comportement déplacé. Le développeur n\'est pas responsable si je fais une erreur. (C\'est ma responsabilité.)</string>
     <string name="onboarding_human_checkbox2">J\'aime déjà FadCam avant même de l\'utiliser. (Non optionnel)</string>
     <string name="onboarding_human_button">Laissez-moi entrer !</string>
@@ -517,4 +517,18 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="toast_no_drive_app">Application Google Drive introuvable</string>
 
     <string name="dialog_audio_noise_suppression_label">Suppression du bruit</string>
+
+    <string name="fix_video_menu_title">Réparer la vidéo (Lecture)</string>
+    <string name="fix_video_repairing">Réparation… Cela peut prendre quelques secondes.</string>
+    <string name="fix_video_success">Vidéo réparée ! Enregistrée sous : %1$s</string>
+    <string name="fix_video_fail">Échec de la réparation. Voir les logs pour plus de détails.</string>
+    <string name="fix_video_invalid">Fichier vidéo invalide.</string>
+    <string name="fix_video_file_not_exist">Le fichier n\'existe pas.</string>
+    <string name="fix_video_fixed_exists">Le fichier FIXED_ existe déjà.</string>
+    <string name="fix_video_internal_only">La réparation n\'est prise en charge que pour les fichiers internes ou accessibles.</string>
+    <string name="fix_video_saf_copy_fail">Échec de la copie du fichier SAF pour réparation.</string>
+    <string name="fix_video_saf_write_fail">Impossible d\'écrire le fichier réparé dans le dossier SAF. Enregistré dans le stockage de l\'application.</string>
+    <string name="fix_video_saf_success">Vidéo réparée ! Enregistrée sous : %1$s.</string>
+    <string name="fix_video_saf_export">Exportez ou partagez le fichier réparé depuis le stockage de l\'application si besoin.</string>
+
 </resources>

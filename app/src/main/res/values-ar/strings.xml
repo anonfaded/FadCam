@@ -505,4 +505,18 @@
     <string name="toast_no_drive_app">لم يتم العثور على تطبيق Google Drive</string>
 
     <string name="dialog_audio_noise_suppression_label">تثبيط الضوضاء</string>
+
+    <string name="fix_video_menu_title">إصلاح الفيديو (إصلاح التشغيل)</string>
+    <string name="fix_video_repairing">جاري الإصلاح… قد يستغرق ذلك بضع ثوانٍ.</string>
+    <string name="fix_video_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s</string>
+    <string name="fix_video_fail">فشل الإصلاح. راجع السجلات لمزيد من التفاصيل.</string>
+    <string name="fix_video_invalid">ملف فيديو غير صالح.</string>
+    <string name="fix_video_file_not_exist">الملف غير موجود.</string>
+    <string name="fix_video_fixed_exists">ملف FIXED_ موجود بالفعل.</string>
+    <string name="fix_video_internal_only">الإصلاح مدعوم فقط للملفات الداخلية أو القابلة للوصول.</string>
+    <string name="fix_video_saf_copy_fail">فشل نسخ فيديو SAF للإصلاح.</string>
+    <string name="fix_video_saf_write_fail">لا يمكن حفظ الملف المُصلح في مجلد SAF. تم الحفظ في تخزين التطبيق.</string>
+    <string name="fix_video_saf_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s.</string>
+    <string name="fix_video_saf_export">يمكنك تصدير أو مشاركة الملف المُصلح من تخزين التطبيق إذا لزم الأمر.</string>
+
 </resources>

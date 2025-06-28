@@ -509,4 +509,17 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="toast_no_drive_app">Aplikasi Google Drive tidak ditemukan</string>
 
     <string name="dialog_audio_noise_suppression_label">Penekanan Kebisingan</string>
+    <string name="fix_video_menu_title">Perbaiki Video (Perbaiki Pemutaran)</string>
+    <string name="fix_video_repairing">Memperbaiki… Ini mungkin memakan waktu beberapa detik.</string>
+    <string name="fix_video_success">Video berhasil diperbaiki! Disimpan sebagai: %1$s</string>
+    <string name="fix_video_fail">Perbaikan gagal. Lihat log untuk detailnya.</string>
+    <string name="fix_video_invalid">File video tidak valid.</string>
+    <string name="fix_video_file_not_exist">File tidak ditemukan.</string>
+    <string name="fix_video_fixed_exists">File FIXED_ sudah ada.</string>
+    <string name="fix_video_internal_only">Perbaikan hanya didukung untuk file internal atau yang dapat diakses.</string>
+    <string name="fix_video_saf_copy_fail">Gagal menyalin video SAF untuk diperbaiki.</string>
+    <string name="fix_video_saf_write_fail">Tidak dapat menulis file hasil perbaikan ke folder SAF. Disimpan di penyimpanan aplikasi.</string>
+    <string name="fix_video_saf_success">Video berhasil diperbaiki! Disimpan sebagai: %1$s.</string>
+    <string name="fix_video_saf_export">Ekspor atau bagikan file hasil perbaikan dari penyimpanan aplikasi jika diperlukan.</string>
+
 </resources>

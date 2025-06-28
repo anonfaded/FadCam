@@ -483,4 +483,17 @@
     <string name="video_menu_upload_drive">上传到 Google Drive</string>
     <string name="toast_no_youtube_app">未找到 YouTube 应用</string>
     <string name="toast_no_drive_app">未找到 Google Drive 应用</string>
+    <string name="fix_video_menu_title">修复视频（修复播放）</string>
+    <string name="fix_video_repairing">正在修复… 可能需要几秒钟。</string>
+    <string name="fix_video_success">视频已修复！已保存为：%1$s</string>
+    <string name="fix_video_fail">修复失败。详情请查看日志。</string>
+    <string name="fix_video_invalid">无效的视频文件。</string>
+    <string name="fix_video_file_not_exist">文件不存在。</string>
+    <string name="fix_video_fixed_exists">FIXED_ 文件已存在。</string>
+    <string name="fix_video_internal_only">仅支持修复内部或可访问的文件。</string>
+    <string name="fix_video_saf_copy_fail">复制 SAF 视频以修复失败。</string>
+    <string name="fix_video_saf_write_fail">无法将修复后的视频写入 SAF 文件夹。已保存到应用存储。</string>
+    <string name="fix_video_saf_success">视频已修复！已保存为：%1$s。</string>
+    <string name="fix_video_saf_export">如有需要，可从应用存储导出或分享修复后的视频。</string>
+
 </resources>

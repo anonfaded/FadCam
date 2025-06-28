@@ -19,7 +19,7 @@ android {
         applicationId = "com.fadcam"
         minSdk = 28
         targetSdk = 34
-        versionCode = 16
+        versionCode = 17
         versionName = "2.0.0-beta"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

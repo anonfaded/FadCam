@@ -560,5 +560,17 @@
     <string name="toast_no_drive_app">Google Drive uygulaması bulunamadı</string>
 
     <string name="dialog_audio_noise_suppression_label">Gürültü Bastırma</string>
+    <string name="fix_video_menu_title">Videoyu Düzelt (Oynatmayı Onar)</string>
+    <string name="fix_video_repairing">Düzeltiliyor… Birkaç saniye sürebilir.</string>
+    <string name="fix_video_success">Video düzeltildi! Şu adla kaydedildi: %1$s</string>
+    <string name="fix_video_fail">Düzeltme başarısız oldu. Detaylar için loglara bakın.</string>
+    <string name="fix_video_invalid">Geçersiz video dosyası.</string>
+    <string name="fix_video_file_not_exist">Dosya mevcut değil.</string>
+    <string name="fix_video_fixed_exists">FIXED_ dosyası zaten mevcut.</string>
+    <string name="fix_video_internal_only">Düzeltme yalnızca dahili veya erişilebilir dosyalar için desteklenir.</string>
+    <string name="fix_video_saf_copy_fail">Düzeltme için SAF videosu kopyalanamadı.</string>
+    <string name="fix_video_saf_write_fail">Düzeltilen dosya SAF klasörüne yazılamadı. Uygulama depolamasına kaydedildi.</string>
+    <string name="fix_video_saf_success">Video düzeltildi! Şu adla kaydedildi: %1$s.</string>
+    <string name="fix_video_saf_export">Gerekirse, düzeltilen dosyayı uygulama depolamasından dışa aktarabilir veya paylaşabilirsiniz.</string>
 
 </resources>

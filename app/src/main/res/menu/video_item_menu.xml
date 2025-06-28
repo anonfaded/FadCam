@@ -6,6 +6,10 @@
         android:icon="@drawable/ic_save"
         android:title="Save to Gallery"/>
         <item
+        android:id="@+id/action_fix_video"
+        android:icon="@drawable/ic_repair"
+        android:title="@string/fix_video_menu_title"/>
+        <item
         android:id="@+id/action_rename"
         android:icon="@drawable/ic_rename"
         android:title="Rename"/>
