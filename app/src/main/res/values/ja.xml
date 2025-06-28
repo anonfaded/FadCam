@@ -117,7 +117,7 @@
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
     <string name="setting_codec_title">Video Codec</string>
-    <string name="note_codec">Choose codec\n(Default: %1$s)</string>
+    <string name="note_codec">Choose codec\n(Default: %1$s)\nTip: With H.265 (HEVC), you can use about half the bitrate of H.264 for the same quality. Example: For FHD, use 8 Mbps instead of 16 Mbps.</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
     <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It\'s worth the wait, just a little longer to process!</string>
@@ -613,4 +613,16 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_error_unknown">Unknown camera error</string>
     <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
     <string name="dialog_audio_noise_suppression_label">Noise Suppression</string>
+    <string name="fix_video_menu_title">Fix Video (Repair Playback)</string>
+    <string name="fix_video_repairing">Repairing… This may take a few seconds.</string>
+    <string name="fix_video_success">Video repaired! Saved as: %1$s</string>
+    <string name="fix_video_fail">Repair failed. See logs for details.</string>
+    <string name="fix_video_invalid">Invalid video file.</string>
+    <string name="fix_video_file_not_exist">File does not exist.</string>
+    <string name="fix_video_fixed_exists">FIXED_ file already exists.</string>
+    <string name="fix_video_internal_only">Repair only supported for internal or accessible files.</string>
+    <string name="fix_video_saf_copy_fail">Failed to copy SAF video for repair.</string>
+    <string name="fix_video_saf_write_fail">Cannot write repaired file to SAF folder. Saved in app storage.</string>
+    <string name="fix_video_saf_success">Video repaired! Saved as: %1$s.</string>
+    <string name="fix_video_saf_export">Export or share the repaired file from app storage if needed.</string>
 </resources>
