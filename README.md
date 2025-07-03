@@ -244,6 +244,8 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [blog.csdn.net](https://blog.csdn.net/2501_91832086/article/details/148797756)
 - [lewz.cn](https://www.lewz.cn/jprj/10448.html)
 - [ruanyazyk.com](https://ruanyazyk.com/tools/media/imageProduction.html#fadcam)
+- [centrum.cz](https://www.centrum.cz/chytre-nahravani-aplikace-fadcam-toci-video-i-s-vypnutou-obrazovkou-89fff656-54ab-5ff0-9d30-5c26e9bd9a3a)
+- [meta.appinn.net](https://meta.appinn.net/t/topic/72853/2)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
 
