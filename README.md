@@ -175,6 +175,7 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [Wuincy Tran on YouTube](https://youtu.be/gLY1SstSwgo?si=_h3eyb0Zh3oo14jK)
 - [El Androide Feliz on YouTube](https://youtu.be/5SCl5X_miTc?si=E44ej0ZfPGTz3HfR)
 - [msn.com](https://www.msn.com/es-es/noticias/tecnologia/esta-app-convierte-tu-m%C3%B3vil-en-una-c%C3%A1mara-discreta-graba-v%C3%ADdeo-sin-encender-la-pantalla/ar-AA1Hf4dR)
+- [RivollPlay Tech on YouTube](https://youtu.be/v0grlqT_qOw?si=PRdB2oLhJLXiXBU_)
 - [softonic on X](https://x.com/softonic/status/1939598582643830840)
 <!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
 <!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
