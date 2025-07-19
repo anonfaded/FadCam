@@ -255,6 +255,42 @@ public class SharedPreferencesManager {
 
     // --- End New FPS Methods ---
 
+    // --- NEW: Zoom Ratio Methods ---
+
+    /**
+     * Gets the saved zoom ratio preference for a specific camera type.
+     * If no specific preference is saved, it returns the default zoom ratio.
+     *
+     * @param cameraType FRONT or BACK camera.
+     * @return The saved zoom ratio (float).
+     */
+    public float getSpecificZoomRatio(CameraType cameraType) {
+        String specificKey = (cameraType == CameraType.FRONT) ?
+                Constants.PREF_ZOOM_RATIO_FRONT : Constants.PREF_ZOOM_RATIO_BACK;
+
+        // Check if the specific key exists
+        if (sharedPreferences.contains(specificKey)) {
+            return sharedPreferences.getFloat(specificKey, Constants.DEFAULT_ZOOM_RATIO);
+        }
+        // No specific key exists, return default
+        else {
+            return Constants.DEFAULT_ZOOM_RATIO;
+        }
+    }
+
+    /**
+     * Saves the zoom ratio preference for a specific camera type.
+     * @param cameraType FRONT or BACK camera.
+     * @param zoomRatio The zoom ratio value to save.
+     */
+    public void setSpecificZoomRatio(CameraType cameraType, float zoomRatio) {
+        String specificKey = (cameraType == CameraType.FRONT) ?
+                Constants.PREF_ZOOM_RATIO_FRONT : Constants.PREF_ZOOM_RATIO_BACK;
+        sharedPreferences.edit().putFloat(specificKey, zoomRatio).apply();
+    }
+
+    // --- End New Zoom Ratio Methods ---
+
     public VideoCodec getVideoCodec() {
         String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, Constants.DEFAULT_VIDEO_CODEC.toString());
         return VideoCodec.valueOf(videoCodec);
