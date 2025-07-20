@@ -2353,6 +2353,10 @@ public class RecordsFragment extends BaseFragment implements
                 videoItems.clear();
                 videoItems.addAll(newVideos);
                 
+                // Also update allLoadedItems for partial updates
+                allLoadedItems.clear();
+                allLoadedItems.addAll(newVideos);
+                
                 if (recordsAdapter != null) {
                     recordsAdapter.updateRecords(videoItems);
                     if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
@@ -2362,6 +2366,10 @@ public class RecordsFragment extends BaseFragment implements
                 // For complete updates, replace everything
                 videoItems.clear();
                 videoItems.addAll(newVideos);
+                
+                // Update allLoadedItems with the complete list
+                allLoadedItems.clear();
+                allLoadedItems.addAll(newVideos);
                 
                 if (recordsAdapter != null) {
                     recordsAdapter.updateRecords(videoItems);
