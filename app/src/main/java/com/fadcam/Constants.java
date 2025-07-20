@@ -16,6 +16,11 @@ public abstract class Constants {
     public static final String PREF_VIDEO_FRAME_RATE_FRONT = "video_frame_rate_front";
     public static final String PREF_VIDEO_FRAME_RATE_BACK = "video_frame_rate_back";
     // *** End New FPS Prefs ***
+    
+    // *** NEW: Zoom Ratio Prefs per Camera ***
+    public static final String PREF_ZOOM_RATIO_FRONT = "zoom_ratio_front";
+    public static final String PREF_ZOOM_RATIO_BACK = "zoom_ratio_back";
+    // *** End New Zoom Ratio Prefs ***
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
     public static final String PREF_BOTH_TORCHES_ENABLED = "pref_both_torches_enabled";
@@ -69,6 +74,7 @@ public abstract class Constants {
     public static final CameraType DEFAULT_CAMERA_TYPE = CameraType.BACK;
     public static final Size DEFAULT_VIDEO_RESOLUTION = new Size(1920, 1080);
     public static final int DEFAULT_VIDEO_FRAME_RATE = 30;
+    public static final float DEFAULT_ZOOM_RATIO = 1.0f; // Default zoom ratio (no zoom)
     public static final VideoCodec DEFAULT_VIDEO_CODEC = VideoCodec.HEVC;
 
     public static final String DEFAULT_WATERMARK_OPTION = "timestamp_fadcam";
