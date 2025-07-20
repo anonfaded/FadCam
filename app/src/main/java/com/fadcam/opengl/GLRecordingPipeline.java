@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
 import java.nio.ByteBuffer;
 
 import com.fadcam.VideoCodec;
@@ -86,11 +87,8 @@ public class GLRecordingPipeline {
         }
     }
 
-    /**
-     * Initializes video timestamp synchronization when the first video frame arrives.
-     * This should be called from GLWatermarkRenderer when setting presentation time.
-     */
-    public void initializeVideoTimestamp(long cameraTimestampNanos) {
+
+    private void initializeVideoTimestamp(long cameraTimestampNanos) {
         synchronized (timestampLock) {
             if (firstVideoTimestampNanos == -1) {
                 firstVideoTimestampNanos = cameraTimestampNanos;
@@ -381,7 +379,7 @@ public class GLRecordingPipeline {
                 setupAudio();
                 if (audioRecordingEnabled) {
                     startAudioThread();
-                    // Give audio encoder a moment to initialize and produce format change
+                    // Give audio encoder time to initialize
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
@@ -617,15 +615,7 @@ public class GLRecordingPipeline {
             }
         }
         
-        // Set complexity for better encoding (API 21+)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                format.setInteger(MediaFormat.KEY_COMPLEXITY, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
-                Log.d(TAG, "Applied encoding complexity setting");
-            } catch (Exception e) {
-                Log.w(TAG, "Complexity setting not supported", e);
-            }
-        }
+
         
         // OPTIONAL: Set priority for real-time encoding (API 23+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
@@ -802,6 +792,14 @@ public class GLRecordingPipeline {
                     glRenderer.renderFrame();
                 }
                 drainEncoder();
+                
+
+                // Check if we need to split the segment due to size
+                if (shouldSplitSegment()) {
+                    Log.d(TAG, "Size limit reached, rolling over segment");
+                    rolloverSegment();
+                }
+
                 
                 // Continue rendering loop
                 if (isRecording && handler != null) {

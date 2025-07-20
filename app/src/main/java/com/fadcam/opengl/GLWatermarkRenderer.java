@@ -388,17 +388,20 @@ public class GLWatermarkRenderer {
             // Set presentation time using synchronized timestamp
             try {
                 long cameraTimestamp = cameraSurfaceTexture.getTimestamp();
-                long synchronizedTimestamp = 0;
+                long presentationTimeNanos;
                 
+
                 // Get synchronized timestamp from recording pipeline if available
                 if (recordingPipeline != null) {
-                    synchronizedTimestamp = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp);
+                    // Convert synchronized timestamp (microseconds) to nanoseconds
+                    presentationTimeNanos = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp) * 1000L;
                 } else {
-                    // Fallback to camera timestamp if no recording pipeline
-                    synchronizedTimestamp = cameraTimestamp;
+                    // Fallback to camera timestamp (already in nanoseconds)
+                    presentationTimeNanos = cameraTimestamp;
                 }
                 
-                EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, synchronizedTimestamp * 1000L); // Convert to nanoseconds
+                EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeNanos);
+
             } catch (Exception e) {
                 Log.e(TAG, "Error setting presentation time", e);
                 // Continue anyway
