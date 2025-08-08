@@ -1,4 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="auto_delete_immediate">Segera</string>
+    <string name="trash_auto_delete_info_immediate">Item dihapus segera.</string>
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Pilih ikon dan nama untuk aplikasi Anda. Ini akan mengubah tampilannya di layar utama Anda.</string>
     <string name="check_for_updates">Periksa pembaruan</string>

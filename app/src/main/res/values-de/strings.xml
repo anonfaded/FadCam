@@ -1,4 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="auto_delete_immediate">Sofort</string>
+    <string name="trash_auto_delete_info_immediate">Elemente werden sofort gelöscht.</string>
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Wähle ein Symbol und einen Namen für die App. Dadurch wird die Anzeige der App auf dem Startbildschirm geändert.</string>
     <string name="check_for_updates">Auf Updates überprüfen</string>

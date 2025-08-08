@@ -1,4 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="auto_delete_immediate">Άμεση</string>
+    <string name="trash_auto_delete_info_immediate">Τα στοιχεία διαγράφονται άμεσα.</string>
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Επιλέξτε ένα εικονίδιο και όνομα για την εφαρμογή σας. Αυτό θα αλλάξει την εμφάνισή της στην αρχική σας οθόνη.</string>
     <string name="check_for_updates">Έλεγχος για Ενημερώσεις</string>

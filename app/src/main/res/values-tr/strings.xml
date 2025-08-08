@@ -1,4 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="auto_delete_immediate">Anında</string>
+    <string name="trash_auto_delete_info_immediate">Öğeler anında silinir.</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
     <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıda \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
 

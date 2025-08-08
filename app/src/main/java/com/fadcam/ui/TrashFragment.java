@@ -672,7 +672,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             return;
         }
 
+        // ----- Fix Start for this method(showAutoDeleteSettingsDialog)-----
         final String[] items = {
+                getString(R.string.auto_delete_immediate), // new immediate option
                 getString(R.string.auto_delete_1_hour),
                 getString(R.string.auto_delete_5_hours),
                 getString(R.string.auto_delete_10_hours),
@@ -685,6 +687,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         };
 
         final int[] valuesInMinutes = {
+                0,           // Immediate
                 60,          // 1 Hour
                 5 * 60,      // 5 Hours
                 10 * 60,     // 10 Hours
@@ -695,6 +698,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 90 * 24 * 60,// 90 Days
                 SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER
         };
+        // ----- Fix Ended for this method(showAutoDeleteSettingsDialog)-----
 
         int currentSettingMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
         int checkedItem = -1;
@@ -843,7 +847,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
 
         int totalMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
 
-        if (totalMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
+        // ----- Fix Start for this method(updateAutoDeleteInfoText)-----
+        if (totalMinutes == 0) {
+            tvAutoDeleteInfo.setText(getString(R.string.trash_auto_delete_info_immediate));
+        } else if (totalMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
             tvAutoDeleteInfo.setText(getString(R.string.trash_auto_delete_info_manual));
         } else if (totalMinutes < 60) { // Less than an hour, show in minutes (though current options are >= 1 hour)
              // This case isn't strictly needed with current options but good for future flexibility
@@ -855,6 +862,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             int days = totalMinutes / (24 * 60);
             tvAutoDeleteInfo.setText(getResources().getQuantityString(R.plurals.trash_auto_delete_info_days, days, days));
         }
+        // ----- Fix Ended for this method(updateAutoDeleteInfoText)-----
     }
 
     @Override

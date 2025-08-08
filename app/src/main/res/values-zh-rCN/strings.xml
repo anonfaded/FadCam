@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="auto_delete_immediate">立即</string>
+    <string name="trash_auto_delete_info_immediate">项目将立即删除。</string>
     <string name="app_icon_description">为您的应用选择图标和名称。这将更改其在主屏幕上的显示方式。</string>
     <string name="check_for_updates">检查更新</string>
     <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方"查看源码"按钮</string>

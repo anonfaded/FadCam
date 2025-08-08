@@ -236,6 +236,19 @@ public class TrashManager {
             trashItems.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName, System.currentTimeMillis(), isSafSource));
             if (saveTrashMetadata(context, trashItems)) {
                 Log.i(TAG, "moveToTrash: Successfully moved and updated metadata for: " + originalDisplayName);
+                // ----- Fix Start for this method(moveToTrash immediate handling)-----
+                // If auto-delete is set to Immediate (0 minutes), delete this item right away
+                int minutes = com.fadcam.SharedPreferencesManager.getInstance(context).getTrashAutoDeleteMinutes();
+                if (minutes == 0) {
+                    Log.i(TAG, "moveToTrash: Immediate auto-delete active. Deleting trashed item now.");
+                    List<TrashItem> single = new ArrayList<>();
+                    // Last added item is this file (by trash file name)
+                    single.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName, System.currentTimeMillis(), isSafSource));
+                    // Reload current list to ensure consistency in internal delete
+                    List<TrashItem> all = loadTrashMetadata(context);
+                    permanentlyDeleteItemsInternal(context, single, all);
+                }
+                // ----- Fix Ended for this method(moveToTrash immediate handling)-----
                 return true;
             } else {
                 Log.e(TAG, "moveToTrash: File moved/copied, but FAILED to save trash metadata for: " + originalDisplayName);
@@ -561,6 +574,15 @@ public class TrashManager {
         if (context == null) {
             Log.e(TAG, "autoDeleteExpiredItems: Context is null.");
             return 0;
+        }
+        // ----- Fix Start for this method(autoDeleteExpiredItems)-----
+        if (autoDeleteMinutes == 0) {
+            // Immediate deletion: delete all items currently in trash
+            Log.i(TAG, "autoDeleteExpiredItems: Immediate mode selected. Deleting all items.");
+            List<TrashItem> allTrashItems = loadTrashMetadata(context);
+            if (allTrashItems.isEmpty()) return 0;
+            boolean success = permanentlyDeleteItemsInternal(context, new ArrayList<>(allTrashItems), allTrashItems);
+            return success ? allTrashItems.size() : 0;
         }
         if (autoDeleteMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
             Log.i(TAG, "autoDeleteExpiredItems: Auto-deletion is set to NEVER. No items will be deleted.");
