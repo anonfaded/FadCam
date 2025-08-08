@@ -13,7 +13,7 @@
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="privacy_information">Privacy Information</string>
-    <string name="copyright_info"> 2024-2025 https://fadedhood.github.io/fadcam\nLicensed under GPL-3.0</string>
+    <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>
         <!-- 8K -->
