@@ -1240,12 +1240,12 @@ public class RecordingService extends Service {
                         // For SM-G990E (S21 FE Exynos) specifically, or other devices known to work with high-speed sessions
                         Log.d(TAG, "Device status is HIGH_SPEED_COMPATIBLE. Attempting constrained high-speed session for " + targetFrameRate + "fps.");
                         useHighSpeedSession = true;
-                        createHighSpeedSession(surfaces, characteristics, targetFrameRate);
+                        createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
                     } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.REQUIRES_VENDOR_KEYS || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.FULLY_COMPATIBLE || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.UNKNOWN) {
                         // For other Samsung devices that use vendor keys in standard session, or unknown devices
                         Log.d(TAG, "Device status is REQUIRES_VENDOR_KEYS or FULLY_COMPATIBLE or UNKNOWN. Attempting standard session with Samsung vendor keys for " + targetFrameRate + "fps.");
                         useHighSpeedSession = false; // Ensure it's a standard session
-                    createStandardSession(surfaces, targetFrameRate, characteristics);
+                        createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
                     } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
                         // For known incompatible Samsung devices, do not attempt 60fps+
                         Log.e(TAG, "Device is KNOWN_INCOMPATIBLE with 60fps+. Blocking request.");
@@ -1284,10 +1284,10 @@ public class RecordingService extends Service {
             // Create the appropriate type of session
             if (useHighSpeedSession) {
                 // For high-speed sessions
-                createHighSpeedSession(surfaces, characteristics, targetFrameRate);
+                createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
                 // Create a standard session with appropriate frame rate settings
-                createStandardSession(surfaces, targetFrameRate, characteristics);
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
         } catch (CameraAccessException e) {
             Log.e(TAG, "createCameraPreviewSession: Camera Access Exception", e);
@@ -1437,7 +1437,7 @@ public class RecordingService extends Service {
                 
                 // Create standard session as fallback
                 if (!surfaces.isEmpty()) {
-                    createStandardSession(surfaces, targetFrameRate, characteristics);
+                    createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
                 } else {
                     Log.e(TAG, "Failed to create surfaces for fallback session");
                     stopRecording();
@@ -2212,7 +2212,7 @@ public class RecordingService extends Service {
      * Creates a high-speed constrained capture session for 60fps+ recording
      */
     private void createHighSpeedSession(List<Surface> surfaces, CameraCharacteristics characteristics, 
-                                       int targetFrameRate) {
+                                        int targetFrameRate, CameraType cameraType) {
         try {
             // For high-speed recording, we need a constrained high-speed capture session
             Log.d(TAG, "Creating constrained high-speed session for " + targetFrameRate + "fps");
@@ -2224,7 +2224,7 @@ public class RecordingService extends Service {
             if (highSpeedSize == null) {
                 Log.d(TAG, "No suitable high-speed size found");
                 // Fallback to standard session
-                createStandardSession(surfaces, targetFrameRate, characteristics);
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
                 return;
             }
             
@@ -2235,7 +2235,7 @@ public class RecordingService extends Service {
             if (captureRequestBuilder == null) {
                 Log.d(TAG, "Failed to create high-speed request builder");
                 // Fallback to standard session
-                createStandardSession(surfaces, targetFrameRate, characteristics);
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
                 return;
             }
             
@@ -2243,6 +2243,9 @@ public class RecordingService extends Service {
             for (Surface surface : surfaces) {
                 captureRequestBuilder.addTarget(surface);
             }
+
+            // Apply zoom settings for back camera
+            applyZoomSettings(captureRequestBuilder, cameraType);
             
             // Set torch mode if enabled
             if (isRecordingTorchEnabled) {
@@ -2262,7 +2265,7 @@ public class RecordingService extends Service {
             Log.e(TAG, "Failed to create high-speed session", e);
             // Fallback to standard session
             try {
-                createStandardSession(surfaces, targetFrameRate, characteristics);
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             } catch (Exception e2) {
                 Log.e(TAG, "Failed to create fallback standard session", e2);
                 stopRecording();
@@ -2274,7 +2277,7 @@ public class RecordingService extends Service {
      * Fallback to create a standard session with the best possible frame rate settings
      */
     private void createStandardSession(List<Surface> surfaces, int targetFrameRate, 
-                                     CameraCharacteristics characteristics) {
+                                       CameraCharacteristics characteristics, CameraType cameraType) {
         try {
             Log.d(TAG, "Creating standard session with optimized frame rate settings");
             
@@ -2288,6 +2291,9 @@ public class RecordingService extends Service {
             
             // Apply frame rate settings
             applyFrameRateSettings(captureRequestBuilder, targetFrameRate, characteristics);
+
+            // Apply zoom settings for back camera
+            applyZoomSettings(captureRequestBuilder, cameraType);
             
             // Set torch mode if enabled
             if (isRecordingTorchEnabled) {
@@ -2322,6 +2328,20 @@ public class RecordingService extends Service {
         if (DeviceHelper.isHuawei() && targetFrameRate >= 60) {
             HuaweiFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
         }
+    }
+
+    /**
+     * Apply zoom settings for the specified camera type
+     */
+    private void applyZoomSettings(CaptureRequest.Builder builder, CameraType cameraType) {
+        // ----- Fix Start for this method(applyZoomSettings)-----
+        // Get zoom ratio from settings for the specific camera type
+        float zoomRatio = sharedPreferencesManager.getSpecificZoomRatio(cameraType);
+        
+        // Apply zoom ratio to the capture request
+        builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
+        Log.d(TAG, "Applied zoom ratio " + zoomRatio + " for " + cameraType + " camera");
+        // ----- Fix Ended for this method(applyZoomSettings)-----
     }
 
     /**

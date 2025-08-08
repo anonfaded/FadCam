@@ -130,6 +130,7 @@ public class SettingsFragment extends BaseFragment {
 
     private Spinner resolutionSpinner;
     private Spinner frameRateSpinner;
+    private Spinner zoomRatioSpinner;
     private Spinner codecSpinner;
     private Spinner watermarkSpinner;
     private Spinner themeSpinner;
@@ -538,6 +539,7 @@ public class SettingsFragment extends BaseFragment {
         cameraSelectionToggle = view.findViewById(R.id.camera_selection_toggle);
         resolutionSpinner = view.findViewById(R.id.resolution_spinner);
         frameRateSpinner = view.findViewById(R.id.framerate_spinner);
+        zoomRatioSpinner = view.findViewById(R.id.zoom_ratio_spinner);
         codecSpinner = view.findViewById(R.id.codec_spinner);
         watermarkSpinner = view.findViewById(R.id.watermark_spinner);
         locationSwitch = view.findViewById(R.id.location_toggle_group);
@@ -704,6 +706,8 @@ public class SettingsFragment extends BaseFragment {
         setupCameraSelectionToggle(view, cameraSelectionToggle);
         setupResolutionSpinner();
         setupFrameRateSpinner();
+        setupZoomRatioSpinner();
+        updateZoomRatioSpinner(); // Populate initially based on current camera type
         setupCodecSpinner();
         setupWatermarkSpinner(view, watermarkSpinner);
         setupLocationSwitch(locationSwitch);
@@ -1777,9 +1781,12 @@ public class SettingsFragment extends BaseFragment {
                     vibrateTouch();
                     // *** Update Visibility & Dependent Spinners ***
                     updateBackLensSpinnerVisibility(); // Show/Hide lens spinner
-                    updateResolutionSpinner(); // Update resolutions for the new camera
-                    updateFrameRateSpinner(); // Update framerates for the new camera
-                    updateBitrateInfoAndHelper(); // Update bitrate info for the new camera
+
+                    updateResolutionSpinner();         // Update resolutions for the new camera
+                    updateFrameRateSpinner();          // Update framerates for the new camera
+                    updateZoomRatioSpinner();          // Update zoom ratios for the new camera
+                    updateBitrateInfoAndHelper();      // Update bitrate info for the new camera
+
                 } else {
                     Log.d(TAG, "Camera main selection didn't change.");
                     // Still need to update lens spinner visibility if fragment was just created
@@ -2168,8 +2175,86 @@ public class SettingsFragment extends BaseFragment {
         });
     }// End setupFrameRateSpinner
 
-    // Keep getHardwareSupportedFrameRates as defined previously, it works per
-    // camera
+
+    private void setupZoomRatioSpinner() {
+        if (zoomRatioSpinner == null) return;
+        
+        // Get current camera type and detect hardware-supported max zoom ratio
+        CameraType selectedCameraType = sharedPreferencesManager.getCameraSelection();
+        float maxZoomRatio = getHardwareSupportedMaxZoomRatio(selectedCameraType);
+        
+        Log.d(TAG_SETTINGS, "Setting up zoom ratio spinner for " + selectedCameraType + " with max zoom: " + maxZoomRatio);
+        
+        // Generate dynamic zoom ratio options based on hardware capabilities
+        List<String> zoomRatioOptions = new ArrayList<>();
+        List<Integer> zoomRatioIntValues = new ArrayList<>();
+        
+        // Add zoom ratios from 0.5x to maxZoomRatio in 0.5x increments
+        for (float zoom = 0.5f; zoom <= maxZoomRatio; zoom += 0.5f) {
+            zoomRatioOptions.add(String.format("%.1fx", zoom));
+            zoomRatioIntValues.add(Math.round(zoom * 10)); // Scale by 10 for integer storage
+        }
+        
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                zoomRatioOptions
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        zoomRatioSpinner.setAdapter(adapter);
+        
+        // Get saved zoom ratio
+        float savedZoomRatio = sharedPreferencesManager.getSpecificZoomRatio(selectedCameraType);
+        
+        // Find the index of the saved zoom ratio
+        int selectedIndex = -1;
+        int savedZoomRatioScaled = Math.round(savedZoomRatio * 10);
+        for (int i = 0; i < zoomRatioIntValues.size(); i++) {
+            if (zoomRatioIntValues.get(i) == savedZoomRatioScaled) {
+                selectedIndex = i;
+                break;
+            }
+        }
+        
+        // If saved ratio not found, default to 1.0x (no zoom)
+        if (selectedIndex == -1) {
+            // Find 1.0x in the list, or use index 1 if available
+            for (int i = 0; i < zoomRatioIntValues.size(); i++) {
+                if (zoomRatioIntValues.get(i) == 10) { // 1.0x = 10 (scaled)
+                    selectedIndex = i;
+                    break;
+                }
+            }
+            if (selectedIndex == -1) {
+                selectedIndex = Math.min(1, zoomRatioIntValues.size() - 1); // Fallback to index 1 or last available
+            }
+            sharedPreferencesManager.setSpecificZoomRatio(selectedCameraType, 1.0f);
+        }
+        
+        zoomRatioSpinner.setSelection(selectedIndex);
+        zoomRatioSpinner.setEnabled(true);
+        
+        zoomRatioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position >= 0 && position < zoomRatioIntValues.size()) {
+                    // Convert scaled integer back to float (divide by 10)
+                    float selectedZoomRatio = zoomRatioIntValues.get(position) / 10.0f;
+                    CameraType currentCameraType = sharedPreferencesManager.getCameraSelection();
+                    sharedPreferencesManager.setSpecificZoomRatio(currentCameraType, selectedZoomRatio);
+                    Log.d(TAG_SETTINGS, "Zoom ratio preference saved: " + selectedZoomRatio + " for " + currentCameraType);
+                } else {
+                    Log.e(TAG_SETTINGS, "Invalid position selected in zoom ratio spinner: " + position);
+                }
+            }
+            
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+
+
 
     /**
      * Updates the frame rate spinner's adapter and selection based on hardware
@@ -2284,6 +2369,218 @@ public class SettingsFragment extends BaseFragment {
         Log.d(TAG_SETTINGS,
                 "FPS Spinner update finished for " + selectedCameraType + ". Enabled: " + frameRateSpinner.isEnabled());
     } // End updateFrameRateSpinner
+
+    /**
+     * Gets the maximum zoom ratio supported by the specified camera type.
+     * Uses Camera2 API to query the CONTROL_ZOOM_RATIO_RANGE characteristic.
+     * 
+     * @param cameraType The camera type (FRONT or BACK) to query.
+     * @return The maximum zoom ratio supported, or 5.0f as default if not available.
+     */
+    private float getHardwareSupportedMaxZoomRatio(CameraType cameraType) {
+        Log.i(TAG_SETTINGS, "=== Getting Hardware Supported Max Zoom Ratio for CameraType: " + cameraType + " ===");
+        final float defaultMaxZoom = 5.0f; // Default maximum zoom ratio
+
+        if (getContext() == null) {
+            Log.e(TAG_SETTINGS, "Zoom Query: Context is null.");
+            return defaultMaxZoom;
+        }
+
+        CameraManager manager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        if (manager == null) {
+            Log.e(TAG_SETTINGS, "Zoom Query: CameraManager is null.");
+            return defaultMaxZoom;
+        }
+
+        String targetCameraId = null;
+        try {
+            // Find the primary camera ID for the requested type (Prioritize ID "0" for BACK)
+            String firstBackIdFallback = null;
+            for (String id : manager.getCameraIdList()) {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null) {
+                    if (cameraType == CameraType.FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        targetCameraId = id;
+                        Log.d(TAG_SETTINGS, "Zoom Query: Found FRONT camera ID: " + targetCameraId);
+                        break;
+                    }
+                    if (cameraType == CameraType.BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                            targetCameraId = id; // Found preferred default BACK ID "0"
+                            Log.d(TAG_SETTINGS, "Zoom Query: Found Primary BACK camera ID: " + targetCameraId);
+                            break;
+                        } else if (firstBackIdFallback == null) {
+                            firstBackIdFallback = id; // Store first BACK ID encountered as fallback
+                        }
+                    }
+                }
+            }
+            // If default BACK "0" wasn't found, use the fallback if available
+            if (cameraType == CameraType.BACK && targetCameraId == null && firstBackIdFallback != null) {
+                targetCameraId = firstBackIdFallback;
+                Log.w(TAG_SETTINGS, "Zoom Query: Default Back ID '0' not found/back-facing. Using first available back ID: " + targetCameraId);
+            }
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.e(TAG_SETTINGS, "Zoom Query: Error accessing camera list/characteristics during ID selection", e);
+            return defaultMaxZoom;
+        }
+
+        if (targetCameraId == null) {
+            Log.e(TAG_SETTINGS, "Zoom Query: Could not find a valid Camera ID for type: " + cameraType);
+            return defaultMaxZoom;
+        }
+        Log.d(TAG_SETTINGS, "Zoom Query: Using Camera ID: " + targetCameraId + " for characteristic lookup.");
+
+        // Get the available zoom ratio range for the target camera
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(targetCameraId);
+            
+            // Check for CONTROL_ZOOM_RATIO_RANGE (API 30+)
+            if (Build.VERSION.SDK_INT >= 30) {
+                Range<Float> zoomRatioRange = characteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+                if (zoomRatioRange != null) {
+                    float maxZoom = zoomRatioRange.getUpper();
+                    Log.d(TAG_SETTINGS, "Zoom Query: Found CONTROL_ZOOM_RATIO_RANGE: " + zoomRatioRange + ", Max: " + maxZoom);
+                    return maxZoom;
+                }
+            }
+            
+            // Fallback: Check for sensor size capability
+            Size sensorSize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
+            if (sensorSize != null) {
+                // Estimate max zoom based on sensor size and typical camera capabilities
+                // Most modern cameras support at least 4x zoom, some up to 10x
+                float estimatedMaxZoom = 4.0f; // Conservative estimate
+                
+                // For back cameras, try higher zoom ratios
+                if (cameraType == CameraType.BACK) {
+                    estimatedMaxZoom = 8.0f; // Most back cameras support up to 8x
+                }
+                
+                Log.d(TAG_SETTINGS, "Zoom Query: Using estimated max zoom: " + estimatedMaxZoom + " for " + cameraType);
+                return estimatedMaxZoom;
+            }
+            
+            Log.w(TAG_SETTINGS, "Zoom Query: No zoom ratio information available, using default: " + defaultMaxZoom);
+            return defaultMaxZoom;
+            
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.e(TAG_SETTINGS, "Zoom Query: Camera access/arg exception getting zoom ratio for ID " + targetCameraId, e);
+            return defaultMaxZoom;
+        } catch (Exception e) {
+            Log.e(TAG_SETTINGS, "Zoom Query: Unexpected error getting zoom ratio for ID " + targetCameraId, e);
+            return defaultMaxZoom;
+        }
+    }
+
+    /**
+     * Updates the zoom ratio spinner's adapter and selection based on hardware capabilities
+     * and the SAVED PREFERENCE FOR THE CURRENTLY SELECTED CAMERA TYPE.
+     */
+    private void updateZoomRatioSpinner() {
+        // Safety checks
+        if (zoomRatioSpinner == null || getContext() == null || sharedPreferencesManager == null) {
+            Log.w(TAG_SETTINGS, "updateZoomRatioSpinner: Prerequisites not met (Spinner/Context/PrefsMgr null).");
+            if (zoomRatioSpinner != null) zoomRatioSpinner.setEnabled(false); // Disable spinner if cannot populate
+            return;
+        }
+
+        CameraType selectedCameraType = sharedPreferencesManager.getCameraSelection();
+        Log.d(TAG_SETTINGS, "Updating zoom ratio spinner display FOR CAMERA TYPE: " + selectedCameraType);
+
+        // 1. Get the maximum zoom ratio supported by this camera type
+        float maxZoomRatio = getHardwareSupportedMaxZoomRatio(selectedCameraType);
+
+        // 2. Generate dynamic zoom ratio options based on hardware capabilities
+        List<String> zoomRatioOptions = new ArrayList<>();
+        List<Integer> zoomRatioIntValues = new ArrayList<>();
+        
+        // Add zoom ratios from 0.5x to maxZoomRatio in 0.5x increments
+        for (float zoom = 0.5f; zoom <= maxZoomRatio; zoom += 0.5f) {
+            zoomRatioOptions.add(String.format("%.1fx", zoom));
+            zoomRatioIntValues.add(Math.round(zoom * 10)); // Scale by 10 for integer storage
+        }
+
+        // 3. Populate adapter
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                zoomRatioOptions
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        zoomRatioSpinner.setAdapter(adapter);
+
+        // 4. Determine Selection
+        int selectedIndex = -1; // Default to invalid index
+
+        if (!zoomRatioOptions.isEmpty()) {
+            // Get the zoom ratio preference specifically saved for this camera type (FRONT or BACK)
+            float savedRatioForThisCameraType = sharedPreferencesManager.getSpecificZoomRatio(selectedCameraType);
+            Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Saved Zoom Ratio Pref for Type " + selectedCameraType + " = " + savedRatioForThisCameraType);
+
+            // Check if the saved preference value is actually in the list of supported ratios
+            int savedRatioScaled = Math.round(savedRatioForThisCameraType * 10);
+            for (int i = 0; i < zoomRatioIntValues.size(); i++) {
+                if (zoomRatioIntValues.get(i) == savedRatioScaled) {
+                    selectedIndex = i;
+                    Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Selecting SAVED ratio (" + savedRatioForThisCameraType + "x) at index: " + selectedIndex);
+                    break;
+                }
+            }
+
+            if (selectedIndex == -1) {
+                // Saved ratio is NOT supported/available. Fallback needed.
+                Log.w(TAG_SETTINGS, "Zoom Ratio Spinner Update: Saved ratio (" + savedRatioForThisCameraType + "x) is NOT in the supported list. Falling back.");
+
+                // Try falling back to the default ratio (1.0x - no zoom)
+                float defaultRatio = Constants.DEFAULT_ZOOM_RATIO;
+                int defaultRatioScaled = Math.round(defaultRatio * 10);
+                for (int i = 0; i < zoomRatioIntValues.size(); i++) {
+                    if (zoomRatioIntValues.get(i) == defaultRatioScaled) {
+                        selectedIndex = i;
+                        Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Falling back to Default (" + defaultRatio + "x) at index: " + selectedIndex);
+                        // Update the preference ONLY because the previously saved one was invalid
+                        sharedPreferencesManager.setSpecificZoomRatio(selectedCameraType, defaultRatio);
+                        break;
+                    }
+                }
+
+                if (selectedIndex == -1 && !zoomRatioIntValues.isEmpty()) {
+                    // If even default 1.0x isn't supported, select the first available ratio in the list
+                    selectedIndex = 0;
+                    float firstAvailableRatio = zoomRatioIntValues.get(selectedIndex) / 10.0f;
+                    Log.w(TAG_SETTINGS, "Zoom Ratio Spinner Update: Default (1.0x) also NOT supported. Selecting first available ratio: " + firstAvailableRatio + "x at index 0.");
+                    // Update preference to the first valid ratio since saved/default were invalid
+                    sharedPreferencesManager.setSpecificZoomRatio(selectedCameraType, firstAvailableRatio);
+                }
+            }
+
+            // 5. Set Spinner Selection and Enabled State
+            if (selectedIndex >= 0 && selectedIndex < zoomRatioOptions.size()) { // Check index bounds
+                zoomRatioSpinner.setSelection(selectedIndex, false); // Set selection without triggering listener initially
+                zoomRatioSpinner.setEnabled(true); // Enable spinner as there are options
+                Log.d(TAG_SETTINGS, "Zoom Ratio Spinner: Final selection set to index " + selectedIndex);
+            } else {
+                Log.e(TAG_SETTINGS, "Zoom Ratio Spinner Update: Invalid final index (" + selectedIndex + "), cannot set selection. Disabling spinner.");
+                zoomRatioSpinner.setEnabled(false); // Disable if no valid selection found
+            }
+
+        } else {
+            // No ratios were found/supported by getHardwareSupportedMaxZoomRatio
+            // If this block is reached, something is inconsistent. Disable the spinner.
+            zoomRatioSpinner.setEnabled(false);
+            Log.e(TAG_SETTINGS, "Zoom Ratio Spinner Update: CRITICAL - No zoom ratios found for " + selectedCameraType + ". Disabling spinner.");
+        }
+        
+        // Update the note text to reflect current selection
+        TextView noteTextView = view.findViewById(R.id.zoom_ratio_note_textview);
+        if (noteTextView != null) {
+            updateZoomRatioNoteText(noteTextView);
+        }
+        
+        Log.d(TAG_SETTINGS, "Zoom Ratio Spinner update finished for " + selectedCameraType + ". Enabled: " + zoomRatioSpinner.isEnabled());
+    } // End updateZoomRatioSpinner
 
     private void setupCodecSpinner() {
         if (codecSpinner == null)
@@ -2791,7 +3088,20 @@ public class SettingsFragment extends BaseFragment {
         }
     }
 
-    private void setupCodecNoteText() {
+
+    /**
+     * Updates the zoom ratio note text to show the default value.
+     */
+    private void updateZoomRatioNoteText(TextView noteTextView) {
+        if (noteTextView == null) return;
+        
+        // Always show 1.0x as the default (no zoom)
+        noteTextView.setText(getString(R.string.note_zoom_ratio, 1.0f));
+        noteTextView.setVisibility(View.VISIBLE);
+    }
+
+    private void setupCodecNoteText()
+    {
         TextView noteTextView = view.findViewById(R.id.codec_note_textview);
         if (noteTextView != null) {
             VideoCodec defaultCodec = Constants.DEFAULT_VIDEO_CODEC;
