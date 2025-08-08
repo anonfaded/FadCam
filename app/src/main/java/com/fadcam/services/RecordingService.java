@@ -32,6 +32,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -64,8 +65,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // Add Intent import
@@ -675,8 +678,27 @@ public class RecordingService extends Service {
         String cameraToOpenId = null;
 
         try {
-            String[] availableCameraIds = cameraManager.getCameraIdList();
-            Log.d(TAG, "Available Camera IDs: " + Arrays.toString(availableCameraIds));
+            String[] basicCameraIds = cameraManager.getCameraIdList();
+            Set<String> allAvailableCameraIds = new HashSet<>(Arrays.asList(basicCameraIds));
+            
+            // On Android P+, also include physical cameras from logical cameras
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                for (String id : basicCameraIds) {
+                    try {
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                        Set<String> physicalIds = chars.getPhysicalCameraIds();
+                        if (physicalIds != null && !physicalIds.isEmpty()) {
+                            allAvailableCameraIds.addAll(physicalIds);
+                            Log.d(TAG, "Added physical camera IDs from logical camera " + id + ": " + physicalIds);
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error checking physical IDs for camera " + id, e);
+                    }
+                }
+            }
+            
+            String[] availableCameraIds = allAvailableCameraIds.toArray(new String[0]);
+            Log.d(TAG, "Available Camera IDs (including physical): " + Arrays.toString(availableCameraIds));
 
             if (selectedType == CameraType.FRONT) {
                 for (String id : availableCameraIds) {
@@ -692,18 +714,42 @@ public class RecordingService extends Service {
                 String preferredBackId = sharedPreferencesManager.getSelectedBackCameraId();
                 Log.d(TAG,"Preferred BACK camera ID from prefs: " + preferredBackId);
                 boolean isValidAndAvailable = false;
+                
+                // First, check if the preferred camera ID exists in our available cameras
                 for(String id : availableCameraIds){
                     if(id.equals(preferredBackId)){
-                        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
-                        Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                        if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                            isValidAndAvailable = true;
-                            break;
-            } else {
-                            Log.w(TAG,"Preferred back ID "+preferredBackId+" exists but is not LENS_FACING_BACK!");
+                        try {
+                            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                            Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                            
+                            // For physical cameras, they might not have LENS_FACING_BACK set
+                            // but if they're in our availableCameraIds and were detected as back cameras
+                            // in SettingsFragment, we should trust that they're valid back cameras
+                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                isValidAndAvailable = true;
+                                Log.d(TAG, "Preferred back camera ID '" + preferredBackId + "' validated with LENS_FACING_BACK");
+                                break;
+                            } else {
+                                // For physical cameras, check if this ID was part of a logical back camera
+                                // If it's in our availableCameraIds, it means it was detected as a back camera
+                                Log.w(TAG,"Preferred back ID "+preferredBackId+" exists but LENS_FACING is: " + facing);
+                                
+                                // Additional validation: check if this is a physical camera from a logical back camera
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    boolean isPhysicalBackCamera = isPhysicalBackCamera(preferredBackId, basicCameraIds, cameraManager);
+                                    if (isPhysicalBackCamera) {
+                                        isValidAndAvailable = true;
+                                        Log.d(TAG, "Preferred camera ID '" + preferredBackId + "' validated as physical back camera");
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (CameraAccessException e) {
+                            Log.e(TAG, "Error getting characteristics for preferred camera " + preferredBackId, e);
                         }
                     }
                 }
+                
                 if (isValidAndAvailable) {
                     cameraToOpenId = preferredBackId;
                     Log.d(TAG, "Using preferred BACK camera ID: " + cameraToOpenId);
@@ -2708,6 +2754,38 @@ public class RecordingService extends Service {
         Log.d(TAG, "Started camera reconnection attempts (infinite)");
     }
     
+    /**
+     * Helper method to check if a camera ID is a physical camera from a logical back camera
+     * This is needed because physical cameras might not have LENS_FACING_BACK set properly
+     * 
+     * @param cameraId The camera ID to check
+     * @param basicCameraIds Array of basic camera IDs from getCameraIdList()
+     * @param cameraManager The camera manager instance
+     * @return true if this is a physical camera from a logical back camera
+     */
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    private boolean isPhysicalBackCamera(String cameraId, String[] basicCameraIds, CameraManager cameraManager) {
+        try {
+            // Check if this camera ID is a physical camera from any logical back camera
+            for (String logicalId : basicCameraIds) {
+                CameraCharacteristics logicalChars = cameraManager.getCameraCharacteristics(logicalId);
+                Integer logicalFacing = logicalChars.get(CameraCharacteristics.LENS_FACING);
+                
+                // Only check logical cameras that are back-facing
+                if (logicalFacing != null && logicalFacing == CameraCharacteristics.LENS_FACING_BACK) {
+                    Set<String> physicalIds = logicalChars.getPhysicalCameraIds();
+                    if (physicalIds != null && physicalIds.contains(cameraId)) {
+                        Log.d(TAG, "Camera ID '" + cameraId + "' is a physical camera from logical back camera '" + logicalId + "'");
+                        return true;
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error checking if camera " + cameraId + " is a physical back camera", e);
+        }
+        return false;
+    }
+
     /**
      * Attempts to reconnect to the camera
      * 
