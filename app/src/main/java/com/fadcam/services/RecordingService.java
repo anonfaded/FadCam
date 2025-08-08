@@ -1176,9 +1176,11 @@ public class RecordingService extends Service {
                 // ... (same Samsung/Huawei/high-speed logic as before)
             }
             if (useHighSpeedSession) {
-                createHighSpeedSession(surfaces, characteristics, targetFrameRate);
+                // ----- Fix Start for this method(createCameraPreviewSession)-----
+                createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
-                createStandardSession(surfaces, targetFrameRate, characteristics);
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+                // ----- Fix Ended for this method(createCameraPreviewSession)-----
             }
             return;
         }
