@@ -361,6 +361,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="trash_empty_toast_message">No items to delete.</string>
     <string name="trash_emptied_toast">All items deleted.</string>
     <string name="trash_items_deleted_toast">%1$d item(s) deleted permanently.</string>
+    <!-- Auto-delete (Trash) -->
+    <string name="auto_delete_immediate">Immediate</string>
+    <string name="trash_auto_delete_info_immediate">Items are deleted immediately.</string>
     <string name="trash_error_deleting_items_toast">Error deleting items.</string>
     <string name="trash_dialog_empty_all_title">Delete All Items?</string>
     <string name="trash_button_empty_all_action">Delete All</string>
