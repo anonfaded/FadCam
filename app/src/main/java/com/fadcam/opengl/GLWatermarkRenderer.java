@@ -137,6 +137,13 @@ public class GLWatermarkRenderer {
     public void setUserOrientationSetting(String orientation) {
         this.userOrientationSetting = orientation;
     }
+    
+    /**
+     * Sets the recording pipeline reference for timestamp synchronization.
+     */
+    public void setRecordingPipeline(GLRecordingPipeline pipeline) {
+        this.recordingPipeline = pipeline;
+    }
 
     private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight) {
         // Top left corner at (-1, 1), width ndcWidth, height ndcHeight
@@ -152,6 +159,9 @@ public class GLWatermarkRenderer {
     private int dynamicBitmapHeight = 48; // Fixed small height for dashcam style
 
     private boolean released = false;
+    
+    // Reference to recording pipeline for timestamp synchronization
+    private GLRecordingPipeline recordingPipeline;
 
     public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation, int videoWidth, int videoHeight) {
         this.context = context;
@@ -375,9 +385,23 @@ public class GLWatermarkRenderer {
             // Update matrices for correct orientation
             updateMatrices();
             
-            // Set presentation time
+            // Set presentation time using synchronized timestamp
             try {
-            EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, cameraSurfaceTexture.getTimestamp());
+                long cameraTimestamp = cameraSurfaceTexture.getTimestamp();
+                long presentationTimeNanos;
+                
+
+                // Get synchronized timestamp from recording pipeline if available
+                if (recordingPipeline != null) {
+                    // Convert synchronized timestamp (microseconds) to nanoseconds
+                    presentationTimeNanos = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp) * 1000L;
+                } else {
+                    // Fallback to camera timestamp (already in nanoseconds)
+                    presentationTimeNanos = cameraTimestamp;
+                }
+                
+                EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeNanos);
+
             } catch (Exception e) {
                 Log.e(TAG, "Error setting presentation time", e);
                 // Continue anyway

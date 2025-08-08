@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
 }
@@ -31,6 +33,21 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("local.properties")
+            val keystoreProperties = Properties()
+            if (keystorePropertiesFile.exists()) {
+                keystoreProperties.load(keystorePropertiesFile.inputStream())
+            }
+            
+            storeFile = file(keystoreProperties.getProperty("KEYSTORE_FILE") ?: "")
+            storePassword = keystoreProperties.getProperty("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = keystoreProperties.getProperty("KEY_ALIAS") ?: ""
+            keyPassword = keystoreProperties.getProperty("KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             // Enable R8 optimization with custom rules
@@ -41,6 +58,9 @@ android {
             // More aggressive optimizations for release
             isDebuggable = false
             isCrunchPngs = true // Aggressively optimize PNG files
+            
+            // Add signing configuration
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

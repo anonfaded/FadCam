@@ -19,7 +19,7 @@
     <string name="send_email">Email oka</string>
     <string name="join_community">Community join kae, madad, ideas share kawalo, aw mustaqbil app updates da paara</string>
     <string name="privacy_information">Da Privacy Maloomat</string>
-    <string name="copyright_info">© 2024 https://fadedhood.github.io/fadcam\nLicensed under GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>
