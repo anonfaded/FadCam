@@ -114,8 +114,10 @@
     <string name="button_settings_cam_front">Front</string>
     <string name="setting_quailty_title">Video Quality</string>
     <string name="setting_framerate_title">Video Framerate</string>
+    <string name="setting_zoom_ratio_title">Zoom Ratio</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
+    <string name="note_zoom_ratio">Choose zoom ratio\n(Default: %1$.1fx - no zoom)</string>
     <string name="setting_codec_title">Video Codec</string>
     <string name="note_codec">Choose codec\n(Default: %1$s)\nTip: With H.265 (HEVC), you can use about half the bitrate of H.264 for the same quality. Example: For FHD, use 8 Mbps instead of 16 Mbps.</string>
     <string name="setting_watermark">Watermark</string>
