@@ -18,7 +18,7 @@
     <string name="send_email">Invia email</string>
     <string name="join_community">Unisciti alla community per ricevere aiuto, condividere idee e futuri aggiornamenti dell\'app</string>
     <string name="privacy_information">Informativa sulla privacy</string>
-    <string name="copyright_info">© 2024 https://fadedhood.github.io/fadcam\nSotto licenza GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://fadcam.faded.dev\nSotto licenza GPL-3.0</string>
     <string name="mainpage_storage_indicator">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Disponibile :</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
