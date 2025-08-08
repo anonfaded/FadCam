@@ -769,11 +769,17 @@ public class GLRecordingPipeline {
     }
 
     private void startRenderLoop() {
+        // ----- Fix Start for this method(startRenderLoop)-----
         if (renderThread == null) {
             renderThread = new HandlerThread("GLRenderThread");
             renderThread.start();
             handler = new Handler(renderThread.getLooper());
         }
+        // Kick off the render loop once; subsequent frames will continue it
+        if (isRecording && handler != null) {
+            handler.post(renderRunnable);
+        }
+        // ----- Fix Ended for this method(startRenderLoop)-----
     }
     
     // Render when a new frame is available (signaled by renderer)
