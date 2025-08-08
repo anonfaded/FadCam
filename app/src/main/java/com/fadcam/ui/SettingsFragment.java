@@ -1781,10 +1781,12 @@ public class SettingsFragment extends BaseFragment {
                     vibrateTouch();
                     // *** Update Visibility & Dependent Spinners ***
                     updateBackLensSpinnerVisibility(); // Show/Hide lens spinner
-                    updateResolutionSpinner(); // Update resolutions for the new camera
-                    updateFrameRateSpinner(); // Update framerates for the new camera
+
+                    updateResolutionSpinner();         // Update resolutions for the new camera
+                    updateFrameRateSpinner();          // Update framerates for the new camera
                     updateZoomRatioSpinner();          // Update zoom ratios for the new camera
-                    updateBitrateInfoAndHelper(); // Update bitrate info for the new camera
+                    updateBitrateInfoAndHelper();      // Update bitrate info for the new camera
+
                 } else {
                     Log.d(TAG, "Camera main selection didn't change.");
                     // Still need to update lens spinner visibility if fragment was just created
@@ -2173,6 +2175,7 @@ public class SettingsFragment extends BaseFragment {
         });
     }// End setupFrameRateSpinner
 
+
     private void setupZoomRatioSpinner() {
         if (zoomRatioSpinner == null) return;
         
@@ -2250,7 +2253,8 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
-    // Keep getHardwareSupportedFrameRates as defined previously, it works per camera
+
+
 
     /**
      * Updates the frame rate spinner's adapter and selection based on hardware
@@ -3083,6 +3087,7 @@ public class SettingsFragment extends BaseFragment {
                     (int) (8 * getResources().getDisplayMetrics().density));
         }
     }
+
 
     /**
      * Updates the zoom ratio note text to show the default value.
