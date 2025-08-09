@@ -17,12 +17,12 @@
             android:layout_height="32dp"
             android:padding="4dp"
             android:src="@drawable/ic_back"
-            android:contentDescription="Back"
+            android:contentDescription="@string/universal_back"
             android:tint="@android:color/white"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Storage Settings"
+            android:text="@string/storage_location_title"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="8dp"
@@ -51,7 +51,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Save Location"
+                android:text="@string/storage_location_title"
                 android:textStyle="bold"
                 android:textSize="15sp"
                 android:textColor="?attr/colorHeading"/>

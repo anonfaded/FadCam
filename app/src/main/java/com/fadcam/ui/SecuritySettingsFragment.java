@@ -20,6 +20,7 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
+import com.fadcam.ui.OverlayNavUtil;
 
 import com.guardanis.applock.AppLock;
 import com.guardanis.applock.dialogs.LockCreationDialogBuilder;
@@ -53,7 +54,7 @@ public class SecuritySettingsFragment extends Fragment {
 
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
-            back.setOnClickListener(v -> handleBack());
+            back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         }
 
         // Configure row click opens the config dialog (replaces legacy configure button)
@@ -64,14 +65,7 @@ public class SecuritySettingsFragment extends Fragment {
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    private void handleBack() {
-        if (getActivity() != null) {
-            requireActivity().getSupportFragmentManager().popBackStack();
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).hideOverlayIfNoFragments();
-            }
-        }
-    }
+    // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshAppLockValue() {
         // -------------- Fix Start for this method(refreshAppLockValue)-----------

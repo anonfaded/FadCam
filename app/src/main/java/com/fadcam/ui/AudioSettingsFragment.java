@@ -332,8 +332,8 @@ public class AudioSettingsFragment extends Fragment {
             }
         });
     // Legacy valid range 64000 - 384000 bps (AAC). Threshold hints around common recommendations.
-    String lowMsg = "Below 128k: clarity may drop";
-    String highMsg = "Above 320k: larger files, minor gain";
+    String lowMsg = getString(R.string.helper_audio_bitrate_low_hint);
+    String highMsg = getString(R.string.helper_audio_bitrate_high_hint);
     // Build sheet with reset & description (including recommended value marker)
     com.fadcam.ui.picker.NumberInputBottomSheetFragment sheet = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
         getString(R.string.dialog_audio_bitrate_label), 64000, 384000, prefs.getAudioBitrate(), getString(R.string.helper_audio_bitrate_detail) + " " + getString(R.string.label_recommended) + ": 192000", 128000, 320000, lowMsg, highMsg, rk);
@@ -341,7 +341,7 @@ public class AudioSettingsFragment extends Fragment {
     if(sheet.getArguments()!=null){
         sheet.getArguments().putBoolean(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_SHOW_RESET, true);
         sheet.getArguments().putInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DEFAULT_VALUE, 192000);
-        sheet.getArguments().putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.helper_audio_bitrate_detail) + "\nRecommended: 192000 bps");
+    sheet.getArguments().putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.helper_audio_bitrate_detail) + "\n" + getString(R.string.audio_bitrate_recommended_line));
     }
         sheet.show(getParentFragmentManager(), "audio_bitrate_input");
         // -------------- Fix Ended for this method(showBitrateInputSheet)-----------

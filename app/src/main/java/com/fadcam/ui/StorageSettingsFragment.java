@@ -13,12 +13,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
+import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 
@@ -79,21 +79,14 @@ public class StorageSettingsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
         valueStorageMode = view.findViewById(R.id.value_storage_mode);
-        view.findViewById(R.id.row_storage_mode).setOnClickListener(v -> showStorageOptionsDialog());
-        View back = view.findViewById(R.id.back_button);
-        if(back!=null){ back.setOnClickListener(v -> handleBack()); }
+    view.findViewById(R.id.row_storage_mode).setOnClickListener(v -> showStorageOptionsSheet());
+    View back = view.findViewById(R.id.back_button);
+    if(back!=null){ back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity())); }
         refreshValue();
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    private void handleBack(){
-        if(getActivity()!=null){
-            requireActivity().getSupportFragmentManager().popBackStack();
-            if(getActivity() instanceof MainActivity){
-                ((MainActivity) getActivity()).hideOverlayIfNoFragments();
-            }
-        }
-    }
+    // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValue(){
         // -------------- Fix Start for this method(refreshValue)-----------
@@ -101,55 +94,68 @@ public class StorageSettingsFragment extends Fragment {
         if(SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode)){
             String uri = prefs.getCustomStorageUri();
             String label = buildDisplayPath(uri);
-            valueStorageMode.setText("Custom: "+label);
+            valueStorageMode.setText(getString(R.string.storage_value_custom_prefix)+" "+label);
         } else {
-            valueStorageMode.setText("Internal App Storage");
+            valueStorageMode.setText(getString(R.string.storage_value_internal));
         }
         // -------------- Fix Ended for this method(refreshValue)-----------
     }
 
-    private void showStorageOptionsDialog(){
-        // -------------- Fix Start for this method(showStorageOptionsDialog)-----------
+    private void showStorageOptionsSheet(){
+        // -------------- Fix Start for this method(showStorageOptionsSheet)-----------
+        final String rk = "picker_result_storage";
+        getParentFragmentManager().setFragmentResultListener(rk, this, (k,b)->{
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if(sel==null) return;
+            String mode = prefs.getStorageMode();
+            boolean custom = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode);
+            switch(sel){
+                case "use_internal":
+                case "switch_internal":
+                    if(!SharedPreferencesManager.STORAGE_MODE_INTERNAL.equals(mode)){
+                        prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                        prefs.setCustomStorageUri(null);
+                        sendStorageChangedBroadcast();
+                    }
+                    break;
+                case "select_custom":
+                case "change_custom":
+                    launchDirectoryPicker(); return; // wait for result
+                case "clear_custom":
+                    prefs.setCustomStorageUri(null);
+                    prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                    sendStorageChangedBroadcast();
+                    break;
+            }
+            refreshValue();
+        });
         String mode = prefs.getStorageMode();
         boolean custom = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode);
-        String[] items;
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        String selectedId = null;
         if(custom){
-            items = new String[]{"Switch to Internal Storage","Change Custom Folder","Clear Custom Folder"};
+            items.add(new com.fadcam.ui.picker.OptionItem("switch_internal", getString(R.string.storage_option_switch_internal)));
+            items.add(new com.fadcam.ui.picker.OptionItem("change_custom", getString(R.string.storage_option_change_custom)));
+            items.add(new com.fadcam.ui.picker.OptionItem("clear_custom", getString(R.string.storage_option_clear_custom)));
+            selectedId = "change_custom"; // highlight change option as current mode indicator
         } else {
-            items = new String[]{"Use Internal Storage","Select Custom Location"};
+            items.add(new com.fadcam.ui.picker.OptionItem("use_internal", getString(R.string.storage_option_use_internal)));
+            items.add(new com.fadcam.ui.picker.OptionItem("select_custom", getString(R.string.storage_option_select_custom)));
+            selectedId = "use_internal";
         }
-        new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
-                .setTitle("Storage Location")
-                .setItems(items,(d,w)->{
-                    if(!custom){
-                        if(w==0){ // ensure internal
-                            if(!SharedPreferencesManager.STORAGE_MODE_INTERNAL.equals(mode)){
-                                prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                                prefs.setCustomStorageUri(null);
-                                sendStorageChangedBroadcast();
-                            }
-                        } else if(w==1){ // choose custom
-                            launchDirectoryPicker();
-                            return; // wait for result
-                        }
-                    } else { // currently custom
-                        if(w==0){ // switch to internal
-                            prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                            prefs.setCustomStorageUri(null);
-                            sendStorageChangedBroadcast();
-                        } else if(w==1){ // change folder
-                            launchDirectoryPicker(); return;
-                        } else if(w==2){ // clear custom
-                            prefs.setCustomStorageUri(null);
-                            prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                            sendStorageChangedBroadcast();
-                        }
-                    }
-                    refreshValue();
-                })
-                .setNegativeButton(R.string.universal_cancel,null)
-                .show();
-        // -------------- Fix Ended for this method(showStorageOptionsDialog)-----------
+        String helper = getString(R.string.storage_helper_primary)+"\n"+getString(R.string.storage_helper_security);
+        if(custom){
+            String uri = prefs.getCustomStorageUri();
+            String displayName = buildDisplayPath(uri);
+            if(uri!=null){
+                helper += "\n\n" + getString(R.string.storage_helper_current_custom_prefix) + " " + displayName;
+                helper += "\n" + getString(R.string.storage_helper_current_custom_uri_prefix) + " " + decodeTreeUriToReadablePath(uri);
+            }
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.storage_sheet_title), items, selectedId, rk, helper);
+        sheet.show(getParentFragmentManager(), "storage_picker");
+        // -------------- Fix Ended for this method(showStorageOptionsSheet)-----------
     }
 
     private void launchDirectoryPicker(){
@@ -164,18 +170,41 @@ public class StorageSettingsFragment extends Fragment {
 
     private String buildDisplayPath(String uriString){
         // -------------- Fix Start for this method(buildDisplayPath)-----------
-        if(uriString==null) return "(None)";
+    if(uriString==null) return getString(R.string.storage_value_none);
         try{
             Uri treeUri = Uri.parse(uriString);
             DocumentFile pickedDir = DocumentFile.fromTreeUri(requireContext(), treeUri);
             if(pickedDir!=null){
                 String name = pickedDir.getName();
                 if(name!=null && !name.isEmpty()) return name;
-                return "Selected Folder";
+        return getString(R.string.storage_value_selected_folder);
             }
-        }catch(Exception e){ Log.e(TAG, "buildDisplayPath error", e); }
-        return "Custom";
+    }catch(Exception e){ Log.e(TAG, "buildDisplayPath error", e); }
+    return getString(R.string.storage_value_selected_folder);
         // -------------- Fix Ended for this method(buildDisplayPath)-----------
+    }
+
+    private String decodeTreeUriToReadablePath(String uriString){
+        // -------------- Fix Start for this method(decodeTreeUriToReadablePath)-----------
+        if(uriString==null) return "";
+        try{
+            // Typical SAF tree URI: content://com.android.externalstorage.documents/tree/primary%3ADownload%2FFadCam
+            int idx = uriString.indexOf("tree/");
+            if(idx>=0){
+                String after = uriString.substring(idx + 5); // skip 'tree/'
+                // Decode percent encodings
+                String decoded = java.net.URLDecoder.decode(after, "UTF-8");
+                // Map primary: to /storage/emulated/0/
+                if(decoded.startsWith("primary:")){
+                    decoded = decoded.replaceFirst("primary:", "/storage/emulated/0/");
+                }
+                // Ensure leading slash if not present
+                if(!decoded.startsWith("/")) decoded = "/" + decoded;
+                return decoded;
+            }
+        }catch(Exception e){ Log.e(TAG, "decodeTreeUriToReadablePath error", e); }
+        return uriString;
+        // -------------- Fix Ended for this method(decodeTreeUriToReadablePath)-----------
     }
 
     private void sendStorageChangedBroadcast(){

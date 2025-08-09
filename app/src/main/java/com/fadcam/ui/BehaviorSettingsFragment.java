@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.MainActivity;
+import com.fadcam.ui.OverlayNavUtil;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
@@ -54,8 +55,8 @@ public class BehaviorSettingsFragment extends BaseFragment {
         valueAutoUpdateState = view.findViewById(R.id.value_auto_update_state);
         toggleOnboarding = view.findViewById(R.id.toggle_onboarding);
         toggleAutoUpdate = view.findViewById(R.id.toggle_auto_update);
-        View back = view.findViewById(R.id.back_button);
-        if (back != null) back.setOnClickListener(v -> handleBack());
+    View back = view.findViewById(R.id.back_button);
+    if (back != null) back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         View rowNotif = view.findViewById(R.id.row_notification_customization);
         if (rowNotif != null) {
             rowNotif.setOnClickListener(v -> openNotificationCustomizationDialog());
@@ -86,14 +87,7 @@ public class BehaviorSettingsFragment extends BaseFragment {
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    private void handleBack() {
-        if (getActivity() != null) {
-            requireActivity().getSupportFragmentManager().popBackStack();
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).hideOverlayIfNoFragments();
-            }
-        }
-    }
+    // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValues() {
         // -------------- Fix Start for this method(refreshValues)-----------

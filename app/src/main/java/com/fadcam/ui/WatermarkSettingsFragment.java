@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.MainActivity;
+import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
@@ -59,7 +60,7 @@ public class WatermarkSettingsFragment extends Fragment {
         view.findViewById(R.id.row_location_watermark).setOnClickListener(v -> toggleLocationWatermark());
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
-            back.setOnClickListener(v -> handleBack());
+            back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         }
         permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
             if (granted) {
@@ -72,14 +73,7 @@ public class WatermarkSettingsFragment extends Fragment {
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    private void handleBack() {
-        if (getActivity() != null) {
-            requireActivity().getSupportFragmentManager().popBackStack();
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).hideOverlayIfNoFragments();
-            }
-        }
-    }
+    // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshLocationValue() {
         // -------------- Fix Start for this method(refreshLocationValue)-----------

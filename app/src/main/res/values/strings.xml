@@ -331,6 +331,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="helper_audio_sampling_recommended">Recommended: 48000 Hz</string>
     <string name="universal_reset">Reset</string>
     <string name="label_recommended">(Recommended)</string>
+    <string name="universal_back">Back</string>
+    <!-- Added: Audio bitrate threshold helper hints -->
+    <string name="helper_audio_bitrate_low_hint">Below 128k: clarity may drop</string>
+    <string name="helper_audio_bitrate_high_hint">Above 320k: larger files, minor gain</string>
+    <string name="audio_bitrate_recommended_line">Recommended: 192000 bps</string>
     <string name="helper_location_watermark">Adds live location text overlay while recording.</string>
     <string name="helper_location_embed">Embeds GPS coordinates into video metadata (geotag).</string>
     <string name="helper_watermark_option">Choose overlay content: timestamp + brand, timestamp only, or none.</string>
@@ -599,6 +604,21 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
     <string name="storage_location_choose_folder">Choose Folder</string>
     <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam.</string>
+    <!-- Added: Storage picker sheet options & helpers -->
+    <string name="storage_sheet_title">Storage Location</string>
+    <string name="storage_option_use_internal">Use Internal Storage</string>
+    <string name="storage_option_switch_internal">Switch to Internal Storage</string>
+    <string name="storage_option_select_custom">Select Custom Location</string>
+    <string name="storage_option_change_custom">Change Custom Folder</string>
+    <string name="storage_option_clear_custom">Clear Custom Folder</string>
+    <string name="storage_helper_primary">Choose where new recordings are saved. Internal storage keeps videos private to the app; a custom folder (SD card or shared storage) makes them visible to other apps like Gallery.</string>
+    <string name="storage_helper_security">Tip: Use Internal for privacy/speed. Use Custom for easier access &amp; sharing.</string>
+    <string name="storage_value_internal">Internal App Storage</string>
+    <string name="storage_value_custom_prefix">Custom:</string>
+    <string name="storage_value_none">(None)</string>
+    <string name="storage_value_selected_folder">Selected Folder</string>
+    <string name="storage_helper_current_custom_prefix">Current custom folder:</string>
+    <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="storage_icon_description">Storage Icon</string>
     <string name="location_icon_description">Location Icon</string>
     <string name="location_embedding_icon_description">Location Embedding Icon</string>

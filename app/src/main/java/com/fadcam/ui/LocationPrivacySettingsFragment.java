@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.MainActivity;
+import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 
@@ -49,8 +50,8 @@ public class LocationPrivacySettingsFragment extends Fragment {
         prefs = SharedPreferencesManager.getInstance(requireContext());
         valueEmbed = view.findViewById(R.id.value_location_embed);
         view.findViewById(R.id.row_location_embed).setOnClickListener(v -> toggleLocationEmbed());
-        View back = view.findViewById(R.id.back_button);
-        if(back!=null){ back.setOnClickListener(v -> handleBack()); }
+    View back = view.findViewById(R.id.back_button);
+    if(back!=null){ back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity())); }
         permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
             if(granted){ onPermissionGrantedPostRequest(); } else { onPermissionDeniedPostRequest(); }
         });
@@ -58,14 +59,7 @@ public class LocationPrivacySettingsFragment extends Fragment {
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    private void handleBack(){
-        if(getActivity()!=null){
-            requireActivity().getSupportFragmentManager().popBackStack();
-            if(getActivity() instanceof MainActivity){
-                ((MainActivity) getActivity()).hideOverlayIfNoFragments();
-            }
-        }
-    }
+    // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValues(){
         // -------------- Fix Start for this method(refreshValues)-----------
