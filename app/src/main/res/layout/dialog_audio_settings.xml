@@ -75,13 +75,7 @@
             android:visibility="gone"
             android:text="@string/dialog_audio_invalid_sampling_rate" />
 
-        <!-- Noise Suppression Switch -->
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/noise_suppression_switch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Enable Noise Suppression"
-            android:layout_marginTop="16dp" />
+    <!-- Noise suppression toggle removed here to avoid duplication; managed as separate row in Audio settings screen -->
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/audio_reset_button"

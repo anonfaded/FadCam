@@ -80,6 +80,20 @@ public class AboutFragment extends BaseFragment {
     }
 
     private void initializeViews() {
+        // -------------- Fix Start for this method(initializeViews)-----------
+        // Header back button handling (new)
+        View back = view.findViewById(R.id.back_button);
+        if (back != null) {
+            back.setOnClickListener(v -> {
+                try {
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                    if (requireActivity() instanceof com.fadcam.MainActivity) {
+                        ((com.fadcam.MainActivity) requireActivity()).hideOverlayIfNoFragments();
+                    }
+                } catch (Exception ignored) {}
+            });
+        }
+        // -------------- Fix Ended for this method(initializeViews)-----------
         ImageView appIcon = view.findViewById(R.id.app_icon);
         TextView appName = view.findViewById(R.id.app_name);
         TextView appVersion = view.findViewById(R.id.app_version);

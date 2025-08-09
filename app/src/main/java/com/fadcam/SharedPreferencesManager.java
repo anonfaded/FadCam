@@ -149,6 +149,7 @@ public class SharedPreferencesManager {
     // App Lock preferences
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
 
+
     // ----- Fix Start: AppLock session unlock state -----
     private static final String KEY_APPLOCK_SESSION_UNLOCKED = "applock_session_unlocked";
     private volatile boolean sessionUnlockedCache = false;

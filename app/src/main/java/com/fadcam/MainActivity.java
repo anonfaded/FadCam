@@ -86,6 +86,39 @@ public class MainActivity extends AppCompatActivity {
     }
     // ----- Fix End: Add method to check if trash fragment is visible -----
 
+    // -------------- Fix Start for this method(hideOverlayIfNoFragments)-----------
+    /** Utility so child fragments can request overlay dismissal after popping back stack. */
+    public void hideOverlayIfNoFragments(){
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        if(overlayContainer!=null){
+            if(getSupportFragmentManager().getBackStackEntryCount()==0){
+                Log.d("OverlayDebug","hideOverlayIfNoFragments: back stack empty -> hide overlay");
+                overlayContainer.setVisibility(View.GONE);
+            }
+            else {
+                Log.d("OverlayDebug","hideOverlayIfNoFragments: back stack count="+getSupportFragmentManager().getBackStackEntryCount());
+            }
+        }
+    }
+    // -------------- Fix Ended for this method(hideOverlayIfNoFragments)-----------
+
+    // -------------- Fix Start for this method(showOverlayFragment)-----------
+    /** Present a fragment in the overlay container, avoiding duplicate dark blank state. */
+    public void showOverlayFragment(Fragment fragment, String tag){
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        if(overlayContainer==null) return;
+    Log.d("OverlayDebug","showOverlayFragment: tag="+tag+" currentBackStack="+getSupportFragmentManager().getBackStackEntryCount());
+        overlayContainer.setVisibility(View.VISIBLE);
+        overlayContainer.setAlpha(0f);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.overlay_fragment_container, fragment, tag)
+                .addToBackStack(tag)
+                .commitAllowingStateLoss();
+        overlayContainer.animate().alpha(1f).setDuration(120).start();
+    }
+    // -------------- Fix Ended for this method(showOverlayFragment)-----------
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Apply theme before setContentView
@@ -154,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         // Keep all pages in memory to prevent content disappearing
         viewPager.setOffscreenPageLimit(adapter.getItemCount());
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+    bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.navigation_home) {
                 viewPager.setCurrentItem(0, true);
@@ -164,8 +197,6 @@ public class MainActivity extends AppCompatActivity {
                 viewPager.setCurrentItem(2, true);
             } else if (itemId == R.id.navigation_settings) {
                 viewPager.setCurrentItem(3, true);
-            } else if (itemId == R.id.navigation_about) {
-                viewPager.setCurrentItem(4, true);
             }
             return true;
         });
@@ -174,21 +205,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 switch (position) {
-                    case 0:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_home);
-                        break;
-                    case 1:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_records);
-                        break;
-                    case 2:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
-                        break;
-                    case 3:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
-                        break;
-                    case 4:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_about);
-                        break;
+                    case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
+                    case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
+                    case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
+                    case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
                 }
             }
         });
@@ -316,6 +336,11 @@ public class MainActivity extends AppCompatActivity {
     // ----- Fix Start: Proper back button handling with double-press to exit -----
     @Override
     public void onBackPressed() {
+        // First: handle any non-trash overlay fragment (settings screens)
+        if(handleNonTrashOverlayBack()){
+            Log.d("OverlayDebug","onBackPressed: dismissed non-trash overlay fragment");
+            return;
+        }
         // Check if trash fragment is visible - handle separately
         if (isTrashFragmentVisible()) {
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
@@ -352,21 +377,10 @@ public class MainActivity extends AppCompatActivity {
                             
                             // Also make sure the correct tab is selected
                             switch (currentPosition) {
-                                case 0:
-                                    bottomNavigationView.setSelectedItemId(R.id.navigation_home);
-                                    break;
-                                case 1:
-                                    bottomNavigationView.setSelectedItemId(R.id.navigation_records);
-                                    break;
-                                case 2:
-                                    bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
-                                    break;
-                                case 3:
-                                    bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
-                                    break;
-                                case 4:
-                                    bottomNavigationView.setSelectedItemId(R.id.navigation_about);
-                                    break;
+                                case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
+                                case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
+                                case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
+                                case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
                             }
                         }
                     });
@@ -500,26 +514,20 @@ public class MainActivity extends AppCompatActivity {
                                         
                                         // Also make sure the correct tab is selected
                                         switch (currentPosition) {
-                                            case 0:
-                                                bottomNavigationView.setSelectedItemId(R.id.navigation_home);
-                                                break;
-                                            case 1:
-                                                bottomNavigationView.setSelectedItemId(R.id.navigation_records);
-                                                break;
-                                            case 2:
-                                                bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
-                                                break;
-                                            case 3:
-                                                bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
-                                                break;
-                                            case 4:
-                                                bottomNavigationView.setSelectedItemId(R.id.navigation_about);
-                                                break;
+                                            case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
+                                            case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
+                                            case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
+                                            case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
                                         }
                                     }
                                 });
                             return; // Exit early without showing toast
                         }
+                    }
+                    // New: generic non-trash overlay back handling (settings screens)
+                    if(handleNonTrashOverlayBack()){
+                        Log.d("OverlayDebug","DispatcherBack: dismissed non-trash overlay fragment");
+                        return; // handled
                     }
                     
                     // If we're not on the home tab, go to home tab first before exiting
@@ -554,6 +562,25 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     }
+
+    // -------------- Fix Start for this method(handleNonTrashOverlayBack)-----------
+    /** Handles back press for any visible overlay fragment that is not TrashFragment. */
+    private boolean handleNonTrashOverlayBack(){
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        if(overlayContainer==null || overlayContainer.getVisibility()!=View.VISIBLE) return false;
+        Fragment top = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
+        if(top==null || top instanceof com.fadcam.ui.TrashFragment) return false;
+        // Animate fade out then pop
+        overlayContainer.animate().alpha(0f).setDuration(160).withEndAction(() -> {
+            overlayContainer.setVisibility(View.GONE);
+            overlayContainer.setAlpha(1f);
+            if(getSupportFragmentManager().getBackStackEntryCount()>0){
+                getSupportFragmentManager().popBackStack();
+            }
+        }).start();
+        return true;
+    }
+    // -------------- Fix Ended for this method(handleNonTrashOverlayBack)-----------
 
     @Override
     protected void onDestroy() {
@@ -690,4 +717,15 @@ public class MainActivity extends AppCompatActivity {
         // Update default clock color based on theme
         sharedPreferencesManager.updateDefaultClockColorForTheme();
     }
+
+    // -------------- Fix Start for this method(applyThemeFromSettings)-----------
+    /**
+     * Public wrapper so settings fragments can request a theme change.
+     * Persists preference already written by caller and recreates activity to apply resources.
+     */
+    public void applyThemeFromSettings(String themeName){
+        applyTheme(themeName);
+        recreate();
+    }
+    // -------------- Fix Ended for this method(applyThemeFromSettings)-----------
 }

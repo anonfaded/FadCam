@@ -4243,9 +4243,7 @@ public class SettingsFragment extends BaseFragment {
     private void showAudioSettingsDialog() {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         View dialogView = inflater.inflate(R.layout.dialog_audio_settings, null);
-        final com.google.android.material.materialswitch.MaterialSwitch noiseSuppressionSwitch = dialogView
-                .findViewById(R.id.noise_suppression_switch);
-        noiseSuppressionSwitch.setChecked(sharedPreferencesManager.isNoiseSuppressionEnabled());
+    // Noise suppression switch removed (now managed in modular AudioSettingsFragment)
         final TextView summaryText = dialogView.findViewById(R.id.audio_settings_summary);
         final TextView bitrateLabel = dialogView.findViewById(R.id.audio_bitrate_label);
         final TextView samplingRateLabel = dialogView.findViewById(R.id.audio_sampling_rate_label);
@@ -4404,11 +4402,7 @@ public class SettingsFragment extends BaseFragment {
                     int sampling = Integer.parseInt(samplingRateInput.getText().toString().trim());
                     sharedPreferencesManager.setAudioBitrate(bitrate);
                     sharedPreferencesManager.setAudioSamplingRate(sampling);
-                    // ----- Fix Start: Save noise suppression toggle -----
-                    sharedPreferencesManager.setNoiseSuppressionEnabled(noiseSuppressionSwitch.isChecked());
-                    // ----- Fix End: Save noise suppression toggle -----
-                    Log.i(TAG_SETTINGS, "Audio settings saved: bitrate=" + bitrate + ", samplingRate=" + sampling
-                            + ", noiseSuppression=" + noiseSuppressionSwitch.isChecked());
+                    Log.i(TAG_SETTINGS, "Audio settings saved: bitrate=" + bitrate + ", samplingRate=" + sampling);
                     dialog.dismiss();
                 }
             });

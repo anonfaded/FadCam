@@ -207,7 +207,6 @@
     <string name="toast_video_save_fail">Failed to save video</string>
     <string name="rename_video_title">Rename Video</string>
     <string name="rename_video_hint">Enter new name</string>
-    <string name="universal_ok">OK</string>
     <string name="toast_rename_name_empty">Name cannot be empty</string>
     <string name="toast_rename_failed">Failed to rename video</string>
     <string name="toast_rename_success">Video renamed successfully</string>
@@ -322,6 +321,19 @@
 • Sampling Rate (Hz) is how many times per second audio is captured. 48000 Hz is standard for video, 44100 Hz is common for audio.
 
 Recommended: 192000 bps, 48000 Hz for most users.</string>
+    <!-- Helper subtitles for new Audio rows -->
+    <string name="helper_record_audio">Toggle capturing microphone audio in videos.</string>
+    <string name="helper_audio_input_source">Select which connected microphone/input to use.</string>
+    <string name="helper_noise_suppression">Experimental filter to reduce background noise.</string>
+    <string name="helper_audio_advanced">Customize bitrate &amp; sampling rate for quality/size balance.</string>
+    <string name="helper_audio_bitrate_detail">Recommended: 192000 bps for high-quality stereo. Lower values reduce file size but may reduce clarity. Range 64000–384000 bps.</string>
+    <string name="helper_audio_sampling_detail">Select 48000 Hz for video (recommended) or 44100 Hz for general audio compatibility.</string>
+    <string name="helper_audio_sampling_recommended">Recommended: 48000 Hz</string>
+    <string name="universal_reset">Reset</string>
+    <string name="label_recommended">(Recommended)</string>
+    <string name="helper_location_watermark">Adds live location text overlay while recording.</string>
+    <string name="helper_location_embed">Embeds GPS coordinates into video metadata (geotag).</string>
+    <string name="helper_watermark_option">Choose overlay content: timestamp + brand, timestamp only, or none.</string>
     <string name="setting_video_orientation_title">Video Orientation</string>
     <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
@@ -347,6 +359,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="bitrate_unit">Mbps</string>
     <string name="bitrate_explanation">What is bitrate?</string>
     <string name="bitrate_explanation_text">Bitrate is the amount of data used per second of video. Higher bitrate means better quality but larger files. Too high or too low can cause problems. Default values are based on professional camera standards.</string>
+    <!-- Added helper utility strings for numeric input bottom sheet -->
+    <string name="universal_enter_number">Enter a number</string>
+    <string name="universal_min_value">Min %1$d</string>
+    <string name="universal_max_value">Max %1$d</string>
+    <string name="universal_ok">OK</string>
+    <string name="universal_enable">Enable</string>
+    <string name="universal_disable">Disable</string>
 
     <!-- Strings for RecordsFragment - Delete Action -->
     <string name="delete_video_dialog_title">Delete Video?</string>
@@ -451,8 +470,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 
     <string name="setting_audio_input_source_title">Audio Input Source</string>
-    <string name="setting_audio_input_source_status_default">Currently using: Phone Microphone</string>
-    <string name="setting_audio_input_source_status_wired">Currently using: Wired Microphone</string>
+    <string name="setting_audio_input_source_status_default">Phone Microphone</string>
+    <string name="setting_audio_input_source_status_wired">Wired Microphone</string>
     <string name="setting_audio_input_source_status_nowired">No wired mic detected</string>
     <string name="audio_input_source_phone">Phone Microphone (Default)</string>
     <string name="audio_input_source_wired">Wired Microphone (if connected)</string>
@@ -685,6 +704,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_error_unknown">Unknown camera error</string>
     <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
     <string name="dialog_audio_noise_suppression_label">Noise Suppression</string>
+    <!-- Added for unified bottom sheet audio settings -->
+    <string name="row_record_audio_title">Record Audio</string>
+    <!-- duplicate removed; using earlier helper_record_audio definition -->
+    <!-- duplicate removed; using earlier helper_noise_suppression definition -->
 
     <string name="fix_video_menu_title">Fix Video (Repair Playback)</string>
     <string name="fix_video_repairing">Repairing… This may take a few seconds.</string>

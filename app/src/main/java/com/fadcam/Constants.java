@@ -82,6 +82,10 @@ public abstract class Constants {
     public static final boolean DEFAULT_RECORD_AUDIO = true;
     public static final int DEFAULT_AUDIO_BITRATE = 192000; // 192 kbps stereo AAC
     public static final int DEFAULT_AUDIO_SAMPLING_RATE = 48000; // 48 kHz
+    // -------------- Fix Start for this class(Constants_video_bitrate_defaults)-----------
+    public static final String PREF_VIDEO_BITRATE = "video_bitrate"; // stored in raw bps
+    public static final int DEFAULT_VIDEO_BITRATE = 8_000_000; // 8 Mbps default
+    // -------------- Fix Ended for this class(Constants_video_bitrate_defaults)-----------
 
     public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH = "com.fadcam.TOGGLE_RECORDING_TORCH";
     // Broadcast action sent by RecordingService when video processing is done

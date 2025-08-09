@@ -107,6 +107,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.LegacySettingsActivity"
+            android:exported="false"
+            android:label="Settings (Legacy)" />
+
         <!-- Detective App Icon (Activity Alias) -->
         <activity-alias
             android:name=".MainActivity.AlternativeIcon"
