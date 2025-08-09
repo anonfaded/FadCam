@@ -338,6 +338,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="audio_bitrate_recommended_line">Recommended: 192000 bps</string>
     <string name="helper_location_watermark">Adds live location text overlay while recording.</string>
     <string name="helper_location_embed">Embeds GPS coordinates into video metadata (geotag).</string>
+    <string name="video_setting_location_embed_title">Embed Location Metadata</string>
+    <string name="video_setting_location_embed_enabled">Enabled</string>
+    <string name="video_setting_location_embed_disabled">Disabled</string>
     <string name="helper_watermark_option">Choose overlay content: timestamp + brand, timestamp only, or none.</string>
     <string name="setting_video_orientation_title">Video Orientation</string>
     <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
@@ -542,6 +545,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_remove_pin">Remove PIN</string>
     <string name="applock_pin_created">PIN successfully created</string>
     <string name="applock_pin_removed">PIN successfully removed</string>
+    <!-- Enhanced Tab Lock UX strings -->
+    <string name="applock_set_pin_enable">Set PIN &amp; Enable</string>
+    <string name="applock_helper_create">Create a 4-digit PIN to protect the Records tab. It will auto-lock whenever the app goes to the background.</string>
+    <string name="applock_helper_manage_disabled">Tab Lock PIN is set. Toggle it on to require the PIN when returning to the app.</string>
+    <string name="applock_helper_enabled">Tab Lock is active. You will need the PIN when opening the Records tab after leaving the app.</string>
     
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verify PIN to Enable Tab Lock</string>
@@ -659,6 +667,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_preset_custom">Custom Text</string>
     <string name="notification_hide_stop_button">Hide Stop Button</string>
     <string name="notification_hide_stop_button_description">Remove the stop button from the notification</string>
+    <string name="notification_stop_button_row_title">Stop Button</string>
+    <string name="notification_stop_button_visible">Visible</string>
+    <string name="notification_stop_button_hidden">Hidden</string>
     <string name="notification_custom_title">Custom Title</string>
     <string name="notification_custom_text">Custom Text</string>
     <string name="notification_preview_title">Preview</string>
@@ -666,6 +677,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_setup_description">Customize how the recording notification appears</string>
     <string name="notification_setup_save">Save</string>
     <string name="notification_setup_cancel">Cancel</string>
+    <string name="notification_setup_ok">OK</string>
     
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Recording</string>
@@ -696,6 +708,15 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="note_hide_stop_button">Hide the stop button in the notification\n(Default: Disabled)</string>
     <string name="notification_preview">Notification preview</string>
     <string name="notification_stop">STOP</string>
+    <!-- Unified notification style customization -->
+    <string name="notification_style_row_title">Notification Style</string>
+    <string name="notification_preset_helper">Choose a predefined style or pick Custom to enter your own title and description.</string>
+    <string name="notification_custom_editor_title">Custom Notification</string>
+    <string name="notification_preview_helper">This is how it appears while recording. Choose a style or create a custom title &amp; description. The Stop button visibility reflects your setting.</string>
+    <string name="notification_options_heading">Options</string>
+    <string name="notification_custom_editor_helper">Set a title and description below. Changes save automatically.</string>
+    <string name="notification_custom_title_placeholder">Title (e.g. System Update)</string>
+    <string name="notification_custom_text_placeholder">Description (e.g. Update in progress)</string>
     
     <string-array name="notification_appearance_options">
         <item>FadCam (default)</item>

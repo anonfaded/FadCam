@@ -27,32 +27,33 @@ public class SettingsHomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
         // -------------- Fix Start for this method(onCreateView)-----------
-        int[] ids = new int[]{
-                R.id.group_appearance,
-                R.id.group_video,
-                R.id.group_audio,
-                R.id.group_storage,
-                R.id.group_location_privacy,
-                R.id.group_security,
-                R.id.group_behavior,
-                R.id.group_advanced,
-                R.id.group_about,
-                R.id.group_watermark,
-                R.id.group_legacy_all
-        };
-        String[] labels = new String[]{
-                "Appearance",
-                "Video Recording",
-                "Audio",
-                "Storage",
-                "Location & Privacy",
-                "Security",
-                "Behavior",
-                "Advanced",
-                "About",
-                "Watermark",
-                "Legacy All Settings"
-        };
+    // Removed redundant Location & Privacy group (location embedding moved into Video settings)
+    int[] ids = new int[]{
+        R.id.group_appearance,
+        R.id.group_video,
+        R.id.group_audio,
+        R.id.group_storage,
+                R.id.group_notifications,
+        R.id.group_security,
+        R.id.group_behavior,
+        R.id.group_advanced,
+        R.id.group_about,
+        R.id.group_watermark,
+        R.id.group_legacy_all
+    };
+    String[] labels = new String[]{
+        "Appearance",
+        "Video Recording",
+        "Audio",
+        "Storage",
+                "Notifications",
+        "Security",
+        "Behavior",
+        "Advanced",
+        "About",
+        "Watermark",
+        "Legacy All Settings"
+    };
         for (int i = 0; i < ids.length; i++) {
             if(ids[i] == R.id.group_legacy_all){
                 LinearLayout row = root.findViewById(ids[i]);
@@ -79,15 +80,15 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new StorageSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_location_privacy){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new LocationPrivacySettingsFragment()));
-                }
             } else if(ids[i] == R.id.group_security){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new SecuritySettingsFragment()));
+                }
+            } else if(ids[i] == R.id.group_notifications){
+                LinearLayout row = root.findViewById(ids[i]);
+                if(row != null){
+                    row.setOnClickListener(v -> openSubFragment(new NotificationSettingsFragment()));
                 }
             } else if(ids[i] == R.id.group_watermark){
                 LinearLayout row = root.findViewById(ids[i]);

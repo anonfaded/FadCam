@@ -60,6 +60,7 @@ public class VideoSettingsFragment extends Fragment {
     private TextView valueCodec;
     private TextView valueBitrate;
     private TextView valueOrientation;
+    private TextView valueLocationEmbed;
     // Newly migrated rows
     private TextView valueZoomRatio;
     private TextView valueVideoSplitEnabled;
@@ -112,6 +113,7 @@ public class VideoSettingsFragment extends Fragment {
         valueCodec = root.findViewById(R.id.value_codec);
     valueBitrate = root.findViewById(R.id.value_bitrate);
         valueOrientation = root.findViewById(R.id.value_orientation);
+    valueLocationEmbed = root.findViewById(R.id.value_location_embed);
     valueZoomRatio = root.findViewById(R.id.value_zoom_ratio);
     valueVideoSplitEnabled = root.findViewById(R.id.value_video_split_enabled);
     valueVideoSplitSize = null; // merged design
@@ -130,6 +132,8 @@ public class VideoSettingsFragment extends Fragment {
     if(zr!=null) zr.setOnClickListener(v -> showZoomRatioBottomSheet());
     View splitRow = root.findViewById(R.id.row_video_splitting);
     if(splitRow!=null) splitRow.setOnClickListener(v -> showVideoSplittingBottomSheet());
+    View locRow = root.findViewById(R.id.row_location_embed);
+    if(locRow!=null) locRow.setOnClickListener(v -> showLocationEmbedSheet());
     }
 
     private void refreshAllValues(){
@@ -197,12 +201,65 @@ public class VideoSettingsFragment extends Fragment {
         // Orientation
         String orient = prefs.getVideoOrientation();
         valueOrientation.setText(SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(orient) ? getString(R.string.video_orientation_landscape) : getString(R.string.video_orientation_portrait));
+        if(valueLocationEmbed!=null){
+            valueLocationEmbed.setText(prefs.isLocationEmbeddingEnabled()? getString(R.string.video_setting_location_embed_enabled): getString(R.string.video_setting_location_embed_disabled));
+        }
 
         // Lens row visibility
         View lensRow = requireView().findViewById(R.id.row_lens);
         if(lensRow!=null){ lensRow.setVisibility(cam==CameraType.BACK && availableBackCameras.size()>0? View.VISIBLE: View.GONE); }
         // -------------- Fix Ended for this method(refreshAllValues)-----------
     }
+
+    private Runnable pendingLocationGrantedAction;
+
+    private void showLocationEmbedSheet(){
+        // -------------- Fix Start for this method(showLocationEmbedSheet)-----------
+        final String rk = "picker_result_location_embed";
+        getParentFragmentManager().setFragmentResultListener(rk, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean enabled = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                if(enabled){
+                    ensureLocationPermissionThen(() -> {
+                        prefs.sharedPreferences.edit().putBoolean(Constants.PREF_EMBED_LOCATION_DATA, true).apply();
+                        refreshAllValues();
+                    });
+                } else {
+                    prefs.sharedPreferences.edit().putBoolean(Constants.PREF_EMBED_LOCATION_DATA, false).apply();
+                    refreshAllValues();
+                }
+            }
+        });
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>(); // no options, switch only
+        String helper = getString(R.string.helper_location_embed) + "\n" + getString(R.string.location_permission_message);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.video_setting_location_embed_title), items, null, rk, helper,
+                getString(R.string.video_setting_location_embed_title), prefs.isLocationEmbeddingEnabled());
+        sheet.show(getParentFragmentManager(), "location_embed_sheet");
+        // -------------- Fix Ended for this method(showLocationEmbedSheet)-----------
+    }
+
+    private void ensureLocationPermissionThen(Runnable onGranted){
+        if(androidx.core.content.ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION)== android.content.pm.PackageManager.PERMISSION_GRANTED){
+            onGranted.run();
+        } else {
+            requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 9123);
+            pendingLocationGrantedAction = onGranted;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode==9123){
+            if(grantResults.length>0 && grantResults[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){
+                if(pendingLocationGrantedAction!=null){ pendingLocationGrantedAction.run(); pendingLocationGrantedAction=null; }
+            } else {
+                pendingLocationGrantedAction=null;
+            }
+        }
+    }
+    // -------------- Additional methods for location embedding end -----------
 
     private void showCameraBottomSheet(){
         // -------------- Fix Start for this method(showCameraBottomSheet)-----------

@@ -224,9 +224,9 @@
             </LinearLayout>
             <View style="@style/SettingsDivider" />
 
-            <!-- Location & Privacy -->
+            <!-- Notifications -->
             <LinearLayout
-                android:id="@+id/group_location_privacy"
+                android:id="@+id/group_notifications"
                 style="@style/SettingsGroupRow"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
@@ -234,7 +234,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_location"
+                    android:src="@drawable/ic_info"
                     android:tint="@android:color/darker_gray"/>
                 <LinearLayout
                     android:layout_width="0dp"
@@ -244,14 +244,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Location &amp; Privacy"
+                        android:text="Notifications"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Geo tagging &amp; embed"
+                        android:text="Recording &amp; preset"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -262,6 +262,7 @@
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
             <View style="@style/SettingsDivider" />
+
 
             <!-- Security -->
             <LinearLayout

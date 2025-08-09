@@ -6,20 +6,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ImageView; // layout icons
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentResultListener;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
-import com.fadcam.Constants;
-import com.fadcam.MainActivity;
 import com.fadcam.ui.OverlayNavUtil;
 
 import com.guardanis.applock.AppLock;
@@ -27,7 +22,7 @@ import com.guardanis.applock.dialogs.LockCreationDialogBuilder;
 import com.guardanis.applock.dialogs.UnlockDialogBuilder;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.List; // legacy leftover (may not be used)
 
 /**
  * SecuritySettingsFragment
@@ -37,6 +32,7 @@ public class SecuritySettingsFragment extends Fragment {
 
     private SharedPreferencesManager sharedPreferencesManager;
     private TextView valueTabLock;
+    private Boolean pendingToggleDesiredState; // track attempted switch state for rollback on cancel
 
     @Nullable
     @Override
@@ -71,7 +67,8 @@ public class SecuritySettingsFragment extends Fragment {
         // -------------- Fix Start for this method(refreshAppLockValue)-----------
         if (valueTabLock != null) {
             boolean enabled = sharedPreferencesManager.isAppLockEnabled();
-            valueTabLock.setText(enabled ? "Enabled" : "Disabled");
+            // Use existing universal enable/disable strings for consistency
+            valueTabLock.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
         }
         // -------------- Fix Ended for this method(refreshAppLockValue)-----------
     }
@@ -81,63 +78,120 @@ public class SecuritySettingsFragment extends Fragment {
         // -------------- Fix Start for this method(showAppLockConfigDialog)-----------
         boolean isEnrolled = AppLock.isEnrolled(requireContext());
         boolean isEnabled = sharedPreferencesManager.isAppLockEnabled();
-        List<String> options = new ArrayList<>();
-        if (isEnabled) {
-            options.add(getString(R.string.applock_disable));
-        } else {
-            options.add(getString(R.string.applock_enable));
-        }
-        if (!isEnrolled) {
-            options.add(getString(R.string.applock_set_pin));
-        } else {
-            options.add(getString(R.string.applock_change_pin));
-            options.add(getString(R.string.applock_remove_pin));
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        // Contextual helper text
+        String helper;
+        if(!isEnrolled){
+            helper = getString(R.string.applock_helper_create);
+            // Single action: Set PIN & Enable (no switch shown yet because enabling requires PIN)
+        } else if(isEnabled){
+            helper = getString(R.string.applock_helper_enabled);
+        } else { // enrolled but disabled
+            helper = getString(R.string.applock_helper_manage_disabled);
         }
 
-        // Theme parity with legacy (Snow Veil detection)
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        int color = ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white);
+        boolean showSwitch = isEnrolled; // Only show switch after a PIN exists
+        String switchTitle = getString(R.string.setting_applock_title);
+        String resultKey = "applock_sheet_result";
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_1, options) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(color);
-                return view;
+        // Build option list based on state
+        if(!isEnrolled){
+            items.add(new com.fadcam.ui.picker.OptionItem("set_pin_enable", getString(R.string.applock_set_pin_enable)));
+        } else {
+            items.add(new com.fadcam.ui.picker.OptionItem("change_pin", getString(R.string.applock_change_pin)));
+            items.add(new com.fadcam.ui.picker.OptionItem("remove_pin", getString(R.string.applock_remove_pin)));
+        }
+
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, bundle) -> {
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean newState = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                handleEnableDisable(newState);
             }
-        };
-
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.applock_dialog_title)
-                .setAdapter(adapter, (dialogInterface, which) -> {
-                    String selectedOption = options.get(which);
-                    if (selectedOption.equals(getString(R.string.applock_enable))) {
-                        if (isEnrolled) {
-                            verifyPinThenExecute(() -> setAppLockEnabled(true), R.string.applock_verify_to_enable);
-                        } else {
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String action = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(action!=null){
+                    switch(action){
+                        case "set_pin_enable":
+                            // Create PIN then auto-enable
                             showPinCreationDialog(true);
-                        }
-                    } else if (selectedOption.equals(getString(R.string.applock_disable))) {
-                        verifyPinThenExecute(() -> setAppLockEnabled(false), R.string.applock_verify_to_disable);
-                    } else if (selectedOption.equals(getString(R.string.applock_set_pin)) || selectedOption.equals(getString(R.string.applock_change_pin))) {
-                        if (isEnrolled) {
+                            break;
+                        case "change_pin":
                             verifyPinThenExecute(() -> showPinCreationDialog(isEnabled), R.string.applock_verify_to_change);
-                        } else {
-                            showPinCreationDialog(isEnabled);
-                        }
-                    } else if (selectedOption.equals(getString(R.string.applock_remove_pin))) {
-                        verifyPinThenExecute(() -> {
-                            AppLock appLock = AppLock.getInstance(requireContext());
-                            appLock.invalidateEnrollments();
-                            setAppLockEnabled(false);
-                            Toast.makeText(requireContext(), R.string.applock_pin_removed, Toast.LENGTH_SHORT).show();
-                        }, R.string.applock_verify_to_remove);
+                            break;
+                        case "remove_pin":
+                            verifyPinThenExecute(() -> {
+                                AppLock appLock = AppLock.getInstance(requireContext());
+                                appLock.invalidateEnrollments();
+                                setAppLockEnabled(false);
+                                Toast.makeText(requireContext(), R.string.applock_pin_removed, Toast.LENGTH_SHORT).show();
+                                // Re-open sheet with updated state for clarity
+                                row_tab_lock_postRefreshOpen();
+                            }, R.string.applock_verify_to_remove);
+                            break;
                     }
-                })
-                .show();
+                }
+            }
+        });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet;
+    if(showSwitch){
+        // Dependent option ids that should be disabled when switch is OFF
+        java.util.ArrayList<String> deps = new java.util.ArrayList<>();
+        for(com.fadcam.ui.picker.OptionItem oi: items){ deps.add(oi.id); }
+        sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitchDependencies(
+            getString(R.string.applock_dialog_title),
+            items,
+            null,
+            resultKey,
+            helper,
+            switchTitle,
+            isEnabled,
+            deps
+        );
+        } else {
+            sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                    getString(R.string.applock_dialog_title),
+                    items,
+                    null,
+                    resultKey,
+                    helper
+            );
+        }
+        sheet.show(getParentFragmentManager(), "applock_sheet");
         // -------------- Fix Ended for this method(showAppLockConfigDialog)-----------
+    }
+
+    private void row_tab_lock_postRefreshOpen(){
+        // -------------- Fix Start for this method(row_tab_lock_postRefreshOpen)-----------
+        refreshAppLockValue();
+        // Re-open sheet after critical structural change (PIN removed) to reflect new UI state
+        row_tab_lock_postDelayed();
+        // -------------- Fix Ended for this method(row_tab_lock_postRefreshOpen)-----------
+    }
+    private void row_tab_lock_postDelayed(){
+        // -------------- Fix Start for this method(row_tab_lock_postDelayed)-----------
+        View view = getView();
+        if(view!=null){ view.postDelayed(this::showAppLockConfigDialog, 150); }
+        // -------------- Fix Ended for this method(row_tab_lock_postDelayed)-----------
+    }
+
+    private void handleEnableDisable(boolean desired){
+        // -------------- Fix Start for this method(handleEnableDisable)-----------
+        boolean currently = sharedPreferencesManager.isAppLockEnabled();
+        if(desired == currently) return; // no change
+        boolean isEnrolled = AppLock.isEnrolled(requireContext());
+    if(desired){
+            if(isEnrolled){
+        pendingToggleDesiredState = desired;
+        verifyPinThenExecute(() -> setAppLockEnabled(true), R.string.applock_verify_to_enable);
+            } else {
+                showPinCreationDialog(true);
+            }
+        } else {
+        pendingToggleDesiredState = desired;
+        verifyPinThenExecute(() -> setAppLockEnabled(false), R.string.applock_verify_to_disable);
+        }
+        // -------------- Fix Ended for this method(handleEnableDisable)-----------
     }
 
     private void verifyPinThenExecute(Runnable action, int titleResId) {
@@ -146,11 +200,30 @@ public class SecuritySettingsFragment extends Fragment {
         new UnlockDialogBuilder(requireActivity())
                 .onUnlocked(() -> {
                     if (action != null) action.run();
+                    pendingToggleDesiredState = null; // finalized
                     refreshAppLockValue();
                 })
-                .onCanceled(() -> Toast.makeText(requireContext(), R.string.applock_verification_canceled, Toast.LENGTH_SHORT).show())
+                .onCanceled(() -> {
+                    Toast.makeText(requireContext(), R.string.applock_verification_canceled, Toast.LENGTH_SHORT).show();
+                    // Revert UI (switch already flipped visually) by closing & reopening sheet with actual state
+                    revertSwitchUIAfterCancel();
+                })
                 .show();
         // -------------- Fix Ended for this method(verifyPinThenExecute)-----------
+    }
+
+    private void revertSwitchUIAfterCancel(){
+        // -------------- Fix Start for this method(revertSwitchUIAfterCancel)-----------
+        pendingToggleDesiredState = null; // discard
+        // Dismiss existing sheet if present
+        androidx.fragment.app.Fragment existing = getParentFragmentManager().findFragmentByTag("applock_sheet");
+        if(existing instanceof com.fadcam.ui.picker.PickerBottomSheetFragment){
+            ((com.fadcam.ui.picker.PickerBottomSheetFragment) existing).dismiss();
+        }
+        // Reopen with correct current state
+        View root = getView();
+        if(root!=null){ root.postDelayed(this::showAppLockConfigDialog, 120); }
+        // -------------- Fix Ended for this method(revertSwitchUIAfterCancel)-----------
     }
 
     private void showPinCreationDialog(boolean enableAfterCreation) {
@@ -158,11 +231,12 @@ public class SecuritySettingsFragment extends Fragment {
         new LockCreationDialogBuilder(requireActivity())
                 .onCanceled(() -> { /* no-op */ })
                 .onLockCreated(() -> {
-                    if (enableAfterCreation) {
-                        setAppLockEnabled(true);
-                    }
+                    // Always enable immediately after creating a PIN when invoked from sheet
+                    if(enableAfterCreation) setAppLockEnabled(true); else setAppLockEnabled(true);
                     Toast.makeText(requireContext(), R.string.applock_pin_created, Toast.LENGTH_SHORT).show();
                     refreshAppLockValue();
+                    // After first creation, reopen config for further actions (change/remove)
+                    row_tab_lock_postDelayed();
                 })
                 .show();
         // -------------- Fix Ended for this method(showPinCreationDialog)-----------
