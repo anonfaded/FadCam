@@ -66,6 +66,8 @@ public class AudioSettingsFragment extends Fragment {
         bindRowHandlers(view);
         refreshMicList();
         refreshAllValues();
+    View back = view.findViewById(R.id.back_button);
+    if(back!=null){ back.setOnClickListener(v -> com.fadcam.ui.OverlayNavUtil.dismiss(requireActivity())); }
         // Removed redundant back handling; central navigation handles this globally.
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
