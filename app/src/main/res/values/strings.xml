@@ -248,7 +248,23 @@
     <string name="torch_both">Both Torches</string>
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
+    <string name="note_debug_detailed">When enabled, FadCam writes a debug log HTML file (FADCAM_debug.html) into the public Downloads/FadCam/ folder. Share this file when reporting issues. Turn off to stop future writes.</string>
     <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
+    <!-- Watermark unified strings -->
+    <string name="watermark_preview_heading">Preview</string>
+    <string name="watermark_options_heading">Options</string>
+    <string name="watermark_style_row_title">Watermark Style</string>
+    <string name="watermark_preview_sample_fadcam">Captured by FadCam - %1$s</string>
+    <string name="watermark_preview_sample_timeonly">%1$s</string>
+    <string name="watermark_style_time_fadcam_label">Time with FadCam</string>
+    <string name="watermark_style_timeonly_label">Timestamp</string>
+    <string name="watermark_style_none_label">No Watermark</string>
+    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video. Fun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
+    <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
+    <string name="location_watermark_sheet_title">Location Overlay</string>
+    <string name="location_watermark_switch_label">Location Overlay</string>
+    <string name="helper_location_overlay_short">Adds approximate coordinates under the watermark.</string>
+    <!-- End watermark unified strings -->
     <string name="torch_shortcut_short_label">Torch</string>
     <string name="torch_shortcut_long_label">Toggle Torch</string>
     <string name="torch_shortcut_disabled">Torch toggle is currently unavailable</string>

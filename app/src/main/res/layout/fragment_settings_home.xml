@@ -303,44 +303,6 @@
             </LinearLayout>
             <View style="@style/SettingsDivider" />
 
-            <!-- Behavior -->
-            <LinearLayout
-                android:id="@+id/group_behavior"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_info"
-                    android:tint="@android:color/darker_gray"/>
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Behavior"
-                        android:textColor="?attr/colorHeading"
-                        android:textStyle="bold"
-                        android:textSize="15sp"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Recording notification"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="12sp"/>
-                </LinearLayout>
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@android:color/darker_gray"/>
-            </LinearLayout>
-            <View style="@style/SettingsDivider" />
 
             <!-- Watermark -->
             <LinearLayout
@@ -390,7 +352,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="32dp"
             android:layout_marginBottom="8dp"
-            android:text="About"
+            android:text="App"
             android:textColor="@android:color/darker_gray"
             android:textStyle="bold" />
 
@@ -404,8 +366,89 @@
             android:paddingTop="4dp"
             android:paddingBottom="4dp">
 
+            <!-- Onboarding Row -->
             <LinearLayout
-                android:id="@+id/group_advanced"
+                android:id="@+id/group_onboarding"
+                style="@style/SettingsGroupRow"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_info"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Show Intro"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/value_onboarding"
+                        android:text="-"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+            <View style="@style/SettingsDivider" />
+
+            <!-- Auto Update Row -->
+            <LinearLayout
+                android:id="@+id/group_auto_update"
+                style="@style/SettingsGroupRow"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_update"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Auto Update Check"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:id="@+id/value_auto_update"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+            <View style="@style/SettingsDivider" />
+
+            <!-- Debug Logging Row -->
+            <LinearLayout
+                android:id="@+id/group_debug_logging"
                 style="@style/SettingsGroupRow"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
@@ -423,20 +466,21 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Advanced"
+                        android:text="Debug Logging"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
+                        android:id="@+id/value_debug_logging"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Debug logging"
+                        android:text="-"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
@@ -473,8 +517,8 @@
                         android:textSize="12sp"/>
                 </LinearLayout>
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>

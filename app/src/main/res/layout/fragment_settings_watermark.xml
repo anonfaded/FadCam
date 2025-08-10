@@ -38,8 +38,60 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Preview Heading -->
+            <TextView
+                android:id="@+id/heading_preview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/watermark_preview_heading"
+                android:textColor="?attr/colorHeading"
+                android:textStyle="bold" />
+
+            <!-- Preview Card -->
+            <FrameLayout
+                android:id="@+id/group_card_preview"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:background="@drawable/watermark_preview_bg"
+                android:padding="12dp">
+                <TextView
+                    android:id="@+id/text_watermark_preview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Captured by FadCam - 10/Aug/2025 06:27:43 AM"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+            </FrameLayout>
+            <TextView
+                android:id="@+id/text_preview_helper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="@string/helper_watermark_preview"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp"/>
+
+            <!-- Options Heading -->
+            <TextView
+                android:id="@+id/heading_options"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/watermark_options_heading"
+                android:textColor="?attr/colorHeading"
+                android:textStyle="bold" />
+
+            <!-- Options Card -->
             <LinearLayout
-                android:id="@+id/group_card_watermark"
+                android:id="@+id/group_card_options"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -47,75 +99,85 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp">
 
-            <!-- Watermark Style (compact with spinner) -->
-            <LinearLayout
-                android:id="@+id/row_watermark_option"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_settings"
-                    android:tint="@android:color/darker_gray"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Watermark Style"
-                    android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-                <Spinner
-                    android:id="@+id/watermark_spinner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:spinnerMode="dropdown"/>
-            </LinearLayout>
-            <View style="@style/SettingsDivider" />
+                <!-- Watermark Style Row (value + arrow) -->
+                <LinearLayout
+                    android:id="@+id/row_watermark_option"
+                    style="@style/SettingsGroupRow"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_settings"
+                        android:tint="@android:color/darker_gray"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/watermark_style_row_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_watermark_style"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
 
-            <!-- Location Watermark (compact) -->
-            <LinearLayout
-                android:id="@+id/row_location_watermark"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_location"
-                    android:tint="@android:color/darker_gray"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Location Watermark"
-                    android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-                <TextView
-                    android:id="@+id/value_location_watermark"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="-"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="13sp"/>
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@android:color/darker_gray"/>
+                <!-- Location Watermark Row -->
+                <LinearLayout
+                    android:id="@+id/row_location_watermark"
+                    style="@style/SettingsGroupRow"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_location"
+                        android:tint="@android:color/darker_gray"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Location Watermark"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_location_watermark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
             </LinearLayout>
-            </LinearLayout> <!-- end group_card_watermark -->
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

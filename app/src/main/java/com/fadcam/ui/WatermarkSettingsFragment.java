@@ -8,9 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,18 +28,20 @@ import com.fadcam.Constants;
 
 /**
  * WatermarkSettingsFragment
- * EXACT migration of legacy watermark spinner + location watermark toggle logic.
+ * Unified design migration: bottom sheet picker + live preview replacing spinner.
  */
 public class WatermarkSettingsFragment extends Fragment {
 
     private static final String TAG = "WatermarkSettings";
 
     private SharedPreferencesManager prefs;
-    private Spinner watermarkSpinner;
     private TextView valueLocationWatermark;
+    private TextView valueWatermarkStyle;
+    private TextView previewText;
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> permissionLauncher;
     private Runnable pendingGrantAction;
+    private View locationRow;
 
     @Nullable
     @Override
@@ -54,10 +54,13 @@ public class WatermarkSettingsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
         prefs = SharedPreferencesManager.getInstance(requireContext());
-        watermarkSpinner = view.findViewById(R.id.watermark_spinner);
-        valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
-        setupWatermarkSpinner(watermarkSpinner);
-        view.findViewById(R.id.row_location_watermark).setOnClickListener(v -> toggleLocationWatermark());
+    valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
+    valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
+    previewText = view.findViewById(R.id.text_watermark_preview);
+    View rowStyle = view.findViewById(R.id.row_watermark_option);
+    if(rowStyle!=null){ rowStyle.setOnClickListener(v -> showWatermarkStyleBottomSheet()); }
+    locationRow = view.findViewById(R.id.row_location_watermark);
+    if(locationRow!=null){ locationRow.setOnClickListener(v -> { if(locationRow.isEnabled()) showLocationWatermarkSheet(); }); }
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
@@ -69,7 +72,10 @@ public class WatermarkSettingsFragment extends Fragment {
                 onPermissionDeniedPostRequest();
             }
         });
-        refreshLocationValue();
+    refreshLocationValue();
+    refreshWatermarkStyleValue();
+    updateLocationRowState();
+    updatePreview();
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
@@ -83,23 +89,39 @@ public class WatermarkSettingsFragment extends Fragment {
         // -------------- Fix Ended for this method(refreshLocationValue)-----------
     }
 
-    private void toggleLocationWatermark() {
-        // -------------- Fix Start for this method(toggleLocationWatermark)-----------
-        boolean currently = prefs.isLocalisationEnabled();
-        if (!currently) {
+    private void toggleLocationDirect(boolean target){
+        if(target){
             ensurePermissionThen(() -> {
                 prefs.setLocationEnabled(true);
                 startLocationHelperIfNeeded();
                 refreshLocationValue();
-                Log.d(TAG, "Location watermark enabled via toggle.");
+                updatePreview();
+                updateLocationRowState();
+                Log.d(TAG, "Location watermark enabled via sheet.");
             });
         } else {
             prefs.setLocationEnabled(false);
             stopLocationIfAllDisabled();
             refreshLocationValue();
-            Log.d(TAG, "Location watermark disabled via toggle.");
+            updatePreview();
+            updateLocationRowState();
+            Log.d(TAG, "Location watermark disabled via sheet.");
         }
-        // -------------- Fix Ended for this method(toggleLocationWatermark)-----------
+    }
+
+    private void showLocationWatermarkSheet(){
+        final String resultKey = "picker_result_location_watermark";
+        boolean enabled = prefs.isLocalisationEnabled();
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                toggleLocationDirect(state);
+            }
+        });
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+            getString(R.string.location_watermark_sheet_title), new java.util.ArrayList<>(), null, resultKey,
+            getString(R.string.helper_location_overlay_short), getString(R.string.location_watermark_switch_label), enabled);
+        sheet.show(getParentFragmentManager(), "location_watermark_sheet");
     }
 
     private void ensurePermissionThen(Runnable onGranted) {
@@ -154,49 +176,82 @@ public class WatermarkSettingsFragment extends Fragment {
         }
     }
 
-    private void setupWatermarkSpinner(Spinner spinner) {
-        // -------------- Fix Start for this method(setupWatermarkSpinner)-----------
-        if (spinner == null) return;
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(), R.array.watermark_options, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        String savedWatermark = prefs.getWatermarkOption();
-        int watermarkIndex = getWatermarkIndex(savedWatermark);
-        spinner.setSelection(watermarkIndex);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedWatermarkValue = getWatermarkValue(position);
-                // -------------- Fix Start for this block(save watermark option)-----------
-                // SharedPreferencesManager does not expose getSharedPreferences(); use its public field
-                prefs.sharedPreferences.edit().putString(Constants.PREF_WATERMARK_OPTION, selectedWatermarkValue).apply();
-                // -------------- Fix Ended for this block(save watermark option)-----------
-                Log.d(TAG, "Watermark preference saved: " + selectedWatermarkValue);
+    private void showWatermarkStyleBottomSheet(){
+        final String resultKey = "picker_result_watermark_style";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(id!=null){
+                    prefs.sharedPreferences.edit().putString(Constants.PREF_WATERMARK_OPTION, id).apply();
+                    refreshWatermarkStyleValue();
+                    updateLocationRowState();
+                    updatePreview();
+                }
             }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) { }
         });
-        // -------------- Fix Ended for this method(setupWatermarkSpinner)-----------
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("timestamp_fadcam", getString(R.string.watermark_style_time_fadcam_label), null));
+        items.add(new com.fadcam.ui.picker.OptionItem("timestamp", getString(R.string.watermark_style_timeonly_label), null));
+        items.add(new com.fadcam.ui.picker.OptionItem("no_watermark", getString(R.string.watermark_style_none_label), null));
+        String current = prefs.getWatermarkOption();
+    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+        getString(R.string.watermark_style_row_title), items, current, resultKey, getString(R.string.helper_watermark_option));
+        sheet.show(getParentFragmentManager(), "watermark_style_sheet");
     }
 
-    private int getWatermarkIndex(String value) {
-        // -------------- Fix Start for this method(getWatermarkIndex)-----------
-        String[] values = getResources().getStringArray(R.array.watermark_values);
-        for (int i = 0; i < values.length; i++) {
-            if (values[i].equals(value)) return i;
+    private void refreshWatermarkStyleValue(){
+        if(valueWatermarkStyle==null) return;
+        String v = prefs.getWatermarkOption();
+        if("timestamp_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_time_fadcam_label));
+        else if("timestamp".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_timeonly_label));
+        else valueWatermarkStyle.setText(getString(R.string.watermark_style_none_label));
+    }
+
+    // -------------- Fix Start for this method(updateLocationRowState)-----------
+    private void updateLocationRowState(){
+        if(locationRow==null) return;
+        boolean watermarkNone = "no_watermark".equals(prefs.getWatermarkOption());
+        if(watermarkNone){
+            if(prefs.isLocalisationEnabled()){
+                prefs.setLocationEnabled(false);
+                refreshLocationValue();
+            }
+            locationRow.setEnabled(false);
+            locationRow.setAlpha(0.4f);
+        } else {
+            locationRow.setEnabled(true);
+            locationRow.setAlpha(1f);
         }
-        Log.w(TAG, "Watermark value '" + value + "' not found, defaulting to 0.");
-        return 0;
-        // -------------- Fix Ended for this method(getWatermarkIndex)-----------
+    }
+    // -------------- Fix Ended for this method(updateLocationRowState)-----------
+
+    private void updatePreview(){
+        if(previewText==null) return;
+        String v = prefs.getWatermarkOption();
+        // Static sample timestamp (preview only; not live updating)
+    String formatted = "10/Jul/2024 04:47:00 PM"; // static sample in original format
+        String baseLine = null;
+        if("timestamp_fadcam".equals(v)){
+            baseLine = getString(R.string.watermark_preview_sample_fadcam, formatted);
+        } else if("timestamp".equals(v)) {
+            baseLine = getString(R.string.watermark_preview_sample_timeonly, formatted);
+        }
+        if(baseLine==null){
+            previewText.setVisibility(View.GONE);
+            return;
+        }
+        if(prefs.isLocalisationEnabled()){
+            // Anonymized dummy coordinates (x placeholders prevent revealing real location structure)
+            baseLine += "\nLat: 24.x6xx  Lon: 67.x0xx";
+        }
+        previewText.setText(baseLine);
+        previewText.setVisibility(View.VISIBLE);
     }
 
-    private String getWatermarkValue(int index) {
-        // -------------- Fix Start for this method(getWatermarkValue)-----------
-        String[] values = getResources().getStringArray(R.array.watermark_values);
-        if (index >= 0 && index < values.length) return values[index];
-        Log.e(TAG, "Invalid index for watermark values: " + index);
-        return values[0];
-        // -------------- Fix Ended for this method(getWatermarkValue)-----------
+    private String formatNow(){
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", java.util.Locale.getDefault());
+        return sdf.format(new java.util.Date());
     }
+
+    // Removed legacy spinner index/value helpers (unified bottom sheet now)
 }

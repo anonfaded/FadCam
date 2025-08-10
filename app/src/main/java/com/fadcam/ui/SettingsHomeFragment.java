@@ -33,10 +33,8 @@ public class SettingsHomeFragment extends Fragment {
         R.id.group_video,
         R.id.group_audio,
         R.id.group_storage,
-                R.id.group_notifications,
+        R.id.group_notifications,
         R.id.group_security,
-        R.id.group_behavior,
-        R.id.group_advanced,
         R.id.group_about,
         R.id.group_watermark,
         R.id.group_legacy_all
@@ -46,11 +44,9 @@ public class SettingsHomeFragment extends Fragment {
         "Video Recording",
         "Audio",
         "Storage",
-                "Notifications",
+        "Notifications",
         "Security",
-        "Behavior",
-        "Advanced",
-        "About",
+        "App",
         "Watermark",
         "Legacy All Settings"
     };
@@ -95,16 +91,6 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new WatermarkSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_behavior){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new BehaviorSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_advanced){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new AdvancedSettingsFragment()));
-                }
             } else if(ids[i] == R.id.group_about){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
@@ -114,6 +100,8 @@ public class SettingsHomeFragment extends Fragment {
                 setupNav(root, ids[i], labels[i]);
             }
         }
+    wireAppInlineRows(root);
+    refreshAppInlineValues(root);
         // -------------- Fix Ended for this method(onCreateView)-----------
         return root;
     }
@@ -131,6 +119,81 @@ public class SettingsHomeFragment extends Fragment {
     // -------------- Fix Start for this method(openSubFragment)-----------
     OverlayNavUtil.show(requireActivity(), fragment, fragment.getClass().getSimpleName());
     // -------------- Fix Ended for this method(openSubFragment)-----------
+    }
+
+    private void wireAppInlineRows(View root){
+        View rowOnboarding = root.findViewById(R.id.group_onboarding);
+        if(rowOnboarding!=null){ rowOnboarding.setOnClickListener(v -> showOnboardingSwitchSheet()); }
+        View rowAutoUpdate = root.findViewById(R.id.group_auto_update);
+        if(rowAutoUpdate!=null){ rowAutoUpdate.setOnClickListener(v -> showAutoUpdateSwitchSheet()); }
+        View rowDebug = root.findViewById(R.id.group_debug_logging);
+        if(rowDebug!=null){ rowDebug.setOnClickListener(v -> showDebugLoggingSwitchSheet()); }
+    }
+
+    private void refreshAppInlineValues(View root){
+        android.widget.TextView vOn = root.findViewById(R.id.value_onboarding);
+        android.widget.TextView vAuto = root.findViewById(R.id.value_auto_update);
+        android.widget.TextView vDebug = root.findViewById(R.id.value_debug_logging);
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        if(vOn!=null){ vOn.setText(prefs.isShowOnboarding()? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
+        boolean auto = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
+        if(vAuto!=null){ vAuto.setText(auto? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
+        if(vDebug!=null){ vDebug.setText(prefs.isDebugLoggingEnabled()? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
+    }
+
+    private void showOnboardingSwitchSheet(){
+        final String resultKey = "picker_result_onboarding";
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        boolean enabled = prefs.isShowOnboarding();
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                if(state){ prefs.sharedPreferences.edit().putBoolean(com.fadcam.Constants.FIRST_INSTALL_CHECKED_KEY, false).apply(); }
+                prefs.setShowOnboarding(state);
+                refreshAppInlineValues(requireView());
+            }
+        });
+        String helper = getString(R.string.note_onboarding);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.setting_onboarding_title), new java.util.ArrayList<>(), null, resultKey, helper,
+                getString(R.string.setting_onboarding_title), enabled);
+        sheet.show(getParentFragmentManager(), "onboarding_switch_sheet");
+    }
+
+    private void showAutoUpdateSwitchSheet(){
+        final String resultKey = "picker_result_auto_update";
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        boolean enabled = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                prefs.sharedPreferences.edit().putBoolean("auto_update_check_enabled", state).apply();
+                refreshAppInlineValues(requireView());
+            }
+        });
+        String helper = getString(R.string.note_auto_update_check);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.setting_auto_update_check_title), new java.util.ArrayList<>(), null, resultKey, helper,
+                getString(R.string.setting_auto_update_check_title), enabled);
+        sheet.show(getParentFragmentManager(), "auto_update_switch_sheet");
+    }
+
+    private void showDebugLoggingSwitchSheet(){
+        final String resultKey = "picker_result_debug_logging";
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        boolean enabled = prefs.isDebugLoggingEnabled();
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                prefs.sharedPreferences.edit().putBoolean(com.fadcam.Constants.PREF_DEBUG_DATA, state).apply();
+                refreshAppInlineValues(requireView());
+            }
+        });
+    String helper = getString(R.string.note_debug_detailed);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.setting_debug_title), new java.util.ArrayList<>(), null, resultKey, helper,
+                getString(R.string.setting_debug_title), enabled);
+        sheet.show(getParentFragmentManager(), "debug_logging_switch_sheet");
     }
 
     @Override
