@@ -36,8 +36,10 @@ public class SettingsHomeFragment extends Fragment {
         R.id.group_notifications,
         R.id.group_security,
         R.id.group_about,
+        R.id.group_review,
         R.id.group_watermark,
-        R.id.group_legacy_all
+        R.id.group_legacy_all,
+        R.id.group_readme
     };
     String[] labels = new String[]{
         "Appearance",
@@ -47,8 +49,10 @@ public class SettingsHomeFragment extends Fragment {
         "Notifications",
         "Security",
         "App",
+        "Review",
         "Watermark",
-        "Legacy All Settings"
+        "Legacy All Settings",
+        "README"
     };
         for (int i = 0; i < ids.length; i++) {
             if(ids[i] == R.id.group_legacy_all){
@@ -96,6 +100,16 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AboutFragment()));
                 }
+            } else if(ids[i] == R.id.group_review){
+                LinearLayout row = root.findViewById(ids[i]);
+                if(row!=null){
+                    row.setOnClickListener(v -> launchReview());
+                }
+            } else if(ids[i] == R.id.group_readme){
+                LinearLayout row = root.findViewById(ids[i]);
+                if(row!=null){
+                    row.setOnClickListener(v -> openReadmeDialog());
+                }
             } else {
                 setupNav(root, ids[i], labels[i]);
             }
@@ -139,6 +153,25 @@ public class SettingsHomeFragment extends Fragment {
         boolean auto = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
         if(vAuto!=null){ vAuto.setText(auto? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
         if(vDebug!=null){ vDebug.setText(prefs.isDebugLoggingEnabled()? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
+    }
+
+    private void openReadmeDialog(){
+        // -------------- Fix Start for this method(openReadmeDialog unified sheet)-----------
+        ReadmeBottomSheetFragment sheet = ReadmeBottomSheetFragment.newInstance();
+        sheet.show(getParentFragmentManager(), "readme_sheet");
+        // -------------- Fix Ended for this method(openReadmeDialog unified sheet)-----------
+    }
+
+    private void launchReview(){
+        // -------------- Fix Start for this method(launchReview webview form)-----------
+        try {
+            android.content.Intent i = new android.content.Intent(requireContext(), WebViewActivity.class);
+            i.putExtra("url", "https://forms.gle/DvUoc1v9kB2bkFiS6");
+            startActivity(i);
+        } catch (Exception e){
+            android.widget.Toast.makeText(requireContext(), "Unable to open review form", android.widget.Toast.LENGTH_SHORT).show();
+        }
+        // -------------- Fix Ended for this method(launchReview webview form)-----------
     }
 
     private void showOnboardingSwitchSheet(){

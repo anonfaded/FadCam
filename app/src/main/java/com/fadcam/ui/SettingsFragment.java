@@ -2699,17 +2699,10 @@ public class SettingsFragment extends BaseFragment {
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
                 Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-
-        MaterialButton githubButton = dialogView.findViewById(R.id.github_button);
-        MaterialButton discordButton = dialogView.findViewById(R.id.discord_button);
-        if (githubButton != null) {
-            githubButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
-            githubButton.setTextColor(isSnowVeilTheme ? Color.BLACK : Color.WHITE);
-        }
-        if (discordButton != null) {
-            discordButton.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
-            discordButton.setTextColor(isSnowVeilTheme ? Color.BLACK : Color.WHITE);
-        }
+    // -------------- Fix Start for this method(showReadmeDialog legacy buttons)-----------
+    // Legacy dialog buttons (github_button / discord_button) removed in refactor to unified rows.
+    // Keep method minimal for backward compatibility if legacy fragment invoked.
+    // -------------- Fix Ended for this method(showReadmeDialog legacy buttons)-----------
         builder.setView(dialogView);
         builder.setPositiveButton(android.R.string.ok, null); // Use standard OK text
 

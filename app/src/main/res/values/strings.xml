@@ -19,6 +19,10 @@
     <string name="contact">Contact</string>
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
+    <string name="readme_github_subtitle">Source code &amp; releases</string>
+    <string name="readme_discord_subtitle">Join the community</string>
+    <string name="website_title">Website</string>
+    <string name="readme_website_subtitle">Official site</string>
     <string name="privacy_information">Privacy Information</string>
     <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">

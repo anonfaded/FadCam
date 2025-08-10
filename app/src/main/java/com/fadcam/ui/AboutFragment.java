@@ -84,14 +84,9 @@ public class AboutFragment extends BaseFragment {
         // Header back button handling (new)
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
-            back.setOnClickListener(v -> {
-                try {
-                    requireActivity().getSupportFragmentManager().popBackStack();
-                    if (requireActivity() instanceof com.fadcam.MainActivity) {
-                        ((com.fadcam.MainActivity) requireActivity()).hideOverlayIfNoFragments();
-                    }
-                } catch (Exception ignored) {}
-            });
+            // -------------- Fix Start for this logic(unified back animation)-----------
+            back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
+            // -------------- Fix Ended for this logic(unified back animation)-----------
         }
         // -------------- Fix Ended for this method(initializeViews)-----------
         ImageView appIcon = view.findViewById(R.id.app_icon);

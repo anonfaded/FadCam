@@ -16,6 +16,7 @@ Goal: Decompose the monolithic `SettingsFragment` + giant XML into modular, iOS�
 7.4 Helper text compression / relocation (PARTIAL – removed, not relocated)
 7.5 Consistent trailing divider removal (DONE)
 7.6 Unified compact card row style (DONE)
+7.7 Overlay navigation unified fade animation (DONE)
 
 ### Phase 8 – Cleanup & Removal
 8.1 Remove dead legacy code (PENDING)
@@ -34,20 +35,24 @@ Goal: Decompose the monolithic `SettingsFragment` + giant XML into modular, iOS�
 Legend: [x] Done · [~] Partial/In Progress · [ ] Pending
 
 ### Phase 1
+
 - [x] Home fragment & navigation
 - [ ] Feature flag fallback
 
 ### Phase 2 (Appearance)
+
 - [x] Fragment & rows migrated
 - [ ] Legacy removal
 - [~] Regression
 
 ### Phase 3 (Video)
+
 - [x] Fragment & UI migrated
 - [ ] Legacy rows removed
 - [~] Full regression
 
 ### Phase 4 (Audio & Storage)
+
 - [x] Audio fragment
 - [x] Storage fragment (UI)
 - [x] Storage chooser logic
@@ -56,11 +61,13 @@ Legend: [x] Done · [~] Partial/In Progress · [ ] Pending
 - [~] Regression
 
 ### Phase 5 (Location & Privacy)
+
 - [x] Fragment
 - [~] Permission flow re-test
 - [ ] Legacy rows removed
 
 ### Phase 6 (Security / Behavior / Advanced / Watermark)
+
 - [x] Fragments
 - [~] App Lock logic migrated
 - [~] Watermark logic migrated
@@ -68,6 +75,7 @@ Legend: [x] Done · [~] Partial/In Progress · [ ] Pending
 - [~] Regression
 
 ### Phase 7 (Polish)
+
 - [x] Compact row style
 - [x] Card grouping
 - [x] Icon tint + 14dp chevron
@@ -76,8 +84,11 @@ Legend: [x] Done · [~] Partial/In Progress · [ ] Pending
 - [~] Bottom sheets (Video settings implemented; extend to Audio/Storage pickers next)
 - [ ] Theme util
 - [~] Helper text relocation
+- [x] Unified overlay open/close animation
+- [x] About header color normalized
 
 ### Phase 8 (Cleanup)
+
 - [ ] Dead code removal
 - [ ] Legacy layout deletion/slim
 - [ ] Fragment slimming
@@ -97,6 +108,9 @@ Legend: [x] Done · [~] Partial/In Progress · [ ] Pending
 - [ ] Overdraw/performance audit on low-end devices
 - [ ] Unit tests for SharedPreferencesManager keys
 - [x] Implement Storage chooser migration & broadcast test (basic broadcast wired; add instrumentation later)
+- [x] README unified bottom sheet (content migrated from dialog)
+- [ ] README markdown rich rendering (future enhancement)
+- [~] Review flow (WebView Google Form integrated; optional Play in-app review later)
 
 ---
 ## 5. Risk & Mitigation Matrix
