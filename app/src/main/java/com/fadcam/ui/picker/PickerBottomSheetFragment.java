@@ -281,12 +281,34 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             cell.setLayoutParams(lp);
             android.widget.ImageView icon = cell.findViewById(R.id.icon_image);
+            View iconRoot = cell.findViewById(R.id.icon_root_frame);
+            View checkContainer = cell.findViewById(R.id.icon_check_container);
             android.widget.ImageView check = cell.findViewById(R.id.icon_check);
             android.widget.TextView label = cell.findViewById(R.id.icon_label);
             label.setText(item.title);
             if(item.iconResId!=null){ icon.setImageResource(item.iconResId); }
             boolean isSel = item.id!=null && item.id.equals(selectedId);
-            check.setVisibility(isSel?View.VISIBLE:View.GONE);
+            if(checkContainer!=null){
+                if(isSel){
+                    checkContainer.setVisibility(View.VISIBLE);
+                    if(check!=null){ check.setScaleX(1f); check.setScaleY(1f); check.setAlpha(1f); }
+                } else {
+                    checkContainer.setVisibility(View.GONE);
+                    if(check!=null){ check.setScaleX(0f); check.setScaleY(0f); check.setAlpha(0f); }
+                }
+            }
+            if(iconRoot!=null){
+                if(isSel){
+                    // Apply a subtle accent stroke
+                    android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+                    bg.setColor(0x00000000); // transparent fill (background already present)
+                    bg.setStroke((int)(2*getResources().getDisplayMetrics().density), 0xFF9CCC65);
+                    bg.setCornerRadius(24f);
+                    iconRoot.setForeground(bg);
+                } else {
+                    iconRoot.setForeground(null);
+                }
+            }
             cell.setOnClickListener(v -> {
                 // clear previous
                 for(int i=0;i<containerLayout.getChildCount();i++){
@@ -295,12 +317,33 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         LinearLayout lr = (LinearLayout) row;
                         for(int j=0;j<lr.getChildCount();j++){
                             View c = lr.getChildAt(j);
-                            ImageView chk = c.findViewById(R.id.icon_check);
-                            if(chk!=null) chk.setVisibility(View.GONE);
+                            View cc = c.findViewById(R.id.icon_check_container);
+                            View ir = c.findViewById(R.id.icon_root_frame);
+                            if(cc!=null) cc.setVisibility(View.GONE);
+                            if(ir!=null) ir.setForeground(null);
                         }
                     }
                 }
-                check.setVisibility(View.VISIBLE);
+                if(checkContainer!=null){
+                    checkContainer.setVisibility(View.VISIBLE);
+                    if(check!=null){
+                        check.setScaleX(0f); check.setScaleY(0f); check.setAlpha(0f);
+                        android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+                        android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(check, View.SCALE_X, 0f, 1f);
+                        android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(check, View.SCALE_Y, 0f, 1f);
+                        android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(check, View.ALPHA, 0f, 1f);
+                        sx.setDuration(140); sy.setDuration(140); a.setDuration(140);
+                        set.playTogether(sx, sy, a);
+                        set.start();
+                    }
+                }
+                if(iconRoot!=null){
+                    android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+                    bg.setColor(0x00000000);
+                    bg.setStroke((int)(2*getResources().getDisplayMetrics().density), 0xFF9CCC65);
+                    bg.setCornerRadius(24f);
+                    iconRoot.setForeground(bg);
+                }
                 Bundle result = new Bundle();
                 result.putString(BUNDLE_SELECTED_ID, item.id);
                 getParentFragmentManager().setFragmentResult(resultKey, result);
