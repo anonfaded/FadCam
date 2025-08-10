@@ -38,7 +38,6 @@ public class SettingsHomeFragment extends Fragment {
         R.id.group_about,
         R.id.group_review,
         R.id.group_watermark,
-        R.id.group_legacy_all,
         R.id.group_readme
     };
     String[] labels = new String[]{
@@ -51,16 +50,10 @@ public class SettingsHomeFragment extends Fragment {
         "App",
         "Review",
         "Watermark",
-        "Legacy All Settings",
         "README"
     };
         for (int i = 0; i < ids.length; i++) {
-            if(ids[i] == R.id.group_legacy_all){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> startActivity(new Intent(requireContext(), LegacySettingsActivity.class)));
-                }
-            } else if(ids[i] == R.id.group_appearance){
+            if(ids[i] == R.id.group_appearance){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AppearanceSettingsFragment()));

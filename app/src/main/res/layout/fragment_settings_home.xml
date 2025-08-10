@@ -661,42 +661,6 @@
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/group_legacy_all"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_avc"
-                    android:tint="@android:color/darker_gray"/>
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="All Settings (Legacy)"
-                        android:textColor="?attr/colorHeading"
-                        android:textStyle="bold"
-                        android:textSize="15sp"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Original full list"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="12sp"/>
-                </LinearLayout>
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@android:color/darker_gray"/>
-            </LinearLayout>
         </LinearLayout>
 
         </LinearLayout>
