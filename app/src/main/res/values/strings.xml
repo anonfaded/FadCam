@@ -218,6 +218,27 @@
     <string name="toast_rename_with_copy">Renamed to %1$s (duplicate name)</string>
     <string name="dialog_del_title">Delete Forever?</string>
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
+    <!-- Preferences Backup -->
+    <string name="prefs_backup_title">Preferences Backup</string>
+    <string name="prefs_export_label">Export Preferences</string>
+    <string name="prefs_export_subtitle">Save all settings to JSON</string>
+    <string name="prefs_import_label">Import Preferences</string>
+    <string name="prefs_import_subtitle">Load settings from JSON</string>
+    <string name="prefs_reset_label">Reset All Preferences</string>
+    <string name="prefs_reset_subtitle">Factory defaults (type DELETE)</string>
+    <string name="prefs_export_success">Export completed</string>
+    <string name="prefs_export_failed">Export failed</string>
+    <string name="prefs_import_success">Import completed</string>
+    <string name="prefs_import_failed">Import failed</string>
+    <string name="prefs_reset_done">All preferences reset</string>
+    <string name="prefs_reset_failed">Reset failed</string>
+    <string name="prefs_reset_type_delete">Type DELETE (all caps) to confirm reset</string>
+    <string name="prefs_reset_not_matched">Input did not match DELETE</string>
+    <string name="prefs_preview_label">Preview JSON</string>
+    <string name="prefs_preview_subtitle">Open &amp; view a preferences file</string>
+    <string name="prefs_preview_none">No JSON loaded yet</string>
+    <string name="universal_confirm">Confirm</string>
+    <string name="universal_close">Close</string>
     <string name="dialog_del_confirm">Delete</string>
     <string name="dialog_multi_video_del_title">Eradicate Video(s)? </string>
     <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? </string>

@@ -142,6 +142,8 @@ public class SettingsHomeFragment extends Fragment {
         if(rowAutoUpdate!=null){ rowAutoUpdate.setOnClickListener(v -> showAutoUpdateSwitchSheet()); }
         View rowDebug = root.findViewById(R.id.group_debug_logging);
         if(rowDebug!=null){ rowDebug.setOnClickListener(v -> showDebugLoggingSwitchSheet()); }
+    View rowBackup = root.findViewById(R.id.group_prefs_backup);
+    if(rowBackup!=null){ rowBackup.setOnClickListener(v -> showPrefsBackupSheet()); }
     }
 
     private void refreshAppInlineValues(View root){
@@ -227,6 +229,11 @@ public class SettingsHomeFragment extends Fragment {
                 getString(R.string.setting_debug_title), new java.util.ArrayList<>(), null, resultKey, helper,
                 getString(R.string.setting_debug_title), enabled);
         sheet.show(getParentFragmentManager(), "debug_logging_switch_sheet");
+    }
+
+    private void showPrefsBackupSheet(){
+        PrefsBackupBottomSheetFragment sheet = PrefsBackupBottomSheetFragment.newInstance();
+        sheet.show(getParentFragmentManager(), "prefs_backup_sheet");
     }
 
     @Override
