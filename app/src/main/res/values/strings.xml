@@ -264,6 +264,10 @@
     <string name="location_watermark_sheet_title">Location Overlay</string>
     <string name="location_watermark_switch_label">Location Overlay</string>
     <string name="helper_location_overlay_short">Adds approximate coordinates under the watermark.</string>
+    <string name="helper_theme_option">Select a theme. Applies instantly.</string>
+    <string name="helper_language_option">Choose the app language.</string>
+    <string name="watermark_disabled_message" translatable="false">Watermark disabled (no watermark will appear in recordings).</string>
+    <string name="helper_app_icon_option" translatable="false">Select an alternative launcher icon.</string>
     <!-- End watermark unified strings -->
     <string name="torch_shortcut_short_label">Torch</string>
     <string name="torch_shortcut_long_label">Toggle Torch</string>

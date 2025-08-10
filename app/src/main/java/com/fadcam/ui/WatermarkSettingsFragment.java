@@ -190,9 +190,9 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         });
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        items.add(new com.fadcam.ui.picker.OptionItem("timestamp_fadcam", getString(R.string.watermark_style_time_fadcam_label), null));
-        items.add(new com.fadcam.ui.picker.OptionItem("timestamp", getString(R.string.watermark_style_timeonly_label), null));
-        items.add(new com.fadcam.ui.picker.OptionItem("no_watermark", getString(R.string.watermark_style_none_label), null));
+    items.add(new com.fadcam.ui.picker.OptionItem("timestamp_fadcam", getString(R.string.watermark_style_time_fadcam_label), (String) null));
+    items.add(new com.fadcam.ui.picker.OptionItem("timestamp", getString(R.string.watermark_style_timeonly_label), (String) null));
+    items.add(new com.fadcam.ui.picker.OptionItem("no_watermark", getString(R.string.watermark_style_none_label), (String) null));
         String current = prefs.getWatermarkOption();
     com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
         getString(R.string.watermark_style_row_title), items, current, resultKey, getString(R.string.helper_watermark_option));
@@ -236,9 +236,13 @@ public class WatermarkSettingsFragment extends Fragment {
         } else if("timestamp".equals(v)) {
             baseLine = getString(R.string.watermark_preview_sample_timeonly, formatted);
         }
+    TextView helper = getView()!=null? getView().findViewById(R.id.text_preview_helper):null;
         if(baseLine==null){
             previewText.setVisibility(View.GONE);
+            if(helper!=null){ helper.setText(getString(R.string.watermark_disabled_message)); }
             return;
+        } else if(helper!=null){
+            helper.setText(getString(R.string.helper_watermark_preview));
         }
         if(prefs.isLocalisationEnabled()){
             // Anonymized dummy coordinates (x placeholders prevent revealing real location structure)

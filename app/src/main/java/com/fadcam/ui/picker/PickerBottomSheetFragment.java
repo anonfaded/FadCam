@@ -37,6 +37,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_SWITCH_STATE = "switch_state";
     public static final String BUNDLE_SWITCH_STATE = "switch_state";
     public static final String ARG_SWITCH_DEPENDENT_IDS = "switch_dependent_ids"; // ArrayList<String> of option ids disabled when switch is off
+    public static final String ARG_USE_GRADIENT = "use_gradient_bg";
+    public static final String ARG_GRID_MODE = "grid_mode"; // for icon grid
 
     public static PickerBottomSheetFragment newInstance(String title, ArrayList<OptionItem> items, String selectedId, String resultKey){
         PickerBottomSheetFragment f = new PickerBottomSheetFragment();
@@ -74,6 +76,18 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
+    public static PickerBottomSheetFragment newInstanceGradient(String title, ArrayList<OptionItem> items, String selectedId, String resultKey, String helper, boolean useGradient){
+        PickerBottomSheetFragment f = newInstance(title, items, selectedId, resultKey, helper);
+        if(f.getArguments()!=null){ f.getArguments().putBoolean(ARG_USE_GRADIENT, useGradient); }
+        return f;
+    }
+
+    public static PickerBottomSheetFragment newInstanceGrid(String title, ArrayList<OptionItem> items, String selectedId, String resultKey, String helper){
+        PickerBottomSheetFragment f = newInstance(title, items, selectedId, resultKey, helper);
+        if(f.getArguments()!=null){ f.getArguments().putBoolean(ARG_GRID_MODE, true); }
+        return f;
+    }
+
 
     private ArrayList<OptionItem> items = new ArrayList<>();
     private String selectedId;
@@ -83,6 +97,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private boolean switchPresent = false; private String switchTitle; private boolean switchState;
     private ArrayList<String> switchDependentIds = new ArrayList<>();
     private LinearLayout containerLayoutRef; private android.widget.Switch switchRef;
+    private boolean useGradientBg = true; // default enabled globally
+    private boolean gridMode = false;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -93,7 +109,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
         Bundle args = getArguments();
-        if(args!=null){
+    if(args!=null){
             title = args.getString(ARG_TITLE, "");
             selectedId = args.getString(ARG_SELECTED_ID, null);
             resultKey = args.getString(ARG_RESULT_KEY, RESULT_KEY);
@@ -105,9 +121,24 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             switchState = args.getBoolean(ARG_SWITCH_STATE, false);
         ArrayList<String> dep = args.getStringArrayList(ARG_SWITCH_DEPENDENT_IDS);
         if(dep!=null) switchDependentIds = dep;
+        if(args.containsKey(ARG_USE_GRADIENT)){
+            useGradientBg = args.getBoolean(ARG_USE_GRADIENT, true);
+        }
+    gridMode = args.getBoolean(ARG_GRID_MODE, false);
         }
         TextView titleView = view.findViewById(R.id.picker_title);
         if(titleView!=null) titleView.setText(title);
+        if(useGradientBg){
+            View root = view.findViewById(R.id.picker_root);
+            if(root!=null){
+                root.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg);
+            }
+        }
+        View divider = view.findViewById(R.id.picker_title_divider);
+        if(divider!=null){
+            divider.setAlpha(0f);
+            divider.animate().alpha(1f).setDuration(260).start();
+        }
     LinearLayout containerLayout = view.findViewById(R.id.picker_list_container);
     containerLayoutRef = containerLayout;
     TextView helperView = view.findViewById(R.id.picker_helper);
@@ -137,18 +168,22 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         switchRow.addView(sw);
         containerLayout.addView(switchRow);
         if(!items.isEmpty()){
-            View divider = new View(view.getContext());
+            View switchDivider = new View(view.getContext());
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
-            divider.setLayoutParams(lp);
-            divider.setBackgroundColor(0x33FFFFFF);
-            containerLayout.addView(divider);
+            switchDivider.setLayoutParams(lp);
+            switchDivider.setBackgroundColor(0x33FFFFFF);
+            containerLayout.addView(switchDivider);
         }
     }
-    int index=0; int last = items.size()-1;
-    for(OptionItem item: items){
+    if(gridMode){
+        buildGrid(containerLayout, view);
+    } else {
+        int index=0; int last = items.size()-1;
+        for(OptionItem item: items){
             View row = li.inflate(R.layout.picker_bottom_sheet_item, containerLayout, false);
             TextView tvTitle = row.findViewById(R.id.picker_item_title);
             TextView tvSubtitle = row.findViewById(R.id.picker_item_subtitle);
+            View colorSwatch = row.findViewById(R.id.picker_item_color_swatch);
             View checkContainer = row.findViewById(R.id.picker_item_check_container);
             ImageView checkIcon = row.findViewById(R.id.picker_item_check);
             row.setTag(item.id); // tag row with its id for dependency handling
@@ -157,6 +192,22 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 tvSubtitle.setText(item.subtitle);
                 tvSubtitle.setVisibility(View.VISIBLE);
             } else { tvSubtitle.setVisibility(View.GONE); }
+            if(colorSwatch!=null){
+                if(item.colorInt!=null){
+                    android.graphics.drawable.GradientDrawable gd = (android.graphics.drawable.GradientDrawable)colorSwatch.getBackground();
+                    gd.setColor(item.colorInt);
+                    // If color perceived as dark, add white stroke for contrast
+                    int r = (item.colorInt >> 16) & 0xFF;
+                    int g = (item.colorInt >> 8) & 0xFF;
+                    int b = item.colorInt & 0xFF;
+                    double luminance = (0.299*r + 0.587*g + 0.114*b) / 255.0;
+                    if(luminance < 0.25){ gd.setStroke((int)(1 * getResources().getDisplayMetrics().density), 0xFFFFFFFF); }
+                    else { gd.setStroke(0, 0); }
+                    colorSwatch.setVisibility(View.VISIBLE);
+                } else {
+                    colorSwatch.setVisibility(View.GONE);
+                }
+            }
             boolean isSel = item.id!=null && item.id.equals(selectedId);
             if(isSel){
                 checkContainer.setVisibility(View.VISIBLE);
@@ -190,20 +241,20 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 Bundle result = new Bundle();
                 result.putString(BUNDLE_SELECTED_ID, item.id);
                 getParentFragmentManager().setFragmentResult(resultKey, result);
-                row.postDelayed(this::dismiss, 160);
+                row.postDelayed(() -> { if(isAdded()) dismissAllowingStateLoss(); }, 160);
             });
             containerLayout.addView(row);
             // Add divider between rows replicating settings group style
             if(index<last){
-                View divider = new View(view.getContext());
+                View rowDivider = new View(view.getContext());
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
-                divider.setLayoutParams(lp);
-                // Lighter neutral divider for better subtle separation (approx 20% white overlay)
-                divider.setBackgroundColor(0x33FFFFFF);
-                containerLayout.addView(divider);
+                rowDivider.setLayoutParams(lp);
+                rowDivider.setBackgroundColor(0x33FFFFFF);
+                containerLayout.addView(rowDivider);
             }
             index++;
         }
+    }
         if(helperView!=null && helperText!=null && !helperText.isEmpty()){
             helperView.setText(helperText);
             helperView.setVisibility(View.VISIBLE);
@@ -211,6 +262,53 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         // Apply initial dependent disable state
         if(switchPresent){ updateDependentRows(switchState); }
         // -------------- Fix Ended for this method(onViewCreated)-----------
+    }
+
+    private void buildGrid(LinearLayout containerLayout, View root){
+        // Build a simple wrapping grid manually (3 columns)
+        int columns = 3;
+        LinearLayout currentRow = null;
+        int count=0;
+        for(OptionItem item: items){
+            if(currentRow==null || count % columns ==0){
+                currentRow = new LinearLayout(requireContext());
+                currentRow.setOrientation(LinearLayout.HORIZONTAL);
+                currentRow.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                currentRow.setPadding(0,8,0,8);
+                containerLayout.addView(currentRow);
+            }
+            View cell = LayoutInflater.from(requireContext()).inflate(R.layout.picker_bottom_sheet_icon_grid_item, currentRow, false);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            cell.setLayoutParams(lp);
+            android.widget.ImageView icon = cell.findViewById(R.id.icon_image);
+            android.widget.ImageView check = cell.findViewById(R.id.icon_check);
+            android.widget.TextView label = cell.findViewById(R.id.icon_label);
+            label.setText(item.title);
+            if(item.iconResId!=null){ icon.setImageResource(item.iconResId); }
+            boolean isSel = item.id!=null && item.id.equals(selectedId);
+            check.setVisibility(isSel?View.VISIBLE:View.GONE);
+            cell.setOnClickListener(v -> {
+                // clear previous
+                for(int i=0;i<containerLayout.getChildCount();i++){
+                    View row = containerLayout.getChildAt(i);
+                    if(row instanceof LinearLayout){
+                        LinearLayout lr = (LinearLayout) row;
+                        for(int j=0;j<lr.getChildCount();j++){
+                            View c = lr.getChildAt(j);
+                            ImageView chk = c.findViewById(R.id.icon_check);
+                            if(chk!=null) chk.setVisibility(View.GONE);
+                        }
+                    }
+                }
+                check.setVisibility(View.VISIBLE);
+                Bundle result = new Bundle();
+                result.putString(BUNDLE_SELECTED_ID, item.id);
+                getParentFragmentManager().setFragmentResult(resultKey, result);
+                cell.postDelayed(() -> { if(isAdded()) dismissAllowingStateLoss(); }, 130);
+            });
+            currentRow.addView(cell);
+            count++;
+        }
     }
 
     // -------------- Fix Start for this method(updateDependentRows)-----------

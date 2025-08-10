@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/picker_root"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -12,11 +13,19 @@
         android:id="@+id/picker_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingTop="12dp"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
         android:gravity="center"
         android:paddingBottom="12dp"/>
+
+    <View
+        android:id="@+id/picker_title_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#33FFFFFF"
+        android:layout_marginBottom="12dp"/>
 
     <!-- Scroll container to ensure long lists (e.g., zoom ratios) are scrollable -->
     <ScrollView

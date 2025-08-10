@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import com.fadcam.ui.OverlayNavUtil;
 
 import androidx.annotation.RequiresApi;
 import androidx.activity.OnBackPressedCallback;
@@ -253,6 +254,41 @@ public class MainActivity extends AppCompatActivity {
         // Status bar
         getWindow().setStatusBarColor(colorStatusBar);
         getWindow().setNavigationBarColor(colorBottomNav);
+
+        // -------------- Fix Start for this logic(reopen appearance/theme sheet after theme change)-----------
+        try {
+            SharedPreferences reopenPrefs = sharedPreferencesManager.sharedPreferences;
+            boolean reopenAppearance = reopenPrefs.getBoolean("reopen_appearance_after_theme", false);
+            if(reopenAppearance){
+                // Clear flag to avoid loops
+                reopenPrefs.edit().putBoolean("reopen_appearance_after_theme", false).apply();
+                // Ensure Settings tab selected (index 3)
+                if(viewPager!=null){ viewPager.setCurrentItem(3, false); }
+                // Post to allow SettingsHomeFragment attach
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        com.fadcam.ui.AppearanceSettingsFragment frag = new com.fadcam.ui.AppearanceSettingsFragment();
+                        OverlayNavUtil.show(this, frag, "AppearanceSettingsFragment");
+                        boolean reopenSheet = reopenPrefs.getBoolean("reopen_theme_sheet_after_theme", false);
+                        if(reopenSheet){
+                            reopenPrefs.edit().putBoolean("reopen_theme_sheet_after_theme", false).apply();
+                            frag.getLifecycle().addObserver(new androidx.lifecycle.DefaultLifecycleObserver(){
+                                @Override public void onResume(androidx.lifecycle.LifecycleOwner owner){
+                                    View v = frag.getView();
+                                    if(v!=null){
+                                        View row = v.findViewById(R.id.row_theme);
+                                        if(row!=null){ row.postDelayed(row::performClick, 100); }
+                                    }
+                                }
+                            });
+                        }
+                    } catch (Exception e){
+                        android.util.Log.e("ThemeReopen","Failed to reopen appearance fragment", e);
+                    }
+                }, 100);
+            }
+        } catch (Exception e){ android.util.Log.e("ThemeReopen","Outer fail", e); }
+        // -------------- Fix Ended for this logic(reopen appearance/theme sheet after theme change)-----------
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N_MR1)

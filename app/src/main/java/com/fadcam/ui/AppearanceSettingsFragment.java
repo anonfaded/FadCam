@@ -65,72 +65,54 @@ public class AppearanceSettingsFragment extends Fragment {
         View row = view.findViewById(R.id.row_theme);
         TextView value = view.findViewById(R.id.value_theme);
         if(row==null || value==null) return;
-        String[] themeNames = { getString(R.string.theme_red), "Midnight Dusk", "Faded Night",
-                getString(R.string.theme_gold), getString(R.string.theme_silentforest),
-                getString(R.string.theme_shadowalloy), getString(R.string.theme_pookiepink),
-                getString(R.string.theme_snowveil) };
-        int[] themeColors = {
-                ContextCompat.getColor(requireContext(), R.color.red_theme_primary),
-                ContextCompat.getColor(requireContext(), R.color.gray),
-                ContextCompat.getColor(requireContext(), R.color.amoled_surface),
-                ContextCompat.getColor(requireContext(), R.color.gold_theme_primary),
-                ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary),
-                ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary),
-                ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary),
-                ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary)
-        };
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
-                Constants.DEFAULT_APP_THEME);
-        int tempThemeIndex = 1;
-        if ("Crimson Bloom".equals(currentTheme)) tempThemeIndex = 0;
-        else if ("Faded Night".equals(currentTheme) || "AMOLED".equals(currentTheme) || "Amoled".equals(currentTheme)) tempThemeIndex = 2;
-        else if ("Premium Gold".equals(currentTheme)) tempThemeIndex = 3;
-        else if ("Silent Forest".equals(currentTheme)) tempThemeIndex = 4;
-        else if ("Shadow Alloy".equals(currentTheme)) tempThemeIndex = 5;
-        else if ("Pookie Pink".equals(currentTheme)) tempThemeIndex = 6;
-        else if ("Snow Veil".equals(currentTheme)) tempThemeIndex = 7;
-        final int themeIndex = tempThemeIndex;
-    value.setText(themeNames[themeIndex]);
-    row.setOnClickListener(v -> {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3);
-            builder.setTitle(R.string.settings_option_theme);
-            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), R.layout.item_theme_option,
-                    R.id.theme_name, themeNames) {
-                @Override
-                public View getView(int position, View convertView, ViewGroup parent) {
-                    View vw = super.getView(position, convertView, parent);
-                    TextView themeName = vw.findViewById(R.id.theme_name);
-                    if(isSnowVeilTheme) themeName.setTextColor(Color.BLACK); else themeName.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
-                    View colorCircle = vw.findViewById(R.id.theme_color_circle);
-                    GradientDrawable drawable = (GradientDrawable) colorCircle.getBackground();
-                    if(position==2){
-                        drawable.setColor(ContextCompat.getColor(requireContext(), R.color.amoled_surface));
-                    } else {
-                        drawable.setColor(themeColors[position]);
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        value.setText(currentTheme);
+        row.setOnClickListener(v -> showThemePicker(value));
+    }
+
+    private void showThemePicker(TextView value){
+        final String resultKey = "picker_result_theme";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(id!=null){
+                    // -------------- Fix Start for this logic(theme selection defer recreate)-----------
+                    // Persist immediately
+            sharedPreferencesManager.sharedPreferences.edit()
+                .putString(Constants.PREF_APP_THEME, id)
+                .putBoolean("reopen_appearance_after_theme", true)
+                .putBoolean("reopen_theme_sheet_after_theme", true)
+                .apply();
+                    // Update visible value text now
+                    value.setText(id);
+                    // Defer activity recreate until after sheet dismissal animation finishes to preserve
+                    // correct checkmark animation & keep user on Appearance screen.
+                    View root = getView();
+                    if(root!=null){
+                        root.postDelayed(() -> {
+                            if(!isAdded()) return; // fragment no longer attached
+                            if(getActivity() instanceof MainActivity){
+                                ((MainActivity) requireActivity()).applyThemeFromSettings(id);
+                            }
+                        }, 260); // picker uses 160ms dismiss delay; add buffer
                     }
-                    if(position==themeIndex){
-                        GradientDrawable highlightBg = new GradientDrawable();
-                        highlightBg.setCornerRadius(8 * getResources().getDisplayMetrics().density);
-                        highlightBg.setColor(isSnowVeilTheme ? ContextCompat.getColor(requireContext(), R.color.snowveil_theme_accent) : 0x33FFFFFF);
-                        vw.setBackground(highlightBg);
-                    } else {
-                        vw.setBackground(null);
-                    }
-                    return vw;
+                    // -------------- Fix Ended for this logic(theme selection defer recreate)-----------
                 }
-            };
-            builder.setSingleChoiceItems(adapter, themeIndex, (dialogInterface, which) -> {
-                String newTheme = themeNames[which];
-                sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_APP_THEME, newTheme).apply();
-                if(getActivity() instanceof MainActivity){
-                    ((MainActivity) requireActivity()).applyThemeFromSettings(newTheme);
-                }
-                value.setText(newTheme);
-                dialogInterface.dismiss();
-            });
-            builder.setNegativeButton(R.string.universal_cancel, null).show();
+            }
         });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+    items.add(new com.fadcam.ui.picker.OptionItem("Crimson Bloom", getString(R.string.theme_red), null, ContextCompat.getColor(requireContext(), R.color.red_theme_primary)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Midnight Dusk", "Midnight Dusk", null, ContextCompat.getColor(requireContext(), R.color.gray)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Faded Night", "Faded Night", null, ContextCompat.getColor(requireContext(), R.color.amoled_surface)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Premium Gold", getString(R.string.theme_gold), null, ContextCompat.getColor(requireContext(), R.color.gold_theme_primary)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Silent Forest", getString(R.string.theme_silentforest), null, ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Shadow Alloy", getString(R.string.theme_shadowalloy), null, ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Pookie Pink", getString(R.string.theme_pookiepink), null, ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Snow Veil", getString(R.string.theme_snowveil), null, ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary)));
+    String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+        getString(R.string.settings_option_theme), items, currentTheme, resultKey, getString(R.string.helper_theme_option), true);
+        sheet.show(getParentFragmentManager(), "theme_picker_sheet");
     }
     // -------------- Refactor End: theme row -----------
 
@@ -156,36 +138,38 @@ public class AppearanceSettingsFragment extends Fragment {
         valueView.setText(languages[selectedIndex]);
         View row = requireView().findViewById(R.id.row_language);
         if(row==null) return;
-        row.setOnClickListener(v -> {
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
-                    Constants.DEFAULT_APP_THEME);
-            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-            int color = ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white);
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_single_choice, languages) {
-                @Override
-                public View getView(int position, View convertView, ViewGroup parent) {
-                    View vw = super.getView(position, convertView, parent);
-                    TextView text1 = vw.findViewById(android.R.id.text1);
-                    if(text1!=null) text1.setTextColor(color);
-                    return vw;
-                }
-            };
-            AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
-                    .setTitle(R.string.setting_language_title)
-                    .setSingleChoiceItems(adapter, selectedIndex, (dialogInterface, which) -> {
-                        String newLangCode = getLanguageCode(which);
-                        if(!newLangCode.equals(sharedPreferencesManager.getLanguage())){
-                            saveLanguagePreference(newLangCode);
-                            if(getActivity() instanceof MainActivity){
-                                ((MainActivity) requireActivity()).applyLanguage(newLangCode);
-                            }
+        row.setOnClickListener(v -> showLanguagePicker(valueView));
+    }
+
+    private void showLanguagePicker(TextView valueView){
+        final String resultKey = "picker_result_language";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String code = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(code!=null){
+                    if(!code.equals(sharedPreferencesManager.getLanguage())){
+                        saveLanguagePreference(code);
+                        if(getActivity() instanceof MainActivity){
+                            ((MainActivity) requireActivity()).applyLanguage(code);
                         }
-                        valueView.setText(languages[which]);
-                        dialogInterface.dismiss();
-                    })
-                    .setNegativeButton(R.string.universal_cancel, null)
-                    .show();
+                    }
+                    String[] langs = getResources().getStringArray(R.array.languages_array);
+                    int idx = getLanguageIndex(code);
+                    valueView.setText(langs[idx]);
+                }
+            }
         });
+        // map codes to display strings in same order as getLanguageIndex switch
+        String[] langDisplay = getResources().getStringArray(R.array.languages_array);
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        String[] codes = {"en","zh","ar","fr","tr","ps","in","it","el","de"};
+        for(int i=0;i<codes.length;i++){
+            // Explicit (String) null to select string-based constructor (avoid ambiguity with iconResId)
+            items.add(new com.fadcam.ui.picker.OptionItem(codes[i], langDisplay[i], (String) null));
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.setting_language_title), items, sharedPreferencesManager.getLanguage(), resultKey, getString(R.string.helper_language_option), true);
+        sheet.show(getParentFragmentManager(), "language_picker_sheet");
     }
 
     private int getLanguageIndex(String languageCode) {
@@ -228,12 +212,39 @@ public class AppearanceSettingsFragment extends Fragment {
     }
 
     private void showAppIconSelectionDialog(TextView valueView){
-        AppIconGridBottomSheet bottomSheet = new AppIconGridBottomSheet((iconKey, iconName) -> {
-            setAppIconButtonText(valueView, iconKey);
-            updateAppIcon(iconKey);
-            vibrateTouch();
+        final String resultKey = "picker_result_app_icon";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(id!=null){
+                    updateAppIcon(id);
+                    setAppIconButtonText(valueView, id);
+                }
+            }
         });
-        bottomSheet.show(getParentFragmentManager(), "AppIconGridBottomSheetAppearance");
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+    // Provide iconResId mapping to mipmap resources (assumes names exist)
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_DEFAULT, getString(R.string.app_icon_default), R.mipmap.ic_launcher));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_MINIMAL, getString(R.string.app_icon_minimal), R.mipmap.ic_launcher_minimal));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_ALTERNATIVE, getString(R.string.app_icon_alternative), R.mipmap.ic_launcher_2));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_FADED, getString(R.string.app_icon_faded), R.mipmap.ic_launcher_faded));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_PALESTINE, getString(R.string.app_icon_palestine), R.mipmap.ic_launcher_palestine));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_PAKISTAN, getString(R.string.app_icon_pakistan), R.mipmap.ic_launcher_pakistan));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_FADSECLAB, getString(R.string.app_icon_fadseclab), R.mipmap.ic_launcher_fadseclab));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_NOOR, getString(R.string.app_icon_noor), R.mipmap.ic_launcher_noor));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_BAT, getString(R.string.app_icon_bat), R.mipmap.ic_launcher_bat));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_REDBINARY, getString(R.string.app_icon_redbinary), R.mipmap.ic_launcher_redbinary));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_NOTES, getString(R.string.app_icon_notes), R.mipmap.ic_launcher_notes));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_CALCULATOR, getString(R.string.app_icon_calculator), R.mipmap.ic_launcher_calculator));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_CLOCK, getString(R.string.app_icon_clock), R.mipmap.ic_launcher_clock));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_WEATHER, getString(R.string.app_icon_weather), R.mipmap.ic_launcher_weather));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_FOOTBALL, getString(R.string.app_icon_football), R.mipmap.ic_launcher_football));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_CAR, getString(R.string.app_icon_car), R.mipmap.ic_launcher_car));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_JET, getString(R.string.app_icon_jet), R.mipmap.ic_launcher_jet));
+        String current = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
+    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGrid(
+        getString(R.string.setting_app_icon_title), items, current, resultKey, getString(R.string.helper_app_icon_option));
+        sheet.show(getParentFragmentManager(), "app_icon_picker_sheet");
     }
 
     private void updateAppIcon(String iconKey) {
