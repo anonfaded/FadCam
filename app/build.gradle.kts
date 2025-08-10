@@ -137,6 +137,7 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.swiperefreshlayout)
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.gson)

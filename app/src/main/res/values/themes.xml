@@ -18,6 +18,20 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
     </style>
 
+    <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
+    <style name="Theme.FadCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Solid dark background -->
+        <item name="android:windowBackground">@color/black</item>
+        <!-- New SplashScreen API attrs -->
+        <item name="windowSplashScreenBackground">@color/black</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/fadseclab_flag</item>
+    <item name="android:statusBarColor">@color/black</item>
+    <item name="android:navigationBarColor">@color/black</item>
+    <item name="android:windowLightStatusBar">false</item>
+        <item name="postSplashScreenTheme">@style/Base.Theme.FadCam</item>
+    </style>
+    <!-- Splash theme end (Fix End Theme.FadCam.Splash) -->
+
     <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
         <!-- Completely black background everywhere -->
         <item name="android:colorBackground">@color/amoled_background</item>

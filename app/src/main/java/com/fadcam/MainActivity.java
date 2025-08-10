@@ -36,6 +36,7 @@ import java.util.Locale;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import androidx.core.splashscreen.SplashScreen; // SplashScreen API
 
 public class MainActivity extends AppCompatActivity {
 
@@ -122,10 +123,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Apply theme before setContentView
-        applyTheme();
-        
         super.onCreate(savedInstanceState);
+        // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
+        SplashScreen.installSplashScreen(this);
+        // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by dynamic choice
+        applyTheme();
 
         // ----- Fix Start: Ensure onboarding shows on first install -----
         // Initialize SharedPreferencesManager instance first
