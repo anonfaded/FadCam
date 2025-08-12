@@ -38,13 +38,7 @@ public class HighSpeedCaptureHelper {
             int targetFrameRate) {
         
         try {
-            // Special case for Samsung devices:
-            // Many Samsung devices don't properly report high-speed capabilities through standard APIs
-            if (DeviceHelper.isSamsung() && targetFrameRate == 60) {
-                // For Samsung, we'll prefer using vendor keys instead of high-speed session
-                // for 60fps specifically, as it's more reliable
-                return false;
-            }
+            // Unify behavior across vendors: use platform-reported high-speed capabilities when present.
             
             StreamConfigurationMap map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);

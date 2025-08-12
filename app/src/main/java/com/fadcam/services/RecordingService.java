@@ -1179,38 +1179,12 @@ public class RecordingService extends Service {
             if (isHighFrameRate && characteristics != null) {
                 showFrameRateToast(targetFrameRate);
 
-                if (DeviceHelper.isSamsung() && DeviceHelper.isHighEndDevice()) {
-                    // Prefer constrained high-speed if the selected size supports it
-                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
-                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
-                        Log.d(TAG, "High-end Samsung: using HSR at selected size for " + targetFrameRate + "fps");
-                        useHighSpeedSession = true;
-                    } else {
-                        Log.d(TAG, "High-end Samsung: selected size not HSR-capable; will use standard session with vendor keys");
-                        useHighSpeedSession = false;
-                    }
-                } else if (DeviceHelper.isSamsung()) {
-                    SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
-                    if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.HIGH_SPEED_COMPATIBLE) {
-                        Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
-                        if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
-                            Log.d(TAG, "Samsung HIGH_SPEED_COMPATIBLE at selected size - using HSR");
-                            useHighSpeedSession = true;
-                        } else {
-                            Log.d(TAG, "Samsung HSR supported but not at selected size - using standard session");
-                            useHighSpeedSession = false;
-                        }
-                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
-                        Log.e(TAG, "Samsung device KNOWN_INCOMPATIBLE with 60fps+; blocking");
-                        Toast.makeText(this, "60fps not supported on this device model.", Toast.LENGTH_LONG).show();
-                        RecordingService.this.recordingState = RecordingState.NONE;
-                        return;
-                    } else {
-                        // REQUIRES_VENDOR_KEYS / FULLY_COMPATIBLE / UNKNOWN -> standard session
-                        useHighSpeedSession = false;
-                    }
+                if (DeviceHelper.isSamsung()) {
+                    // Unify Samsung path with Pixel: always use standard session (no HSR).
+                    Log.d(TAG, "Samsung device: forcing standard session for " + targetFrameRate + "fps to match Pixel behavior");
+                    useHighSpeedSession = false;
                 } else if (DeviceHelper.isHuawei()) {
-                    // Use standard session with Huawei vendor keys
+                    // Unify behavior: do not apply Huawei vendor keys, prefer platform capabilities
                     useHighSpeedSession = false;
                 } else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
                     Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
@@ -1280,53 +1254,11 @@ public class RecordingService extends Service {
             
             // For high frame rates, evaluate if we should use high-speed session
             if (isHighFrameRate && characteristics != null) {
-                // FORCE high-speed session for high-end Samsung devices for 60fps+
-                // This is the primary fix for the Samsung S23 FPS issue.
-                if (DeviceHelper.isSamsung() && DeviceHelper.isHighEndDevice()) {
-                    // Validate HSR only if selected size is compatible
-                    Size selected = sharedPreferencesManager.getCameraResolution();
-                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
-                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
-                        Log.d(TAG, "High-end Samsung: using HSR at selected size for " + targetFrameRate + "fps");
-                        showFrameRateToast(targetFrameRate);
-                        useHighSpeedSession = true;
-                    } else {
-                        Log.d(TAG, "High-end Samsung: selected size not HSR-capable; using standard session");
-                        useHighSpeedSession = false;
-                    }
-                }
-                // For other Samsung devices, use the existing compatibility logic
-                else if (DeviceHelper.isSamsung()) {
-                    Log.d(TAG, "Samsung device detected. Handling " + targetFrameRate + "fps for this device.");
+                // Unify Samsung path with Pixel: never force HSR on Samsung
+                if (DeviceHelper.isSamsung()) {
+                    Log.d(TAG, "Samsung device: using standard session (no HSR) for " + targetFrameRate + "fps");
                     showFrameRateToast(targetFrameRate);
-                    
-                    // Determine Samsung FPS compatibility status
-                    SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
-
-                    if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.HIGH_SPEED_COMPATIBLE) {
-                        Size selected = sharedPreferencesManager.getCameraResolution();
-                        Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
-                        if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
-                            Log.d(TAG, "Device status HIGH_SPEED_COMPATIBLE at selected size. Using HSR for " + targetFrameRate + "fps.");
-                            useHighSpeedSession = true;
-                            createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
-                        } else {
-                            Log.d(TAG, "Selected size not supported for HSR, using standard session with vendor keys");
-                            useHighSpeedSession = false;
-                        }
-                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.REQUIRES_VENDOR_KEYS || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.FULLY_COMPATIBLE || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.UNKNOWN) {
-                        // For other Samsung devices that use vendor keys in standard session, or unknown devices
-                        Log.d(TAG, "Device status is REQUIRES_VENDOR_KEYS or FULLY_COMPATIBLE or UNKNOWN. Attempting standard session with Samsung vendor keys for " + targetFrameRate + "fps.");
-                        useHighSpeedSession = false; // Ensure it's a standard session
-                        createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
-                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
-                        // For known incompatible Samsung devices, do not attempt 60fps+
-                        Log.e(TAG, "Device is KNOWN_INCOMPATIBLE with 60fps+. Blocking request.");
-                        Toast.makeText(this, "60fps not supported on this device model.", Toast.LENGTH_LONG).show();
-                        RecordingService.this.recordingState = RecordingState.NONE; // Reset state to NONE by direct assignment from outer class
-                        return; // Do not proceed with recording
-                    }
-                    return; // Return after handling Samsung-specific logic
+                    useHighSpeedSession = false;
                 } 
                 // For Huawei devices, also prefer vendor keys
                 else if (DeviceHelper.isHuawei()) {
@@ -2440,16 +2372,9 @@ public class RecordingService extends Service {
         Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to " + chosen);
 
         // Apply Samsung-specific keys if applicable
-        if (DeviceHelper.isSamsung()) {
-            // -------------- Fix Start for this method(applyFrameRateSettings)-----------
-            SamsungFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate, characteristics);
-            // -------------- Fix Ended for this method(applyFrameRateSettings)-----------
-        }
+    // Do not apply Samsung vendor keys: unify behavior with standard devices (Pixel-like)
 
-        // Apply Huawei-specific keys if applicable
-        if (DeviceHelper.isHuawei() && targetFrameRate >= 60) {
-            HuaweiFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
-        }
+    // Unified behavior: no Huawei/Samsung vendor keys; rely on AE range only.
     }
 
     /**
