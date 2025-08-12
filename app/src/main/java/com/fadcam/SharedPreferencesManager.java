@@ -452,6 +452,23 @@ public class SharedPreferencesManager {
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists
     public static final boolean DEFAULT_PREVIEW_ENABLED = true; // Check default exists
 
+    // -------------- Fix Start for this section(Cloak Recents preference)-----------
+    /** Preference key controlling whether the app should cloak its snapshot in the Android Recents screen. */
+    public static final String PREF_CLOAK_RECENTS_ENABLED = "cloak_recents_enabled";
+    /** Default behavior is ON to protect user privacy out of the box. */
+    public static final boolean DEFAULT_CLOAK_RECENTS_ENABLED = true;
+
+    /** Returns whether cloaking recents snapshot is enabled. Default: true. */
+    public boolean isCloakRecentsEnabled() {
+        return sharedPreferences.getBoolean(PREF_CLOAK_RECENTS_ENABLED, DEFAULT_CLOAK_RECENTS_ENABLED);
+    }
+
+    /** Enables or disables cloaking the recents snapshot. */
+    public void setCloakRecentsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_CLOAK_RECENTS_ENABLED, enabled).apply();
+    }
+    // -------------- Fix Ended for this section(Cloak Recents preference)-----------
+
     /**
      * Gets the preferred physical camera ID for the back camera.
      * Defaults to Constants.DEFAULT_BACK_CAMERA_ID if not set or invalid.
@@ -896,5 +913,36 @@ public class SharedPreferencesManager {
         return com.fadcam.R.mipmap.ic_launcher;
     }
     // -------------- Fix Ended for this method(getCurrentAppIconResId)-----------
+
+    // -------------- Fix Start for this method(getAppIconDisplayName)-----------
+    /**
+     * Returns a human-readable display name for the currently selected app icon.
+     * Falls back to the default app name when unknown.
+     */
+    public String getAppIconDisplayName() {
+        if (context == null) return "";
+        String key = getCurrentAppIcon();
+        try {
+            if (Constants.APP_ICON_MINIMAL.equals(key)) return context.getString(R.string.app_icon_minimal);
+            if (Constants.APP_ICON_ALTERNATIVE.equals(key)) return context.getString(R.string.app_icon_alternative);
+            if (Constants.APP_ICON_FADED.equals(key)) return context.getString(R.string.app_icon_faded);
+            if (Constants.APP_ICON_PALESTINE.equals(key)) return context.getString(R.string.app_icon_palestine);
+            if (Constants.APP_ICON_PAKISTAN.equals(key)) return context.getString(R.string.app_icon_pakistan);
+            if (Constants.APP_ICON_FADSECLAB.equals(key)) return context.getString(R.string.app_icon_fadseclab);
+            if (Constants.APP_ICON_NOOR.equals(key)) return context.getString(R.string.app_icon_noor);
+            if (Constants.APP_ICON_BAT.equals(key)) return context.getString(R.string.app_icon_bat);
+            if (Constants.APP_ICON_REDBINARY.equals(key)) return context.getString(R.string.app_icon_redbinary);
+            if (Constants.APP_ICON_NOTES.equals(key)) return context.getString(R.string.app_icon_notes);
+            if (Constants.APP_ICON_CALCULATOR.equals(key)) return context.getString(R.string.app_icon_calculator);
+            if (Constants.APP_ICON_CLOCK.equals(key)) return context.getString(R.string.app_icon_clock);
+            if (Constants.APP_ICON_WEATHER.equals(key)) return context.getString(R.string.app_icon_weather);
+            if (Constants.APP_ICON_FOOTBALL.equals(key)) return context.getString(R.string.app_icon_football);
+            if (Constants.APP_ICON_CAR.equals(key)) return context.getString(R.string.app_icon_car);
+            if (Constants.APP_ICON_JET.equals(key)) return context.getString(R.string.app_icon_jet);
+        } catch (Exception ignored) { }
+        // Default app label
+        try { return context.getString(R.string.app_name); } catch (Exception e) { return ""; }
+    }
+    // -------------- Fix Ended for this method(getAppIconDisplayName)-----------
 
 }

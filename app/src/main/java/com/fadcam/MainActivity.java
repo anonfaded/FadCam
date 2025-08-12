@@ -37,6 +37,7 @@ import java.util.Locale;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import androidx.core.splashscreen.SplashScreen; // SplashScreen API
+import android.view.WindowManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
 
     // Add SharedPreferencesManager field
     private SharedPreferencesManager sharedPreferencesManager;
+    // Cloak overlay view reference
+    private View cloakOverlay;
+    private android.widget.ImageView cloakIconView;
+    private android.widget.TextView cloakTitleView;
 
     private final Runnable backPressRunnable = new Runnable() {
         @Override
@@ -129,6 +134,21 @@ public class MainActivity extends AppCompatActivity {
         // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by dynamic choice
         applyTheme();
 
+        // -------------- Fix Start for this block(apply cloak as early as possible)-----------
+        try {
+            if (this.sharedPreferencesManager == null) {
+                this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            boolean cloakEarly = this.sharedPreferencesManager.isCloakRecentsEnabled();
+            if (cloakEarly) {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                }
+                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            }
+        } catch (Throwable t) { android.util.Log.w("Cloak", "early cloak apply fail", t); }
+        // -------------- Fix Ended for this block(apply cloak as early as possible)-----------
+
         // ----- Fix Start: Ensure onboarding shows on first install -----
         // Initialize SharedPreferencesManager instance first
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
@@ -178,8 +198,76 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        // -------------- Fix Start for this block(apply persistent cloak at startup)-----------
+        try {
+            if (this.sharedPreferencesManager == null) {
+                this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            boolean cloak = this.sharedPreferencesManager.isCloakRecentsEnabled();
+            if (cloak) {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                }
+                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            } else {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(true); } catch (Throwable ignored) {}
+                }
+                try { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            }
+        } catch (Throwable t) {
+            android.util.Log.w("Cloak", "init cloak state fail", t);
+        }
+        // -------------- Fix Ended for this block(apply persistent cloak at startup)-----------
+
         viewPager = findViewById(R.id.view_pager);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+        // -------------- Fix Start for this block(init cloak overlay)-----------
+        // A simple overlay that we can show/hide to mask the UI before recents snapshot.
+        try {
+            android.widget.FrameLayout overlay = new android.widget.FrameLayout(this);
+            overlay.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            overlay.setBackgroundColor(0xFF000000); // default solid black
+            overlay.setClickable(true); // swallow touches while visible
+            overlay.setFocusable(true);
+
+            // Centered decoy content
+            android.widget.LinearLayout content = new android.widget.LinearLayout(this);
+            content.setOrientation(android.widget.LinearLayout.VERTICAL);
+            content.setGravity(android.view.Gravity.CENTER);
+            android.widget.FrameLayout.LayoutParams clp = new android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            content.setLayoutParams(clp);
+
+            cloakIconView = new android.widget.ImageView(this);
+            int iconSize = (int) (72 * getResources().getDisplayMetrics().density);
+            android.widget.LinearLayout.LayoutParams ilp = new android.widget.LinearLayout.LayoutParams(iconSize, iconSize);
+            cloakIconView.setLayoutParams(ilp);
+            cloakIconView.setImageResource(SharedPreferencesManager.getInstance(this).getCurrentAppIconResId());
+
+            cloakTitleView = new android.widget.TextView(this);
+            android.widget.LinearLayout.LayoutParams tlp = new android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            tlp.topMargin = (int) (12 * getResources().getDisplayMetrics().density);
+            cloakTitleView.setLayoutParams(tlp);
+            cloakTitleView.setTextColor(0xFFFFFFFF);
+            cloakTitleView.setTextSize(18f);
+            cloakTitleView.setTypeface(cloakTitleView.getTypeface(), android.graphics.Typeface.BOLD);
+            cloakTitleView.setText(SharedPreferencesManager.getInstance(this).getAppIconDisplayName());
+
+            content.addView(cloakIconView);
+            content.addView(cloakTitleView);
+            overlay.addView(content);
+
+            overlay.setVisibility(View.GONE);
+            ViewGroup root = (ViewGroup) findViewById(android.R.id.content);
+            if (root != null) {
+                root.addView(overlay);
+            }
+            cloakOverlay = overlay;
+        } catch (Exception e) {
+            android.util.Log.w("Cloak", "Failed to init cloak overlay", e);
+        }
+        // -------------- Fix Ended for this block(init cloak overlay)-----------
 
         ViewPagerAdapter adapter = new ViewPagerAdapter(this);
         viewPager.setAdapter(adapter);
@@ -370,6 +458,53 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
     }
+
+    // -------------- Fix Start for this method(applyCloakIfNeeded)-----------
+    /** Shows or hides the cloak overlay based on preference. */
+    private void applyCloakIfNeeded(boolean show) {
+        try {
+            if (cloakOverlay == null) return;
+            // Refresh decoy visuals from current icon & label
+            if (cloakIconView != null) cloakIconView.setImageResource(SharedPreferencesManager.getInstance(this).getCurrentAppIconResId());
+            if (cloakTitleView != null) cloakTitleView.setText(SharedPreferencesManager.getInstance(this).getAppIconDisplayName());
+            if (show) {
+                cloakOverlay.setAlpha(1f);
+                cloakOverlay.setVisibility(View.VISIBLE);
+            } else {
+                cloakOverlay.setVisibility(View.GONE);
+                cloakOverlay.setAlpha(1f);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("Cloak", "applyCloakIfNeeded failed", e);
+        }
+    }
+    // -------------- Fix Ended for this method(applyCloakIfNeeded)-----------
+
+    // -------------- Fix Start for this method(applyCloakPreferenceNow)-----------
+    /**
+     * Immediately applies or removes recents cloaking flags at runtime based on user toggle.
+     * This lets the change take effect without restarting the app.
+     */
+    public void applyCloakPreferenceNow(boolean enable) {
+        try {
+            if (enable) {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                }
+                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            } else {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(true); } catch (Throwable ignored) {}
+                }
+                try { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            }
+            // Ensure decoy overlay is hidden during active use
+            applyCloakIfNeeded(false);
+        } catch (Exception e) {
+            android.util.Log.w("Cloak", "applyCloakPreferenceNow failed", e);
+        }
+    }
+    // -------------- Fix Ended for this method(applyCloakPreferenceNow)-----------
     
     // ----- Fix Start: Proper back button handling with double-press to exit -----
     @Override
@@ -476,6 +611,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // -------------- Fix Start for this method(onResume - enforce preference state)-----------
+        applyCloakIfNeeded(false); // hide decoy overlay while active
+        try {
+            boolean cloak = SharedPreferencesManager.getInstance(this).isCloakRecentsEnabled();
+            if (cloak) {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                }
+                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            } else {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(true); } catch (Throwable ignored) {}
+                }
+                try { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+            }
+        } catch (Throwable t) { android.util.Log.w("Cloak", "onResume preference apply fail", t); }
+        // -------------- Fix Ended for this method(onResume - enforce preference state)-----------
         
         // Update UI for current theme
         String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
@@ -600,6 +752,54 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     }
+
+    // -------------- Fix Start for this method(onPause)-----------
+    @Override
+    protected void onPause() {
+        // Show cloak just before going into background to affect recents snapshot
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
+            if (enabled) {
+                // -------------- Fix Start for this block(onPause - enforce secure/recents)-----------
+                applyCloakIfNeeded(true);
+                // For Android 14+, explicitly disable recents screenshots
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                }
+                // On older devices, set FLAG_SECURE to force a black snapshot in recents
+                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                // -------------- Fix Ended for this block(onPause - enforce secure/recents)-----------
+            }
+        } catch (Exception e) { android.util.Log.w("Cloak", "onPause cloak fail", e); }
+        super.onPause();
+    }
+    // -------------- Fix Ended for this method(onPause)-----------
+
+    // -------------- Fix Start for this method(onUserLeaveHint)-----------
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        // Additional safeguard when user leaves to recents directly
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
+            if (enabled) {
+                // -------------- Fix Start for this block(onUserLeaveHint - enforce secure/recents)-----------
+                applyCloakIfNeeded(true);
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                }
+                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                // -------------- Fix Ended for this block(onUserLeaveHint - enforce secure/recents)-----------
+            }
+        } catch (Exception e) { android.util.Log.w("Cloak", "onUserLeaveHint cloak fail", e); }
+    }
+    // -------------- Fix Ended for this method(onUserLeaveHint)-----------
 
     // -------------- Fix Start for this method(handleNonTrashOverlayBack)-----------
     /** Handles back press for any visible overlay fragment that is not TrashFragment. */

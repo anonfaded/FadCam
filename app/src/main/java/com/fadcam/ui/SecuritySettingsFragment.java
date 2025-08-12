@@ -32,6 +32,7 @@ public class SecuritySettingsFragment extends Fragment {
 
     private SharedPreferencesManager sharedPreferencesManager;
     private TextView valueTabLock;
+    private TextView valueCloakRecents;
     private Boolean pendingToggleDesiredState; // track attempted switch state for rollback on cancel
 
     @Nullable
@@ -46,7 +47,9 @@ public class SecuritySettingsFragment extends Fragment {
         // -------------- Fix Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         valueTabLock = view.findViewById(R.id.value_tab_lock_status);
+    valueCloakRecents = view.findViewById(R.id.value_cloak_recents_status);
         refreshAppLockValue();
+    refreshCloakRecentsValue();
 
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
@@ -57,6 +60,10 @@ public class SecuritySettingsFragment extends Fragment {
         View row = view.findViewById(R.id.row_tab_lock);
         if (row != null) {
             row.setOnClickListener(v -> showAppLockConfigDialog());
+        }
+        View rowCloak = view.findViewById(R.id.row_cloak_recents);
+        if (rowCloak != null) {
+            rowCloak.setOnClickListener(v -> showCloakRecentsConfig());
         }
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
@@ -71,6 +78,15 @@ public class SecuritySettingsFragment extends Fragment {
             valueTabLock.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
         }
         // -------------- Fix Ended for this method(refreshAppLockValue)-----------
+    }
+
+    private void refreshCloakRecentsValue() {
+        // -------------- Fix Start for this method(refreshCloakRecentsValue)-----------
+        if (valueCloakRecents != null) {
+            boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
+            valueCloakRecents.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
+        }
+        // -------------- Fix Ended for this method(refreshCloakRecentsValue)-----------
     }
 
     // Method to show the AppLock configuration dialog
@@ -159,6 +175,39 @@ public class SecuritySettingsFragment extends Fragment {
         }
         sheet.show(getParentFragmentManager(), "applock_sheet");
         // -------------- Fix Ended for this method(showAppLockConfigDialog)-----------
+    }
+
+    private void showCloakRecentsConfig() {
+        // -------------- Fix Start for this method(showCloakRecentsConfig)-----------
+        String resultKey = "cloak_recents_sheet_result";
+        String helper = getString(R.string.setting_cloak_recents_helper);
+        boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
+
+        // no additional items yet, just the master switch
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, bundle) -> {
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                sharedPreferencesManager.setCloakRecentsEnabled(state);
+                refreshCloakRecentsValue();
+                Toast.makeText(requireContext(), state ? R.string.setting_enabled_msg : R.string.setting_disabled_msg, Toast.LENGTH_SHORT).show();
+                // -------------- Fix Start: apply cloak instantly without restart -----------
+                try {
+                    android.app.Activity act = requireActivity();
+                    if (act instanceof com.fadcam.MainActivity) {
+                        ((com.fadcam.MainActivity) act).applyCloakPreferenceNow(state);
+                    }
+                } catch (Throwable ignored) {}
+                // -------------- Fix End: apply cloak instantly without restart -----------
+            }
+        });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
+                .newInstanceWithSwitch(getString(R.string.setting_cloak_recents_title), items, null, resultKey, helper,
+                        getString(R.string.setting_cloak_recents_switch), enabled);
+        sheet.show(getParentFragmentManager(), "cloak_recents_sheet");
+        // -------------- Fix Ended for this method(showCloakRecentsConfig)-----------
     }
 
     private void row_tab_lock_postRefreshOpen(){

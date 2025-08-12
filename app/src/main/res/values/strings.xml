@@ -469,6 +469,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="trash_restore_fail_toast">Error restoring items. Some files might not have been restored or gallery might not be updated. Check app permissions for storage.</string>
     <string name="trash_restore_cancelled_toast">Restore cancelled.</string>
     <string name="trash_fragment_title_text">Recently Deleted</string>
+    
+    <!-- Fix Start: Cloak Recents strings -->
+    <string name="setting_cloak_recents_title">Cloak in Recents</string>
+    <string name="setting_cloak_recents_switch">Hide preview</string>
+    <string name="setting_cloak_recents_helper">When enabled, the app preview shown in the Android app overview is hidden. This helps protect your privacy.\n(Default: Enabled)</string>
+    <string name="setting_enabled_msg">Enabled</string>
+    <string name="setting_disabled_msg">Disabled</string>
+    <!-- Fix End: Cloak Recents strings -->
     <string name="universal_restore">Restore</string>
     <string name="deleted_item_thumbnail_description">Deleted item thumbnail</string>
     <string name="trash_empty_icon_description">Trash is empty icon</string>
@@ -593,7 +601,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_pin_removed">PIN successfully removed</string>
     <!-- Enhanced Tab Lock UX strings -->
     <string name="applock_set_pin_enable">Set PIN &amp; Enable</string>
-    <string name="applock_helper_create">Create a 4-digit PIN to protect the Records tab. It will auto-lock whenever the app goes to the background.</string>
+    <string name="applock_helper_create">Create protection for the Records tab using a 4‑digit PIN, password, or fingerprint. It will auto‑lock when the app goes to background.</string>
     <string name="applock_helper_manage_disabled">Tab Lock PIN is set. Toggle it on to require the PIN when returning to the app.</string>
     <string name="applock_helper_enabled">Tab Lock is active. You will need the PIN when opening the Records tab after leaving the app.</string>
     

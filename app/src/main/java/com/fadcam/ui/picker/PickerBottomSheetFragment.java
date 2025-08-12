@@ -149,10 +149,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         switchRow.setOrientation(LinearLayout.HORIZONTAL);
         switchRow.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         switchRow.setPadding(4, 12, 4, 12);
-        TextView label = new TextView(requireContext());
+    TextView label = new TextView(requireContext());
         label.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         label.setText(switchTitle);
-        label.setTextColor(getResources().getColor(android.R.color.white, requireContext().getTheme()));
+    label.setTextColor(getResources().getColor(android.R.color.white, requireContext().getTheme()));
         label.setTextSize(16f);
         label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
         android.widget.Switch sw = new android.widget.Switch(requireContext());
