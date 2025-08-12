@@ -249,7 +249,7 @@ public class AppearanceSettingsFragment extends Fragment {
 
     private void updateAppIcon(String iconKey) {
         PackageManager pm = requireContext().getPackageManager();
-        ComponentName defaultIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity");
+        ComponentName defaultIcon = new ComponentName(requireContext(), "com.fadcam.SplashActivity");
         ComponentName alternativeIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.AlternativeIcon");
         ComponentName fadedIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FadedIcon");
         ComponentName palestineIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.PalestineIcon");

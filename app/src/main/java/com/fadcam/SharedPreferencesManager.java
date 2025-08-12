@@ -849,4 +849,52 @@ public class SharedPreferencesManager {
         }
     }
 
+    // -------------- Fix Start for this method(getCurrentAppIcon)-----------
+    /**
+     * Gets the currently selected app icon key.
+     * This is used by the notification system to display the same icon as the launcher.
+     * 
+     * @return Current app icon key (e.g., "default", "pakistan", "minimal", etc.)
+     */
+    public String getCurrentAppIcon() {
+        return sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
+    }
+    // -------------- Fix Ended for this method(getCurrentAppIcon)-----------
+
+    // -------------- Fix Start for this method(getCurrentAppIconResId)-----------
+    /**
+     * Returns the mipmap resource ID corresponding to the currently selected app icon.
+     * Centralizes icon-key -> resource-ID mapping so callers (e.g., notifications) don't duplicate it.
+     */
+    public int getCurrentAppIconResId() {
+        String key = getCurrentAppIcon();
+        return getAppIconResId(key);
+    }
+
+    /**
+     * Maps an icon key to its mipmap resource ID.
+     * Falls back to the default launcher icon if an unknown key is provided.
+     */
+    public int getAppIconResId(String iconKey) {
+        if (Constants.APP_ICON_MINIMAL.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_minimal;
+        if (Constants.APP_ICON_ALTERNATIVE.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_2;
+        if (Constants.APP_ICON_FADED.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_faded;
+        if (Constants.APP_ICON_PALESTINE.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_palestine;
+        if (Constants.APP_ICON_PAKISTAN.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_pakistan;
+        if (Constants.APP_ICON_FADSECLAB.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_fadseclab;
+        if (Constants.APP_ICON_NOOR.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_noor;
+        if (Constants.APP_ICON_BAT.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_bat;
+        if (Constants.APP_ICON_REDBINARY.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_redbinary;
+        if (Constants.APP_ICON_NOTES.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_notes;
+        if (Constants.APP_ICON_CALCULATOR.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_calculator;
+        if (Constants.APP_ICON_CLOCK.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_clock;
+        if (Constants.APP_ICON_WEATHER.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_weather;
+        if (Constants.APP_ICON_FOOTBALL.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_football;
+        if (Constants.APP_ICON_CAR.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_car;
+        if (Constants.APP_ICON_JET.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_jet;
+        // default or unknown
+        return com.fadcam.R.mipmap.ic_launcher;
+    }
+    // -------------- Fix Ended for this method(getCurrentAppIconResId)-----------
+
 }
