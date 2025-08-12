@@ -53,3 +53,5 @@ alwaysApply: true
 
     Use logging frameworks like SLF4J or Log4j instead of System.out.println for production code.
     Ensure code is scalable, testable, and maintainable with proper unit tests (e.g., JUnit).
+    
+- And most importantly, after every complete change, in the end run "./gradlew compileDebugJavaWithJavac" command to see if build succeeds and if not then fix the errors and then again check, once succes then run "./gradlew installDebug" as a final command so before you end the converstation, the app is installed on my phone.

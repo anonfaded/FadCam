@@ -1428,6 +1428,13 @@ public class GLRecordingPipeline {
                     android.media.AudioFormat.ENCODING_PCM_16BIT);
             // Use 2x the minimum buffer size for best reliability
             int bufferSize = Math.max(minBufferSize * 2, audioSampleRate * audioChannelCount);
+            
+            // Check for RECORD_AUDIO permission before creating AudioRecord
+            if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) 
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                throw new SecurityException("RECORD_AUDIO permission not granted");
+            }
+            
             audioRecord = new android.media.AudioRecord(
                     audioSource,
                     audioSampleRate,
