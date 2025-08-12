@@ -495,9 +495,90 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private List<Size> getCompatiblesVideoResolutions(CameraType type){
-        // -------------- Fix Start for this method(getCompatiblesVideoResolutions_legacyReuse)-----------
+        // -------------- Fix Start for this method(getCompatiblesVideoResolutions)-----------
+        // First return cached list if available
         if(type==CameraType.FRONT && !cachedResolutionsFront.isEmpty()) return cachedResolutionsFront;
         if(type==CameraType.BACK && !cachedResolutionsBack.isEmpty()) return cachedResolutionsBack;
+
+        // New approach: enumerate raw supported sizes from StreamConfigurationMap so that
+        // smaller legacy/sub-SD resolutions (e.g. 320x240, 352x288, 426x240) not tied to a specific
+        // CamcorderProfile constant are still exposed to the user. The previous implementation only
+        // surfaced sizes that exactly matched a CamcorderProfile, resulting in seeing just SD/HD/FHD.
+        List<Size> supported = new ArrayList<>();
+        try {
+            String cameraId = getActualCameraIdForType(type);
+            if(cameraId!=null){
+                supported = getSupportedVideoSizesForCamera(cameraId); // already filtered by isReasonableVideoSize
+            }
+        } catch (Exception e){
+            Log.w(TAG, "Direct supported size enumeration failed, falling back", e);
+        }
+
+        if(supported == null) supported = new ArrayList<>();
+
+        // Curate: intersect with canonical list to avoid overwhelming user with every sensor mode.
+        // Canonical ordered list from highest to lowest + legacy "super low" requests.
+        final String[] CANONICAL = {
+                "7680x4320", // 8K
+                "3840x2160", // 4K
+                "2560x1440", // 2K
+                "1920x1080", // FHD
+                "1280x720",  // HD
+                "854x480",   // 480p widescreen (may not have label)
+                "720x480",   // SD (widescreen-ish 3:2)
+                "640x480",   // SD 4:3
+                "480x360",   // legacy lower SD
+                "426x240",   // 240p widescreen
+                "352x288",   // CIF
+                "320x240"    // QVGA
+        };
+        Set<String> supportedSet = new HashSet<>();
+        for(Size s: supported){ supportedSet.add(s.getWidth()+"x"+s.getHeight()); }
+
+        List<Size> curated = new ArrayList<>();
+        // We will only add a size if it has a matching CamcorderProfile (recordable),
+        // preventing phantom choices that cause recording failures.
+        String actualCameraId = getActualCameraIdForType(type);
+        for(String dim: CANONICAL){
+            if(!supportedSet.contains(dim)) continue; // hardware doesn't advertise it
+            try{
+                String[] parts = dim.split("x");
+                Size candidate = new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+                if(actualCameraId!=null && createProfileForSize(actualCameraId, candidate)!=null){
+                    curated.add(candidate);
+                }
+            }catch(Exception ignored){}
+        }
+
+        // Ensure current saved resolution (if supported) appears even if non-canonical
+        try{
+            Size current = prefs.getCameraResolution();
+            String curKey = current.getWidth()+"x"+current.getHeight();
+            if(supportedSet.contains(curKey) && curated.stream().noneMatch(s-> s.getWidth()==current.getWidth() && s.getHeight()==current.getHeight())){
+                curated.add(0, current); // put at top to keep visible
+            }
+        }catch(Exception ignored){}
+
+        if(!curated.isEmpty()){
+            // Sort by area desc (except we already placed current earlier if injected)
+            try{ Collections.sort(curated,(a,b)-> Long.compare((long)b.getWidth()*b.getHeight(), (long)a.getWidth()*a.getHeight())); }catch(Exception ignored){}
+            // Auto-correct saved preference if it's no longer valid (e.g., user had 4K selected but profile absent)
+            try{
+                Size saved = prefs.getCameraResolution();
+                boolean found = false; for(Size s: curated){ if(s.getWidth()==saved.getWidth() && s.getHeight()==saved.getHeight()){ found=true; break; } }
+                if(!found){ // downgrade to first (highest) valid size
+                    Size fallback = curated.get(0);
+                    prefs.sharedPreferences.edit()
+                            .putInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, fallback.getWidth())
+                            .putInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, fallback.getHeight())
+                            .apply();
+                }
+            }catch(Exception ignored){}
+            if(type==CameraType.FRONT) cachedResolutionsFront = curated; else cachedResolutionsBack = curated;
+            return curated;
+        }
+
+        // Fallback: legacy profile-derived approach (should rarely be needed now and will still be curated upstream)
         List<CamcorderProfile> profiles = getCamcorderProfilesForTypeInternal(type);
         List<Size> sizes = new ArrayList<>();
         if(profiles!=null){ for(CamcorderProfile p: profiles){ if(p!=null){ sizes.add(new Size(p.videoFrameWidth, p.videoFrameHeight)); } } }
@@ -506,7 +587,7 @@ public class VideoSettingsFragment extends Fragment {
         try{ Collections.sort(list,(a,b)-> Long.compare((long)b.getWidth()*b.getHeight(), (long)a.getWidth()*a.getHeight())); }catch(Exception ignored){}
         if(type==CameraType.FRONT) cachedResolutionsFront = list; else cachedResolutionsBack = list;
         return list;
-        // -------------- Fix Ended for this method(getCompatiblesVideoResolutions_legacyReuse)-----------
+        // -------------- Fix Ended for this method(getCompatiblesVideoResolutions)-----------
     }
 
     // Legacy internal helpers (copied/adapted from SettingsFragment to ensure parity)
@@ -533,7 +614,17 @@ public class VideoSettingsFragment extends Fragment {
         return supportedSizes;
     }
 
-    private boolean isReasonableVideoSize(Size size){ int w=size.getWidth(), h=size.getHeight(); if(w<480||h<360) return false; double ar=(double)w/h; return ar>=1.0 && ar<=2.5; }
+    // -------------- Fix Start for this method(isReasonableVideoSize lower threshold)-----------
+    private boolean isReasonableVideoSize(Size size){
+        int w = size.getWidth();
+        int h = size.getHeight();
+        // Allow lower legacy SD / sub-SD resolutions (e.g., 320x240, 352x288, 426x240) requested by user.
+        // Previous threshold filtered anything below 480x360 and removed "super low" options.
+        if(w < 320 || h < 240) return false; // new minimal floor
+        double ar = (double) w / h;
+        return ar >= 1.0 && ar <= 2.5;
+    }
+    // -------------- Fix Ended for this method(isReasonableVideoSize lower threshold)-----------
 
     private CamcorderProfile createProfileForSize(String cameraId, Size size){
         try{
