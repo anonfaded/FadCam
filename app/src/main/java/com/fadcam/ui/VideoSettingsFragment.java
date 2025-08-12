@@ -336,7 +336,8 @@ public class VideoSettingsFragment extends Fragment {
                 refreshAllValues();
             }
         });
-        String helper = getString(R.string.setting_back_lens_info_single_v2);
+        // Create dynamic helper text based on detected cameras
+        String helper = createLensHelperText();
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_back_lens_title), items, saved, resultKey, helper);
@@ -536,6 +537,10 @@ public class VideoSettingsFragment extends Fragment {
         CameraManager manager = (CameraManager) ctx.getSystemService(Context.CAMERA_SERVICE);
         try {
             String defaultId = Constants.DEFAULT_BACK_CAMERA_ID != null ? Constants.DEFAULT_BACK_CAMERA_ID : "0";
+
+            // Track camera types to avoid duplicates
+            java.util.Set<String> addedCameraTypes = new java.util.HashSet<>();
+
             for (String id : manager.getCameraIdList()) {
                 CameraCharacteristics ch = manager.getCameraCharacteristics(id);
                 Integer facing = ch.get(CameraCharacteristics.LENS_FACING);
@@ -544,28 +549,81 @@ public class VideoSettingsFragment extends Fragment {
                     Float focal = null;
                     if (focalLengths != null && focalLengths.length > 0)
                         focal = focalLengths[0];
+
                     StringBuilder display = new StringBuilder();
+                    String cameraType;
                     boolean isDefault = id.equals(defaultId);
+
+                    // Determine camera type based on focal length, but be conservative
+                    // Only classify as wide-angle if there are multiple cameras with different
+                    // focal lengths
+                    String lensType = null;
+                    if (focal != null && availableBackCameras.size() > 0) {
+                        // Only classify as special lens types if we have multiple cameras
+                        // This prevents single-camera phones from being mislabeled
+                        boolean hasMultipleCameras = false;
+                        try {
+                            // Quick check if there are multiple back cameras
+                            int backCameraCount = 0;
+                            for (String checkId : manager.getCameraIdList()) {
+                                CameraCharacteristics checkCh = manager.getCameraCharacteristics(checkId);
+                                Integer checkFacing = checkCh.get(CameraCharacteristics.LENS_FACING);
+                                if (checkFacing != null && checkFacing == CameraCharacteristics.LENS_FACING_BACK) {
+                                    backCameraCount++;
+                                }
+                            }
+                            hasMultipleCameras = backCameraCount > 1;
+                        } catch (Exception e) {
+                            // If we can't determine, assume single camera
+                            hasMultipleCameras = false;
+                        }
+
+                        if (hasMultipleCameras) {
+                            // Only classify lens types if there are multiple cameras
+                            if (focal <= 3f) {
+                                lensType = "Ultra-Wide";
+                            } else if (focal <= 6f) {
+                                lensType = "Wide-Angle";
+                            } else if (focal >= 70f) {
+                                lensType = "Telephoto";
+                            } else if (focal >= 50f) {
+                                lensType = "Portrait";
+                            }
+                            // For focal lengths between 6-50mm, don't classify (likely standard)
+                        }
+                        // For single camera phones, don't classify by focal length
+                    }
+
                     if (isDefault) {
-                        display.append("Main");
-                    } else if (focal != null) {
-                        if (focal <= 4f)
-                            display.append("Ultra-Wide");
-                        else if (focal <= 8f)
-                            display.append("Wide-Angle");
-                        else if (focal >= 50f)
-                            display.append("Telephoto");
-                        else if (focal >= 35f)
-                            display.append("Portrait");
-                        else
-                            display.append("Camera");
+                        // For default camera, show both "Main" and lens type if it's not standard
+                        if (lensType != null && !lensType.equals("Standard")) {
+                            display.append("Main (").append(lensType).append(")");
+                            cameraType = "Main_" + lensType;
+                        } else {
+                            display.append("Main");
+                            cameraType = "Main";
+                        }
+                    } else if (lensType != null) {
+                        display.append(lensType);
+                        cameraType = lensType;
                     } else {
                         display.append("Camera");
+                        cameraType = "Camera_" + id;
                     }
+
+                    // Skip duplicate camera types (except Main camera which is always included)
+                    if (!isDefault && addedCameraTypes.contains(cameraType)) {
+                        Log.d(TAG, "Skipping duplicate camera type: " + cameraType + " (ID: " + id + ")");
+                        continue;
+                    }
+
+                    addedCameraTypes.add(cameraType);
                     display.append(" (").append(id).append(")");
                     if (focal != null)
                         display.append(" ").append(Math.round(focal)).append("mm");
                     availableBackCameras.add(new CameraIdInfo(id, display.toString()));
+
+                    Log.d(TAG, "Added camera: " + display.toString() + " with focal length: " + focal);
                 }
             }
             // Sort: default first then numeric id
@@ -1057,14 +1115,14 @@ public class VideoSettingsFragment extends Fragment {
         Size resolution = prefs.getCameraResolution();
         CameraType camera = prefs.getCameraSelection();
         int framerate = prefs.getSpecificVideoFrameRate(camera);
-        
+
         int width = resolution.getWidth();
         int height = resolution.getHeight();
         int pixels = width * height;
-        
+
         // Base bitrate calculation based on resolution
         int baseBitrate;
-        
+
         if (pixels >= 3840 * 2160) {
             // 4K and above
             baseBitrate = 45000; // 45 Mbps
@@ -1084,12 +1142,12 @@ public class VideoSettingsFragment extends Fragment {
             // SD and below
             baseBitrate = 2000; // 2 Mbps
         }
-        
+
         // Adjust for framerate (higher framerate = higher bitrate)
         if (framerate > 30) {
             baseBitrate = (int) (baseBitrate * (framerate / 30.0f));
         }
-        
+
         return baseBitrate;
     }
 
@@ -1134,7 +1192,8 @@ public class VideoSettingsFragment extends Fragment {
                 }
             }
         });
-        String helper = getString(R.string.note_zoom_ratio, 1.0f);
+        // Create dynamic helper text explaining auto-selection behavior
+        String helper = createZoomHelperText(cam);
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_zoom_ratio_title), items, currentId, resultKey, helper);
@@ -1359,5 +1418,80 @@ public class VideoSettingsFragment extends Fragment {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
+    /**
+     * Creates dynamic helper text for lens selection based on detected cameras
+     */
+    private String createLensHelperText() {
+        if (availableBackCameras.isEmpty()) {
+            return getString(R.string.setting_back_lens_info_single_v2); // Fallback to static text
+        }
+        
+        int cameraCount = availableBackCameras.size();
+        if (cameraCount == 1) {
+            return "Only one back camera detected. No lens switching available.";
+        } else {
+            StringBuilder helper = new StringBuilder();
+            helper.append("Detected ").append(cameraCount).append(" back cameras: ");
+            for (int i = 0; i < availableBackCameras.size(); i++) {
+                if (i > 0) helper.append(", ");
+                CameraIdInfo info = availableBackCameras.get(i);
+                // Extract just the lens type from display name (before the parentheses)
+                String lensType = info.displayName.split(" \\(")[0];
+                helper.append(lensType);
+            }
+            helper.append(". Select the lens you want to use for recording.");
+            return helper.toString();
+        }
+    }
 
+    /**
+     * Creates dynamic helper text for zoom ratio explaining auto-selection behavior
+     */
+    private String createZoomHelperText(CameraType cameraType) {
+        StringBuilder helper = new StringBuilder();
+        
+        // Get the default zoom ratio for this camera type
+        float defaultZoom = prefs.getSpecificZoomRatio(cameraType);
+        
+        helper.append("Zoom ratio controls the field of view. ");
+        helper.append("Default is ").append(String.format(Locale.getDefault(), "%.1fx", defaultZoom));
+        
+        // Add information about auto-selection for wide-angle cameras
+        if (cameraType == CameraType.BACK) {
+            String selectedCameraId = prefs.getSelectedBackCameraId();
+            if (selectedCameraId != null && !selectedCameraId.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                // Check if this is a wide-angle camera
+                if (isWideAngleCamera(selectedCameraId)) {
+                    helper.append(" (auto-selected 0.5x for wide-angle lens to show full field of view)");
+                }
+            }
+        }
+        
+        helper.append(". Lower values = wider view, higher values = more zoomed in.");
+        return helper.toString();
+    }
+    
+    /**
+     * Helper method to check if a camera ID is wide-angle (reused from SharedPreferencesManager logic)
+     */
+    private boolean isWideAngleCamera(String cameraId) {
+        try {
+            Context ctx = getContext();
+            if (ctx == null) return false;
+            
+            CameraManager manager = (CameraManager) ctx.getSystemService(Context.CAMERA_SERVICE);
+            if (manager != null) {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+                float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                if (focalLengths != null && focalLengths.length > 0) {
+                    float focal = focalLengths[0];
+                    // Wide-angle cameras typically have focal lengths <= 8mm
+                    return focal <= 8f;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error checking camera characteristics for ID: " + cameraId, e);
+        }
+        return false;
+    }
 }

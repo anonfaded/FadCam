@@ -36,7 +36,8 @@ public class SharedPreferencesManager {
     }
 
     public void addOpenedVideoUri(String uriString) {
-        if (uriString == null || uriString.isEmpty()) return;
+        if (uriString == null || uriString.isEmpty())
+            return;
         Set<String> openedUris = getOpenedVideoUris(); // Get current set (returns a copy)
         if (openedUris.add(uriString)) { // Add the new URI (add returns true if set was changed)
             sharedPreferences.edit().putStringSet(Constants.PREF_OPENED_VIDEO_URIS, openedUris).apply();
@@ -49,36 +50,39 @@ public class SharedPreferencesManager {
     // Optional: Method to clear the opened set (e.g., for debugging)
     public void clearOpenedVideoUris() {
         sharedPreferences.edit().remove(Constants.PREF_OPENED_VIDEO_URIS).apply();
-        Log.w("SharedPrefs","Cleared all opened video URIs.");
+        Log.w("SharedPrefs", "Cleared all opened video URIs.");
     }
     // --- End Opened Video Methods ---
 
     private static final String PREF_KEY_VIDEO_ORIENTATION = "video_orientation";
 
-
-    // ----- Fix Start for this class (SharedPreferencesManager_trash_auto_delete) -----
+    // ----- Fix Start for this class (SharedPreferencesManager_trash_auto_delete)
+    // -----
     private static final String PREF_KEY_TRASH_AUTO_DELETE_MINUTES = "trash_auto_delete_minutes";
     public static final int DEFAULT_TRASH_AUTO_DELETE_MINUTES = 30 * 24 * 60; // 30 days in minutes
     public static final int TRASH_AUTO_DELETE_NEVER = -1; // This constant can remain as is, representing manual delete
-    // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete) -----
+    // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete)
+    // -----
 
     // ----- Fix Start for this class (SharedPreferencesManager_clock_color) -----
     private static final String PREF_KEY_CLOCK_CARD_COLOR = "clock_card_color";
-    
+
     // This will be set dynamically based on theme
     public static String DEFAULT_CLOCK_CARD_COLOR = "#673AB7"; // Initial value: Purple
-    
+
     /**
-     * Gets the currently set clock card color. 
-     * For AMOLED theme, special handling ensures the clock card always uses Dark Grey.
+     * Gets the currently set clock card color.
+     * For AMOLED theme, special handling ensures the clock card always uses Dark
+     * Grey.
      */
     public String getClockCardColor() {
-        String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        
+        String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
+
         // Special case for AMOLED theme - always return Dark Grey
-        if (currentTheme != null && 
-            (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") || 
-             currentTheme.equalsIgnoreCase("Faded Night"))) {
+        if (currentTheme != null &&
+                (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") ||
+                        currentTheme.equalsIgnoreCase("Faded Night"))) {
             return "#424242"; // Dark Grey for AMOLED
         } else if (currentTheme.equals("Crimson Bloom")) {
             return "#F44336"; // Red for Red theme
@@ -93,22 +97,24 @@ public class SharedPreferencesManager {
         } else if (currentTheme.equals("Snow Veil")) {
             return "#E0E0E0"; // Light Grey for Snow Veil theme
         }
-        
+
         // For other themes or default
         return sharedPreferences.getString(PREF_KEY_CLOCK_CARD_COLOR, DEFAULT_CLOCK_CARD_COLOR);
     }
-    
+
     /**
      * Updates the default clock card color based on the current theme.
      * This should be called whenever the theme changes or on app startup.
      */
     public void updateDefaultClockColorForTheme() {
-        String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        
-        // Only update if the theme changes and the color wasn't manually set by the user
+        String currentTheme = sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
+
+        // Only update if the theme changes and the color wasn't manually set by the
+        // user
         if (currentTheme != null) {
-            if (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") || 
-                currentTheme.equalsIgnoreCase("Faded Night")) {
+            if (currentTheme.equalsIgnoreCase("AMOLED") || currentTheme.equalsIgnoreCase("Amoled") ||
+                    currentTheme.equalsIgnoreCase("Faded Night")) {
                 setClockCardColor("#424242"); // Dark Grey for AMOLED
             } else if (currentTheme.equals("Crimson Bloom")) {
                 setClockCardColor("#F44336"); // Red for Red theme
@@ -127,28 +133,31 @@ public class SharedPreferencesManager {
             }
         }
     }
-    
+
     public void setClockCardColor(String colorHex) {
         sharedPreferences.edit().putString(PREF_KEY_CLOCK_CARD_COLOR, colorHex).apply();
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_video_splitting) -----
+    // ----- Fix Start for this class (SharedPreferencesManager_video_splitting)
+    // -----
     public static final String PREF_VIDEO_SPLITTING_ENABLED = "video_splitting_enabled";
     public static final boolean DEFAULT_VIDEO_SPLITTING_ENABLED = false;
     public static final String PREF_VIDEO_SPLIT_SIZE_MB = "video_split_size_mb";
     public static final int DEFAULT_VIDEO_SPLIT_SIZE_MB = 2048; // 2GB
-    // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting) -----
+    // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting)
+    // -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source) -----
+    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source)
+    // -----
     private static final String PREF_KEY_AUDIO_INPUT_SOURCE = "audio_input_source";
     public static final String AUDIO_INPUT_SOURCE_PHONE = "phone_mic";
     public static final String AUDIO_INPUT_SOURCE_WIRED = "wired_mic";
-    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source) -----
+    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source)
+    // -----
 
     // App Lock preferences
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
-
 
     // ----- Fix Start: AppLock session unlock state -----
     private static final String KEY_APPLOCK_SESSION_UNLOCKED = "applock_session_unlocked";
@@ -158,13 +167,15 @@ public class SharedPreferencesManager {
      * Returns true if the AppLock has been unlocked for this session.
      */
     public boolean isAppLockSessionUnlocked() {
-        if (sessionUnlockedCache) return true;
+        if (sessionUnlockedCache)
+            return true;
         sessionUnlockedCache = sharedPreferences.getBoolean(KEY_APPLOCK_SESSION_UNLOCKED, false);
         return sessionUnlockedCache;
     }
 
     /**
      * Sets the AppLock session unlock state.
+     * 
      * @param unlocked true if unlocked, false to reset
      */
     public void setAppLockSessionUnlocked(boolean unlocked) {
@@ -189,13 +200,17 @@ public class SharedPreferencesManager {
 
     // --- Camera / Video settings ---
     public CameraType getCameraSelection() {
-        String cameraSelection = sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION, String.valueOf(Constants.DEFAULT_CAMERA_TYPE));
+        String cameraSelection = sharedPreferences.getString(Constants.PREF_CAMERA_SELECTION,
+                String.valueOf(Constants.DEFAULT_CAMERA_TYPE));
         return CameraType.valueOf(cameraSelection);
     }
 
     public Size getCameraResolution() {
-        return new Size(sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, Constants.DEFAULT_VIDEO_RESOLUTION.getWidth()),
-                sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, Constants.DEFAULT_VIDEO_RESOLUTION.getHeight()));
+        return new Size(
+                sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH,
+                        Constants.DEFAULT_VIDEO_RESOLUTION.getWidth()),
+                sharedPreferences.getInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT,
+                        Constants.DEFAULT_VIDEO_RESOLUTION.getHeight()));
     }
 
     // --- Existing FPS method (Maybe deprecate later) ---
@@ -203,7 +218,7 @@ public class SharedPreferencesManager {
     public Integer getVideoFrameRate() {
         // Keep original default logic maybe? Or point to Back Camera?
         // For safety, maybe return Back camera's value if new ones exist
-        if(sharedPreferences.contains(Constants.PREF_VIDEO_FRAME_RATE_BACK)){
+        if (sharedPreferences.contains(Constants.PREF_VIDEO_FRAME_RATE_BACK)) {
             return getSpecificVideoFrameRate(CameraType.BACK);
         }
         return sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
@@ -220,17 +235,19 @@ public class SharedPreferencesManager {
      * @return The saved frame rate (int).
      */
     public int getSpecificVideoFrameRate(CameraType cameraType) {
-        String specificKey = (cameraType == CameraType.FRONT) ?
-                Constants.PREF_VIDEO_FRAME_RATE_FRONT : Constants.PREF_VIDEO_FRAME_RATE_BACK;
+        String specificKey = (cameraType == CameraType.FRONT) ? Constants.PREF_VIDEO_FRAME_RATE_FRONT
+                : Constants.PREF_VIDEO_FRAME_RATE_BACK;
 
         // 1. Check if the specific key exists
         if (sharedPreferences.contains(specificKey)) {
             return sharedPreferences.getInt(specificKey, Constants.DEFAULT_VIDEO_FRAME_RATE);
         }
-        // 2. Specific key doesn't exist, check if the OLD generic key exists (for migration)
+        // 2. Specific key doesn't exist, check if the OLD generic key exists (for
+        // migration)
         else if (sharedPreferences.contains(Constants.PREF_VIDEO_FRAME_RATE)) {
-            int oldGenericValue = sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE, Constants.DEFAULT_VIDEO_FRAME_RATE);
-            Log.w("SharedPrefs", "Migrating old FPS pref ("+oldGenericValue+") to key: "+ specificKey);
+            int oldGenericValue = sharedPreferences.getInt(Constants.PREF_VIDEO_FRAME_RATE,
+                    Constants.DEFAULT_VIDEO_FRAME_RATE);
+            Log.w("SharedPrefs", "Migrating old FPS pref (" + oldGenericValue + ") to key: " + specificKey);
             // Save the migrated value to the new key
             setSpecificVideoFrameRate(cameraType, oldGenericValue);
             // Optionally remove the old key after migration
@@ -245,12 +262,13 @@ public class SharedPreferencesManager {
 
     /**
      * Saves the frame rate preference for a specific camera type.
+     * 
      * @param cameraType FRONT or BACK camera.
-     * @param frameRate The frame rate value to save.
+     * @param frameRate  The frame rate value to save.
      */
     public void setSpecificVideoFrameRate(CameraType cameraType, int frameRate) {
-        String specificKey = (cameraType == CameraType.FRONT) ?
-                Constants.PREF_VIDEO_FRAME_RATE_FRONT : Constants.PREF_VIDEO_FRAME_RATE_BACK;
+        String specificKey = (cameraType == CameraType.FRONT) ? Constants.PREF_VIDEO_FRAME_RATE_FRONT
+                : Constants.PREF_VIDEO_FRAME_RATE_BACK;
         sharedPreferences.edit().putInt(specificKey, frameRate).apply();
     }
 
@@ -261,43 +279,96 @@ public class SharedPreferencesManager {
     /**
      * Gets the saved zoom ratio preference for a specific camera type.
      * If no specific preference is saved, it returns the default zoom ratio.
+     * For wide-angle cameras, uses a lower default zoom ratio to properly utilize
+     * the wide field of view.
      *
      * @param cameraType FRONT or BACK camera.
      * @return The saved zoom ratio (float).
      */
     public float getSpecificZoomRatio(CameraType cameraType) {
-        String specificKey = (cameraType == CameraType.FRONT) ?
-                Constants.PREF_ZOOM_RATIO_FRONT : Constants.PREF_ZOOM_RATIO_BACK;
+        String specificKey = (cameraType == CameraType.FRONT) ? Constants.PREF_ZOOM_RATIO_FRONT
+                : Constants.PREF_ZOOM_RATIO_BACK;
 
         // Check if the specific key exists
         if (sharedPreferences.contains(specificKey)) {
-            return sharedPreferences.getFloat(specificKey, Constants.DEFAULT_ZOOM_RATIO);
+            return sharedPreferences.getFloat(specificKey, getDefaultZoomRatioForCamera(cameraType));
         }
-        // No specific key exists, return default
+        // No specific key exists, return camera-appropriate default
         else {
-            return Constants.DEFAULT_ZOOM_RATIO;
+            return getDefaultZoomRatioForCamera(cameraType);
         }
     }
 
     /**
+     * Gets the appropriate default zoom ratio based on camera type and selected
+     * lens.
+     * Wide-angle cameras get a lower default zoom ratio to properly utilize their
+     * wide field of view.
+     */
+    private float getDefaultZoomRatioForCamera(CameraType cameraType) {
+        if (cameraType == CameraType.BACK) {
+            // For back camera, check if a wide-angle lens is selected
+            String selectedCameraId = getSelectedBackCameraId();
+            if (selectedCameraId != null && !selectedCameraId.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                // Check camera characteristics to determine if it's wide-angle
+                if (isWideAngleCamera(selectedCameraId)) {
+                    return 0.5f; // Lower zoom for wide-angle cameras to show full field of view
+                }
+                // For telephoto or other cameras, use normal zoom
+                return Constants.DEFAULT_ZOOM_RATIO;
+            }
+        }
+        // Default zoom ratio for main cameras (front camera and main back camera)
+        return Constants.DEFAULT_ZOOM_RATIO;
+    }
+
+    /**
+     * Checks if the given camera ID corresponds to a wide-angle or ultra-wide
+     * camera
+     * by examining its focal length characteristics.
+     */
+    private boolean isWideAngleCamera(String cameraId) {
+        try {
+            android.hardware.camera2.CameraManager manager = (android.hardware.camera2.CameraManager) context
+                    .getSystemService(Context.CAMERA_SERVICE);
+            if (manager != null) {
+                android.hardware.camera2.CameraCharacteristics characteristics = manager
+                        .getCameraCharacteristics(cameraId);
+                float[] focalLengths = characteristics.get(
+                        android.hardware.camera2.CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                if (focalLengths != null && focalLengths.length > 0) {
+                    float focal = focalLengths[0];
+                    // Wide-angle cameras typically have focal lengths <= 8mm
+                    // Ultra-wide cameras typically have focal lengths <= 4mm
+                    return focal <= 8f;
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("SharedPrefs", "Error checking camera characteristics for ID: " + cameraId, e);
+        }
+        return false;
+    }
+
+    /**
      * Saves the zoom ratio preference for a specific camera type.
+     * 
      * @param cameraType FRONT or BACK camera.
-     * @param zoomRatio The zoom ratio value to save.
+     * @param zoomRatio  The zoom ratio value to save.
      */
     public void setSpecificZoomRatio(CameraType cameraType, float zoomRatio) {
-        String specificKey = (cameraType == CameraType.FRONT) ?
-                Constants.PREF_ZOOM_RATIO_FRONT : Constants.PREF_ZOOM_RATIO_BACK;
+        String specificKey = (cameraType == CameraType.FRONT) ? Constants.PREF_ZOOM_RATIO_FRONT
+                : Constants.PREF_ZOOM_RATIO_BACK;
         sharedPreferences.edit().putFloat(specificKey, zoomRatio).apply();
     }
 
     // --- End New Zoom Ratio Methods ---
 
     public VideoCodec getVideoCodec() {
-        String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, Constants.DEFAULT_VIDEO_CODEC.toString());
+        String videoCodec = sharedPreferences.getString(Constants.PREF_VIDEO_CODEC,
+                Constants.DEFAULT_VIDEO_CODEC.toString());
         return VideoCodec.valueOf(videoCodec);
     }
     // --- End Camera / Video settings ---
-
 
     // --- STORAGE METHODS ---
     public String getStorageMode() {
@@ -323,7 +394,6 @@ public class SharedPreferencesManager {
         editor.apply();
     }
     // --- END STORAGE METHODS ---
-
 
     // --- Other existing methods ---
     public boolean isVideoCodecExist() {
@@ -351,10 +421,13 @@ public class SharedPreferencesManager {
         // Default to true if the preference doesn't exist yet
         return sharedPreferences.getBoolean(Constants.PREF_IS_PREVIEW_ENABLED, Constants.DEFAULT_PREVIEW_ENABLED);
     }
-    // Method to save the preview state (often inline in the Fragment's savePreviewState, but could be here too)
+
+    // Method to save the preview state (often inline in the Fragment's
+    // savePreviewState, but could be here too)
     public void setPreviewEnabled(boolean isEnabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_IS_PREVIEW_ENABLED, isEnabled).apply();
     }
+
     public String getLanguage() {
         return sharedPreferences.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
     }
@@ -382,15 +455,18 @@ public class SharedPreferencesManager {
     /**
      * Gets the preferred physical camera ID for the back camera.
      * Defaults to Constants.DEFAULT_BACK_CAMERA_ID if not set or invalid.
+     * 
      * @return The saved physical camera ID string.
      */
     public String getSelectedBackCameraId() {
-        // Basic validation could be added here if needed (e.g., check if ID is purely numeric?)
+        // Basic validation could be added here if needed (e.g., check if ID is purely
+        // numeric?)
         return sharedPreferences.getString(Constants.PREF_SELECTED_BACK_CAMERA_ID, Constants.DEFAULT_BACK_CAMERA_ID);
     }
 
     /**
      * Saves the preferred physical camera ID for the back camera.
+     * 
      * @param cameraId The physical camera ID string to save.
      */
     public void setSelectedBackCameraId(String cameraId) {
@@ -406,15 +482,19 @@ public class SharedPreferencesManager {
     public int getAudioBitrate() {
         return sharedPreferences.getInt(Constants.PREF_AUDIO_BITRATE, Constants.DEFAULT_AUDIO_BITRATE);
     }
+
     public void setAudioBitrate(int bitrate) {
         sharedPreferences.edit().putInt(Constants.PREF_AUDIO_BITRATE, bitrate).apply();
     }
+
     public int getAudioSamplingRate() {
         return sharedPreferences.getInt(Constants.PREF_AUDIO_SAMPLING_RATE, Constants.DEFAULT_AUDIO_SAMPLING_RATE);
     }
+
     public void setAudioSamplingRate(int samplingRate) {
         sharedPreferences.edit().putInt(Constants.PREF_AUDIO_SAMPLING_RATE, samplingRate).apply();
     }
+
     public void resetAudioSettingsToDefault() {
         setAudioBitrate(Constants.DEFAULT_AUDIO_BITRATE);
         setAudioSamplingRate(Constants.DEFAULT_AUDIO_SAMPLING_RATE);
@@ -437,6 +517,7 @@ public class SharedPreferencesManager {
 
     /**
      * Checks if the video orientation is set to landscape.
+     * 
      * @return true if the orientation is landscape, false otherwise.
      */
     public boolean isOrientationLandscape() {
@@ -444,7 +525,8 @@ public class SharedPreferencesManager {
     }
     // --- End Video Orientation ---
 
-    // ----- Fix Start for this class (SharedPreferencesManager_trash_auto_delete_methods) -----
+    // ----- Fix Start for this class
+    // (SharedPreferencesManager_trash_auto_delete_methods) -----
     public void setTrashAutoDeleteMinutes(int minutes) {
         sharedPreferences.edit().putInt(PREF_KEY_TRASH_AUTO_DELETE_MINUTES, minutes).apply();
         Log.d("SharedPrefsManager", "Trash auto-delete duration set to: " + minutes + " minutes.");
@@ -455,9 +537,11 @@ public class SharedPreferencesManager {
         Log.d("SharedPrefsManager", "Retrieved trash auto-delete duration: " + minutes + " minutes.");
         return minutes;
     }
-    // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete_methods) -----
+    // ----- Fix Ended for this class
+    // (SharedPreferencesManager_trash_auto_delete_methods) -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_video_splitting_methods) -----
+    // ----- Fix Start for this class
+    // (SharedPreferencesManager_video_splitting_methods) -----
     public boolean isVideoSplittingEnabled() {
         return sharedPreferences.getBoolean(PREF_VIDEO_SPLITTING_ENABLED, DEFAULT_VIDEO_SPLITTING_ENABLED);
     }
@@ -473,9 +557,11 @@ public class SharedPreferencesManager {
     public void setVideoSplitSizeMb(int sizeMb) {
         sharedPreferences.edit().putInt(PREF_VIDEO_SPLIT_SIZE_MB, sizeMb).apply();
     }
-    // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting_methods) -----
+    // ----- Fix Ended for this class
+    // (SharedPreferencesManager_video_splitting_methods) -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source) -----
+    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source)
+    // -----
     public void setAudioInputSource(String source) {
         sharedPreferences.edit().putString(PREF_KEY_AUDIO_INPUT_SOURCE, source).apply();
     }
@@ -483,7 +569,8 @@ public class SharedPreferencesManager {
     public String getAudioInputSource() {
         return sharedPreferences.getString(PREF_KEY_AUDIO_INPUT_SOURCE, AUDIO_INPUT_SOURCE_PHONE);
     }
-    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source) -----
+    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source)
+    // -----
 
     // ----- Fix Start for method(onboarding) -----
     // Using the proper constant from Constants class
@@ -502,9 +589,11 @@ public class SharedPreferencesManager {
     }
     // ----- Fix End for method(onboarding) -----
 
-    // ----- Fix Start for this class(SharedPreferencesManager_location_methods) -----
+    // ----- Fix Start for this class(SharedPreferencesManager_location_methods)
+    // -----
     /**
      * Sets whether location embedding is enabled
+     * 
      * @param enabled True to enable location embedding, false to disable
      */
     public void setLocationEmbeddingEnabled(boolean enabled) {
@@ -513,24 +602,28 @@ public class SharedPreferencesManager {
 
     /**
      * Sets whether location watermark is enabled
+     * 
      * @param enabled True to enable location watermark, false to disable
      */
     public void setLocationEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_LOCATION_DATA, enabled).apply();
     }
-    // ----- Fix Ended for this class(SharedPreferencesManager_location_methods) -----
+    // ----- Fix Ended for this class(SharedPreferencesManager_location_methods)
+    // -----
 
     // ----- Fix Start for this class (SharedPreferencesManager_applock) -----
     /**
      * Checks if app lock is enabled
+     * 
      * @return true if app lock is enabled, false otherwise
      */
     public boolean isAppLockEnabled() {
         return sharedPreferences.getBoolean(PREF_APP_LOCK_ENABLED, false);
     }
-    
+
     /**
      * Enables or disables app lock
+     * 
      * @param enabled true to enable app lock, false to disable
      */
     public void setAppLockEnabled(boolean enabled) {
@@ -538,7 +631,8 @@ public class SharedPreferencesManager {
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_applock) -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_notification_customization) -----
+    // ----- Fix Start for this class
+    // (SharedPreferencesManager_notification_customization) -----
     // Notification customization constants
     public static final String PREF_NOTIFICATION_PRESET = "notification_preset";
     public static final String NOTIFICATION_PRESET_DEFAULT = "default"; // Default FadCam notification
@@ -554,6 +648,7 @@ public class SharedPreferencesManager {
 
     /**
      * Gets the selected notification preset.
+     * 
      * @return The preset key, default is "default"
      */
     public String getNotificationPreset() {
@@ -562,6 +657,7 @@ public class SharedPreferencesManager {
 
     /**
      * Sets the notification preset.
+     * 
      * @param preset The preset key to use
      */
     public void setNotificationPreset(String preset) {
@@ -570,6 +666,7 @@ public class SharedPreferencesManager {
 
     /**
      * Gets the custom notification title if set by user.
+     * 
      * @return The custom title or null if not set
      */
     public String getCustomNotificationTitle() {
@@ -578,6 +675,7 @@ public class SharedPreferencesManager {
 
     /**
      * Sets the custom notification title.
+     * 
      * @param title The custom title text
      */
     public void setCustomNotificationTitle(String title) {
@@ -586,6 +684,7 @@ public class SharedPreferencesManager {
 
     /**
      * Gets the custom notification text if set by user.
+     * 
      * @return The custom text or null if not set
      */
     public String getCustomNotificationText() {
@@ -594,6 +693,7 @@ public class SharedPreferencesManager {
 
     /**
      * Sets the custom notification text.
+     * 
      * @param text The custom notification text
      */
     public void setCustomNotificationText(String text) {
@@ -602,6 +702,7 @@ public class SharedPreferencesManager {
 
     /**
      * Checks if the stop button should be hidden in the notification.
+     * 
      * @return true if button should be hidden, false otherwise
      */
     public boolean isNotificationStopButtonHidden() {
@@ -610,6 +711,7 @@ public class SharedPreferencesManager {
 
     /**
      * Sets whether to hide the stop button in the notification.
+     * 
      * @param hide true to hide the button, false to show it
      */
     public void setNotificationStopButtonHidden(boolean hide) {
@@ -618,15 +720,16 @@ public class SharedPreferencesManager {
 
     /**
      * Gets the notification title based on the selected preset or custom text.
+     * 
      * @return The notification title to display
      */
     public String getNotificationTitle() {
         String preset = getNotificationPreset();
-        
+
         if (context == null) {
             return null; // Return null if context is not available
         }
-        
+
         switch (preset) {
             case NOTIFICATION_PRESET_DEFAULT:
                 return null; // Use default from strings.xml
@@ -638,21 +741,23 @@ public class SharedPreferencesManager {
                 return context.getString(R.string.notification_title_syncing);
             case NOTIFICATION_PRESET_CUSTOM:
                 String custom = getCustomNotificationTitle();
-                return (custom != null && !custom.isEmpty()) ? custom : context.getString(R.string.notification_title_custom_default);
+                return (custom != null && !custom.isEmpty()) ? custom
+                        : context.getString(R.string.notification_title_custom_default);
             default:
                 return null; // Use default from strings.xml
         }
     }
-    
+
     /**
      * Gets the notification channel name based on the selected preset
+     * 
      * @return The channel name to display
      */
     public String getNotificationChannelName() {
         if (context == null) {
             return null; // Return null if context is not available
         }
-        
+
         String preset = getNotificationPreset();
         switch (preset) {
             case NOTIFICATION_PRESET_DEFAULT:
@@ -665,7 +770,8 @@ public class SharedPreferencesManager {
                 return context.getString(R.string.notification_channel_data_sync);
             case NOTIFICATION_PRESET_CUSTOM:
                 String custom = getCustomNotificationTitle();
-                return (custom != null && !custom.isEmpty()) ? custom : context.getString(R.string.notification_channel_generic);
+                return (custom != null && !custom.isEmpty()) ? custom
+                        : context.getString(R.string.notification_channel_generic);
             default:
                 return null;
         }
@@ -673,6 +779,7 @@ public class SharedPreferencesManager {
 
     /**
      * Gets the notification text based on the selected preset or custom text.
+     * 
      * @param isRecordingPaused Whether recording is currently paused
      * @return The notification text to display
      */
@@ -680,36 +787,35 @@ public class SharedPreferencesManager {
         if (context == null) {
             return null; // Return null if context is not available
         }
-        
+
         String preset = getNotificationPreset();
         switch (preset) {
             case NOTIFICATION_PRESET_DEFAULT:
                 return null; // Use default from strings.xml
             case NOTIFICATION_PRESET_SYSTEM_UPDATE:
-                return isRecordingPaused ? 
-                    context.getString(R.string.notification_text_system_update_paused) : 
-                    context.getString(R.string.notification_text_system_update_progress);
+                return isRecordingPaused ? context.getString(R.string.notification_text_system_update_paused)
+                        : context.getString(R.string.notification_text_system_update_progress);
             case NOTIFICATION_PRESET_DOWNLOADING:
-                return isRecordingPaused ? 
-                    context.getString(R.string.notification_text_downloading_paused) : 
-                    context.getString(R.string.notification_text_downloading_progress);
+                return isRecordingPaused ? context.getString(R.string.notification_text_downloading_paused)
+                        : context.getString(R.string.notification_text_downloading_progress);
             case NOTIFICATION_PRESET_SYNCING:
-                return isRecordingPaused ? 
-                    context.getString(R.string.notification_text_syncing_paused) : 
-                    context.getString(R.string.notification_text_syncing_progress);
+                return isRecordingPaused ? context.getString(R.string.notification_text_syncing_paused)
+                        : context.getString(R.string.notification_text_syncing_progress);
             case NOTIFICATION_PRESET_CUSTOM:
                 String custom = getCustomNotificationText();
-                return (custom != null && !custom.isEmpty()) ? custom : 
-                    context.getString(R.string.notification_text_custom_default);
+                return (custom != null && !custom.isEmpty()) ? custom
+                        : context.getString(R.string.notification_text_custom_default);
             default:
                 return null; // Use default from strings.xml
         }
     }
-    // ----- Fix Ended for this class (SharedPreferencesManager_notification_customization) -----
+    // ----- Fix Ended for this class
+    // (SharedPreferencesManager_notification_customization) -----
 
     // ----- Fix Start for this method(getVideoSplitSizeBytes)-----
     /**
      * Returns the video split size in bytes, based on the value in MB.
+     * 
      * @return Split size in bytes
      */
     public long getVideoSplitSizeBytes() {
@@ -719,15 +825,18 @@ public class SharedPreferencesManager {
     // ----- Fix Ended for this method(getVideoSplitSizeBytes)-----
 
     public static final String PREF_AUDIO_NOISE_SUPPRESSION = "audio_noise_suppression";
+
     public boolean isNoiseSuppressionEnabled() {
         return sharedPreferences.getBoolean(PREF_AUDIO_NOISE_SUPPRESSION, false);
     }
+
     public void setNoiseSuppressionEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(PREF_AUDIO_NOISE_SUPPRESSION, enabled).apply();
     }
 
     /**
-     * Returns the current video bitrate in bps, using custom or default as set in preferences.
+     * Returns the current video bitrate in bps, using custom or default as set in
+     * preferences.
      */
     public int getCurrentBitrate() {
         if (sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
