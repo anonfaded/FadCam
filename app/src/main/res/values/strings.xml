@@ -284,7 +284,7 @@
     <string name="watermark_style_time_fadcam_label">Time with FadCam</string>
     <string name="watermark_style_timeonly_label">Timestamp</string>
     <string name="watermark_style_none_label">No Watermark</string>
-    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video. Fun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
+    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
     <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
     <string name="location_watermark_sheet_title">Location Overlay</string>
     <string name="location_watermark_switch_label">Location Overlay</string>
@@ -635,10 +635,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_default" translatable="false">Legacy</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
-    <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
+    <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
+    <string name="app_icon_noor" translatable="false">Noor</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>

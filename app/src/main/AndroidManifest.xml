@@ -145,11 +145,11 @@
             </intent-filter>
         </activity-alias>
         
-        <!-- Sumud App Icon (Activity Alias) -->
+        <!-- Palestine App Icon (Activity Alias) -->
         <activity-alias
             android:name=".MainActivity.PalestineIcon"
             android:enabled="false"
-            android:label="Sumud (صُمود)"
+            android:label="I❤️Palestine"
             android:icon="@mipmap/ic_launcher_palestine"
             android:roundIcon="@mipmap/ic_launcher_palestine_round"
             android:targetActivity=".MainActivity"
