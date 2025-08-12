@@ -41,6 +41,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.fadcam.Utils;
+import com.fadcam.utils.CameraXFrameRateUtil;
+import com.fadcam.utils.DeviceHelper;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
+import java.util.Collections;
+import java.util.Arrays;
 
 /**
  * VideoSettingsFragment
@@ -390,7 +395,7 @@ public class VideoSettingsFragment extends Fragment {
     private void showFrameRateBottomSheet() {
         // -------------- Fix Start for this method(showFrameRateBottomSheet)-----------
         CameraType cam = prefs.getCameraSelection();
-        java.util.List<Integer> rates = getCompatiblesVideoFrameRates(cam);
+        java.util.List<Integer> rates = getHardwareSupportedFrameRates(cam);
         int current = prefs.getSpecificVideoFrameRate(cam);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         String currentId = String.valueOf(current);
@@ -412,7 +417,7 @@ public class VideoSettingsFragment extends Fragment {
                 refreshAllValues();
             }
         });
-        String helper = getString(R.string.note_framerate, prefs.getSpecificVideoFrameRate(cam));
+        String helper = getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE);
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_framerate_title), items, currentId, resultKey, helper);
@@ -965,118 +970,37 @@ public class VideoSettingsFragment extends Fragment {
         return null;
     }
 
-    private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
-        // Derived from legacy method snippet
-        Context ctx = getContext();
-        if (ctx == null)
-            return new ArrayList<>();
-        List<Integer> defaultList = new ArrayList<>();
-        defaultList.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
-        CameraManager manager = (CameraManager) ctx.getSystemService(Context.CAMERA_SERVICE);
-        String targetCameraId = getActualCameraIdForType(cameraType);
-        if (targetCameraId == null)
-            return defaultList;
-        Range<Integer>[] ranges = null;
-        try {
-            CameraCharacteristics ch = manager.getCameraCharacteristics(targetCameraId);
-            ranges = ch.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-        } catch (Exception e) {
-            Log.e(TAG, "FPS ranges error", e);
-            return defaultList;
-        }
-        Set<Integer> framerates = new TreeSet<>();
-        int maxProfileFps = 30;
-        try {
-            int camIdInt = Integer.parseInt(targetCameraId);
-            int[] qualities = { CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_2160P,
-                    CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P };
-            for (int q : qualities) {
-                if (CamcorderProfile.hasProfile(camIdInt, q)) {
-                    CamcorderProfile p = CamcorderProfile.get(camIdInt, q);
-                    if (p != null && p.videoFrameRate > maxProfileFps)
-                        maxProfileFps = p.videoFrameRate;
-                }
-            }
-            if (Build.VERSION.SDK_INT >= 29) {
-                int[] high = { CamcorderProfile.QUALITY_HIGH_SPEED_HIGH, CamcorderProfile.QUALITY_HIGH_SPEED_1080P,
-                        CamcorderProfile.QUALITY_HIGH_SPEED_720P };
-                for (int h : high) {
-                    if (CamcorderProfile.hasProfile(camIdInt, h)) {
-                        CamcorderProfile p = CamcorderProfile.get(camIdInt, h);
-                        if (p != null && p.videoFrameRate > maxProfileFps)
-                            maxProfileFps = p.videoFrameRate;
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        if (ranges == null || ranges.length == 0) {
-            for (int fps = 10; fps <= maxProfileFps; fps += 5) {
-                if (fps <= 30 || fps % 30 == 0)
-                    framerates.add(fps);
-            }
-            int[] standard = { 24, 25, 30, 60, 90, 120 };
-            for (int r : standard) {
-                if (r <= maxProfileFps)
-                    framerates.add(r);
-            }
-        } else {
-            for (Range<Integer> r : ranges) {
-                if (r != null) {
-                    for (int fps = r.getLower(); fps <= r.getUpper(); fps++) {
-                        framerates.add(fps);
-                    }
-                }
-            }
-            if (maxProfileFps > 30) {
-                int[] highRates = { 60, 90, 120, 240 };
-                for (int r : highRates) {
-                    if (r <= maxProfileFps)
-                        framerates.add(r);
-                }
-            }
-        }
-        if (framerates.isEmpty())
-            framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
-        List<Integer> list = new ArrayList<>(framerates);
-        if (list.size() > 20) {
-            Set<Integer> filtered = new TreeSet<>();
-            int[] standard = { 24, 25, 30, 50, 60, 90, 120, 240 };
-            for (int s : standard) {
-                if (framerates.contains(s))
-                    filtered.add(s);
-            }
-            for (int f : framerates) {
-                if (f % 5 == 0 && f <= 60)
-                    filtered.add(f);
-                else if (f > 60)
-                    filtered.add(f);
-            }
-            if (!filtered.contains(Constants.DEFAULT_VIDEO_FRAME_RATE)
-                    && framerates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE))
-                filtered.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
-            list = new ArrayList<>(filtered);
-        }
-        return list;
-    }
 
-    // Legacy-style compatible frame rate list using selected profile constraints
+
+    // Compatible frame rate list - fixed to not be limited by CamcorderProfile default FPS
     private List<Integer> getCompatiblesVideoFrameRates(CameraType cameraType) {
-        CamcorderProfile profile = getCamcorderProfile(cameraType);
-        if (profile == null) {
-            List<Integer> single = new ArrayList<>();
-            single.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
-            return single;
-        }
-        int max = profile.videoFrameRate;
+        // The real issue: Don't limit by CamcorderProfile.videoFrameRate which might be just the default (30fps)
+        // Instead, provide all available options and let the camera/encoder handle what's actually supported
         int[] options = getResources().getIntArray(R.array.video_framerate_options);
         List<Integer> list = new ArrayList<>();
-        for (int o : options) {
-            if (o <= max)
-                list.add(o);
+        
+        // Add all frame rate options from the array (includes 60fps, 90fps, 120fps)
+        for (int fps : options) {
+            list.add(fps);
         }
-        if (list.isEmpty())
-            list.add(max);
+        
+        // If no options defined in array, provide standard options including high frame rates
+        if (list.isEmpty()) {
+            list.add(24);
+            list.add(30);
+            list.add(60);
+            list.add(90);
+            list.add(120);
+        }
+        
+        // Ensure default frame rate is included
+        if (!list.contains(Constants.DEFAULT_VIDEO_FRAME_RATE)) {
+            list.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        }
+        
+        // Sort the list
+        java.util.Collections.sort(list);
+        
         return list;
     }
 
@@ -1494,4 +1418,325 @@ public class VideoSettingsFragment extends Fragment {
         }
         return false;
     }
+
+    /**
+     * Queries the Camera2 API for supported FPS ranges for the primary camera of
+     * the specified type
+     * and returns a list of all unique framerates supported by the hardware.
+     *
+     * @param cameraType The camera type (FRONT or BACK) to query.
+     * @return A sorted List<Integer> of all supported frame rates. Returns default
+     *         [30] on critical errors.
+     */
+    @ExperimentalCamera2Interop
+    private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
+        // ----- Fix Start for this method(getHardwareSupportedFrameRates)-----
+        if (getContext() == null) {
+            Log.e(TAG, "FPS Query: Context is null.");
+            return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        }
+
+        // Use the new CameraX utility for framerate detection
+        try {
+            Log.i(TAG, "Using CameraX API for framerate detection");
+            List<Integer> detectedRates = CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(),
+                    cameraType);
+
+            // Special handling for Samsung devices - explicitly add 60fps support if not
+            // already present
+            if (DeviceHelper.isSamsung() && !detectedRates.contains(60)) {
+                Log.i(TAG, "Samsung device detected - Adding 60fps support explicitly");
+                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
+                enhancedRates.add(60);
+                Collections.sort(enhancedRates);
+                return enhancedRates;
+            }
+
+            // Special handling for high-end Huawei devices
+            if (DeviceHelper.isHuawei() && DeviceHelper.isHighEndDevice() && !detectedRates.contains(60)) {
+                Log.i(TAG, "High-end Huawei device detected - Adding 60fps support");
+                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
+                enhancedRates.add(60);
+                Collections.sort(enhancedRates);
+                return enhancedRates;
+            }
+
+            return detectedRates;
+        } catch (Exception e) {
+            Log.e(TAG, "Error using CameraX for framerate detection, falling back to Camera2", e);
+            // Fallback to Camera2 API implementation - retain original logic
+            return getHardwareSupportedFrameRatesUsingCamera2(cameraType);
+        }
+        // ----- Fix Ended for this method(getHardwareSupportedFrameRates)-----
+    }
+
+    /**
+     * Original Camera2 API implementation for getting supported framerates.
+     * Kept as a fallback method in case CameraX implementation fails.
+     * 
+     * @param cameraType The camera type (FRONT or BACK) to query.
+     * @return A sorted List<Integer> of all supported frame rates.
+     */
+    private List<Integer> getHardwareSupportedFrameRatesUsingCamera2(CameraType cameraType) {
+        Log.i(TAG,
+                "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " using Camera2 API ===");
+        final List<Integer> defaultRateList = Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
+
+        if (getContext() == null) {
+            Log.e(TAG, "FPS Query: Context is null.");
+            return defaultRateList;
+        }
+
+        CameraManager manager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        if (manager == null) {
+            Log.e(TAG, "FPS Query: CameraManager is null.");
+            return defaultRateList;
+        }
+
+        String targetCameraId = null;
+        try {
+            // Find the primary camera ID for the requested type (Prioritize ID "0" for
+            // BACK)
+            String firstBackIdFallback = null;
+            for (String id : manager.getCameraIdList()) {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null) {
+                    if (cameraType == CameraType.FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        targetCameraId = id;
+                        Log.d(TAG, "FPS Query: Found FRONT camera ID: " + targetCameraId);
+                        break;
+                    }
+                    if (cameraType == CameraType.BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
+                            targetCameraId = id; // Found preferred default BACK ID "0"
+                            Log.d(TAG, "FPS Query: Found Primary BACK camera ID: " + targetCameraId);
+                            break;
+                        } else if (firstBackIdFallback == null) {
+                            firstBackIdFallback = id; // Store first BACK ID encountered as fallback
+                        }
+                    }
+                }
+            }
+            // If default BACK "0" wasn't found, use the fallback if available
+            if (cameraType == CameraType.BACK && targetCameraId == null && firstBackIdFallback != null) {
+                targetCameraId = firstBackIdFallback;
+                Log.w(TAG,
+                        "FPS Query: Default Back ID '0' not found/back-facing. Using first available back ID: "
+                                + targetCameraId);
+            }
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.e(TAG, "FPS Query: Error accessing camera list/characteristics during ID selection", e);
+            return defaultRateList;
+        }
+
+        if (targetCameraId == null) {
+            Log.e(TAG, "FPS Query: Could not find a valid Camera ID for type: " + cameraType);
+            return defaultRateList;
+        }
+        Log.d(TAG, "FPS Query: Using Camera ID: " + targetCameraId + " for characteristic lookup.");
+
+        // Get the available AE FPS ranges for the target camera
+        Range<Integer>[] hardwareFpsRanges = null;
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(targetCameraId);
+            hardwareFpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.e(TAG, "FPS Query: Camera access/arg exception getting FPS ranges for ID " + targetCameraId,
+                    e);
+            // Return default [30] on error accessing ranges
+            return defaultRateList;
+        } catch (Exception e) {
+            Log.e(TAG, "FPS Query: Unexpected error getting FPS ranges for ID " + targetCameraId, e);
+            return defaultRateList;
+        }
+
+        // Create a set to store all possible framerates from the ranges
+        Set<Integer> framerates = new TreeSet<>(); // TreeSet automatically sorts
+
+        // First check for higher framerates in CamcorderProfiles
+        // This is important because some devices don't report high FPS in Camera2 AE
+        // ranges
+        // but do support them in CamcorderProfile
+        int maxProfileFps = 30; // Default assumption
+
+        try {
+            // Check all quality levels for max framerates
+            int cameraId = Integer.parseInt(targetCameraId);
+            int[] qualities = {
+                    CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_2160P,
+                    CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P
+            };
+
+            for (int quality : qualities) {
+                if (CamcorderProfile.hasProfile(cameraId, quality)) {
+                    CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
+                    if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                        maxProfileFps = profile.videoFrameRate;
+                        Log.d(TAG, "FPS Query: Found higher framerate " + maxProfileFps +
+                                " in CamcorderProfile quality " + quality);
+                    }
+                }
+            }
+
+            // Check for specific high-framerate profiles if they exist
+            if (Build.VERSION.SDK_INT >= 29) { // Android 10+
+                try {
+                    // Some devices have specific high-FPS profiles for 60fps/120fps
+                    if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_HIGH)) {
+                        CamcorderProfile profile = CamcorderProfile.get(cameraId,
+                                CamcorderProfile.QUALITY_HIGH_SPEED_HIGH);
+                        if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                            maxProfileFps = profile.videoFrameRate;
+                            Log.d(TAG, "FPS Query: Found high-speed framerate " +
+                                    maxProfileFps + " in QUALITY_HIGH_SPEED_HIGH");
+                        }
+                    }
+
+                    if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_1080P)) {
+                        CamcorderProfile profile = CamcorderProfile.get(cameraId,
+                                CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
+                        if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                            maxProfileFps = profile.videoFrameRate;
+                            Log.d(TAG, "FPS Query: Found high-speed framerate " +
+                                    maxProfileFps + " in QUALITY_HIGH_SPEED_1080P");
+                        }
+                    }
+
+                    if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH_SPEED_720P)) {
+                        CamcorderProfile profile = CamcorderProfile.get(cameraId,
+                                CamcorderProfile.QUALITY_HIGH_SPEED_720P);
+                        if (profile != null && profile.videoFrameRate > maxProfileFps) {
+                            maxProfileFps = profile.videoFrameRate;
+                            Log.d(TAG, "FPS Query: Found high-speed framerate " +
+                                    maxProfileFps + " in QUALITY_HIGH_SPEED_720P");
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "FPS Query: Error checking high-speed profiles: " + e.getMessage());
+                }
+            }
+
+            Log.d(TAG, "FPS Query: Maximum framerate found in CamcorderProfiles: " + maxProfileFps);
+
+        } catch (NumberFormatException e) {
+            Log.w(TAG, "FPS Query: Could not parse camera ID as integer: " + targetCameraId);
+            // Continue with Camera2 API method only
+        } catch (Exception e) {
+            Log.w(TAG, "FPS Query: Error checking CamcorderProfiles: " + e.getMessage());
+            // Continue with Camera2 API method only
+        }
+
+        if (hardwareFpsRanges == null || hardwareFpsRanges.length == 0) {
+            Log.w(TAG, "FPS Query: No AE FPS ranges reported by hardware for camera " + targetCameraId
+                    + ". Using CamcorderProfile.");
+            // Create some basic framerates based on CamcorderProfile information
+            for (int fps = 10; fps <= maxProfileFps; fps += 5) {
+                if (fps <= 30 || fps % 30 == 0) { // Include all multiples of 30 over 30fps
+                    framerates.add(fps);
+                }
+            }
+
+            // Add standard framerates
+            int[] standardRates = { 24, 25, 30, 60, 90, 120 };
+            for (int rate : standardRates) {
+                if (rate <= maxProfileFps) {
+                    framerates.add(rate);
+                }
+            }
+
+            if (framerates.isEmpty()) {
+                framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE); // Default fallback
+            }
+        } else {
+            Log.d(TAG, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": "
+                    + Arrays.toString(hardwareFpsRanges));
+
+            // Process each range to get ALL supported framerates
+            for (Range<Integer> range : hardwareFpsRanges) {
+                if (range != null) {
+                    int lower = range.getLower();
+                    int upper = range.getUpper();
+
+                    Log.d(TAG, "FPS Query: Processing range " + lower + "-" + upper);
+
+                    // For most devices, framerates are available at discrete steps (usually 1fps)
+                    // Add ALL integer values within the range to ensure we catch values like 59fps
+                    for (int fps = lower; fps <= upper; fps++) {
+                        framerates.add(fps);
+                    }
+                }
+            }
+
+            // If CamcorderProfile reported higher framerates than Camera2 API, add those
+            // too
+            if (maxProfileFps > 30) {
+                Log.d(TAG, "FPS Query: Adding higher framerates from CamcorderProfile");
+
+                // Add standard high framerates if they're supported by the profile
+                int[] highRates = { 60, 90, 120, 240 };
+                for (int rate : highRates) {
+                    if (rate <= maxProfileFps) {
+                        framerates.add(rate);
+                        Log.d(TAG, "FPS Query: Added " + rate + "fps from CamcorderProfile");
+                    }
+                }
+            }
+        }
+
+        // Ensure we have at least one value (the default)
+        if (framerates.isEmpty()) {
+            Log.e(TAG, "FPS Query: No valid framerates found from hardware ranges. Adding default: "
+                    + Constants.DEFAULT_VIDEO_FRAME_RATE);
+            framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+        }
+
+        // Convert to list and ensure the list is sorted (which TreeSet already does)
+        List<Integer> finalSupportedRates = new ArrayList<>(framerates);
+
+        // If the list is too large (some devices might report hundreds of values),
+        // we could optionally filter to keep just common/useful values or step at
+        // 5-10fps intervals
+        if (finalSupportedRates.size() > 20) {
+            Log.w(TAG, "FPS Query: Large number of framerates detected (" + finalSupportedRates.size() +
+                    "), keeping only useful values for UI");
+
+            // Filter to keep standard values + any higher FPS values
+            Set<Integer> filteredRates = new TreeSet<>();
+
+            // Important standard rates to always include if supported
+            int[] standardRates = { 24, 25, 30, 50, 60, 90, 120, 240 };
+            for (int rate : standardRates) {
+                if (framerates.contains(rate)) {
+                    filteredRates.add(rate);
+                }
+            }
+
+            // Also include significant non-standard rates
+            // This handles cases like 59.94fps (which is often rounded to 59 or 60)
+            for (int fps : framerates) {
+                // Include rates divisible by 5 (e.g., 5, 10, 15, 20, 25...)
+                if (fps % 5 == 0 && fps <= 60) {
+                    filteredRates.add(fps);
+                }
+                // Include all higher framerates (e.g., 72, 90, 120, etc.)
+                else if (fps > 60) {
+                    filteredRates.add(fps);
+                }
+            }
+
+            // If we've excluded the default rate by accident, add it back
+            if (!filteredRates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE) &&
+                    framerates.contains(Constants.DEFAULT_VIDEO_FRAME_RATE)) {
+                filteredRates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
+            }
+
+            // Replace the full list with our filtered list
+            finalSupportedRates = new ArrayList<>(filteredRates);
+            Log.d(TAG, "FPS Query: Filtered to " + finalSupportedRates.size() + " useful framerates");
+        }
+
+        return finalSupportedRates;
+    }
+
 }

@@ -155,6 +155,12 @@ public class GLRecordingPipeline {
     private long firstVideoTimestampNanos = -1;
     private final Object timestampLock = new Object();
 
+    // -------------- Fix Start for GLRecordingPipeline watermark scheduler-----------
+    // Update watermark on a low-frequency handler to avoid per-frame overhead and sustain 60fps
+    private final android.os.Handler watermarkUpdateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable updateWatermarkRunnable;
+    // -------------- Fix Ended for GLRecordingPipeline watermark scheduler-----------
+
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation, VideoCodec videoCodec) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation, videoCodec);
@@ -332,6 +338,18 @@ public class GLRecordingPipeline {
                     }
                 });
                 
+                // -------------- Fix Start: initialize watermark immediately --------------
+                try {
+                    if (watermarkInfoProvider != null) {
+                        String initial = watermarkInfoProvider.getWatermarkText();
+                        glRenderer.setWatermarkText(initial != null ? initial : "");
+                        Log.d(TAG, "Applied initial watermark text during prepareSurfaces");
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to apply initial watermark", e);
+                }
+                // -------------- Fix End: initialize watermark immediately --------------
+
                 Log.d(TAG, "GLWatermarkRenderer setup complete");
             }
         } catch (Exception e) {
@@ -386,7 +404,27 @@ public class GLRecordingPipeline {
                         Thread.currentThread().interrupt();
                     }
                 }
-                
+
+                // -------------- Fix Start for this method(startRecording)-----------
+                // Start a separate, low-frequency watermark updater (once per second)
+                if (updateWatermarkRunnable == null) {
+                    updateWatermarkRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isRecording && !released) {
+                                try {
+                                    updateWatermark();
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Watermark update failed", e);
+                                }
+                                watermarkUpdateHandler.postDelayed(this, 1000);
+                            }
+                        }
+                    };
+                }
+                watermarkUpdateHandler.post(updateWatermarkRunnable);
+                // -------------- Fix Ended for this method(startRecording)-----------
+
                 // Start the render loop (which will trigger video encoder format change)
                 startRenderLoop();
                 
@@ -556,6 +594,16 @@ public class GLRecordingPipeline {
             }
         }
         
+        // ESSENTIAL: For constant framerate recording, especially on Samsung devices
+        // Force constant framerate mode to avoid variable framerate encoding
+        try {
+            // This helps ensure the encoder produces constant framerate output
+            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
+            Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+        } catch (Exception e) {
+            Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+        }
+        
         // ESSENTIAL: Real-time priority for smooth recording (API 23+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             try {
@@ -582,6 +630,14 @@ public class GLRecordingPipeline {
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate); // Already using user's bitrate setting
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate); // Already using user's framerate setting
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
+        
+        // ESSENTIAL: For constant framerate recording, especially on Samsung devices
+        try {
+            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
+            Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+        } catch (Exception e) {
+            Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+        }
         
         // Industry Standard: Enhanced encoder configuration for reliability
         // These settings improve compatibility while respecting user's codec choice
@@ -791,8 +847,9 @@ public class GLRecordingPipeline {
             }
             
             try {
-                // Update watermark text before rendering
-                updateWatermark();
+                // -------------- Fix Start for this method(renderRunnable)-----------
+                // Do NOT update watermark every frame; a separate timer handles it to avoid FPS drops
+                // -------------- Fix Ended for this method(renderRunnable)-----------
                 
                 if (glRenderer != null) {
                     glRenderer.renderFrame();
@@ -807,10 +864,8 @@ public class GLRecordingPipeline {
                 }
 
                 
-                // Continue rendering loop
-                if (isRecording && handler != null) {
-                    handler.post(this);
-                }
+                // Continue rendering loop when new frames arrive (onFrameAvailable posts this runnable).
+                // Avoid self-posting to reduce CPU load and sustain high FPS.
             } catch (Exception e) {
                 Log.e(TAG, "Error in render loop", e);
             }
@@ -1070,6 +1125,16 @@ public class GLRecordingPipeline {
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
+
+        // -------------- Fix Start for this method(stopRecording)-----------
+        // Stop watermark updates
+        try {
+            watermarkUpdateHandler.removeCallbacksAndMessages(null);
+            updateWatermarkRunnable = null;
+        } catch (Exception e) {
+            Log.w(TAG, "Error stopping watermark updater", e);
+        }
+        // -------------- Fix Ended for this method(stopRecording)-----------
         
         if (renderThread != null) {
             try {
@@ -1187,8 +1252,17 @@ public class GLRecordingPipeline {
      * Updates the watermark text in real time.
      */
     public void updateWatermark() {
-        if (glRenderer != null) {
-            glRenderer.setWatermarkText(watermarkInfoProvider.getWatermarkText());
+        if (glRenderer == null || watermarkInfoProvider == null) return;
+        final String text = watermarkInfoProvider.getWatermarkText();
+        // Ensure the GL texture update runs on the render thread with EGL context current
+        if (handler != null) {
+            handler.post(() -> {
+                try {
+                    glRenderer.updateWatermarkTextOnGlThread(text != null ? text : "");
+                } catch (Exception e) {
+                    Log.w(TAG, "updateWatermark: GL thread update failed", e);
+                }
+            });
         }
     }
 

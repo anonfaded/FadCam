@@ -1169,19 +1169,67 @@ public class RecordingService extends Service {
                     Log.e(TAG, "Error getting camera characteristics", e);
                 }
             }
-            int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+            // -------------- Fix Start for this method(createCameraPreviewSession)-----------
+            // Use per-camera FPS setting and only choose HSR if selected resolution supports it
+            int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
+            Size selected = sharedPreferencesManager.getCameraResolution();
+
             if (isHighFrameRate && characteristics != null) {
-                // ... (same Samsung/Huawei/high-speed logic as before)
+                showFrameRateToast(targetFrameRate);
+
+                if (DeviceHelper.isSamsung() && DeviceHelper.isHighEndDevice()) {
+                    // Prefer constrained high-speed if the selected size supports it
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        Log.d(TAG, "High-end Samsung: using HSR at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        Log.d(TAG, "High-end Samsung: selected size not HSR-capable; will use standard session with vendor keys");
+                        useHighSpeedSession = false;
+                    }
+                } else if (DeviceHelper.isSamsung()) {
+                    SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
+                    if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.HIGH_SPEED_COMPATIBLE) {
+                        Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
+                        if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                            Log.d(TAG, "Samsung HIGH_SPEED_COMPATIBLE at selected size - using HSR");
+                            useHighSpeedSession = true;
+                        } else {
+                            Log.d(TAG, "Samsung HSR supported but not at selected size - using standard session");
+                            useHighSpeedSession = false;
+                        }
+                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
+                        Log.e(TAG, "Samsung device KNOWN_INCOMPATIBLE with 60fps+; blocking");
+                        Toast.makeText(this, "60fps not supported on this device model.", Toast.LENGTH_LONG).show();
+                        RecordingService.this.recordingState = RecordingState.NONE;
+                        return;
+                    } else {
+                        // REQUIRES_VENDOR_KEYS / FULLY_COMPATIBLE / UNKNOWN -> standard session
+                        useHighSpeedSession = false;
+                    }
+                } else if (DeviceHelper.isHuawei()) {
+                    // Use standard session with Huawei vendor keys
+                    useHighSpeedSession = false;
+                } else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        Log.d(TAG, "HSR supported at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        Log.d(TAG, "HSR supported but selected size incompatible; using standard session");
+                        useHighSpeedSession = false;
+                    }
+                }
             }
+
             if (useHighSpeedSession) {
-                // ----- Fix Start for this method(createCameraPreviewSession)-----
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
-                // ----- Fix Ended for this method(createCameraPreviewSession)-----
             }
+            // -------------- Fix Ended for this method(createCameraPreviewSession)-----------
             return;
         }
 
@@ -1215,8 +1263,10 @@ public class RecordingService extends Service {
                 characteristics = cameraManager.getCameraCharacteristics(cameraId);
             }
             
-            // Get target frame rate from settings
-            int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+            // -------------- Fix Start: Use per-camera FPS --------------
+            // Get target frame rate from settings for specific camera
+            int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            // -------------- Fix End: Use per-camera FPS --------------
             
             // Log device info once for debugging
             DeviceHelper.logDeviceInfo();
@@ -1230,8 +1280,23 @@ public class RecordingService extends Service {
             
             // For high frame rates, evaluate if we should use high-speed session
             if (isHighFrameRate && characteristics != null) {
-                // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
-                if (DeviceHelper.isSamsung()) {
+                // FORCE high-speed session for high-end Samsung devices for 60fps+
+                // This is the primary fix for the Samsung S23 FPS issue.
+                if (DeviceHelper.isSamsung() && DeviceHelper.isHighEndDevice()) {
+                    // Validate HSR only if selected size is compatible
+                    Size selected = sharedPreferencesManager.getCameraResolution();
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        Log.d(TAG, "High-end Samsung: using HSR at selected size for " + targetFrameRate + "fps");
+                        showFrameRateToast(targetFrameRate);
+                        useHighSpeedSession = true;
+                    } else {
+                        Log.d(TAG, "High-end Samsung: selected size not HSR-capable; using standard session");
+                        useHighSpeedSession = false;
+                    }
+                }
+                // For other Samsung devices, use the existing compatibility logic
+                else if (DeviceHelper.isSamsung()) {
                     Log.d(TAG, "Samsung device detected. Handling " + targetFrameRate + "fps for this device.");
                     showFrameRateToast(targetFrameRate);
                     
@@ -1239,10 +1304,16 @@ public class RecordingService extends Service {
                     SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
 
                     if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.HIGH_SPEED_COMPATIBLE) {
-                        // For SM-G990E (S21 FE Exynos) specifically, or other devices known to work with high-speed sessions
-                        Log.d(TAG, "Device status is HIGH_SPEED_COMPATIBLE. Attempting constrained high-speed session for " + targetFrameRate + "fps.");
-                        useHighSpeedSession = true;
-                        createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
+                        Size selected = sharedPreferencesManager.getCameraResolution();
+                        Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
+                        if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                            Log.d(TAG, "Device status HIGH_SPEED_COMPATIBLE at selected size. Using HSR for " + targetFrameRate + "fps.");
+                            useHighSpeedSession = true;
+                            createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
+                        } else {
+                            Log.d(TAG, "Selected size not supported for HSR, using standard session with vendor keys");
+                            useHighSpeedSession = false;
+                        }
                     } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.REQUIRES_VENDOR_KEYS || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.FULLY_COMPATIBLE || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.UNKNOWN) {
                         // For other Samsung devices that use vendor keys in standard session, or unknown devices
                         Log.d(TAG, "Device status is REQUIRES_VENDOR_KEYS or FULLY_COMPATIBLE or UNKNOWN. Attempting standard session with Samsung vendor keys for " + targetFrameRate + "fps.");
@@ -1269,8 +1340,15 @@ public class RecordingService extends Service {
                 }
                 // For other devices, check if high-speed is supported
                 else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
-                    Log.d(TAG, "High-speed session is supported for " + targetFrameRate + "fps");
-                    useHighSpeedSession = true;
+                    Size selected = sharedPreferencesManager.getCameraResolution();
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate, selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        Log.d(TAG, "High-speed session supported at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        Log.d(TAG, "HSR supported but not at selected size; using standard session");
+                        useHighSpeedSession = false;
+                    }
                     
                     // Show toast informing the user about experimental 60fps
                     showFrameRateToast(targetFrameRate);
@@ -1424,12 +1502,14 @@ public class RecordingService extends Service {
                 if (cameraId != null) {
                     characteristics = cameraManager.getCameraCharacteristics(cameraId);
                 }
-                
-                int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+                // -------------- Fix Start: Use per-camera FPS and include GL surface in fallback --------------
+                int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
                 
                 // Recreate surfaces for standard session
                 List<Surface> surfaces = new ArrayList<>();
-                
+                if (glRecordingPipeline != null && glRecordingPipeline.getCameraInputSurface() != null) {
+                    surfaces.add(glRecordingPipeline.getCameraInputSurface());
+                }
 
                 
                 // Add preview surface if available
@@ -1444,6 +1524,7 @@ public class RecordingService extends Service {
                     Log.e(TAG, "Failed to create surfaces for fallback session");
                     stopRecording();
                 }
+                // -------------- Fix End: Use per-camera FPS and include GL surface in fallback --------------
             } catch (Exception e) {
                 Log.e(TAG, "Failed to create fallback session after high-speed failure", e);
                 stopRecording();
@@ -2317,13 +2398,52 @@ public class RecordingService extends Service {
      */
     private void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, 
                                       CameraCharacteristics characteristics) {
-        // Apply standard AE target FPS range
-        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new android.util.Range<>(targetFrameRate, targetFrameRate));
-        Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to [" + targetFrameRate + "," + targetFrameRate + "]");
+        // Apply a safe AE target FPS range. Prefer exact [X,X], otherwise pick a supported range including X
+        android.util.Range<Integer> chosen = null;
+        try {
+            if (characteristics != null) {
+                android.util.Range<Integer>[] ranges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                if (ranges != null && ranges.length > 0) {
+                    // Prefer exact constant range first
+                    for (android.util.Range<Integer> r : ranges) {
+                        if (r.getLower() == targetFrameRate && r.getUpper() == targetFrameRate) {
+                            chosen = r; break;
+                        }
+                    }
+                    // Then any range that contains the target
+                    if (chosen == null) {
+                        for (android.util.Range<Integer> r : ranges) {
+                            if (r.getLower() <= targetFrameRate && r.getUpper() >= targetFrameRate) {
+                                chosen = r; break;
+                            }
+                        }
+                    }
+                    // Finally, pick the closest upper bound
+                    if (chosen == null) {
+                        android.util.Range<Integer> best = ranges[0];
+                        int bestDiff = Math.abs(best.getUpper() - targetFrameRate);
+                        for (android.util.Range<Integer> r : ranges) {
+                            int diff = Math.abs(r.getUpper() - targetFrameRate);
+                            if (diff < bestDiff) { best = r; bestDiff = diff; }
+                        }
+                        chosen = best;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to choose AE FPS range from characteristics", e);
+        }
+        if (chosen == null) {
+            chosen = new android.util.Range<>(targetFrameRate, targetFrameRate);
+        }
+        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, chosen);
+        Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to " + chosen);
 
         // Apply Samsung-specific keys if applicable
         if (DeviceHelper.isSamsung()) {
-            SamsungFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
+            // -------------- Fix Start for this method(applyFrameRateSettings)-----------
+            SamsungFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate, characteristics);
+            // -------------- Fix Ended for this method(applyFrameRateSettings)-----------
         }
 
         // Apply Huawei-specific keys if applicable
@@ -2595,7 +2715,9 @@ public class RecordingService extends Service {
                 }
             }
             int videoBitrate = getVideoBitrate();
-            int videoFramerate = sharedPreferencesManager.getVideoFrameRate();
+            // -------------- Fix Start: Use per-camera FPS for encoder --------------
+            int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            // -------------- Fix End: Use per-camera FPS for encoder --------------
             // ----- Fix Start for video splitting -----
             // Set splitSizeBytes to 0 if video splitting is disabled
             long splitSizeBytes = 0;

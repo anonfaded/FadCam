@@ -633,6 +633,32 @@ public class GLWatermarkRenderer {
         updateWatermarkTexture();
     }
 
+    // -------------- Fix Start for this method(updateWatermarkTextOnGlThread)-----------
+    /**
+     * Updates watermark text ensuring it runs on the GL thread with a current EGL context.
+     * Call this from the render thread.
+     */
+    public void updateWatermarkTextOnGlThread(String text) {
+        // Avoid unnecessary texture work if unchanged
+        if (text == null) text = "";
+        if (text.equals(this.watermarkText) && watermarkTextureId != 0 && watermarkBitmap != null) {
+            return;
+        }
+        this.watermarkText = text;
+        // Ensure EGL context is current for safe GL texture upload
+        try {
+            if (eglDisplay != EGL14.EGL_NO_DISPLAY && eglSurface != EGL14.EGL_NO_SURFACE && eglContext != EGL14.EGL_NO_CONTEXT) {
+                if (!EGL14.eglGetCurrentContext().equals(eglContext)) {
+                    EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to ensure EGL current for watermark update", e);
+        }
+        updateWatermarkTexture();
+    }
+    // -------------- Fix Ended for this method(updateWatermarkTextOnGlThread)-----------
+
     private void updateWatermarkTexture() {
         // Use a smaller font for dashcam style
         watermarkPaint.setTextSize(20);

@@ -8,9 +8,11 @@ import android.util.Log;
 import android.util.Range;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Helper class to apply Samsung-specific camera frame rate settings, often using vendor keys.
@@ -49,49 +51,54 @@ public class SamsungFrameRateHelper {
      * @param builder The CaptureRequest.Builder to modify.
      * @param targetFrameRate The desired frame rate (e.g., 60).
      */
-    public static void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate) {
+    // -------------- Fix Start for this method(applyFrameRateSettings)-----------
+    public static void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, @Nullable CameraCharacteristics characteristics) {
         if (builder == null) {
             Log.e(TAG, "CaptureRequest.Builder is null, cannot apply Samsung frame rate settings.");
             return;
         }
+        // Do NOT override CONTROL_AE_TARGET_FPS_RANGE here; let the caller choose a supported range.
+        // Apply Samsung-specific vendor keys conservatively and only when supported by the platform.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // API 29+
+            try {
+                // Helper to set a vendor key only if characteristics indicate support (best effort)
+                final java.util.function.BiConsumer<String, Integer> safeSetIntKey = (keyName, value) -> {
+                    try {
+                        CaptureRequest.Key<Integer> key = new CaptureRequest.Key<>(keyName, Integer.class);
+                        if (characteristics == null || isKeySupported(characteristics, key)) {
+                            builder.set(key, value);
+                            Log.d(TAG, "Applied vendor key " + keyName + "=" + value);
+                        } else {
+                            Log.d(TAG, "Vendor key not supported per characteristics: " + keyName);
+                        }
+                    } catch (Throwable t) {
+                        Log.d(TAG, "Skipping vendor key due to error: " + keyName + ", " + t.getMessage());
+                    }
+                };
 
-        // Apply standard AE target FPS range first
-        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new android.util.Range<>(targetFrameRate, targetFrameRate));
-        Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to [" + targetFrameRate + "," + targetFrameRate + "]");
+                // Avoid enabling Samsung motion/variable speed modes; prefer constant frame pacing.
+                safeSetIntKey.accept(KEY_MOTION_RECORDING_MODE, 0);
+                safeSetIntKey.accept(KEY_RECORDING_MOTION_SPEED_MODE, 0);
 
-        // Apply Samsung-specific vendor keys if available and supported by the device
-        // These keys are often required for higher frame rates (60fps, 120fps) on Samsung devices
-        try {
-            // Samsung internal keys for recording control
-            if (targetFrameRate >= 60) {
-                // For 60fps+ on newer devices, set motion recording modes
-                builder.set(new CaptureRequest.Key<>(KEY_MOTION_RECORDING_MODE, Integer.class), 1); // MOTION_RECORDING_MODE_ON
-                builder.set(new CaptureRequest.Key<>(KEY_RECORDING_MOTION_SPEED_MODE, Integer.class), 1); // High speed mode (e.g., 1x for 60fps)
-                Log.d(TAG, "Set motion recording modes for " + targetFrameRate + "fps");
-            } else {
-                builder.set(new CaptureRequest.Key<>(KEY_MOTION_RECORDING_MODE, Integer.class), 0); // MOTION_RECORDING_MODE_OFF
-                builder.set(new CaptureRequest.Key<>(KEY_RECORDING_MOTION_SPEED_MODE, Integer.class), 0); // Normal speed
+                // Direct FPS hints (if honored on this model)
+                safeSetIntKey.accept(KEY_RECORDER_FPS, targetFrameRate);
+                safeSetIntKey.accept(KEY_RECORDING_MAX_FPS, targetFrameRate);
+                safeSetIntKey.accept(KEY_RECORDING_MIN_FPS, targetFrameRate);
+
+                if (targetFrameRate >= 60) {
+                    // Prefer constant frame rate if available
+                    safeSetIntKey.accept("samsung.android.control.constantFrameRate", 1);
+                    // Do not force-disable HFR mode universally; only set when supported and needed.
+                    // Some models require leaving HFR mode alone for 60fps to engage properly.
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Samsung vendor key application skipped: " + e.getMessage());
             }
-
-            // More direct FPS control keys
-            builder.set(new CaptureRequest.Key<>(KEY_RECORDER_FPS, Integer.class), targetFrameRate);
-            Log.d(TAG, "Set vendor.samsung.recorder.fps to " + targetFrameRate);
-
-            // High frame rate specific mode
-            builder.set(new CaptureRequest.Key<>(KEY_HIGH_FRAME_RATE_MODE, Integer.class), targetFrameRate >= 60 ? 1 : 0); // 1 for HFR, 0 for normal
-            Log.d(TAG, "Set vendor.samsung.parameter.high_frame_rate_mode to " + (targetFrameRate >= 60 ? 1 : 0));
-
-            // Set min/max FPS ranges using Samsung's own keys
-            builder.set(new CaptureRequest.Key<>(KEY_RECORDING_MAX_FPS, Integer.class), targetFrameRate);
-            builder.set(new CaptureRequest.Key<>(KEY_RECORDING_MIN_FPS, Integer.class), targetFrameRate);
-            Log.d(TAG, "Set samsung.android.control.recordingMin/MaxFps to " + targetFrameRate);
-
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "One or more Samsung vendor keys not supported on this device: " + e.getMessage());
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error applying Samsung vendor keys: " + e.getMessage());
+        } else {
+            Log.d(TAG, "API < 29: Skipping Samsung vendor keys to avoid compatibility issues");
         }
     }
+    // -------------- Fix Ended for this method(applyFrameRateSettings)-----------
 
     /**
      * Determines the Samsung FPS compatibility status for the current device model.
@@ -101,7 +108,8 @@ public class SamsungFrameRateHelper {
      * @return The SamsungFpsStatus for the current device.
      */
     public static SamsungFpsStatus getDeviceFpsStatus() {
-        String model = Build.MODEL.toLowerCase();
+    // -------------- Fix Start for this method(getDeviceFpsStatus)-----------
+    String model = Build.MODEL == null ? "" : Build.MODEL.toLowerCase(Locale.ROOT);
 
         // Known fully compatible devices - These will prioritize standard session with vendor keys (if supported)
         List<String> fullyCompatibleModels = Arrays.asList(
@@ -146,7 +154,8 @@ public class SamsungFrameRateHelper {
             }
         }
 
-        return SamsungFpsStatus.UNKNOWN;
+    return SamsungFpsStatus.UNKNOWN;
+    // -------------- Fix Ended for this method(getDeviceFpsStatus)-----------
     }
 
     /**
@@ -165,12 +174,8 @@ public class SamsungFrameRateHelper {
             @NonNull CameraCharacteristics characteristics) {
             
         try {
-            // Apply the standard FPS range first
-            Range<Integer> fpsRange = new Range<>(targetFrameRate, targetFrameRate);
-            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
-            
-            // Apply Samsung-specific keys (now passes characteristics)
-            applyFrameRateSettings(builder, targetFrameRate);
+            // Caller should have set AE range already; only apply vendor keys here.
+            applyFrameRateSettings(builder, targetFrameRate, characteristics);
             
             // Start the repeating request
             session.setRepeatingRequest(builder.build(), null, null);
