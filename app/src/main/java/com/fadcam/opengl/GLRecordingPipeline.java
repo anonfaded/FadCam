@@ -1488,7 +1488,24 @@ public class GLRecordingPipeline {
                     audioChannelCount);
             audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
             audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, audioBitrate);
-            audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384);
+            // -------------- Fix Start for this method(setupAudio)-----------
+            // Increase input size to avoid starvation and crackling under load
+            // Empirically validated values from user report
+            int desiredMaxInput = 262144; // 256 KiB
+            try {
+                audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, desiredMaxInput);
+            } catch (Exception e) {
+                Log.w(TAG, "KEY_MAX_INPUT_SIZE not supported as integer?", e);
+            }
+            // Explicitly declare PCM encoding when available (API 24+)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                try {
+                    audioFormat.setInteger(MediaFormat.KEY_PCM_ENCODING, android.media.AudioFormat.ENCODING_PCM_16BIT);
+                } catch (Exception e) {
+                    Log.w(TAG, "KEY_PCM_ENCODING not supported", e);
+                }
+            }
+            // -------------- Fix Ended for this method(setupAudio)-----------
             audioEncoder = MediaCodec.createEncoderByType(android.media.MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             audioEncoder.start();
@@ -1546,25 +1563,49 @@ public class GLRecordingPipeline {
         audioThread = new Thread(() -> {
             try {
                 audioRecord.startRecording();
-                ByteBuffer inputBuffer = ByteBuffer.allocateDirect(4096);
+                // -------------- Fix Start for this method(startAudioThread)-----------
+                // Use a large byte[] buffer and feed encoder in sane chunks aligned to frames
+                final int bytesPerFrame = audioChannelCount * 2; // 16-bit PCM
+                final int aacFrameSize = 1024 * bytesPerFrame;   // 1024 PCM frames per AAC frame
+                final int readBufferSize = Math.max(aacFrameSize * 4, 131072); // >= 128 KiB
+                byte[] readBuffer = new byte[readBufferSize];
+                long audioFramesWritten = 0L; // PCM frames (not bytes)
+                long lastPtsUs = 0L;
+                // -------------- Fix Ended for this method(startAudioThread)-----------
                 while (audioThreadRunning) {
-                    int read = audioRecord.read(inputBuffer, inputBuffer.capacity());
+                    int read = audioRecord.read(readBuffer, 0, readBuffer.length);
                     if (read > 0) {
-                        int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
-                        if (inputBufferIndex >= 0) {
+                        int offset = 0;
+                        while (offset < read && audioThreadRunning) {
+                            int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
+                            if (inputBufferIndex < 0) {
+                                // Encoder busy; break and try next loop iteration
+                                break;
+                            }
                             ByteBuffer codecInput = audioEncoder.getInputBuffer(inputBufferIndex);
+                            if (codecInput == null) {
+                                break;
+                            }
                             codecInput.clear();
-                            inputBuffer.rewind();
-                            codecInput.put(inputBuffer.array(), 0, read);
-                            long pts = getSynchronizedAudioTimestamp();
-                            audioEncoder.queueInputBuffer(inputBufferIndex, 0, read, pts, 0);
+                            int toCopy = Math.min(codecInput.remaining(), read - offset);
+                            codecInput.put(readBuffer, offset, toCopy);
+                            // PTS based on frames written so far (stable, drift-free)
+                long ptsUs = (audioFramesWritten * 1_000_000L) / audioSampleRate;
+                audioEncoder.queueInputBuffer(inputBufferIndex, 0, toCopy, ptsUs, 0);
+                lastPtsUs = ptsUs;
+                            // Advance counters
+                            offset += toCopy;
+                            audioFramesWritten += (toCopy / bytesPerFrame);
                         }
                     }
                 }
                 // Signal EOS
                 int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
                 if (inputBufferIndex >= 0) {
-                    audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, getSynchronizedAudioTimestamp(), MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+            // Use lastPtsUs from our audio timeline to avoid duration jumps
+            long eosPtsUs = (audioFramesWritten * 1_000_000L) / audioSampleRate;
+            if (eosPtsUs < lastPtsUs) eosPtsUs = lastPtsUs; // monotonic safeguard
+            audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, eosPtsUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Audio thread error", e);
