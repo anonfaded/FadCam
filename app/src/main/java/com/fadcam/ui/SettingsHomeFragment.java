@@ -134,7 +134,12 @@ public class SettingsHomeFragment extends Fragment {
         View rowAutoUpdate = root.findViewById(R.id.group_auto_update);
         if(rowAutoUpdate!=null){ rowAutoUpdate.setOnClickListener(v -> showAutoUpdateSwitchSheet()); }
         View rowDebug = root.findViewById(R.id.group_debug_logging);
-        if(rowDebug!=null){ rowDebug.setOnClickListener(v -> showDebugLoggingSwitchSheet()); }
+        if(rowDebug!=null){
+            rowDebug.setOnClickListener(v -> {
+                DebugLogBottomSheetFragment sheet = DebugLogBottomSheetFragment.newInstance();
+                sheet.show(getParentFragmentManager(), "debug_log_tools");
+            });
+        }
     View rowBackup = root.findViewById(R.id.group_prefs_backup);
     if(rowBackup!=null){ rowBackup.setOnClickListener(v -> showPrefsBackupSheet()); }
     }

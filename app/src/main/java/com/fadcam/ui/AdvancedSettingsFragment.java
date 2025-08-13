@@ -38,12 +38,22 @@ public class AdvancedSettingsFragment extends Fragment {
         debugSwitch = view.findViewById(R.id.switch_debug_logging);
         if (debugSwitch != null) {
             debugSwitch.setChecked(prefs.isDebugLoggingEnabled());
-            debugSwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
-                    prefs.sharedPreferences.edit().putBoolean(Constants.PREF_DEBUG_DATA, isChecked).apply());
+            debugSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.sharedPreferences.edit().putBoolean(Constants.PREF_DEBUG_DATA, isChecked).apply();
+                // Eagerly toggle logger runtime so file is created right away when enabled
+                com.fadcam.Log.setDebugEnabled(isChecked);
+            });
         }
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
             back.setOnClickListener(v -> handleBack());
+        }
+        View tools = view.findViewById(R.id.row_debug_log_tools);
+        if (tools != null) {
+            tools.setOnClickListener(v -> {
+                DebugLogBottomSheetFragment f = DebugLogBottomSheetFragment.newInstance();
+                f.show(getParentFragmentManager(), "debug_log_tools");
+            });
         }
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }

@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:overScrollMode="ifContentScrolls"
         android:fillViewport="true"
-        android:maxHeight="400dp">
+        android:maxHeight="700dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

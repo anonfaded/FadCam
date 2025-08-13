@@ -816,4 +816,19 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fix_video_saf_write_fail">Cannot write repaired file to SAF folder. Saved in app storage.</string>
     <string name="fix_video_saf_success">Video repaired! Saved as: %1$s.</string>
     <string name="fix_video_saf_export">Export or share the repaired file from app storage if needed.</string>
+
+    <!-- Debug Log Tools -->
+    <string name="debug_log_tools_title">Debug Log</string>
+    <string name="debug_log_tools_subtitle">Preview, search, share or delete FADCAM_debug.html</string>
+    <string name="debug_log_tools_helper">Shows the debug log file (FADCAM_debug.html). Use the search box to filter. Share when reporting bugs.</string>
+    <string name="debug_log_share_title">Share Debug Log</string>
+    <string name="debug_log_share_subtitle">Open the system share sheet</string>
+    <string name="debug_log_delete_title">Delete Debug Log</string>
+    <string name="debug_log_delete_subtitle">Remove the log file from storage</string>
+    <string name="debug_log_open_title">Open Externally</string>
+    <string name="debug_log_open_subtitle">View in a browser or HTML viewer</string>
+    <string name="debug_log_search_hint">Search log…</string>
+    <string name="debug_log_empty">No debug log yet</string>
+    <string name="debug_log_share_fail">Share failed</string>
+    <string name="debug_log_open_fail">Open failed</string>
 </resources>

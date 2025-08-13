@@ -242,6 +242,11 @@ public class GLRecordingPipeline {
      */
     public void prepareSurfaces() {
         try {
+        // -------------- Fix Start for this method(prepareSurfaces)-----------
+    // -------------- Fix Start for this method(prepareSurfaces)-----------
+    try { com.fadcam.Log.d(TAG, "prepareSurfaces() called"); } catch (Throwable ignore){}
+    // -------------- Fix Ended for this method(prepareSurfaces)-----------
+        // -------------- Fix Ended for this method(prepareSurfaces)-----------
             // Make sure any previous resources are fully released
             if (glRenderer != null) {
                 Log.d(TAG, "Releasing previous renderer before preparing new surfaces");
@@ -249,6 +254,7 @@ public class GLRecordingPipeline {
                     glRenderer.release();
                 } catch (Exception e) {
                     Log.e(TAG, "Error releasing previous renderer", e);
+                    try { com.fadcam.Log.e(TAG, "Error releasing previous renderer", e); } catch (Throwable ignore){}
                 }
                 glRenderer = null;
             }
@@ -374,6 +380,7 @@ public class GLRecordingPipeline {
         try {
             if (!isRecording) {
                 Log.d(TAG, "Starting recording pipeline");
+                try { com.fadcam.Log.d(TAG, "Starting recording pipeline"); } catch (Throwable ignore){}
                 
                 // Make sure we have a valid renderer and surfaces
                 if (glRenderer == null || encoderInputSurface == null) {
@@ -895,6 +902,7 @@ public class GLRecordingPipeline {
                     if (muxerStarted) {
                         // This should NOT happen if we wait for format before starting muxer
                         Log.e(TAG, "CRITICAL: Format changed after muxer started - this indicates a timing issue!");
+                        try { com.fadcam.Log.e(TAG, "CRITICAL: Format changed after muxer started - timing issue"); } catch (Throwable ignore){}
                         // Don't restart muxer - this causes duration issues
                         // Instead, log the error and continue with existing muxer
                         Log.w(TAG, "Continuing with existing muxer to prevent duration corruption");
@@ -902,12 +910,14 @@ public class GLRecordingPipeline {
                         // Normal case - add video track first
                         videoTrackIndex = mediaMuxer.addTrack(newFormat);
                         Log.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
+                        try { com.fadcam.Log.d(TAG, "Video track added: index="+videoTrackIndex+", fmt="+newFormat.toString()); } catch (Throwable ignore){}
                         
                         // Start muxer immediately if audio is disabled
                         if (!audioRecordingEnabled) {
                             mediaMuxer.start();
                             muxerStarted = true;
                             Log.d(TAG, "Started muxer for video-only recording");
+                            try { com.fadcam.Log.d(TAG, "Muxer started (video-only)"); } catch (Throwable ignore){}
                         } else {
                             // Audio is enabled - check if audio track is already added
                             if (audioTrackIndex != -1) {
@@ -915,9 +925,11 @@ public class GLRecordingPipeline {
                                 mediaMuxer.start();
                                 muxerStarted = true;
                                 Log.d(TAG, "Started muxer with both video and audio tracks");
+                                try { com.fadcam.Log.d(TAG, "Muxer started (audio+video)"); } catch (Throwable ignore){}
                             } else {
                                 // Wait for audio track to be added
                                 Log.d(TAG, "Video track added, waiting for audio track before starting muxer");
+                                try { com.fadcam.Log.d(TAG, "Waiting for audio track before starting muxer"); } catch (Throwable ignore){}
                             }
                         }
                     }
@@ -952,16 +964,19 @@ public class GLRecordingPipeline {
                         mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error writing video frame to muxer", e);
+                                try { com.fadcam.Log.e(TAG, "Error writing video frame to muxer", e); } catch (Throwable ignore){}
                                 // -------------- Fix Start for this method(drainEncoder)-----------
                                 // BULLETPROOF: Continue processing but mark potential corruption
                                 if (e.getMessage() != null && e.getMessage().contains("muxer")) {
                                     Log.w(TAG, "Muxer error detected - file may need emergency finalization");
+                                    try { com.fadcam.Log.w(TAG, "Muxer error detected - will attempt emergency finalize if needed"); } catch (Throwable ignore){}
                                 }
                                 // -------------- Fix Ended for this method(drainEncoder)-----------
                     }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
                         Log.d(TAG, "Dropping encoded frame because muxer isn't started yet");
+                        try { com.fadcam.Log.w(TAG, "Dropping encoded frame (muxer not started yet)"); } catch (Throwable ignore){}
                     }
                     
                     videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
@@ -1113,7 +1128,8 @@ public class GLRecordingPipeline {
      * Ensures recorded files are always playable even when errors occur.
      */
     public void stopRecording() {
-        Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+    Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+    try { com.fadcam.Log.d(TAG, "stopRecording: Stopping recording and releasing resources"); } catch (Throwable ignore){}
         if (isStopped || released) {
             Log.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
             return;
@@ -1133,6 +1149,7 @@ public class GLRecordingPipeline {
             updateWatermarkRunnable = null;
         } catch (Exception e) {
             Log.w(TAG, "Error stopping watermark updater", e);
+            try { com.fadcam.Log.w(TAG, "Error stopping watermark updater: " + e.getMessage()); } catch (Throwable ignore){}
         }
         // -------------- Fix Ended for this method(stopRecording)-----------
         
