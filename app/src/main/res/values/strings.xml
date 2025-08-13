@@ -273,7 +273,7 @@
     <string name="torch_both">Both Torches</string>
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
-    <string name="note_debug_detailed">When enabled, FadCam writes a debug log HTML file (FADCAM_debug.html) into the public Downloads/FadCam/ folder. Share this file when reporting issues. Turn off to stop future writes.</string>
+    <string name="note_debug_detailed">When enabled, FadCam writes a debug log HTML file (FADCAM_debug.html) into the public Downloads/FadCam/ folder. Share this file when reporting issues. Turn off to stop future writes.\nNote: Debug logging may add performance overhead during recording — keep it off unless you are troubleshooting.</string>
     <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
     <!-- Watermark unified strings -->
     <string name="watermark_preview_heading">Preview</string>
@@ -820,7 +820,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Debug Log Tools -->
     <string name="debug_log_tools_title">Debug Log</string>
     <string name="debug_log_tools_subtitle">Preview, search, share or delete FADCAM_debug.html</string>
-    <string name="debug_log_tools_helper">Shows the debug log file (FADCAM_debug.html). Use the search box to filter. Share when reporting bugs.</string>
+    <string name="debug_log_tools_helper">Shows the debug log file (FADCAM_debug.html). Enabling debug logging may add performance overhead—don’t enable it unless you’re facing a bug and need to share the log. Use the search box to filter.</string>
     <string name="debug_log_share_title">Share Debug Log</string>
     <string name="debug_log_share_subtitle">Open the system share sheet</string>
     <string name="debug_log_delete_title">Delete Debug Log</string>

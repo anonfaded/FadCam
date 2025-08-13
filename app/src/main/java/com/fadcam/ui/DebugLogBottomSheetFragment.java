@@ -271,8 +271,9 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(24), dp(24));
         iconLp.setMarginEnd(dp(16));
         icon.setLayoutParams(iconLp);
-        icon.setImageResource(iconRes);
-        icon.setImageTintList(ColorStateList.valueOf(iconGrayEnabled));
+    icon.setImageResource(iconRes);
+    // Match tinting approach used across settings/readme screens
+    icon.setImageTintList(ColorStateList.valueOf(iconGrayEnabled));
         row.addView(icon);
         LinearLayout text = new LinearLayout(requireContext());
         text.setOrientation(LinearLayout.VERTICAL);
