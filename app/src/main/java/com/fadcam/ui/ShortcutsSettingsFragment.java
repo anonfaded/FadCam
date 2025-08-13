@@ -155,7 +155,7 @@ public class ShortcutsSettingsFragment extends Fragment {
         items.add(new com.fadcam.ui.picker.OptionItem(
                 "customize",
                 "Customize",
-                "Time format, date format, Arabic date",
+                "Time format, date display, background, Arabic date",
                 null,
                 R.drawable.ic_settings,
                 null
@@ -182,9 +182,25 @@ public class ShortcutsSettingsFragment extends Fragment {
                     showTimeFormatSheet();
                 } else if("date_format".equals(selected)){
                     showDateFormatSheet();
+                } else if("show_date".equals(selected)){
+                    toggleShowDate();
                 } else if("arabic_date".equals(selected)){
                     toggleArabicDate();
+                } else if("arabic_date_format".equals(selected)){
+                    showArabicDateFormatSheet();
+                } else if("branding".equals(selected)){
+                    toggleBranding();
                 }
+            }
+            // Handle switch state changes for black background
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean switchState = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
+                prefs.setBlackBackground(switchState);
+                updateAllWidgets();
+                updatePreview();
+                // Show customize sheet again after switch toggle
+                new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
             }
         });
         
@@ -193,35 +209,66 @@ public class ShortcutsSettingsFragment extends Fragment {
         
         items.add(new com.fadcam.ui.picker.OptionItem(
                 "time_format",
-                "Time Format",
-                prefs.is24HourFormat() ? "24-hour (15:30)" : "12-hour (3:30 PM)",
+                getString(R.string.widget_time_format_title),
+                prefs.is24HourFormat() ? getString(R.string.widget_time_format_24h) : getString(R.string.widget_time_format_12h),
                 null,
                 R.drawable.ic_clock_widget,
                 null
         ));
         items.add(new com.fadcam.ui.picker.OptionItem(
+                "show_date",
+                getString(R.string.widget_show_date_title),
+                prefs.showDate() ? getString(R.string.widget_option_enabled) : getString(R.string.widget_option_disabled),
+                null,
+                R.drawable.ic_calendar,
+                null
+        ));
+        items.add(new com.fadcam.ui.picker.OptionItem(
                 "date_format",
-                "Date Format",
-                "Choose date display style",
+                getString(R.string.widget_date_format_title),
+                prefs.showDate() ? getString(R.string.widget_date_format_sample) : getString(R.string.widget_option_disabled),
                 null,
                 R.drawable.ic_calendar,
                 null
         ));
         items.add(new com.fadcam.ui.picker.OptionItem(
                 "arabic_date",
-                "Arabic Date",
-                prefs.showArabicDate() ? "Enabled" : "Disabled",
+                getString(R.string.widget_arabic_date_title),
+                (prefs.showDate() && prefs.showArabicDate()) ? getString(R.string.widget_option_enabled) : getString(R.string.widget_option_disabled),
                 null,
                 R.drawable.ic_language,
                 null
         ));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "arabic_date_format",
+                getString(R.string.widget_arabic_date_format_title),
+                getArabicDateFormatDescription(prefs.getArabicDateFormat()),
+                null,
+                R.drawable.ic_language,
+                null
+        ));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "branding",
+                getString(R.string.widget_branding_title),
+                getBrandingDescription(prefs),
+                null,
+                R.drawable.fadseclab_flag,
+                null
+        ));
         
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-                "Customize Clock Widget",
+        // Create list of dependent options that should be disabled when black background is off
+        java.util.ArrayList<String> dependentIds = new java.util.ArrayList<>();
+        dependentIds.add("branding"); // FadSecLab flag depends on black background
+        
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitchDependencies(
+                getString(R.string.widget_customize_title),
                 items,
                 null,
                 resultKey,
-                "Customize how your clock widget displays time and date"
+                getString(R.string.widget_customize_description),
+                getString(R.string.widget_black_background_title), // Switch title
+                prefs.hasBlackBackground(), // Switch state
+                dependentIds // Dependent option IDs
         );
         sheet.show(getParentFragmentManager(), "customize_widget");
     }
@@ -291,6 +338,24 @@ public class ShortcutsSettingsFragment extends Fragment {
         new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
     }
 
+    private void toggleShowDate(){
+        com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
+        prefs.setShowDate(!prefs.showDate());
+        updateAllWidgets();
+        updatePreview();
+        // Show customize sheet again after toggle
+        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
+    }
+
+    private void toggleBlackBackground(){
+        com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
+        prefs.setBlackBackground(!prefs.hasBlackBackground());
+        updateAllWidgets();
+        updatePreview();
+        // Show customize sheet again after toggle
+        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
+    }
+
     private void updateAllWidgets(){
         android.content.Context ctx = requireContext();
         android.appwidget.AppWidgetManager awm = android.appwidget.AppWidgetManager.getInstance(ctx);
@@ -305,6 +370,88 @@ public class ShortcutsSettingsFragment extends Fragment {
         updatePreview();
     }
 
+    private void showArabicDateFormatSheet(){
+        final String resultKey = "picker_result_arabic_date_format";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String selected = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
+                prefs.setArabicDateFormat(selected);
+                updateAllWidgets();
+                updatePreview();
+                // Show customize sheet again after selection
+                new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
+            }
+        });
+        
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "FULL_ARABIC",
+                getString(R.string.arabic_date_full_arabic),
+                getString(R.string.arabic_date_sample_full_arabic),
+                null,
+                R.drawable.ic_language,
+                null
+        ));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "MONTH_ARABIC_NUMBERS_ENGLISH",
+                getString(R.string.arabic_date_month_arabic_numbers_english),
+                getString(R.string.arabic_date_sample_mixed),
+                null,
+                R.drawable.ic_language,
+                null
+        ));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "FULL_ENGLISH",
+                getString(R.string.arabic_date_full_english),
+                getString(R.string.arabic_date_sample_english),
+                null,
+                R.drawable.ic_language,
+                null
+        ));
+        
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.arabic_date_format_title),
+                items,
+                null,
+                resultKey,
+                getString(R.string.arabic_date_format_description)
+        );
+        sheet.show(getParentFragmentManager(), "arabic_date_format");
+    }
+
+    private String getArabicDateFormatDescription(String format) {
+        switch (format) {
+            case "FULL_ARABIC":
+                return getString(R.string.arabic_date_description_full_arabic);
+            case "MONTH_ARABIC_NUMBERS_ENGLISH":
+                return getString(R.string.arabic_date_description_mixed);
+            case "FULL_ENGLISH":
+                return getString(R.string.arabic_date_description_english);
+            default:
+                return getString(R.string.arabic_date_description_default);
+        }
+    }
+
+    private void toggleBranding() {
+        com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
+        prefs.setBranding(!prefs.showBranding());
+        updateAllWidgets();
+        updatePreview();
+        // Show customize sheet again after toggle
+        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
+    }
+
+    private String getBrandingDescription(com.fadcam.widgets.WidgetPreferences prefs) {
+        if (prefs.showBranding() && prefs.hasBlackBackground()) {
+            return getString(R.string.widget_branding_enabled);
+        } else if (prefs.showBranding() && !prefs.hasBlackBackground()) {
+            return getString(R.string.widget_branding_requires_background);
+        } else {
+            return getString(R.string.widget_branding_disabled);
+        }
+    }
+
     private void updatePreview(){
         // -------------- Fix Start for this method(updatePreview)-----------
         if(getView() == null) return;
@@ -312,6 +459,15 @@ public class ShortcutsSettingsFragment extends Fragment {
         if(preview == null) return;
 
         com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
+        
+        // Update background based on preferences
+        if(prefs.hasBlackBackground() && prefs.showBranding()){
+            preview.setBackgroundResource(R.drawable.widget_black_background_with_branding);
+        } else if(prefs.hasBlackBackground()){
+            preview.setBackgroundResource(R.drawable.widget_black_background);
+        } else {
+            preview.setBackground(null);
+        }
         
         // Update time and AM/PM
         java.text.SimpleDateFormat timeFormat;
@@ -333,22 +489,32 @@ public class ShortcutsSettingsFragment extends Fragment {
             }
         }
         
-        // Update date
-        String datePattern = prefs.getDateFormat();
-        String date = new java.text.SimpleDateFormat(datePattern, java.util.Locale.getDefault()).format(new java.util.Date());
+        // Update date visibility and content
         android.widget.TextView dateView = preview.findViewById(R.id.clock_date_preview);
-        if(dateView != null) dateView.setText(date);
-        
-        // Update Arabic date
         android.widget.TextView arabicDateView = preview.findViewById(R.id.clock_date_arabic_preview);
-        if(arabicDateView != null){
-            if(prefs.showArabicDate()){
-                String arabicDate = com.fadcam.widgets.ArabicDateUtils.getArabicDate();
-                arabicDateView.setText(arabicDate);
-                arabicDateView.setVisibility(android.view.View.VISIBLE);
-            } else {
-                arabicDateView.setVisibility(android.view.View.GONE);
+        if(prefs.showDate()) {
+            String datePattern = prefs.getDateFormat();
+            String date = new java.text.SimpleDateFormat(datePattern, java.util.Locale.getDefault()).format(new java.util.Date());
+            if(dateView != null) {
+                dateView.setText(date);
+                dateView.setVisibility(android.view.View.VISIBLE);
             }
+            
+            // Arabic date only shows if both date and Arabic date are enabled
+            if(arabicDateView != null){
+                if(prefs.showArabicDate()){
+                    String arabicDateFormat = prefs.getArabicDateFormat();
+                    String arabicDate = com.fadcam.widgets.ArabicDateUtils.getArabicDate(arabicDateFormat);
+                    arabicDateView.setText(arabicDate);
+                    arabicDateView.setVisibility(android.view.View.VISIBLE);
+                } else {
+                    arabicDateView.setVisibility(android.view.View.GONE);
+                }
+            }
+        } else {
+            // Hide both date and Arabic date if date is disabled
+            if(dateView != null) dateView.setVisibility(android.view.View.GONE);
+            if(arabicDateView != null) arabicDateView.setVisibility(android.view.View.GONE);
         }
         // -------------- Fix Ended for this method(updatePreview)-----------
     }

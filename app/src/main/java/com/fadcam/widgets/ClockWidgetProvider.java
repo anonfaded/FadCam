@@ -83,15 +83,15 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         android.util.Size widgetSize = getWidgetSize(context, manager, appWidgetId);
         float scaleFactor = calculateScaleFactor(widgetSize);
 
-        // Apply dynamic font sizes with bigger base sizes
-        float timeSize = 42f * scaleFactor;      // Increased from 32sp to 42sp
-        float ampmSize = 18f * scaleFactor;      // Increased from 14sp to 18sp  
-        float dateSize = 18f * scaleFactor;      // Increased from 14sp to 18sp
-        float arabicDateSize = 16f * scaleFactor; // Increased from 12sp to 16sp
+        // Apply dynamic font sizes with bigger base sizes for time
+        float timeSize = 48f * scaleFactor;      // Even bigger time: 48sp
+        float ampmSize = 14f * scaleFactor;      // Smaller AM/PM: 14sp  
+        float dateSize = 18f * scaleFactor;      // Date size: 18sp
+        float arabicDateSize = 16f * scaleFactor; // Arabic date: 16sp
 
         // Ensure minimum readable sizes
-        timeSize = Math.max(timeSize, 32f);
-        ampmSize = Math.max(ampmSize, 14f);
+        timeSize = Math.max(timeSize, 36f);
+        ampmSize = Math.max(ampmSize, 12f);
         dateSize = Math.max(dateSize, 14f);
         arabicDateSize = Math.max(arabicDateSize, 12f);
 
@@ -101,7 +101,19 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         views.setTextViewTextSize(R.id.clock_date, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize);
         views.setTextViewTextSize(R.id.clock_date_arabic, android.util.TypedValue.COMPLEX_UNIT_SP, arabicDateSize);
 
-        // Format time based on preference
+        // Set background based on preferences
+        if (prefs.hasBlackBackground() && prefs.showBranding()) {
+            // Combined black background with branding overlay
+            views.setInt(R.id.clock_root, "setBackgroundResource", R.drawable.widget_black_background_with_branding);
+        } else if (prefs.hasBlackBackground()) {
+            // Just black background
+            views.setInt(R.id.clock_root, "setBackgroundResource", R.drawable.widget_black_background);
+        } else {
+            // Transparent background
+            views.setInt(R.id.clock_root, "setBackgroundResource", android.R.color.transparent);
+        }
+
+        // Format time based on preference (default: 12-hour)
         if (prefs.is24HourFormat()) {
             String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
             views.setTextViewText(R.id.clock_time, time);
@@ -114,14 +126,22 @@ public class ClockWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.clock_ampm, android.view.View.VISIBLE);
         }
         
-        // Format date based on preference
-        String datePattern = prefs.getDateFormat();
-        String date = new SimpleDateFormat(datePattern, Locale.getDefault()).format(new Date());
-        views.setTextViewText(R.id.clock_date, date);
+        // Show/hide date based on preference
+        if (prefs.showDate()) {
+            String datePattern = prefs.getDateFormat();
+            String date = new SimpleDateFormat(datePattern, Locale.getDefault()).format(new Date());
+            views.setTextViewText(R.id.clock_date, date);
+            views.setViewVisibility(R.id.clock_date, android.view.View.VISIBLE);
+            views.setViewVisibility(R.id.date_container, android.view.View.VISIBLE);
+        } else {
+            views.setViewVisibility(R.id.clock_date, android.view.View.GONE);
+            views.setViewVisibility(R.id.date_container, android.view.View.GONE);
+        }
         
-        // Arabic date
-        if (prefs.showArabicDate()) {
-            String arabicDate = ArabicDateUtils.getArabicDate();
+        // Arabic date (only show if date is enabled and Arabic date is enabled)
+        if (prefs.showDate() && prefs.showArabicDate()) {
+            String arabicDateFormat = prefs.getArabicDateFormat();
+            String arabicDate = ArabicDateUtils.getArabicDate(arabicDateFormat);
             views.setTextViewText(R.id.clock_date_arabic, arabicDate);
             views.setViewVisibility(R.id.clock_date_arabic, android.view.View.VISIBLE);
         } else {

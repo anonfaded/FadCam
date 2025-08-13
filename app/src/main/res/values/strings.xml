@@ -301,6 +301,43 @@
     <string name="widgets_pin_unsupported">Pinning widgets is not supported by your launcher.</string>
     <string name="widget_clock_title">Clock widget</string>
     <string name="widgets_pin_fallback">If no prompt appears, long‑press your Home screen, open Widgets, and drag the FadCam Clock widget.</string>
+    
+    <!-- Widget Customization -->
+    <string name="widget_customize_title">Customize Clock Widget</string>
+    <string name="widget_customize_description">Customize how your clock widget displays time and date</string>
+    <string name="widget_time_format_title">Time Format</string>
+    <string name="widget_show_date_title">Show Date</string>
+    <string name="widget_date_format_title">Date Format</string>
+    <string name="widget_black_background_title">Black Background</string>
+    <string name="widget_arabic_date_title">Arabic Date</string>
+    <string name="widget_arabic_date_format_title">Arabic Date Format</string>
+    <string name="widget_branding_title">FadSecLab Branding</string>
+    
+    <!-- Widget Option Descriptions -->
+    <string name="widget_time_format_12h">12-hour (3:30 PM)</string>
+    <string name="widget_time_format_24h">24-hour (15:30)</string>
+    <string name="widget_option_enabled">Enabled</string>
+    <string name="widget_option_disabled">Disabled</string>
+    <string name="widget_background_transparent">Disabled (Transparent)</string>
+    <string name="widget_date_format_sample">Aug 13, 2025</string>
+    <string name="widget_branding_enabled">Enabled (with Black Background)</string>
+    <string name="widget_branding_disabled">Disabled</string>
+    <string name="widget_branding_requires_background">Requires Black Background</string>
+    
+    <!-- Arabic Date Format Options -->
+    <string name="arabic_date_format_title">Arabic Date Format</string>
+    <string name="arabic_date_format_description">Choose how to display the Islamic date</string>
+    <string name="arabic_date_full_arabic">Full Arabic</string>
+    <string name="arabic_date_month_arabic_numbers_english">Arabic Month, English Numbers</string>
+    <string name="arabic_date_full_english">Full English</string>
+    <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
+    <string name="arabic_date_sample_mixed">7 صفر 1447</string>
+    <string name="arabic_date_sample_english">7 Safar 1447</string>
+    <string name="arabic_date_description_full_arabic">Full Arabic (٧ صفر ١٤٤٧)</string>
+    <string name="arabic_date_description_mixed">Arabic Month, English Numbers</string>
+    <string name="arabic_date_description_english">Full English</string>
+    <string name="arabic_date_description_default">Full Arabic (Default)</string>
+    
     <string name="shortcuts_helper_text">Add shortcuts to your home screen. Select a shortcut above to add. A confirmation is required.
 These shortcuts can also be used with automation apps (e.g., MacroDroid) to trigger intents, like mapping volume buttons.</string>
     <string name="shortcuts_add_to_home">Add to Home screen</string>

@@ -3,7 +3,7 @@
     android:id="@+id/clock_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp"
+    android:padding="6dp"
     android:background="@android:color/transparent">
 
     <LinearLayout
@@ -13,14 +13,15 @@
         android:layout_centerVertical="true"
         android:layout_alignParentStart="true"
         android:orientation="horizontal"
-        android:gravity="bottom">
+        android:gravity="bottom"
+        android:layout_marginEnd="8dp">
 
         <TextView
             android:id="@+id/clock_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/white"
-            android:textSize="42sp"
+            android:textSize="48sp"
             android:textStyle="bold"
             android:shadowColor="@android:color/black"
             android:shadowDx="1"
@@ -34,9 +35,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
-            android:layout_marginBottom="2dp"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#B0B0B0"
+            android:textSize="14sp"
             android:shadowColor="@android:color/black"
             android:shadowDx="1"
             android:shadowDy="1"
@@ -47,18 +48,18 @@
 
     <LinearLayout
         android:id="@+id/date_container"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
         android:layout_toEndOf="@id/time_container"
-        android:layout_marginStart="8dp"
         android:orientation="vertical"
-        android:gravity="end">
+        android:gravity="end"
+        android:layout_marginStart="4dp">
 
         <TextView
             android:id="@+id/clock_date"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="#E0E0E0"
             android:textSize="18sp"
@@ -67,12 +68,15 @@
             android:shadowDy="1"
             android:shadowRadius="1"
             android:text="Wed, 13 Aug"
-            android:maxLines="1"
-            android:gravity="end"/>
+            android:maxLines="2"
+            android:gravity="end"
+            android:ellipsize="none"
+            android:breakStrategy="simple"
+            android:lineSpacingExtra="1dp"/>
 
         <TextView
             android:id="@+id/clock_date_arabic"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:textColor="#C0C0C0"
@@ -82,7 +86,12 @@
             android:shadowDy="1"
             android:shadowRadius="1"
             android:text="٧ صفر ١٤٤٧"
-            android:maxLines="1"
-            android:gravity="end"/>
+            android:maxLines="2"
+            android:gravity="end"
+            android:textDirection="rtl"
+            android:textAlignment="viewEnd"
+            android:ellipsize="none"
+            android:breakStrategy="simple"
+            android:lineSpacingExtra="1dp"/>
     </LinearLayout>
 </RelativeLayout>

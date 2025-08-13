@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/white"
-            android:textSize="42sp"
+            android:textSize="32sp"
             android:textStyle="bold"
             android:text="8:05"
             android:maxLines="1"/>
@@ -29,16 +29,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
-            android:layout_marginBottom="2dp"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#B0B0B0"
+            android:textSize="10sp"
             android:text="PM"
             android:maxLines="1"/>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/date_container_preview"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
@@ -49,23 +49,29 @@
 
         <TextView
             android:id="@+id/clock_date_preview"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="#E0E0E0"
-            android:textSize="18sp"
+            android:textSize="12sp"
             android:text="Wed, 13 Aug"
-            android:maxLines="1"
-            android:gravity="end"/>
+            android:maxLines="2"
+            android:gravity="end"
+            android:breakStrategy="simple"
+            android:lineSpacingExtra="1dp"/>
 
         <TextView
             android:id="@+id/clock_date_arabic_preview"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:textColor="#C0C0C0"
-            android:textSize="16sp"
+            android:textSize="11sp"
             android:text="٧ صفر ١٤٤٧"
-            android:maxLines="1"
-            android:gravity="end"/>
+            android:maxLines="2"
+            android:gravity="end"
+            android:textDirection="rtl"
+            android:textAlignment="viewEnd"
+            android:breakStrategy="simple"
+            android:lineSpacingExtra="1dp"/>
     </LinearLayout>
 </RelativeLayout>

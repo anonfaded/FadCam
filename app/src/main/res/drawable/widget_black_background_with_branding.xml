@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Black background layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#CC000000"/>
+            <corners android:radius="12dp"/>
+        </shape>
+    </item>
+    
+    <!-- FadSecLab flag overlay on the right side -->
+    <item
+        android:gravity="end|bottom"
+        android:width="24dp"
+        android:height="12dp"
+        android:bottom="4dp"
+        android:right="6dp">
+        <bitmap
+            android:src="@drawable/fadseclab_flag"
+            android:alpha="0.7"
+            android:gravity="end|bottom"/>
+    </item>
+</layer-list>
