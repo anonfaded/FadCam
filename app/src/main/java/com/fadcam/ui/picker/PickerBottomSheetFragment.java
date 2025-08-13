@@ -39,6 +39,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_SWITCH_DEPENDENT_IDS = "switch_dependent_ids"; // ArrayList<String> of option ids disabled when switch is off
     public static final String ARG_USE_GRADIENT = "use_gradient_bg";
     public static final String ARG_GRID_MODE = "grid_mode"; // for icon grid
+    public static final String ARG_HIDE_CHECK = "hide_check"; // hide selection checkmark UI
 
     public static PickerBottomSheetFragment newInstance(String title, ArrayList<OptionItem> items, String selectedId, String resultKey){
         PickerBottomSheetFragment f = new PickerBottomSheetFragment();
@@ -99,6 +100,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private LinearLayout containerLayoutRef; private android.widget.Switch switchRef;
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
+    private boolean hideCheck = false;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -125,6 +127,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             useGradientBg = args.getBoolean(ARG_USE_GRADIENT, true);
         }
     gridMode = args.getBoolean(ARG_GRID_MODE, false);
+        hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
         }
         TextView titleView = view.findViewById(R.id.picker_title);
         if(titleView!=null) titleView.setText(title);
@@ -195,7 +198,14 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 tvSubtitle.setVisibility(View.VISIBLE);
             } else { tvSubtitle.setVisibility(View.GONE); }
             if(leadingIcon!=null){
-                if(item.iconResId!=null){ leadingIcon.setImageResource(item.iconResId); leadingIcon.setVisibility(View.VISIBLE);} else { leadingIcon.setVisibility(View.GONE);} }
+                if(item.iconResId!=null){ 
+                    leadingIcon.setImageResource(item.iconResId); 
+                    leadingIcon.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(), android.R.color.darker_gray));
+                    leadingIcon.setVisibility(View.VISIBLE);
+                } else { 
+                    leadingIcon.setVisibility(View.GONE);
+                } 
+            }
             if(trailingIcon!=null){
                 if(item.trailingIconResId!=null){ trailingIcon.setImageResource(item.trailingIconResId); trailingIcon.setVisibility(View.VISIBLE);} else { trailingIcon.setVisibility(View.GONE);} }
             if(colorSwatch!=null){
@@ -216,11 +226,15 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             }
             boolean isSel = item.id!=null && item.id.equals(selectedId);
             if(isSel){
-                checkContainer.setVisibility(View.VISIBLE);
-                checkIcon.setScaleX(1f); checkIcon.setScaleY(1f); checkIcon.setAlpha(1f);
+                if(hideCheck){
+                    checkContainer.setVisibility(View.GONE);
+                } else {
+                    checkContainer.setVisibility(View.VISIBLE);
+                    checkIcon.setScaleX(1f); checkIcon.setScaleY(1f); checkIcon.setAlpha(1f);
+                }
             } else {
-                // If a trailing icon is present (confirmation style), drop the check container entirely to align trailing icon flush right
-                if(trailingIcon!=null && trailingIcon.getVisibility()==View.VISIBLE){
+                // If hideCheck or a trailing icon is present (confirmation style), drop the check container entirely to align trailing icon flush right
+                if(hideCheck || (trailingIcon!=null && trailingIcon.getVisibility()==View.VISIBLE)){
                     checkContainer.setVisibility(View.GONE);
                 } else {
                     checkContainer.setVisibility(View.INVISIBLE); // keep space to avoid layout shift
@@ -229,25 +243,27 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             }
             row.setOnClickListener(v -> {
                 // Clear old selection visual
-                int childCount = containerLayout.getChildCount();
-                for(int i=0;i<childCount;i++){
-                    View child = containerLayout.getChildAt(i);
-                    View cc = child.findViewById(R.id.picker_item_check_container);
-                    ImageView ci = child.findViewById(R.id.picker_item_check);
-                    if(cc!=null && ci!=null){
-                        cc.setVisibility(View.INVISIBLE);
-                        ci.setScaleX(0f); ci.setScaleY(0f); ci.setAlpha(0f);
+                if(!hideCheck){
+                    int childCount = containerLayout.getChildCount();
+                    for(int i=0;i<childCount;i++){
+                        View child = containerLayout.getChildAt(i);
+                        View cc = child.findViewById(R.id.picker_item_check_container);
+                        ImageView ci = child.findViewById(R.id.picker_item_check);
+                        if(cc!=null && ci!=null){
+                            cc.setVisibility(View.INVISIBLE);
+                            ci.setScaleX(0f); ci.setScaleY(0f); ci.setAlpha(0f);
+                        }
                     }
+                    // Animate new selection
+                    checkContainer.setVisibility(View.VISIBLE);
+                    AnimatorSet set = new AnimatorSet();
+                    ObjectAnimator sx = ObjectAnimator.ofFloat(checkIcon, View.SCALE_X, 0f, 1f);
+                    ObjectAnimator sy = ObjectAnimator.ofFloat(checkIcon, View.SCALE_Y, 0f, 1f);
+                    ObjectAnimator a = ObjectAnimator.ofFloat(checkIcon, View.ALPHA, 0f, 1f);
+                    sx.setDuration(140); sy.setDuration(140); a.setDuration(140);
+                    set.playTogether(sx, sy, a);
+                    set.start();
                 }
-                // Animate new selection
-                checkContainer.setVisibility(View.VISIBLE);
-                AnimatorSet set = new AnimatorSet();
-                ObjectAnimator sx = ObjectAnimator.ofFloat(checkIcon, View.SCALE_X, 0f, 1f);
-                ObjectAnimator sy = ObjectAnimator.ofFloat(checkIcon, View.SCALE_Y, 0f, 1f);
-                ObjectAnimator a = ObjectAnimator.ofFloat(checkIcon, View.ALPHA, 0f, 1f);
-                sx.setDuration(140); sy.setDuration(140); a.setDuration(140);
-                set.playTogether(sx, sy, a);
-                set.start();
                 // Post result then dismiss slightly later
                 Bundle result = new Bundle();
                 result.putString(BUNDLE_SELECTED_ID, item.id);
@@ -297,7 +313,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             android.widget.ImageView check = cell.findViewById(R.id.icon_check);
             android.widget.TextView label = cell.findViewById(R.id.icon_label);
             label.setText(item.title);
-            if(item.iconResId!=null){ icon.setImageResource(item.iconResId); }
+            if(item.iconResId!=null){ 
+                icon.setImageResource(item.iconResId); 
+                icon.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(), android.R.color.darker_gray));
+            }
             boolean isSel = item.id!=null && item.id.equals(selectedId);
             if(checkContainer!=null){
                 if(isSel){

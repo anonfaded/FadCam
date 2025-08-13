@@ -379,6 +379,28 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (Exception e){ android.util.Log.e("ThemeReopen","Outer fail", e); }
         // -------------- Fix Ended for this logic(reopen appearance/theme sheet after theme change)-----------
+        
+        // -------------- Fix Start for this logic(handle widget intent to open shortcuts)-----------
+        handleWidgetIntent();
+        // -------------- Fix Ended for this logic(handle widget intent to open shortcuts)-----------
+    }
+    
+    private void handleWidgetIntent() {
+        Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("open_shortcuts_widgets", false)) {
+            // Navigate to Settings tab and then open Shortcuts & Widgets screen
+            if (viewPager != null) {
+                viewPager.setCurrentItem(3, false); // Settings tab
+            }
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    com.fadcam.ui.ShortcutsSettingsFragment frag = new com.fadcam.ui.ShortcutsSettingsFragment();
+                    OverlayNavUtil.show(this, frag, "ShortcutsSettingsFragment");
+                } catch (Exception e) {
+                    android.util.Log.e("WidgetIntent", "Failed to open shortcuts fragment", e);
+                }
+            }, 100);
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N_MR1)

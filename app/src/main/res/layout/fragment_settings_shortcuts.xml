@@ -48,6 +48,8 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:background="@drawable/settings_group_card_bg"
+        android:clickable="false"
+        android:focusable="false"
         android:padding="12dp"
         android:layout_marginTop="8dp">
 
@@ -148,4 +150,78 @@
         android:textSize="12sp"
         android:text="@string/shortcuts_helper_text"/>
 
+    <!-- Widgets Section Title -->
+    <TextView
+        android:id="@+id/heading_widgets"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="6dp"
+        android:text="Widgets"
+        android:textColor="?attr/colorHeading"
+        android:textStyle="bold" />
+
+    <!-- Widgets group card (dark themed) with full width widgets -->
+    <LinearLayout
+        android:id="@+id/widgets_group_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="12dp">
+
+        <!-- Clock widget row (full width) -->
+        <LinearLayout
+            android:id="@+id/cell_widget_clock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <FrameLayout
+                android:id="@+id/clock_widget_preview"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:background="@drawable/widget_preview_bg"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="8dp">
+
+                <include layout="@layout/widget_clock_preview"/>
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/clock_widget_title_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="8dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_clock_widget"
+                    android:tint="@android:color/darker_gray"/>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Clock"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_open_in_new"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
 </LinearLayout>

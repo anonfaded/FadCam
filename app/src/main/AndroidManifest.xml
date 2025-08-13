@@ -421,6 +421,22 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </receiver>
+
+        <!-- Clock App Widget Provider -->
+        <receiver
+            android:name=".widgets.ClockWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_clock_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="com.fadcam.widgets.ACTION_UPDATE_CLOCK" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/clock_widget_info" />
+        </receiver>
     </application>
 
 </manifest>
