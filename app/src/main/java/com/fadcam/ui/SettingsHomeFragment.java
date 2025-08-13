@@ -35,6 +35,7 @@ public class SettingsHomeFragment extends Fragment {
         R.id.group_storage,
         R.id.group_notifications,
         R.id.group_security,
+        R.id.group_widgets,
         R.id.group_about,
         R.id.group_review,
         R.id.group_watermark,
@@ -47,6 +48,7 @@ public class SettingsHomeFragment extends Fragment {
         "Storage",
         "Notifications",
         "Security",
+        "Widgets",
         "App",
         "Review",
         "Watermark",
@@ -77,6 +79,11 @@ public class SettingsHomeFragment extends Fragment {
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new SecuritySettingsFragment()));
+                }
+            } else if(ids[i] == R.id.group_widgets){
+                LinearLayout row = root.findViewById(ids[i]);
+                if(row != null){
+                    row.setOnClickListener(v -> openSubFragment(new ShortcutsSettingsFragment()));
                 }
             } else if(ids[i] == R.id.group_notifications){
                 LinearLayout row = root.findViewById(ids[i]);
@@ -127,6 +134,8 @@ public class SettingsHomeFragment extends Fragment {
     OverlayNavUtil.show(requireActivity(), fragment, fragment.getClass().getSimpleName());
     // -------------- Fix Ended for this method(openSubFragment)-----------
     }
+
+    // Removed legacy widgets bottom sheet (replaced by full Shortcuts & Widgets screen)
 
     private void wireAppInlineRows(View root){
         View rowOnboarding = root.findViewById(R.id.group_onboarding);

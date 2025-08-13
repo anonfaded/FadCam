@@ -54,7 +54,9 @@
                     android:id="@+id/picker_list_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"/>
+                    android:orientation="vertical"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"/>
             </LinearLayout>
             <TextView
                 android:id="@+id/picker_helper"

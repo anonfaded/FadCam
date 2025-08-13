@@ -186,12 +186,18 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             View colorSwatch = row.findViewById(R.id.picker_item_color_swatch);
             View checkContainer = row.findViewById(R.id.picker_item_check_container);
             ImageView checkIcon = row.findViewById(R.id.picker_item_check);
+            ImageView leadingIcon = row.findViewById(R.id.picker_item_leading_icon);
+            ImageView trailingIcon = row.findViewById(R.id.picker_item_trailing_icon);
             row.setTag(item.id); // tag row with its id for dependency handling
             tvTitle.setText(item.title);
             if(item.subtitle!=null && !item.subtitle.isEmpty()){
                 tvSubtitle.setText(item.subtitle);
                 tvSubtitle.setVisibility(View.VISIBLE);
             } else { tvSubtitle.setVisibility(View.GONE); }
+            if(leadingIcon!=null){
+                if(item.iconResId!=null){ leadingIcon.setImageResource(item.iconResId); leadingIcon.setVisibility(View.VISIBLE);} else { leadingIcon.setVisibility(View.GONE);} }
+            if(trailingIcon!=null){
+                if(item.trailingIconResId!=null){ trailingIcon.setImageResource(item.trailingIconResId); trailingIcon.setVisibility(View.VISIBLE);} else { trailingIcon.setVisibility(View.GONE);} }
             if(colorSwatch!=null){
                 if(item.colorInt!=null){
                     android.graphics.drawable.GradientDrawable gd = (android.graphics.drawable.GradientDrawable)colorSwatch.getBackground();
@@ -213,7 +219,12 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 checkContainer.setVisibility(View.VISIBLE);
                 checkIcon.setScaleX(1f); checkIcon.setScaleY(1f); checkIcon.setAlpha(1f);
             } else {
-                checkContainer.setVisibility(View.INVISIBLE); // keep space to avoid layout shift
+                // If a trailing icon is present (confirmation style), drop the check container entirely to align trailing icon flush right
+                if(trailingIcon!=null && trailingIcon.getVisibility()==View.VISIBLE){
+                    checkContainer.setVisibility(View.GONE);
+                } else {
+                    checkContainer.setVisibility(View.INVISIBLE); // keep space to avoid layout shift
+                }
                 checkIcon.setScaleX(0f); checkIcon.setScaleY(0f); checkIcon.setAlpha(0f);
             }
             row.setOnClickListener(v -> {

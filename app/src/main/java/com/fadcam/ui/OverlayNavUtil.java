@@ -21,6 +21,11 @@ public final class OverlayNavUtil {
         if(container==null) return;
         container.setVisibility(View.VISIBLE);
         container.setAlpha(0f);
+        // Disable background pager swipes while overlay is open
+        androidx.viewpager2.widget.ViewPager2 vp = activity.findViewById(R.id.view_pager);
+        if(vp != null){
+            try { vp.setUserInputEnabled(false); } catch (Throwable ignored) { }
+        }
         activity.getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.overlay_fragment_container, fragment, tag)
@@ -38,7 +43,10 @@ public final class OverlayNavUtil {
         }
         int currentPosition = 0;
         ViewPager2 vp = activity.findViewById(R.id.view_pager);
-        if(vp!=null) currentPosition = vp.getCurrentItem();
+        if(vp!=null){
+            currentPosition = vp.getCurrentItem();
+            try { vp.setUserInputEnabled(true); } catch (Throwable ignored) { }
+        }
         container.animate().alpha(0f).setDuration(160).withEndAction(() -> {
             container.setVisibility(View.GONE);
             container.setAlpha(1f);

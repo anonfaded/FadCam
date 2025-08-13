@@ -297,6 +297,13 @@
     <string name="torch_shortcut_short_label">Torch</string>
     <string name="torch_shortcut_long_label">Toggle Torch</string>
     <string name="torch_shortcut_disabled">Torch toggle is currently unavailable</string>
+    <string name="widgets_helper_text">Pin quick actions to your home screen for instant access.</string>
+        <string name="widgets_pin_unsupported">Pinning shortcuts is not supported by your launcher.</string>
+    <string name="shortcuts_helper_text">Add shortcuts to your home screen. Select a shortcut above to add. A confirmation is required.
+These shortcuts can also be used with automation apps (e.g., MacroDroid) to trigger intents, like mapping volume buttons.</string>
+    <string name="shortcuts_add_to_home">Add to Home screen</string>
+    <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
+    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
     <!-- Torch Error Messages -->
     <string-array name="torch_error_messages">
         <item>Torch is compiling... please don\'t wait 🖥️</item>

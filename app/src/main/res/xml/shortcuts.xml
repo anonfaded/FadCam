@@ -3,19 +3,20 @@
     <shortcut
         android:id="@+id/torch_toggle"
         android:enabled="true"
-        android:icon="@drawable/ic_torch"
+        android:icon="@drawable/flashlight_shortcut"
         android:shortcutShortLabel="@string/torch_shortcut_short_label"
         android:shortcutLongLabel="@string/torch_shortcut_long_label"
         android:shortcutDisabledMessage="@string/torch_shortcut_disabled">
         <intent
-            android:action="com.fadcam.TOGGLE_TORCH"
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.TorchToggleActivity"
             android:targetPackage="com.fadcam" />
     </shortcut>
 
     <shortcut
         android:id="@+id/record_start"
         android:enabled="true"
-        android:icon="@drawable/ic_play"
+        android:icon="@drawable/start_shortcut"
         android:shortcutShortLabel="@string/start_recording"
         android:shortcutLongLabel="@string/start_recording">
         <intent
@@ -27,7 +28,7 @@
     <shortcut
         android:id="@+id/record_stop"
         android:enabled="true"
-        android:icon="@drawable/ic_stop"
+        android:icon="@drawable/stop_shortcut"
         android:shortcutShortLabel="@string/stop_recording"
         android:shortcutLongLabel="@string/stop_recording">
         <intent
