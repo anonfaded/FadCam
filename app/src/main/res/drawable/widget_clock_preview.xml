@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Card background -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="#202020" />
+        </shape>
+    </item>
+
+    <!-- Time bar -->
+    <item android:gravity="start|center_vertical"
+        android:left="16dp" android:top="0dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <size android:width="120dp" android:height="8dp" />
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <!-- AM/PM bar -->
+    <item android:gravity="start|center_vertical"
+        android:left="140dp" android:right="0dp">
+        <shape android:shape="rectangle">
+            <size android:width="16dp" android:height="6dp" />
+            <solid android:color="#B0B0B0" />
+        </shape>
+    </item>
+
+    <!-- Date line 1 -->
+    <item android:gravity="end|center_vertical"
+        android:left="0dp" android:top="-14dp" android:right="16dp" android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <size android:width="96dp" android:height="6dp" />
+            <solid android:color="#E0E0E0" />
+        </shape>
+    </item>
+    <!-- Date line 2 -->
+    <item android:gravity="end|center_vertical"
+        android:left="0dp" android:top="10dp" android:right="16dp" android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <size android:width="84dp" android:height="6dp" />
+            <solid android:color="#C0C0C0" />
+        </shape>
+    </item>
+</layer-list>

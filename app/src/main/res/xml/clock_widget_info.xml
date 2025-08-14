@@ -6,5 +6,7 @@
     android:minResizeHeight="60dp"
     android:updatePeriodMillis="60000"
     android:initialLayout="@layout/widget_clock"
+    android:previewLayout="@layout/widget_clock_preview"
+    android:previewImage="@drawable/widget_clock_preview"
     android:widgetCategory="home_screen"
     android:resizeMode="horizontal|vertical" />
