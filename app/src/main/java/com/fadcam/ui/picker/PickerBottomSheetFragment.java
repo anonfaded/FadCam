@@ -191,12 +191,46 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             ImageView checkIcon = row.findViewById(R.id.picker_item_check);
             ImageView leadingIcon = row.findViewById(R.id.picker_item_leading_icon);
             ImageView trailingIcon = row.findViewById(R.id.picker_item_trailing_icon);
+            androidx.appcompat.widget.SwitchCompat itemSwitch = row.findViewById(R.id.picker_item_switch);
             row.setTag(item.id); // tag row with its id for dependency handling
             tvTitle.setText(item.title);
-            if(item.subtitle!=null && !item.subtitle.isEmpty()){
-                tvSubtitle.setText(item.subtitle);
-                tvSubtitle.setVisibility(View.VISIBLE);
-            } else { tvSubtitle.setVisibility(View.GONE); }
+            
+            // Handle switch vs subtitle display
+            if(item.hasSwitch != null && item.hasSwitch){
+                // Show switch instead of subtitle
+                tvSubtitle.setVisibility(View.GONE);
+                itemSwitch.setVisibility(View.VISIBLE);
+                itemSwitch.setChecked(item.switchState != null && item.switchState);
+                // Make the switch functional but prevent row click
+                itemSwitch.setOnCheckedChangeListener((switchView, isChecked) -> {
+                    // Handle dependencies: if this is black_background, control branding availability
+                    if("black_background".equals(item.id)) {
+                        updateBrandingDependency(isChecked);
+                    }
+                    // Handle dependencies: if this is show_date, control date_format availability
+                    else if("show_date".equals(item.id)) {
+                        updateDateFormatDependency(isChecked);
+                    }
+                    // Handle dependencies: if this is arabic_date, control arabic_date_format availability
+                    else if("arabic_date".equals(item.id)) {
+                        updateArabicDateFormatDependency(isChecked);
+                    }
+                    
+                    // Post switch result without dismissing
+                    Bundle result = new Bundle();
+                    result.putString(BUNDLE_SELECTED_ID, item.id);
+                    getParentFragmentManager().setFragmentResult(resultKey, result);
+                });
+            } else {
+                // Show normal subtitle
+                itemSwitch.setVisibility(View.GONE);
+                if(item.subtitle!=null && !item.subtitle.isEmpty()){
+                    tvSubtitle.setText(item.subtitle);
+                    tvSubtitle.setVisibility(View.VISIBLE);
+                } else { 
+                    tvSubtitle.setVisibility(View.GONE); 
+                }
+            }
             if(leadingIcon!=null){
                 if(item.iconResId!=null){ 
                     leadingIcon.setImageResource(item.iconResId); 
@@ -242,6 +276,11 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 checkIcon.setScaleX(0f); checkIcon.setScaleY(0f); checkIcon.setAlpha(0f);
             }
             row.setOnClickListener(v -> {
+                // Don't handle click for switch items - they handle their own toggle
+                if(item.hasSwitch != null && item.hasSwitch) {
+                    return;
+                }
+                
                 // Clear old selection visual
                 if(!hideCheck){
                     int childCount = containerLayout.getChildCount();
@@ -288,6 +327,11 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
         // Apply initial dependent disable state
         if(switchPresent){ updateDependentRows(switchState); }
+        
+        // Apply initial dependency states
+        applyInitialBrandingDependency();
+        applyInitialDateFormatDependency();
+        applyInitialArabicDateFormatDependency();
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
@@ -438,4 +482,145 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
     }
     // -------------- Fix Ended for this method(updateDependentRows)-----------
+    
+    /**
+     * Update branding switch dependency based on black background state
+     */
+    private void updateBrandingDependency(boolean blackBackgroundEnabled) {
+        if(containerLayoutRef == null) return;
+        
+        int childCount = containerLayoutRef.getChildCount();
+        for(int i = 0; i < childCount; i++) {
+            View child = containerLayoutRef.getChildAt(i);
+            Object tag = child.getTag();
+            if("branding".equals(tag)) {
+                androidx.appcompat.widget.SwitchCompat brandingSwitch = child.findViewById(R.id.picker_item_switch);
+                if(brandingSwitch != null) {
+                    brandingSwitch.setEnabled(blackBackgroundEnabled);
+                    child.setAlpha(blackBackgroundEnabled ? 1f : 0.4f);
+                    
+                    // If black background is disabled, turn off branding switch
+                    if(!blackBackgroundEnabled && brandingSwitch.isChecked()) {
+                        brandingSwitch.setChecked(false);
+                        // Trigger branding toggle to save the state
+                        Bundle result = new Bundle();
+                        result.putString(BUNDLE_SELECTED_ID, "branding");
+                        getParentFragmentManager().setFragmentResult(resultKey, result);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Apply initial branding dependency state based on current black background setting
+     */
+    private void applyInitialBrandingDependency() {
+        if(containerLayoutRef == null) return;
+        
+        // Find black background switch state
+        boolean blackBackgroundEnabled = false;
+        int childCount = containerLayoutRef.getChildCount();
+        for(int i = 0; i < childCount; i++) {
+            View child = containerLayoutRef.getChildAt(i);
+            Object tag = child.getTag();
+            if("black_background".equals(tag)) {
+                androidx.appcompat.widget.SwitchCompat bgSwitch = child.findViewById(R.id.picker_item_switch);
+                if(bgSwitch != null) {
+                    blackBackgroundEnabled = bgSwitch.isChecked();
+                }
+                break;
+            }
+        }
+        
+        // Apply dependency to branding switch
+        updateBrandingDependency(blackBackgroundEnabled);
+    }
+    
+    /**
+     * Update date format dependency based on show date state
+     */
+    private void updateDateFormatDependency(boolean showDateEnabled) {
+        if(containerLayoutRef == null) return;
+        
+        int childCount = containerLayoutRef.getChildCount();
+        for(int i = 0; i < childCount; i++) {
+            View child = containerLayoutRef.getChildAt(i);
+            Object tag = child.getTag();
+            if("date_format".equals(tag)) {
+                child.setEnabled(showDateEnabled);
+                child.setAlpha(showDateEnabled ? 1f : 0.4f);
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Apply initial date format dependency state based on current show date setting
+     */
+    private void applyInitialDateFormatDependency() {
+        if(containerLayoutRef == null) return;
+        
+        // Find show date switch state
+        boolean showDateEnabled = false;
+        int childCount = containerLayoutRef.getChildCount();
+        for(int i = 0; i < childCount; i++) {
+            View child = containerLayoutRef.getChildAt(i);
+            Object tag = child.getTag();
+            if("show_date".equals(tag)) {
+                androidx.appcompat.widget.SwitchCompat dateSwitch = child.findViewById(R.id.picker_item_switch);
+                if(dateSwitch != null) {
+                    showDateEnabled = dateSwitch.isChecked();
+                }
+                break;
+            }
+        }
+        
+        // Apply dependency to date format option
+        updateDateFormatDependency(showDateEnabled);
+    }
+    
+    /**
+     * Update Arabic date format dependency based on Arabic date state
+     */
+    private void updateArabicDateFormatDependency(boolean arabicDateEnabled) {
+        if(containerLayoutRef == null) return;
+        
+        int childCount = containerLayoutRef.getChildCount();
+        for(int i = 0; i < childCount; i++) {
+            View child = containerLayoutRef.getChildAt(i);
+            Object tag = child.getTag();
+            if("arabic_date_format".equals(tag)) {
+                child.setEnabled(arabicDateEnabled);
+                child.setAlpha(arabicDateEnabled ? 1f : 0.4f);
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Apply initial Arabic date format dependency state based on current Arabic date setting
+     */
+    private void applyInitialArabicDateFormatDependency() {
+        if(containerLayoutRef == null) return;
+        
+        // Find Arabic date switch state
+        boolean arabicDateEnabled = false;
+        int childCount = containerLayoutRef.getChildCount();
+        for(int i = 0; i < childCount; i++) {
+            View child = containerLayoutRef.getChildAt(i);
+            Object tag = child.getTag();
+            if("arabic_date".equals(tag)) {
+                androidx.appcompat.widget.SwitchCompat arabicDateSwitch = child.findViewById(R.id.picker_item_switch);
+                if(arabicDateSwitch != null) {
+                    arabicDateEnabled = arabicDateSwitch.isChecked();
+                }
+                break;
+            }
+        }
+        
+        // Apply dependency to Arabic date format option
+        updateArabicDateFormatDependency(arabicDateEnabled);
+    }
 }

@@ -132,20 +132,25 @@ public class ClockWidgetProvider extends AppWidgetProvider {
             String date = new SimpleDateFormat(datePattern, Locale.getDefault()).format(new Date());
             views.setTextViewText(R.id.clock_date, date);
             views.setViewVisibility(R.id.clock_date, android.view.View.VISIBLE);
-            views.setViewVisibility(R.id.date_container, android.view.View.VISIBLE);
         } else {
             views.setViewVisibility(R.id.clock_date, android.view.View.GONE);
-            views.setViewVisibility(R.id.date_container, android.view.View.GONE);
         }
         
-        // Arabic date (only show if date is enabled and Arabic date is enabled)
-        if (prefs.showDate() && prefs.showArabicDate()) {
+        // Arabic date (independent of regular date setting)
+        if (prefs.showArabicDate()) {
             String arabicDateFormat = prefs.getArabicDateFormat();
             String arabicDate = ArabicDateUtils.getArabicDate(arabicDateFormat);
             views.setTextViewText(R.id.clock_date_arabic, arabicDate);
             views.setViewVisibility(R.id.clock_date_arabic, android.view.View.VISIBLE);
         } else {
             views.setViewVisibility(R.id.clock_date_arabic, android.view.View.GONE);
+        }
+        
+        // Show date_container if either regular date OR Arabic date is enabled
+        if (prefs.showDate() || prefs.showArabicDate()) {
+            views.setViewVisibility(R.id.date_container, android.view.View.VISIBLE);
+        } else {
+            views.setViewVisibility(R.id.date_container, android.view.View.GONE);
         }
 
         // Click to open the app at Shortcuts & Widgets screen

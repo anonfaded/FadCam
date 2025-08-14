@@ -11,13 +11,13 @@
     <!-- FadSecLab flag overlay on the right side -->
     <item
         android:gravity="end|bottom"
-        android:width="24dp"
-        android:height="12dp"
-        android:bottom="4dp"
-        android:right="6dp">
+        android:width="16dp"
+        android:height="8dp"
+        android:bottom="3dp"
+        android:right="4dp">
         <bitmap
             android:src="@drawable/fadseclab_flag"
-            android:alpha="0.7"
+            android:alpha="0.8"
             android:gravity="end|bottom"/>
     </item>
 </layer-list>
