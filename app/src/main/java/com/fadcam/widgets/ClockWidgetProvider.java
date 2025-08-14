@@ -79,21 +79,30 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_clock);
         WidgetPreferences prefs = new WidgetPreferences(context);
 
-        // Get widget size for dynamic scaling
-        android.util.Size widgetSize = getWidgetSize(context, manager, appWidgetId);
-        float scaleFactor = calculateScaleFactor(widgetSize);
+    // Get widget size for dynamic scaling
+    android.util.Size widgetSize = getWidgetSize(context, manager, appWidgetId);
+    float scaleFactor = calculateScaleFactor(widgetSize);
 
-        // Apply dynamic font sizes with bigger base sizes for time
-        float timeSize = 48f * scaleFactor;      // Even bigger time: 48sp
-        float ampmSize = 14f * scaleFactor;      // Smaller AM/PM: 14sp  
-        float dateSize = 18f * scaleFactor;      // Date size: 18sp
-        float arabicDateSize = 16f * scaleFactor; // Arabic date: 16sp
+    // Apply dynamic font sizes with bigger base sizes for time
+    float timeSize = 56f * scaleFactor; // increased base for better prominence
+    float ampmSize = 14f * scaleFactor;
 
-        // Ensure minimum readable sizes
-        timeSize = Math.max(timeSize, 36f);
-        ampmSize = Math.max(ampmSize, 12f);
-        dateSize = Math.max(dateSize, 14f);
-        arabicDateSize = Math.max(arabicDateSize, 12f);
+    // Date lines: use a very gentle width-only scale to avoid ballooning on tall widgets
+    // Base dimensions aligned with calculateScaleFactor()
+    final float baseWidth = 250f;
+    float widthScale = widgetSize != null ? (float) widgetSize.getWidth() / baseWidth : 1f;
+    // Keep it compact: don't let date scale above base; allow slight shrink for narrow widgets
+    float dateScale = Math.max(0.85f, Math.min(1.0f, widthScale));
+
+    // Lower base sizes for a concise, modern look
+    float dateSize = 16f * dateScale;
+    float arabicDateSize = 14f * dateScale;
+
+    // Ensure minimum readable sizes and reasonable maximums for date text
+    timeSize = Math.max(timeSize, 42f);
+    ampmSize = Math.max(ampmSize, 12f);
+    dateSize = Math.max(13f, Math.min(18f, dateSize));
+    arabicDateSize = Math.max(11f, Math.min(16f, arabicDateSize));
 
         // Set dynamic text sizes
         views.setTextViewTextSize(R.id.clock_time, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
@@ -101,17 +110,15 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         views.setTextViewTextSize(R.id.clock_date, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize);
         views.setTextViewTextSize(R.id.clock_date_arabic, android.util.TypedValue.COMPLEX_UNIT_SP, arabicDateSize);
 
-        // Set background based on preferences
-        if (prefs.hasBlackBackground() && prefs.showBranding()) {
-            // Combined black background with branding overlay
-            views.setInt(R.id.clock_root, "setBackgroundResource", R.drawable.widget_black_background_with_branding);
-        } else if (prefs.hasBlackBackground()) {
-            // Just black background
-            views.setInt(R.id.clock_root, "setBackgroundResource", R.drawable.widget_black_background);
-        } else {
-            // Transparent background
-            views.setInt(R.id.clock_root, "setBackgroundResource", android.R.color.transparent);
-        }
+            // Set background color only
+            if (prefs.hasBlackBackground()) {
+                views.setInt(R.id.clock_root, "setBackgroundResource", R.drawable.widget_black_background);
+            } else {
+                views.setInt(R.id.clock_root, "setBackgroundResource", android.R.color.transparent);
+            }
+
+            // Branding overlay visibility via dedicated ImageView
+            views.setViewVisibility(R.id.branding_logo, prefs.showBranding() ? android.view.View.VISIBLE : android.view.View.GONE);
 
         // Format time based on preference (default: 12-hour)
         if (prefs.is24HourFormat()) {
@@ -160,8 +167,8 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         PendingIntent pi = PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         views.setOnClickPendingIntent(R.id.clock_root, pi);
 
-        manager.updateAppWidget(appWidgetId, views);
-        // -------------- Fix Ended for this method(updateClock)-----------
+    manager.updateAppWidget(appWidgetId, views);
+    // -------------- Fix Ended for this method(updateClock)-----------
     }
 
     private void scheduleMinuteUpdates(Context context) {

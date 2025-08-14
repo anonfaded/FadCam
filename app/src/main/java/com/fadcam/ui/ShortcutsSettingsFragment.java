@@ -468,12 +468,16 @@ public class ShortcutsSettingsFragment extends Fragment {
         com.fadcam.widgets.WidgetPreferences prefs = new com.fadcam.widgets.WidgetPreferences(requireContext());
         
         // Update background based on preferences
-        if(prefs.hasBlackBackground() && prefs.showBranding()){
-            preview.setBackgroundResource(R.drawable.widget_black_background_with_branding);
-        } else if(prefs.hasBlackBackground()){
+        if(prefs.hasBlackBackground()){
             preview.setBackgroundResource(R.drawable.widget_black_background);
         } else {
             preview.setBackground(null);
+        }
+
+        // Branding preview visibility (independent of background color rendering)
+        android.view.View brandingPreview = preview.findViewById(R.id.branding_logo_preview);
+        if (brandingPreview != null) {
+            brandingPreview.setVisibility(prefs.showBranding() ? android.view.View.VISIBLE : android.view.View.GONE);
         }
         
         // Update time and AM/PM

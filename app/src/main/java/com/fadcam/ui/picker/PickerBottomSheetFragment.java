@@ -207,12 +207,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 itemSwitch.setChecked(item.switchState != null && item.switchState);
                 // Make the switch functional but prevent row click
                 itemSwitch.setOnCheckedChangeListener((switchView, isChecked) -> {
-                    // Handle dependencies: if this is black_background, control branding availability
-                    if("black_background".equals(item.id)) {
-                        updateBrandingDependency(isChecked);
-                    }
                     // Handle dependencies: if this is show_date, control date_format availability
-                    else if("show_date".equals(item.id)) {
+                    if("show_date".equals(item.id)) {
                         updateDateFormatDependency(isChecked);
                     }
                     // Handle dependencies: if this is arabic_date, control arabic_date_format availability
@@ -336,8 +332,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         // Apply initial dependent disable state
         if(switchPresent){ updateDependentRows(switchState); }
         
-        // Apply initial dependency states
-        applyInitialBrandingDependency();
+    // Apply initial dependency states
         applyInitialDateFormatDependency();
         applyInitialArabicDateFormatDependency();
         // -------------- Fix Ended for this method(onViewCreated)-----------
@@ -498,60 +493,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     }
     // -------------- Fix Ended for this method(updateDependentRows)-----------
     
-    /**
-     * Update branding switch dependency based on black background state
-     */
-    private void updateBrandingDependency(boolean blackBackgroundEnabled) {
-        if(containerLayoutRef == null) return;
-        
-        int childCount = containerLayoutRef.getChildCount();
-        for(int i = 0; i < childCount; i++) {
-            View child = containerLayoutRef.getChildAt(i);
-            Object tag = child.getTag();
-            if("branding".equals(tag)) {
-                androidx.appcompat.widget.SwitchCompat brandingSwitch = child.findViewById(R.id.picker_item_switch);
-                if(brandingSwitch != null) {
-                    brandingSwitch.setEnabled(blackBackgroundEnabled);
-                    child.setAlpha(blackBackgroundEnabled ? 1f : 0.4f);
-                    
-                    // If black background is disabled, turn off branding switch
-                    if(!blackBackgroundEnabled && brandingSwitch.isChecked()) {
-                        brandingSwitch.setChecked(false);
-                        // Trigger branding toggle to save the state
-                        Bundle result = new Bundle();
-                        result.putString(BUNDLE_SELECTED_ID, "branding");
-                        getParentFragmentManager().setFragmentResult(resultKey, result);
-                    }
-                }
-                break;
-            }
-        }
-    }
-    
-    /**
-     * Apply initial branding dependency state based on current black background setting
-     */
-    private void applyInitialBrandingDependency() {
-        if(containerLayoutRef == null) return;
-        
-        // Find black background switch state
-        boolean blackBackgroundEnabled = false;
-        int childCount = containerLayoutRef.getChildCount();
-        for(int i = 0; i < childCount; i++) {
-            View child = containerLayoutRef.getChildAt(i);
-            Object tag = child.getTag();
-            if("black_background".equals(tag)) {
-                androidx.appcompat.widget.SwitchCompat bgSwitch = child.findViewById(R.id.picker_item_switch);
-                if(bgSwitch != null) {
-                    blackBackgroundEnabled = bgSwitch.isChecked();
-                }
-                break;
-            }
-        }
-        
-        // Apply dependency to branding switch
-        updateBrandingDependency(blackBackgroundEnabled);
-    }
+    // Branding dependency removed: branding is independent of background
     
     /**
      * Update date format dependency based on show date state

@@ -5,6 +5,18 @@
     android:layout_height="match_parent"
     android:padding="8dp">
 
+    <ImageView
+        android:id="@+id/branding_logo_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/fadseclab_flag"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="0dp"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:visibility="gone"
+        android:contentDescription="@null"/>
+
     <LinearLayout
         android:id="@+id/time_container_preview"
         android:layout_width="wrap_content"
@@ -74,4 +86,5 @@
             android:breakStrategy="simple"
             android:lineSpacingExtra="1dp"/>
     </LinearLayout>
+
 </RelativeLayout>
