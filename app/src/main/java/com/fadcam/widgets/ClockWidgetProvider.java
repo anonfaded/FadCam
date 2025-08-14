@@ -120,6 +120,21 @@ public class ClockWidgetProvider extends AppWidgetProvider {
             // Branding overlay visibility via dedicated ImageView
             views.setViewVisibility(R.id.branding_logo, prefs.showBranding() ? android.view.View.VISIBLE : android.view.View.GONE);
 
+        // Dynamic branding flag sizing: keep it a small band, not full height
+        if (prefs.showBranding()) {
+            float widgetHeightDp = widgetSize != null ? widgetSize.getHeight() : 110f;
+            // Even stronger scaling and larger default band
+            float desiredDp = widgetHeightDp * 0.70f; // 70% of height
+            float clampedDp = Math.max(72f, Math.min(240f, desiredDp));
+            int px = dpToPx(context, clampedDp);
+            views.setInt(R.id.branding_logo, "setMaxHeight", px);
+            views.setInt(R.id.branding_logo, "setMinimumHeight", px);
+
+            // Slight upward nudge to avoid overlapping the time line visually
+            // Note: setTranslationY is not available via RemoteViews, but we can use setY relative adjustment with current position
+            // Instead, rely on layout translation set in XML; keep here in case future API allows
+        }
+
         // Format time based on preference (default: 12-hour)
         if (prefs.is24HourFormat()) {
             String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
@@ -170,6 +185,13 @@ public class ClockWidgetProvider extends AppWidgetProvider {
     manager.updateAppWidget(appWidgetId, views);
     // -------------- Fix Ended for this method(updateClock)-----------
     }
+
+    // -------------- Fix Start for this method(dpToPx)-----------
+    private static int dpToPx(Context context, float dp) {
+        final float density = context.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+    // -------------- Fix Ended for this method(dpToPx)-----------
 
     private void scheduleMinuteUpdates(Context context) {
         // -------------- Fix Start for this method(scheduleMinuteUpdates)-----------

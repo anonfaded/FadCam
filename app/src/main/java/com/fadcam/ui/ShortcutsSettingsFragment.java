@@ -474,10 +474,26 @@ public class ShortcutsSettingsFragment extends Fragment {
             preview.setBackground(null);
         }
 
-        // Branding preview visibility (independent of background color rendering)
-        android.view.View brandingPreview = preview.findViewById(R.id.branding_logo_preview);
+        // Branding preview visibility and dynamic sizing
+        android.widget.ImageView brandingPreview = preview.findViewById(R.id.branding_logo_preview);
         if (brandingPreview != null) {
             brandingPreview.setVisibility(prefs.showBranding() ? android.view.View.VISIBLE : android.view.View.GONE);
+            if (prefs.showBranding()) {
+                // Use the preview container height to size the flag band
+                preview.post(() -> {
+                    int h = preview.getHeight();
+                    if (h > 0) {
+                        float desired = h * 0.70f; // 70% of container height
+                        float clampedDp = Math.max(72f, Math.min(240f, pxToDp(desired)));
+                        int px = dpToPx(clampedDp);
+                        brandingPreview.setMaxHeight(px);
+                        brandingPreview.setMinimumHeight(px);
+                        // Upward translation: 10dp
+                        brandingPreview.setTranslationY(-dpToPx(10));
+                        brandingPreview.requestLayout();
+                    }
+                });
+            }
         }
         
         // Update time and AM/PM
@@ -538,6 +554,20 @@ public class ShortcutsSettingsFragment extends Fragment {
         }
         // -------------- Fix Ended for this method(updatePreview)-----------
     }
+
+    // -------------- Fix Start for this method(dpToPx)-----------
+    private int dpToPx(float dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+    // -------------- Fix Ended for this method(dpToPx)-----------
+
+    // -------------- Fix Start for this method(pxToDp)-----------
+    private float pxToDp(float px) {
+        float density = getResources().getDisplayMetrics().density;
+        return px / density;
+    }
+    // -------------- Fix Ended for this method(pxToDp)-----------
 
     private void requestPinClockWidget(){
         android.content.Context ctx = requireContext();
