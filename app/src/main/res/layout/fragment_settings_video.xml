@@ -15,15 +15,16 @@
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
+        android:background="?attr/colorTopBar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
         <ImageView
             android:id="@+id/back_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:padding="4dp"
-            android:src="@drawable/ic_back"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="2dp"
+            android:src="@drawable/ic_close"
             android:tint="@android:color/white"/>
         <TextView
             android:id="@+id/header_video"
@@ -33,7 +34,7 @@
             android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/white"
-            android:layout_marginStart="8dp"/>
+            android:layout_marginStart="12dp"/>
     </LinearLayout>
 
     <ScrollView
@@ -50,7 +51,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="16dp"
-            android:paddingEnd="16dp">
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp">
 
             <!-- Group Card Container -->
             <LinearLayout
