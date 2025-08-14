@@ -16,12 +16,16 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
+import com.fadcam.shortcuts.ShortcutsManager;
+import com.fadcam.shortcuts.ShortcutsPreferences;
 
 /**
  * ShortcutsSettingsFragment
@@ -44,24 +48,28 @@ public class ShortcutsSettingsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
+        // Init image picker for custom shortcut icons
+        initImagePicker();
         View back = view.findViewById(R.id.back_button);
         if(back!=null){ back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity())); }
 
     TextView helper = view.findViewById(R.id.shortcuts_helper);
     if(helper!=null){ helper.setText(getString(R.string.shortcuts_helper_text)); }
+    // Ensure dynamic shortcuts reflect current customization when opening screen
+    try { new ShortcutsManager(requireContext()).publishAllDynamic(); } catch (Throwable ignored) {}
 
     wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_shortcut,
                 getString(R.string.start_recording),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStartActivity"),
-                "record_start");
+                ShortcutsManager.ID_START);
     wireShortcutRow(view, R.id.cell_stop, R.id.icon_stop, R.drawable.stop_shortcut,
                 getString(R.string.stop_recording),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStopActivity"),
-                "record_stop");
+                ShortcutsManager.ID_STOP);
     wireShortcutRow(view, R.id.cell_torch, R.id.icon_torch, R.drawable.flashlight_shortcut,
                 getString(R.string.torch_shortcut_short_label),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
-                "torch_toggle");
+                ShortcutsManager.ID_TORCH);
 
     // Unify ripple/click: handle click on parent container only
     View widgetCell = view.findViewById(R.id.cell_widget_clock);
@@ -73,19 +81,44 @@ public class ShortcutsSettingsFragment extends Fragment {
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
+    // -------------- Fix Start for this method(wireShortcutRow)-----------
     private void wireShortcutRow(View root, int rowId, int iconId, int iconRes, String title, Intent intent, String shortcutId){
         LinearLayout row = root.findViewById(rowId);
         ImageView icon = root.findViewById(iconId);
         TextView label = root.findViewById(titleIdFor(rowId));
-        if(label!=null) label.setText(title);
+        // Also show immutable codename/purpose under the label if a dedicated subtitle view exists
+    TextView subtitle = null;
+    if(rowId == R.id.cell_start){ subtitle = root.findViewById(R.id.subtitle_start); }
+    else if(rowId == R.id.cell_stop){ subtitle = root.findViewById(R.id.subtitle_stop); }
+    else if(rowId == R.id.cell_torch){ subtitle = root.findViewById(R.id.subtitle_torch); }
+        // Apply custom label/icon if present
+        ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
+        String custom = sp.getCustomLabel(shortcutId);
+        if(label!=null) label.setText(custom != null ? custom : title);
+        if(subtitle!=null){
+            // Show a small badge with the canonical action name (no codename/id)
+            String badgeText = title; // localized label like Start/Stop/Torch
+            subtitle.setText(badgeText);
+            subtitle.setVisibility(View.VISIBLE);
+            // Apply background badge color based on shortcut
+            if(ShortcutsManager.ID_START.equals(shortcutId)){
+                subtitle.setBackgroundResource(R.drawable.badge_green);
+            } else if(ShortcutsManager.ID_STOP.equals(shortcutId)){
+                subtitle.setBackgroundResource(R.drawable.badge_red);
+            } else if(ShortcutsManager.ID_TORCH.equals(shortcutId)){
+                subtitle.setBackgroundResource(R.drawable.badge_amber);
+            }
+        }
+        if(icon!=null) loadShortcutIconInto(icon, shortcutId, iconRes);
 
         // Icon click must also show confirmation (no direct pinning)
-        if(icon!=null){ icon.setOnClickListener(v -> showConfirmSheet(title, shortcutId, iconRes, intent)); }
+        if(icon!=null){ icon.setOnClickListener(v -> showShortcutSheet(title, shortcutId, iconRes, intent)); }
 
         if(row!=null){
-            row.setOnClickListener(v -> showConfirmSheet(title, shortcutId, iconRes, intent));
+            row.setOnClickListener(v -> showShortcutSheet(title, shortcutId, iconRes, intent));
         }
     }
+    // -------------- Fix Ended for this method(wireShortcutRow)-----------
 
     private int titleIdFor(int rowId){
         if(rowId == R.id.cell_start) return R.id.title_start;
@@ -93,41 +126,180 @@ public class ShortcutsSettingsFragment extends Fragment {
         return R.id.title_torch;
     }
 
-    private void requestPin(String shortcutId, String label, int iconRes, Intent intent){
+    // Removed codename display; using concise badges instead.
+
+    // -------------- Fix Start for this method(requestPin)-----------
+    private void requestPin(String shortcutId, String defaultLabel, int iconRes, Intent intent){
         Context ctx = requireContext();
-        if(!ShortcutManagerCompat.isRequestPinShortcutSupported(ctx)){
+        ShortcutsManager sm = new ShortcutsManager(ctx);
+        if(!sm.isPinSupported()){
             android.widget.Toast.makeText(ctx, R.string.widgets_pin_unsupported, android.widget.Toast.LENGTH_SHORT).show();
             return;
         }
-        ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(ctx, shortcutId)
-                .setShortLabel(label)
-                .setIcon(IconCompat.createWithResource(ctx, iconRes))
-                .setIntent(intent)
-                .build();
-    ShortcutManagerCompat.requestPinShortcut(ctx, info, null);
+        ShortcutInfoCompat infoPin = sm.buildShortcutForPin(shortcutId, intent, iconRes, defaultLabel);
+        ShortcutInfoCompat infoBase = sm.buildShortcut(shortcutId, intent, iconRes, defaultLabel);
+        // Push both base and pin ids as dynamic to override any static fallback paths
+        try {
+            java.util.List<ShortcutInfoCompat> list = new java.util.ArrayList<>();
+            list.add(infoBase);
+            list.add(infoPin);
+            for (ShortcutInfoCompat s : list) {
+                androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(ctx, s);
+            }
+            // Update too, so pinned shortcuts refresh immediately on some launchers
+            androidx.core.content.pm.ShortcutManagerCompat.updateShortcuts(ctx, list);
+        } catch (Throwable ignored) {}
+        sm.requestPin(infoPin);
     }
+    // -------------- Fix Ended for this method(requestPin)-----------
 
-    private void showConfirmSheet(String title, String shortcutId, int iconRes, Intent intent){
+    // -------------- Fix Start for this method(showShortcutSheet)-----------
+    private void showShortcutSheet(String title, String shortcutId, int iconRes, Intent intent){
         final String resultKey = "picker_result_pin_" + shortcutId;
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
             if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
                 String selected = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
                 if("pin".equals(selected)){
                     requestPin(shortcutId, title, iconRes, intent);
+                } else if ("customize".equals(selected)) {
+                    showCustomizeShortcutSheet(shortcutId, title, iconRes, intent);
                 }
             }
         });
     java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
     // Leading icon is the shortcut icon; trailing is external-link indicator
     items.add(new com.fadcam.ui.picker.OptionItem("pin", getString(R.string.shortcuts_add_to_home), (String) null, null, iconRes, R.drawable.ic_open_in_new));
+    items.add(new com.fadcam.ui.picker.OptionItem(
+            "customize",
+            getString(R.string.shortcuts_customize_title),
+            getString(R.string.shortcuts_customize_subtitle),
+            null,
+            R.drawable.ic_settings,
+            R.drawable.ic_arrow_right
+    ));
     com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-        title, items, null, resultKey, getString(R.string.shortcuts_sheet_helper));
+        title, items, null, resultKey, getString(R.string.shortcuts_sheet_helper) + "\n" + getShortcutPurposeLine(shortcutId));
     // Hide selection check; we only show trailing external-link icon
     if(sheet.getArguments()!=null){ sheet.getArguments().putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true); }
         // Pass grid mode false, but we want to show the shortcut icon prominently in the title area by setting header icon view if supported
         // As a simple approach, we prefix title with an inline space and rely on icon in option; alternative is to extend picker layout (deferred)
         sheet.show(getParentFragmentManager(), "pin_sheet_"+shortcutId);
     }
+    // -------------- Fix Ended for this method(showShortcutSheet)-----------
+
+    // -------------- Fix Start for this method(showCustomizeShortcutSheet)-----------
+    private void showCustomizeShortcutSheet(String shortcutId, String defaultLabel, int defaultIconRes, Intent intent){
+        final String resultKey = "picker_result_customize_" + shortcutId;
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String selected = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if("rename".equals(selected)){
+                    promptRename(shortcutId, defaultLabel);
+                } else if ("change_icon".equals(selected)){
+                    pendingIconShortcutId = shortcutId;
+                    if(imagePickerLauncher != null){ imagePickerLauncher.launch(new String[]{"image/*"}); }
+                } else if ("reset".equals(selected)){
+                    ShortcutsManager sm = new ShortcutsManager(requireContext());
+                    sm.reset(shortcutId);
+                    sm.publishAllDynamic();
+                    refreshShortcutRows();
+                }
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        // We avoid unknown drawable ids by passing null leading icons
+    items.add(new com.fadcam.ui.picker.OptionItem("rename", getString(R.string.shortcuts_customize_action_rename), null, null, null, R.drawable.ic_arrow_right));
+    items.add(new com.fadcam.ui.picker.OptionItem("change_icon", getString(R.string.shortcuts_customize_action_change_icon), null, null, null, R.drawable.ic_arrow_right));
+    items.add(new com.fadcam.ui.picker.OptionItem("reset", getString(R.string.shortcuts_customize_action_reset), null, null, null, null));
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+        getString(R.string.shortcuts_customize_title), items, null, resultKey, getString(R.string.shortcuts_customize_sheet_desc));
+        if(sheet.getArguments()!=null){ sheet.getArguments().putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true); }
+        sheet.show(getParentFragmentManager(), "customize_"+shortcutId);
+    }
+    // -------------- Fix Ended for this method(showCustomizeShortcutSheet)-----------
+
+    // -------------- Fix Start for this method(promptRename)-----------
+    private void promptRename(String shortcutId, String defaultLabel){
+        ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
+        String current = sp.getCustomLabel(shortcutId);
+        final String resultKey = "text_input_result_" + shortcutId;
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            String text = b.getString(com.fadcam.ui.picker.TextInputBottomSheetFragment.RESULT_TEXT);
+            // Persist empty as clearing customization to fall back to default
+            ShortcutsManager sm = new ShortcutsManager(requireContext());
+            sm.setCustomLabel(shortcutId, (text!=null && !text.trim().isEmpty()) ? text.trim() : null);
+            sm.publishAllDynamic();
+            refreshShortcutRows();
+        });
+        String helper = getString(R.string.shortcuts_rename_helper) + "\n" + getShortcutPurposeLine(shortcutId);
+        com.fadcam.ui.picker.TextInputBottomSheetFragment sheet = com.fadcam.ui.picker.TextInputBottomSheetFragment.newInstance(
+                getString(R.string.shortcuts_customize_dialog_title),
+                current != null ? current : defaultLabel,
+                defaultLabel,
+                helper,
+                resultKey
+        );
+        sheet.show(getParentFragmentManager(), "rename_"+shortcutId);
+    }
+
+    private String getShortcutPurposeLine(String shortcutId){
+        if(ShortcutsManager.ID_START.equals(shortcutId)){
+            return getString(R.string.shortcut_purpose_start);
+        } else if(ShortcutsManager.ID_STOP.equals(shortcutId)){
+            return getString(R.string.shortcut_purpose_stop);
+        } else {
+            return getString(R.string.shortcut_purpose_torch);
+        }
+    }
+    // -------------- Fix Ended for this method(promptRename)-----------
+
+    // -------------- Fix Start for this method(refreshShortcutRows)-----------
+    private void refreshShortcutRows(){
+        View view = getView(); if(view == null) return;
+        // Start
+        wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_shortcut,
+                getString(R.string.start_recording),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStartActivity"),
+                ShortcutsManager.ID_START);
+        // Stop
+        wireShortcutRow(view, R.id.cell_stop, R.id.icon_stop, R.drawable.stop_shortcut,
+                getString(R.string.stop_recording),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStopActivity"),
+                ShortcutsManager.ID_STOP);
+        // Torch
+        wireShortcutRow(view, R.id.cell_torch, R.id.icon_torch, R.drawable.flashlight_shortcut,
+                getString(R.string.torch_shortcut_short_label),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
+                ShortcutsManager.ID_TORCH);
+    }
+    // -------------- Fix Ended for this method(refreshShortcutRows)-----------
+
+    // -------------- Fix Start for this method(loadShortcutIconInto)-----------
+    private void loadShortcutIconInto(ImageView imageView, String shortcutId, int defaultIconRes){
+        ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
+        String path = sp.getCustomIconPath(shortcutId);
+        if(path != null){
+            android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeFile(path);
+            if(bmp != null){ imageView.setImageBitmap(bmp); return; }
+        }
+        imageView.setImageResource(defaultIconRes);
+    }
+    // -------------- Fix Ended for this method(loadShortcutIconInto)-----------
+
+    // -------------- Fix Start for this method(initImagePicker)-----------
+    private ActivityResultLauncher<String[]> imagePickerLauncher;
+    private String pendingIconShortcutId;
+    private void initImagePicker(){
+        imagePickerLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+            if(uri == null || pendingIconShortcutId == null) return;
+            // Persist a copy into app storage via ShortcutsPreferences
+            ShortcutsManager sm = new ShortcutsManager(requireContext());
+            boolean ok = sm.setCustomIconFromUri(pendingIconShortcutId, uri);
+            pendingIconShortcutId = null;
+            if(ok){ sm.publishAllDynamic(); refreshShortcutRows(); }
+        });
+    }
+    // -------------- Fix Ended for this method(initImagePicker)-----------
 
     private void showClockWidgetSheet(){
         final String resultKey = "picker_result_pin_widget_clock";
@@ -151,10 +323,10 @@ public class ShortcutsSettingsFragment extends Fragment {
                 R.drawable.ic_clock_widget,
                 R.drawable.ic_open_in_new
         ));
-        items.add(new com.fadcam.ui.picker.OptionItem(
-                "customize",
-                "Customize",
-                "Time, date, theme options",
+    items.add(new com.fadcam.ui.picker.OptionItem(
+        "customize",
+        getString(R.string.widget_customize_action_label),
+        getString(R.string.widget_customize_action_subtitle),
                 null,
                 R.drawable.ic_settings,
                 R.drawable.ic_arrow_right

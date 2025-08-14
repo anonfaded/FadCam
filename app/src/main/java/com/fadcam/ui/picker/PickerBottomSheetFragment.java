@@ -233,8 +233,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             }
             if(leadingIcon!=null){
                 if(item.iconResId!=null){ 
-                    leadingIcon.setImageResource(item.iconResId); 
-                    leadingIcon.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(), android.R.color.darker_gray));
+                    leadingIcon.setImageResource(item.iconResId);
+                    // Do not tint shortcut icons; preserve original colors to avoid white box look
+                    leadingIcon.setImageTintList(null);
                     leadingIcon.setVisibility(View.VISIBLE);
                 } else { 
                     leadingIcon.setVisibility(View.GONE);
@@ -368,8 +369,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             android.widget.TextView label = cell.findViewById(R.id.icon_label);
             label.setText(item.title);
             if(item.iconResId!=null){ 
-                icon.setImageResource(item.iconResId); 
-                icon.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(), android.R.color.darker_gray));
+                icon.setImageResource(item.iconResId);
+                icon.setImageTintList(null);
             }
             boolean isSel = item.id!=null && item.id.equals(selectedId);
             if(checkContainer!=null){

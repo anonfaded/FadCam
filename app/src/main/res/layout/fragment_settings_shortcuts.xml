@@ -88,6 +88,18 @@
                         android:textColor="@android:color/white"
                         android:textSize="14sp"
                         android:text="@string/start_recording"/>
+                    <TextView
+                        android:id="@+id/subtitle_start"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@android:color/black"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:visibility="gone"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -111,6 +123,18 @@
                         android:textColor="@android:color/white"
                         android:textSize="14sp"
                         android:text="@string/stop_recording"/>
+                    <TextView
+                        android:id="@+id/subtitle_stop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@android:color/black"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:visibility="gone"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -134,6 +158,18 @@
                         android:textColor="@android:color/white"
                         android:textSize="14sp"
                         android:text="@string/torch_shortcut_short_label"/>
+                    <TextView
+                        android:id="@+id/subtitle_torch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@android:color/black"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:visibility="gone"/>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

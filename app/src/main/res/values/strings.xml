@@ -343,6 +343,22 @@ These shortcuts can also be used with automation apps (e.g., MacroDroid) to trig
     <string name="shortcuts_add_to_home">Add to Home screen</string>
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
     <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <!-- Shortcuts customization UI -->
+    <string name="shortcuts_customize_title">Customize</string>
+    <string name="shortcuts_customize_subtitle">Name and icon</string>
+    <string name="shortcuts_customize_dialog_title">Rename shortcut</string>
+    <string name="shortcuts_customize_dialog_save">Save</string>
+    <string name="shortcuts_customize_action_rename">Rename</string>
+    <string name="shortcuts_customize_action_change_icon">Change icon</string>
+    <string name="shortcuts_customize_action_reset">Reset to default</string>
+    <string name="shortcuts_customize_sheet_desc">Set a custom name and icon for this shortcut.</string>
+    <string name="shortcuts_rename_helper">Tip: Leave empty to use the default name.</string>
+    <string name="shortcut_purpose_start">This shortcut starts recording with the back camera.</string>
+    <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
+    <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
+    <!-- Widget sheet action labels (avoid hardcoded) -->
+    <string name="widget_customize_action_label">Customize</string>
+    <string name="widget_customize_action_subtitle">Time, date, theme options</string>
     <!-- Torch Error Messages -->
     <string-array name="torch_error_messages">
         <item>Torch is compiling... please don\'t wait 🖥️</item>
