@@ -1,1 +1,0 @@
-// Intentionally left blank. Huawei-specific helper removed to standardize behavior.
