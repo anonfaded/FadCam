@@ -158,7 +158,7 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         info.setText(getString(R.string.prefs_reset_type_delete));
         info.setTextColor(getResources().getColor(android.R.color.darker_gray));
         info.setTextSize(13f);
-        info.setPadding(dp(4), dp(4), dp(4), dp(4));
+        info.setPadding(dp(16), dp(4), dp(16), dp(4));
         parent.addView(info);
 
         final EditText input = new EditText(requireContext());
@@ -173,6 +173,8 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         input.setHintTextColor(0xFF777777);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(8);
+        lp.leftMargin = dp(16);
+        lp.rightMargin = dp(16);
         parent.addView(input, lp);
         parent.addView(makeDivider());
         parent.addView(actionRow(R.drawable.ic_delete, getString(R.string.prefs_reset_label), getString(R.string.prefs_reset_subtitle), v -> {

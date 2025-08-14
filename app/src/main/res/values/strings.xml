@@ -609,7 +609,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="audio_input_source_headphones_no_mic">Headphones detected (no mic)</string>
 
     <!-- Fix Start: Add onboarding toggle strings -->
-    <string name="setting_onboarding_title">Show Onboarding on Next Launch</string>
+    <string name="setting_onboarding_title">Show Intro</string>
     <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open FadCam.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
@@ -722,7 +722,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="changelog_label">What\'s New</string>
 
     <!-- Fix Start: Add auto update check toggle strings -->
-    <string name="setting_auto_update_check_title">Auto Update Check on Startup</string>
+    <string name="setting_auto_update_check_title">Auto Update Check</string>
     <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
     <!-- Fix End: Add auto update check toggle strings -->
     

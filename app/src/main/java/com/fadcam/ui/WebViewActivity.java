@@ -18,16 +18,8 @@ public class WebViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_webview);
 
-        // Set up the Toolbar
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
-
-        // Handle the back button click
-        toolbar.setNavigationOnClickListener(v -> finish());
+        // Set up the back button
+        findViewById(R.id.back_button).setOnClickListener(v -> finish());
 
         // Set up the WebView
         WebView webView = findViewById(R.id.webview);
