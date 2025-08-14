@@ -354,6 +354,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <!-- Black App Icon (Activity Alias) -->
+        <activity-alias
+            android:name=".MainActivity.BlackIcon"
+            android:enabled="false"
+            android:label="@string/app_icon_black_alias_label"
+            android:icon="@mipmap/ic_launcher_black"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         
         <activity
             android:name=".ui.VideoPlayerActivity"

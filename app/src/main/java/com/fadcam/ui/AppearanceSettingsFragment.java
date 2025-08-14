@@ -208,7 +208,8 @@ public class AppearanceSettingsFragment extends Fragment {
         else if (key.equals(Constants.APP_ICON_WEATHER)) button.setText(getString(R.string.app_icon_weather));
         else if (key.equals(Constants.APP_ICON_FOOTBALL)) button.setText(getString(R.string.app_icon_football));
         else if (key.equals(Constants.APP_ICON_CAR)) button.setText(getString(R.string.app_icon_car));
-        else if (key.equals(Constants.APP_ICON_JET)) button.setText(getString(R.string.app_icon_jet));
+    else if (key.equals(Constants.APP_ICON_JET)) button.setText(getString(R.string.app_icon_jet));
+    else if (key.equals(Constants.APP_ICON_BLACK)) button.setText("");
     }
 
     private void showAppIconSelectionDialog(TextView valueView){
@@ -241,6 +242,7 @@ public class AppearanceSettingsFragment extends Fragment {
     items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_FOOTBALL, getString(R.string.app_icon_football), R.mipmap.ic_launcher_football));
     items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_CAR, getString(R.string.app_icon_car), R.mipmap.ic_launcher_car));
     items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_JET, getString(R.string.app_icon_jet), R.mipmap.ic_launcher_jet));
+    items.add(new com.fadcam.ui.picker.OptionItem(Constants.APP_ICON_BLACK, "", R.mipmap.ic_launcher_black));
         String current = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_ICON, Constants.APP_ICON_DEFAULT);
     com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGrid(
         getString(R.string.setting_app_icon_title), items, current, resultKey, getString(R.string.helper_app_icon_option));
@@ -265,9 +267,10 @@ public class AppearanceSettingsFragment extends Fragment {
         ComponentName footballIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.FootballIcon");
         ComponentName carIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.CarIcon");
         ComponentName jetIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.JetIcon");
-        ComponentName minimalIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.MinimalIcon");
+    ComponentName minimalIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.MinimalIcon");
+    ComponentName blackIcon = new ComponentName(requireContext(), "com.fadcam.MainActivity.BlackIcon");
 
-        ComponentName[] all = {defaultIcon, alternativeIcon, fadedIcon, palestineIcon, pakistanIcon, fadseclabIcon, noorIcon, batIcon, redbinaryIcon, notesIcon, calculatorIcon, clockIcon, weatherIcon, footballIcon, carIcon, jetIcon, minimalIcon};
+    ComponentName[] all = {defaultIcon, alternativeIcon, fadedIcon, palestineIcon, pakistanIcon, fadseclabIcon, noorIcon, batIcon, redbinaryIcon, notesIcon, calculatorIcon, clockIcon, weatherIcon, footballIcon, carIcon, jetIcon, minimalIcon, blackIcon};
         for(ComponentName cn: all){
             pm.setComponentEnabledSetting(cn, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
         }
@@ -289,7 +292,8 @@ public class AppearanceSettingsFragment extends Fragment {
         else if (Constants.APP_ICON_FOOTBALL.equals(iconKey)) enable = footballIcon;
         else if (Constants.APP_ICON_CAR.equals(iconKey)) enable = carIcon;
         else if (Constants.APP_ICON_JET.equals(iconKey)) enable = jetIcon;
-        else if (Constants.APP_ICON_MINIMAL.equals(iconKey)) enable = minimalIcon;
+    else if (Constants.APP_ICON_MINIMAL.equals(iconKey)) enable = minimalIcon;
+    else if (Constants.APP_ICON_BLACK.equals(iconKey)) enable = blackIcon;
 
         pm.setComponentEnabledSetting(enable, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
         sharedPreferencesManager.sharedPreferences.edit().putString(Constants.PREF_APP_ICON, iconKey).apply();

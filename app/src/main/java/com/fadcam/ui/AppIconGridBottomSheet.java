@@ -91,7 +91,8 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             getString(R.string.app_icon_clock),            // Utility icons
             getString(R.string.app_icon_weather),          // last
             getString(R.string.app_icon_notes),
-            getString(R.string.app_icon_calculator)
+            getString(R.string.app_icon_calculator),
+            "" // Black icon (no display name)
         };
 
         // Icon resources - rearranged to match the names array
@@ -112,7 +113,8 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             R.mipmap.ic_launcher_clock,          // Utility icons
             R.mipmap.ic_launcher_weather,
             R.mipmap.ic_launcher_notes,
-            R.mipmap.ic_launcher_calculator
+            R.mipmap.ic_launcher_calculator,
+            R.mipmap.ic_launcher_black
         };
 
         // Icon keys - rearranged to match the order above
@@ -133,7 +135,8 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             Constants.APP_ICON_CLOCK,            // Utility icons
             Constants.APP_ICON_WEATHER,
             Constants.APP_ICON_NOTES,
-            Constants.APP_ICON_CALCULATOR
+            Constants.APP_ICON_CALCULATOR,
+            Constants.APP_ICON_BLACK
         };
 
         // Check current theme for text color

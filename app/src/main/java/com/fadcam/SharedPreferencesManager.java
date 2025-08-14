@@ -893,6 +893,7 @@ public class SharedPreferencesManager {
      * Falls back to the default launcher icon if an unknown key is provided.
      */
     public int getAppIconResId(String iconKey) {
+    if (Constants.APP_ICON_BLACK.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_black;
         if (Constants.APP_ICON_MINIMAL.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_minimal;
         if (Constants.APP_ICON_ALTERNATIVE.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_2;
         if (Constants.APP_ICON_FADED.equals(iconKey)) return com.fadcam.R.mipmap.ic_launcher_faded;
@@ -923,6 +924,7 @@ public class SharedPreferencesManager {
         if (context == null) return "";
         String key = getCurrentAppIcon();
         try {
+            if (Constants.APP_ICON_BLACK.equals(key)) return ""; // No name as requested
             if (Constants.APP_ICON_MINIMAL.equals(key)) return context.getString(R.string.app_icon_minimal);
             if (Constants.APP_ICON_ALTERNATIVE.equals(key)) return context.getString(R.string.app_icon_alternative);
             if (Constants.APP_ICON_FADED.equals(key)) return context.getString(R.string.app_icon_faded);

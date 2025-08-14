@@ -61,7 +61,7 @@ public class ShortcutIconGridBottomSheet extends BottomSheetDialogFragment {
         if (desc != null) desc.setText(R.string.shortcuts_choose_icon_desc);
 
         // We reuse AppIconAdapter but ignore names and radio checks, just handle click
-        String[] iconNames = {
+    String[] iconNames = {
                 getString(R.string.app_icon_default),
                 getString(R.string.app_icon_minimal),
                 getString(R.string.app_icon_alternative),
@@ -78,10 +78,11 @@ public class ShortcutIconGridBottomSheet extends BottomSheetDialogFragment {
                 getString(R.string.app_icon_clock),
                 getString(R.string.app_icon_weather),
                 getString(R.string.app_icon_notes),
-                getString(R.string.app_icon_calculator)
+        getString(R.string.app_icon_calculator),
+        "" // Black icon has no display name
         };
 
-        int[] iconResources = {
+    int[] iconResources = {
                 R.mipmap.ic_launcher,
                 R.mipmap.ic_launcher_minimal,
                 R.mipmap.ic_launcher_2,
@@ -98,11 +99,12 @@ public class ShortcutIconGridBottomSheet extends BottomSheetDialogFragment {
                 R.mipmap.ic_launcher_clock,
                 R.mipmap.ic_launcher_weather,
                 R.mipmap.ic_launcher_notes,
-                R.mipmap.ic_launcher_calculator
+        R.mipmap.ic_launcher_calculator,
+        R.mipmap.ic_launcher_black
         };
 
         // fake key arrays to satisfy the adapter; we'll not use selection state
-        String[] iconKeys = {
+    String[] iconKeys = {
                 Constants.APP_ICON_DEFAULT,
                 Constants.APP_ICON_MINIMAL,
                 Constants.APP_ICON_ALTERNATIVE,
@@ -119,7 +121,8 @@ public class ShortcutIconGridBottomSheet extends BottomSheetDialogFragment {
                 Constants.APP_ICON_CLOCK,
                 Constants.APP_ICON_WEATHER,
                 Constants.APP_ICON_NOTES,
-                Constants.APP_ICON_CALCULATOR
+        Constants.APP_ICON_CALCULATOR,
+        Constants.APP_ICON_BLACK
         };
 
         boolean isSnowVeilTheme = "Snow Veil".equals(spm.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME));

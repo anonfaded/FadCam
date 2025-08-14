@@ -167,4 +167,5 @@ public abstract class Constants {
     public static final String APP_ICON_CAR = "car"; // Car icon
     public static final String APP_ICON_JET = "jet"; // Jet fighter icon
     public static final String APP_ICON_MINIMAL = "minimal";
+    public static final String APP_ICON_BLACK = "black"; // Full black icon
 }
