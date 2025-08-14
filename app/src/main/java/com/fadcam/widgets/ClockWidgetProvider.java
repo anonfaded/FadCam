@@ -17,6 +17,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.text.TextPaint;
+import androidx.core.content.res.ResourcesCompat;
+
 /**
  * Dark-themed clock App Widget provider that updates every minute.
  */
@@ -83,32 +91,15 @@ public class ClockWidgetProvider extends AppWidgetProvider {
     android.util.Size widgetSize = getWidgetSize(context, manager, appWidgetId);
     float scaleFactor = calculateScaleFactor(widgetSize);
 
-    // Apply dynamic font sizes with bigger base sizes for time
-    float timeSize = 56f * scaleFactor; // increased base for better prominence
-    float ampmSize = 14f * scaleFactor;
+    // Compute dynamic text sizes (in sp)
+    float timeSizeSp = Math.max(42f, 56f * scaleFactor);
+    float ampmSizeSp = Math.max(12f, 14f * scaleFactor);
 
-    // Date lines: use a very gentle width-only scale to avoid ballooning on tall widgets
-    // Base dimensions aligned with calculateScaleFactor()
     final float baseWidth = 250f;
     float widthScale = widgetSize != null ? (float) widgetSize.getWidth() / baseWidth : 1f;
-    // Keep it compact: don't let date scale above base; allow slight shrink for narrow widgets
     float dateScale = Math.max(0.85f, Math.min(1.0f, widthScale));
-
-    // Lower base sizes for a concise, modern look
-    float dateSize = 16f * dateScale;
-    float arabicDateSize = 14f * dateScale;
-
-    // Ensure minimum readable sizes and reasonable maximums for date text
-    timeSize = Math.max(timeSize, 42f);
-    ampmSize = Math.max(ampmSize, 12f);
-    dateSize = Math.max(13f, Math.min(18f, dateSize));
-    arabicDateSize = Math.max(11f, Math.min(16f, arabicDateSize));
-
-        // Set dynamic text sizes
-        views.setTextViewTextSize(R.id.clock_time, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
-        views.setTextViewTextSize(R.id.clock_ampm, android.util.TypedValue.COMPLEX_UNIT_SP, ampmSize);
-        views.setTextViewTextSize(R.id.clock_date, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize);
-        views.setTextViewTextSize(R.id.clock_date_arabic, android.util.TypedValue.COMPLEX_UNIT_SP, arabicDateSize);
+    float dateSizeSp = Math.max(13f, Math.min(18f, 16f * dateScale));
+    float arabicDateSizeSp = Math.max(11f, Math.min(16f, 14f * dateScale));
 
             // Set background color only
             if (prefs.hasBlackBackground()) {
@@ -135,16 +126,32 @@ public class ClockWidgetProvider extends AppWidgetProvider {
             // Instead, rely on layout translation set in XML; keep here in case future API allows
         }
 
+        // Prepare colors
+        int timeColor = Color.WHITE;
+        int ampmColor = Color.parseColor("#B0B0B0");
+        int dateColor = Color.parseColor("#E0E0E0");
+        int arabicColor = Color.parseColor("#C0C0C0");
+
+        int widgetWidthPx = dpToPx(context, widgetSize != null ? widgetSize.getWidth() : 250);
+        // Reserve around 55% of width for date section; keep some gap
+        int dateMaxWidth = (int) (widgetWidthPx * 0.55f);
+
+        // Ubuntu regular typeface from res/font
+        android.graphics.Typeface ubuntu = ResourcesCompat.getFont(context, R.font.ubuntu_regular);
+
         // Format time based on preference (default: 12-hour)
         if (prefs.is24HourFormat()) {
             String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
-            views.setTextViewText(R.id.clock_time, time);
+            Bitmap timeBmp = renderTextBitmap(context, time, timeSizeSp, timeColor, true, false, 0, ubuntu);
+            views.setImageViewBitmap(R.id.clock_time, timeBmp);
             views.setViewVisibility(R.id.clock_ampm, android.view.View.GONE);
         } else {
             String time = new SimpleDateFormat("h:mm", Locale.getDefault()).format(new Date());
             String ampm = new SimpleDateFormat("a", Locale.getDefault()).format(new Date());
-            views.setTextViewText(R.id.clock_time, time);
-            views.setTextViewText(R.id.clock_ampm, ampm);
+            Bitmap timeBmp = renderTextBitmap(context, time, timeSizeSp, timeColor, true, false, 0, ubuntu);
+            Bitmap ampmBmp = renderTextBitmap(context, ampm, ampmSizeSp, ampmColor, true, false, 0, ubuntu);
+            views.setImageViewBitmap(R.id.clock_time, timeBmp);
+            views.setImageViewBitmap(R.id.clock_ampm, ampmBmp);
             views.setViewVisibility(R.id.clock_ampm, android.view.View.VISIBLE);
         }
         
@@ -152,7 +159,8 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         if (prefs.showDate()) {
             String datePattern = prefs.getDateFormat();
             String date = new SimpleDateFormat(datePattern, Locale.getDefault()).format(new Date());
-            views.setTextViewText(R.id.clock_date, date);
+            Bitmap dateBmp = renderTextBitmap(context, date, dateSizeSp, dateColor, true, false, dateMaxWidth, ubuntu);
+            views.setImageViewBitmap(R.id.clock_date, dateBmp);
             views.setViewVisibility(R.id.clock_date, android.view.View.VISIBLE);
         } else {
             views.setViewVisibility(R.id.clock_date, android.view.View.GONE);
@@ -162,7 +170,8 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         if (prefs.showArabicDate()) {
             String arabicDateFormat = prefs.getArabicDateFormat();
             String arabicDate = ArabicDateUtils.getArabicDate(arabicDateFormat);
-            views.setTextViewText(R.id.clock_date_arabic, arabicDate);
+            Bitmap arabicBmp = renderTextBitmap(context, arabicDate, arabicDateSizeSp, arabicColor, true, true, dateMaxWidth, ubuntu);
+            views.setImageViewBitmap(R.id.clock_date_arabic, arabicBmp);
             views.setViewVisibility(R.id.clock_date_arabic, android.view.View.VISIBLE);
         } else {
             views.setViewVisibility(R.id.clock_date_arabic, android.view.View.GONE);
@@ -250,4 +259,55 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         return Math.max(0.7f, Math.min(2.0f, scale));
         // -------------- Fix Ended for this method(calculateScaleFactor)-----------
     }
+
+    // -------------- Fix Start for this method(renderTextBitmap)-----------
+    private Bitmap renderTextBitmap(Context context, String text, float textSizeSp, int color,
+                                    boolean addShadow, boolean rtl, int maxWidthPx,
+                                    android.graphics.Typeface typeface) {
+        TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
+        paint.setColor(color);
+        paint.setTextSize(textSizeSp * context.getResources().getDisplayMetrics().scaledDensity);
+        if (typeface != null) paint.setTypeface(typeface);
+
+        if (addShadow) {
+            paint.setShadowLayer(1.5f, 1f, 1f, Color.BLACK);
+        }
+
+        // Measure text
+        Rect bounds = new Rect();
+        paint.getTextBounds(text, 0, text.length(), bounds);
+        float textWidth = paint.measureText(text);
+        float textHeight = bounds.height();
+
+        int bmpWidth = (int) Math.ceil(textWidth);
+        int bmpHeight = (int) Math.ceil(textHeight * 1.3f);
+
+        if (maxWidthPx > 0 && bmpWidth > maxWidthPx) {
+            // Simple ellipsizing to fit max width
+            String ellipsized = android.text.TextUtils.ellipsize(text, paint, maxWidthPx, android.text.TextUtils.TruncateAt.END).toString();
+            text = ellipsized;
+            paint.getTextBounds(text, 0, text.length(), bounds);
+            textWidth = paint.measureText(text);
+            bmpWidth = (int) Math.ceil(textWidth);
+            bmpHeight = (int) Math.ceil(bounds.height() * 1.3f);
+        }
+
+        if (bmpWidth <= 0) bmpWidth = 1;
+        if (bmpHeight <= 0) bmpHeight = (int) Math.ceil(textSizeSp);
+
+        Bitmap bmp = Bitmap.createBitmap(bmpWidth, bmpHeight, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bmp);
+        canvas.drawColor(Color.TRANSPARENT);
+
+        Paint.FontMetrics fm = paint.getFontMetrics();
+        float x = 0f;
+        if (rtl) {
+            x = bmpWidth; // drawText with align RIGHT for RTL
+            paint.setTextAlign(Paint.Align.RIGHT);
+        }
+        float y = bmpHeight - (bmpHeight - (bounds.bottom - bounds.top)) / 2f - bounds.bottom;
+        canvas.drawText(text, x, y, paint);
+        return bmp;
+    }
+    // -------------- Fix Ended for this method(renderTextBitmap)-----------
 }

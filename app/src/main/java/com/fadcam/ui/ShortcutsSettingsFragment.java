@@ -204,12 +204,10 @@ public class ShortcutsSettingsFragment extends Fragment {
                         showArabicDateFormatSheet();
                     }
                 } else if("branding".equals(selected)){
-                    // Handle switch toggle for branding (only if black background is enabled)
-                    if(prefs.hasBlackBackground()) {
-                        prefs.setBranding(!prefs.showBranding());
-                        updateAllWidgets();
-                        updatePreview();
-                    }
+                    // Handle switch toggle for branding (independent of background)
+                    prefs.setBranding(!prefs.showBranding());
+                    updateAllWidgets();
+                    updatePreview();
                 }
             }
         });
@@ -450,10 +448,8 @@ public class ShortcutsSettingsFragment extends Fragment {
     }
 
     private String getBrandingDescription(com.fadcam.widgets.WidgetPreferences prefs) {
-        if (prefs.showBranding() && prefs.hasBlackBackground()) {
+        if (prefs.showBranding()) {
             return getString(R.string.widget_branding_enabled);
-        } else if (prefs.showBranding() && !prefs.hasBlackBackground()) {
-            return getString(R.string.widget_branding_requires_background);
         } else {
             return getString(R.string.widget_branding_disabled);
         }
