@@ -151,7 +151,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         LinearLayout switchRow = new LinearLayout(requireContext());
         switchRow.setOrientation(LinearLayout.HORIZONTAL);
         switchRow.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        switchRow.setPadding(4, 12, 4, 12);
+        switchRow.setPadding(dp(16), dp(12), dp(16), dp(12));
     TextView label = new TextView(requireContext());
         label.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         label.setText(switchTitle);
