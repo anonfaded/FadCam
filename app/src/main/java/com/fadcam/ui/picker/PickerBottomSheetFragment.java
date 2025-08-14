@@ -173,6 +173,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         if(!items.isEmpty()){
             View switchDivider = new View(view.getContext());
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
+            // -------------- Fix Start for this method(onViewCreated)-----------
+            // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
+            lp.setMargins(dp(14), 0, dp(12), 0);
+            // -------------- Fix Ended for this method(onViewCreated)-----------
             switchDivider.setLayoutParams(lp);
             switchDivider.setBackgroundColor(0x33FFFFFF);
             containerLayout.addView(switchDivider);
@@ -314,6 +318,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             if(index<last){
                 View rowDivider = new View(view.getContext());
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
+                // -------------- Fix Start for this method(onViewCreated)-----------
+                // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
+                lp.setMargins(dp(14), 0, dp(12), 0);
+                // -------------- Fix Ended for this method(onViewCreated)-----------
                 rowDivider.setLayoutParams(lp);
                 rowDivider.setBackgroundColor(0x33FFFFFF);
                 containerLayout.addView(rowDivider);
@@ -334,6 +342,13 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         applyInitialArabicDateFormatDependency();
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
+
+    // -------------- Fix Start for this method(dp)-----------
+    private int dp(int value){
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(value * density);
+    }
+    // -------------- Fix Ended for this method(dp)-----------
 
     private void buildGrid(LinearLayout containerLayout, View root){
         // Build a simple wrapping grid manually (3 columns)

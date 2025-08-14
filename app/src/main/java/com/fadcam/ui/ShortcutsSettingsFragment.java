@@ -63,11 +63,10 @@ public class ShortcutsSettingsFragment extends Fragment {
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
                 "torch_toggle");
 
-    View preview = view.findViewById(R.id.clock_widget_preview);
-    View titleRow = view.findViewById(R.id.clock_widget_title_row);
+    // Unify ripple/click: handle click on parent container only
+    View widgetCell = view.findViewById(R.id.cell_widget_clock);
     View.OnClickListener widgetClick = v -> showClockWidgetSheet();
-    if(preview!=null) preview.setOnClickListener(widgetClick);
-    if(titleRow!=null) titleRow.setOnClickListener(widgetClick);
+    if(widgetCell!=null) widgetCell.setOnClickListener(widgetClick);
     
     // Initialize preview with current preferences
     updatePreview();

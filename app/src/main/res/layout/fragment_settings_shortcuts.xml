@@ -171,22 +171,22 @@
         android:background="@drawable/settings_group_card_bg"
         android:padding="12dp">
 
-        <!-- Clock widget row (full width) -->
+        <!-- Clock widget row (full width) with unified ripple on parent container -->
         <LinearLayout
             android:id="@+id/cell_widget_clock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="8dp"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
 
             <FrameLayout
                 android:id="@+id/clock_widget_preview"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:background="@drawable/widget_preview_bg"
-                android:foreground="?android:attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
                 android:padding="8dp">
 
                 <include layout="@layout/widget_clock_preview"/>
@@ -198,10 +198,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:paddingTop="8dp"
-                android:foreground="?android:attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
+                android:paddingTop="8dp">
                 <ImageView
                     android:layout_width="18dp"
                     android:layout_height="18dp"

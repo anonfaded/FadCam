@@ -48,5 +48,8 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
         <item name="android:background">#262626</item>
+    <!-- Match SettingsGroupRow horizontal insets (14dp start / 12dp end) -->
+    <item name="android:layout_marginStart">14dp</item>
+    <item name="android:layout_marginEnd">12dp</item>
     </style>
 </resources>
