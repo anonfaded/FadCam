@@ -3,6 +3,8 @@ package com.fadcam.shortcuts;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -10,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
+import androidx.appcompat.content.res.AppCompatResources;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -69,6 +72,11 @@ public class ShortcutsManager {
 
     @Nullable
     private IconCompat resolveIcon(@NonNull String id, @DrawableRes int fallback) {
+        // Prefer resource id when present to preserve adaptive icon masks and scaling
+        int resId = prefs.getCustomIconRes(id);
+        if (resId != 0) {
+            return IconCompat.createWithResource(ctx, resId);
+        }
         String path = prefs.getCustomIconPath(id);
         if (path != null) {
             File f = new File(path);
@@ -98,6 +106,33 @@ public class ShortcutsManager {
     public boolean setCustomIconFromUri(@NonNull String id, @NonNull android.net.Uri uri) {
         return prefs.setCustomIconFromUri(id, uri) != null;
     }
+
+    // -------------- Fix Start for this method(setCustomIconFromBitmap)-----------
+    /**
+     * Persists a custom icon for the given shortcut from a Bitmap.
+     * Returns true if saved successfully.
+     */
+    public boolean setCustomIconFromBitmap(@NonNull String id, @NonNull android.graphics.Bitmap bitmap) {
+        return prefs.setCustomIconFromBitmap(id, bitmap) != null;
+    }
+    // -------------- Fix Ended for this method(setCustomIconFromBitmap)-----------
+
+    // -------------- Fix Start for this method(setCustomIconFromResId)-----------
+    /**
+     * Persists a custom icon for the given shortcut from a drawable resource (including adaptive icons).
+     * The drawable is rasterized to a 192x192 bitmap before saving.
+     */
+    public boolean setCustomIconFromResId(@NonNull String id, @DrawableRes int resId) {
+        try {
+            // Store the resource id directly so launcher can apply the correct mask/scale
+            prefs.setCustomIconRes(id, resId);
+            // Ensure any stale bitmap path is ignored (handled inside prefs as well)
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+    // -------------- Fix Ended for this method(setCustomIconFromResId)-----------
 
     public boolean isPinSupported() {
         return ShortcutManagerCompat.isRequestPinShortcutSupported(ctx);

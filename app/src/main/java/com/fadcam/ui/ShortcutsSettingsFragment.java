@@ -196,8 +196,8 @@ public class ShortcutsSettingsFragment extends Fragment {
                 if("rename".equals(selected)){
                     promptRename(shortcutId, defaultLabel);
                 } else if ("change_icon".equals(selected)){
-                    pendingIconShortcutId = shortcutId;
-                    if(imagePickerLauncher != null){ imagePickerLauncher.launch(new String[]{"image/*"}); }
+                    // Show source picker: choose from app icons or from gallery
+                    showChangeIconSourceSheet(shortcutId);
                 } else if ("reset".equals(selected)){
                     ShortcutsManager sm = new ShortcutsManager(requireContext());
                     sm.reset(shortcutId);
@@ -217,6 +217,38 @@ public class ShortcutsSettingsFragment extends Fragment {
         sheet.show(getParentFragmentManager(), "customize_"+shortcutId);
     }
     // -------------- Fix Ended for this method(showCustomizeShortcutSheet)-----------
+
+    // -------------- Fix Start for this method(showChangeIconSourceSheet)-----------
+    private void showChangeIconSourceSheet(String shortcutId){
+        final String resultKey = "picker_result_icon_source_" + shortcutId;
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if("from_app_icons".equals(sel)){
+                    // Open grid of app icons and save selected as shortcut icon
+                    ShortcutIconGridBottomSheet sheet = new ShortcutIconGridBottomSheet(iconResId -> {
+                        ShortcutsManager sm = new ShortcutsManager(requireContext());
+                        if(sm.setCustomIconFromResId(shortcutId, iconResId)){
+                            sm.publishAllDynamic();
+                            refreshShortcutRows();
+                        }
+                    });
+                    sheet.show(getParentFragmentManager(), "shortcut_icon_grid_"+shortcutId);
+                } else if("from_gallery".equals(sel)){
+                    pendingIconShortcutId = shortcutId;
+                    if(imagePickerLauncher != null){ imagePickerLauncher.launch(new String[]{"image/*"}); }
+                }
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("from_app_icons", getString(R.string.shortcuts_choose_from_app_icons), null, null, R.drawable.ic_theme, null));
+        items.add(new com.fadcam.ui.picker.OptionItem("from_gallery", getString(R.string.shortcuts_choose_from_gallery), null, null, R.drawable.ic_open_in_new, null));
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.shortcuts_choose_icon_title), items, null, resultKey, getString(R.string.shortcuts_choose_icon_desc));
+        if(sheet.getArguments()!=null){ sheet.getArguments().putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true); }
+        sheet.show(getParentFragmentManager(), "icon_source_"+shortcutId);
+    }
+    // -------------- Fix Ended for this method(showChangeIconSourceSheet)-----------
 
     // -------------- Fix Start for this method(promptRename)-----------
     private void promptRename(String shortcutId, String defaultLabel){
@@ -277,6 +309,11 @@ public class ShortcutsSettingsFragment extends Fragment {
     // -------------- Fix Start for this method(loadShortcutIconInto)-----------
     private void loadShortcutIconInto(ImageView imageView, String shortcutId, int defaultIconRes){
         ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
+        int res = sp.getCustomIconRes(shortcutId);
+        if(res != 0){
+            imageView.setImageResource(res);
+            return;
+        }
         String path = sp.getCustomIconPath(shortcutId);
         if(path != null){
             android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeFile(path);

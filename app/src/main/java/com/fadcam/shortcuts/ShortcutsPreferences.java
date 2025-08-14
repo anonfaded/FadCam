@@ -57,16 +57,26 @@ public class ShortcutsPreferences {
      */
     @Nullable
     public String setCustomIconFromBitmap(@NonNull String shortcutId, @NonNull Bitmap bitmap) {
-        Bitmap squared = toSquare(bitmap);
-        // 192x192 px target for adaptive icon source
-        Bitmap scaled = Bitmap.createScaledBitmap(squared, 192, 192, true);
+    Bitmap squared = toSquare(bitmap);
+    // High-res adaptive icon source (432x432 px ~ 108dp@xxxhdpi). Keep content within ~66% safe zone
+    final int TARGET = 432;
+    final int SAFE = Math.round(TARGET * 0.666f); // ~288px
+    final int MARGIN = (TARGET - SAFE) / 2;       // center inset (~72px)
+    Bitmap scaledContent = Bitmap.createScaledBitmap(squared, SAFE, SAFE, true);
+    Bitmap scaled = Bitmap.createBitmap(TARGET, TARGET, Bitmap.Config.ARGB_8888);
+    Canvas canvas = new Canvas(scaled);
+    canvas.drawColor(Color.TRANSPARENT);
+    canvas.drawBitmap(scaledContent, MARGIN, MARGIN, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
         File out = new File(getIconsDir(), fileName(shortcutId));
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(out);
+            // Save lossless PNG to preserve sharp edges
             scaled.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.flush();
+            // Persist path and clear any stored resId to avoid precedence issues
             sp.edit().putString(keyIcon(shortcutId), out.getAbsolutePath()).apply();
+            sp.edit().remove(keyIconRes(shortcutId)).apply();
             return out.getAbsolutePath();
         } catch (IOException e) {
             // swallow; caller may fallback to default icon
@@ -107,6 +117,7 @@ public class ShortcutsPreferences {
     public void reset(@NonNull String shortcutId) {
         clearCustomLabel(shortcutId);
         clearCustomIcon(shortcutId);
+    clearCustomIconRes(shortcutId);
     }
 
     private File getIconsDir() {
@@ -118,6 +129,7 @@ public class ShortcutsPreferences {
 
     private static String keyLabel(String id) { return "label_" + id; }
     private static String keyIcon(String id) { return "icon_" + id; }
+    private static String keyIconRes(String id) { return "iconRes_" + id; }
     private static String fileName(String id) { return id + ".png"; }
 
     private static Bitmap toSquare(Bitmap src) {
@@ -137,4 +149,30 @@ public class ShortcutsPreferences {
             return out;
         }
     }
+
+    // -------------- Fix Start for this method(setCustomIconRes / getCustomIconRes / clearCustomIconRes)-----------
+    /**
+     * Stores a drawable resource id to be used as the custom icon for this shortcut.
+     * Clears any previously saved bitmap path, since the resource will take precedence.
+     */
+    public void setCustomIconRes(@NonNull String shortcutId, int resId) {
+        sp.edit().putInt(keyIconRes(shortcutId), resId).apply();
+        // Clear old bitmap path to avoid confusion
+        sp.edit().remove(keyIcon(shortcutId)).apply();
+    }
+
+    /**
+     * Returns the stored custom icon resource id, or 0 if none.
+     */
+    public int getCustomIconRes(@NonNull String shortcutId) {
+        return sp.getInt(keyIconRes(shortcutId), 0);
+    }
+
+    /**
+     * Clears the custom icon resource id for this shortcut.
+     */
+    public void clearCustomIconRes(@NonNull String shortcutId) {
+        sp.edit().remove(keyIconRes(shortcutId)).apply();
+    }
+    // -------------- Fix Ended for this method(setCustomIconRes / getCustomIconRes / clearCustomIconRes)-----------
 }

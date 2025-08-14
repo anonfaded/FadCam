@@ -338,8 +338,7 @@
     <string name="arabic_date_description_english">Full English</string>
     <string name="arabic_date_description_default">Full Arabic (Default)</string>
     
-    <string name="shortcuts_helper_text">Add shortcuts to your home screen. Select a shortcut above to add. A confirmation is required.
-These shortcuts can also be used with automation apps (e.g., MacroDroid) to trigger intents, like mapping volume buttons.</string>
+    <string name="shortcuts_helper_text">Add shortcuts from above. They also work with automation apps (e.g., MacroDroid) to trigger actions like mapping volume buttons.</string>
     <string name="shortcuts_add_to_home">Add to Home screen</string>
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
     <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
@@ -350,6 +349,10 @@ These shortcuts can also be used with automation apps (e.g., MacroDroid) to trig
     <string name="shortcuts_customize_dialog_save">Save</string>
     <string name="shortcuts_customize_action_rename">Rename</string>
     <string name="shortcuts_customize_action_change_icon">Change icon</string>
+    <string name="shortcuts_choose_icon_title">Change shortcut icon</string>
+    <string name="shortcuts_choose_icon_desc">Pick an icon for this shortcut. You can choose from the app\'s icon set or select an image from your gallery.</string>
+    <string name="shortcuts_choose_from_app_icons">Choose from app icons</string>
+    <string name="shortcuts_choose_from_gallery">Choose from gallery</string>
     <string name="shortcuts_customize_action_reset">Reset to default</string>
     <string name="shortcuts_customize_sheet_desc">Set a custom name and icon for this shortcut.</string>
     <string name="shortcuts_rename_helper">Tip: Leave empty to use the default name.</string>
