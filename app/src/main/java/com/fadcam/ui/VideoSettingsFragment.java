@@ -1452,14 +1452,7 @@ public class VideoSettingsFragment extends Fragment {
                 return enhancedRates;
             }
 
-            // Special handling for high-end Huawei devices
-            if (DeviceHelper.isHuawei() && DeviceHelper.isHighEndDevice() && !detectedRates.contains(60)) {
-                Log.i(TAG, "High-end Huawei device detected - Adding 60fps support");
-                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
-                enhancedRates.add(60);
-                Collections.sort(enhancedRates);
-                return enhancedRates;
-            }
+            // Removed Huawei-specific handling to standardize behavior across devices
 
             return detectedRates;
         } catch (Exception e) {

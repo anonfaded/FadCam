@@ -92,7 +92,6 @@ import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import com.fadcam.utils.DeviceHelper;
 import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
-import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
 
 // Add import
 import com.fadcam.opengl.GLRecordingPipeline;
@@ -1248,9 +1247,6 @@ public class RecordingService extends Service {
                     Log.d(TAG, "Samsung device: forcing standard session for " + targetFrameRate
                             + "fps to match Pixel behavior");
                     useHighSpeedSession = false;
-                } else if (DeviceHelper.isHuawei()) {
-                    // Unify behavior: do not apply Huawei vendor keys, prefer platform capabilities
-                    useHighSpeedSession = false;
                 } else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
                     Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate,
                             selected.getWidth(), selected.getHeight());
@@ -1325,16 +1321,6 @@ public class RecordingService extends Service {
                 if (DeviceHelper.isSamsung()) {
                     Log.d(TAG, "Samsung device: using standard session (no HSR) for " + targetFrameRate + "fps");
                     showFrameRateToast(targetFrameRate);
-                    useHighSpeedSession = false;
-                }
-                // For Huawei devices, also prefer vendor keys
-                else if (DeviceHelper.isHuawei()) {
-                    Log.d(TAG, "Using Huawei-specific approach for high frame rates");
-
-                    // Show toast informing the user about experimental 60fps
-                    showFrameRateToast(targetFrameRate);
-
-                    // Use standard session with Huawei vendor keys
                     useHighSpeedSession = false;
                 }
                 // For other devices, check if high-speed is supported
@@ -2567,14 +2553,14 @@ public class RecordingService extends Service {
         // This method is kept to avoid refactoring all callers
 
         if (frameRate >= 60) {
+            // -------------- Fix Start for this method(showFrameRateToast)-----------
             // Just log the high frame rate usage
             if (DeviceHelper.isSamsung()) {
                 Log.d(TAG, "Using experimental " + frameRate + "fps mode for Samsung");
-            } else if (DeviceHelper.isHuawei()) {
-                Log.d(TAG, "Using experimental " + frameRate + "fps mode for Huawei");
             } else {
                 Log.d(TAG, "Using experimental " + frameRate + "fps mode");
             }
+            // -------------- Fix Ended for this method(showFrameRateToast)-----------
         }
     }
 

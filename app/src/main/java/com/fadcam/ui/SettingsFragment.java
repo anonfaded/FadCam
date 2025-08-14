@@ -3099,17 +3099,17 @@ public class SettingsFragment extends BaseFragment {
         CameraType currentSelectedCamera = sharedPreferencesManager.getCameraSelection();
         int currentFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(currentSelectedCamera);
 
-        if (currentFrameRate >= 60) {
+    if (currentFrameRate >= 60) {
             // For high frame rates, show experimental warning with red color for better
             // visibility
-            String warningText = getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE) +
-                    "\n\n<font color='#FF0000'><b>EXPERIMENTAL:</b> " + currentFrameRate
-                    + "fps is an experimental mode " +
-                    (DeviceHelper.isSamsung() ? "for Samsung devices. "
-                            : (DeviceHelper.isHuawei() ? "for Huawei devices. " : ""))
-                    +
-                    "This frame rate may not be supported on all devices and could cause instability. " +
-                    "Use only if your hardware can support it.</font>";
+        // -------------- Fix Start for this method(updateFrameRateNoteText)-----------
+        String warningText = getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE) +
+            "\n\n<font color='#FF0000'><b>EXPERIMENTAL:</b> " + currentFrameRate
+            + "fps is an experimental mode " +
+            (DeviceHelper.isSamsung() ? "for Samsung devices. " : "") +
+            "This frame rate may not be supported on all devices and could cause instability. " +
+            "Use only if your hardware can support it.</font>";
+        // -------------- Fix Ended for this method(updateFrameRateNoteText)-----------
 
             noteTextView.setText(Html.fromHtml(warningText, Html.FROM_HTML_MODE_COMPACT));
             noteTextView.setVisibility(View.VISIBLE);
@@ -3996,14 +3996,7 @@ public class SettingsFragment extends BaseFragment {
                 return enhancedRates;
             }
 
-            // Special handling for high-end Huawei devices
-            if (DeviceHelper.isHuawei() && DeviceHelper.isHighEndDevice() && !detectedRates.contains(60)) {
-                Log.i(TAG_SETTINGS, "High-end Huawei device detected - Adding 60fps support");
-                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
-                enhancedRates.add(60);
-                Collections.sort(enhancedRates);
-                return enhancedRates;
-            }
+            // Huawei-specific handling removed to standardize behavior across devices
 
             return detectedRates;
         } catch (Exception e) {

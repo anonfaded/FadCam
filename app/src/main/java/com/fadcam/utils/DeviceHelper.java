@@ -20,16 +20,6 @@ public class DeviceHelper {
     }
     
     /**
-     * Check if the device is made by Huawei or Honor
-     * 
-     * @return true if the device is a Huawei or Honor device
-     */
-    public static boolean isHuawei() {
-        String manufacturer = Build.MANUFACTURER.toLowerCase();
-        return manufacturer.contains("huawei") || manufacturer.contains("honor");
-    }
-    
-    /**
      * Check if the device is made by Google
      * 
      * @return true if the device is a Google device
@@ -44,6 +34,7 @@ public class DeviceHelper {
      * @return true if the device is likely a high-end device
      */
     public static boolean isHighEndDevice() {
+        // -------------- Fix Start for this method(isHighEndDevice)-----------
         String model = Build.MODEL.toLowerCase();
         String device = Build.DEVICE.toLowerCase();
         String manufacturer = Build.MANUFACTURER.toLowerCase();
@@ -57,15 +48,7 @@ public class DeviceHelper {
                    model.contains("sm-f9");   // Fold series
         }
         
-        if (isHuawei()) {
-            // Huawei P and Mate series are high end
-            return model.contains("p20") || 
-                   model.contains("p30") || 
-                   model.contains("p40") || 
-                   model.contains("mate");
-        }
-        
-        if (isGoogle()) {
+    if (isGoogle()) {
             // Google Pixel 3 and above are considered high-end
             return model.contains("pixel 3") || 
                    model.contains("pixel 4") || 
@@ -81,6 +64,7 @@ public class DeviceHelper {
                model.contains("premium") ||
                model.contains("flagship") || 
                model.contains("elite");
+    // -------------- Fix Ended for this method(isHighEndDevice)-----------
     }
     
     /**
