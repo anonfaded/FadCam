@@ -145,8 +145,8 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
     public void selectAll() {
         selectedItems.clear();
         selectedItems.addAll(trashItems);
-        // Notify visible range for smoother updates
-        notifyItemRangeChanged(0, getItemCount(), "SELECTION_TOGGLE");
+    // Notify all items to ensure offscreen holders bind with a tick when they appear
+    notifyDataSetChanged();
         if (interactionListener != null) {
             interactionListener.onItemSelectedStateChanged(!selectedItems.isEmpty());
         }
@@ -159,7 +159,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         if (!selectedItems.isEmpty()) {
             int oldCount = selectedItems.size();
             selectedItems.clear();
-            notifyItemRangeChanged(0, getItemCount(), "SELECTION_TOGGLE");
+            notifyDataSetChanged();
             if (interactionListener != null) {
                 interactionListener.onItemSelectedStateChanged(false);
             }
@@ -268,6 +268,13 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                 iconCheckContainer.setVisibility(View.VISIBLE);
                 if (iconCheck != null) {
                     if (selectedItems.contains(item)) {
+                        // Ensure a drawable is set (recycled views might have been cleared)
+                        AnimatedVectorDrawableCompat avd = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_check_draw);
+                        if (avd != null) {
+                            iconCheck.setImageDrawable(avd);
+                            // It's okay to animate when coming into view; ensures a consistent drawn tick
+                            avd.start();
+                        }
                         iconCheck.setAlpha(1f);
                     } else {
                         // Unselected: ensure inner tick is cleared and transparent, keep background visible
