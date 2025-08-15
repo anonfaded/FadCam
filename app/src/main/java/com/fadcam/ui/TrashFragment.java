@@ -142,10 +142,8 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                     exitSelectionMode();
                     return;
                 }
-                // Otherwise delegate to activity/back stack
-                if (getActivity() != null) {
-                    getActivity().onBackPressed();
-                }
+                // Otherwise dismiss the overlay directly to avoid cascading back logic
+                try { com.fadcam.ui.OverlayNavUtil.dismiss(requireActivity()); } catch (Throwable ignored) {}
                 // -------------- Fix Ended for this method(backButtonOnClick)-----------
             });
         }
@@ -949,14 +947,11 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         // If in selection mode, exit selection mode
         if (isInSelectionMode()) {
             exitSelectionMode();
-            return true;
+            return true; // consumed
         }
-
-        // ----- Fix Start: Let MainActivity handle the back press -----
-        // For normal cases, let MainActivity handle it - it will detect that
-        // TrashFragment is visible and close it properly
-        return false;
-        // ----- Fix End: Let MainActivity handle the back press -----
+    // Dismiss the overlay explicitly; don't propagate to activity
+    try { com.fadcam.ui.OverlayNavUtil.dismiss(requireActivity()); } catch (Throwable ignored) {}
+        return true; // consumed
     }
 
     /**

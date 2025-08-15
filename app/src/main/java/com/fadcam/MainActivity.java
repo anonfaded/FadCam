@@ -77,21 +77,7 @@ public class MainActivity extends AppCompatActivity {
     }
     // ----- Fix End: Add method to disable back toast temporarily -----
 
-    // ----- Fix Start: Add method to check if trash fragment is visible -----
-    /**
-     * Checks if the TrashFragment is currently visible in the overlay container
-     * @return true if TrashFragment is visible, false otherwise
-     */
-    private boolean isTrashFragmentVisible() {
-        View overlayContainer = findViewById(R.id.overlay_fragment_container);
-        if (overlayContainer != null && overlayContainer.getVisibility() == View.VISIBLE) {
-            Fragment fragment = getSupportFragmentManager()
-                    .findFragmentById(R.id.overlay_fragment_container);
-            return fragment instanceof TrashFragment;
-        }
-        return false;
-    }
-    // ----- Fix End: Add method to check if trash fragment is visible -----
+    // Removed Trash-specific visibility checks; overlay back handling is unified below.
 
     // -------------- Fix Start for this method(hideOverlayIfNoFragments)-----------
     /** Utility so child fragments can request overlay dismissal after popping back stack. */
@@ -531,75 +517,10 @@ public class MainActivity extends AppCompatActivity {
     // ----- Fix Start: Proper back button handling with double-press to exit -----
     @Override
     public void onBackPressed() {
-        // First: handle any non-trash overlay fragment (settings screens)
-        if(handleNonTrashOverlayBack()){
-            Log.d("OverlayDebug","onBackPressed: dismissed non-trash overlay fragment");
+        // Unified: handle any visible overlay fragment (trash or settings)
+        if(handleOverlayBack()){
+            Log.d("OverlayDebug","onBackPressed: dismissed overlay fragment");
             return;
-        }
-        // Check if trash fragment is visible - handle separately
-        if (isTrashFragmentVisible()) {
-            View overlayContainer = findViewById(R.id.overlay_fragment_container);
-            if (overlayContainer != null) {
-                // Animate fading out
-                overlayContainer.animate()
-                    .alpha(0f)
-                    .setDuration(250)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            // Set visibility to GONE after animation completes
-                            overlayContainer.setVisibility(View.GONE);
-                            overlayContainer.setAlpha(1f); // Reset alpha for next time
-                            
-                            // Pop any fragments in the back stack
-                            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                                getSupportFragmentManager().popBackStack();
-                            }
-                            
-                            // Force a complete reset of the ViewPager and its fragments
-                            // Save current position
-                            final int currentPosition = viewPager.getCurrentItem();
-                            
-                            // Completely recreate the adapter (aggressive approach)
-                            ViewPagerAdapter newAdapter = new ViewPagerAdapter(MainActivity.this);
-                            viewPager.setAdapter(newAdapter);
-                            
-                            // Reset page transformer to ensure animations work
-                            viewPager.setPageTransformer(new FadePageTransformer());
-                            
-                            // Restore position without animation
-                            viewPager.setCurrentItem(currentPosition, false);
-                            
-                            // Also make sure the correct tab is selected
-                            switch (currentPosition) {
-                                case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
-                                case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
-                                case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
-                                case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
-                            }
-                        }
-                    });
-                return; // Exit early without showing toast
-            }
-            
-            // If for some reason we couldn't animate, fallback to immediate hide
-            if (overlayContainer != null) {
-                overlayContainer.setVisibility(View.GONE);
-            }
-            
-            // Pop any fragments in the back stack
-            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                getSupportFragmentManager().popBackStack();
-            }
-            
-            // Refresh the records fragment if needed
-            Fragment recordsFragment = getSupportFragmentManager()
-                    .findFragmentByTag("RecordsFragment");
-            if (recordsFragment instanceof RecordsFragment) {
-                ((RecordsFragment) recordsFragment).refreshList();
-            }
-            
-            return; // Exit early without showing toast
         }
 
         // If we're not on the home tab, go to home tab first before exiting
@@ -690,55 +611,9 @@ public class MainActivity extends AppCompatActivity {
             getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
                 @Override
                 public void handleOnBackPressed() {
-                    // Check if trash fragment is visible - handle separately
-                    if (isTrashFragmentVisible()) {
-                        View overlayContainer = findViewById(R.id.overlay_fragment_container);
-                        if (overlayContainer != null) {
-                            // Animate fading out
-                            overlayContainer.animate()
-                                .alpha(0f)
-                                .setDuration(250)
-                                .setListener(new AnimatorListenerAdapter() {
-                                    @Override
-                                    public void onAnimationEnd(Animator animation) {
-                                        // Set visibility to GONE after animation completes
-                                        overlayContainer.setVisibility(View.GONE);
-                                        overlayContainer.setAlpha(1f); // Reset alpha for next time
-                                        
-                                        // Pop any fragments in the back stack
-                                        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                                            getSupportFragmentManager().popBackStack();
-                                        }
-                                        
-                                        // Force a complete reset of the ViewPager and its fragments
-                                        // Save current position
-                                        final int currentPosition = viewPager.getCurrentItem();
-                                        
-                                        // Completely recreate the adapter (aggressive approach)
-                                        ViewPagerAdapter newAdapter = new ViewPagerAdapter(MainActivity.this);
-                                        viewPager.setAdapter(newAdapter);
-                                        
-                                        // Reset page transformer to ensure animations work
-                                        viewPager.setPageTransformer(new FadePageTransformer());
-                                        
-                                        // Restore position without animation
-                                        viewPager.setCurrentItem(currentPosition, false);
-                                        
-                                        // Also make sure the correct tab is selected
-                                        switch (currentPosition) {
-                                            case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
-                                            case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
-                                            case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
-                                            case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
-                                        }
-                                    }
-                                });
-                            return; // Exit early without showing toast
-                        }
-                    }
-                    // New: generic non-trash overlay back handling (settings screens)
-                    if(handleNonTrashOverlayBack()){
-                        Log.d("OverlayDebug","DispatcherBack: dismissed non-trash overlay fragment");
+                    // Unified: generic overlay back handling (trash & settings)
+                    if(handleOverlayBack()){
+                        Log.d("OverlayDebug","DispatcherBack: dismissed overlay fragment");
                         return; // handled
                     }
                     
@@ -823,24 +698,34 @@ public class MainActivity extends AppCompatActivity {
     }
     // -------------- Fix Ended for this method(onUserLeaveHint)-----------
 
-    // -------------- Fix Start for this method(handleNonTrashOverlayBack)-----------
-    /** Handles back press for any visible overlay fragment that is not TrashFragment. */
-    private boolean handleNonTrashOverlayBack(){
+    // -------------- Fix Start for this method(handleOverlayBack)-----------
+    /** Handles back press for any visible overlay fragment (settings or trash). */
+    private boolean handleOverlayBack(){
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
         if(overlayContainer==null || overlayContainer.getVisibility()!=View.VISIBLE) return false;
         Fragment top = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
-        if(top==null || top instanceof com.fadcam.ui.TrashFragment) return false;
+        if(top==null) return false;
         // Animate fade out then pop
+        // -------------- Fix Start for this method(handleOverlayBack_raceGuard)-----------
+        final Fragment beforeTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
         overlayContainer.animate().alpha(0f).setDuration(160).withEndAction(() -> {
-            overlayContainer.setVisibility(View.GONE);
-            overlayContainer.setAlpha(1f);
-            if(getSupportFragmentManager().getBackStackEntryCount()>0){
-                getSupportFragmentManager().popBackStack();
+            Fragment currentTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
+            boolean sameInstance = currentTop == beforeTop;
+            if(sameInstance){
+                overlayContainer.setVisibility(View.GONE);
+                overlayContainer.setAlpha(1f);
+                if(getSupportFragmentManager().getBackStackEntryCount()>0){
+                    getSupportFragmentManager().popBackStack();
+                }
+            } else {
+                // A different overlay appeared; don't hide or pop.
+                overlayContainer.setAlpha(1f);
             }
         }).start();
+        // -------------- Fix Ended for this method(handleOverlayBack_raceGuard)-----------
         return true;
     }
-    // -------------- Fix Ended for this method(handleNonTrashOverlayBack)-----------
+    // -------------- Fix Ended for this method(handleOverlayBack)-----------
 
     @Override
     protected void onDestroy() {
