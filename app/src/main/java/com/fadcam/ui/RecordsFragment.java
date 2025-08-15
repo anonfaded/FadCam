@@ -1476,8 +1476,8 @@ public class RecordsFragment extends BaseFragment implements
             }
         });
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> options = new java.util.ArrayList<>();
-        options.add(new com.fadcam.ui.picker.OptionItem("confirm", getString(R.string.dialog_del_confirm)));
-        options.add(new com.fadcam.ui.picker.OptionItem("cancel", getString(R.string.universal_cancel)));
+    options.add(new com.fadcam.ui.picker.OptionItem("confirm", getString(R.string.dialog_del_confirm), null, null, R.drawable.ic_delete_all));
+    options.add(new com.fadcam.ui.picker.OptionItem("cancel", getString(R.string.universal_cancel), null, null, R.drawable.ic_close));
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
                 getString(R.string.delete_all_videos_title), options, "", pickerKey, getString(R.string.delete_all_videos_subtitle_short)
         );

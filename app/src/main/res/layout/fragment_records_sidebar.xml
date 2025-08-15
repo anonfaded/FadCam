@@ -28,11 +28,11 @@
     </LinearLayout>
 
     <!-- Divider below header -->
-    <View
+    <com.google.android.material.divider.MaterialDivider
         android:layout_width="match_parent"
-        android:layout_height="1dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:background="?android:attr/listDivider"/>
+        app:dividerColor="#262626"/>
 
     <!-- Group: Sorting -->
     <TextView
@@ -92,10 +92,10 @@
         </LinearLayout>
 
         <!-- Divider between rows in card -->
-        <View
+        <com.google.android.material.divider.MaterialDivider
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?android:attr/listDivider"/>
+            android:layout_height="wrap_content"
+            app:dividerColor="#262626"/>
 
         <!-- View Mode Row (moved from FAB) -->
         <LinearLayout

@@ -113,10 +113,10 @@ public class RecordsSidebarFragment extends DialogFragment {
 
     private void openSortPicker(){
         ArrayList<OptionItem> options = new ArrayList<>();
-        options.add(new OptionItem("latest", getString(R.string.sort_latest_first)));
-        options.add(new OptionItem("oldest", getString(R.string.sort_oldest_first)));
-        options.add(new OptionItem("smallest", getString(R.string.sort_smallest_first)));
-        options.add(new OptionItem("largest", getString(R.string.sort_largest_first)));
+    options.add(new OptionItem("latest", getString(R.string.sort_latest_first), null, null, R.drawable.ic_sort));
+    options.add(new OptionItem("oldest", getString(R.string.sort_oldest_first), null, null, R.drawable.ic_sort));
+    options.add(new OptionItem("smallest", getString(R.string.sort_smallest_first), null, null, R.drawable.ic_sort));
+    options.add(new OptionItem("largest", getString(R.string.sort_largest_first), null, null, R.drawable.ic_sort));
 
         final String pickerKey = "records_sort_picker";
         getParentFragmentManager().setFragmentResultListener(pickerKey, this, (k, bundle)->{
