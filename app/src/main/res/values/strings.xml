@@ -771,6 +771,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sort By</string>
     <string name="records_sort_helper">Choose how recordings are ordered in the list.</string>
+    <string name="records_sort_order_title">Sorting order</string>
     <string name="records_view_mode_title">View mode</string>
     <string name="view_mode_grid">Grid</string>
     <string name="view_mode_list">List</string>

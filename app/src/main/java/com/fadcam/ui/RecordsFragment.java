@@ -119,7 +119,6 @@ public class RecordsFragment extends BaseFragment implements
     private LinearLayout emptyStateContainer; // Add field for the empty state layout
     private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
-    private FloatingActionButton fabToggleView;
     private FloatingActionButton fabDeleteSelected;
 
     // ----- Fix Start: Add AppLock overlay view field -----
@@ -599,13 +598,11 @@ public class RecordsFragment extends BaseFragment implements
         recyclerView = view.findViewById(R.id.recycler_view_records);
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); 
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
-        fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
         applockOverlay = view.findViewById(R.id.applock_overlay);
 
         setupRecyclerView();
-        setupFabListeners();
-        updateFabIcons(); // Set initial FAB icon based on isGridView
+    setupFabListeners();
 
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
@@ -660,10 +657,6 @@ public class RecordsFragment extends BaseFragment implements
         // -------------- Fix Ended for this method(applyTheme)-----------
         // Apply theme to FABs
         int colorButton = resolveThemeColor(R.attr.colorButton);
-        if (fabToggleView != null) {
-            fabToggleView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
-            fabToggleView.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
-        }
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
             fabDeleteSelected.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
@@ -705,7 +698,7 @@ public class RecordsFragment extends BaseFragment implements
         
         Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume.");
         loadRecordsList(); // RESTORED: Always reload the list when the fragment resumes
-        updateFabIcons();
+    // no-op: view mode toggle is in Records Options side sheet
         // ----- Fix Start: Always invalidate options menu to ensure correct menu for Records tab -----
         requireActivity().invalidateOptionsMenu();
         // ----- Fix End: Always invalidate options menu to ensure correct menu for Records tab -----
@@ -904,15 +897,7 @@ public class RecordsFragment extends BaseFragment implements
     private void setupFabListeners() {
         Log.d(TAG,"Setting up FAB listeners.");
         // Ensure FABs are not null before setting listeners
-        if (fabToggleView != null) {
-            fabToggleView.setOnClickListener(v -> {
-                Log.d(TAG, "fabToggleView clicked!");
-                toggleViewMode();
-            });
-            Log.d(TAG,"FAB Toggle listener set.");
-        } else {
-            Log.e(TAG, "fabToggleView is null in setupFabListeners!");
-        }
+    // removed FAB toggle; use side sheet's View mode row
 
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setOnClickListener(v -> {
@@ -938,11 +923,7 @@ public class RecordsFragment extends BaseFragment implements
         updateFabIcons();
     }
 
-    private void updateFabIcons() {
-        if (fabToggleView != null) {
-            fabToggleView.setImageResource(isGridView ? R.drawable.ic_list : R.drawable.ic_grid);
-        }
-    }
+    private void updateFabIcons() { /* removed FAB */ }
 
     // Load records from Internal or SAF based on preference
 
@@ -1331,7 +1312,7 @@ public class RecordsFragment extends BaseFragment implements
             int count = selectedUris.size();
             titleText.setText(count > 0 ? count + " selected" : "Select items");
             fabDeleteSelected.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
-            fabToggleView.setVisibility(View.GONE);
+            // FAB removed
             // Show left-side close button and hide more-options
             if (closeButton != null) {
                 closeButton.setVisibility(View.VISIBLE);
@@ -1355,7 +1336,7 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
             fabDeleteSelected.setVisibility(View.GONE);
-            fabToggleView.setVisibility(View.VISIBLE);
+            // FAB removed
             // Restore more-options icon and hide close button
             if (menuButton != null) {
                 menuButton.setVisibility(View.VISIBLE);
@@ -2203,7 +2184,7 @@ public class RecordsFragment extends BaseFragment implements
         int vis = visible ? View.VISIBLE : View.INVISIBLE;
         if (recyclerView != null) recyclerView.setVisibility(vis);
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(vis);
-        if (fabToggleView != null) fabToggleView.setVisibility(vis);
+    // FAB removed
         if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(vis);
     }
 

@@ -144,15 +144,7 @@
 
 
     <!-- FABs -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_toggle_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:visibility="gone"
-        app:srcCompat="@drawable/ic_list"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    <!-- Removed: View mode FAB moved to Records Options side sheet -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_delete_selected"
         android:layout_width="wrap_content"

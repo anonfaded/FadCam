@@ -77,7 +77,7 @@
                     android:id="@+id/row_sort_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/sort_by"
+                    android:text="@string/records_sort_order_title"
                     android:textColor="?attr/colorHeading"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
