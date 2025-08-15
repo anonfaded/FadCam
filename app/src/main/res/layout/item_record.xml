@@ -188,18 +188,35 @@
 
         </FrameLayout>
 
-        <!-- Selection Checkmark Overlay -->
-        <ImageView
-            android:id="@+id/check_icon"
+        <!-- Selection Checkmark Overlay (picker-style: bg + inner check) -->
+        <FrameLayout
+            android:id="@+id/icon_check_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
-            android:elevation="2dp"
-            android:src="@drawable/ic_check"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="?attr/colorPrimary" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <View
+                android:id="@+id/icon_check_bg"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:background="@drawable/picker_check_background" />
+
+            <ImageView
+                android:id="@+id/icon_check"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/avd_check_draw"
+                app:tint="?attr/colorPrimary"
+                android:scaleX="0"
+                android:scaleY="0"
+                android:alpha="0.0" />
+
+        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

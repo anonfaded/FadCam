@@ -25,10 +25,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.RadioButton;
 import android.widget.Toast;
+import android.widget.CheckBox;
 // Import ImageView
 import android.widget.TextView;     // Import TextView
 
@@ -133,8 +135,14 @@ public class RecordsFragment extends BaseFragment implements
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
-    private MaterialToolbar toolbar;
+    // -------------- Fix Start for this method(updateHeaderFields)-----------
+    private TextView titleText;
+    private ImageView menuButton;
+    private ImageView closeButton;
+    private View selectAllContainer;
+    private android.widget.ImageView selectAllCheck;
     private CharSequence originalToolbarTitle;
+    // -------------- Fix Ended for this method(updateHeaderFields)-----------
 
     // --- Selection State ---
     private boolean isInSelectionMode = false;
@@ -507,17 +515,85 @@ public class RecordsFragment extends BaseFragment implements
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
 
+        // -------------- Fix Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        toolbar = view.findViewById(R.id.topAppBar); 
-        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
-            AppCompatActivity activity = (AppCompatActivity) getActivity();
-            activity.setSupportActionBar(toolbar);
-            originalToolbarTitle = getString(R.string.records_title); 
-            toolbar.setTitle(originalToolbarTitle);
-        } else {
-            Log.e(TAG, "Toolbar is null or activity is not AppCompatActivity in RecordsFragment.");
+        
+        // Initialize header elements
+        titleText = view.findViewById(R.id.title_text);
+    menuButton = view.findViewById(R.id.action_more_options);
+    closeButton = view.findViewById(R.id.action_close);
+    selectAllContainer = view.findViewById(R.id.action_select_all_container);
+    selectAllCheck = view.findViewById(R.id.action_select_all_check);
+        
+        // Setup menu button click listener
+        if (menuButton != null) {
+            menuButton.setOnClickListener(v -> showRecordsSidebar());
         }
-        setHasOptionsMenu(true); 
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> exitSelectionMode());
+        }
+        if (selectAllContainer != null && selectAllCheck != null) {
+            selectAllContainer.setOnClickListener(v -> {
+                if (!isInSelectionMode) return; // ignore when not selecting
+                boolean willSelectAll = selectedUris.size() != videoItems.size() || videoItems.isEmpty();
+                if (willSelectAll) {
+                    selectedUris.clear();
+                    for (VideoItem item : videoItems) {
+                        if (item != null && item.uri != null) selectedUris.add(item.uri);
+                    }
+                } else {
+                    selectedUris.clear();
+                }
+                if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+                // animate the header check like picker does
+                boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+                // Use unified bounce+fade animation for header check
+                if (allSelected) {
+                    selectAllContainer.setVisibility(View.VISIBLE);
+                    selectAllCheck.setVisibility(View.VISIBLE);
+                    try {
+                        android.graphics.drawable.Drawable d = selectAllCheck.getDrawable();
+                        if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
+                            androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat avd = (androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) d;
+                            avd.stop(); avd.start();
+                        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && d instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                            android.graphics.drawable.AnimatedVectorDrawable av = (android.graphics.drawable.AnimatedVectorDrawable) d;
+                            av.stop(); av.start();
+                        } else {
+                            // fallback to a quick fade in
+                            selectAllCheck.setAlpha(0f); selectAllCheck.setScaleX(0f); selectAllCheck.setScaleY(0f);
+                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_X, 0f, 1f);
+                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_Y, 0f, 1f);
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, 0f, 1f);
+                            sx.setDuration(200); sy.setDuration(200); a.setDuration(160);
+                            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+                            set.playTogether(sx, sy, a); set.start();
+                        }
+                    } catch (Exception e) { /* ignore and fallback */ }
+                } else {
+                    // uncheck: fade/erase fallback; if AVD present, just fade out
+                    try {
+                        android.graphics.drawable.Drawable d = selectAllCheck.getDrawable();
+                        if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
+                            // can't reliably reverse; fade out the view
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
+                            a.setDuration(180); a.setInterpolator(new android.view.animation.AccelerateInterpolator()); a.start();
+                        } else {
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
+                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_X, selectAllCheck.getScaleX(), 0f);
+                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_Y, selectAllCheck.getScaleY(), 0f);
+                            a.setDuration(180); sx.setDuration(180); sy.setDuration(180);
+                            android.animation.AnimatorSet set = new android.animation.AnimatorSet(); set.playTogether(a, sx, sy); set.start();
+                        }
+                    } catch (Exception e) { /* ignore */ }
+                    selectAllContainer.setVisibility(View.VISIBLE);
+                }
+                updateUiForSelectionMode();
+            });
+        }
+        
+        originalToolbarTitle = getString(R.string.records_title);
+        // -------------- Fix Ended for this method(onViewCreated)----------- 
 
         loadingIndicator = view.findViewById(R.id.loading_indicator); 
         recyclerView = view.findViewById(R.id.recycler_view_records);
@@ -578,9 +654,10 @@ public class RecordsFragment extends BaseFragment implements
         // ----- Fix End: Show AppLock overlay immediately if required and not unlocked (session-based) -----
 
         // ----- Fix Start: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
-        // Apply theme to top bar
-        int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
-        if (toolbar != null) toolbar.setBackgroundColor(colorTopBar);
+        // -------------- Fix Start for this method(applyTheme)-----------
+        // Apply theme to top bar - header bar background is handled by ?attr/colorTopBar in XML
+        // No need to set background color programmatically
+        // -------------- Fix Ended for this method(applyTheme)-----------
         // Apply theme to FABs
         int colorButton = resolveThemeColor(R.attr.colorButton);
         if (fabToggleView != null) {
@@ -604,15 +681,15 @@ public class RecordsFragment extends BaseFragment implements
         if (viewPager != null && viewPager.getCurrentItem() == 1 && isVisible()) {
             checkAppLock();
         }
-        // Re-assert toolbar and invalidate options menu
-        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
-            AppCompatActivity activity = (AppCompatActivity) getActivity();
-            activity.setSupportActionBar(toolbar); // Re-set the support action bar
-            toolbar.setTitle(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
-            Log.d(TAG, "Toolbar re-set in onResume.");
+        // -------------- Fix Start for this method(onResume)-----------
+        // Update title text
+        if (titleText != null) {
+            titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+            Log.d(TAG, "Title text updated in onResume.");
         } else {
-            Log.w(TAG, "Could not re-set toolbar in onResume - toolbar or activity null/invalid.");
+            Log.w(TAG, "Could not update title in onResume - titleText is null.");
         }
+        // -------------- Fix Ended for this method(onResume)-----------
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
@@ -1243,28 +1320,61 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     // --- UI Updates ---
-    /** Updates Toolbar, FABs based on whether selection mode is active */
+    // -------------- Fix Start for this method(updateUiForSelectionMode)-----------
+    /** Updates Title, FABs based on whether selection mode is active */
     private void updateUiForSelectionMode() {
-        if (!isAdded() || toolbar == null || getActivity() == null) { Log.w(TAG,"Cannot update selection UI - not ready"); return;}
+        if (!isAdded() || titleText == null || getActivity() == null) { Log.w(TAG,"Cannot update selection UI - not ready"); return;}
 
         if (isInSelectionMode) {
             int count = selectedUris.size();
-            toolbar.setTitle(count > 0 ? count + " selected" : "Select items");
-            toolbar.setNavigationIcon(R.drawable.ic_close); // Ensure you have ic_close drawable
-            toolbar.setNavigationContentDescription("Exit selection mode");
-            toolbar.setNavigationOnClickListener(v -> exitSelectionMode());
+            titleText.setText(count > 0 ? count + " selected" : "Select items");
             fabDeleteSelected.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
             fabToggleView.setVisibility(View.GONE);
+            // Show left-side close button and hide more-options
+            if (closeButton != null) {
+                closeButton.setVisibility(View.VISIBLE);
+                closeButton.setImageResource(R.drawable.ic_close);
+                closeButton.setContentDescription(getString(R.string.universal_close));
+            }
+            if (menuButton != null) {
+                menuButton.setVisibility(View.GONE);
+            }
+            if (selectAllContainer != null && selectAllCheck != null) {
+                selectAllContainer.setVisibility(View.VISIBLE);
+                boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+                int tint = allSelected ? resolveThemeColor(R.attr.colorToggle) : android.graphics.Color.WHITE;
+                selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(tint));
+                if (allSelected) {
+                    selectAllCheck.setScaleX(1f); selectAllCheck.setScaleY(1f); selectAllCheck.setAlpha(1f);
+                } else {
+                    selectAllCheck.setScaleX(0f); selectAllCheck.setScaleY(0f); selectAllCheck.setAlpha(0f);
+                }
+            }
         } else {
-            toolbar.setTitle(originalToolbarTitle);
-            toolbar.setNavigationIcon(null);
-            toolbar.setNavigationOnClickListener(null);
+            titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
             fabDeleteSelected.setVisibility(View.GONE);
             fabToggleView.setVisibility(View.VISIBLE);
+            // Restore more-options icon and hide close button
+            if (menuButton != null) {
+                menuButton.setVisibility(View.VISIBLE);
+                menuButton.setImageResource(R.drawable.ic_more_vert);
+                menuButton.setOnClickListener(v -> showRecordsSidebar());
+                menuButton.setContentDescription(getString(R.string.more_options));
+            }
+            if (closeButton != null) {
+                closeButton.setVisibility(View.GONE);
+            }
+            if (selectAllContainer != null && selectAllCheck != null) {
+                selectAllContainer.setVisibility(View.GONE);
+                selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+            }
         }
         // Refresh the options menu (to show/hide "More Options")
-        getActivity().invalidateOptionsMenu();
+        if (getActivity() != null) {
+            getActivity().invalidateOptionsMenu();
+        }
     }
+    // -------------- Fix Ended for this method(updateUiForSelectionMode)-----------
     // --- Deletion Logic ---
 
     // Add null check in confirmDeleteSelected just in case

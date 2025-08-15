@@ -354,28 +354,40 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // *** END RESTORED Status Badge Logic ***
 
 
-        // --- 5. Handle Selection Mode Visuals (Checkbox & BACKGROUND/TEXT COLOR) ---
-        if (holder.checkIcon != null) {
+        // --- 5. Handle Selection Mode Visuals (picker-style check container & BACKGROUND/TEXT COLOR) ---
+        if (holder.iconCheckContainer != null && holder.checkIcon != null) {
             if (this.isSelectionModeActive) {
-                holder.checkIcon.setVisibility(View.VISIBLE);
+                holder.iconCheckContainer.setVisibility(View.VISIBLE);
+
+                // Tint the inner check icon to match theme toggle color
+                try {
+                    int tint = resolveThemeColor(context, R.attr.colorToggle);
+                    holder.checkIcon.setImageTintList(ColorStateList.valueOf(tint));
+                } catch (Exception e) {
+                    // Fallback to primary color
+                    holder.checkIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorPrimary)));
+                }
+
                 if (isCurrentlySelected) {
-                    holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_checked); // Replace with actual drawable
-                    holder.checkIcon.setAlpha(1.0f);
+                    // Ensure bg visible and animate inner check in
+                    holder.checkIcon.setAlpha(1f);
+                    holder.checkIcon.setScaleX(1f);
+                    holder.checkIcon.setScaleY(1f);
                     // Highlight background and adjust text color for contrast
                     if(holder.itemView instanceof CardView && context!=null) {
                         if (isSnowVeilTheme) {
-                            // For Snow Veil, use a light blue highlight with black text
                             ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.snowveil_theme_accent));
                             if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
                         } else {
-                            // For other themes, use normal selection color with white text
                             ((CardView)holder.itemView).setCardBackgroundColor(resolveThemeColor(context, R.attr.colorButton));
                             if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.WHITE);
                         }
                     }
                 } else {
-                    holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_outline); // Replace with actual drawable
-                    holder.checkIcon.setAlpha(0.7f);
+                    // ensure inner check hidden
+                    holder.checkIcon.setAlpha(0f);
+                    holder.checkIcon.setScaleX(0f);
+                    holder.checkIcon.setScaleY(0f);
                     // Reset background and text color
                     if(holder.itemView instanceof CardView && context!=null) {
                         if (isSnowVeilTheme) {
@@ -388,8 +400,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     }
                 }
             } else { // Not in selection mode
-                holder.checkIcon.setVisibility(View.GONE);
-                // Ensure default background and text color are restored
+                holder.iconCheckContainer.setVisibility(View.GONE);
+                // Reset bg and text color
                 if(holder.itemView instanceof CardView && context!=null) {
                     if (isSnowVeilTheme) {
                         ((CardView)holder.itemView).setCardBackgroundColor(Color.WHITE);
@@ -400,7 +412,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     }
                 }
             }
-        } else { Log.w(TAG, "checkIcon is null in ViewHolder at pos "+position); }
+        } else { Log.w(TAG, "iconCheckContainer or checkIcon is null in ViewHolder at pos "+position); }
 
 
         // --- 6. Set Enabled State and Listeners ---
@@ -528,6 +540,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
                 return;
             }
+
+            if (payloads.contains("SELECTION_TOGGLE")) {
+                // Animate the inner check in/out based on current selection state
+                if (position < records.size()) {
+                    VideoItem videoItem = records.get(position);
+                    boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
+                    // animate using unified bounce+fade helper
+                    animateCheckIcon(holder.checkIcon, isCurrentlySelected);
+                }
+                return;
+            }
         }
         // If no specific payload, do a full bind
         onBindViewHolder(holder, position);
@@ -556,7 +579,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Find item's position and update only that item for efficiency
         int position = findPositionByUri(videoUri);
         if (position != -1) {
-            notifyItemChanged(position); // Update specific item
+            notifyItemChanged(position, "SELECTION_TOGGLE"); // Update specific item with payload to animate
         } else {
             Log.w(TAG,"Could not find position for URI: "+ videoUri + " during toggle. List size: " + records.size());
             // Maybe list was updated concurrently? Do a full refresh as fallback.
@@ -1516,6 +1539,80 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    // Animate the inner check icon with a small bounce on check and fade out on uncheck
+    private void animateCheckIcon(View checkIconView, boolean willBeSelected) {
+        if (checkIconView == null) return;
+
+        // Prefer AnimatedVectorDrawable tick-draw when available (smooth path draw)
+        try {
+            android.graphics.drawable.Drawable d = null;
+            if (checkIconView instanceof android.widget.ImageView) {
+                d = ((android.widget.ImageView) checkIconView).getDrawable();
+            }
+            if (willBeSelected) {
+                // If drawable is an AVD, ensure we have a fresh instance and start its animation
+                if (checkIconView instanceof android.widget.ImageView) {
+                    android.widget.ImageView iv = (android.widget.ImageView) checkIconView;
+                    try {
+                        androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat newAvd = androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat.create(iv.getContext(), R.drawable.avd_check_draw);
+                        if (newAvd != null) {
+                            iv.setImageDrawable(newAvd);
+                            newAvd.start();
+                            iv.setAlpha(1f); iv.setScaleX(1f); iv.setScaleY(1f); iv.setVisibility(View.VISIBLE);
+                            return;
+                        }
+                        // Fallback to platform AVD
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                            android.graphics.drawable.Drawable platformAv = iv.getContext().getDrawable(R.drawable.avd_check_draw);
+                            if (platformAv instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                                iv.setImageDrawable(platformAv);
+                                ((android.graphics.drawable.AnimatedVectorDrawable) platformAv).start();
+                                iv.setAlpha(1f); iv.setScaleX(1f); iv.setScaleY(1f); iv.setVisibility(View.VISIBLE);
+                                return;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            } else {
+                // For uncheck, try reverse if possible (compat doesn't expose reverse reliably), else fallback
+                if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
+                    // Cannot reverse reliably; just fade out the view for uncheck
+                    android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(checkIconView, View.ALPHA, checkIconView.getAlpha(), 0f);
+                    a.setDuration(180);
+                    a.setInterpolator(new android.view.animation.AccelerateInterpolator());
+                    a.start();
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            // ignore and fall back
+        }
+
+        // Fallback: use scale/alpha animation
+        if (willBeSelected) {
+            checkIconView.setVisibility(View.VISIBLE);
+            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_X, 0f, 1.0f);
+            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_Y, 0f, 1.0f);
+            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(checkIconView, View.ALPHA, 0f, 1f);
+            sx.setDuration(220); sy.setDuration(220); a.setDuration(160);
+            sx.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            sy.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            a.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+            set.playTogether(sx, sy, a);
+            set.start();
+        } else {
+            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(checkIconView, View.ALPHA, checkIconView.getAlpha(), 0f);
+            android.animation.ObjectAnimator s = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_X, checkIconView.getScaleX(), 0f);
+            android.animation.ObjectAnimator s2 = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_Y, checkIconView.getScaleY(), 0f);
+            a.setDuration(180); s.setDuration(180); s2.setDuration(180);
+            a.setInterpolator(new android.view.animation.AccelerateInterpolator());
+            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+            set.playTogether(a, s, s2);
+            set.start();
+        }
+    }
+
     // Get video duration from URI (Helper)
     private long getVideoDuration(Uri videoUri) {
         if(context == null || videoUri == null) return 0;
@@ -1582,6 +1679,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewFileTime;
         TextView textViewSerialNumber;
         ImageView checkIcon;
+    View iconCheckContainer;
+    View iconCheckBg;
         ImageView menuButton;           // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot;       // *** ADDED: Reference for the warning dot ***
@@ -1600,7 +1699,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             textViewFileSize = itemView.findViewById(R.id.text_view_file_size);
             textViewFileTime = itemView.findViewById(R.id.text_view_file_time);
             textViewSerialNumber = itemView.findViewById(R.id.text_view_serial_number);
-            checkIcon = itemView.findViewById(R.id.check_icon);
+            checkIcon = itemView.findViewById(R.id.icon_check);
+            iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
+            iconCheckBg = itemView.findViewById(R.id.icon_check_bg);
             menuButton = itemView.findViewById(R.id.menu_button);
 
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot);             // *** Find the warning dot ***
