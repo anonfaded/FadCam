@@ -32,25 +32,28 @@ applyTo: '**'
   // -------------- Fix Ended for this method(methodName)-----------
   ```
   
-🧠 Communication
+### 🧠 Communication
+- **Ask when unsure**: If requirements are unclear or ambiguous, ask for clarification before proceeding.
+- **Concise responses**: Keep responses short and focused. Avoid unnecessary explanations or code unless requested.
+- **Complete solutions**: If the fix/update is small, provide the full method or class code block for clarity.
 
-    Ask when unsure: If requirements are unclear or ambiguous, ask for clarification before proceeding.
+### 🧑‍💻 Industry Best Practices
+- **Follow style guides**: Follow Google Java Style Guide or Oracle conventions for naming and formatting.
+- **SOLID principles**: Apply SOLID principles, design patterns, and dependency injection where applicable.
+- **Exception handling**: Handle exceptions gracefully. Do not catch generic Exception unless necessary.
+- **Input validation**: Always validate external inputs and sanitize file/stream access.
+- **Logging**: Use logging frameworks like SLF4J or Log4j instead of System.out.println for production code.
+- **Testing**: Ensure code is scalable, testable, and maintainable with proper unit tests (e.g., JUnit).
+- **Build and install**: After every complete change, run `./gradlew compileDebugJavaWithJavac` to check if the build succeeds. If not, fix the errors and check again. Once successful, run `./gradlew installDebug` so the app is installed on your phone.
 
-    Concise responses: Keep responses short and focused. Avoid unnecessary explanations or code unless requested.
-
-    Complete solutions: If the fix/update is small, provide the full method or class code block for clarity.
-
-🧑‍💻 Industry Best Practices
-
-    Follow Google Java Style Guide or Oracle conventions for naming and formatting.
-
-    Apply SOLID principles, design patterns, and dependency injection where applicable.
-
-    Handle exceptions gracefully. Do not catch generic Exception unless necessary.
-
-    Always validate external inputs and sanitize file/stream access.
-
-    Use logging frameworks like SLF4J or Log4j instead of System.out.println for production code.
-    Ensure code is scalable, testable, and maintainable with proper unit tests (e.g., JUnit).
-
-- And most importantly, after every complete change, in the end run "./gradlew compileDebugJavaWithJavac" command to see if build succeeds and if not then fix the errors and then again check, once succes then run "./gradlew installDebug" as a final command so before you end the converstation, the app is installed on my phone.
+### 🎯 UI Icon Policy — Material Icons Font (Required)
+- Always use the local Material Icons font for UI icons instead of vector/XML drawables.
+- Font path: `app/src/main/res/font/materialicons.ttf` (referenced as `@font/materialicons`).
+- Rendering approach:
+  - Prefer a `TextView` configured with `android:fontFamily="@font/materialicons"` and set the icon using its ligature text (e.g., `"arrow_upward"`).
+  - When setting programmatically, load once and cache the typeface:
+    - `Typeface tf = ResourcesCompat.getFont(context, R.font.materialicons);`
+    - Reuse the cached instance to avoid repeated loads and crashes.
+- In pickers and side sheets, prefer ligature icons via a dedicated leading symbol `TextView`; keep legacy `ImageView` only as fallback.
+- For new features, select contextual ligatures (e.g., `trending_up`/`trending_down` for size, `arrow_upward`/`arrow_downward` for recency).
+- Do not add new SVG/vector drawables for standard icons; use ligatures unless a brand/logo asset is required.
