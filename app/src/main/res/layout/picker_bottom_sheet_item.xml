@@ -3,8 +3,6 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="52dp"
-    android:layout_marginStart="12dp"
-    android:layout_marginEnd="12dp"
     android:paddingStart="14dp"
     android:paddingEnd="12dp"
     android:gravity="center_vertical"
@@ -93,14 +91,14 @@
             android:id="@+id/picker_item_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="12dp"
             android:visibility="gone"/>
             
         <ImageView
             android:id="@+id/picker_item_trailing_icon"
             android:layout_width="12dp"
             android:layout_height="12dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="12dp"
             android:visibility="gone"
             android:tint="@android:color/darker_gray"/>
 

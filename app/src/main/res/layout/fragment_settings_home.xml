@@ -23,7 +23,7 @@
             android:id="@+id/header_settings_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Settings"
+            android:text="@string/settings_title"
             android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/white"/>
@@ -56,7 +56,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
-            android:text="README"
+            android:text="@string/button_settings_readme"
             android:textColor="@android:color/darker_gray"
             android:textStyle="bold" />
 
@@ -72,9 +72,7 @@
 
             <LinearLayout
                 android:id="@+id/group_readme"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -89,14 +87,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="README"
+                        android:text="@string/view_source_code"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Project overview"
+                        android:text="@string/readme_github_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -116,7 +114,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
-            android:text="General"
+            android:text="@string/general"
             android:textColor="@android:color/darker_gray"
             android:textStyle="bold" />
 
@@ -133,9 +131,7 @@
             <!-- Appearance Row -->
             <LinearLayout
                 android:id="@+id/group_appearance"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -150,14 +146,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Appearance"
+                        android:text="@string/setting_theme_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Theme, Icon, Language"
+                        android:text="@string/settings_option_theme"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -172,9 +168,7 @@
             <!-- Video -->
             <LinearLayout
                 android:id="@+id/group_video"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -189,14 +183,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Video Recording"
+                        android:text="@string/settings_video_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Resolution, FPS, Codec, Bitrate"
+                        android:text="@string/setting_video_bitrate_title"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -211,9 +205,7 @@
             <!-- Audio -->
             <LinearLayout
                 android:id="@+id/group_audio"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -228,14 +220,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Audio"
+                        android:text="@string/setting_audio_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Input, recording toggle"
+                        android:text="@string/button_audio_settings"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -250,9 +242,7 @@
             <!-- Storage -->
             <LinearLayout
                 android:id="@+id/group_storage"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -267,14 +257,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Storage"
+                        android:text="@string/storage_location_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Save location &amp; SD"
+                        android:text="@string/storage_location_description"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -289,9 +279,7 @@
             <!-- Notifications -->
             <LinearLayout
                 android:id="@+id/group_notifications"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -306,14 +294,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Notifications"
+                        android:text="@string/settings_notifications_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Recording &amp; preset"
+                        android:text="@string/settings_notifications_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -329,9 +317,7 @@
             <!-- Security -->
             <LinearLayout
                 android:id="@+id/group_security"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -346,14 +332,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Security"
+                        android:text="@string/settings_security_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="App Lock"
+                        android:text="@string/setting_applock_title"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -369,9 +355,7 @@
             <!-- Watermark -->
             <LinearLayout
                 android:id="@+id/group_watermark"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -386,14 +370,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Watermark"
+                        android:text="@string/settings_watermark_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Overlay branding mode"
+                        android:text="@string/settings_watermark_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -408,9 +392,7 @@
             <!-- Shortcuts (moved under General) -->
             <LinearLayout
                 android:id="@+id/group_widgets"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -432,7 +414,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pin Start/Stop/Torch to Home"
+                        android:text="@string/shortcuts_pin_to_home"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -453,7 +435,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="32dp"
             android:layout_marginBottom="8dp"
-            android:text="App"
+            android:text="@string/settings_section_app"
             android:textColor="@android:color/darker_gray"
             android:textStyle="bold" />
 
@@ -471,8 +453,7 @@
             <LinearLayout
                 android:id="@+id/group_onboarding"
                 style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                >
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -487,7 +468,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show Intro"
+                        android:text="@string/setting_onboarding_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
@@ -496,6 +477,7 @@
                         android:layout_height="wrap_content"
                         android:id="@+id/value_onboarding"
                         android:text="-"
+                        android:layout_marginEnd="12dp"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -511,8 +493,7 @@
             <LinearLayout
                 android:id="@+id/group_auto_update"
                 style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                >
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -527,7 +508,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Auto Update Check"
+                        android:text="@string/setting_auto_update_check_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
@@ -536,6 +517,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="-"
+                        android:layout_marginEnd="12dp"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -551,8 +533,7 @@
             <LinearLayout
                 android:id="@+id/group_debug_logging"
                 style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                >
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -567,7 +548,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Debug Logging"
+                        android:text="@string/setting_debug_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
@@ -576,6 +557,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="-"
+                        android:layout_marginEnd="12dp"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -591,8 +573,7 @@
             <LinearLayout
                 android:id="@+id/group_prefs_backup"
                 style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                >
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -607,14 +588,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Import / Export"
+                        android:text="@string/prefs_import_export_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Backup, restore, reset"
+                        android:text="@string/prefs_import_export_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -629,8 +610,7 @@
             <LinearLayout
                 android:id="@+id/group_about"
                 style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                >
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -645,14 +625,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="About"
+                        android:text="@string/nav_about"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Version, update, licenses"
+                        android:text="@string/about_version_update_licenses"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -668,8 +648,7 @@
             <LinearLayout
                 android:id="@+id/group_review"
                 style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                >
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -684,14 +663,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Write a Review"
+                        android:text="@string/button_setting_review"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Share feedback"
+                        android:text="@string/share_feedback"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"/>
                 </LinearLayout>

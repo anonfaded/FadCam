@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:paddingTop="12dp"
     android:paddingBottom="20dp"
-    android:paddingStart="12dp"
+    android:paddingStart="14dp"
     android:paddingEnd="12dp">
 
     <TextView
@@ -24,9 +24,9 @@
         android:id="@+id/picker_title_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-    android:background="#33FFFFFF"
-    android:layout_marginStart="14dp"
-    android:layout_marginEnd="12dp"
+        android:background="#262626"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"/>
 
     <!-- Scroll container to ensure long lists (e.g., zoom ratios) are scrollable -->
@@ -65,7 +65,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:paddingStart="12dp"
+                android:paddingStart="14dp"
                 android:paddingEnd="12dp"
                 android:textColor="@android:color/darker_gray"
                 android:textSize="13sp"

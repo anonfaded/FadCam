@@ -30,7 +30,7 @@
             android:id="@+id/header_video"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Video Recording"
+            android:text="@string/settings_video_title"
             android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/white"
@@ -67,9 +67,7 @@
             <!-- Camera Selection Row -->
             <LinearLayout
                 android:id="@+id/row_camera_type"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -79,7 +77,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Camera"
+                    android:text="@string/row_camera_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -91,7 +89,7 @@
                     android:id="@+id/value_camera_type"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -107,9 +105,7 @@
             <!-- Lens Row -->
             <LinearLayout
                 android:id="@+id/row_lens"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -119,7 +115,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Lens"
+                    android:text="@string/row_lens_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -131,7 +127,7 @@
                     android:id="@+id/value_lens"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -146,9 +142,7 @@
             <!-- Resolution Row -->
             <LinearLayout
                 android:id="@+id/row_resolution"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -158,7 +152,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Resolution"
+                    android:text="@string/row_resolution_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -170,7 +164,7 @@
                     android:id="@+id/value_resolution"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -185,9 +179,7 @@
             <!-- Frame Rate Row -->
             <LinearLayout
                 android:id="@+id/row_framerate"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -197,7 +189,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Frame Rate"
+                    android:text="@string/row_frame_rate_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -209,7 +201,7 @@
                     android:id="@+id/value_framerate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -224,9 +216,7 @@
             <!-- Codec Row -->
             <LinearLayout
                 android:id="@+id/row_codec"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -236,7 +226,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Codec"
+                    android:text="@string/row_codec_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -248,7 +238,7 @@
                     android:id="@+id/value_codec"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -263,9 +253,7 @@
             <!-- Bitrate Row -->
             <LinearLayout
                 android:id="@+id/row_bitrate"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -275,7 +263,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bitrate"
+                    android:text="@string/row_bitrate_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -287,7 +275,7 @@
                     android:id="@+id/value_bitrate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -304,9 +292,7 @@
             <!-- Zoom Ratio Row -->
             <LinearLayout
                 android:id="@+id/row_zoom_ratio"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -316,7 +302,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Zoom Ratio"
+                    android:text="@string/row_zoom_ratio_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -328,7 +314,7 @@
                     android:id="@+id/value_zoom_ratio"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -343,9 +329,7 @@
             <!-- Video Splitting Row -->
             <LinearLayout
                 android:id="@+id/row_video_splitting"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -355,7 +339,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Video Splitting"
+                    android:text="@string/row_video_splitting_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -367,8 +351,8 @@
                     android:id="@+id/value_video_split_enabled"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:text="Disabled"
+                    android:layout_marginEnd="12dp"
+                    android:text="@string/setting_disabled_msg"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
                 <ImageView
@@ -382,9 +366,7 @@
             <!-- Orientation Row (last without trailing divider) -->
             <LinearLayout
                 android:id="@+id/row_orientation"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -394,7 +376,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Orientation"
+                    android:text="@string/row_orientation_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -406,7 +388,7 @@
                     android:id="@+id/value_orientation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -421,9 +403,7 @@
             <!-- Location Embed Row -->
             <LinearLayout
                 android:id="@+id/row_location_embed"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"

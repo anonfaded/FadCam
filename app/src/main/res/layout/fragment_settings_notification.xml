@@ -146,9 +146,7 @@
 
                 <LinearLayout
                     android:id="@+id/row_notification_preset"
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    style="@style/SettingsGroupRow">
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -176,7 +174,7 @@
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="12dp"
                         android:src="@drawable/ic_arrow_right"
                         android:tint="@android:color/darker_gray"/>
                 </LinearLayout>
@@ -186,9 +184,7 @@
                 <!-- Hide Stop Button Row (opens bottom sheet) -->
                 <LinearLayout
                     android:id="@+id/row_hide_stop_button"
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    style="@style/SettingsGroupRow">
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -216,7 +212,7 @@
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="12dp"
                         android:src="@drawable/ic_arrow_right"
                         android:tint="@android:color/darker_gray"/>
                 </LinearLayout>

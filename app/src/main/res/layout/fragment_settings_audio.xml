@@ -30,7 +30,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Audio Settings"
+            android:text="@string/settings_audio_title"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="12dp"
@@ -66,9 +66,7 @@
             <!-- Record Audio (compact) -->
             <LinearLayout
                 android:id="@+id/row_record_audio"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -78,7 +76,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Record Audio"
+                    android:text="@string/row_record_audio_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -96,7 +94,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
@@ -105,9 +103,7 @@
             <!-- Input Source (compact) -->
             <LinearLayout
                 android:id="@+id/row_audio_input_source"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -117,7 +113,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Input Source"
+                    android:text="@string/row_input_source_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -135,7 +131,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
@@ -144,9 +140,7 @@
             <!-- Noise Suppression (compact) -->
             <LinearLayout
                 android:id="@+id/row_noise_suppression"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -156,7 +150,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Noise Suppression"
+                    android:text="@string/row_noise_suppression_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -174,7 +168,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
@@ -183,9 +177,7 @@
             <!-- Advanced Audio (compact) -->
             <LinearLayout
                 android:id="@+id/row_audio_advanced"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -195,7 +187,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Advanced"
+                    android:text="@string/settings_advanced_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -213,7 +205,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>

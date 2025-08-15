@@ -30,7 +30,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Security"
+            android:text="@string/settings_security_title"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="12dp"
@@ -66,9 +66,7 @@
             <!-- Tab Lock (compact) -->
             <LinearLayout
                 android:id="@+id/row_tab_lock"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -78,7 +76,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tab Lock"
+                    android:text="@string/setting_applock_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -96,17 +94,17 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
+            <View style="@style/SettingsDivider" />
+
             <!-- Cloak in Recents (compact) -->
             <LinearLayout
                 android:id="@+id/row_cloak_recents"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -134,7 +132,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>

@@ -140,10 +140,18 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     private View buildPreviewArea() {
         LinearLayout container = new LinearLayout(requireContext());
         container.setOrientation(LinearLayout.VERTICAL);
+    // -------------- Fix Start for padding (buildPreviewArea)-----------
+    // Apply same gutters as Settings rows: 14dp start / 12dp end, with small vertical padding
+    // -------------- Fix Start for this method(buildPreviewArea padding)-----------
+    container.setPadding(dp(14), dp(6), dp(12), dp(6));
+    // -------------- Fix Ended for this method(buildPreviewArea padding)-----------
+    // -------------- Fix Ended for padding (buildPreviewArea)-----------
 
         LinearLayout searchRow = new LinearLayout(requireContext());
         searchRow.setOrientation(LinearLayout.HORIZONTAL);
         searchRow.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+    // Add bottom spacing so search and list don't stick together
+    searchRow.setPadding(0, 0, 0, dp(6));
         searchEdit = new EditText(requireContext());
         searchEdit.setHint(R.string.debug_log_search_hint);
         searchEdit.setBackgroundResource(R.drawable.prefs_input_bg);
@@ -252,9 +260,10 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     private View makeDivider(){
         View d = new View(requireContext());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
-        lp.setMargins(0, dp(2), 0, dp(2));
+        // Match SettingsDivider insets and color
+        lp.setMargins(dp(14), dp(2), dp(12), dp(2));
         d.setLayoutParams(lp);
-        d.setBackgroundColor(0x33FFFFFF);
+        d.setBackgroundColor(0x262626);
         return d;
     }
     // -------------- Fix Ended for this method(makeDivider)-----------
@@ -266,7 +275,9 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
-        row.setPadding(dp(16), dp(6), dp(16), dp(6));
+        // -------------- Fix Start for this method(buildActionRow)-----------
+        // 14dp start / 12dp end gutters, light vertical padding
+        row.setPadding(dp(14), dp(6), dp(12), dp(6));
         android.widget.ImageView icon = new android.widget.ImageView(requireContext());
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(24), dp(24));
         iconLp.setMarginEnd(dp(16));
@@ -289,11 +300,14 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         secondary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
         text.addView(primary); text.addView(secondary); row.addView(text);
         android.widget.ImageView arrow = new android.widget.ImageView(requireContext());
-        arrow.setLayoutParams(new LinearLayout.LayoutParams(dp(14), dp(14)));
+    LinearLayout.LayoutParams arrowLp = new LinearLayout.LayoutParams(dp(14), dp(14));
+    arrowLp.setMarginStart(dp(12)); // value-to-arrow breathing room
+    arrow.setLayoutParams(arrowLp);
         arrow.setImageResource(R.drawable.ic_arrow_right);
         arrow.setImageTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.darker_gray)));
         row.addView(arrow);
-        return row;
+    // -------------- Fix Ended for this method(buildActionRow)-----------
+    return row;
     }
     // -------------- Fix Ended for this method(buildActionRow)-----------
 
@@ -304,7 +318,8 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
-        row.setPadding(dp(16), dp(6), dp(16), dp(6));
+    // -------------- Fix Start for this method(buildToggleRow)-----------
+    row.setPadding(dp(14), dp(6), dp(12), dp(6));
         TextView label = new TextView(requireContext());
         label.setText(getString(R.string.setting_debug_title));
         label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
@@ -319,8 +334,9 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             prefs.sharedPreferences.edit().putBoolean(Constants.PREF_DEBUG_DATA, isChecked).apply();
             Log.setDebugEnabled(isChecked);
         });
-        row.addView(sw, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        return row;
+    row.addView(sw, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+    // -------------- Fix Ended for this method(buildToggleRow)-----------
+    return row;
     }
     // -------------- Fix Ended for this method(buildToggleRow)-----------
 

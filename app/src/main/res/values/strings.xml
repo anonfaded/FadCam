@@ -258,6 +258,24 @@
     <string name="update_available_message">A freshly baked update is ready! You\'re on v%1$s, latest is v%2$s. Enjoy new features and improvements.</string>
     <string name="visit_fdroid">Visit F-Droid</string>
     <string name="visit_github">Visit GitHub</string>
+    <!-- Settings titles and row labels (to remove hardcoded texts) -->
+    <string name="settings_video_title">Video Recording</string>
+    <string name="settings_audio_title">Audio Settings</string>
+    <string name="settings_watermark_title">Watermark</string>
+    <string name="settings_advanced_title">Advanced</string>
+    <string name="row_camera_title">Camera</string>
+    <string name="row_lens_title">Lens</string>
+    <string name="row_resolution_title">Resolution</string>
+    <string name="row_frame_rate_title">Frame Rate</string>
+    <string name="row_codec_title">Codec</string>
+    <string name="row_bitrate_title">Bitrate</string>
+    <string name="row_zoom_ratio_title">Zoom Ratio</string>
+    <string name="row_video_splitting_title">Video Splitting</string>
+    <string name="row_orientation_title">Orientation</string>
+    <string name="row_record_audio_title">Record Audio</string>
+    <string name="row_input_source_title">Input Source</string>
+    <string name="row_noise_suppression_title">Noise Suppression</string>
+    <string name="settings_location_watermark_title">Location Watermark</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
     <string name="switched_front_camera">Switched to front camera</string>
@@ -733,6 +751,19 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Storage Location</string>
     <string name="storage_location_description">Choose where recordings are saved.</string>
+    
+    <!-- Settings Home section headers and rows -->
+    <string name="general">General</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_subtitle">Recording &amp; preset</string>
+    <string name="settings_security_title">Security</string>
+    <string name="settings_watermark_subtitle">Overlay branding mode</string>
+    <string name="prefs_import_export_title">Import / Export</string>
+    <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
+    <string name="about_version_update_licenses">Version, update, licenses</string>
+    <string name="share_feedback">Share feedback</string>
+    <string name="shortcuts_pin_to_home">Pin Start/Stop/Torch to Home</string>
     <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
     <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
     <string name="storage_location_choose_folder">Choose Folder</string>
@@ -876,10 +907,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_error_unknown">Unknown camera error</string>
     <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
     <string name="dialog_audio_noise_suppression_label">Noise Suppression</string>
-    <!-- Added for unified bottom sheet audio settings -->
-    <string name="row_record_audio_title">Record Audio</string>
-    <!-- duplicate removed; using earlier helper_record_audio definition -->
-    <!-- duplicate removed; using earlier helper_noise_suppression definition -->
+    <!-- duplicate removed: row_record_audio_title already defined above -->
 
     <string name="fix_video_menu_title">Fix Video (Repair Playback)</string>
     <string name="fix_video_repairing">Repairing… This may take a few seconds.</string>

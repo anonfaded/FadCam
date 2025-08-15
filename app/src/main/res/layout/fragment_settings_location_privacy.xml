@@ -66,9 +66,7 @@
             <!-- Embed Location Metadata (compact) -->
             <LinearLayout
                 android:id="@+id/row_location_embed"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                style="@style/SettingsGroupRow">
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
@@ -96,7 +94,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>

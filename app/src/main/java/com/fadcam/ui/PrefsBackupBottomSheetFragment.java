@@ -120,9 +120,10 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
     private View buildDivider(){
         View divider = new View(requireContext());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
-        lp.setMargins(0, dp(2), 0, dp(2));
+        // Match SettingsDivider horizontal insets (14dp start / 12dp end)
+        lp.setMargins(dp(14), dp(2), dp(12), dp(2));
         divider.setLayoutParams(lp);
-        divider.setBackgroundColor(0x33FFFFFF);
+        divider.setBackgroundColor(0x262626);
         return divider;
     }
 
@@ -131,7 +132,8 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
-        row.setPadding(dp(16), dp(8), dp(16), dp(8));
+    // Match gutters 14dp start / 12dp end
+    row.setPadding(dp(14), dp(8), dp(12), dp(8));
         row.setOnClickListener(click);
         android.widget.ImageView icon = new android.widget.ImageView(requireContext());
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(24), dp(24));
@@ -157,7 +159,9 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
         text.addView(secondary);
         row.addView(text);
         android.widget.ImageView arrow = new android.widget.ImageView(requireContext());
-        arrow.setLayoutParams(new LinearLayout.LayoutParams(dp(14), dp(14)));
+    LinearLayout.LayoutParams arrowLp = new LinearLayout.LayoutParams(dp(14), dp(14));
+    arrowLp.setMarginStart(dp(12));
+    arrow.setLayoutParams(arrowLp);
         arrow.setImageResource(R.drawable.ic_arrow_right);
         arrow.setImageTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.darker_gray)));
         row.addView(arrow);

@@ -57,3 +57,36 @@ applyTo: '**'
 - In pickers and side sheets, prefer ligature icons via a dedicated leading symbol `TextView`; keep legacy `ImageView` only as fallback.
 - For new features, select contextual ligatures (e.g., `trending_up`/`trending_down` for size, `arrow_upward`/`arrow_downward` for recency).
 - Do not add new SVG/vector drawables for standard icons; use ligatures unless a brand/logo asset is required.
+ 
+## FadCam UI Styling — Settings Rows & Bottom Pickers
+
+Use this spec when adding new settings or bottom-sheet pickers to keep visuals consistent.
+
+- Shared background and ripple
+  - Use `@drawable/settings_home_row_bg` for all tappable rows and picker items.
+  - Ripple inset must be 4dp uniformly on all sides so the press fill stays off the card edges.
+
+- Settings rows (inside group cards)
+  - Container: apply `style="@style/SettingsGroupRow"` (center vertical, shared background, no per-row paddings).
+  - Content gutters: paddingStart 14dp, paddingEnd 12dp (provided by the style).
+  - Leading icon/symbol: 24dp square with marginEnd 16dp.
+    - Prefer Material Icons ligatures via a TextView using `@font/materialicons` (per policy); use ImageView only as fallback.
+  - Title: 15sp, bold, color `?attr/colorHeading`.
+  - Subtitle/value text: 12sp, color `@android:color/darker_gray`.
+  - Value-to-arrow gap: add `android:layout_marginEnd="12dp"` on the trailing value TextView before the arrow/switch.
+  - Trailing arrow/icon: 14dp, tinted `@android:color/darker_gray`.
+  - Dividers between rows: use `@style/SettingsDivider` with margins Start 14dp / End 12dp to align with gutters.
+
+- Group cards
+  - Wrap related rows in a card using `@drawable/settings_group_card_bg`.
+  - Vertical padding on the card container: 4dp top and 4dp bottom.
+
+- Bottom pickers (bottom sheets)
+  - Item rows mirror Settings rows: same background, gutters (14dp start / 12dp end), and spacing rules.
+  - Leading symbol/icon: 24dp with marginEnd 16dp; prefer ligatures via `@font/materialicons`.
+  - Trailing switch/chevron: add `layout_marginEnd="12dp"` for breathing room.
+  - Keep optional subtitle at 12sp, `@android:color/darker_gray`.
+
+- Text and resources
+  - Never hardcode UI strings in layouts; always use `@string/...` entries.
+  - Keep spacing/margins centralized via shared styles; avoid per-row overrides unless absolutely necessary.
