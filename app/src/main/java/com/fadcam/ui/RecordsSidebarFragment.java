@@ -26,11 +26,21 @@ public class RecordsSidebarFragment extends DialogFragment {
     private static final String ARG_SELECTED_SORT_ID = "selected_sort_id";
     private String resultKey = "records_sidebar_result";
     private String selectedSortId;
+    private boolean isGridViewInitial = true;
 
     public static RecordsSidebarFragment newInstance(String selectedSortId){
         RecordsSidebarFragment f = new RecordsSidebarFragment();
         Bundle b = new Bundle();
         b.putString(ARG_SELECTED_SORT_ID, selectedSortId);
+        f.setArguments(b);
+        return f;
+    }
+
+    public static RecordsSidebarFragment newInstance(String selectedSortId, boolean isGrid){
+        RecordsSidebarFragment f = new RecordsSidebarFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_SELECTED_SORT_ID, selectedSortId);
+        b.putBoolean("is_grid_view", isGrid);
         f.setArguments(b);
         return f;
     }
@@ -61,11 +71,10 @@ public class RecordsSidebarFragment extends DialogFragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if(getArguments()!=null){ selectedSortId = getArguments().getString(ARG_SELECTED_SORT_ID, "latest"); }
-
-        // Back button in header
-        View back = view.findViewById(R.id.sidebar_back);
-    if(back!=null){ back.setOnClickListener(v -> dismiss()); }
+        if(getArguments()!=null){
+            selectedSortId = getArguments().getString(ARG_SELECTED_SORT_ID, "latest");
+            isGridViewInitial = getArguments().getBoolean("is_grid_view", true);
+        }
 
         // Sort row container opens unified picker
         View sortRow = view.findViewById(R.id.row_sort);
@@ -81,6 +90,21 @@ public class RecordsSidebarFragment extends DialogFragment {
             deleteRow.setOnClickListener(v -> {
                 Bundle b = new Bundle();
                 b.putString("action", "delete_all");
+                getParentFragmentManager().setFragmentResult(resultKey, b);
+                dismiss();
+            });
+        }
+
+        // View mode row
+        View viewModeRow = view.findViewById(R.id.row_view_mode);
+        TextView viewModeSub = view.findViewById(R.id.row_view_mode_subtitle);
+        android.widget.ImageView viewModeIcon = view.findViewById(R.id.row_view_mode_icon);
+        if(viewModeSub!=null){ viewModeSub.setText(isGridViewInitial ? R.string.view_mode_grid : R.string.view_mode_list); }
+        if(viewModeIcon!=null){ viewModeIcon.setImageResource(isGridViewInitial ? R.drawable.ic_grid : R.drawable.ic_list); }
+        if(viewModeRow!=null){
+            viewModeRow.setOnClickListener(v -> {
+                Bundle b = new Bundle();
+                b.putString("action", "toggle_view_mode");
                 getParentFragmentManager().setFragmentResult(resultKey, b);
                 dismiss();
             });

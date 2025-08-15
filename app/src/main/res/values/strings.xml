@@ -771,6 +771,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sort By</string>
     <string name="records_sort_helper">Choose how recordings are ordered in the list.</string>
+    <string name="records_view_mode_title">View mode</string>
+    <string name="view_mode_grid">Grid</string>
+    <string name="view_mode_list">List</string>
     <string name="delete_all_videos_subtitle_short">Remove all recordings</string>
     <string name="sort_latest_first">Latest First</string>
     <string name="sort_oldest_first">Oldest First</string>

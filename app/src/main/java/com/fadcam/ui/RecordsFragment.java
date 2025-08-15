@@ -939,7 +939,9 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private void updateFabIcons() {
-        fabToggleView.setImageResource(isGridView ? R.drawable.ic_list : R.drawable.ic_grid);
+        if (fabToggleView != null) {
+            fabToggleView.setImageResource(isGridView ? R.drawable.ic_list : R.drawable.ic_grid);
+        }
     }
 
     // Load records from Internal or SAF based on preference
@@ -1694,7 +1696,7 @@ public class RecordsFragment extends BaseFragment implements
         if (getActivity() == null) return;
         // -------------- Fix Start for this method(showRecordsSidebar)-----------
         // Use unified overlay: open a sidebar-style fragment to host row-based options.
-        RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption));
+    RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), isGridView);
         // Listen for result events from rows (sort picker, delete all, etc.)
         final String resultKey = "records_sidebar_result";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
@@ -1715,6 +1717,9 @@ public class RecordsFragment extends BaseFragment implements
                 }
                 case "delete_all":
                     confirmDeleteAll();
+                    break;
+                case "toggle_view_mode":
+                    toggleViewMode();
                     break;
             }
         });

@@ -11,32 +11,28 @@
     android:paddingEnd="16dp"
     android:background="@drawable/sidesheet_bg">
 
-    <!-- Header with back button and title -->
+    <!-- Header with title only -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:id="@+id/sidebar_back"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_back"
-            android:tint="@android:color/white"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/universal_back"/>
-
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="@string/records_options_title"
             android:textColor="@android:color/white"
             android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingStart="12dp"/>
+            android:textSize="18sp"/>
     </LinearLayout>
+
+    <!-- Divider below header -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:background="?android:attr/listDivider"/>
 
     <!-- Group: Sorting -->
     <TextView
@@ -60,25 +56,84 @@
         <LinearLayout
             android:id="@+id/row_sort"
             style="@style/SettingsGroupRow"
-            android:layout_height="48dp"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
-            <TextView
-                android:id="@+id/row_sort_title"
-                android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="16dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/row_sort_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_sort"
+                android:tint="@android:color/darker_gray"/>
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/sort_by"
-                android:textColor="?attr/colorHeading"
-                android:textStyle="bold"
-                android:textSize="15sp"/>
-            <TextView
-                android:id="@+id/row_sort_subtitle"
-                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/row_sort_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort_by"
+                    android:textColor="?attr/colorHeading"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/row_sort_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:text="@string/sort_latest_first"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider between rows in card -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"/>
+
+        <!-- View Mode Row (moved from FAB) -->
+        <LinearLayout
+            android:id="@+id/row_view_mode"
+            style="@style/SettingsGroupRow"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="16dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/row_view_mode_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_grid"
+                android:tint="@android:color/darker_gray"/>
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="12sp"
-                android:text="@string/sort_latest_first"/>
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/row_view_mode_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_view_mode_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/row_view_mode_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:text="@string/view_mode_grid"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
@@ -114,25 +169,39 @@
         <LinearLayout
             android:id="@+id/row_delete_all"
             style="@style/SettingsGroupRow"
-            android:layout_height="48dp"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
-            <TextView
-                android:id="@+id/row_delete_all_title"
-                android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="16dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/row_delete_all_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_delete_all"
+                android:tint="@android:color/darker_gray"/>
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/delete_all_videos_title"
-                android:textColor="?attr/colorHeading"
-                android:textStyle="bold"
-                android:textSize="15sp"/>
-            <TextView
-                android:id="@+id/row_delete_all_subtitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="12sp"
-                android:text="@string/delete_all_videos_subtitle_short"/>
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/row_delete_all_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/delete_all_videos_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/row_delete_all_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:text="@string/delete_all_videos_subtitle_short"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
