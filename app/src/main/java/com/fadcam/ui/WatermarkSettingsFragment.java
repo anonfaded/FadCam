@@ -238,7 +238,9 @@ public class WatermarkSettingsFragment extends Fragment {
         }
     TextView helper = getView()!=null? getView().findViewById(R.id.text_preview_helper):null;
         if(baseLine==null){
-            previewText.setVisibility(View.GONE);
+            // Show a UI-only placeholder instead of hiding the preview when no watermark is selected.
+            previewText.setText(getString(R.string.watermark_preview_funny));
+            previewText.setVisibility(View.VISIBLE);
             if(helper!=null){ helper.setText(getString(R.string.watermark_disabled_message)); }
             return;
         } else if(helper!=null){

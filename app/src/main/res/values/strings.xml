@@ -206,6 +206,7 @@
     <string name="array_watermark_time_fadcam">Time with Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
+    <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
     <string name="recent_features" translatable="false">• Audio toggle, bitrate &amp; input source options\n• Video bitrate, orientation, FPS (60/90), and splitting\n• Wide-angle detection &amp; swipe-to-refresh\n• Thumbnails show index, duration, and size\n• Sorting by date/size + bottom sheet redesign\n• "Video Info" option in 3-dot menu\n• Time-ago labels, "New"/"Temp" badges, empty state UI\n• Trash bin with playback, restore &amp; auto-delete\n• "Select All" in Trash\n• Onboarding slides for new users\n• Video geotagging (location in metadata)\n• Improved animations\n• Fixed back button crash/blank screen\n• AMOLED black &amp; 7+ more themes &amp; 15+ new icons</string>
     <string name="upcoming_features" translatable="false">• Auto-scheduled recordings\n• Auto-uploading to Google Drive\n• Custom app icons\n• In-app video editor (FaditorX - coming soon)\n• Remote tab with cross-device controls\n• Livestreaming of Video Recording\n• And many more exciting features!</string>
     <string name="toast_video_not_found">Error: Video not found</string>
