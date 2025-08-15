@@ -9,7 +9,7 @@
     android:paddingBottom="16dp"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:background="@drawable/sidesheet_bg">
+    android:background="@drawable/sidesheet_gradient_bg">
 
     <!-- Header with title only -->
     <LinearLayout
