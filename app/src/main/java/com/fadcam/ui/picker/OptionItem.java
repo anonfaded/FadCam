@@ -18,6 +18,9 @@ public class OptionItem implements Parcelable {
     public final Integer trailingIconResId; // optional trailing icon (e.g., external-link)
     public final Boolean hasSwitch; // nullable - if true, shows a switch instead of subtitle
     public final Boolean switchState; // nullable - current state of the switch (only used if hasSwitch is true)
+    public final String badgeText; // nullable - optional small pill text under title
+    public final Integer badgeBgResId; // nullable - drawable background for badge (rounded)
+    public final Boolean disabled; // nullable - if true, row appears grayed-out and non-selecting
 
     public OptionItem(String id, String title) { this(id, title, null, null, null, null, null, null, null); }
     public OptionItem(String id, String title, String subtitle) { this(id, title, subtitle, null, null, null, null, null, null); }
@@ -35,8 +38,13 @@ public class OptionItem implements Parcelable {
         this(id, title, null, null, iconResId, null, true, switchState, null);
     }
 
-    // Main constructor
+    // Main constructor (legacy, no badge/disabled)
     public OptionItem(String id, String title, String subtitle, Integer colorInt, Integer iconResId, Integer trailingIconResId, Boolean hasSwitch, Boolean switchState, String iconLigature) {
+        this(id, title, subtitle, colorInt, iconResId, trailingIconResId, hasSwitch, switchState, iconLigature, null, null, null);
+    }
+
+    // New extended constructor
+    public OptionItem(String id, String title, String subtitle, Integer colorInt, Integer iconResId, Integer trailingIconResId, Boolean hasSwitch, Boolean switchState, String iconLigature, String badgeText, Integer badgeBgResId, Boolean disabled) {
         this.id = id;
         this.title = title;
         this.subtitle = subtitle;
@@ -46,15 +54,23 @@ public class OptionItem implements Parcelable {
         this.trailingIconResId = trailingIconResId;
         this.hasSwitch = hasSwitch;
         this.switchState = switchState;
+        this.badgeText = badgeText;
+        this.badgeBgResId = badgeBgResId;
+        this.disabled = disabled;
     }
 
     public OptionItem(String id, String title, Integer iconResId) {
-        this.id = id; this.title = title; this.subtitle = null; this.colorInt = null; this.iconResId = iconResId; this.iconLigature = null; this.trailingIconResId = null; this.hasSwitch = null; this.switchState = null;
+        this.id = id; this.title = title; this.subtitle = null; this.colorInt = null; this.iconResId = iconResId; this.iconLigature = null; this.trailingIconResId = null; this.hasSwitch = null; this.switchState = null; this.badgeText = null; this.badgeBgResId = null; this.disabled = null;
     }
 
     // Factory for ligature-based icon
     public static OptionItem withLigature(String id, String title, String iconLigature) {
         return new OptionItem(id, title, null, null, null, null, null, null, iconLigature);
+    }
+
+    // Factory for ligature + badge + disabled state (helper subtitle optional)
+    public static OptionItem withLigatureBadge(String id, String title, String iconLigature, String badgeText, Integer badgeBgResId, boolean disabled, String subtitle) {
+        return new OptionItem(id, title, subtitle, null, null, null, null, null, iconLigature, badgeText, badgeBgResId, disabled);
     }
 
     protected OptionItem(Parcel in) {
@@ -67,6 +83,9 @@ public class OptionItem implements Parcelable {
     if(in.readInt()==1){ trailingIconResId = in.readInt(); } else { trailingIconResId = null; }
     if(in.readInt()==1){ hasSwitch = in.readInt()==1; } else { hasSwitch = null; }
     if(in.readInt()==1){ switchState = in.readInt()==1; } else { switchState = null; }
+    badgeText = in.readString();
+    if(in.readInt()==1){ badgeBgResId = in.readInt(); } else { badgeBgResId = null; }
+    if(in.readInt()==1){ disabled = in.readInt()==1; } else { disabled = null; }
     }
 
     public static final Creator<OptionItem> CREATOR = new Creator<OptionItem>() {
@@ -85,5 +104,8 @@ public class OptionItem implements Parcelable {
     if(trailingIconResId!=null){ dest.writeInt(1); dest.writeInt(trailingIconResId); } else { dest.writeInt(0); }
     if(hasSwitch!=null){ dest.writeInt(1); dest.writeInt(hasSwitch ? 1 : 0); } else { dest.writeInt(0); }
     if(switchState!=null){ dest.writeInt(1); dest.writeInt(switchState ? 1 : 0); } else { dest.writeInt(0); }
+    dest.writeString(badgeText);
+    if(badgeBgResId!=null){ dest.writeInt(1); dest.writeInt(badgeBgResId); } else { dest.writeInt(0); }
+    if(disabled!=null){ dest.writeInt(1); dest.writeInt(disabled ? 1 : 0); } else { dest.writeInt(0); }
     }
 }

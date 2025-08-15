@@ -93,6 +93,7 @@
     <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
+    <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/FadCam</string>
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>
@@ -100,6 +101,7 @@
     <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
     <string name="video_menu_upload_youtube">Upload to YouTube</string>
     <string name="video_menu_upload_drive">Upload to  Google Drive</string>
+    <string name="video_menu_upload_faddrive">Upload to FadDrive</string>
     <string name="toast_no_youtube_app">YouTube app not found</string>
     <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
@@ -681,6 +683,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="version_format">v%s</string>
 
     <string name="edit_with_faditorx">Edit with FaditorX</string>
+    <string name="remote_coming_soon_badge">Coming Soon</string>
     
     <!-- Update Bottom Sheet Strings -->
     <string name="update_sarcastic_heading">📦 Oh look, another update...</string>

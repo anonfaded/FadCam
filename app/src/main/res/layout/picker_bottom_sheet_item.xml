@@ -2,7 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="56dp"
+    android:layout_height="52dp"
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
     android:paddingStart="14dp"
     android:paddingEnd="12dp"
     android:gravity="center_vertical"
@@ -44,21 +46,40 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
-        <TextView
-            android:id="@+id/picker_item_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="normal"/>
-        <TextView
-            android:id="@+id/picker_item_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="14sp"
-            android:layout_marginTop="2dp"
-            android:visibility="gone"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:id="@+id/picker_item_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp"
+                    android:textStyle="normal"/>
+                <TextView
+                    android:id="@+id/picker_item_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:textSize="11sp"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/badge_background_green"
+                    android:visibility="gone"/>
+            </LinearLayout>
+            <TextView
+                android:id="@+id/picker_item_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#999999"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp"
+                android:visibility="gone"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -77,8 +98,8 @@
             
         <ImageView
             android:id="@+id/picker_item_trailing_icon"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
             android:layout_marginEnd="8dp"
             android:visibility="gone"
             android:tint="@android:color/darker_gray"/>

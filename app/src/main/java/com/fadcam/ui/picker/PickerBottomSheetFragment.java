@@ -191,6 +191,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             View row = li.inflate(R.layout.picker_bottom_sheet_item, containerLayout, false);
             TextView tvTitle = row.findViewById(R.id.picker_item_title);
             TextView tvSubtitle = row.findViewById(R.id.picker_item_subtitle);
+            TextView tvBadge = row.findViewById(R.id.picker_item_badge);
             View colorSwatch = row.findViewById(R.id.picker_item_color_swatch);
             View checkContainer = row.findViewById(R.id.picker_item_check_container);
             ImageView checkIcon = row.findViewById(R.id.picker_item_check);
@@ -200,6 +201,23 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             androidx.appcompat.widget.SwitchCompat itemSwitch = row.findViewById(R.id.picker_item_switch);
             row.setTag(item.id); // tag row with its id for dependency handling
             tvTitle.setText(item.title);
+            // Danger styling for destructive actions
+            if("action_delete".equals(item.id)){
+                try {
+                    row.setBackgroundResource(R.drawable.settings_home_row_bg);
+                    // overlay red tint for danger row
+                    row.getBackground().mutate();
+                    row.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x33FF3B30));
+                } catch (Exception ignored) {}
+            }
+            // Badge rendering
+            if(tvBadge!=null){
+                if(item.badgeText!=null && !item.badgeText.isEmpty()){
+                    tvBadge.setText(item.badgeText);
+                    if(item.badgeBgResId!=null){ tvBadge.setBackgroundResource(item.badgeBgResId); }
+                    tvBadge.setVisibility(View.VISIBLE);
+                } else { tvBadge.setVisibility(View.GONE); }
+            }
             
             // Handle switch vs subtitle display
             if(item.hasSwitch != null && item.hasSwitch){
@@ -227,8 +245,13 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 // Show normal subtitle
                 itemSwitch.setVisibility(View.GONE);
                 if(item.subtitle!=null && !item.subtitle.isEmpty()){
-                    tvSubtitle.setText(item.subtitle);
-                    tvSubtitle.setVisibility(View.VISIBLE);
+                    // If disabled, we don't display helper text in row (but keep it for toast)
+                    if(item.disabled != null && item.disabled){
+                        tvSubtitle.setVisibility(View.GONE);
+                    } else {
+                        tvSubtitle.setText(item.subtitle);
+                        tvSubtitle.setVisibility(View.VISIBLE);
+                    }
                 } else { 
                     tvSubtitle.setVisibility(View.GONE); 
                 }
@@ -290,9 +313,29 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 }
                 checkIcon.setScaleX(0f); checkIcon.setScaleY(0f); checkIcon.setAlpha(0f);
             }
+            // Apply disabled visual state
+            if(item.disabled != null && item.disabled){
+                row.setEnabled(false);
+                row.setAlpha(0.5f);
+                tvTitle.setTextColor(0xFFAAAAAA);
+                tvSubtitle.setTextColor(0xFF777777);
+                if(leadingSymbol!=null){ leadingSymbol.setTextColor(0xFFAAAAAA); }
+                if(leadingIcon!=null){ leadingIcon.setColorFilter(0xFFAAAAAA); }
+            }
+
             row.setOnClickListener(v -> {
                 // Don't handle click for switch items - they handle their own toggle
                 if(item.hasSwitch != null && item.hasSwitch) {
+                    return;
+                }
+                // If disabled, show a subtle bounce and optional toast via subtitle, but don't select
+                if(item.disabled != null && item.disabled){
+                    v.animate().scaleX(0.98f).scaleY(0.98f).setDuration(80).withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(80)).start();
+                    try {
+                        CharSequence msg = (item.subtitle!=null && !item.subtitle.isEmpty()) ? item.subtitle : getString(R.string.remote_toast_coming_soon);
+                        android.widget.Toast.makeText(requireContext(), msg, android.widget.Toast.LENGTH_SHORT).show();
+                    } catch (Exception ignored) {}
+                    // Still send a result for disabled? No, ignore selection
                     return;
                 }
                 
@@ -331,7 +374,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
                 // -------------- Fix Start for this method(onViewCreated)-----------
                 // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
-                lp.setMargins(dp(14), 0, dp(12), 0);
+                // Row now has 12dp outer margins + 14dp inner start and 12dp inner end paddings
+                // Keep divider aligned with inner paddings, but also inset by the outer margins
+                lp.setMargins(dp(14)+dp(12), dp(2), dp(12)+dp(12), dp(2));
                 // -------------- Fix Ended for this method(onViewCreated)-----------
                 rowDivider.setLayoutParams(lp);
                 rowDivider.setBackgroundColor(0x33FFFFFF);

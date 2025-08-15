@@ -20,6 +20,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.text.SpannableString;
@@ -83,6 +84,10 @@ import android.content.ContentResolver;
 import androidx.core.content.FileProvider;
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.ReturnCode;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.ui.picker.OptionItem;
 
 // Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -434,50 +439,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // INSTEAD, set a click listener on the menuButtonContainer
         if (holder.menuButtonContainer != null) {
+            // -------------- Fix Start for this method(onBindViewHolder)-----------
             holder.menuButtonContainer.setOnClickListener(v -> {
-                // Check allowMenuClick again inside the listener, as the state might have changed
-                // (though less likely if onBindViewHolder is efficient)
                 boolean isStillAllowMenuClick = !this.currentlyProcessingUris.contains(videoItem.uri) && !this.isSelectionModeActive;
                 if (isStillAllowMenuClick) {
-                    PopupMenu popup = setupPopupMenu(holder, videoItem);
-                    if (popup != null) {
-                        popup.show();
-                        // --- Fix Start: Robustly gray out FaditorX menu item and show badge ---
-                        // Wait for the popup to be fully shown, then update the view
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            try {
-                                Field listViewField = popup.getClass().getDeclaredField("mPopup");
-                                listViewField.setAccessible(true);
-                                Object menuPopupHelper = listViewField.get(popup);
-                                Method getListViewMethod = menuPopupHelper.getClass().getDeclaredMethod("getListView");
-                                getListViewMethod.setAccessible(true);
-                                android.widget.ListView listView = (android.widget.ListView) getListViewMethod.invoke(menuPopupHelper);
-                                if (listView != null) {
-                                    for (int i = 0; i < listView.getChildCount(); i++) {
-                                        View row = listView.getChildAt(i);
-                                        TextView label = row.findViewById(R.id.menu_edit_label);
-                                        TextView badge = row.findViewById(R.id.menu_badge_coming_soon);
-                                        ImageView icon = row.findViewById(android.R.id.icon);
-                                        if (label != null && badge != null) {
-                                            label.setTextColor(Color.parseColor("#888888"));
-                                            badge.setVisibility(View.VISIBLE);
-                                            badge.setText("Coming Soon");
-                                            badge.setBackgroundResource(R.drawable.badge_background_red);
-                                            if (icon != null) {
-                                                icon.setColorFilter(Color.parseColor("#888888"), android.graphics.PorterDuff.Mode.SRC_IN);
-                                            }
-                                            break; // Found the correct row
-                                        }
-                                    }
-                                }
-                            } catch (Exception e) {
-                                Log.w(TAG, "Could not update FaditorX menu item badge: " + e.getMessage());
-                            }
-                        }, 50); // Delay to ensure popup is rendered
-                        // --- Fix End: Robustly gray out FaditorX menu item and show badge ---
-                    }
+                    showVideoActionsSheet(holder, videoItem);
                 }
             });
+            // -------------- Fix Ended for this method(onBindViewHolder)-----------
         }
 
     } // End onBindViewHolder
@@ -615,6 +584,111 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         context.getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
+
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    /**
+     * showVideoActionsSheet
+     * Replaces legacy PopupMenu with our unified bottom sheet picker using ligature icons.
+     * Preserves existing behaviors by mapping item ids to the same handlers.
+     */
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    private void showVideoActionsSheet(RecordViewHolder holder, VideoItem videoItem) {
+        Context ctx = holder.itemView.getContext();
+        if (!(ctx instanceof FragmentActivity)) {
+            // Fallback to popup if we don't have a FragmentActivity context
+            PopupMenu popup = setupPopupMenu(holder, videoItem);
+            if (popup != null) popup.show();
+            return;
+        }
+
+    ArrayList<OptionItem> items = new ArrayList<>();
+    // Order mirrors existing menu; use contextual ligatures per repo policy and helper subtitles
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    // Add helper text explaining the save destination
+    items.add(new OptionItem(
+        "action_save",
+        ctx.getString(R.string.video_menu_save),
+        ctx.getString(R.string.video_menu_save_helper_downloads_fadcam, "Video will be saved to Downloads/FadCam"),
+        null,
+        null,
+        null,
+        null,
+        null,
+        "download",
+        null,
+        null,
+        null
+    ));
+    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    // Temporarily hide Fix Video from UI; keep feature intact for later re-enable
+    // items.add(OptionItem.withLigature("action_fix_video", ctx.getString(R.string.fix_video_menu_title), "build"));
+    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
+    items.add(OptionItem.withLigature("action_rename", ctx.getString(R.string.video_menu_rename), "drive_file_rename_outline"));
+    items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
+    items.add(OptionItem.withLigature("action_upload_youtube", ctx.getString(R.string.video_menu_upload_youtube), "play_circle"));
+    items.add(OptionItem.withLigature("action_upload_drive", ctx.getString(R.string.video_menu_upload_drive), "cloud_upload"));
+    // New: Upload to FadDrive (coming soon) — badge only, no helper line
+    items.add(OptionItem.withLigatureBadge("action_upload_faddrive", ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud", ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+    // Coming soon: Edit with FaditorX — after FadDrive
+    items.add(OptionItem.withLigatureBadge("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx), "content_cut", ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+    items.add(OptionItem.withLigature("action_delete", ctx.getString(R.string.video_menu_del), "delete"));
+
+        String resultKey = "video_actions:" + (videoItem.uri != null ? videoItem.uri.toString() : System.identityHashCode(videoItem));
+        FragmentManager fm = ((FragmentActivity) ctx).getSupportFragmentManager();
+        fm.setFragmentResultListener(resultKey, (FragmentActivity) ctx, (requestKey, bundle) -> {
+            if (bundle == null) return;
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (id == null) return;
+            switch (id) {
+                case "action_edit_faditorx":
+                    Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                    break;
+                case "action_upload_faddrive":
+                    Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                    break;
+                case "action_save":
+                    saveVideoToGalleryInternal(videoItem);
+                    break;
+                case "action_fix_video":
+                    fixVideoFile(videoItem);
+                    break;
+                case "action_rename":
+                    showRenameDialog(videoItem);
+                    break;
+                case "action_info":
+                    showVideoInfoDialog(videoItem);
+                    break;
+                case "action_delete":
+                    if (actionListener != null) actionListener.onDeleteVideo(videoItem);
+                    break;
+                case "action_upload_youtube":
+                    openVideoInYouTube(videoItem);
+                    break;
+                case "action_upload_drive":
+                    openVideoInGoogleDrive(videoItem);
+                    break;
+            }
+        });
+
+    // Title: show the file name or a generic label
+    String sheetTitle = (videoItem != null && videoItem.displayName != null) ? videoItem.displayName : ctx.getString(R.string.records_title);
+    PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+        sheetTitle,
+                items,
+                null,
+                resultKey,
+                null,
+                true
+        );
+
+        // Hide selection checkmarks for action sheets so rows are compact
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+
+        sheet.show(fm, "video_actions_sheet");
+    }
+    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
 
     private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
         Context context = holder.itemView.getContext();
