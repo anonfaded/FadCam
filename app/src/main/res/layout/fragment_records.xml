@@ -49,7 +49,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:padding="2dp"
-            android:src="@drawable/ic_more_vert"
+            android:src="@drawable/ic_two_line_hamburger"
             android:contentDescription="@string/more_options"
             android:tint="@android:color/white"
             android:background="?attr/selectableItemBackgroundBorderless"/>

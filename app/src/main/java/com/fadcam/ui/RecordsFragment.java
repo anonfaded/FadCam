@@ -1357,9 +1357,11 @@ public class RecordsFragment extends BaseFragment implements
             // Restore more-options icon and hide close button
             if (menuButton != null) {
                 menuButton.setVisibility(View.VISIBLE);
-                menuButton.setImageResource(R.drawable.ic_more_vert);
+                // -------------- Fix Start for this method(updateHeaderMenuIcon)-----------
+                menuButton.setImageResource(R.drawable.ic_two_line_hamburger);
                 menuButton.setOnClickListener(v -> showRecordsSidebar());
                 menuButton.setContentDescription(getString(R.string.more_options));
+                // -------------- Fix Ended for this method(updateHeaderMenuIcon)-----------
             }
             if (closeButton != null) {
                 closeButton.setVisibility(View.GONE);
@@ -1475,45 +1477,29 @@ public class RecordsFragment extends BaseFragment implements
     }
     private void confirmDeleteAll() {
         vibrate();
-        // ----- Fix Start for this method(confirmDeleteAll)-----
         int totalVideoCount = videoItems.size();
-        // ----- Fix Ended for this method(confirmDeleteAll)-----
         if (totalVideoCount == 0){
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
         }
-        
-        // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
-        
-        // Use a custom TextView for the message to ensure correct color
-        TextView messageView = new TextView(requireContext());
-        messageView.setText(getString(R.string.delete_all_videos_description) + "\n(" + totalVideoCount + " videos will be removed)");
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-        messageView.setTextSize(16);
-        messageView.setPadding(48, 32, 48, 32);
-        
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
-                .setTitle(getString(R.string.delete_all_videos_title))
-                .setView(messageView)
-                .setPositiveButton(getString(R.string.dialog_del_confirm), (dialog, which) -> deleteAllVideos())
-                .setNegativeButton(getString(R.string.universal_cancel), null);
-                
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        
-        // Set button colors based on theme
-        if (isSnowVeilTheme) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-        } else if (isFadedNightTheme) {
-            // Set white button text for Faded Night theme
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
-        }
+        // -------------- Fix Start for this method(confirmDeleteAll)-----------
+        // Use unified bottom picker as a confirmation sheet
+        final String pickerKey = "records_delete_all_picker";
+        getParentFragmentManager().setFragmentResultListener(pickerKey, this, (key, bundle) -> {
+            if (bundle == null) return;
+            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if ("confirm".equals(sel)) {
+                deleteAllVideos();
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> options = new java.util.ArrayList<>();
+        options.add(new com.fadcam.ui.picker.OptionItem("confirm", getString(R.string.dialog_del_confirm)));
+        options.add(new com.fadcam.ui.picker.OptionItem("cancel", getString(R.string.universal_cancel)));
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.delete_all_videos_title), options, "", pickerKey, getString(R.string.delete_all_videos_subtitle_short)
+        );
+        sheet.show(getParentFragmentManager(), "RecordsDeleteAllPicker");
+        // -------------- Fix Ended for this method(confirmDeleteAll)-----------
     }
 
     // Inside RecordsFragment.java
@@ -1705,70 +1691,56 @@ public class RecordsFragment extends BaseFragment implements
 
 
     private void showRecordsSidebar() {
-        if (getContext() == null) return;
-        
-        // Create listeners for sort option selection and delete all
-        RecordsOptionsBottomSheet.OnSortOptionSelectedListener sortListener = bottomSheetSortOption -> {
-            // Convert the bottom sheet SortOption to the fragment SortOption
-            SortOption fragmentSortOption;
-            switch (bottomSheetSortOption) {
-                case LATEST_FIRST:
-                    fragmentSortOption = SortOption.LATEST_FIRST;
+        if (getActivity() == null) return;
+        // -------------- Fix Start for this method(showRecordsSidebar)-----------
+        // Use unified overlay: open a sidebar-style fragment to host row-based options.
+        RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption));
+        // Listen for result events from rows (sort picker, delete all, etc.)
+        final String resultKey = "records_sidebar_result";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            if (!resultKey.equals(key)) return;
+            String action = bundle.getString("action");
+            if (action == null) return;
+            switch (action) {
+                case "sort": {
+                    String sortId = bundle.getString("sort_id");
+                    if (sortId != null) {
+                        SortOption newOption = mapIdToSort(sortId);
+                        if (newOption != currentSortOption) {
+                            currentSortOption = newOption;
+                            performVideoSort();
+                        }
+                    }
                     break;
-                case OLDEST_FIRST:
-                    fragmentSortOption = SortOption.OLDEST_FIRST;
-                    break;
-                case SMALLEST_FILES:
-                    fragmentSortOption = SortOption.SMALLEST_FILES;
-                    break;
-                case LARGEST_FILES:
-                    fragmentSortOption = SortOption.LARGEST_FILES;
-                    break;
-                default:
-                    fragmentSortOption = SortOption.LATEST_FIRST;
+                }
+                case "delete_all":
+                    confirmDeleteAll();
                     break;
             }
-            
-            if (fragmentSortOption != currentSortOption) {
-                Log.i(TAG, "Sort option changed to: " + fragmentSortOption);
-                currentSortOption = fragmentSortOption;
-                performVideoSort(); // Call the sorting method
-            } else {
-                Log.d(TAG, "Sort option clicked, but no change: " + currentSortOption);
-            }
-        };
-        
-        RecordsOptionsBottomSheet.OnDeleteAllClickedListener deleteListener = this::confirmDeleteAll;
-        
-        // Convert the fragment SortOption to the bottom sheet SortOption
-        RecordsOptionsBottomSheet.SortOption bottomSheetSortOption;
-        switch (currentSortOption) {
-            case LATEST_FIRST:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LATEST_FIRST;
-                break;
-            case OLDEST_FIRST:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.OLDEST_FIRST;
-                break;
-            case SMALLEST_FILES:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.SMALLEST_FILES;
-                break;
-            case LARGEST_FILES:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LARGEST_FILES;
-                break;
-            default:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LATEST_FIRST;
-                break;
-        }
-        
-        // Create and show the custom bottom sheet
-        RecordsOptionsBottomSheet bottomSheet = new RecordsOptionsBottomSheet(
-                sharedPreferencesManager,
-                bottomSheetSortOption,
-                sortListener,
-                deleteListener);
-        
-        bottomSheet.show(getChildFragmentManager(), "RecordsOptionsBottomSheet");
+        });
+    sidebar.setResultKey(resultKey);
+    // Show as a Material side sheet dialog instead of full-screen overlay
+    sidebar.show(getParentFragmentManager(), "RecordsSidebar");
+        // -------------- Fix Ended for this method(showRecordsSidebar)-----------
     }
+
+    // -------------- Fix Start for this class(mapSortHelpers)-----------
+    private String mapSortToId(SortOption opt){
+        switch (opt){
+            case LATEST_FIRST: return "latest";
+            case OLDEST_FIRST: return "oldest";
+            case SMALLEST_FILES: return "smallest";
+            case LARGEST_FILES: return "largest";
+        }
+        return "latest";
+    }
+    private SortOption mapIdToSort(String id){
+        if("oldest".equals(id)) return SortOption.OLDEST_FIRST;
+        if("smallest".equals(id)) return SortOption.SMALLEST_FILES;
+        if("largest".equals(id)) return SortOption.LARGEST_FILES;
+        return SortOption.LATEST_FIRST;
+    }
+    // -------------- Fix Ended for this class(mapSortHelpers)-----------
 
 
     // Updated sorting logic to work with List<VideoItem>
