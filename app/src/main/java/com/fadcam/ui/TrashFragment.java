@@ -55,6 +55,9 @@ import android.os.Looper;
 import android.graphics.PorterDuff;
 import android.widget.RadioButton;
 import java.lang.reflect.Field;
+// Picker bottom sheet imports
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
 
 public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashItemInteractionListener {
 
@@ -151,7 +154,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         // Setup menu button click listener
         ImageView menuButton = view.findViewById(R.id.action_trash_auto_delete_settings);
         if (menuButton != null) {
-            menuButton.setOnClickListener(v -> showAutoDeleteSettingsDialog());
+            menuButton.setOnClickListener(v -> showAutoDeleteBottomSheet());
         }
         // -------------- Fix Ended for this method(initializeViews)-----------
         titleText = view.findViewById(R.id.title_text);
@@ -726,10 +729,100 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_trash_auto_delete_settings) {
-            showAutoDeleteSettingsDialog();
+            // -------------- Fix Start for this method(onOptionsItemSelected:routeToBottomSheet)-----------
+            showAutoDeleteBottomSheet();
+            // -------------- Fix Ended for this method(onOptionsItemSelected:routeToBottomSheet)-----------
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Shows the unified bottom sheet picker for Trash auto-delete policy, replacing the legacy dialog.
+     */
+    private void showAutoDeleteBottomSheet() {
+        if (getContext() == null || sharedPreferencesManager == null) return;
+
+        // -------------- Fix Start for this method(showAutoDeleteBottomSheet)-----------
+        // Define options
+        final String[] ids = new String[]{
+                "immediate", "1h", "5h", "10h", "1d", "7d", "30d", "60d", "90d", "never"
+        };
+        final int[] minutes = new int[]{
+                0,
+                60,
+                5 * 60,
+                10 * 60,
+                1 * 24 * 60,
+                7 * 24 * 60,
+                30 * 24 * 60,
+                60 * 24 * 60,
+                90 * 24 * 60,
+                SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER
+        };
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem("immediate", getString(R.string.auto_delete_immediate)));
+        items.add(new OptionItem("1h", getString(R.string.auto_delete_1_hour)));
+        items.add(new OptionItem("5h", getString(R.string.auto_delete_5_hours)));
+        items.add(new OptionItem("10h", getString(R.string.auto_delete_10_hours)));
+        items.add(new OptionItem("1d", getString(R.string.auto_delete_1_day)));
+        items.add(new OptionItem("7d", getString(R.string.auto_delete_7_days)));
+        items.add(new OptionItem("30d", getString(R.string.auto_delete_30_days)));
+        items.add(new OptionItem("60d", getString(R.string.auto_delete_60_days)));
+        items.add(new OptionItem("90d", getString(R.string.auto_delete_90_days)));
+        items.add(new OptionItem("never", getString(R.string.auto_delete_never)));
+
+        // Determine selectedId from current setting
+        int current = sharedPreferencesManager.getTrashAutoDeleteMinutes();
+        String selectedId = null;
+        for (int i = 0; i < minutes.length; i++) {
+            if (minutes[i] == current) { selectedId = ids[i]; break; }
+        }
+        if (selectedId == null) selectedId = "never"; // default
+
+        // Register result listener
+        final String resultKey = "trash_auto_delete_picker";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, result) -> {
+            if (!resultKey.equals(requestKey)) return;
+            String sel = result.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel == null) return;
+            Integer newMinutes = null;
+            for (int i = 0; i < ids.length; i++) {
+                if (ids[i].equals(sel)) { newMinutes = minutes[i]; break; }
+            }
+            if (newMinutes == null) return;
+
+            sharedPreferencesManager.setTrashAutoDeleteMinutes(newMinutes);
+            updateAutoDeleteInfoText();
+
+            boolean itemsWereAutoDeleted = false;
+            if (getContext() != null) {
+                int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), newMinutes);
+                if (autoDeletedCount > 0) {
+                    Toast.makeText(getContext(), getString(R.string.trash_auto_deleted_toast, autoDeletedCount), Toast.LENGTH_LONG).show();
+                    itemsWereAutoDeleted = true;
+                }
+            }
+            loadTrashItems();
+            if (trashAdapter != null && !itemsWereAutoDeleted) {
+                trashAdapter.notifyDataSetChanged();
+            }
+        });
+
+        // Helper text if available
+        String helper;
+        try {
+            helper = getString(R.string.trash_auto_delete_picker_helper);
+        } catch (Exception e) {
+            helper = null;
+        }
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+                getString(R.string.auto_delete_dialog_title), items, selectedId, resultKey, helper
+        );
+        sheet.show(getParentFragmentManager(), "TrashAutoDeletePicker");
+        // -------------- Fix Ended for this method(showAutoDeleteBottomSheet)-----------
     }
 
     private void showAutoDeleteSettingsDialog() {

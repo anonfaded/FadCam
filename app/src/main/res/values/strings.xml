@@ -585,6 +585,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="auto_delete_90_days">After 90 Days</string>
     <string name="auto_delete_never">Never (Manual Deletion)</string>
     <string name="auto_delete_save_setting">Save</string>
+    <string name="trash_auto_delete_picker_helper">Choose when items in Trash should be auto‑deleted.</string>
     <!-- End Strings for Trash Auto-Delete Feature -->
 
     <string name="video_split_size_summary_mb">Current: %1$d MB</string>
