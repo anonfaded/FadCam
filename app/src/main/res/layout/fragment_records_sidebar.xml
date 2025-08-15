@@ -5,11 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:clipToOutline="true"
     android:paddingTop="16dp"
     android:paddingBottom="16dp"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:background="@drawable/sidesheet_gradient_bg">
+    android:background="@drawable/sidesheet_wrapper_bg">
 
     <!-- Header with title only -->
     <LinearLayout
@@ -32,6 +33,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp"
         app:dividerColor="#262626"/>
 
     <!-- Group: Sorting -->
@@ -95,6 +98,8 @@
         <com.google.android.material.divider.MaterialDivider
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="12dp"
             app:dividerColor="#262626"/>
 
         <!-- View Mode Row (moved from FAB) -->

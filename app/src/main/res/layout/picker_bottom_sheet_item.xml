@@ -8,6 +8,17 @@
     android:gravity="center_vertical"
     android:background="@drawable/settings_home_row_bg">
 
+    <TextView
+        android:id="@+id/picker_item_leading_symbol"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="22sp"
+        android:visibility="gone"
+        android:fontFamily="@font/materialicons"/>
+
     <ImageView
         android:id="@+id/picker_item_leading_icon"
         android:layout_width="24dp"

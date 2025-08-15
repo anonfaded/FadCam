@@ -101,6 +101,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
     private boolean hideCheck = false;
+    private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -194,6 +195,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             View checkContainer = row.findViewById(R.id.picker_item_check_container);
             ImageView checkIcon = row.findViewById(R.id.picker_item_check);
             ImageView leadingIcon = row.findViewById(R.id.picker_item_leading_icon);
+            TextView leadingSymbol = row.findViewById(R.id.picker_item_leading_symbol);
             ImageView trailingIcon = row.findViewById(R.id.picker_item_trailing_icon);
             androidx.appcompat.widget.SwitchCompat itemSwitch = row.findViewById(R.id.picker_item_switch);
             row.setTag(item.id); // tag row with its id for dependency handling
@@ -231,10 +233,22 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     tvSubtitle.setVisibility(View.GONE); 
                 }
             }
-            if(leadingIcon!=null){
+            if(leadingSymbol!=null && item.iconLigature != null){
+                // Lazy-load materialicons.ttf from res/font
+                if(MATERIAL_ICONS_TF == null){
+                    try {
+                        MATERIAL_ICONS_TF = androidx.core.content.res.ResourcesCompat.getFont(requireContext(), R.font.materialicons);
+                    } catch (Exception e){
+                        MATERIAL_ICONS_TF = android.graphics.Typeface.DEFAULT;
+                    }
+                }
+                leadingSymbol.setTypeface(MATERIAL_ICONS_TF);
+                leadingSymbol.setText(item.iconLigature);
+                leadingSymbol.setVisibility(View.VISIBLE);
+                if(leadingIcon!=null) leadingIcon.setVisibility(View.GONE);
+            } else if(leadingIcon!=null){
                 if(item.iconResId!=null){ 
                     leadingIcon.setImageResource(item.iconResId);
-                    // Do not tint shortcut icons; preserve original colors to avoid white box look
                     leadingIcon.setImageTintList(null);
                     leadingIcon.setVisibility(View.VISIBLE);
                 } else { 

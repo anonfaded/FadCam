@@ -53,10 +53,18 @@ public class RecordsSidebarFragment extends DialogFragment {
         // -------------- Fix Start for this method(onCreateDialog)-----------
         // Create a Material SideSheetDialog to host the sidebar content
         SideSheetDialog dialog = new SideSheetDialog(requireContext());
-        // Make window background transparent so layout background with rounded corners shows
-        if(dialog.getWindow()!=null){
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        // Make window background fully transparent so our gradient shape shows without gray corners
+        if (dialog.getWindow() != null) {
+            android.view.Window window = dialog.getWindow();
+            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            // Remove decor view padding/insets that can cause gray strips
+            android.view.View decor = window.getDecorView();
+            if (decor instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) decor).setPadding(0, 0, 0, 0);
+                decor.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            }
         }
+    // No-op: window background already transparent; layout clips to outline.
         return dialog;
         // -------------- Fix Ended for this method(onCreateDialog)-----------
     }
@@ -112,11 +120,17 @@ public class RecordsSidebarFragment extends DialogFragment {
     }
 
     private void openSortPicker(){
-        ArrayList<OptionItem> options = new ArrayList<>();
-    options.add(new OptionItem("latest", getString(R.string.sort_latest_first), null, null, R.drawable.ic_sort));
-    options.add(new OptionItem("oldest", getString(R.string.sort_oldest_first), null, null, R.drawable.ic_sort));
-    options.add(new OptionItem("smallest", getString(R.string.sort_smallest_first), null, null, R.drawable.ic_sort));
-    options.add(new OptionItem("largest", getString(R.string.sort_largest_first), null, null, R.drawable.ic_sort));
+    ArrayList<OptionItem> options = new ArrayList<>();
+    // -------------- Fix Start for this method(openSortPicker_material_symbols)-----------
+    // Use Material Symbols ligatures for cleaner, consistent icons
+    options.add(OptionItem.withLigature("latest", getString(R.string.sort_latest_first), "arrow_upward"));
+    options.add(OptionItem.withLigature("oldest", getString(R.string.sort_oldest_first), "arrow_downward"));
+    // Use size icons to imply file size ordering
+    // -------------- Fix Start for this method(openSortPicker_size_icons)-----------
+    options.add(OptionItem.withLigature("smallest", getString(R.string.sort_smallest_first), "trending_down"));
+    options.add(OptionItem.withLigature("largest", getString(R.string.sort_largest_first), "trending_up"));
+    // -------------- Fix Ended for this method(openSortPicker_size_icons)-----------
+    // -------------- Fix Ended for this method(openSortPicker_material_symbols)-----------
 
         final String pickerKey = "records_sort_picker";
         getParentFragmentManager().setFragmentResultListener(pickerKey, this, (k, bundle)->{
@@ -139,6 +153,27 @@ public class RecordsSidebarFragment extends DialogFragment {
         getString(R.string.sort_by), options, selectedSortId, pickerKey, getString(R.string.records_sort_helper)
     );
         picker.show(getParentFragmentManager(), "RecordsSortPicker");
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // -------------- Fix Start for this method(onStart_clearContainerBackgrounds)-----------
+        // Clear any default container backgrounds from the SideSheet host views to avoid gray edges around rounded corners
+        View root = getView();
+        if(root != null){
+            View p = (View) root.getParent();
+            int guard = 0;
+            while(p != null && guard < 5){ // climb a few levels safely
+                try {
+                    if(p.getBackground() != null){ p.setBackgroundColor(android.graphics.Color.TRANSPARENT); }
+                } catch (Exception ignored) { }
+                if(!(p.getParent() instanceof View)) break;
+                p = (View) p.getParent();
+                guard++;
+            }
+        }
+        // -------------- Fix Ended for this method(onStart_clearContainerBackgrounds)-----------
     }
 
     private void updateSortSubtitle(TextView tv, String id){
