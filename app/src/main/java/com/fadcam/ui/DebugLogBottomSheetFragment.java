@@ -263,7 +263,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         // Match SettingsDivider insets and color
         lp.setMargins(dp(14), dp(2), dp(12), dp(2));
         d.setLayoutParams(lp);
-        d.setBackgroundColor(0x262626);
+    d.setBackgroundColor(0xFF262626);
         return d;
     }
     // -------------- Fix Ended for this method(makeDivider)-----------

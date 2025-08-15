@@ -123,7 +123,7 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
         // Match SettingsDivider horizontal insets (14dp start / 12dp end)
         lp.setMargins(dp(14), dp(2), dp(12), dp(2));
         divider.setLayoutParams(lp);
-        divider.setBackgroundColor(0x262626);
+    divider.setBackgroundColor(0xFF262626);
         return divider;
     }
 
