@@ -74,7 +74,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private TextView tvAutoDeleteInfo;
     private SharedPreferencesManager sharedPreferencesManager;
     private boolean isInSelectionMode = false;
-    private CheckBox checkboxSelectAll;
+    private View selectAllContainer;
+    private ImageView selectAllCheck;
+    private ImageView selectAllBg;
+    private ImageView settingsIcon;
 
     private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
     private boolean isUnlocked = false;
@@ -133,10 +136,17 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         ImageView backButton = view.findViewById(R.id.back_button);
         if (backButton != null) {
             backButton.setOnClickListener(v -> {
-                // Simply trigger the back press - MainActivity will handle the rest
+                // -------------- Fix Start for this method(backButtonOnClick)-----------
+                // If we're in selection mode, exit it instead of leaving the screen
+                if (isInSelectionMode()) {
+                    exitSelectionMode();
+                    return;
+                }
+                // Otherwise delegate to activity/back stack
                 if (getActivity() != null) {
                     getActivity().onBackPressed();
                 }
+                // -------------- Fix Ended for this method(backButtonOnClick)-----------
             });
         }
         
@@ -154,11 +164,58 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
         emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
         tvAutoDeleteInfo = view.findViewById(R.id.tvAutoDeleteInfo);
-        checkboxSelectAll = view.findViewById(R.id.checkbox_select_all);
+    selectAllContainer = view.findViewById(R.id.action_select_all_container);
+    selectAllCheck = view.findViewById(R.id.action_select_all_check);
+    selectAllBg = view.findViewById(R.id.action_select_all_bg);
+    settingsIcon = view.findViewById(R.id.action_trash_auto_delete_settings);
 
-        setupRecyclerView();
-        setupButtonListeners();
-        setupSelectAllCheckbox();
+        // Wire header select-all container click
+    if (selectAllContainer != null) {
+            selectAllContainer.setOnClickListener(v -> {
+                if (trashAdapter == null) return;
+                if (!trashAdapter.isAllSelected() && !trashItems.isEmpty()) {
+                    trashAdapter.selectAll();
+            if (selectAllCheck != null) {
+                        selectAllCheck.setVisibility(View.VISIBLE);
+                        selectAllCheck.setAlpha(1f);
+                        try {
+                            androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat avd =
+                                    androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat.create(requireContext(), R.drawable.avd_check_draw);
+                            if (avd != null) {
+                                selectAllCheck.setImageDrawable(avd);
+                                avd.start();
+                            }
+                        } catch (Exception e) {
+                            selectAllCheck.setScaleX(0.85f);
+                            selectAllCheck.setScaleY(0.85f);
+                            selectAllCheck.setAlpha(0f);
+                            selectAllCheck.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(220).start();
+                        }
+                    }
+                } else {
+                    if (trashAdapter.getSelectedItemsCount() > 0) {
+                        trashAdapter.clearSelections();
+                    }
+                    if (selectAllCheck != null) {
+                        selectAllCheck.animate().alpha(0f).setDuration(160).withEndAction(() -> {
+                            selectAllCheck.setVisibility(View.INVISIBLE);
+                            // Clear drawable to reset AVD state for next time
+                            selectAllCheck.setImageDrawable(null);
+                        }).start();
+                    }
+                }
+                updateActionButtonsState();
+            });
+        }
+
+    // Ensure initial visibility: settings icon shown, select-all hidden
+    if (settingsIcon != null) settingsIcon.setVisibility(View.VISIBLE);
+    if (selectAllContainer != null) selectAllContainer.setVisibility(View.GONE);
+    if (selectAllBg != null) selectAllBg.setVisibility(View.INVISIBLE);
+    if (selectAllCheck != null) selectAllCheck.setVisibility(View.INVISIBLE);
+
+    setupRecyclerView();
+    setupButtonListeners();
         updateAutoDeleteInfoText();
     }
 
@@ -490,10 +547,30 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         }
         // -------------- Fix Ended for this method(updateToolbarTitle)-----------
 
-        // Show/hide select all checkbox
-        if (checkboxSelectAll != null) {
-            checkboxSelectAll.setVisibility((isInSelectionMode && !trashItems.isEmpty()) ? View.VISIBLE : View.GONE);
+        // Show select-all slot; keep container present to preserve toolbar height.
+        boolean inSel = isInSelectionMode && !trashItems.isEmpty();
+        if (selectAllContainer != null) selectAllContainer.setVisibility(inSel ? View.VISIBLE : View.GONE);
+        if (selectAllBg != null) selectAllBg.setVisibility(inSel ? View.VISIBLE : View.INVISIBLE);
+        if (selectAllCheck != null) {
+            boolean allSel = inSel && trashAdapter != null && trashAdapter.isAllSelected();
+            if (allSel) {
+                // Ensure AVD starts fresh each time all becomes selected
+                selectAllCheck.setAlpha(1f);
+                selectAllCheck.setVisibility(View.VISIBLE);
+                androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat avd =
+                        androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat.create(requireContext(), R.drawable.avd_check_draw);
+                if (avd != null) {
+                    selectAllCheck.setImageDrawable(avd);
+                    avd.start();
+                }
+            } else {
+                // Hide tick but keep empty box background
+                selectAllCheck.setAlpha(0f);
+                selectAllCheck.setVisibility(inSel ? View.INVISIBLE : View.GONE);
+                selectAllCheck.setImageDrawable(null);
+            }
         }
+        if (settingsIcon != null) settingsIcon.setVisibility(inSel ? View.GONE : View.VISIBLE);
 
         updateSelectAllCheckboxState();
     }
@@ -607,9 +684,29 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             // Update select all checkbox state
             updateSelectAllCheckboxState();
 
-            // Show/hide select all checkbox
-            if (checkboxSelectAll != null) {
-                checkboxSelectAll.setVisibility(isInSelectionMode ? View.VISIBLE : View.GONE);
+            // Show/hide header select all container
+            if (selectAllContainer != null) selectAllContainer.setVisibility(isInSelectionMode ? View.VISIBLE : View.GONE);
+            if (selectAllBg != null) selectAllBg.setVisibility(isInSelectionMode ? View.VISIBLE : View.INVISIBLE);
+            if (selectAllCheck != null) {
+                boolean allSel = isInSelectionMode && trashAdapter != null && trashAdapter.isAllSelected();
+                if (allSel) {
+                    selectAllCheck.setAlpha(1f);
+                    selectAllCheck.setVisibility(View.VISIBLE);
+                    androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat avd =
+                            androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat.create(requireContext(), R.drawable.avd_check_draw);
+                    if (avd != null) {
+                        selectAllCheck.setImageDrawable(avd);
+                        avd.start();
+                    }
+                } else {
+                    selectAllCheck.setAlpha(0f);
+                    selectAllCheck.setVisibility(View.INVISIBLE);
+                    selectAllCheck.setImageDrawable(null);
+                }
+            }
+            if (settingsIcon != null) settingsIcon.setVisibility(isInSelectionMode ? View.GONE : View.VISIBLE);
+            if (settingsIcon != null) {
+                settingsIcon.setVisibility(isInSelectionMode ? View.GONE : View.VISIBLE);
             }
         }
     }
@@ -890,42 +987,35 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             updateDeleteButtonAppearance(false);
             updateRestoreButtonAppearance(false);
 
-            // Hide select all checkbox
-            if (checkboxSelectAll != null) {
-                checkboxSelectAll.setVisibility(View.GONE);
+            // Hide header select all
+            if (selectAllContainer != null) {
+                selectAllContainer.setVisibility(View.GONE);
+            }
+            if (selectAllBg != null) selectAllBg.setVisibility(View.INVISIBLE);
+            if (selectAllCheck != null) {
+                selectAllCheck.setAlpha(0f);
+                selectAllCheck.setVisibility(View.INVISIBLE);
+                selectAllCheck.setImageDrawable(null);
             }
         }
     }
 
-    private void setupSelectAllCheckbox() {
-        if (checkboxSelectAll == null)
-            return;
-
-        checkboxSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                if (!trashAdapter.isAllSelected() && !trashItems.isEmpty()) {
-                    trashAdapter.selectAll();
-                }
-            } else {
-                if (trashAdapter.getSelectedItemsCount() > 0) {
-                    trashAdapter.clearSelections();
-                }
-            }
-            updateActionButtonsState();
-        });
-    }
-
     private void updateSelectAllCheckboxState() {
-        if (checkboxSelectAll == null || trashAdapter == null)
-            return;
-
-        // Update checkbox without triggering listener
-        checkboxSelectAll.setOnCheckedChangeListener(null);
-        boolean shouldBeChecked = trashAdapter.isAllSelected() && !trashItems.isEmpty();
-        checkboxSelectAll.setChecked(shouldBeChecked);
-
-        // Re-add the listener
-        setupSelectAllCheckbox();
+    if (selectAllContainer == null || trashAdapter == null) return;
+    boolean inSel2 = isInSelectionMode && !trashItems.isEmpty();
+    selectAllContainer.setVisibility(inSel2 ? View.VISIBLE : View.GONE);
+    if (selectAllBg != null) selectAllBg.setVisibility(inSel2 ? View.VISIBLE : View.INVISIBLE);
+    if (selectAllCheck != null) {
+        boolean all = inSel2 && trashAdapter.isAllSelected();
+        if (all) {
+            selectAllCheck.setAlpha(1f);
+            selectAllCheck.setVisibility(View.VISIBLE);
+        } else {
+            selectAllCheck.setAlpha(0f);
+            selectAllCheck.setVisibility(inSel2 ? View.INVISIBLE : View.GONE);
+            selectAllCheck.setImageDrawable(null);
+        }
+    }
     }
 
     /**
