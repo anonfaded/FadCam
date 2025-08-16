@@ -1343,31 +1343,23 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             Uri shareUri = getShareableUri(videoItem.uri);
             Log.d(TAG, "Converted share URI: " + shareUri);
             
-            // Direct YouTube upload intent
+            // Direct YouTube upload intent: try package-targeted intent first, fall back to chooser on failure
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("video/*");
             intent.putExtra(Intent.EXTRA_STREAM, shareUri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setPackage("com.google.android.youtube");
-            
-            // Check if the YouTube app is available
-            PackageManager packageManager = context.getPackageManager();
-            List<ResolveInfo> activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-            
-            if (!activities.isEmpty()) {
-                Log.d(TAG, "YouTube app found, sending video");
+
+            try {
                 context.startActivity(intent);
-            } else {
-                // Try alternative YouTube package (YouTube Go)
+            } catch (android.content.ActivityNotFoundException anf) {
+                // Try alternative package name once
                 intent.setPackage("com.google.android.apps.youtube.mango");
-                activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-                
-                if (!activities.isEmpty()) {
-                    Log.d(TAG, "YouTube Go app found, sending video");
+                try {
                     context.startActivity(intent);
-                } else {
-                    // Fallback to generic sharing dialog with a hint
-                    Log.d(TAG, "YouTube app not found, falling back to generic share");
+                } catch (android.content.ActivityNotFoundException anf2) {
+                    // Final fallback: generic chooser
+                    Log.d(TAG, "YouTube package-targeted intents failed, falling back to generic share");
                     Intent chooserIntent = Intent.createChooser(
                             new Intent(Intent.ACTION_SEND)
                                     .setType("video/*")
@@ -1376,7 +1368,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                             "Upload to YouTube"
                     );
                     context.startActivity(chooserIntent);
-                    Toast.makeText(context, R.string.toast_no_youtube_app, Toast.LENGTH_LONG).show();
                 }
             }
         } catch (Exception e) {
@@ -1418,32 +1409,23 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             Uri shareUri = getShareableUri(videoItem.uri);
             Log.d(TAG, "Converted share URI: " + shareUri);
             
-            // Use ShareCompat to create the intent as recommended
+            // Use ShareCompat to create the intent; try package-targeted Drive first, fall back to chooser on failure
             Intent intent = ShareCompat.IntentBuilder.from((Activity)context)
                     .setStream(shareUri)
                     .setType("video/*")
                     .getIntent()
-                    .setPackage("com.google.android.apps.docs")
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            
-            // Check if Google Drive is available
-            PackageManager packageManager = context.getPackageManager();
-            List<ResolveInfo> activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-            
-            if (!activities.isEmpty()) {
-                Log.d(TAG, "Google Drive app found, sending video");
+
+            intent.setPackage("com.google.android.apps.docs");
+            try {
                 context.startActivity(intent);
-            } else {
-                // Try alternative Drive package
+            } catch (android.content.ActivityNotFoundException anf) {
+                // Try alternative Drive package name
                 intent.setPackage("com.google.android.apps.docs.editors.docs");
-                activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-                
-                if (!activities.isEmpty()) {
-                    Log.d(TAG, "Alternative Google Drive app found, sending video");
+                try {
                     context.startActivity(intent);
-                } else {
-                    // Fallback to generic sharing dialog with a hint
-                    Log.d(TAG, "Google Drive app not found, falling back to generic share");
+                } catch (android.content.ActivityNotFoundException anf2) {
+                    Log.d(TAG, "Drive package-targeted intents failed, falling back to generic share");
                     Intent chooserIntent = Intent.createChooser(
                             ShareCompat.IntentBuilder.from((Activity)context)
                                     .setStream(shareUri)
@@ -1453,7 +1435,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                             "Upload to Drive"
                     );
                     context.startActivity(chooserIntent);
-                    Toast.makeText(context, R.string.toast_no_drive_app, Toast.LENGTH_LONG).show();
                 }
             }
         } catch (Exception e) {
