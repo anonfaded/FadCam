@@ -347,7 +347,8 @@ public class GLWatermarkRenderer {
             }
             
             if (!madeCurrentSuccessfully) {
-                throw new IllegalStateException("Failed to make EGL context current after multiple attempts");
+                Log.e(TAG, "renderToEncoder: eglMakeCurrent ultimately failed; skipping this frame");
+                return; // Abort this frame gracefully instead of throwing
             }
             
             // Check if cameraSurfaceTexture is still valid
@@ -550,7 +551,16 @@ public class GLWatermarkRenderer {
         int[] version = new int[2];
         if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) throw new RuntimeException("eglInitialize failed");
 
-        int[] attribList = { EGL14.EGL_RED_SIZE, 8, EGL14.EGL_GREEN_SIZE, 8, EGL14.EGL_BLUE_SIZE, 8, EGL14.EGL_ALPHA_SIZE, 8, EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, EGL14.EGL_NONE };
+        // Include EGL_RECORDABLE_ANDROID for better driver compatibility (e.g., Huawei)
+        int[] attribList = {
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_GREEN_SIZE, 8,
+            EGL14.EGL_BLUE_SIZE, 8,
+            EGL14.EGL_ALPHA_SIZE, 8,
+            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+            android.opengl.EGLExt.EGL_RECORDABLE_ANDROID, 1,
+            EGL14.EGL_NONE
+        };
         EGLConfig[] configs = new EGLConfig[1];
         int[] numConfigs = new int[1];
         EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0);

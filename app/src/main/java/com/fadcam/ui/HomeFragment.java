@@ -1041,6 +1041,8 @@ public class HomeFragment extends BaseFragment {
     private boolean isStateReceiversRegistered = false;
     private boolean isCompletionReceiverRegistered = false; // Renamed from isStatsReceiverRegistered
     private boolean isTorchReceiverRegistered = false;
+    // Receiver for recording failure broadcasts
+    private android.content.BroadcastReceiver recordingFailedReceiver;
 
 
     // --- MAIN Registration Method ---
@@ -1082,6 +1084,8 @@ public class HomeFragment extends BaseFragment {
         registerTorchReceiver(context);
         // ----- Fix Start for this method(registerBroadcastReceivers) -----
         registerSegmentCompleteStatsReceiver(context); // Register the new one
+    // Register recording failed receiver
+    registerRecordingFailedReceiver(context);
         // ----- Fix Ended for this method(registerBroadcastReceivers) -----
 
         // ----- Fix Start: Also register the camera resource availability receiver -----
@@ -1094,6 +1098,53 @@ public class HomeFragment extends BaseFragment {
         // isCompletionReceiverRegistered is managed by registerRecordingCompleteReceiver
         // isTorchReceiverRegistered is managed by registerTorchReceiver
         Log.i(TAG,"All HomeFragment broadcast receivers registration attempt finished.");
+    }
+    private void registerRecordingFailedReceiver(Context context) {
+        if (recordingFailedReceiver == null) {
+            recordingFailedReceiver = new android.content.BroadcastReceiver() {
+                @Override
+                public void onReceive(Context c, Intent intent) {
+                    if (intent == null || !isAdded()) return;
+                    if (Constants.ACTION_RECORDING_FAILED.equals(intent.getAction())) {
+                        String errorMessage = intent.getStringExtra(Constants.EXTRA_ERROR_MESSAGE);
+                        String stackTrace = intent.getStringExtra(Constants.EXTRA_STACK_TRACE);
+                        showRecordingFailedDialog(errorMessage, stackTrace);
+                    }
+                }
+            };
+        }
+        IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_FAILED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(recordingFailedReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            context.registerReceiver(recordingFailedReceiver, filter);
+        }
+    }
+
+    private void showRecordingFailedDialog(String errorMessage, String stackTrace) {
+        if (getContext() == null || !isAdded()) return;
+
+        String fullErrorMessage = "FadCam could not start recording.\n\nPlease copy this error and report it on GitHub or Discord.\n\n"
+                + "-----------------------------------\n"
+                + "Error Message:\n" + (errorMessage != null ? errorMessage : "No message") + "\n\n"
+                + "Device Info:\n"
+                + "MANUFACTURER: " + Build.MANUFACTURER + "\n"
+                + "MODEL: " + Build.MODEL + "\n"
+                + "ANDROID: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")\n\n"
+                + "Stack Trace:\n" + (stackTrace != null ? stackTrace : "No stack trace")
+                + "\n-----------------------------------";
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Recording Failed")
+                .setMessage(fullErrorMessage)
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                .setNeutralButton("Copy Error", (dialog, which) -> {
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                    android.content.ClipData clip = android.content.ClipData.newPlainText("FadCam Error", fullErrorMessage);
+                    clipboard.setPrimaryClip(clip);
+                    android.widget.Toast.makeText(getContext(), "Error copied to clipboard", android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .show();
     }
 
     // --- Initialization Helper Methods ---
@@ -1467,6 +1518,10 @@ public class HomeFragment extends BaseFragment {
         }
         // ----- Fix Ended for this method(unregisterBroadcastReceivers_check_flags)-----
         Log.i(TAG,"All HomeFragment broadcast receivers unregistration attempt finished.");
+        // Unregister recording failed receiver
+        if (recordingFailedReceiver != null) {
+            try { requireContext().unregisterReceiver(recordingFailedReceiver); } catch (Exception ignore) {}
+        }
     }
 
     @Override

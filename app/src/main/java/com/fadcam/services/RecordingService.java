@@ -2727,6 +2727,7 @@ public class RecordingService extends Service {
 
     // Update startRecording to use new GLRecordingPipeline constructor
     private void startRecording() {
+        // -------------- Fix Start for this method(startRecording)-----------
         Log.d(TAG, "startRecording: beginning recording setup");
         if (recordingState != RecordingState.STARTING) {
             Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
@@ -2883,11 +2884,29 @@ public class RecordingService extends Service {
 
             Log.d(TAG, "Recording setup complete");
         } catch (Exception e) {
-            Log.e(TAG, "Exception in startRecording", e);
+            Log.e(TAG, "CRITICAL FAILURE IN startRecording", e);
+
+            // Broadcast the failure to the UI with details
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+
+            Intent failureIntent = new Intent(Constants.ACTION_RECORDING_FAILED);
+            failureIntent.putExtra(Constants.EXTRA_ERROR_MESSAGE, e.getMessage());
+            failureIntent.putExtra(Constants.EXTRA_STACK_TRACE, stackTrace);
+            try {
+                sendBroadcast(failureIntent);
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to broadcast recording failure", t);
+            }
+
+            // Clean up and stop the service
             recordingState = RecordingState.NONE;
             sharedPreferencesManager.setRecordingInProgress(false);
-            stopSelf();
+            stopRecording();
         }
+        // -------------- Fix Ended for this method(startRecording) -----------
     }
 
     // Add this field to the class

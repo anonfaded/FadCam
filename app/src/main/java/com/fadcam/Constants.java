@@ -108,6 +108,13 @@ public abstract class Constants {
     // Extra key for the URI of the file being processed (usually the temp file)
     public static final String EXTRA_PROCESSING_URI_STRING = "com.fadcam.EXTRA_PROCESSING_URI_STRING";
 
+    // -------------- Fix Start: Add constant for recording failure broadcast -----------
+    // Broadcast action sent by RecordingService when it fails to start
+    public static final String ACTION_RECORDING_FAILED = "com.fadcam.RECORDING_FAILED";
+    public static final String EXTRA_ERROR_MESSAGE = "com.fadcam.EXTRA_ERROR_MESSAGE";
+    public static final String EXTRA_STACK_TRACE = "com.fadcam.EXTRA_STACK_TRACE";
+    // -------------- Fix Ended for this constant -----------
+
     // ----- Fix Start for this class (Constants_video_splitting_broadcast) -----
     // Broadcast action sent by RecordingService when a video segment is complete (due to splitting)
     public static final String ACTION_RECORDING_SEGMENT_COMPLETE = "com.fadcam.RECORDING_SEGMENT_COMPLETE";
