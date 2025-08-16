@@ -101,6 +101,8 @@
     <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
     <string name="video_menu_upload_youtube">Upload to YouTube</string>
     <string name="video_menu_upload_drive">Upload to  Google Drive</string>
+    <string name="video_menu_open_with">Open with...</string>
+    <string name="chooser_open_with">Open with</string>
     <string name="video_menu_upload_faddrive">Upload to FadDrive</string>
     <string name="toast_no_youtube_app">YouTube app not found</string>
     <string name="toast_no_drive_app">Google Drive app not found</string>

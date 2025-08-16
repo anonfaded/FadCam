@@ -628,6 +628,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
     items.add(OptionItem.withLigature("action_upload_youtube", ctx.getString(R.string.video_menu_upload_youtube), "play_circle"));
     items.add(OptionItem.withLigature("action_upload_drive", ctx.getString(R.string.video_menu_upload_drive), "cloud_upload"));
+    items.add(OptionItem.withLigature("action_open_with", ctx.getString(R.string.video_menu_open_with), "open_in_new"));
     // New: Upload to FadDrive (coming soon) — badge only, no helper line
     items.add(OptionItem.withLigatureBadge("action_upload_faddrive", ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud", ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
     // Coming soon: Edit with FaditorX — after FadDrive
@@ -667,6 +668,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     break;
                 case "action_upload_drive":
                     openVideoInGoogleDrive(videoItem);
+                    break;
+                case "action_open_with":
+                    openWithExternalPlayer(videoItem);
                     break;
             }
         });
@@ -1488,6 +1492,44 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         
         return uri; // Return original if conversion failed
+    }
+
+    /**
+     * Launch system chooser to open the video with an external player without exporting.
+     */
+    private void openWithExternalPlayer(VideoItem videoItem) {
+        if (context == null || videoItem == null || videoItem.uri == null) return;
+        try {
+            Uri shareUri = getShareableUri(videoItem.uri);
+            if (shareUri == null) {
+                Toast.makeText(context, R.string.toast_video_not_found, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(shareUri, "video/*");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            Intent chooser = Intent.createChooser(intent, context.getString(R.string.chooser_open_with));
+            context.startActivity(chooser);
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening external player for: " + videoItem.uri, e);
+            try {
+                // final fallback: generic SEND chooser
+                Uri shareUri = getShareableUri(videoItem.uri);
+                Intent chooserIntent = Intent.createChooser(
+                        new Intent(Intent.ACTION_SEND)
+                                .setType("video/*")
+                                .putExtra(Intent.EXTRA_STREAM, shareUri)
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                        context.getString(R.string.chooser_open_with)
+                );
+                context.startActivity(chooserIntent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Fallback share failed", ex);
+                Toast.makeText(context, "Could not open video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     // --- NEW Helper to get resolution (refactored from info dialog) ---
