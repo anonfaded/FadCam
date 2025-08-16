@@ -33,4 +33,24 @@
         android:layout_margin="16dp"
         app:tint="@android:color/white" />
 
+    <!-- Overlay indicator for quick 2x playback (appears while long-press is active) -->
+    <TextView
+        android:id="@+id/quick_speed_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="72dp"
+        android:background="@drawable/quick_speed_bg"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone"
+        android:importantForAccessibility="no"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
+
 </FrameLayout>

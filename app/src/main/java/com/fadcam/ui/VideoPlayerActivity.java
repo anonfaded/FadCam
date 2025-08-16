@@ -32,6 +32,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private StyledPlayerView playerView;
     private ImageButton backButton;
     private ImageButton settingsButton; // For playback speed
+    private TextView quickSpeedOverlay;
 
     // Playback speed options
     private final CharSequence[] speedOptions = {"0.5x", "1x (Normal)", "1.5x", "2x", "3x", "4x", "6x", "8x", "10x"};
@@ -65,6 +66,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             Log.i(TAG, "Received video URI: " + videoUri.toString());
             initializePlayer(videoUri); // Pass the Uri directly
             setupCustomSettingsAction();
+            setupPressAndHoldFor2x();
         } else {
             // Log error and finish if URI is missing
             Log.e(TAG, "Video URI is null. Intent Data: " + getIntent().getDataString() +". Cannot initialize player.");
@@ -91,6 +93,66 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //            bar.setTouchTargetHeight((int) (getResources().getDisplayMetrics().density * 32));
         }
         // ----- Fix End: Programmatically set seekbar colors for dynamic theming -----
+    }
+    // Press-and-hold behavior: while pressed, play at 2x; on release, revert to previous speed
+    private void setupPressAndHoldFor2x() {
+        if (playerView == null) return;
+        quickSpeedOverlay = findViewById(R.id.quick_speed_overlay);
+        final int LONG_PRESS_MS = 220; // threshold for long-press
+        final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+        final boolean[] isLongPress = {false};
+        final Runnable longPressRunnable = () -> {
+            isLongPress[0] = true;
+            if (player != null) {
+                player.setPlaybackParameters(new PlaybackParameters(2.0f));
+                showQuickOverlay(true);
+                // Hide controller in case it was visible to match YouTube behavior
+                playerView.hideController();
+            }
+        };
+
+        playerView.setOnTouchListener((v, ev) -> {
+            switch (ev.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    isLongPress[0] = false;
+                    handler.postDelayed(longPressRunnable, LONG_PRESS_MS);
+                    break;
+                case android.view.MotionEvent.ACTION_POINTER_DOWN:
+                    // treat multi-touch as long-press
+                    handler.post(longPressRunnable);
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_POINTER_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    handler.removeCallbacks(longPressRunnable);
+                    if (isLongPress[0]) {
+                        // Was a long-press; revert without showing controller
+                        if (player != null) {
+                            float revertSpeed = speedValues[currentSpeedIndex];
+                            player.setPlaybackParameters(new PlaybackParameters(revertSpeed));
+                        }
+                        showQuickOverlay(false);
+                        isLongPress[0] = false;
+                        // Consume event to avoid controller showing due to tap release
+                        return true;
+                    }
+                    // Not a long-press; allow normal behavior (taps show controller)
+                    break;
+            }
+            return false;
+        });
+    }
+
+    private void showQuickOverlay(boolean show) {
+        if (quickSpeedOverlay == null) return;
+        if (show) {
+            quickSpeedOverlay.setText("2x");
+            quickSpeedOverlay.setVisibility(View.VISIBLE);
+            quickSpeedOverlay.setAlpha(0f);
+            quickSpeedOverlay.animate().alpha(1f).setDuration(120).start();
+        } else {
+            quickSpeedOverlay.animate().alpha(0f).setDuration(120).withEndAction(() -> quickSpeedOverlay.setVisibility(View.GONE)).start();
+        }
     }
 
     // *** FIX: Modified method signature to accept Uri ***
