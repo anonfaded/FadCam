@@ -213,6 +213,14 @@
     <string name="array_watermark_nomark">No Watermark</string>
     <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
     <string name="toast_video_not_found">Error: Video not found</string>
+    <string name="quick_speed_title">Quick Speed</string>
+    <string name="quick_speed_option_default">2x (Default)</string>
+    <string name="quick_speed_option_1_25">1.25x</string>
+    <string name="quick_speed_option_1_5">1.5x</string>
+    <string name="quick_speed_option_1_75">1.75x</string>
+    <string name="quick_speed_option_2">2x</string>
+    <string name="quick_speed_option_2_5">2.5x</string>
+    <string name="quick_speed_option_custom">Custom</string>
     <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
     <string name="toast_video_save_fail">Failed to save video</string>
     <string name="rename_video_title">Rename Video</string>
@@ -360,6 +368,27 @@
     <string name="shortcuts_add_to_home">Add to Home screen</string>
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
     <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="video_player_settings_title">Video Player Settings</string>
+    <string name="video_player_settings_helper">Playback Speed changes the normal speed of video playback. Quick Speed is a temporary boost applied only while you press and hold on the video. You can change these settings here or directly from the Video Player screen.</string>
+    <string name="video_player_settings_subtitle">Playback &amp; Quick Speed</string>
+    <string name="playback_speed_label">Playback Speed</string>
+    <string name="playback_speed_title">Playback Speed</string>
+    <string name="playback_speed_subtitle">Change playback speed for this video</string>
+    <string name="toast_default_playback_speed_set">Default playback speed set to %1$s</string>
+    <string name="mute_playback_title">Mute playback</string>
+    <string name="mute_playback_subtitle">Play videos with sound off</string>
+    <string name="mute_playback_helper">When enabled, videos will play muted by default. You can toggle this here or from the Video Player screen.</string>
+    <string name="mute_playback_helper_picker">When enabled, videos will play muted by default.</string>
+    <string name="mute_on_toast">Playback muted</string>
+    <string name="mute_off_toast">Playback unmuted</string>
+    <string name="video_player_settings_helper_player">You can change these options here or from the Settings tab as well.</string>
+    <string name="playback_controls_heading">Playback controls</string>
+    <string name="playback_controls_helper">Adjust playback speed or set a Quick Speed for press-and-hold. You can change these here or from the Video Player screen.</string>
+    <string name="sound_heading">Audio during playback</string>
+    <!-- Focused helpers for pickers -->
+    <string name="playback_speed_helper_settings">Default speed for video playback.</string>
+    <string name="playback_speed_helper_player">Affects current playback only. To change the default for future videos, use Settings.</string>
+    <string name="quick_speed_helper">Quick Speed applies only while you press and hold during playback.</string>
     <!-- Shortcuts customization UI -->
     <string name="shortcuts_customize_title">Customize</string>
     <string name="shortcuts_customize_subtitle">Name and icon</string>
