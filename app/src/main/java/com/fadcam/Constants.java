@@ -175,4 +175,9 @@ public abstract class Constants {
     public static final String APP_ICON_JET = "jet"; // Jet fighter icon
     public static final String APP_ICON_MINIMAL = "minimal";
     public static final String APP_ICON_BLACK = "black"; // Full black icon
+    // Quick speed preference key for press-and-hold quick speed
+    public static final String PREF_QUICK_SPEED = "pref_quick_speed";
+    public static final float DEFAULT_QUICK_SPEED = 2.0f;
+    // Mute playback preference
+    public static final String PREF_PLAYBACK_MUTED = "pref_playback_muted";
 }

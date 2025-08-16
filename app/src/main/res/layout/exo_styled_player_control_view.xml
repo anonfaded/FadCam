@@ -72,9 +72,9 @@
                         style="@style/ExoStyledControls.Button.Bottom.Settings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/ic_speed_24"
+                        android:src="@drawable/ic_settings_24"
                         app:tint="@android:color/white"
-                        android:contentDescription="Playback Speed"/>
+                        android:contentDescription="@string/settings_title"/>
 
 
 

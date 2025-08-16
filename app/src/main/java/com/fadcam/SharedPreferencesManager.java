@@ -139,6 +139,18 @@ public class SharedPreferencesManager {
     }
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
+    // ----- Fix Start for this class (SharedPreferencesManager_playback_muted) -----
+    /** Returns whether playback should start muted by default. Default: false (unmuted). */
+    public boolean isPlaybackMuted() {
+        return sharedPreferences.getBoolean(Constants.PREF_PLAYBACK_MUTED, false);
+    }
+
+    /** Sets the playback muted preference. */
+    public void setPlaybackMuted(boolean muted) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_PLAYBACK_MUTED, muted).apply();
+    }
+    // ----- Fix Ended for this class (SharedPreferencesManager_playback_muted) -----
+
     // ----- Fix Start for this class (SharedPreferencesManager_video_splitting)
     // -----
     public static final String PREF_VIDEO_SPLITTING_ENABLED = "video_splitting_enabled";
@@ -398,6 +410,15 @@ public class SharedPreferencesManager {
     // --- Other existing methods ---
     public boolean isVideoCodecExist() {
         return sharedPreferences.getString(Constants.PREF_VIDEO_CODEC, null) != null;
+    }
+
+    // --- Quick speed preference for press-and-hold fast playback ---
+    public float getQuickSpeed() {
+        return sharedPreferences.getFloat(Constants.PREF_QUICK_SPEED, Constants.DEFAULT_QUICK_SPEED);
+    }
+
+    public void setQuickSpeed(float speed) {
+        sharedPreferences.edit().putFloat(Constants.PREF_QUICK_SPEED, speed).apply();
     }
 
     public boolean isLocalisationEnabled() {

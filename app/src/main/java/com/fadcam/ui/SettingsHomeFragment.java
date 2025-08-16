@@ -31,6 +31,7 @@ public class SettingsHomeFragment extends Fragment {
     int[] ids = new int[]{
         R.id.group_appearance,
         R.id.group_video,
+        R.id.group_video_player_settings,
         R.id.group_audio,
         R.id.group_storage,
         R.id.group_notifications,
@@ -44,6 +45,7 @@ public class SettingsHomeFragment extends Fragment {
     String[] labels = new String[]{
         "Appearance",
         "Video Recording",
+        "Video Player Settings",
         "Audio",
         "Storage",
         "Notifications",
@@ -64,6 +66,12 @@ public class SettingsHomeFragment extends Fragment {
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new VideoSettingsFragment()));
+                }
+        } else if(ids[i] == R.id.group_video_player_settings){
+                LinearLayout row = root.findViewById(ids[i]);
+                if(row != null){
+            // Open dedicated screen; inside that screen rows still open bottom pickers
+            row.setOnClickListener(v -> openSubFragment(new VideoPlayerSettingsFragment()));
                 }
             } else if(ids[i] == R.id.group_audio){
                 LinearLayout row = root.findViewById(ids[i]);
@@ -118,6 +126,89 @@ public class SettingsHomeFragment extends Fragment {
     refreshAppInlineValues(root);
         // -------------- Fix Ended for this method(onCreateView)-----------
         return root;
+    }
+
+    /**
+     * Opens the unified Video Player Settings sheet, reusing PickerBottomSheetFragment.
+     * Contains two rows: Playback Speed and Quick Speed. Helper explains the difference.
+     */
+    private void showVideoPlayerSettingsSheet(){
+        // -------------- Fix Start for this method(showVideoPlayerSettingsSheet)-----------
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        // We don't compute dynamic subtitles here; keep concise labels.
+        items.add(new com.fadcam.ui.picker.OptionItem("row_playback_speed", getString(R.string.playback_speed_label), null, null, null, null, null, null, "speed", null, null, null));
+        items.add(new com.fadcam.ui.picker.OptionItem("row_quick_speed", getString(R.string.quick_speed_title), null, null, null, null, null, null, "bolt", null, null, null));
+        final String RK_SETTINGS = "rk_settings_video_player";
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.video_player_settings_title), items, null, RK_SETTINGS, getString(R.string.video_player_settings_helper));
+        getParentFragmentManager().setFragmentResultListener(RK_SETTINGS, this, (key, bundle) -> {
+            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if("row_playback_speed".equals(sel)){
+                showPlaybackSpeedPickerFromSettings();
+            } else if("row_quick_speed".equals(sel)){
+                showQuickSpeedPickerFromSettings();
+            }
+        });
+        sheet.show(getParentFragmentManager(), "video_player_settings_sheet_settings_tab");
+        // -------------- Fix Ended for this method(showVideoPlayerSettingsSheet)-----------
+    }
+
+    private void showPlaybackSpeedPickerFromSettings(){
+        // -------------- Fix Start for this method(showPlaybackSpeedPickerFromSettings)-----------
+        // Mirror the player's list for consistency
+        final String RK = "rk_pick_playback_speed_settings";
+        float[] speedValues = new float[]{0.5f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
+        CharSequence[] labels = new CharSequence[]{"0.5x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        for(int i=0;i<speedValues.length;i++){
+            items.add(new com.fadcam.ui.picker.OptionItem("spd_"+speedValues[i], String.valueOf(labels[i]), null, null, null, null, null, null, "speed", null, null, null));
+        }
+    float current = com.fadcam.SharedPreferencesManager.getInstance(requireContext())
+        .sharedPreferences.getFloat("pref_default_playback_speed", 1.0f);
+    String selectedId = "spd_"+current;
+    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+        getString(R.string.playback_speed_title), items, selectedId, RK, getString(R.string.playback_speed_helper_settings));
+        getParentFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if(sel!=null && sel.startsWith("spd_")){
+                try{
+                    float val = Float.parseFloat(sel.substring(4));
+                    // Persist as default playback speed for future videos
+                    com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences
+                        .edit().putFloat("pref_default_playback_speed", val).apply();
+                    android.widget.Toast.makeText(requireContext(), getString(R.string.toast_default_playback_speed_set, val+"x"), android.widget.Toast.LENGTH_SHORT).show();
+                }catch(NumberFormatException ignored){}
+            }
+        });
+        sheet.show(getParentFragmentManager(), "playback_speed_picker_settings_tab");
+        // -------------- Fix Ended for this method(showPlaybackSpeedPickerFromSettings)-----------
+    }
+
+    private void showQuickSpeedPickerFromSettings(){
+        // -------------- Fix Start for this method(showQuickSpeedPickerFromSettings)-----------
+        final String RK = "rk_pick_quick_speed_settings";
+        float[] speedValues = new float[]{0.5f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
+        CharSequence[] labels = new CharSequence[]{"0.5x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        for(int i=0;i<speedValues.length;i++){
+            String title = Math.abs(speedValues[i]-2.0f)<0.001f? getString(R.string.quick_speed_option_default): String.valueOf(labels[i]);
+            items.add(new com.fadcam.ui.picker.OptionItem("spd_"+speedValues[i], title, null, null, null, null, null, null, "bolt", null, null, null));
+        }
+        float current = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).getQuickSpeed();
+        String selectedId = "spd_"+current;
+    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+        getString(R.string.quick_speed_title), items, selectedId, RK, getString(R.string.quick_speed_helper));
+        getParentFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if(sel!=null && sel.startsWith("spd_")){
+                try{
+                    float val = Float.parseFloat(sel.substring(4));
+                    com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setQuickSpeed(val);
+                }catch(NumberFormatException ignored){}
+            }
+        });
+        sheet.show(getParentFragmentManager(), "quick_speed_picker_settings_tab");
+        // -------------- Fix Ended for this method(showQuickSpeedPickerFromSettings)-----------
     }
 
     private void setupNav(View root, int id, String label){

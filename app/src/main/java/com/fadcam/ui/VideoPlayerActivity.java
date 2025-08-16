@@ -8,8 +8,11 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import android.widget.TextView;
+import java.text.DecimalFormat;
+import java.util.Locale;
 import android.widget.ArrayAdapter;
 import android.view.ViewGroup;
+import java.util.ArrayList;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,6 +25,8 @@ import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.ui.picker.OptionItem;
 
 
 public class VideoPlayerActivity extends AppCompatActivity {
@@ -33,6 +38,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private ImageButton backButton;
     private ImageButton settingsButton; // For playback speed
     private TextView quickSpeedOverlay;
+    private SharedPreferencesManager spm;
+    // -------------- Fix Start for field(video_settings_result_keys)-----------
+    private static final String RK_VIDEO_SETTINGS = "rk_video_settings";
+    private static final String RK_PLAYBACK_SPEED = "rk_playback_speed";
+    private static final String RK_QUICK_SPEED = "rk_quick_speed";
+    // -------------- Fix Ended for field(video_settings_result_keys)-----------
 
     // Playback speed options
     private final CharSequence[] speedOptions = {"0.5x", "1x (Normal)", "1.5x", "2x", "3x", "4x", "6x", "8x", "10x"};
@@ -64,8 +75,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         if (videoUri != null) {
             Log.i(TAG, "Received video URI: " + videoUri.toString());
+            spm = SharedPreferencesManager.getInstance(this);
+            // Read default playback speed from prefs (if set) and adjust currentSpeedIndex
+            float defSpd = sharedPreferencesManager.sharedPreferences.getFloat("pref_default_playback_speed", speedValues[currentSpeedIndex]);
+            for(int i=0;i<speedValues.length;i++){ if(Math.abs(speedValues[i]-defSpd)<0.001f){ currentSpeedIndex = i; break; } }
             initializePlayer(videoUri); // Pass the Uri directly
             setupCustomSettingsAction();
+            setupQuickSpeedSettings();
             setupPressAndHoldFor2x();
         } else {
             // Log error and finish if URI is missing
@@ -94,7 +110,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
         // ----- Fix End: Programmatically set seekbar colors for dynamic theming -----
     }
-    // Press-and-hold behavior: while pressed, play at 2x; on release, revert to previous speed
+    // Press-and-hold behavior: while pressed, ramp to quick speed; on release, revert to previous speed
     private void setupPressAndHoldFor2x() {
         if (playerView == null) return;
         quickSpeedOverlay = findViewById(R.id.quick_speed_overlay);
@@ -104,9 +120,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
         final Runnable longPressRunnable = () -> {
             isLongPress[0] = true;
             if (player != null) {
-                player.setPlaybackParameters(new PlaybackParameters(2.0f));
+                float start = player.getPlaybackParameters().speed;
+                float target = spm != null ? spm.getQuickSpeed() : 2.0f;
+                animatePlaybackSpeed(start, target, 200);
                 showQuickOverlay(true);
-                // Hide controller in case it was visible to match YouTube behavior
                 playerView.hideController();
             }
         };
@@ -129,7 +146,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         // Was a long-press; revert without showing controller
                         if (player != null) {
                             float revertSpeed = speedValues[currentSpeedIndex];
-                            player.setPlaybackParameters(new PlaybackParameters(revertSpeed));
+                            animatePlaybackSpeed(player.getPlaybackParameters().speed, revertSpeed, 200);
                         }
                         showQuickOverlay(false);
                         isLongPress[0] = false;
@@ -143,10 +160,74 @@ public class VideoPlayerActivity extends AppCompatActivity {
         });
     }
 
+    // Show a picker to set quick-speed via long-press on settings button
+    private void setupQuickSpeedSettings() {
+        if (settingsButton != null) {
+            settingsButton.setOnLongClickListener(v -> {
+                showQuickSpeedPickerSheet();
+                return true;
+            });
+        }
+    }
+
+    // -------------- Fix Start for this method(showQuickSpeedPickerSheet)-----------
+    private void showQuickSpeedPickerSheet() {
+        ArrayList<OptionItem> items = new ArrayList<>();
+        for (int i = 0; i < speedValues.length; i++) {
+            float v = speedValues[i];
+            String id = "spd_" + v;
+            String title;
+            if (Math.abs(v - 2.0f) < 0.001f) {
+                title = getString(R.string.quick_speed_option_default); // 2x (Default)
+            } else {
+                title = String.valueOf(speedOptions[i]);
+            }
+                items.add(new OptionItem(id, title, null, null, null, null, null, null, "bolt", null, null, null));
+        }
+        float current = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+        String selectedId = "spd_" + current;
+            PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.quick_speed_title), items, selectedId, RK_QUICK_SPEED, getString(R.string.quick_speed_helper));
+        getSupportFragmentManager().setFragmentResultListener(RK_QUICK_SPEED, this, (key, bundle) -> {
+            String selId = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selId != null && selId.startsWith("spd_")) {
+                try {
+                    float val = Float.parseFloat(selId.substring(4));
+                    if (spm != null) spm.setQuickSpeed(val);
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+        sheet.show(getSupportFragmentManager(), "quick_speed_sheet");
+    }
+    // -------------- Fix Ended for this method(showQuickSpeedPickerSheet)-----------
+
+    // Animate playback speed from start to target over duration ms
+    private void animatePlaybackSpeed(float start, float target, int durationMs) {
+        if (player == null) return;
+        try {
+            android.animation.ValueAnimator va = android.animation.ValueAnimator.ofFloat(start, target);
+            va.setDuration(durationMs);
+            va.addUpdateListener(animation -> {
+                float v = (float) animation.getAnimatedValue();
+                try { player.setPlaybackParameters(new PlaybackParameters(v)); } catch (Exception ignored) {}
+            });
+            va.start();
+        } catch (Exception ignored) {}
+    }
+
     private void showQuickOverlay(boolean show) {
         if (quickSpeedOverlay == null) return;
         if (show) {
-            quickSpeedOverlay.setText("2x");
+            float quick = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+            // Format like "2x" or "1.5x" without unnecessary decimals
+            String formatted;
+            try {
+                DecimalFormat df = new DecimalFormat("#.#");
+                df.setDecimalSeparatorAlwaysShown(false);
+                formatted = df.format(quick) + "x";
+            } catch (Exception e) {
+                formatted = String.format(Locale.US, "%sx", quick);
+            }
+            quickSpeedOverlay.setText(formatted);
             quickSpeedOverlay.setVisibility(View.VISIBLE);
             quickSpeedOverlay.setAlpha(0f);
             quickSpeedOverlay.animate().alpha(1f).setDuration(120).start();
@@ -167,6 +248,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
             player.setMediaItem(mediaItem);
             // Set initial playback speed
             player.setPlaybackParameters(new PlaybackParameters(speedValues[currentSpeedIndex]));
+            // Apply initial mute state from prefs
+            boolean muted = SharedPreferencesManager.getInstance(this).isPlaybackMuted();
+            try{ player.setVolume(muted? 0f: 1f); }catch(Exception ignored){}
             player.prepare();
             player.play(); // Autoplay
             Log.i(TAG, "ExoPlayer initialized and started for URI: " + videoUri);
@@ -189,7 +273,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             // Need to import com.google.android.exoplayer2.ui.R specifically for this ID
             settingsButton = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_settings);
             if (settingsButton != null) {
-                settingsButton.setOnClickListener(v -> showPlaybackSpeedDialog());
+                settingsButton.setOnClickListener(v -> showVideoSettingsSheet());
                 Log.d(TAG, "Custom settings button listener attached to @id/exo_settings.");
             } else {
                 // This can happen if the overridden layout exo_styled_player_control_view.xml
@@ -201,45 +285,87 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
-    // ----- Fix Start: Use themed dialog for playback speed with white text for radio items -----
-    private void showPlaybackSpeedDialog() {
-        if (player == null) {
-            Log.e(TAG, "Player is null, cannot show speed dialog.");
-            return;
-        }
-        if (playerView != null) {
-            playerView.hideController(); // Hide controller during dialog interaction
-        }
-
-        // Custom ArrayAdapter to force white text for radio items
-        int white = getResources().getColor(android.R.color.white);
-        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(this, android.R.layout.simple_list_item_single_choice, speedOptions) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(white);
-                return view;
+    // -------------- Fix Start for this method(showVideoSettingsSheet)-----------
+    private void showVideoSettingsSheet() {
+        ArrayList<OptionItem> items = new ArrayList<>();
+        // Row: Playback Speed (show current runtime speed label)
+    String playbackSubtitle = String.valueOf(speedOptions[currentSpeedIndex]);
+        items.add(new OptionItem("row_playback_speed", getString(R.string.playback_speed_label), playbackSubtitle, null, null, null, null, null, "speed", null, null, null));
+        // Row: Quick Speed
+        float quick = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+        String quickSubtitle;
+        try { java.text.DecimalFormat df = new java.text.DecimalFormat("#.#"); quickSubtitle = df.format(quick) + "x"; } catch (Exception e) { quickSubtitle = quick + "x"; }
+        items.add(new OptionItem("row_quick_speed", getString(R.string.quick_speed_title), quickSubtitle, null, null, null, null, null, "bolt", null, null, null));
+        // Row: Mute playback (handled as a switch via a separate sheet)
+        boolean mutedPref = SharedPreferencesManager.getInstance(this).isPlaybackMuted();
+        String muteSubtitle = mutedPref ? getString(R.string.universal_enable) : getString(R.string.universal_disable);
+        items.add(new OptionItem("row_mute_playback", getString(R.string.mute_playback_title), muteSubtitle, null, null, null, null, null, "volume_off", null, null, null));
+    String helper = getString(R.string.video_player_settings_helper_player);
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.video_player_settings_title), items, null, RK_VIDEO_SETTINGS, helper);
+        getSupportFragmentManager().setFragmentResultListener(RK_VIDEO_SETTINGS, this, (key, bundle) -> {
+            String sel = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if ("row_playback_speed".equals(sel)) {
+                showPlaybackSpeedPickerSheet();
+            } else if ("row_quick_speed".equals(sel)) {
+                showQuickSpeedPickerSheet();
+            } else if ("row_mute_playback".equals(sel)) {
+                showMuteSwitchSheet();
             }
-        };
-
-        themedDialogBuilder()
-                .setTitle("Playback Speed")
-                .setSingleChoiceItems(adapter, currentSpeedIndex, (dialog, which) -> {
-                    currentSpeedIndex = which;
-                    player.setPlaybackParameters(new PlaybackParameters(speedValues[which]));
-                    Log.i(TAG, "Playback speed set to: " + speedOptions[which]);
-                    dialog.dismiss();
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                    if (playerView != null) playerView.showController();
-                })
-                .setOnDismissListener(dialog -> {
-                    if (playerView != null) playerView.showController();
-                })
-                .show();
+        });
+        sheet.show(getSupportFragmentManager(), "video_settings_sheet");
     }
-    // ----- Fix End: Use themed dialog for playback speed with white text for radio items -----
+    // -------------- Fix Ended for this method(showVideoSettingsSheet)-----------
+
+    // -------------- Fix Start for this method(showPlaybackSpeedPickerSheet)-----------
+    private void showPlaybackSpeedPickerSheet() {
+        if (player == null) return;
+        ArrayList<OptionItem> items = new ArrayList<>();
+        for (int i = 0; i < speedValues.length; i++) {
+            String id = "spd_" + speedValues[i];
+            String title = String.valueOf(speedOptions[i]);
+            items.add(new OptionItem(id, title, null, null, null, null, null, null, "speed", null, null, null));
+        }
+        String selectedId = "spd_" + speedValues[currentSpeedIndex];
+    PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.playback_speed_title), items, selectedId, RK_PLAYBACK_SPEED, getString(R.string.playback_speed_helper_player));
+        getSupportFragmentManager().setFragmentResultListener(RK_PLAYBACK_SPEED, this, (key, bundle) -> {
+            String selId = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selId != null && selId.startsWith("spd_")) {
+                try {
+                    float val = Float.parseFloat(selId.substring(4));
+                    int newIndex = currentSpeedIndex;
+                    for (int i = 0; i < speedValues.length; i++) { if (Math.abs(speedValues[i] - val) < 0.001f) { newIndex = i; break; } }
+                    currentSpeedIndex = newIndex;
+                    player.setPlaybackParameters(new PlaybackParameters(val));
+                    Log.i(TAG, "Playback speed set to: " + val + "x");
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+        sheet.show(getSupportFragmentManager(), "playback_speed_sheet");
+    }
+    private void showMuteSwitchSheet(){
+        final String RK = "rk_video_mute_switch";
+        boolean enabled = SharedPreferencesManager.getInstance(this).isPlaybackMuted();
+        getSupportFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
+            if(b.containsKey(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                SharedPreferencesManager.getInstance(this).setPlaybackMuted(state);
+                applyMutedStateToPlayer(state);
+                // Update subtitle in the main settings sheet if it's still visible
+                // (the row subtitle in this sheet is static; we refresh when reopening)
+            }
+        });
+    String helper = getString(R.string.mute_playback_helper_picker);
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.mute_playback_title), new ArrayList<>(), null, RK, helper, getString(R.string.mute_playback_title), enabled);
+        sheet.show(getSupportFragmentManager(), "video_mute_switch_sheet");
+    }
+
+    private void applyMutedStateToPlayer(boolean muted){
+        try{
+            if(player!=null){ player.setVolume(muted? 0f: 1f); }
+        }catch(Exception ignored){}
+    }
+    // -------------- Fix Ended for this method(showPlaybackSpeedPickerSheet)-----------
 
     // ----- Fix Start: Add resolveThemeColor helper -----
     private int resolveThemeColor(int attr) {
