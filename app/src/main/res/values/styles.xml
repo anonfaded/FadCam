@@ -31,4 +31,34 @@
         <item name="android:textColor">?attr/colorHeading</item>
     </style>
     <!-- Fix End: Add missing Material text appearance styles for compatibility -->
+
+    <!-- Settings home row style -->
+    <style name="SettingsGroupRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:layout_marginBottom">4dp</item>
+        <item name="android:background">@drawable/settings_home_row_bg</item>
+    </style>
+    <style name="SettingsDivider" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">#262626</item>
+    <!-- Match SettingsGroupRow horizontal insets (14dp start / 12dp end) -->
+    <item name="android:layout_marginStart">14dp</item>
+    <item name="android:layout_marginEnd">12dp</item>
+    </style>
+
+    <!-- TextAppearances for AppWidget (Ubuntu font) -->
+    <style name="WidgetText.Ubuntu.Regular" parent="">
+        <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    <style name="WidgetText.Ubuntu.Bold" parent="WidgetText.Ubuntu.Regular">
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>

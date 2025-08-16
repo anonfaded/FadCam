@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/records_sidebar_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:clipToOutline="true"
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:background="@drawable/sidesheet_wrapper_bg">
+
+    <!-- Header with title only -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/records_options_title"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
+    </LinearLayout>
+
+    <!-- Divider below header -->
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+    android:layout_marginStart="14dp"
+    android:layout_marginEnd="12dp"
+        app:dividerColor="#262626"/>
+
+    <!-- Group: Sorting -->
+    <TextView
+        android:id="@+id/sort_group_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/sort_by"
+        android:textColor="@android:color/darker_gray"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:textStyle="bold"/>
+
+    <LinearLayout
+        android:id="@+id/sort_group_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/settings_group_card_bg"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/row_sort"
+            style="@style/SettingsGroupRow"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="12dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/row_sort_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_sort"
+                android:tint="@android:color/darker_gray"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/row_sort_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_sort_order_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/row_sort_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:text="@string/sort_latest_first"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider between rows in card -->
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="12dp"
+            app:dividerColor="#262626"/>
+
+        <!-- View Mode Row (moved from FAB) -->
+        <LinearLayout
+            android:id="@+id/row_view_mode"
+            style="@style/SettingsGroupRow"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="12dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/row_view_mode_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_grid"
+                android:tint="@android:color/darker_gray"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/row_view_mode_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_view_mode_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/row_view_mode_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:text="@string/view_mode_grid"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/sort_group_helper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp"
+        android:textColor="@android:color/darker_gray"
+        android:text="@string/records_sort_helper"/>
+
+    <!-- Group: Danger Zone -->
+    <TextView
+        android:id="@+id/delete_group_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/universal_delete"
+        android:textColor="@android:color/darker_gray"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:textStyle="bold"/>
+
+    <LinearLayout
+        android:id="@+id/delete_group_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/settings_group_card_bg"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/row_delete_all"
+            style="@style/SettingsGroupRow"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="16dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/row_delete_all_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_delete_all"
+                android:tint="@android:color/darker_gray"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/row_delete_all_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/delete_all_videos_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/row_delete_all_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:text="@string/delete_all_videos_subtitle_short"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

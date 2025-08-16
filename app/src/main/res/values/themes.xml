@@ -18,6 +18,20 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
     </style>
 
+    <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
+    <style name="Theme.FadCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Solid dark background -->
+        <item name="android:windowBackground">@color/black</item>
+        <!-- New SplashScreen API attrs -->
+        <item name="windowSplashScreenBackground">@color/black</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/fadseclab_flag</item>
+    <item name="android:statusBarColor">@color/black</item>
+    <item name="android:navigationBarColor">@color/black</item>
+    <item name="android:windowLightStatusBar">false</item>
+        <item name="postSplashScreenTheme">@style/Base.Theme.FadCam</item>
+    </style>
+    <!-- Splash theme end (Fix End Theme.FadCam.Splash) -->
+
     <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
         <!-- Completely black background everywhere -->
         <item name="android:colorBackground">@color/amoled_background</item>
@@ -110,7 +124,9 @@
         <item name="android:popupMenuStyle">@style/Widget.FadCam.Red.PopupMenu</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+    <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+    <!-- Ensure switches use red accent instead of purple -->
+    <item name="switchStyle">@style/Widget.FadCam.Red.Switch</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -131,6 +147,13 @@
         <item name="android:popupBackground">@color/red_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
+
+    <!-- Fix Start: Add red switch style to match Theme.FadCam.Red accents -->
+    <style name="Widget.FadCam.Red.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="thumbTint">@color/switch_thumb</item>
+        <item name="trackTint">@color/switch_track</item>
+    </style>
+    <!-- Fix End: Add red switch style to match Theme.FadCam.Red accents -->
 
     <style name="Theme.FadCam.Gold" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/gold_theme_primary_variant</item>

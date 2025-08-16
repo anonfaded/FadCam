@@ -72,14 +72,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // Add Intent import
+
 // Add Uri import
 // Import your Constants class
 // Add if needed
 // Add if needed
 
-
 import android.media.MediaRecorder.OnInfoListener;
-
 
 import org.osmdroid.util.GeoPoint;
 
@@ -87,18 +86,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 // Add to the beginning of the file
 import android.media.MediaMetadataRetriever;
+import android.graphics.BitmapFactory;
 
 import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import com.fadcam.utils.DeviceHelper;
 import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
-import com.fadcam.utils.camera.vendor.HuaweiFrameRateHelper;
 
 // Add import
 import com.fadcam.opengl.GLRecordingPipeline;
 import com.fadcam.opengl.WatermarkInfoProvider;
-
-
 
 public class RecordingService extends Service {
 
@@ -128,7 +125,8 @@ public class RecordingService extends Service {
 
     private SharedPreferencesManager sharedPreferencesManager; // Your settings manager
 
-    private boolean isRolloverClosingOldSession = false; // Flag to manage state during segment rollover when the old session is closing
+    private boolean isRolloverClosingOldSession = false; // Flag to manage state during segment rollover when the old
+                                                         // session is closing
 
     private WakeLock recordingWakeLock;
 
@@ -147,14 +145,14 @@ public class RecordingService extends Service {
         Log.d(TAG, "onCreate: Service creating...");
         // Initialize essential components first
         sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
-        
+
         // Only initialize LocationHelper if location is explicitly enabled
         if (sharedPreferencesManager != null && sharedPreferencesManager.isLocalisationEnabled()) {
             locationHelper = new LocationHelper(this); // For watermark text
         } else {
             Log.d(TAG, "Location feature disabled, skipping LocationHelper initialization");
         }
-        
+
         // Initialize GeotagHelper only if location embedding is enabled
         if (sharedPreferencesManager != null && sharedPreferencesManager.isLocationEmbeddingEnabled()) {
             try {
@@ -167,11 +165,11 @@ public class RecordingService extends Service {
         } else {
             Log.d(TAG, "Location embedding disabled, skipping GeotagHelper initialization");
         }
-        
+
         createNotificationChannel(); // Setup notifications early
 
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        if(cameraManager == null) {
+        if (cameraManager == null) {
             Log.e(TAG, "Failed to get CameraManager service.");
             stopSelf(); // Cannot function without CameraManager
             return;
@@ -218,7 +216,8 @@ public class RecordingService extends Service {
             if (sharedPreferencesManager != null && sharedPreferencesManager.isRecordingInProgress()) {
                 // Defensive: only re-initialize if not already running
                 if (glRecordingPipeline == null) {
-                    // Recreate pipeline and surfaces (minimal, actual re-init logic may be more complex)
+                    // Recreate pipeline and surfaces (minimal, actual re-init logic may be more
+                    // complex)
                     // You may want to trigger the same logic as when starting recording
                     // For now, just log and rely on UI/fragment to trigger full re-init
                     Log.d(TAG, "App foregrounded and recording in progress, pipeline will be re-initialized by UI");
@@ -234,39 +233,40 @@ public class RecordingService extends Service {
                 Log.w(TAG, "START_RECORDING rejected - camera resources still being released");
                 // Show toast on UI thread
                 mainHandler.post(() -> {
-                    Toast.makeText(getApplicationContext(), 
-                        R.string.camera_resources_cooldown, 
-                        Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(),
+                            R.string.camera_resources_cooldown,
+                            Toast.LENGTH_LONG).show();
                 });
                 // Don't stop the service yet as FFmpeg might still be running
                 return START_STICKY;
             }
-            
+
             Log.i(TAG, "Handling START_RECORDING intent. Service recording state is " + recordingState);
-            
+
             // Reset recording state if it's somehow corrupted
             if (recordingState != RecordingState.NONE && cameraDevice == null) {
-                Log.w(TAG, "Recording state inconsistency detected. Resetting state from " + recordingState + " to NONE.");
+                Log.w(TAG,
+                        "Recording state inconsistency detected. Resetting state from " + recordingState + " to NONE.");
                 recordingState = RecordingState.NONE;
                 sharedPreferencesManager.setRecordingInProgress(false);
             }
-            
-            // Only proceed if we're in NONE state 
+
+            // Only proceed if we're in NONE state
             if (recordingState == RecordingState.NONE) {
                 // Update the UI and Service state atomically
                 recordingState = RecordingState.STARTING;
                 sharedPreferencesManager.setRecordingInProgress(true);
-                
+
                 // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
                 Log.d(TAG, "Initial torch state for recording session: " + isRecordingTorchEnabled);
-                
+
                 // Set up preview surface if provided
                 setupSurfaceTexture(intent);
-                
+
                 // Start foreground service
                 setupRecordingInProgressNotification();
-                
+
                 // Begin camera/recording setup
                 if (cameraDevice == null) {
                     pendingStartRecording = true;
@@ -276,10 +276,10 @@ public class RecordingService extends Service {
                     Log.d(TAG, "Camera already open, starting recording directly");
                     startRecording();
                 }
-                
+
                 // Notify UI that we're starting
                 broadcastOnRecordingStarted();
-                
+
                 return START_STICKY;
             } else {
                 // If we're not in NONE state, log a warning and notify the user
@@ -302,14 +302,16 @@ public class RecordingService extends Service {
             // Handle surface changes for preview
             setupSurfaceTexture(intent);
             if (glRecordingPipeline != null) {
-                // Only update the preview surface, never re-initialize or re-prepare the pipeline
+                // Only update the preview surface, never re-initialize or re-prepare the
+                // pipeline
                 glRecordingPipeline.setPreviewSurface(previewSurface);
             }
             // Only reconfigure the camera session if recording or paused
             if (isRecording() || isPaused()) {
                 createCameraPreviewSession();
             }
-            Log.d(TAG, "ACTION_CHANGE_SURFACE handled: preview surface updated, camera session reconfigured if needed. No pipeline re-init.");
+            Log.d(TAG,
+                    "ACTION_CHANGE_SURFACE handled: preview surface updated, camera session reconfigured if needed. No pipeline re-init.");
             return START_STICKY;
         } else if (Constants.BROADCAST_ON_RECORDING_STATE_REQUEST.equals(action)) {
             // Handle UI state sync requests
@@ -323,53 +325,54 @@ public class RecordingService extends Service {
             // Handle torch toggle requests
             toggleRecordingTorch();
             return START_STICKY;
-        } 
+        }
 
         else if (Constants.INTENT_ACTION_REINITIALIZE_LOCATION.equals(action)) {
             // Handle request to reinitialize location helpers after settings change
             Log.d(TAG, "Handling REINITIALIZE_LOCATION intent");
-            
+
             // Extract the embedding preference directly from intent if available
             boolean forceInit = intent.getBooleanExtra("force_init", false);
             boolean embedLocationFromIntent = intent.getBooleanExtra("embed_location", false);
             boolean hasLocationPermission = intent.getBooleanExtra("has_permission", false);
-            
+
             // Log the values for debugging
             Log.d(TAG, "Location intent extras:");
             Log.d(TAG, "  - force_init: " + forceInit);
             Log.d(TAG, "  - embed_location: " + embedLocationFromIntent);
             Log.d(TAG, "  - has_permission: " + hasLocationPermission);
-            
+
             // If embed_location is true but permission is not granted, log warning
             if (embedLocationFromIntent && !hasLocationPermission) {
                 Log.w(TAG, "Warning: Location embedding requested but permission is not granted");
                 // Don't override preference in this case - let the UI control it
             }
-            // If intent explicitly specifies the embed_location value, use it to force override the preference
+            // If intent explicitly specifies the embed_location value, use it to force
+            // override the preference
             else if (intent.hasExtra("embed_location")) {
                 Log.d(TAG, "Intent explicitly specifies embed_location=" + embedLocationFromIntent);
-                
+
                 // Force the preference to match what was sent in the intent
                 if (sharedPreferencesManager.isLocationEmbeddingEnabled() != embedLocationFromIntent) {
                     Log.d(TAG, "Updating preferences to match intent value");
                     sharedPreferencesManager.sharedPreferences.edit()
-                        .putBoolean(Constants.PREF_EMBED_LOCATION_DATA, embedLocationFromIntent)
-                        .apply();
+                            .putBoolean(Constants.PREF_EMBED_LOCATION_DATA, embedLocationFromIntent)
+                            .apply();
                 }
             }
-            
+
             // Now reinitialize with potential updated preferences
             reinitializeLocationHelpers(forceInit);
             return START_STICKY;
-        } 
+        }
 
         else {
             Log.w(TAG, "Unknown action received: " + action);
-            if (!isWorkingInProgress()) stopSelf();
+            if (!isWorkingInProgress())
+                stopSelf();
             return START_NOT_STICKY;
         }
     }
-
 
     @Nullable
     @Override
@@ -377,17 +380,16 @@ public class RecordingService extends Service {
         return null; // Not a bound service
     }
 
-
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy: Service being destroyed...");
-        
+
         // Stop any active reconnection attempts
         stopReconnectionAttempts();
-        
+
         // Make sure dummy surface is released
         releaseDummyBackgroundSurface();
-        
+
         // Ensure all location services are properly stopped
         if (geotagHelper != null) {
             try {
@@ -397,7 +399,7 @@ public class RecordingService extends Service {
                 Log.e(TAG, "Error stopping GeotagHelper updates", e);
             }
         }
-        
+
         if (locationHelper != null) {
             try {
                 locationHelper.stopLocationUpdates();
@@ -406,7 +408,7 @@ public class RecordingService extends Service {
                 Log.e(TAG, "Error stopping LocationHelper updates", e);
             }
         }
-        
+
         // Force recording to stop if somehow it's still active
         if (recordingState != RecordingState.NONE) {
             Log.w(TAG, "Service being destroyed while recording is active. Forcing stop.");
@@ -416,14 +418,14 @@ public class RecordingService extends Service {
                 Log.e(TAG, "Error stopping recording during service destruction", e);
             }
         }
-        
+
         // Clean up camera resources
         try {
             releaseRecordingResources();
         } catch (Exception e) {
             Log.e(TAG, "Error releasing resources during service destruction", e);
         }
-        
+
         // Release wake lock if still held
         if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
             try {
@@ -433,13 +435,12 @@ public class RecordingService extends Service {
                 Log.e(TAG, "Error releasing wake lock", e);
             }
         }
-        
+
         Log.d(TAG, "Service destroyed.");
         // Clean up GeotagHelper when service is destroyed
         super.onDestroy();
     }
     // --- End Lifecycle Methods ---
-
 
     // --- Core Recording Logic ---
     private void stopRecording() {
@@ -447,23 +448,25 @@ public class RecordingService extends Service {
             Log.w(TAG, "stopRecording: Already in stopping process, ignoring duplicate call");
             return;
         }
-        
+
         isStopping = true;
         Log.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
-        
+
         // ----- Fix Start for this method(stopRecording)-----
         // Stop black frame rendering if active
         stopBlackFrameRendering();
-        
+
         // Stop reconnection attempts if active
         stopReconnectionAttempts();
         // ----- Fix Ended for this method(stopRecording)-----
-        
+
         if (recordingState == RecordingState.NONE) {
             Log.d(TAG, "stopRecording called but state is already NONE, just cleaning up");
             sharedPreferencesManager.setRecordingInProgress(false);
-            if (!isWorkingInProgress()) stopSelf();
-            if (recordingWakeLock != null && recordingWakeLock.isHeld()) recordingWakeLock.release();
+            if (!isWorkingInProgress())
+                stopSelf();
+            if (recordingWakeLock != null && recordingWakeLock.isHeld())
+                recordingWakeLock.release();
             // ----- Fix Start: Close SAF ParcelFileDescriptor if open -----
             if (safRecordingPfd != null) {
                 try {
@@ -478,22 +481,24 @@ public class RecordingService extends Service {
             isStopping = false; // Reset stopping flag if we're already stopped
             return;
         }
-        
+
         // First update the state to prevent any new operations
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
 
-        // Stop foreground service and cancel notification early to improve responsiveness
+        // Stop foreground service and cancel notification early to improve
+        // responsiveness
         stopForeground(true);
         cancelNotification();
-        
-        // Use a background thread for resource cleanup to avoid blocking the main thread
+
+        // Use a background thread for resource cleanup to avoid blocking the main
+        // thread
         new Thread(() -> {
             try {
                 // Set camera resources as releasing and broadcast early
                 setCameraResourcesReleasing(true);
                 broadcastOnRecordingStopped();
-                
+
                 // First stop the capture session
                 if (captureSession != null) {
                     try {
@@ -506,14 +511,14 @@ public class RecordingService extends Service {
                         captureSession = null;
                     }
                 }
-                
+
                 // Give some time for the session to close
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                
+
                 // Stop and release the GL pipeline
                 if (glRecordingPipeline != null) {
                     try {
@@ -525,14 +530,14 @@ public class RecordingService extends Service {
                         glRecordingPipeline = null;
                     }
                 }
-                
+
                 // Give some time for the GL pipeline to release resources
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                
+
                 // Close the camera device last
                 if (cameraDevice != null) {
                     try {
@@ -545,7 +550,7 @@ public class RecordingService extends Service {
                         isCameraOpen = false;
                     }
                 }
-                
+
                 // Final cleanup on the main thread
                 mainHandler.post(() -> {
                     // Release wake lock if held
@@ -557,8 +562,9 @@ public class RecordingService extends Service {
                             Log.e(TAG, "Error releasing wake lock", e);
                         }
                     }
-                    
-                    // ----- Fix Start: Close SAF ParcelFileDescriptor if open (background thread) -----
+
+                    // ----- Fix Start: Close SAF ParcelFileDescriptor if open (background thread)
+                    // -----
                     if (safRecordingPfd != null) {
                         try {
                             safRecordingPfd.close();
@@ -568,16 +574,17 @@ public class RecordingService extends Service {
                         }
                         safRecordingPfd = null;
                     }
-                    // ----- Fix End: Close SAF ParcelFileDescriptor if open (background thread) -----
+                    // ----- Fix End: Close SAF ParcelFileDescriptor if open (background thread)
+                    // -----
                     // Check if service can stop
                     checkIfServiceCanStop();
-                    
+
                     // Reset stopping flag
                     isStopping = false;
-                    
+
                     // Clear any pending recording start flag
                     pendingStartRecording = false;
-                    
+
                     Log.d(TAG, "stopRecording sequence completed successfully");
                 });
             } catch (Exception e) {
@@ -591,8 +598,10 @@ public class RecordingService extends Service {
     }
 
     private void pauseRecording() {
-        if (recordingState != RecordingState.IN_PROGRESS) return;
-        if (glRecordingPipeline != null) glRecordingPipeline.pauseRecording(); // if supported
+        if (recordingState != RecordingState.IN_PROGRESS)
+            return;
+        if (glRecordingPipeline != null)
+            glRecordingPipeline.pauseRecording(); // if supported
         recordingState = RecordingState.PAUSED;
         sharedPreferencesManager.setRecordingInProgress(false);
         setupRecordingResumeNotification();
@@ -601,8 +610,10 @@ public class RecordingService extends Service {
     }
 
     private void resumeRecording() {
-        if (recordingState != RecordingState.PAUSED) return;
-        if (glRecordingPipeline != null) glRecordingPipeline.resumeRecording(); // if supported
+        if (recordingState != RecordingState.PAUSED)
+            return;
+        if (glRecordingPipeline != null)
+            glRecordingPipeline.resumeRecording(); // if supported
         recordingState = RecordingState.IN_PROGRESS;
         sharedPreferencesManager.setRecordingInProgress(true);
         setupRecordingInProgressNotification();
@@ -611,16 +622,35 @@ public class RecordingService extends Service {
     }
 
     private void releaseRecordingResources() {
-        if (isStopping) return;
-        
+        if (isStopping)
+            return;
+
         // Release dummy background surface first
         releaseDummyBackgroundSurface();
-        
+
         isStopping = true;
-        try { if (captureSession != null) { captureSession.close(); } } catch (Exception e) { } finally { captureSession = null; }
-        try { if (cameraDevice != null) { cameraDevice.close(); } } catch (Exception e) { } finally { cameraDevice = null; }
-        if (glRecordingPipeline != null) { glRecordingPipeline.stopRecording(); glRecordingPipeline = null; }
-        // ----- Fix Start: Close SAF ParcelFileDescriptor if open (resource cleanup) -----
+        try {
+            if (captureSession != null) {
+                captureSession.close();
+            }
+        } catch (Exception e) {
+        } finally {
+            captureSession = null;
+        }
+        try {
+            if (cameraDevice != null) {
+                cameraDevice.close();
+            }
+        } catch (Exception e) {
+        } finally {
+            cameraDevice = null;
+        }
+        if (glRecordingPipeline != null) {
+            glRecordingPipeline.stopRecording();
+            glRecordingPipeline = null;
+        }
+        // ----- Fix Start: Close SAF ParcelFileDescriptor if open (resource cleanup)
+        // -----
         if (safRecordingPfd != null) {
             try {
                 safRecordingPfd.close();
@@ -630,7 +660,8 @@ public class RecordingService extends Service {
             }
             safRecordingPfd = null;
         }
-        // ----- Fix End: Close SAF ParcelFileDescriptor if open (resource cleanup) -----
+        // ----- Fix End: Close SAF ParcelFileDescriptor if open (resource cleanup)
+        // -----
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
     }
@@ -638,14 +669,17 @@ public class RecordingService extends Service {
     /**
      * Checks if the service has any active work (recording, pausing, or processing)
      * and calls stopSelf() if it is completely idle.
-     * This should be called whenever a task completes (recording stops, processing finishes).
+     * This should be called whenever a task completes (recording stops, processing
+     * finishes).
      */
     private void checkIfServiceCanStop() {
         // Read volatile flag and check state atomically as best as possible
 
-        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks=" + ffmpegProcessingTaskCount.get());
+        Log.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks="
+                + ffmpegProcessingTaskCount.get());
 
-        // Use the new shouldServiceStayAlive method to determine if service should continue running
+        // Use the new shouldServiceStayAlive method to determine if service should
+        // continue running
         if (!shouldServiceStayAlive()) {
             Log.i(TAG, "No active recording or background processing detected. Stopping service.");
             // Remove from foreground first to avoid ANR if stopSelf takes time
@@ -657,18 +691,19 @@ public class RecordingService extends Service {
 
     }
 
-
     private void openCamera() {
         Log.d(TAG, "openCamera: Opening camera");
         if (cameraManager == null) {
-            Log.e(TAG,"openCamera: CameraManager (class field) is null.");
-            if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+            Log.e(TAG, "openCamera: CameraManager (class field) is null.");
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
             stopSelf();
             return;
         }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG,"openCamera: Camera permission denied.");
-            if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+            Log.e(TAG, "openCamera: Camera permission denied.");
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
             Toast.makeText(this, "Camera permission denied for service", Toast.LENGTH_LONG).show();
             stopSelf();
             return;
@@ -680,7 +715,7 @@ public class RecordingService extends Service {
         try {
             String[] basicCameraIds = cameraManager.getCameraIdList();
             Set<String> allAvailableCameraIds = new HashSet<>(Arrays.asList(basicCameraIds));
-            
+
             // On Android P+, also include physical cameras from logical cameras
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 for (String id : basicCameraIds) {
@@ -696,7 +731,7 @@ public class RecordingService extends Service {
                     }
                 }
             }
-            
+
             String[] availableCameraIds = allAvailableCameraIds.toArray(new String[0]);
             Log.d(TAG, "Available Camera IDs (including physical): " + Arrays.toString(availableCameraIds));
 
@@ -712,34 +747,39 @@ public class RecordingService extends Service {
                 }
             } else { // CameraType.BACK
                 String preferredBackId = sharedPreferencesManager.getSelectedBackCameraId();
-                Log.d(TAG,"Preferred BACK camera ID from prefs: " + preferredBackId);
+                Log.d(TAG, "Preferred BACK camera ID from prefs: " + preferredBackId);
                 boolean isValidAndAvailable = false;
-                
+
                 // First, check if the preferred camera ID exists in our available cameras
-                for(String id : availableCameraIds){
-                    if(id.equals(preferredBackId)){
+                for (String id : availableCameraIds) {
+                    if (id.equals(preferredBackId)) {
                         try {
                             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
                             Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                            
+
                             // For physical cameras, they might not have LENS_FACING_BACK set
                             // but if they're in our availableCameraIds and were detected as back cameras
                             // in SettingsFragment, we should trust that they're valid back cameras
                             if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
                                 isValidAndAvailable = true;
-                                Log.d(TAG, "Preferred back camera ID '" + preferredBackId + "' validated with LENS_FACING_BACK");
+                                Log.d(TAG, "Preferred back camera ID '" + preferredBackId
+                                        + "' validated with LENS_FACING_BACK");
                                 break;
                             } else {
                                 // For physical cameras, check if this ID was part of a logical back camera
                                 // If it's in our availableCameraIds, it means it was detected as a back camera
-                                Log.w(TAG,"Preferred back ID "+preferredBackId+" exists but LENS_FACING is: " + facing);
-                                
-                                // Additional validation: check if this is a physical camera from a logical back camera
+                                Log.w(TAG, "Preferred back ID " + preferredBackId + " exists but LENS_FACING is: "
+                                        + facing);
+
+                                // Additional validation: check if this is a physical camera from a logical back
+                                // camera
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    boolean isPhysicalBackCamera = isPhysicalBackCamera(preferredBackId, basicCameraIds, cameraManager);
+                                    boolean isPhysicalBackCamera = isPhysicalBackCamera(preferredBackId, basicCameraIds,
+                                            cameraManager);
                                     if (isPhysicalBackCamera) {
                                         isValidAndAvailable = true;
-                                        Log.d(TAG, "Preferred camera ID '" + preferredBackId + "' validated as physical back camera");
+                                        Log.d(TAG, "Preferred camera ID '" + preferredBackId
+                                                + "' validated as physical back camera");
                                         break;
                                     }
                                 }
@@ -749,16 +789,19 @@ public class RecordingService extends Service {
                         }
                     }
                 }
-                
+
                 if (isValidAndAvailable) {
                     cameraToOpenId = preferredBackId;
                     Log.d(TAG, "Using preferred BACK camera ID: " + cameraToOpenId);
                 } else {
-                    Log.w(TAG,"Preferred back camera ID '"+preferredBackId+"' is invalid or unavailable. Falling back to default ID '"+Constants.DEFAULT_BACK_CAMERA_ID+"'.");
+                    Log.w(TAG,
+                            "Preferred back camera ID '" + preferredBackId
+                                    + "' is invalid or unavailable. Falling back to default ID '"
+                                    + Constants.DEFAULT_BACK_CAMERA_ID + "'.");
                     cameraToOpenId = Constants.DEFAULT_BACK_CAMERA_ID;
                     boolean defaultExistsAndIsBack = false;
-                    for(String id : availableCameraIds){
-                        if(id.equals(cameraToOpenId)) {
+                    for (String id : availableCameraIds) {
+                        if (id.equals(cameraToOpenId)) {
                             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
                             Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                             if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
@@ -767,41 +810,43 @@ public class RecordingService extends Service {
                             break;
                         }
                     }
-                    if(!defaultExistsAndIsBack){
-                        Log.e(TAG,"Critical: Default back camera ID '"+cameraToOpenId+"' not found or not back-facing! Cannot select default back camera.");
+                    if (!defaultExistsAndIsBack) {
+                        Log.e(TAG, "Critical: Default back camera ID '" + cameraToOpenId
+                                + "' not found or not back-facing! Cannot select default back camera.");
                         String fallbackBackId = null;
-                        for(String id: availableCameraIds){
+                        for (String id : availableCameraIds) {
                             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
                             Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                            if(facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                                Log.w(TAG,"Using first available back camera as final fallback: "+id);
+                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                Log.w(TAG, "Using first available back camera as final fallback: " + id);
                                 fallbackBackId = id;
                                 break;
                             }
                         }
-                        if (fallbackBackId != null){
+                        if (fallbackBackId != null) {
                             cameraToOpenId = fallbackBackId;
                         } else {
                             cameraToOpenId = null;
                             Log.e(TAG, "Could not find any back-facing camera.");
                         }
-                }
+                    }
                 }
             }
 
             if (cameraToOpenId == null) {
                 Log.e(TAG, "Could not determine a valid camera ID to open for selected type: " + selectedType);
                 Toast.makeText(this, "Failed to find selected camera", Toast.LENGTH_LONG).show();
-                if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+                if (recordingState == RecordingState.STARTING)
+                    recordingState = RecordingState.NONE;
                 stopSelf();
                 return;
             }
-            Log.i(TAG,"Attempting to open final Camera ID: "+ cameraToOpenId);
+            Log.i(TAG, "Attempting to open final Camera ID: " + cameraToOpenId);
 
-            if(cameraDevice != null) {
-                Log.w(TAG,"openCamera: Closing existing cameraDevice instance first.");
+            if (cameraDevice != null) {
+                Log.w(TAG, "openCamera: Closing existing cameraDevice instance first.");
                 try {
-                cameraDevice.close();
+                    cameraDevice.close();
                 } catch (Exception e) {
                     Log.e(TAG, "Error explicitly closing existing cameraDevice prior to opening new one", e);
                 }
@@ -818,47 +863,58 @@ public class RecordingService extends Service {
                     Log.i(TAG, "Opening camera " + finalCameraToOpenId + ", attempt " + (attempt + 1));
                     cameraManager.openCamera(finalCameraToOpenId, cameraStateCallback, backgroundHandler);
                     return;
-        } catch (CameraAccessException e) {
-                    Log.e(TAG, "openCamera: Camera Access Exception on attempt " + (attempt + 1) + " for ID " + finalCameraToOpenId, e);
+                } catch (CameraAccessException e) {
+                    Log.e(TAG, "openCamera: Camera Access Exception on attempt " + (attempt + 1) + " for ID "
+                            + finalCameraToOpenId, e);
                     // Use direct integer values for error codes for broader compatibility
                     int reason = e.getReason();
-                    if (reason == 1 /* ERROR_CAMERA_DISABLED */ || 
-                        reason == 4 /* ERROR_CAMERA_IN_USE */) { 
+                    if (reason == 1 /* ERROR_CAMERA_DISABLED */ ||
+                            reason == 4 /* ERROR_CAMERA_IN_USE */) {
                         attempt++;
                         if (attempt < MAX_RETRIES) {
-                            Log.w(TAG, "Camera disabled (1) or in use (4), reason: " + reason + ". Retrying in " + RETRY_DELAY_MS + "ms... (" + attempt + "/" + MAX_RETRIES + ")");
+                            Log.w(TAG, "Camera disabled (1) or in use (4), reason: " + reason + ". Retrying in "
+                                    + RETRY_DELAY_MS + "ms... (" + attempt + "/" + MAX_RETRIES + ")");
                             try {
                                 Thread.sleep(RETRY_DELAY_MS);
                             } catch (InterruptedException ie) {
                                 Log.w(TAG, "Camera open retry delay interrupted", ie);
                                 Thread.currentThread().interrupt();
-                                if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+                                if (recordingState == RecordingState.STARTING)
+                                    recordingState = RecordingState.NONE;
                                 stopSelf();
                                 return;
                             }
                         } else {
-                            Log.e(TAG, "Max retries reached for camera " + finalCameraToOpenId + ". Giving up. Reason: " + reason);
-                            if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
-                            Toast.makeText(this, "Camera repeatedly unavailable (Reason: " + reason + "). Stopping.", Toast.LENGTH_LONG).show();
+                            Log.e(TAG, "Max retries reached for camera " + finalCameraToOpenId + ". Giving up. Reason: "
+                                    + reason);
+                            if (recordingState == RecordingState.STARTING)
+                                recordingState = RecordingState.NONE;
+                            Toast.makeText(this, "Camera repeatedly unavailable (Reason: " + reason + "). Stopping.",
+                                    Toast.LENGTH_LONG).show();
                             stopSelf();
                             return;
                         }
                     } else {
                         Log.e(TAG, "Unrecoverable CameraAccessException (Reason: " + reason + "). Not retrying.", e);
-                        if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+                        if (recordingState == RecordingState.STARTING)
+                            recordingState = RecordingState.NONE;
                         Toast.makeText(this, "Camera access error: " + reason, Toast.LENGTH_LONG).show();
                         stopSelf();
                         return;
                     }
                 } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "openCamera: Illegal Argument Exception (likely invalid camera ID '"+finalCameraToOpenId+"'). Attempt: " + (attempt+1), e);
-                    if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+                    Log.e(TAG, "openCamera: Illegal Argument Exception (likely invalid camera ID '"
+                            + finalCameraToOpenId + "'). Attempt: " + (attempt + 1), e);
+                    if (recordingState == RecordingState.STARTING)
+                        recordingState = RecordingState.NONE;
                     Toast.makeText(this, "Invalid camera configuration.", Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 } catch (Exception e) {
-                    Log.e(TAG, "openCamera: Unexpected error on attempt " + (attempt + 1) + " for ID " + finalCameraToOpenId, e);
-                    if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+                    Log.e(TAG, "openCamera: Unexpected error on attempt " + (attempt + 1) + " for ID "
+                            + finalCameraToOpenId, e);
+                    if (recordingState == RecordingState.STARTING)
+                        recordingState = RecordingState.NONE;
                     Toast.makeText(this, "Unexpected camera error.", Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
@@ -866,17 +922,21 @@ public class RecordingService extends Service {
             }
         } catch (CameraAccessException e) {
             Log.e(TAG, "openCamera: Initial Camera Access Exception (listing/characteristics)", e);
-            if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
             Toast.makeText(this, "Failed to access camera details.", Toast.LENGTH_LONG).show();
             stopSelf();
-        } catch (IllegalArgumentException e){
-            Log.e(TAG, "openCamera: Outer Illegal Argument Exception (likely invalid camera ID '"+cameraToOpenId+"' for characteristics)", e);
-            if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "openCamera: Outer Illegal Argument Exception (likely invalid camera ID '" + cameraToOpenId
+                    + "' for characteristics)", e);
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
             Toast.makeText(this, "Invalid camera setup.", Toast.LENGTH_LONG).show();
             stopSelf();
         } catch (Exception e) {
             Log.e(TAG, "openCamera: Unexpected outer error", e);
-            if (recordingState == RecordingState.STARTING) recordingState = RecordingState.NONE;
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
             Toast.makeText(this, "Critical camera system error.", Toast.LENGTH_LONG).show();
             stopSelf();
         }
@@ -888,16 +948,16 @@ public class RecordingService extends Service {
             Log.d(TAG, "Camera device opened successfully");
             cameraDevice = camera;
             isCameraOpen = true;
-            
+
             // Check if we're waiting for camera to resume normal recording
             if (recordingState == RecordingState.WAITING_FOR_CAMERA && pendingCameraReconnect) {
                 Log.d(TAG, "Camera reconnected after interruption, resuming normal recording");
                 pendingCameraReconnect = false;
                 stopReconnectionAttempts();
-                
+
                 // First pause any ongoing work with black frames
                 final boolean wasRenderingBlackFrames = isRenderingBlackFrames;
-                
+
                 // Use a longer delay between stopping black frames and starting camera session
                 // to ensure all GL resources are properly cleaned up
                 mainHandler.post(() -> {
@@ -905,10 +965,10 @@ public class RecordingService extends Service {
                         // First, stop black frame rendering to free up GL resources
                         if (wasRenderingBlackFrames) {
                             stopBlackFrameRendering();
-                            
+
                             // Add a delay to ensure cleanup is complete
                             Log.d(TAG, "Waiting for black frame renderer cleanup before reconnecting camera");
-                            
+
                             // Resume camera session after delay
                             mainHandler.postDelayed(() -> resumeCameraAfterReconnection(), 1500);
                         } else {
@@ -924,12 +984,12 @@ public class RecordingService extends Service {
                 });
                 return;
             }
-            
+
             // Check if we have a pending recording start request
             if (pendingStartRecording) {
                 Log.d(TAG, "Found pendingStartRecording=true, starting recording now");
                 pendingStartRecording = false; // Reset the flag
-                
+
                 // Start recording on main thread to avoid threading issues
                 mainHandler.post(() -> {
                     try {
@@ -970,27 +1030,27 @@ public class RecordingService extends Service {
         public void onDisconnected(@NonNull CameraDevice camera) {
             // ----- Fix Start for this method(onDisconnected)-----
             Log.d(TAG, "Camera device disconnected");
-            
+
             // Store camera state before closing
             boolean wasRecording = (recordingState == RecordingState.IN_PROGRESS);
-            
+
             // Close camera device
             if (cameraDevice != null) {
                 cameraDevice.close();
                 cameraDevice = null;
             }
             isCameraOpen = false;
-            
+
             // Reset the pending flag if camera disconnected
             if (pendingStartRecording) {
                 Log.w(TAG, "Camera disconnected while pendingStartRecording=true, resetting flag");
                 pendingStartRecording = false;
             }
-            
+
             // If we were recording, switch to black frame mode
             if (wasRecording) {
                 Log.w(TAG, "Camera disconnected during recording, switching to black frame mode");
-                
+
                 // Use a small delay to avoid race conditions with camera state changes
                 mainHandler.postDelayed(() -> {
                     handleCameraInterruption();
@@ -1007,39 +1067,39 @@ public class RecordingService extends Service {
         public void onError(@NonNull CameraDevice camera, int error) {
             // ----- Fix Start for this method(onError)-----
             Log.e(TAG, "Camera device error: " + error);
-            
+
             // Store camera state before closing
             boolean wasRecording = (recordingState == RecordingState.IN_PROGRESS);
-            
+
             if (cameraDevice != null) {
                 cameraDevice.close();
                 cameraDevice = null;
             }
             isCameraOpen = false;
-            
+
             // Reset the pending flag if camera error
             if (pendingStartRecording) {
                 Log.w(TAG, "Camera error while pendingStartRecording=true, resetting flag");
                 pendingStartRecording = false;
             }
-            
+
             // If error is camera in use and we were recording, switch to black frame mode
-            if ((error == CameraDevice.StateCallback.ERROR_CAMERA_IN_USE || 
-                 error == CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE) && 
-                wasRecording) {
+            if ((error == CameraDevice.StateCallback.ERROR_CAMERA_IN_USE ||
+                    error == CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE) &&
+                    wasRecording) {
                 Log.w(TAG, "Camera in use error during recording, switching to black frame mode");
-                
+
                 // Use a small delay to avoid race conditions with camera state changes
                 mainHandler.postDelayed(() -> {
                     handleCameraInterruption();
                 }, 300);
-            } 
+            }
             // For other errors or states, stop recording
             else if (recordingState != RecordingState.NONE && recordingState != RecordingState.WAITING_FOR_CAMERA) {
                 Log.w(TAG, "Camera error during recording, stopping recording");
                 stopRecording();
             }
-            
+
             // Show error to user
             String errorMsg;
             switch (error) {
@@ -1061,9 +1121,10 @@ public class RecordingService extends Service {
                 default:
                     errorMsg = getString(R.string.camera_error_unknown) + " (" + error + ")";
             }
-            
+
             final String finalErrorMsg = errorMsg;
-            // mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg, Toast.LENGTH_LONG).show());
+            // mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg,
+            // Toast.LENGTH_LONG).show());
             // ----- Fix Ended for this method(onError)-----
         }
 
@@ -1071,14 +1132,14 @@ public class RecordingService extends Service {
         public void onClosed(@NonNull CameraDevice camera) {
             Log.d(TAG, "Camera device closed");
             isCameraOpen = false;
-            
+
             // If we were in segment rollover, continue with the rollover process
             if (isRolloverClosingOldSession) {
                 Log.d(TAG, "Camera closed during segment rollover, proceeding with rollover");
                 isRolloverClosingOldSession = false;
                 proceedWithRolloverAfterOldSessionClosed();
             }
-            
+
             // Reset the pending flag if camera closed
             if (pendingStartRecording) {
                 Log.w(TAG, "Camera closed while pendingStartRecording=true, resetting flag");
@@ -1094,24 +1155,24 @@ public class RecordingService extends Service {
     private void resumeCameraAfterReconnection() {
         try {
             Log.d(TAG, "Resuming normal camera recording after reconnection");
-            
+
             // Create camera session first
             createCameraPreviewSession();
-            
+
             // Wait a moment for the session to be fully configured
             mainHandler.postDelayed(() -> {
                 try {
                     // Update recording state
                     recordingState = RecordingState.IN_PROGRESS;
-                    
+
                     // Show notification about recording resumed
                     setupRecordingInProgressNotification();
-                    
+
                     // Show toast to user
-                    // Toast.makeText(RecordingService.this, 
-                    //         R.string.camera_reconnection_success, 
-                    //         Toast.LENGTH_SHORT).show();
-                    
+                    // Toast.makeText(RecordingService.this,
+                    // R.string.camera_reconnection_success,
+                    // Toast.LENGTH_SHORT).show();
+
                     Log.i(TAG, "Normal recording resumed after camera reconnection");
                 } catch (Exception e) {
                     Log.e(TAG, "Error finalizing camera reconnection", e);
@@ -1148,9 +1209,9 @@ public class RecordingService extends Service {
             }
             // Do NOT add previewSurface to Camera2 session outputs
             // if (previewSurface != null) {
-            //     surfaces.add(previewSurface);
+            // surfaces.add(previewSurface);
             // } else {
-            //     Log.w(TAG, "Preview surface is null; preview will be disabled.");
+            // Log.w(TAG, "Preview surface is null; preview will be disabled.");
             // }
             if (surfaces.isEmpty()) {
                 Log.e(TAG, "No valid surfaces for camera session!");
@@ -1169,23 +1230,47 @@ public class RecordingService extends Service {
                     Log.e(TAG, "Error getting camera characteristics", e);
                 }
             }
-            int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
+            // -------------- Fix Start for this
+            // method(createCameraPreviewSession)-----------
+            // Use per-camera FPS setting and only choose HSR if selected resolution
+            // supports it
+            int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
+            Size selected = sharedPreferencesManager.getCameraResolution();
+
             if (isHighFrameRate && characteristics != null) {
-                // ... (same Samsung/Huawei/high-speed logic as before)
+                showFrameRateToast(targetFrameRate);
+
+                if (DeviceHelper.isSamsung()) {
+                    // Unify Samsung path with Pixel: always use standard session (no HSR).
+                    Log.d(TAG, "Samsung device: forcing standard session for " + targetFrameRate
+                            + "fps to match Pixel behavior");
+                    useHighSpeedSession = false;
+                } else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate,
+                            selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        Log.d(TAG, "HSR supported at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        Log.d(TAG, "HSR supported but selected size incompatible; using standard session");
+                        useHighSpeedSession = false;
+                    }
+                }
             }
+
             if (useHighSpeedSession) {
-                // ----- Fix Start for this method(createCameraPreviewSession)-----
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
-                // ----- Fix Ended for this method(createCameraPreviewSession)-----
             }
+            // -------------- Fix Ended for this
+            // method(createCameraPreviewSession)-----------
             return;
         }
 
-        Log.d(TAG,"createCameraPreviewSession: Creating session...");
+        Log.d(TAG, "createCameraPreviewSession: Creating session...");
         try {
             List<Surface> surfaces = new ArrayList<>();
             if (glRecordingPipeline != null) {
@@ -1195,7 +1280,7 @@ public class RecordingService extends Service {
                 surfaces.add(previewSurface);
                 previewSurfaceAdded = true;
                 Log.d(TAG, "Using valid preview surface from UI");
-            }             else if (dummyBackgroundSurface != null && dummyBackgroundSurface.isValid()) {
+            } else if (dummyBackgroundSurface != null && dummyBackgroundSurface.isValid()) {
                 // Use dummy surface when UI surface is gone (app backgrounded)
                 // to prevent recording issues like green frames
                 surfaces.add(dummyBackgroundSurface);
@@ -1204,85 +1289,64 @@ public class RecordingService extends Service {
             } else {
                 Log.d(TAG, "No valid preview or dummy surface available");
             }
-            
+
             // Get camera characteristics for frame rate handling
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
             CameraType cameraType = sharedPreferencesManager.getCameraSelection();
             String cameraId = getCameraId(cameraManager, cameraType);
             CameraCharacteristics characteristics = null;
-            
+
             if (cameraId != null) {
                 characteristics = cameraManager.getCameraCharacteristics(cameraId);
             }
-            
-            // Get target frame rate from settings
-            int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
-            
+
+            // -------------- Fix Start: Use per-camera FPS --------------
+            // Get target frame rate from settings for specific camera
+            int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            // -------------- Fix End: Use per-camera FPS --------------
+
             // Log device info once for debugging
             DeviceHelper.logDeviceInfo();
-            
+
             // Check if we need to use high-speed session for 60fps+ recording
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
-            
+
             // Continue with existing code...
             // Rest of the method stays the same
-            
+
             // For high frame rates, evaluate if we should use high-speed session
             if (isHighFrameRate && characteristics != null) {
-                // For Samsung devices, we ALWAYS use vendor keys over high-speed sessions for 60fps
+                // Unify Samsung path with Pixel: never force HSR on Samsung
                 if (DeviceHelper.isSamsung()) {
-                    Log.d(TAG, "Samsung device detected. Handling " + targetFrameRate + "fps for this device.");
+                    Log.d(TAG, "Samsung device: using standard session (no HSR) for " + targetFrameRate + "fps");
                     showFrameRateToast(targetFrameRate);
-                    
-                    // Determine Samsung FPS compatibility status
-                    SamsungFrameRateHelper.SamsungFpsStatus fpsStatus = SamsungFrameRateHelper.getDeviceFpsStatus();
-
-                    if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.HIGH_SPEED_COMPATIBLE) {
-                        // For SM-G990E (S21 FE Exynos) specifically, or other devices known to work with high-speed sessions
-                        Log.d(TAG, "Device status is HIGH_SPEED_COMPATIBLE. Attempting constrained high-speed session for " + targetFrameRate + "fps.");
-                        useHighSpeedSession = true;
-                        createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
-                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.REQUIRES_VENDOR_KEYS || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.FULLY_COMPATIBLE || fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.UNKNOWN) {
-                        // For other Samsung devices that use vendor keys in standard session, or unknown devices
-                        Log.d(TAG, "Device status is REQUIRES_VENDOR_KEYS or FULLY_COMPATIBLE or UNKNOWN. Attempting standard session with Samsung vendor keys for " + targetFrameRate + "fps.");
-                        useHighSpeedSession = false; // Ensure it's a standard session
-                        createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
-                    } else if (fpsStatus == SamsungFrameRateHelper.SamsungFpsStatus.KNOWN_INCOMPATIBLE) {
-                        // For known incompatible Samsung devices, do not attempt 60fps+
-                        Log.e(TAG, "Device is KNOWN_INCOMPATIBLE with 60fps+. Blocking request.");
-                        Toast.makeText(this, "60fps not supported on this device model.", Toast.LENGTH_LONG).show();
-                        RecordingService.this.recordingState = RecordingState.NONE; // Reset state to NONE by direct assignment from outer class
-                        return; // Do not proceed with recording
-                    }
-                    return; // Return after handling Samsung-specific logic
-                } 
-                // For Huawei devices, also prefer vendor keys
-                else if (DeviceHelper.isHuawei()) {
-                    Log.d(TAG, "Using Huawei-specific approach for high frame rates");
-                    
-                    // Show toast informing the user about experimental 60fps
-                    showFrameRateToast(targetFrameRate);
-                    
-                    // Use standard session with Huawei vendor keys
                     useHighSpeedSession = false;
                 }
                 // For other devices, check if high-speed is supported
                 else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
-                    Log.d(TAG, "High-speed session is supported for " + targetFrameRate + "fps");
-                    useHighSpeedSession = true;
-                    
+                    Size selected = sharedPreferencesManager.getCameraResolution();
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate,
+                            selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        Log.d(TAG, "High-speed session supported at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        Log.d(TAG, "HSR supported but not at selected size; using standard session");
+                        useHighSpeedSession = false;
+                    }
+
                     // Show toast informing the user about experimental 60fps
                     showFrameRateToast(targetFrameRate);
                 } else {
-                    Log.d(TAG, "High-speed not supported for " + targetFrameRate + 
-                           "fps, using standard session");
-                           
+                    Log.d(TAG, "High-speed not supported for " + targetFrameRate +
+                            "fps, using standard session");
+
                     // Show toast informing the user that high frame rate may not be fully supported
                     showFrameRateToast(targetFrameRate);
                 }
             }
-            
+
             // Create the appropriate type of session
             if (useHighSpeedSession) {
                 // For high-speed sessions
@@ -1303,12 +1367,12 @@ public class RecordingService extends Service {
         }
     }
 
-
     private final CameraCaptureSession.StateCallback captureSessionCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
             if (isStopping || cameraDevice == null || recordingState == RecordingState.NONE) {
-                Log.w(TAG, "onConfigured: Service is stopping, camera device is null, or recording state is NONE. Aborting.");
+                Log.w(TAG,
+                        "onConfigured: Service is stopping, camera device is null, or recording state is NONE. Aborting.");
                 return;
             }
             Log.d(TAG, "Standard capture session configured");
@@ -1317,13 +1381,12 @@ public class RecordingService extends Service {
                 // Set auto control mode
                 captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
                 // Set torch/flash mode
-                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, 
-                    isRecordingTorchEnabled ? 
-                        CaptureRequest.FLASH_MODE_TORCH : 
-                        CaptureRequest.FLASH_MODE_OFF);
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
+                        isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
                 // Defensive: check session state before using
                 if (captureSession == null || cameraDevice == null || recordingState == RecordingState.NONE) {
-                    Log.w(TAG, "onConfigured: Session or cameraDevice became null before setRepeatingRequest. Aborting.");
+                    Log.w(TAG,
+                            "onConfigured: Session or cameraDevice became null before setRepeatingRequest. Aborting.");
                     return;
                 }
                 // Start repeating request
@@ -1335,7 +1398,8 @@ public class RecordingService extends Service {
                     stopRecording();
                     return;
                 }
-                // Start the GL pipeline only after session is configured and repeating request is set
+                // Start the GL pipeline only after session is configured and repeating request
+                // is set
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.startRecording();
                 }
@@ -1346,23 +1410,25 @@ public class RecordingService extends Service {
                 stopRecording();
             }
         }
-        
+
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            if (isStopping) return;
+            if (isStopping)
+                return;
             Log.e(TAG, "Standard capture session configuration failed");
             stopRecording();
         }
-        
+
         @Override
         public void onClosed(@NonNull CameraCaptureSession session) {
-            if (isStopping) return;
+            if (isStopping)
+                return;
             Log.d(TAG, "Capture session closed");
-            
+
             if (session == captureSession) {
                 captureSession = null;
             }
-            
+
             if (isRolloverClosingOldSession) {
                 Log.d(TAG, "Capture session closed as part of rollover");
                 isRolloverClosingOldSession = false;
@@ -1374,30 +1440,28 @@ public class RecordingService extends Service {
     /**
      * Callback for high-speed session state changes
      */
-    private final CameraCaptureSession.StateCallback highSpeedSessionCallback = 
-            new CameraCaptureSession.StateCallback() {
-        
+    private final CameraCaptureSession.StateCallback highSpeedSessionCallback = new CameraCaptureSession.StateCallback() {
+
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
             if (isStopping || cameraDevice == null) {
                 Log.e(TAG, "onConfigured: Service is stopping or camera closed before high-speed session configured");
                 return;
             }
-            
+
             try {
                 Log.d(TAG, "High-speed session configured successfully");
                 captureSession = session;
-                
+
                 // For high-speed sessions, we need to create a list of requests for burst
-                CameraConstrainedHighSpeedCaptureSession highSpeedSession = 
-                        (CameraConstrainedHighSpeedCaptureSession) session;
-                        
-                List<CaptureRequest> highSpeedRequests = 
-                        highSpeedSession.createHighSpeedRequestList(captureRequestBuilder.build());
-                        
+                CameraConstrainedHighSpeedCaptureSession highSpeedSession = (CameraConstrainedHighSpeedCaptureSession) session;
+
+                List<CaptureRequest> highSpeedRequests = highSpeedSession
+                        .createHighSpeedRequestList(captureRequestBuilder.build());
+
                 // Start repeating burst for high-speed recording
                 highSpeedSession.setRepeatingBurst(highSpeedRequests, null, backgroundHandler);
-                
+
                 // Handle recording state
                 handleSessionConfigured();
             } catch (CameraAccessException e) {
@@ -1408,35 +1472,38 @@ public class RecordingService extends Service {
                 stopRecording();
             }
         }
-        
+
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            if (isStopping) return;
+            if (isStopping)
+                return;
             Log.e(TAG, "High-speed session configuration failed");
-            
+
             try {
                 // Can't get surfaces from the failed session, need to recreate them
                 CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
                 CameraType cameraType = sharedPreferencesManager.getCameraSelection();
                 String cameraId = getCameraId(cameraManager, cameraType);
                 CameraCharacteristics characteristics = null;
-                
+
                 if (cameraId != null) {
                     characteristics = cameraManager.getCameraCharacteristics(cameraId);
                 }
-                
-                int targetFrameRate = sharedPreferencesManager.getVideoFrameRate();
-                
+                // -------------- Fix Start: Use per-camera FPS and include GL surface in
+                // fallback --------------
+                int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+
                 // Recreate surfaces for standard session
                 List<Surface> surfaces = new ArrayList<>();
-                
+                if (glRecordingPipeline != null && glRecordingPipeline.getCameraInputSurface() != null) {
+                    surfaces.add(glRecordingPipeline.getCameraInputSurface());
+                }
 
-                
                 // Add preview surface if available
                 if (previewSurface != null) {
                     surfaces.add(previewSurface);
                 }
-                
+
                 // Create standard session as fallback
                 if (!surfaces.isEmpty()) {
                     createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
@@ -1444,15 +1511,18 @@ public class RecordingService extends Service {
                     Log.e(TAG, "Failed to create surfaces for fallback session");
                     stopRecording();
                 }
+                // -------------- Fix End: Use per-camera FPS and include GL surface in fallback
+                // --------------
             } catch (Exception e) {
                 Log.e(TAG, "Failed to create fallback session after high-speed failure", e);
                 stopRecording();
             }
         }
-        
+
         @Override
         public void onClosed(@NonNull CameraCaptureSession session) {
-            if (isStopping) return;
+            if (isStopping)
+                return;
             // Handle session closure same as standard session
             if (captureSessionCallback != null) {
                 captureSessionCallback.onClosed(session);
@@ -1460,23 +1530,23 @@ public class RecordingService extends Service {
         }
     };
 
-
-
     /**
-     * Handles errors that occur during the preparation or execution of video processing.
-     * Logs the error, shows a Toast, resets the processing flag, and attempts to clean up
+     * Handles errors that occur during the preparation or execution of video
+     * processing.
+     * Logs the error, shows a Toast, resets the processing flag, and attempts to
+     * clean up
      * the temporary input file associated with the failed process.
      *
-     * @param errorMessage A description of the error that occurred.
-     * @param internalTempInputPath The URI (as String) or absolute path of the temporary input file
-     *                               that should be cleaned up because its processing failed. Can be null.
+     * @param errorMessage          A description of the error that occurred.
+     * @param internalTempInputPath The URI (as String) or absolute path of the
+     *                              temporary input file
+     *                              that should be cleaned up because its processing
+     *                              failed. Can be null.
      */
     // Helper to handle storage setup errors consistently
     private void handleProcessingError(String errorMessage, @Nullable String internalTempInputPath) {
         Log.e(TAG, "Processing Error: " + errorMessage);
         Toast.makeText(this, "Error processing video recording", Toast.LENGTH_LONG).show();
-
-
 
         // If an input path/URI was provided, log attempt to clean it
         if (internalTempInputPath != null) {
@@ -1488,18 +1558,17 @@ public class RecordingService extends Service {
             Log.w(TAG, "handleProcessingError called without specific input path reference.");
         }
 
-
-
         // Check if the service should stop now that processing has failed/stopped
         if (!isWorkingInProgress()) {
-            Log.d(TAG,"handleProcessingError: No other work pending, stopping service.");
+            Log.d(TAG, "handleProcessingError: No other work pending, stopping service.");
             stopSelf();
         }
     }
 
     // Use this primarily for file paths, maybe less critical for content:// URIs
     private String escapeFFmpegPath(String path) {
-        if (path == null) return "";
+        if (path == null)
+            return "";
         // For content URIs, usually best not to quote/escape unless specifically needed
         if (path.startsWith("content://")) {
             return path;
@@ -1508,10 +1577,6 @@ public class RecordingService extends Service {
             return "'" + path.replace("'", "'\\''") + "'";
         }
     }
-
-
-
-
 
     // Helper to handle storage setup errors consistently
     private void handleStorageError(String message) {
@@ -1523,12 +1588,11 @@ public class RecordingService extends Service {
     }
     // --- End Watermarking & Processing ---
 
-
     // --- Helper Methods ---
     private void setupSurfaceTexture(Intent intent) {
         // ----- Fix Start for this method(setupSurfaceTexture)-----
         Surface oldPreviewSurface = previewSurface; // Store old surface to check for changes
-        if(intent != null) {
+        if (intent != null) {
             previewSurface = intent.getParcelableExtra("SURFACE");
             boolean validOldSurface = oldPreviewSurface != null && oldPreviewSurface.isValid();
             boolean validNewSurface = previewSurface != null && previewSurface.isValid();
@@ -1554,44 +1618,47 @@ public class RecordingService extends Service {
         // ----- Fix Ended for this method(setupSurfaceTexture)-----
     }
 
-
-
-
-
-
     private int getVideoBitrate() {
         int videoBitrate;
         if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
-            videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored as kbps, use bps
+            videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored
+                                                                                                                    // as
+                                                                                                                    // kbps,
+                                                                                                                    // use
+                                                                                                                    // bps
             Log.d(TAG, "[DEBUG] Using custom video bitrate: " + videoBitrate + " bps");
         } else {
-            videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+            videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(),
+                    sharedPreferencesManager.getVideoFrameRate());
             Log.d(TAG, "[DEBUG] Using default video bitrate: " + videoBitrate + " bps");
         }
         return videoBitrate;
     }
 
-
     private int getFontSizeBasedOnBitrate() {
         int fontSize;
         long videoBitrate = getVideoBitrate();
-        if (videoBitrate <= 1_000_000) fontSize = 12; // <= 1 Mbps (Approx SD)
-        else if (videoBitrate <= 5_000_000) fontSize = 16; // <= 5 Mbps (Approx HD)
-        else if (videoBitrate <= 15_000_000) fontSize = 24; // <= 15 Mbps (Approx FHD)
-        else fontSize = 30; // Higher bitrates (e.g., 4K)
+        if (videoBitrate <= 1_000_000)
+            fontSize = 12; // <= 1 Mbps (Approx SD)
+        else if (videoBitrate <= 5_000_000)
+            fontSize = 16; // <= 5 Mbps (Approx HD)
+        else if (videoBitrate <= 15_000_000)
+            fontSize = 24; // <= 15 Mbps (Approx FHD)
+        else
+            fontSize = 30; // Higher bitrates (e.g., 4K)
         Log.d(TAG, "Determined Font Size: " + fontSize + " for bitrate " + videoBitrate);
         return fontSize;
     }
 
-
     private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH); // 12-hour format with AM/PM
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH); // 12-hour format with
+                                                                                               // AM/PM
         return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
 
-
     private String convertArabicNumeralsToEnglish(String text) {
-        if (text == null) return null;
+        if (text == null)
+            return null;
         return text.replaceAll("٠", "0")
                 .replaceAll("١", "1")
                 .replaceAll("٢", "2")
@@ -1605,29 +1672,28 @@ public class RecordingService extends Service {
     }
 
     private String getLocationData() {
-        if(locationHelper == null) {
+        if (locationHelper == null) {
             Log.w(TAG, "LocationHelper not initialized, cannot get location data.");
             return ""; // Return empty, not "Not available" to avoid user confusion
         }
         String locData = locationHelper.getLocationData();
-        // Avoid adding "Location not available" to watermark, just add lat/lon if present
+        // Avoid adding "Location not available" to watermark, just add lat/lon if
+        // present
         return (locData != null && locData.contains("Lat=")) ? locData : "";
     }
 
-
     private String escapeFFmpegString(String text) {
-        if (text == null) return "";
+        if (text == null)
+            return "";
         return text
                 .replace("\\", "\\\\") // Escape backslashes
-                .replace(":", "\\:")  // Escape colons
-                .replace("'", "")      // Remove single quotes entirely (safer than escaping)
-                .replace("\"", "")     // Remove double quotes
+                .replace(":", "\\:") // Escape colons
+                .replace("'", "") // Remove single quotes entirely (safer than escaping)
+                .replace("\"", "") // Remove double quotes
                 .replace("%", "%%"); // Escape percent signs
     }
 
-
     // --- End Helper Methods ---
-
 
     // --- Broadcasts ---
     private void broadcastOnRecordingStarted() {
@@ -1635,31 +1701,34 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
         sendBroadcast(broadcastIntent);
-        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_STARTED");
+        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STARTED");
     }
+
     private void broadcastOnRecordingResumed() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_RESUMED);
         sendBroadcast(broadcastIntent);
-        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_RESUMED");
+        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_RESUMED");
     }
+
     private void broadcastOnRecordingPaused() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_PAUSED);
         sendBroadcast(broadcastIntent);
-        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_PAUSED");
+        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_PAUSED");
     }
+
     private void broadcastOnRecordingStopped() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
         sendBroadcast(broadcastIntent);
-        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_STOPPED");
+        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STOPPED");
     }
+
     private void broadcastOnRecordingStateCallback() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
         sendBroadcast(broadcastIntent);
-        Log.d(TAG,"Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: "+recordingState);
+        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState);
     }
     // --- End Broadcasts ---
-
 
     // --- Notifications ---
     private void createNotificationChannel() {
@@ -1667,10 +1736,9 @@ public class RecordingService extends Service {
             // ----- Fix Start for this method(createNotificationChannel) -----
             // Get the custom channel name or use a generic name
             String channelName = sharedPreferencesManager.getNotificationChannelName();
-            CharSequence name = (channelName != null) ? 
-                channelName : 
-                getString(R.string.notification_channel_recording, getString(R.string.app_name));
-            
+            CharSequence name = (channelName != null) ? channelName
+                    : getString(R.string.notification_channel_recording, getString(R.string.app_name));
+
             // Use a generic description that doesn't reveal the app's purpose
             String description = getString(R.string.notification_channel_description);
             int importance = NotificationManager.IMPORTANCE_LOW; // Low importance to be less intrusive
@@ -1692,22 +1760,27 @@ public class RecordingService extends Service {
 
     private void setupRecordingInProgressNotification() {
         // ----- Fix Start for this method(setupRecordingInProgressNotification) -----
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification setup.");
-            // If Android Tiramisu or higher, START_FOREGROUND without notification IS allowed if user denies permission
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification setup.");
+            // If Android Tiramisu or higher, START_FOREGROUND without notification IS
+            // allowed if user denies permission
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 try {
-                    startForeground(NOTIFICATION_ID, createBaseNotificationBuilder().build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
-                    Log.d(TAG,"Started foreground without notification permission (Tiramisu+).");
+                    startForeground(NOTIFICATION_ID, createBaseNotificationBuilder().build(),
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+                                    | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+                    Log.d(TAG, "Started foreground without notification permission (Tiramisu+).");
                     return;
-                } catch (Exception e){
-                    Log.e(TAG,"Error starting foreground on Tiramisu+ without permission",e);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error starting foreground on Tiramisu+ without permission", e);
                     stopSelf(); // Critical error if foreground fails
                     return;
                 }
             } else {
-                // On older versions, foreground service needs a notification, permission IS required
-                Toast.makeText(this,"Notification permission needed", Toast.LENGTH_LONG).show();
+                // On older versions, foreground service needs a notification, permission IS
+                // required
+                Toast.makeText(this, "Notification permission needed", Toast.LENGTH_LONG).show();
                 stopSelf(); // Cannot run foreground service properly
                 return;
             }
@@ -1718,15 +1791,16 @@ public class RecordingService extends Service {
         boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
 
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_progress_description));
-        
+                .setContentText(notificationText != null ? notificationText
+                        : getString(R.string.notification_video_recording_progress_description));
+
         // Add stop action only if not hidden
         if (!hideStopButton) {
             builder.clearActions() // Remove previous actions
-                .addAction(new NotificationCompat.Action(
-                        R.drawable.ic_stop,
-                        getString(R.string.button_stop),
-                        createStopRecordingIntent()));
+                    .addAction(new NotificationCompat.Action(
+                            R.drawable.ic_stop,
+                            getString(R.string.button_stop),
+                            createStopRecordingIntent()));
         }
 
         startForeground(NOTIFICATION_ID, builder.build());
@@ -1734,11 +1808,11 @@ public class RecordingService extends Service {
         // ----- Fix Ended for this method(setupRecordingInProgressNotification) -----
     }
 
-
     private void setupRecordingResumeNotification() { // Notification shown when PAUSED
         // ----- Fix Start for this method(setupRecordingResumeNotification) -----
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG,"POST_NOTIFICATIONS permission not granted, skipping notification update.");
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification update.");
             return; // Don't crash if user denied permission after start
         }
 
@@ -1747,21 +1821,22 @@ public class RecordingService extends Service {
         boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
 
         NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(notificationText != null ? notificationText : getString(R.string.notification_video_recording_paused_description))
+                .setContentText(notificationText != null ? notificationText
+                        : getString(R.string.notification_video_recording_paused_description))
                 .clearActions(); // Remove previous actions
-        
+
         // Add resume action
         builder.addAction(new NotificationCompat.Action(
-                        R.drawable.ic_play, // Use Play icon for Resume action
-                        getString(R.string.button_resume),
+                R.drawable.ic_play, // Use Play icon for Resume action
+                getString(R.string.button_resume),
                 createResumeRecordingIntent()));
-                
+
         // Add stop action only if not hidden
         if (!hideStopButton) {
             builder.addAction(new NotificationCompat.Action(
-                        R.drawable.ic_stop,
-                        getString(R.string.button_stop),
-                        createStopRecordingIntent()));
+                    R.drawable.ic_stop,
+                    getString(R.string.button_stop),
+                    createStopRecordingIntent()));
         }
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
@@ -1770,19 +1845,19 @@ public class RecordingService extends Service {
         // ----- Fix Ended for this method(setupRecordingResumeNotification) -----
     }
 
-
     private NotificationCompat.Builder createBaseNotificationBuilder() {
         // ----- Fix Start for this method(createBaseNotificationBuilder) -----
         // Get custom notification title if set
         String notificationTitle = sharedPreferencesManager.getNotificationTitle();
         String preset = sharedPreferencesManager.getNotificationPreset();
-        
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(notificationTitle != null ? notificationTitle : getString(R.string.notification_video_recording))
+                .setContentTitle(notificationTitle != null ? notificationTitle
+                        : getString(R.string.notification_video_recording))
                 .setOngoing(true) // Makes it non-dismissible
                 .setSilent(true) // Suppress sound/vibration defaults
                 .setPriority(NotificationCompat.PRIORITY_LOW);
-        
+
         // Choose appropriate icon based on notification preset
         int smallIconResId;
         switch (preset) {
@@ -1799,77 +1874,152 @@ public class RecordingService extends Service {
                 smallIconResId = R.drawable.ic_notification_icon;
                 break;
         }
-        
+
         builder.setSmallIcon(smallIconResId);
-        
+
+        // -------------- Fix Start for this
+        // method(createBaseNotificationBuilder_large_icon)-----------
+        // Set custom large icon based on currently selected app icon for discretion
+        int largeIconResId = getCurrentAppIconResourceId();
+        Log.d(TAG, "createBaseNotificationBuilder: Using large icon resource ID = " + largeIconResId);
+        android.graphics.Bitmap largeIconBitmap = loadNotificationLargeIconBitmap(largeIconResId);
+        if (largeIconBitmap != null) {
+            builder.setLargeIcon(largeIconBitmap);
+            Log.d(TAG, "createBaseNotificationBuilder: Successfully set large icon bitmap");
+        } else {
+            Log.w(TAG, "createBaseNotificationBuilder: Failed to render large icon, proceeding without it");
+        }
+        // -------------- Fix Ended for this
+        // method(createBaseNotificationBuilder_large_icon)-----------
+
         // Set a generic content intent that doesn't reveal the app
         if (!SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT.equals(preset)) {
             // For non-default presets, use a blank PendingIntent that does nothing
             Intent emptyIntent = new Intent();
-            PendingIntent emptyPendingIntent = PendingIntent.getActivity(this, 0, emptyIntent, 
+            PendingIntent emptyPendingIntent = PendingIntent.getActivity(this, 0, emptyIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             builder.setContentIntent(emptyPendingIntent);
         } else {
             // For default preset, use normal app opening intent
             builder.setContentIntent(createOpenAppIntent());
         }
-                
+
         return builder;
         // ----- Fix Ended for this method(createBaseNotificationBuilder) -----
     }
 
+    // -------------- Fix Start for this
+    // method(getCurrentAppIconResourceId)-----------
+    /**
+     * Gets the resource ID for the currently selected app icon to use as
+     * notification large icon.
+     * This ensures the notification uses the same icon as the user has selected for
+     * the app launcher,
+     * maintaining discretion and consistency.
+     * 
+     * @return Resource ID of the current app icon, or 0 if not found
+     */
+    private int getCurrentAppIconResourceId() {
+        String currentAppIcon = sharedPreferencesManager.getCurrentAppIcon();
+        Log.d(TAG, "getCurrentAppIconResourceId: Current app icon preference = " + currentAppIcon);
+        // Map icon key to its resource id via SharedPreferencesManager
+        int resId = sharedPreferencesManager.getAppIconResId(currentAppIcon);
+        Log.d(TAG, "getCurrentAppIconResourceId: Resolved to resId=" + resId);
+        return resId;
+    }
+
+    // -------------- Fix Start for this method(loadNotificationLargeIconBitmap)-----------
+    /**
+     * Renders the given icon resource (mipmap/drawable; vector/adaptive/webp/png) into
+     * a Bitmap sized for notification large icons. This ensures we always provide a
+     * rasterized PNG-like bitmap even when the source is vector or adaptive.
+     */
+    private @Nullable android.graphics.Bitmap loadNotificationLargeIconBitmap(int resId) {
+        if (resId == 0) return null;
+        try {
+            // First try decoding directly (works for PNG/WEBP bitmaps)
+            android.graphics.Bitmap direct = android.graphics.BitmapFactory.decodeResource(getResources(), resId);
+            int targetW = getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
+            int targetH = getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_height);
+            int target = Math.max(1, Math.min(targetW, targetH));
+            if (direct != null) {
+                if (direct.getWidth() == target && direct.getHeight() == target) return direct;
+                // Scale to target square for consistency
+                return android.graphics.Bitmap.createScaledBitmap(direct, target, target, true);
+            }
+
+            // Fallback: render any Drawable (vector/adaptive) to bitmap
+            android.graphics.drawable.Drawable d = androidx.appcompat.content.res.AppCompatResources.getDrawable(this, resId);
+            if (d == null) return null;
+            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(target, target, android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+            d.setBounds(0, 0, target, target);
+            d.draw(canvas);
+            return bmp;
+        } catch (Throwable t) {
+            Log.w(TAG, "loadNotificationLargeIconBitmap: failed to render icon", t);
+            return null;
+        }
+    }
+    // -------------- Fix Ended for this method(loadNotificationLargeIconBitmap)-----------
+    // -------------- Fix Ended for this
+    // method(getCurrentAppIconResourceId)-----------
+
     private void cancelNotification() {
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.cancel(NOTIFICATION_ID);
-        Log.d(TAG,"Cancelled notification.");
+        Log.d(TAG, "Cancelled notification.");
     }
-
 
     private PendingIntent createOpenAppIntent() {
         Intent openAppIntent = new Intent(this, MainActivity.class);
         // Standard flags to bring existing task to front or start new
         openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         // Use FLAG_IMMUTABLE for security best practices on newer Androids
-        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
         return PendingIntent.getActivity(this, 0, openAppIntent, flags);
     }
 
     private PendingIntent createStopRecordingIntent() {
         Intent stopIntent = new Intent(this, RecordingService.class);
         stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
-        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
         return PendingIntent.getService(this, 1, stopIntent, flags); // Use unique request code (1)
     }
 
     private PendingIntent createResumeRecordingIntent() {
         Intent resumeIntent = new Intent(this, RecordingService.class);
         resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
-        // Make sure surface data isn't needed here - pass null if required or handle differently
-        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        // Make sure surface data isn't needed here - pass null if required or handle
+        // differently
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
         return PendingIntent.getService(this, 2, resumeIntent, flags); // Use unique request code (2)
     }
-
-
 
     // --- Toast Helpers ---
     private void showRecordingResumedToast() {
         Utils.showQuickToast(this, R.string.video_recording_resumed);
     }
+
     private void showRecordingInPausedToast() {
         Utils.showQuickToast(this, R.string.video_recording_paused);
     }
     // --- End Toast Helpers ---
 
-
     // --- Torch Logic ---
-
 
     private void toggleRecordingTorch() {
         if (captureRequestBuilder != null && captureSession != null && cameraDevice != null) {
             if (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED) {
                 try {
                     isRecordingTorchEnabled = !isRecordingTorchEnabled; // Toggle the state for the session
-                    Log.d(TAG,"Toggling recording torch via CaptureRequest. New state: "+ isRecordingTorchEnabled);
+                    Log.d(TAG, "Toggling recording torch via CaptureRequest. New state: " + isRecordingTorchEnabled);
 
                     captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
                             isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
@@ -1886,19 +2036,21 @@ public class RecordingService extends Service {
                 } catch (CameraAccessException e) {
                     Log.e(TAG, "Could not toggle recording torch via CaptureRequest: " + e.getMessage());
                     isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
-                } catch(IllegalStateException e) {
-                    Log.e(TAG,"Could not toggle recording torch via CaptureRequest - session/camera closed?", e);
+                } catch (IllegalStateException e) {
+                    Log.e(TAG, "Could not toggle recording torch via CaptureRequest - session/camera closed?", e);
                     isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
                 }
             } else {
-                Log.w(TAG, "Cannot toggle recording torch via CaptureRequest - not IN_PROGRESS or PAUSED. State: " + recordingState);
-                // If not recording, HomeFragment should handle torch directly via CameraManager.setTorchMode()
+                Log.w(TAG, "Cannot toggle recording torch via CaptureRequest - not IN_PROGRESS or PAUSED. State: "
+                        + recordingState);
+                // If not recording, HomeFragment should handle torch directly via
+                // CameraManager.setTorchMode()
             }
         } else {
-            Log.w(TAG, "Cannot toggle recording torch via CaptureRequest - session, request builder, or camera device is null.");
+            Log.w(TAG,
+                    "Cannot toggle recording torch via CaptureRequest - session, request builder, or camera device is null.");
         }
     }
-
 
     // --- Status Check ---
     public boolean isRecording() {
@@ -1919,37 +2071,39 @@ public class RecordingService extends Service {
     // Combined status check
     public boolean isWorkingInProgress() {
 
-        // Only consider recording states (not FFmpeg processing) for determining if camera is busy
-        // This allows new recordings to start while FFmpeg is still processing in the background
-        return recordingState == RecordingState.IN_PROGRESS || 
-               recordingState == RecordingState.PAUSED || 
-               recordingState == RecordingState.STARTING;
+        // Only consider recording states (not FFmpeg processing) for determining if
+        // camera is busy
+        // This allows new recordings to start while FFmpeg is still processing in the
+        // background
+        return recordingState == RecordingState.IN_PROGRESS ||
+                recordingState == RecordingState.PAUSED ||
+                recordingState == RecordingState.STARTING;
 
     }
-    
+
     /**
-     * Check if the service should stay alive (either recording is in progress or FFmpeg is processing)
-     * This is different from isWorkingInProgress() which only checks if recording is active
+     * Check if the service should stay alive (either recording is in progress or
+     * FFmpeg is processing)
+     * This is different from isWorkingInProgress() which only checks if recording
+     * is active
      */
     private boolean shouldServiceStayAlive() {
-        return ffmpegProcessingTaskCount.get() > 0 || 
-               recordingState == RecordingState.IN_PROGRESS || 
-               recordingState == RecordingState.PAUSED || 
-               recordingState == RecordingState.STARTING ||
-               recordingState == RecordingState.WAITING_FOR_CAMERA;
+        return ffmpegProcessingTaskCount.get() > 0 ||
+                recordingState == RecordingState.IN_PROGRESS ||
+                recordingState == RecordingState.PAUSED ||
+                recordingState == RecordingState.STARTING ||
+                recordingState == RecordingState.WAITING_FOR_CAMERA;
     }
 
-
     private void handleSegmentRolloverInternal() {
-        Log.i(TAG, "handleSegmentRolloverInternal: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
+        Log.i(TAG,
+                "handleSegmentRolloverInternal: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
     }
 
     private void proceedWithRolloverAfterOldSessionClosed() {
-        Log.i(TAG, "proceedWithRolloverAfterOldSessionClosed: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
+        Log.i(TAG,
+                "proceedWithRolloverAfterOldSessionClosed: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
     }
-
-
-
 
     private File createNextSegmentOutputFile(int nextSegmentNumber) {
         // ----- Fix Start for this method(createNextSegmentOutputFile)-----
@@ -1970,8 +2124,10 @@ public class RecordingService extends Service {
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
             // Use FadCam prefix for consistent naming
-            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-            DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, baseFilename);
+            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+                    + Constants.RECORDING_FILE_EXTENSION;
+            DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION,
+                    baseFilename);
             if (nextDocFile == null || !nextDocFile.exists()) {
                 Log.e(TAG, "createNextSegmentOutputFile: Failed to create DocumentFile in SAF: " + baseFilename);
                 return null;
@@ -1980,7 +2136,8 @@ public class RecordingService extends Service {
                 // Open a ParcelFileDescriptor for the next segment
                 ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(nextDocFile.getUri(), "w");
                 if (pfd == null) {
-                    Log.e(TAG, "createNextSegmentOutputFile: Failed to open ParcelFileDescriptor for next SAF URI: " + nextDocFile.getUri());
+                    Log.e(TAG, "createNextSegmentOutputFile: Failed to open ParcelFileDescriptor for next SAF URI: "
+                            + nextDocFile.getUri());
                     return null;
                 }
                 pfd.close(); // Immediately close, as the pipeline will open as needed
@@ -1994,8 +2151,9 @@ public class RecordingService extends Service {
             // Internal storage mode - Use same directory and naming as first segment
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
-            
+            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+                    + Constants.RECORDING_FILE_EXTENSION;
+
             // Use the same directory as the first segment (app's external files directory)
             File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
             if (!videoDir.exists() && !videoDir.mkdirs()) {
@@ -2003,7 +2161,7 @@ public class RecordingService extends Service {
                 Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
                 return null;
             }
-            
+
             // Create the file directly in the final directory
             File nextFile = new File(videoDir, baseFilename);
             Log.i(TAG, "Next segment file created: " + nextFile.getAbsolutePath());
@@ -2012,9 +2170,6 @@ public class RecordingService extends Service {
         // ----- Fix Ended for this method(createNextSegmentOutputFile)-----
     }
 
-
-
-
     // Helper to check if a wired mic is connected
     private boolean isWiredMicConnected() {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -2022,9 +2177,9 @@ public class RecordingService extends Service {
             AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
             for (AudioDeviceInfo device : devices) {
                 if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-                    device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-                    device.getType() == AudioDeviceInfo.TYPE_USB_DEVICE ||
-                    device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
+                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                        device.getType() == AudioDeviceInfo.TYPE_USB_DEVICE ||
+                        device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
                     return true;
                 }
             }
@@ -2035,9 +2190,9 @@ public class RecordingService extends Service {
         return false;
     }
 
-
     /**
-     * Sets the camera resource releasing state and schedules it to be available again after a cooldown period.
+     * Sets the camera resource releasing state and schedules it to be available
+     * again after a cooldown period.
      * Also broadcasts the availability state change to the UI components.
      * 
      * @param releasing True if camera resources are being released, false otherwise
@@ -2045,22 +2200,23 @@ public class RecordingService extends Service {
     private void setCameraResourcesReleasing(boolean releasing) {
         isCameraResourceReleasing = releasing;
         Log.d(TAG, "Camera resources releasing state set to: " + releasing);
-        
+
         // Broadcast the current availability state
         broadcastCameraResourceAvailability(!releasing);
-        
-        // If we're releasing resources, schedule them to become available after a cooldown
+
+        // If we're releasing resources, schedule them to become available after a
+        // cooldown
         if (releasing) {
             mainHandler.postDelayed(() -> {
                 isCameraResourceReleasing = false;
                 Log.d(TAG, "Camera resource cooldown ended, resources available now");
-                
+
                 // Broadcast that camera resources are available again
                 broadcastCameraResourceAvailability(true);
             }, Constants.CAMERA_RESOURCE_COOLDOWN_MS);
         }
     }
-    
+
     /**
      * Broadcasts the camera resource availability state to UI components
      * 
@@ -2073,10 +2229,12 @@ public class RecordingService extends Service {
         Log.d(TAG, "Broadcasted camera resource availability: " + available);
     }
 
-
     /**
-     * Helper method to verify if location metadata was successfully embedded in a video file
-     * This method will add logs that you can filter for "METADATA_CHECK" to trace the issue
+     * Helper method to verify if location metadata was successfully embedded in a
+     * video file
+     * This method will add logs that you can filter for "METADATA_CHECK" to trace
+     * the issue
+     * 
      * @param videoFilePath Path to the final processed video file
      */
     private void verifyLocationMetadata(String videoFilePath) {
@@ -2084,37 +2242,36 @@ public class RecordingService extends Service {
             Log.e(TAG, "METADATA_CHECK: Video file path is null");
             return;
         }
-        
+
         Log.d(TAG, "METADATA_CHECK: Checking for location metadata in " + videoFilePath);
-        
+
         try {
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             retriever.setDataSource(videoFilePath);
-            
+
             // Get location data
             String locationString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION);
-            
+
             if (locationString != null && !locationString.isEmpty()) {
                 Log.d(TAG, "METADATA_CHECK: Found location data in video: " + locationString);
             } else {
                 Log.e(TAG, "METADATA_CHECK: No location metadata found in processed video!");
                 Log.e(TAG, "METADATA_CHECK: This suggests the metadata was lost during processing");
             }
-            
+
             // Check a few other metadata fields to see if any metadata is preserved
             String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-            
-            Log.d(TAG, "METADATA_CHECK: Other metadata - Duration: " + duration + 
-                  ", Resolution: " + width + "x" + height);
-            
+
+            Log.d(TAG, "METADATA_CHECK: Other metadata - Duration: " + duration +
+                    ", Resolution: " + width + "x" + height);
+
             retriever.release();
         } catch (Exception e) {
             Log.e(TAG, "METADATA_CHECK: Error checking metadata", e);
         }
     }
-
 
     /**
      * Reinitializes location helpers based on current preference settings
@@ -2126,13 +2283,14 @@ public class RecordingService extends Service {
 
     /**
      * Reinitializes location helpers based on current preference settings
+     * 
      * @param forceInit Force reinitialization even if settings haven't changed
      */
     private void reinitializeLocationHelpers(boolean forceInit) {
         Log.d(TAG, "==== Reinitializing Location Helpers ====");
-        Log.d(TAG, "Current preferences: location=" + sharedPreferencesManager.isLocalisationEnabled() + 
-               ", embedding=" + sharedPreferencesManager.isLocationEmbeddingEnabled());
-        
+        Log.d(TAG, "Current preferences: location=" + sharedPreferencesManager.isLocalisationEnabled() +
+                ", embedding=" + sharedPreferencesManager.isLocationEmbeddingEnabled());
+
         // Handle LocationHelper for watermark
         boolean locationEnabled = sharedPreferencesManager.isLocalisationEnabled();
         if (locationEnabled) {
@@ -2142,7 +2300,7 @@ public class RecordingService extends Service {
                     if (locationHelper != null) {
                         locationHelper.stopLocationUpdates();
                     }
-                    
+
                     locationHelper = new LocationHelper(this);
                     Log.d(TAG, "Created new LocationHelper for watermark");
                 } catch (Exception e) {
@@ -2162,19 +2320,19 @@ public class RecordingService extends Service {
                 }
             }
         }
-        
+
         // Handle GeotagHelper for metadata embedding
         boolean embeddingEnabled = sharedPreferencesManager.isLocationEmbeddingEnabled();
         if (embeddingEnabled) {
             boolean needsNewHelper = geotagHelper == null || forceInit;
-            
+
             if (needsNewHelper) {
                 try {
                     // Clean up existing helper if needed
                     if (geotagHelper != null) {
                         geotagHelper.stopUpdates();
                     }
-                    
+
                     // Create new helper
                     geotagHelper = new GeotagHelper(this);
                     boolean started = geotagHelper.startUpdates();
@@ -2192,7 +2350,6 @@ public class RecordingService extends Service {
                     Log.e(TAG, "Error starting GeotagHelper updates", e);
                 }
             }
-            
 
         } else {
             if (geotagHelper != null) {
@@ -2205,42 +2362,41 @@ public class RecordingService extends Service {
                 }
             }
         }
-        
+
         Log.d(TAG, "==== Location Helpers Reinitialization Complete ====");
     }
-
 
     /**
      * Creates a high-speed constrained capture session for 60fps+ recording
      */
-    private void createHighSpeedSession(List<Surface> surfaces, CameraCharacteristics characteristics, 
-                                        int targetFrameRate, CameraType cameraType) {
+    private void createHighSpeedSession(List<Surface> surfaces, CameraCharacteristics characteristics,
+            int targetFrameRate, CameraType cameraType) {
         try {
             // For high-speed recording, we need a constrained high-speed capture session
             Log.d(TAG, "Creating constrained high-speed session for " + targetFrameRate + "fps");
-            
+
             // Get the best size for high-speed recording
             Size highSpeedSize = HighSpeedCaptureHelper.getBestHighSpeedSize(
                     characteristics, targetFrameRate, 0, 0);
-                    
+
             if (highSpeedSize == null) {
                 Log.d(TAG, "No suitable high-speed size found");
                 // Fallback to standard session
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
                 return;
             }
-            
+
             // Configure a builder for high-speed recording
             captureRequestBuilder = HighSpeedCaptureHelper.configureHighSpeedRequestBuilder(
                     cameraDevice, null, targetFrameRate, characteristics);
-                    
+
             if (captureRequestBuilder == null) {
                 Log.d(TAG, "Failed to create high-speed request builder");
                 // Fallback to standard session
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
                 return;
             }
-            
+
             // Add surfaces as targets
             for (Surface surface : surfaces) {
                 captureRequestBuilder.addTarget(surface);
@@ -2248,20 +2404,20 @@ public class RecordingService extends Service {
 
             // Apply zoom settings for back camera
             applyZoomSettings(captureRequestBuilder, cameraType);
-            
+
             // Set torch mode if enabled
             if (isRecordingTorchEnabled) {
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
             } else {
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
             }
-            
+
             // Create the constrained high-speed session
             cameraDevice.createConstrainedHighSpeedCaptureSession(
-                    surfaces, 
-                    highSpeedSessionCallback, 
+                    surfaces,
+                    highSpeedSessionCallback,
                     backgroundHandler);
-                    
+
             Log.d(TAG, "Requested constrained high-speed capture session creation");
         } catch (Exception e) {
             Log.e(TAG, "Failed to create high-speed session", e);
@@ -2276,34 +2432,35 @@ public class RecordingService extends Service {
     }
 
     /**
-     * Fallback to create a standard session with the best possible frame rate settings
+     * Fallback to create a standard session with the best possible frame rate
+     * settings
      */
-    private void createStandardSession(List<Surface> surfaces, int targetFrameRate, 
-                                       CameraCharacteristics characteristics, CameraType cameraType) {
+    private void createStandardSession(List<Surface> surfaces, int targetFrameRate,
+            CameraCharacteristics characteristics, CameraType cameraType) {
         try {
             Log.d(TAG, "Creating standard session with optimized frame rate settings");
-            
+
             // Create standard request builder
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-            
+
             // Add surfaces as targets
             for (Surface surface : surfaces) {
                 captureRequestBuilder.addTarget(surface);
             }
-            
+
             // Apply frame rate settings
             applyFrameRateSettings(captureRequestBuilder, targetFrameRate, characteristics);
 
             // Apply zoom settings for back camera
             applyZoomSettings(captureRequestBuilder, cameraType);
-            
+
             // Set torch mode if enabled
             if (isRecordingTorchEnabled) {
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
             } else {
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
             }
-            
+
             // Create the session
             cameraDevice.createCaptureSession(surfaces, captureSessionCallback, backgroundHandler);
         } catch (Exception e) {
@@ -2315,21 +2472,61 @@ public class RecordingService extends Service {
     /**
      * Apply appropriate frame rate settings based on device type
      */
-    private void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, 
-                                      CameraCharacteristics characteristics) {
-        // Apply standard AE target FPS range
-        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new android.util.Range<>(targetFrameRate, targetFrameRate));
-        Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to [" + targetFrameRate + "," + targetFrameRate + "]");
+    private void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate,
+            CameraCharacteristics characteristics) {
+        // Apply a safe AE target FPS range. Prefer exact [X,X], otherwise pick a
+        // supported range including X
+        android.util.Range<Integer> chosen = null;
+        try {
+            if (characteristics != null) {
+                android.util.Range<Integer>[] ranges = characteristics
+                        .get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                if (ranges != null && ranges.length > 0) {
+                    // Prefer exact constant range first
+                    for (android.util.Range<Integer> r : ranges) {
+                        if (r.getLower() == targetFrameRate && r.getUpper() == targetFrameRate) {
+                            chosen = r;
+                            break;
+                        }
+                    }
+                    // Then any range that contains the target
+                    if (chosen == null) {
+                        for (android.util.Range<Integer> r : ranges) {
+                            if (r.getLower() <= targetFrameRate && r.getUpper() >= targetFrameRate) {
+                                chosen = r;
+                                break;
+                            }
+                        }
+                    }
+                    // Finally, pick the closest upper bound
+                    if (chosen == null) {
+                        android.util.Range<Integer> best = ranges[0];
+                        int bestDiff = Math.abs(best.getUpper() - targetFrameRate);
+                        for (android.util.Range<Integer> r : ranges) {
+                            int diff = Math.abs(r.getUpper() - targetFrameRate);
+                            if (diff < bestDiff) {
+                                best = r;
+                                bestDiff = diff;
+                            }
+                        }
+                        chosen = best;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to choose AE FPS range from characteristics", e);
+        }
+        if (chosen == null) {
+            chosen = new android.util.Range<>(targetFrameRate, targetFrameRate);
+        }
+        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, chosen);
+        Log.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to " + chosen);
 
         // Apply Samsung-specific keys if applicable
-        if (DeviceHelper.isSamsung()) {
-            SamsungFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
-        }
+        // Do not apply Samsung vendor keys: unify behavior with standard devices
+        // (Pixel-like)
 
-        // Apply Huawei-specific keys if applicable
-        if (DeviceHelper.isHuawei() && targetFrameRate >= 60) {
-            HuaweiFrameRateHelper.applyFrameRateSettings(builder, targetFrameRate);
-        }
+        // Unified behavior: no Huawei/Samsung vendor keys; rely on AE range only.
     }
 
     /**
@@ -2339,7 +2536,7 @@ public class RecordingService extends Service {
         // ----- Fix Start for this method(applyZoomSettings)-----
         // Get zoom ratio from settings for the specific camera type
         float zoomRatio = sharedPreferencesManager.getSpecificZoomRatio(cameraType);
-        
+
         // Apply zoom ratio to the capture request
         builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
         Log.d(TAG, "Applied zoom ratio " + zoomRatio + " for " + cameraType + " camera");
@@ -2348,21 +2545,22 @@ public class RecordingService extends Service {
 
     /**
      * Previously showed toast messages for high frame rates
-     * Now just logs the message as warnings are shown permanently in the settings UI
+     * Now just logs the message as warnings are shown permanently in the settings
+     * UI
      */
     private void showFrameRateToast(int frameRate) {
         // Frame rate warnings are now shown permanently in the settings UI
         // This method is kept to avoid refactoring all callers
-        
+
         if (frameRate >= 60) {
+            // -------------- Fix Start for this method(showFrameRateToast)-----------
             // Just log the high frame rate usage
             if (DeviceHelper.isSamsung()) {
                 Log.d(TAG, "Using experimental " + frameRate + "fps mode for Samsung");
-            } else if (DeviceHelper.isHuawei()) {
-                Log.d(TAG, "Using experimental " + frameRate + "fps mode for Huawei");
             } else {
                 Log.d(TAG, "Using experimental " + frameRate + "fps mode");
             }
+            // -------------- Fix Ended for this method(showFrameRateToast)-----------
         }
     }
 
@@ -2370,8 +2568,9 @@ public class RecordingService extends Service {
      * Helper method to get the proper camera ID based on camera type
      */
     private String getCameraId(CameraManager cameraManager, CameraType cameraType) {
-        if (cameraManager == null) return null;
-        
+        if (cameraManager == null)
+            return null;
+
         try {
             if (cameraType == CameraType.BACK) {
                 // For back camera, use the selected back camera ID
@@ -2390,7 +2589,7 @@ public class RecordingService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Error finding camera ID", e);
         }
-        
+
         return null;
     }
 
@@ -2404,19 +2603,18 @@ public class RecordingService extends Service {
                 // Start the MediaRecorder
 
                 recordingState = RecordingState.IN_PROGRESS;
-                
 
-                // Use SystemClock.elapsedRealtime() instead of System.currentTimeMillis() for consistency with HomeFragment
+                // Use SystemClock.elapsedRealtime() instead of System.currentTimeMillis() for
+                // consistency with HomeFragment
                 recordingStartTime = SystemClock.elapsedRealtime();
                 Log.d(TAG, "Recording started with recordingStartTime=" + recordingStartTime);
 
-                
                 // Setup notification
                 setupRecordingInProgressNotification();
-                
+
                 // Broadcast that recording has started
                 broadcastOnRecordingStarted();
-                
+
                 Log.d(TAG, "Recording started successfully");
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start recording", e);
@@ -2441,7 +2639,8 @@ public class RecordingService extends Service {
     private File getFinalOutputFile() {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String segmentSuffix = ""; // No segment number for the initial file
-        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+                + Constants.RECORDING_FILE_EXTENSION;
         File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         if (!videoDir.exists() && !videoDir.mkdirs()) {
             Log.e(TAG, "Cannot create internal recording directory: " + videoDir.getAbsolutePath());
@@ -2450,7 +2649,6 @@ public class RecordingService extends Service {
         }
         return new File(videoDir, baseFilename);
     }
-
 
     // Inner class for OpenGL pipeline segment callback
     private class GLSegmentCallback implements com.fadcam.opengl.GLRecordingPipeline.SegmentCallback {
@@ -2470,7 +2668,8 @@ public class RecordingService extends Service {
                     return;
                 }
                 Uri treeUri = Uri.parse(customUriString);
-                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(RecordingService.this, treeUri);
+                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile
+                        .fromTreeUri(RecordingService.this, treeUri);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     Log.e(TAG, "Segment rollover: Cannot write to selected custom directory");
                     stopRecording();
@@ -2516,7 +2715,8 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Successfully created new segment file: " + nextFile.getAbsolutePath());
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
-                    Log.d(TAG, "Set next output to path: " + nextFile.getAbsolutePath() + " for segment " + nextSegmentNumber);
+                    Log.d(TAG, "Set next output to path: " + nextFile.getAbsolutePath() + " for segment "
+                            + nextSegmentNumber);
                 } else {
                     Log.e(TAG, "glRecordingPipeline is null, cannot set next output");
                 }
@@ -2537,25 +2737,31 @@ public class RecordingService extends Service {
         if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
             new Thread(() -> {
                 try {
-                    if (geotagHelper == null) geotagHelper = new GeotagHelper(this);
+                    if (geotagHelper == null)
+                        geotagHelper = new GeotagHelper(this);
                     geotagHelper.startUpdates();
                     Thread.sleep(800);
-                } catch (Exception e) { Log.e(TAG, "Error initializing GeotagHelper", e); }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error initializing GeotagHelper", e);
+                }
             }).start();
         }
 
         try {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG,"Permissions missing, cannot start recording.");
-                Toast.makeText(this,"Permissions required for recording", Toast.LENGTH_LONG).show();
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Log.e(TAG, "Permissions missing, cannot start recording.");
+                Toast.makeText(this, "Permissions required for recording", Toast.LENGTH_LONG).show();
                 recordingState = RecordingState.NONE;
                 sharedPreferencesManager.setRecordingInProgress(false);
                 stopSelf();
                 return;
             }
 
-            if (recordingWakeLock != null && !recordingWakeLock.isHeld()) recordingWakeLock.acquire();
+            if (recordingWakeLock != null && !recordingWakeLock.isHeld())
+                recordingWakeLock.acquire();
 
             watermarkInfoProvider = new WatermarkInfoProvider() {
                 @Override
@@ -2589,13 +2795,16 @@ public class RecordingService extends Service {
                 try {
                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
                     Integer so = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                    if (so != null) sensorOrientation = so;
+                    if (so != null)
+                        sensorOrientation = so;
                 } catch (Exception e) {
                     Log.e(TAG, "Error getting sensor orientation", e);
                 }
             }
             int videoBitrate = getVideoBitrate();
-            int videoFramerate = sharedPreferencesManager.getVideoFrameRate();
+            // -------------- Fix Start: Use per-camera FPS for encoder --------------
+            int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            // -------------- Fix End: Use per-camera FPS for encoder --------------
             // ----- Fix Start for video splitting -----
             // Set splitSizeBytes to 0 if video splitting is disabled
             long splitSizeBytes = 0;
@@ -2608,12 +2817,12 @@ public class RecordingService extends Service {
             // ----- Fix Ended for video splitting -----
             int initialSegmentNumber = 1;
             GLSegmentCallback segmentCallback = new GLSegmentCallback();
-            
+
             Log.d(TAG, "Creating GLRecordingPipeline with: " +
-                  "width=" + videoWidth + ", height=" + videoHeight + 
-                  ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate +
-                  ", orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
-            
+                    "width=" + videoWidth + ", height=" + videoHeight +
+                    ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate +
+                    ", orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
+
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
@@ -2625,7 +2834,8 @@ public class RecordingService extends Service {
                     return;
                 }
                 Uri treeUri = Uri.parse(customUriString);
-                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri);
+                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile
+                        .fromTreeUri(this, treeUri);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     Log.e(TAG, "Cannot write to selected custom directory");
                     Toast.makeText(this, "Cannot write to selected custom directory", Toast.LENGTH_LONG).show();
@@ -2642,7 +2852,8 @@ public class RecordingService extends Service {
                     return;
                 }
                 Uri safUri = videoFile.getUri();
-                // ----- Fix Start: Open PFD and keep it open for the duration of recording -----
+                // ----- Fix Start: Open PFD and keep it open for the duration of recording
+                // -----
                 safRecordingPfd = getContentResolver().openFileDescriptor(safUri, "w");
                 if (safRecordingPfd == null) {
                     Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
@@ -2651,20 +2862,25 @@ public class RecordingService extends Service {
                     return;
                 }
                 Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
-                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec);
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
+                        videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
+                        initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
+                        selectedCodec);
                 // ----- Fix End: Open PFD and keep it open for the duration of recording -----
             } else {
                 File outputFile = getFinalOutputFile();
                 Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
-                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec);
+                glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
+                        videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
+                        segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec);
             }
-            
+
             Log.d(TAG, "Preparing GLRecordingPipeline surfaces");
             glRecordingPipeline.prepareSurfaces();
-            
+
             Log.d(TAG, "Creating camera preview session");
             createCameraPreviewSession();
-            
+
             Log.d(TAG, "Recording setup complete");
         } catch (Exception e) {
             Log.e(TAG, "Exception in startRecording", e);
@@ -2682,13 +2898,13 @@ public class RecordingService extends Service {
     private void createDummyBackgroundSurface() {
         // Release any existing dummy resources
         releaseDummyBackgroundSurface();
-        
+
         try {
             // Create a 1x1 SurfaceTexture (minimal size/resources)
             dummySurfaceTexture = new SurfaceTexture(0);
             dummySurfaceTexture.setDefaultBufferSize(1, 1);
             dummyBackgroundSurface = new Surface(dummySurfaceTexture);
-            
+
             Log.d(TAG, "Created dummy background surface to prevent green screen on Samsung");
         } catch (Exception e) {
             Log.e(TAG, "Failed to create dummy background surface", e);
@@ -2708,7 +2924,7 @@ public class RecordingService extends Service {
                 dummyBackgroundSurface = null;
             }
         }
-        
+
         if (dummySurfaceTexture != null) {
             try {
                 dummySurfaceTexture.release();
@@ -2721,12 +2937,13 @@ public class RecordingService extends Service {
     }
 
     // ----- Fix Start for camera interruption handling -----
-    // Flag to track if we need to automatically resume recording after camera interruption
+    // Flag to track if we need to automatically resume recording after camera
+    // interruption
     private boolean pendingCameraReconnect = false;
     private static final long RECONNECT_RETRY_DELAY_MS = 2000; // 2 seconds between reconnection attempts
     private Handler reconnectHandler = new Handler(Looper.getMainLooper());
     private Runnable reconnectRunnable;
-// ----- Fix End for camera interruption handling -----
+    // ----- Fix End for camera interruption handling -----
 
     // ----- Fix Start for camera interruption handling -----
     /**
@@ -2755,14 +2972,16 @@ public class RecordingService extends Service {
         reconnectHandler.post(reconnectRunnable);
         Log.d(TAG, "Started camera reconnection attempts (infinite)");
     }
-    
+
     /**
-     * Helper method to check if a camera ID is a physical camera from a logical back camera
-     * This is needed because physical cameras might not have LENS_FACING_BACK set properly
+     * Helper method to check if a camera ID is a physical camera from a logical
+     * back camera
+     * This is needed because physical cameras might not have LENS_FACING_BACK set
+     * properly
      * 
-     * @param cameraId The camera ID to check
+     * @param cameraId       The camera ID to check
      * @param basicCameraIds Array of basic camera IDs from getCameraIdList()
-     * @param cameraManager The camera manager instance
+     * @param cameraManager  The camera manager instance
      * @return true if this is a physical camera from a logical back camera
      */
     @RequiresApi(api = Build.VERSION_CODES.P)
@@ -2772,12 +2991,13 @@ public class RecordingService extends Service {
             for (String logicalId : basicCameraIds) {
                 CameraCharacteristics logicalChars = cameraManager.getCameraCharacteristics(logicalId);
                 Integer logicalFacing = logicalChars.get(CameraCharacteristics.LENS_FACING);
-                
+
                 // Only check logical cameras that are back-facing
                 if (logicalFacing != null && logicalFacing == CameraCharacteristics.LENS_FACING_BACK) {
                     Set<String> physicalIds = logicalChars.getPhysicalCameraIds();
                     if (physicalIds != null && physicalIds.contains(cameraId)) {
-                        Log.d(TAG, "Camera ID '" + cameraId + "' is a physical camera from logical back camera '" + logicalId + "'");
+                        Log.d(TAG, "Camera ID '" + cameraId + "' is a physical camera from logical back camera '"
+                                + logicalId + "'");
                         return true;
                     }
                 }
@@ -2805,17 +3025,19 @@ public class RecordingService extends Service {
 
     /**
      * Handles camera interruptions by continuing to record with black frames.
-     * This is called when the camera is disconnected or encounters an error during recording.
+     * This is called when the camera is disconnected or encounters an error during
+     * recording.
      */
     private void handleCameraInterruption() {
         // ----- Fix Start for this method(handleCameraInterruption)-----
         if (recordingState != RecordingState.IN_PROGRESS) {
-            Log.w(TAG, "handleCameraInterruption called but not in IN_PROGRESS state, current state: " + recordingState);
+            Log.w(TAG,
+                    "handleCameraInterruption called but not in IN_PROGRESS state, current state: " + recordingState);
             return;
         }
-        
+
         Log.i(TAG, "Camera interrupted during recording - switching to black frame mode");
-        
+
         // Save the current camera ID for reconnection
         String cameraToReconnect = null;
         try {
@@ -2829,52 +3051,53 @@ public class RecordingService extends Service {
             Log.e(TAG, "Error determining camera ID for reconnection", e);
             cameraToReconnect = "0"; // Default to first camera
         }
-        
+
         // Update recording state to a special state
         recordingState = RecordingState.WAITING_FOR_CAMERA;
-        
+
         // Show notification about camera interruption
         setupCameraInterruptionNotification();
-        
+
         // Start camera reconnection attempts
         pendingCameraReconnect = true;
-        
+
         // Start a thread to render black frames while the camera is unavailable
         startBlackFrameRendering();
-        
+
         // Start camera reconnection attempts
         startCameraReconnectionAttempts(cameraToReconnect);
-        
+
         Log.i(TAG, "Recording continuing with black frames, attempting camera reconnection");
         // ----- Fix Ended for this method(handleCameraInterruption)-----
     }
-    
+
     private Handler blackFrameHandler;
     private HandlerThread blackFrameThread;
     private boolean isRenderingBlackFrames = false;
     private static final int BLACK_FRAME_INTERVAL_MS = 33; // ~30fps
-    
+
     /**
-     * Starts rendering black frames to keep the recording going when camera is unavailable.
+     * Starts rendering black frames to keep the recording going when camera is
+     * unavailable.
      */
     private void startBlackFrameRendering() {
         if (isRenderingBlackFrames) {
             Log.d(TAG, "Already rendering black frames");
             return;
         }
-        
+
         if (glRecordingPipeline == null) {
             Log.e(TAG, "Cannot start black frame rendering - pipeline is null");
             return;
         }
-        
+
         // Create a dedicated thread for rendering black frames
         blackFrameThread = new HandlerThread("BlackFrameRenderer");
         blackFrameThread.start();
         blackFrameHandler = new Handler(blackFrameThread.getLooper());
-        
+
         isRenderingBlackFrames = true;
-        
+
         // Create a runnable that renders black frames at regular intervals
         Runnable blackFrameRunnable = new Runnable() {
             @Override
@@ -2884,7 +3107,7 @@ public class RecordingService extends Service {
                     stopBlackFrameRendering();
                     return;
                 }
-                
+
                 // Render a black frame - don't try to recreate renderer if it fails
                 if (glRecordingPipeline != null) {
                     try {
@@ -2894,7 +3117,7 @@ public class RecordingService extends Service {
                         Log.d(TAG, "Expected exception rendering black frame during camera disconnection");
                     }
                 }
-                
+
                 // Schedule the next frame - even if this one failed
                 // The video will just have some dropped frames, which is better than stopping
                 if (isRenderingBlackFrames && blackFrameHandler != null) {
@@ -2902,12 +3125,12 @@ public class RecordingService extends Service {
                 }
             }
         };
-        
+
         // Start rendering black frames
         blackFrameHandler.post(blackFrameRunnable);
         Log.d(TAG, "Started rendering black frames");
     }
-    
+
     /**
      * Stops rendering black frames.
      */
@@ -2915,16 +3138,16 @@ public class RecordingService extends Service {
         // Set flag first to prevent new frames from being scheduled
         isRenderingBlackFrames = false;
         Log.d(TAG, "Stopping black frame rendering");
-        
+
         // Cancel all pending messages in handler
         if (blackFrameHandler != null) {
             blackFrameHandler.removeCallbacksAndMessages(null);
         }
-        
+
         // Stop the thread safely
         final HandlerThread threadToCleanup = blackFrameThread; // Local reference for cleanup
         blackFrameThread = null; // Clear reference immediately to prevent new usage
-        
+
         // Clean up the thread on a background thread to avoid blocking
         new Thread(() -> {
             try {
@@ -2941,20 +3164,22 @@ public class RecordingService extends Service {
                 Log.w(TAG, "Error cleaning up black frame thread", e);
             }
         }, "BlackFrameCleanupThread").start();
-        
+
         // Clear handler reference
         blackFrameHandler = null;
-        
+
         Log.d(TAG, "Stopped rendering black frames");
     }
 
     /**
-     * Sets up a notification to inform the user that recording is continuing with black frames
+     * Sets up a notification to inform the user that recording is continuing with
+     * black frames
      * due to camera interruption.
      */
     private void setupCameraInterruptionNotification() {
         // ----- Fix Start for this method(setupCameraInterruptionNotification)-----
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification update.");
             return;
         }
@@ -2965,7 +3190,7 @@ public class RecordingService extends Service {
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(getString(R.string.camera_interrupted_description)))
                 .clearActions();
-        
+
         // Add stop action
         boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
         if (!hideStopButton) {

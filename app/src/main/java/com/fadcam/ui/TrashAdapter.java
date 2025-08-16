@@ -4,7 +4,8 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
+import android.graphics.drawable.Drawable;
+import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -68,28 +69,60 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         View view = LayoutInflater.from(context).inflate(R.layout.item_trash, parent, false);
         return new TrashViewHolder(view);
     }
-
     @Override
     public void onBindViewHolder(@NonNull TrashViewHolder holder, int position) {
         TrashItem item = trashItems.get(position);
         holder.bind(item);
-        
         // Apply Snow Veil theme if needed (apply after normal binding)
         if (isSnowVeilTheme && holder.itemView instanceof androidx.cardview.widget.CardView) {
-            // Set white background for card
             ((androidx.cardview.widget.CardView) holder.itemView).setCardBackgroundColor(android.graphics.Color.WHITE);
-            
-            // Set black text for better contrast
-            if (holder.tvOriginalName != null) {
-                holder.tvOriginalName.setTextColor(android.graphics.Color.BLACK);
+            if (holder.tvOriginalName != null) holder.tvOriginalName.setTextColor(android.graphics.Color.BLACK);
+            if (holder.tvDateTrashed != null) holder.tvDateTrashed.setTextColor(android.graphics.Color.BLACK);
+            if (holder.tvOriginalLocation != null) holder.tvOriginalLocation.setTextColor(android.graphics.Color.BLACK);
+        }
+    }
+
+    // Payload-aware binding so we can play an animation only when selection toggles occur.
+    @Override
+    public void onBindViewHolder(@NonNull TrashViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (payloads == null || payloads.isEmpty()) {
+            // Full bind
+            onBindViewHolder(holder, position);
+            return;
+        }
+
+        // Handle selection toggle payload specifically
+        TrashItem item = trashItems.get(position);
+        boolean selected = selectedItems.contains(item);
+
+        if (payloads.contains("SELECTION_TOGGLE")) {
+            if (holder.iconCheckContainer != null && holder.iconCheck != null) {
+                if (selected) {
+                    holder.iconCheckContainer.setVisibility(View.VISIBLE);
+                    holder.iconCheck.setAlpha(1f);
+                    // Create a fresh AnimatedVectorDrawableCompat and start it
+                    AnimatedVectorDrawableCompat avd = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_check_draw);
+                    if (avd != null) {
+                        holder.iconCheck.setImageDrawable(avd);
+                        avd.start();
+                    } else {
+                        // Fallback: simple scale/pop animation
+                        holder.iconCheck.setScaleX(0.7f);
+                        holder.iconCheck.setScaleY(0.7f);
+                        holder.iconCheck.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(200).start();
+                    }
+                } else {
+                    // Fade out the tick but keep the container visible (empty state)
+                    holder.iconCheck.animate().alpha(0f).setDuration(180).withEndAction(() -> {
+                        // Clear drawable to avoid leftover AVD artifacts and keep background visible
+                        holder.iconCheck.setImageDrawable(null);
+                        holder.iconCheck.setAlpha(0f);
+                    }).start();
+                }
             }
-            if (holder.tvDateTrashed != null) {
-                holder.tvDateTrashed.setTextColor(android.graphics.Color.BLACK);
-            }
-            if (holder.tvOriginalLocation != null) {
-                holder.tvOriginalLocation.setTextColor(android.graphics.Color.BLACK);
-            }
-            // Keep the remaining time text color dynamic based on urgency
+        } else {
+            // Other payloads fall back to full bind
+            onBindViewHolder(holder, position);
         }
     }
 
@@ -112,9 +145,10 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
     public void selectAll() {
         selectedItems.clear();
         selectedItems.addAll(trashItems);
-        notifyDataSetChanged();
+    // Notify all items to ensure offscreen holders bind with a tick when they appear
+    notifyDataSetChanged();
         if (interactionListener != null) {
-            interactionListener.onItemSelectedStateChanged(true);
+            interactionListener.onItemSelectedStateChanged(!selectedItems.isEmpty());
         }
     }
 
@@ -123,6 +157,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
      */
     public void clearSelections() {
         if (!selectedItems.isEmpty()) {
+            int oldCount = selectedItems.size();
             selectedItems.clear();
             notifyDataSetChanged();
             if (interactionListener != null) {
@@ -143,7 +178,8 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         TextView tvOriginalName;
         TextView tvDateTrashed;
         TextView tvOriginalLocation;
-        CheckBox checkBoxSelected;
+    View iconCheckContainer;
+    ImageView iconCheck;
         ImageView imageViewThumbnail;
         TextView tvRemainingTime;
 
@@ -153,7 +189,8 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             tvOriginalName = itemView.findViewById(R.id.tv_trash_item_original_name);
             tvDateTrashed = itemView.findViewById(R.id.tv_trash_item_date_trashed);
             tvOriginalLocation = itemView.findViewById(R.id.tv_trash_item_original_location);
-            checkBoxSelected = itemView.findViewById(R.id.checkbox_trash_item_selected);
+            iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
+            iconCheck = itemView.findViewById(R.id.icon_check);
             tvRemainingTime = itemView.findViewById(R.id.tv_trash_item_remaining_time);
         }
 
@@ -226,9 +263,26 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                 }
             }
 
-            // Set the checkbox state without triggering onCheckedChangeListener
-            checkBoxSelected.setOnCheckedChangeListener(null);
-            checkBoxSelected.setChecked(selectedItems.contains(item));
+            // Show check container by default (background visible). The inner tick image is shown when selected.
+            if (iconCheckContainer != null) {
+                iconCheckContainer.setVisibility(View.VISIBLE);
+                if (iconCheck != null) {
+                    if (selectedItems.contains(item)) {
+                        // Ensure a drawable is set (recycled views might have been cleared)
+                        AnimatedVectorDrawableCompat avd = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_check_draw);
+                        if (avd != null) {
+                            iconCheck.setImageDrawable(avd);
+                            // It's okay to animate when coming into view; ensures a consistent drawn tick
+                            avd.start();
+                        }
+                        iconCheck.setAlpha(1f);
+                    } else {
+                        // Unselected: ensure inner tick is cleared and transparent, keep background visible
+                        iconCheck.setImageDrawable(null);
+                        iconCheck.setAlpha(0f);
+                    }
+                }
+            }
             
             // Set up click listeners
             itemView.setOnClickListener(v -> {
@@ -260,20 +314,22 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
                 return true;
             });
 
-            // Re-add the listener after setting the initial state
-            checkBoxSelected.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (isChecked && !selectedItems.contains(item)) {
-                    selectedItems.add(item);
-                    if (interactionListener != null) {
-                        interactionListener.onItemCheckChanged(item, true);
-                    }
-                } else if (!isChecked && selectedItems.contains(item)) {
-                    selectedItems.remove(item);
-                    if (interactionListener != null) {
-                        interactionListener.onItemCheckChanged(item, false);
-                    }
-                }
-            });
+            // Clicking directly on the check container should toggle selection and
+            // should not open playback. Consume the click event to prevent
+            // propagation to the itemView click listener.
+            if (iconCheckContainer != null) {
+                iconCheckContainer.setOnTouchListener((v, event) -> {
+                    // Consume touch and handle click via OnClick to avoid propagation
+                    return false; // allow click to proceed
+                });
+                iconCheckContainer.setOnClickListener(v -> {
+                    toggleSelection(item);
+                    v.setPressed(false);
+                });
+            }
+
+            // We keep selection driven by clicks/long clicks. When toggling programmatically,
+            // simply show/hide the container and notify listener.
         }
     }
     
@@ -288,14 +344,22 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             selectedItems.remove(item);
         }
         
-        // Find the position of the item and notify the adapter
+        // Find the position of the item and notify the adapter (use payload for targeted bind)
         int position = trashItems.indexOf(item);
         if (position != -1) {
-            notifyItemChanged(position);
+            notifyItemChanged(position, "SELECTION_TOGGLE");
         }
         
         if (interactionListener != null) {
             interactionListener.onItemCheckChanged(item, newState);
+            interactionListener.onItemSelectedStateChanged(!selectedItems.isEmpty());
         }
+    }
+
+    /**
+     * Returns true if currently in selection mode (i.e., any items selected)
+     */
+    public boolean isInSelectionMode() {
+        return !selectedItems.isEmpty();
     }
 } 

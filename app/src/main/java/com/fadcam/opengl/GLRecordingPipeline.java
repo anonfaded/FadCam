@@ -155,6 +155,12 @@ public class GLRecordingPipeline {
     private long firstVideoTimestampNanos = -1;
     private final Object timestampLock = new Object();
 
+    // -------------- Fix Start for GLRecordingPipeline watermark scheduler-----------
+    // Update watermark on a low-frequency handler to avoid per-frame overhead and sustain 60fps
+    private final android.os.Handler watermarkUpdateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable updateWatermarkRunnable;
+    // -------------- Fix Ended for GLRecordingPipeline watermark scheduler-----------
+
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth, int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback, Surface previewSurface, String orientation, int sensorOrientation, VideoCodec videoCodec) {
         this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate, outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback, orientation, sensorOrientation, videoCodec);
@@ -236,6 +242,11 @@ public class GLRecordingPipeline {
      */
     public void prepareSurfaces() {
         try {
+        // -------------- Fix Start for this method(prepareSurfaces)-----------
+    // -------------- Fix Start for this method(prepareSurfaces)-----------
+    try { com.fadcam.Log.d(TAG, "prepareSurfaces() called"); } catch (Throwable ignore){}
+    // -------------- Fix Ended for this method(prepareSurfaces)-----------
+        // -------------- Fix Ended for this method(prepareSurfaces)-----------
             // Make sure any previous resources are fully released
             if (glRenderer != null) {
                 Log.d(TAG, "Releasing previous renderer before preparing new surfaces");
@@ -243,6 +254,7 @@ public class GLRecordingPipeline {
                     glRenderer.release();
                 } catch (Exception e) {
                     Log.e(TAG, "Error releasing previous renderer", e);
+                    try { com.fadcam.Log.e(TAG, "Error releasing previous renderer", e); } catch (Throwable ignore){}
                 }
                 glRenderer = null;
             }
@@ -332,6 +344,18 @@ public class GLRecordingPipeline {
                     }
                 });
                 
+                // -------------- Fix Start: initialize watermark immediately --------------
+                try {
+                    if (watermarkInfoProvider != null) {
+                        String initial = watermarkInfoProvider.getWatermarkText();
+                        glRenderer.setWatermarkText(initial != null ? initial : "");
+                        Log.d(TAG, "Applied initial watermark text during prepareSurfaces");
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to apply initial watermark", e);
+                }
+                // -------------- Fix End: initialize watermark immediately --------------
+
                 Log.d(TAG, "GLWatermarkRenderer setup complete");
             }
         } catch (Exception e) {
@@ -356,6 +380,7 @@ public class GLRecordingPipeline {
         try {
             if (!isRecording) {
                 Log.d(TAG, "Starting recording pipeline");
+                try { com.fadcam.Log.d(TAG, "Starting recording pipeline"); } catch (Throwable ignore){}
                 
                 // Make sure we have a valid renderer and surfaces
                 if (glRenderer == null || encoderInputSurface == null) {
@@ -386,7 +411,27 @@ public class GLRecordingPipeline {
                         Thread.currentThread().interrupt();
                     }
                 }
-                
+
+                // -------------- Fix Start for this method(startRecording)-----------
+                // Start a separate, low-frequency watermark updater (once per second)
+                if (updateWatermarkRunnable == null) {
+                    updateWatermarkRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isRecording && !released) {
+                                try {
+                                    updateWatermark();
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Watermark update failed", e);
+                                }
+                                watermarkUpdateHandler.postDelayed(this, 1000);
+                            }
+                        }
+                    };
+                }
+                watermarkUpdateHandler.post(updateWatermarkRunnable);
+                // -------------- Fix Ended for this method(startRecording)-----------
+
                 // Start the render loop (which will trigger video encoder format change)
                 startRenderLoop();
                 
@@ -556,6 +601,16 @@ public class GLRecordingPipeline {
             }
         }
         
+        // ESSENTIAL: For constant framerate recording, especially on Samsung devices
+        // Force constant framerate mode to avoid variable framerate encoding
+        try {
+            // This helps ensure the encoder produces constant framerate output
+            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
+            Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+        } catch (Exception e) {
+            Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+        }
+        
         // ESSENTIAL: Real-time priority for smooth recording (API 23+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             try {
@@ -582,6 +637,14 @@ public class GLRecordingPipeline {
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate); // Already using user's bitrate setting
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate); // Already using user's framerate setting
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
+        
+        // ESSENTIAL: For constant framerate recording, especially on Samsung devices
+        try {
+            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
+            Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+        } catch (Exception e) {
+            Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+        }
         
         // Industry Standard: Enhanced encoder configuration for reliability
         // These settings improve compatibility while respecting user's codec choice
@@ -791,8 +854,9 @@ public class GLRecordingPipeline {
             }
             
             try {
-                // Update watermark text before rendering
-                updateWatermark();
+                // -------------- Fix Start for this method(renderRunnable)-----------
+                // Do NOT update watermark every frame; a separate timer handles it to avoid FPS drops
+                // -------------- Fix Ended for this method(renderRunnable)-----------
                 
                 if (glRenderer != null) {
                     glRenderer.renderFrame();
@@ -807,10 +871,8 @@ public class GLRecordingPipeline {
                 }
 
                 
-                // Continue rendering loop
-                if (isRecording && handler != null) {
-                    handler.post(this);
-                }
+                // Continue rendering loop when new frames arrive (onFrameAvailable posts this runnable).
+                // Avoid self-posting to reduce CPU load and sustain high FPS.
             } catch (Exception e) {
                 Log.e(TAG, "Error in render loop", e);
             }
@@ -840,6 +902,7 @@ public class GLRecordingPipeline {
                     if (muxerStarted) {
                         // This should NOT happen if we wait for format before starting muxer
                         Log.e(TAG, "CRITICAL: Format changed after muxer started - this indicates a timing issue!");
+                        try { com.fadcam.Log.e(TAG, "CRITICAL: Format changed after muxer started - timing issue"); } catch (Throwable ignore){}
                         // Don't restart muxer - this causes duration issues
                         // Instead, log the error and continue with existing muxer
                         Log.w(TAG, "Continuing with existing muxer to prevent duration corruption");
@@ -847,12 +910,14 @@ public class GLRecordingPipeline {
                         // Normal case - add video track first
                         videoTrackIndex = mediaMuxer.addTrack(newFormat);
                         Log.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
+                        try { com.fadcam.Log.d(TAG, "Video track added: index="+videoTrackIndex+", fmt="+newFormat.toString()); } catch (Throwable ignore){}
                         
                         // Start muxer immediately if audio is disabled
                         if (!audioRecordingEnabled) {
                             mediaMuxer.start();
                             muxerStarted = true;
                             Log.d(TAG, "Started muxer for video-only recording");
+                            try { com.fadcam.Log.d(TAG, "Muxer started (video-only)"); } catch (Throwable ignore){}
                         } else {
                             // Audio is enabled - check if audio track is already added
                             if (audioTrackIndex != -1) {
@@ -860,9 +925,11 @@ public class GLRecordingPipeline {
                                 mediaMuxer.start();
                                 muxerStarted = true;
                                 Log.d(TAG, "Started muxer with both video and audio tracks");
+                                try { com.fadcam.Log.d(TAG, "Muxer started (audio+video)"); } catch (Throwable ignore){}
                             } else {
                                 // Wait for audio track to be added
                                 Log.d(TAG, "Video track added, waiting for audio track before starting muxer");
+                                try { com.fadcam.Log.d(TAG, "Waiting for audio track before starting muxer"); } catch (Throwable ignore){}
                             }
                         }
                     }
@@ -897,16 +964,19 @@ public class GLRecordingPipeline {
                         mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error writing video frame to muxer", e);
+                                try { com.fadcam.Log.e(TAG, "Error writing video frame to muxer", e); } catch (Throwable ignore){}
                                 // -------------- Fix Start for this method(drainEncoder)-----------
                                 // BULLETPROOF: Continue processing but mark potential corruption
                                 if (e.getMessage() != null && e.getMessage().contains("muxer")) {
                                     Log.w(TAG, "Muxer error detected - file may need emergency finalization");
+                                    try { com.fadcam.Log.w(TAG, "Muxer error detected - will attempt emergency finalize if needed"); } catch (Throwable ignore){}
                                 }
                                 // -------------- Fix Ended for this method(drainEncoder)-----------
                     }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
                         Log.d(TAG, "Dropping encoded frame because muxer isn't started yet");
+                        try { com.fadcam.Log.w(TAG, "Dropping encoded frame (muxer not started yet)"); } catch (Throwable ignore){}
                     }
                     
                     videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
@@ -1058,7 +1128,8 @@ public class GLRecordingPipeline {
      * Ensures recorded files are always playable even when errors occur.
      */
     public void stopRecording() {
-        Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+    Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+    try { com.fadcam.Log.d(TAG, "stopRecording: Stopping recording and releasing resources"); } catch (Throwable ignore){}
         if (isStopped || released) {
             Log.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
             return;
@@ -1070,6 +1141,17 @@ public class GLRecordingPipeline {
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
+
+        // -------------- Fix Start for this method(stopRecording)-----------
+        // Stop watermark updates
+        try {
+            watermarkUpdateHandler.removeCallbacksAndMessages(null);
+            updateWatermarkRunnable = null;
+        } catch (Exception e) {
+            Log.w(TAG, "Error stopping watermark updater", e);
+            try { com.fadcam.Log.w(TAG, "Error stopping watermark updater: " + e.getMessage()); } catch (Throwable ignore){}
+        }
+        // -------------- Fix Ended for this method(stopRecording)-----------
         
         if (renderThread != null) {
             try {
@@ -1187,8 +1269,17 @@ public class GLRecordingPipeline {
      * Updates the watermark text in real time.
      */
     public void updateWatermark() {
-        if (glRenderer != null) {
-            glRenderer.setWatermarkText(watermarkInfoProvider.getWatermarkText());
+        if (glRenderer == null || watermarkInfoProvider == null) return;
+        final String text = watermarkInfoProvider.getWatermarkText();
+        // Ensure the GL texture update runs on the render thread with EGL context current
+        if (handler != null) {
+            handler.post(() -> {
+                try {
+                    glRenderer.updateWatermarkTextOnGlThread(text != null ? text : "");
+                } catch (Exception e) {
+                    Log.w(TAG, "updateWatermark: GL thread update failed", e);
+                }
+            });
         }
     }
 
@@ -1414,7 +1505,24 @@ public class GLRecordingPipeline {
                     audioChannelCount);
             audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
             audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, audioBitrate);
-            audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384);
+            // -------------- Fix Start for this method(setupAudio)-----------
+            // Increase input size to avoid starvation and crackling under load
+            // Empirically validated values from user report
+            int desiredMaxInput = 262144; // 256 KiB
+            try {
+                audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, desiredMaxInput);
+            } catch (Exception e) {
+                Log.w(TAG, "KEY_MAX_INPUT_SIZE not supported as integer?", e);
+            }
+            // Explicitly declare PCM encoding when available (API 24+)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                try {
+                    audioFormat.setInteger(MediaFormat.KEY_PCM_ENCODING, android.media.AudioFormat.ENCODING_PCM_16BIT);
+                } catch (Exception e) {
+                    Log.w(TAG, "KEY_PCM_ENCODING not supported", e);
+                }
+            }
+            // -------------- Fix Ended for this method(setupAudio)-----------
             audioEncoder = MediaCodec.createEncoderByType(android.media.MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             audioEncoder.start();
@@ -1428,6 +1536,13 @@ public class GLRecordingPipeline {
                     android.media.AudioFormat.ENCODING_PCM_16BIT);
             // Use 2x the minimum buffer size for best reliability
             int bufferSize = Math.max(minBufferSize * 2, audioSampleRate * audioChannelCount);
+            
+            // Check for RECORD_AUDIO permission before creating AudioRecord
+            if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) 
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                throw new SecurityException("RECORD_AUDIO permission not granted");
+            }
+            
             audioRecord = new android.media.AudioRecord(
                     audioSource,
                     audioSampleRate,
@@ -1465,25 +1580,49 @@ public class GLRecordingPipeline {
         audioThread = new Thread(() -> {
             try {
                 audioRecord.startRecording();
-                ByteBuffer inputBuffer = ByteBuffer.allocateDirect(4096);
+                // -------------- Fix Start for this method(startAudioThread)-----------
+                // Use a large byte[] buffer and feed encoder in sane chunks aligned to frames
+                final int bytesPerFrame = audioChannelCount * 2; // 16-bit PCM
+                final int aacFrameSize = 1024 * bytesPerFrame;   // 1024 PCM frames per AAC frame
+                final int readBufferSize = Math.max(aacFrameSize * 4, 131072); // >= 128 KiB
+                byte[] readBuffer = new byte[readBufferSize];
+                long audioFramesWritten = 0L; // PCM frames (not bytes)
+                long lastPtsUs = 0L;
+                // -------------- Fix Ended for this method(startAudioThread)-----------
                 while (audioThreadRunning) {
-                    int read = audioRecord.read(inputBuffer, inputBuffer.capacity());
+                    int read = audioRecord.read(readBuffer, 0, readBuffer.length);
                     if (read > 0) {
-                        int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
-                        if (inputBufferIndex >= 0) {
+                        int offset = 0;
+                        while (offset < read && audioThreadRunning) {
+                            int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
+                            if (inputBufferIndex < 0) {
+                                // Encoder busy; break and try next loop iteration
+                                break;
+                            }
                             ByteBuffer codecInput = audioEncoder.getInputBuffer(inputBufferIndex);
+                            if (codecInput == null) {
+                                break;
+                            }
                             codecInput.clear();
-                            inputBuffer.rewind();
-                            codecInput.put(inputBuffer.array(), 0, read);
-                            long pts = getSynchronizedAudioTimestamp();
-                            audioEncoder.queueInputBuffer(inputBufferIndex, 0, read, pts, 0);
+                            int toCopy = Math.min(codecInput.remaining(), read - offset);
+                            codecInput.put(readBuffer, offset, toCopy);
+                            // PTS based on frames written so far (stable, drift-free)
+                long ptsUs = (audioFramesWritten * 1_000_000L) / audioSampleRate;
+                audioEncoder.queueInputBuffer(inputBufferIndex, 0, toCopy, ptsUs, 0);
+                lastPtsUs = ptsUs;
+                            // Advance counters
+                            offset += toCopy;
+                            audioFramesWritten += (toCopy / bytesPerFrame);
                         }
                     }
                 }
                 // Signal EOS
                 int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
                 if (inputBufferIndex >= 0) {
-                    audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, getSynchronizedAudioTimestamp(), MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+            // Use lastPtsUs from our audio timeline to avoid duration jumps
+            long eosPtsUs = (audioFramesWritten * 1_000_000L) / audioSampleRate;
+            if (eosPtsUs < lastPtsUs) eosPtsUs = lastPtsUs; // monotonic safeguard
+            audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, eosPtsUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Audio thread error", e);

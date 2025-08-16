@@ -20,9 +20,8 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
             case 2:
                 return new RemoteFragment();
             case 3:
-                return new SettingsFragment();
-            case 4:
-                return new AboutFragment();
+                // Phase 1: Use new SettingsHomeFragment (legacy fragment accessible from inside)
+                return new SettingsHomeFragment();
             default:
                 return new HomeFragment();
         }
@@ -30,6 +29,6 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 5; // Number of fragments
+    return 4; // About tab removed; accessible via Settings overlay
     }
 }

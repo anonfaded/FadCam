@@ -20,6 +20,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.text.SpannableString;
@@ -83,6 +84,10 @@ import android.content.ContentResolver;
 import androidx.core.content.FileProvider;
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.ReturnCode;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.ui.picker.OptionItem;
 
 // Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -354,28 +359,40 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // *** END RESTORED Status Badge Logic ***
 
 
-        // --- 5. Handle Selection Mode Visuals (Checkbox & BACKGROUND/TEXT COLOR) ---
-        if (holder.checkIcon != null) {
+        // --- 5. Handle Selection Mode Visuals (picker-style check container & BACKGROUND/TEXT COLOR) ---
+        if (holder.iconCheckContainer != null && holder.checkIcon != null) {
             if (this.isSelectionModeActive) {
-                holder.checkIcon.setVisibility(View.VISIBLE);
+                holder.iconCheckContainer.setVisibility(View.VISIBLE);
+
+                // Tint the inner check icon to match theme toggle color
+                try {
+                    int tint = resolveThemeColor(context, R.attr.colorToggle);
+                    holder.checkIcon.setImageTintList(ColorStateList.valueOf(tint));
+                } catch (Exception e) {
+                    // Fallback to primary color
+                    holder.checkIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorPrimary)));
+                }
+
                 if (isCurrentlySelected) {
-                    holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_checked); // Replace with actual drawable
-                    holder.checkIcon.setAlpha(1.0f);
+                    // Ensure bg visible and animate inner check in
+                    holder.checkIcon.setAlpha(1f);
+                    holder.checkIcon.setScaleX(1f);
+                    holder.checkIcon.setScaleY(1f);
                     // Highlight background and adjust text color for contrast
                     if(holder.itemView instanceof CardView && context!=null) {
                         if (isSnowVeilTheme) {
-                            // For Snow Veil, use a light blue highlight with black text
                             ((CardView)holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.snowveil_theme_accent));
                             if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
                         } else {
-                            // For other themes, use normal selection color with white text
                             ((CardView)holder.itemView).setCardBackgroundColor(resolveThemeColor(context, R.attr.colorButton));
                             if(holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.WHITE);
                         }
                     }
                 } else {
-                    holder.checkIcon.setImageResource(R.drawable.placeholder_checkbox_outline); // Replace with actual drawable
-                    holder.checkIcon.setAlpha(0.7f);
+                    // ensure inner check hidden
+                    holder.checkIcon.setAlpha(0f);
+                    holder.checkIcon.setScaleX(0f);
+                    holder.checkIcon.setScaleY(0f);
                     // Reset background and text color
                     if(holder.itemView instanceof CardView && context!=null) {
                         if (isSnowVeilTheme) {
@@ -388,8 +405,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     }
                 }
             } else { // Not in selection mode
-                holder.checkIcon.setVisibility(View.GONE);
-                // Ensure default background and text color are restored
+                holder.iconCheckContainer.setVisibility(View.GONE);
+                // Reset bg and text color
                 if(holder.itemView instanceof CardView && context!=null) {
                     if (isSnowVeilTheme) {
                         ((CardView)holder.itemView).setCardBackgroundColor(Color.WHITE);
@@ -400,7 +417,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     }
                 }
             }
-        } else { Log.w(TAG, "checkIcon is null in ViewHolder at pos "+position); }
+        } else { Log.w(TAG, "iconCheckContainer or checkIcon is null in ViewHolder at pos "+position); }
 
 
         // --- 6. Set Enabled State and Listeners ---
@@ -422,50 +439,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // INSTEAD, set a click listener on the menuButtonContainer
         if (holder.menuButtonContainer != null) {
+            // -------------- Fix Start for this method(onBindViewHolder)-----------
             holder.menuButtonContainer.setOnClickListener(v -> {
-                // Check allowMenuClick again inside the listener, as the state might have changed
-                // (though less likely if onBindViewHolder is efficient)
                 boolean isStillAllowMenuClick = !this.currentlyProcessingUris.contains(videoItem.uri) && !this.isSelectionModeActive;
                 if (isStillAllowMenuClick) {
-                    PopupMenu popup = setupPopupMenu(holder, videoItem);
-                    if (popup != null) {
-                        popup.show();
-                        // --- Fix Start: Robustly gray out FaditorX menu item and show badge ---
-                        // Wait for the popup to be fully shown, then update the view
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            try {
-                                Field listViewField = popup.getClass().getDeclaredField("mPopup");
-                                listViewField.setAccessible(true);
-                                Object menuPopupHelper = listViewField.get(popup);
-                                Method getListViewMethod = menuPopupHelper.getClass().getDeclaredMethod("getListView");
-                                getListViewMethod.setAccessible(true);
-                                android.widget.ListView listView = (android.widget.ListView) getListViewMethod.invoke(menuPopupHelper);
-                                if (listView != null) {
-                                    for (int i = 0; i < listView.getChildCount(); i++) {
-                                        View row = listView.getChildAt(i);
-                                        TextView label = row.findViewById(R.id.menu_edit_label);
-                                        TextView badge = row.findViewById(R.id.menu_badge_coming_soon);
-                                        ImageView icon = row.findViewById(android.R.id.icon);
-                                        if (label != null && badge != null) {
-                                            label.setTextColor(Color.parseColor("#888888"));
-                                            badge.setVisibility(View.VISIBLE);
-                                            badge.setText("Coming Soon");
-                                            badge.setBackgroundResource(R.drawable.badge_background_red);
-                                            if (icon != null) {
-                                                icon.setColorFilter(Color.parseColor("#888888"), android.graphics.PorterDuff.Mode.SRC_IN);
-                                            }
-                                            break; // Found the correct row
-                                        }
-                                    }
-                                }
-                            } catch (Exception e) {
-                                Log.w(TAG, "Could not update FaditorX menu item badge: " + e.getMessage());
-                            }
-                        }, 50); // Delay to ensure popup is rendered
-                        // --- Fix End: Robustly gray out FaditorX menu item and show badge ---
-                    }
+                    showVideoActionsSheet(holder, videoItem);
                 }
             });
+            // -------------- Fix Ended for this method(onBindViewHolder)-----------
         }
 
     } // End onBindViewHolder
@@ -528,6 +509,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
                 return;
             }
+
+            if (payloads.contains("SELECTION_TOGGLE")) {
+                // Animate the inner check in/out based on current selection state
+                if (position < records.size()) {
+                    VideoItem videoItem = records.get(position);
+                    boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
+                    // animate using unified bounce+fade helper
+                    animateCheckIcon(holder.checkIcon, isCurrentlySelected);
+                }
+                return;
+            }
         }
         // If no specific payload, do a full bind
         onBindViewHolder(holder, position);
@@ -556,7 +548,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Find item's position and update only that item for efficiency
         int position = findPositionByUri(videoUri);
         if (position != -1) {
-            notifyItemChanged(position); // Update specific item
+            notifyItemChanged(position, "SELECTION_TOGGLE"); // Update specific item with payload to animate
         } else {
             Log.w(TAG,"Could not find position for URI: "+ videoUri + " during toggle. List size: " + records.size());
             // Maybe list was updated concurrently? Do a full refresh as fallback.
@@ -592,6 +584,111 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         context.getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
+
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    /**
+     * showVideoActionsSheet
+     * Replaces legacy PopupMenu with our unified bottom sheet picker using ligature icons.
+     * Preserves existing behaviors by mapping item ids to the same handlers.
+     */
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    private void showVideoActionsSheet(RecordViewHolder holder, VideoItem videoItem) {
+        Context ctx = holder.itemView.getContext();
+        if (!(ctx instanceof FragmentActivity)) {
+            // Fallback to popup if we don't have a FragmentActivity context
+            PopupMenu popup = setupPopupMenu(holder, videoItem);
+            if (popup != null) popup.show();
+            return;
+        }
+
+    ArrayList<OptionItem> items = new ArrayList<>();
+    // Order mirrors existing menu; use contextual ligatures per repo policy and helper subtitles
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    // Add helper text explaining the save destination
+    items.add(new OptionItem(
+        "action_save",
+        ctx.getString(R.string.video_menu_save),
+        ctx.getString(R.string.video_menu_save_helper_downloads_fadcam, "Video will be saved to Downloads/FadCam"),
+        null,
+        null,
+        null,
+        null,
+        null,
+        "download",
+        null,
+        null,
+        null
+    ));
+    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
+    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
+    // Temporarily hide Fix Video from UI; keep feature intact for later re-enable
+    // items.add(OptionItem.withLigature("action_fix_video", ctx.getString(R.string.fix_video_menu_title), "build"));
+    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
+    items.add(OptionItem.withLigature("action_rename", ctx.getString(R.string.video_menu_rename), "drive_file_rename_outline"));
+    items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
+    items.add(OptionItem.withLigature("action_upload_youtube", ctx.getString(R.string.video_menu_upload_youtube), "play_circle"));
+    items.add(OptionItem.withLigature("action_upload_drive", ctx.getString(R.string.video_menu_upload_drive), "cloud_upload"));
+    // New: Upload to FadDrive (coming soon) — badge only, no helper line
+    items.add(OptionItem.withLigatureBadge("action_upload_faddrive", ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud", ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+    // Coming soon: Edit with FaditorX — after FadDrive
+    items.add(OptionItem.withLigatureBadge("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx), "content_cut", ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+    items.add(OptionItem.withLigature("action_delete", ctx.getString(R.string.video_menu_del), "delete"));
+
+        String resultKey = "video_actions:" + (videoItem.uri != null ? videoItem.uri.toString() : System.identityHashCode(videoItem));
+        FragmentManager fm = ((FragmentActivity) ctx).getSupportFragmentManager();
+        fm.setFragmentResultListener(resultKey, (FragmentActivity) ctx, (requestKey, bundle) -> {
+            if (bundle == null) return;
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (id == null) return;
+            switch (id) {
+                case "action_edit_faditorx":
+                    Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                    break;
+                case "action_upload_faddrive":
+                    Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                    break;
+                case "action_save":
+                    saveVideoToGalleryInternal(videoItem);
+                    break;
+                case "action_fix_video":
+                    fixVideoFile(videoItem);
+                    break;
+                case "action_rename":
+                    showRenameDialog(videoItem);
+                    break;
+                case "action_info":
+                    showVideoInfoDialog(videoItem);
+                    break;
+                case "action_delete":
+                    if (actionListener != null) actionListener.onDeleteVideo(videoItem);
+                    break;
+                case "action_upload_youtube":
+                    openVideoInYouTube(videoItem);
+                    break;
+                case "action_upload_drive":
+                    openVideoInGoogleDrive(videoItem);
+                    break;
+            }
+        });
+
+    // Title: show the file name or a generic label
+    String sheetTitle = (videoItem != null && videoItem.displayName != null) ? videoItem.displayName : ctx.getString(R.string.records_title);
+    PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+        sheetTitle,
+                items,
+                null,
+                resultKey,
+                null,
+                true
+        );
+
+        // Hide selection checkmarks for action sheets so rows are compact
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+
+        sheet.show(fm, "video_actions_sheet");
+    }
+    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
 
     private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
         Context context = holder.itemView.getContext();
@@ -1516,6 +1613,80 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    // Animate the inner check icon with a small bounce on check and fade out on uncheck
+    private void animateCheckIcon(View checkIconView, boolean willBeSelected) {
+        if (checkIconView == null) return;
+
+        // Prefer AnimatedVectorDrawable tick-draw when available (smooth path draw)
+        try {
+            android.graphics.drawable.Drawable d = null;
+            if (checkIconView instanceof android.widget.ImageView) {
+                d = ((android.widget.ImageView) checkIconView).getDrawable();
+            }
+            if (willBeSelected) {
+                // If drawable is an AVD, ensure we have a fresh instance and start its animation
+                if (checkIconView instanceof android.widget.ImageView) {
+                    android.widget.ImageView iv = (android.widget.ImageView) checkIconView;
+                    try {
+                        androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat newAvd = androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat.create(iv.getContext(), R.drawable.avd_check_draw);
+                        if (newAvd != null) {
+                            iv.setImageDrawable(newAvd);
+                            newAvd.start();
+                            iv.setAlpha(1f); iv.setScaleX(1f); iv.setScaleY(1f); iv.setVisibility(View.VISIBLE);
+                            return;
+                        }
+                        // Fallback to platform AVD
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                            android.graphics.drawable.Drawable platformAv = iv.getContext().getDrawable(R.drawable.avd_check_draw);
+                            if (platformAv instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                                iv.setImageDrawable(platformAv);
+                                ((android.graphics.drawable.AnimatedVectorDrawable) platformAv).start();
+                                iv.setAlpha(1f); iv.setScaleX(1f); iv.setScaleY(1f); iv.setVisibility(View.VISIBLE);
+                                return;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            } else {
+                // For uncheck, try reverse if possible (compat doesn't expose reverse reliably), else fallback
+                if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
+                    // Cannot reverse reliably; just fade out the view for uncheck
+                    android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(checkIconView, View.ALPHA, checkIconView.getAlpha(), 0f);
+                    a.setDuration(180);
+                    a.setInterpolator(new android.view.animation.AccelerateInterpolator());
+                    a.start();
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            // ignore and fall back
+        }
+
+        // Fallback: use scale/alpha animation
+        if (willBeSelected) {
+            checkIconView.setVisibility(View.VISIBLE);
+            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_X, 0f, 1.0f);
+            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_Y, 0f, 1.0f);
+            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(checkIconView, View.ALPHA, 0f, 1f);
+            sx.setDuration(220); sy.setDuration(220); a.setDuration(160);
+            sx.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            sy.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            a.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+            set.playTogether(sx, sy, a);
+            set.start();
+        } else {
+            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(checkIconView, View.ALPHA, checkIconView.getAlpha(), 0f);
+            android.animation.ObjectAnimator s = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_X, checkIconView.getScaleX(), 0f);
+            android.animation.ObjectAnimator s2 = android.animation.ObjectAnimator.ofFloat(checkIconView, View.SCALE_Y, checkIconView.getScaleY(), 0f);
+            a.setDuration(180); s.setDuration(180); s2.setDuration(180);
+            a.setInterpolator(new android.view.animation.AccelerateInterpolator());
+            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+            set.playTogether(a, s, s2);
+            set.start();
+        }
+    }
+
     // Get video duration from URI (Helper)
     private long getVideoDuration(Uri videoUri) {
         if(context == null || videoUri == null) return 0;
@@ -1582,6 +1753,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewFileTime;
         TextView textViewSerialNumber;
         ImageView checkIcon;
+    View iconCheckContainer;
+    View iconCheckBg;
         ImageView menuButton;           // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot;       // *** ADDED: Reference for the warning dot ***
@@ -1600,7 +1773,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             textViewFileSize = itemView.findViewById(R.id.text_view_file_size);
             textViewFileTime = itemView.findViewById(R.id.text_view_file_time);
             textViewSerialNumber = itemView.findViewById(R.id.text_view_serial_number);
-            checkIcon = itemView.findViewById(R.id.check_icon);
+            checkIcon = itemView.findViewById(R.id.icon_check);
+            iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
+            iconCheckBg = itemView.findViewById(R.id.icon_check_bg);
             menuButton = itemView.findViewById(R.id.menu_button);
 
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot);             // *** Find the warning dot ***

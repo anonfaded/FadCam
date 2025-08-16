@@ -25,10 +25,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.RadioButton;
 import android.widget.Toast;
+import android.widget.CheckBox;
 // Import ImageView
 import android.widget.TextView;     // Import TextView
 
@@ -117,7 +119,6 @@ public class RecordsFragment extends BaseFragment implements
     private LinearLayout emptyStateContainer; // Add field for the empty state layout
     private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
-    private FloatingActionButton fabToggleView;
     private FloatingActionButton fabDeleteSelected;
 
     // ----- Fix Start: Add AppLock overlay view field -----
@@ -133,8 +134,14 @@ public class RecordsFragment extends BaseFragment implements
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
-    private MaterialToolbar toolbar;
+    // -------------- Fix Start for this method(updateHeaderFields)-----------
+    private TextView titleText;
+    private ImageView menuButton;
+    private ImageView closeButton;
+    private View selectAllContainer;
+    private android.widget.ImageView selectAllCheck;
     private CharSequence originalToolbarTitle;
+    // -------------- Fix Ended for this method(updateHeaderFields)-----------
 
     // --- Selection State ---
     private boolean isInSelectionMode = false;
@@ -507,29 +514,95 @@ public class RecordsFragment extends BaseFragment implements
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
 
+        // -------------- Fix Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        toolbar = view.findViewById(R.id.topAppBar); 
-        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
-            AppCompatActivity activity = (AppCompatActivity) getActivity();
-            activity.setSupportActionBar(toolbar);
-            originalToolbarTitle = getString(R.string.records_title); 
-            toolbar.setTitle(originalToolbarTitle);
-        } else {
-            Log.e(TAG, "Toolbar is null or activity is not AppCompatActivity in RecordsFragment.");
+        
+        // Initialize header elements
+        titleText = view.findViewById(R.id.title_text);
+    menuButton = view.findViewById(R.id.action_more_options);
+    closeButton = view.findViewById(R.id.action_close);
+    selectAllContainer = view.findViewById(R.id.action_select_all_container);
+    selectAllCheck = view.findViewById(R.id.action_select_all_check);
+        
+        // Setup menu button click listener
+        if (menuButton != null) {
+            menuButton.setOnClickListener(v -> showRecordsSidebar());
         }
-        setHasOptionsMenu(true); 
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> exitSelectionMode());
+        }
+        if (selectAllContainer != null && selectAllCheck != null) {
+            selectAllContainer.setOnClickListener(v -> {
+                if (!isInSelectionMode) return; // ignore when not selecting
+                boolean willSelectAll = selectedUris.size() != videoItems.size() || videoItems.isEmpty();
+                if (willSelectAll) {
+                    selectedUris.clear();
+                    for (VideoItem item : videoItems) {
+                        if (item != null && item.uri != null) selectedUris.add(item.uri);
+                    }
+                } else {
+                    selectedUris.clear();
+                }
+                if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+                // animate the header check like picker does
+                boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+                // Use unified bounce+fade animation for header check
+                if (allSelected) {
+                    selectAllContainer.setVisibility(View.VISIBLE);
+                    selectAllCheck.setVisibility(View.VISIBLE);
+                    try {
+                        android.graphics.drawable.Drawable d = selectAllCheck.getDrawable();
+                        if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
+                            androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat avd = (androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) d;
+                            avd.stop(); avd.start();
+                        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && d instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                            android.graphics.drawable.AnimatedVectorDrawable av = (android.graphics.drawable.AnimatedVectorDrawable) d;
+                            av.stop(); av.start();
+                        } else {
+                            // fallback to a quick fade in
+                            selectAllCheck.setAlpha(0f); selectAllCheck.setScaleX(0f); selectAllCheck.setScaleY(0f);
+                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_X, 0f, 1f);
+                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_Y, 0f, 1f);
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, 0f, 1f);
+                            sx.setDuration(200); sy.setDuration(200); a.setDuration(160);
+                            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+                            set.playTogether(sx, sy, a); set.start();
+                        }
+                    } catch (Exception e) { /* ignore and fallback */ }
+                } else {
+                    // uncheck: fade/erase fallback; if AVD present, just fade out
+                    try {
+                        android.graphics.drawable.Drawable d = selectAllCheck.getDrawable();
+                        if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
+                            // can't reliably reverse; fade out the view
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
+                            a.setDuration(180); a.setInterpolator(new android.view.animation.AccelerateInterpolator()); a.start();
+                        } else {
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
+                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_X, selectAllCheck.getScaleX(), 0f);
+                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_Y, selectAllCheck.getScaleY(), 0f);
+                            a.setDuration(180); sx.setDuration(180); sy.setDuration(180);
+                            android.animation.AnimatorSet set = new android.animation.AnimatorSet(); set.playTogether(a, sx, sy); set.start();
+                        }
+                    } catch (Exception e) { /* ignore */ }
+                    selectAllContainer.setVisibility(View.VISIBLE);
+                }
+                updateUiForSelectionMode();
+            });
+        }
+        
+        originalToolbarTitle = getString(R.string.records_title);
+        // -------------- Fix Ended for this method(onViewCreated)----------- 
 
         loadingIndicator = view.findViewById(R.id.loading_indicator); 
         recyclerView = view.findViewById(R.id.recycler_view_records);
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); 
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
-        fabToggleView = view.findViewById(R.id.fab_toggle_view);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
         applockOverlay = view.findViewById(R.id.applock_overlay);
 
         setupRecyclerView();
-        setupFabListeners();
-        updateFabIcons(); // Set initial FAB icon based on isGridView
+    setupFabListeners();
 
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
@@ -578,15 +651,12 @@ public class RecordsFragment extends BaseFragment implements
         // ----- Fix End: Show AppLock overlay immediately if required and not unlocked (session-based) -----
 
         // ----- Fix Start: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
-        // Apply theme to top bar
-        int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
-        if (toolbar != null) toolbar.setBackgroundColor(colorTopBar);
+        // -------------- Fix Start for this method(applyTheme)-----------
+        // Apply theme to top bar - header bar background is handled by ?attr/colorTopBar in XML
+        // No need to set background color programmatically
+        // -------------- Fix Ended for this method(applyTheme)-----------
         // Apply theme to FABs
         int colorButton = resolveThemeColor(R.attr.colorButton);
-        if (fabToggleView != null) {
-            fabToggleView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
-            fabToggleView.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
-        }
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
             fabDeleteSelected.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
@@ -604,15 +674,15 @@ public class RecordsFragment extends BaseFragment implements
         if (viewPager != null && viewPager.getCurrentItem() == 1 && isVisible()) {
             checkAppLock();
         }
-        // Re-assert toolbar and invalidate options menu
-        if (toolbar != null && getActivity() instanceof AppCompatActivity) {
-            AppCompatActivity activity = (AppCompatActivity) getActivity();
-            activity.setSupportActionBar(toolbar); // Re-set the support action bar
-            toolbar.setTitle(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
-            Log.d(TAG, "Toolbar re-set in onResume.");
+        // -------------- Fix Start for this method(onResume)-----------
+        // Update title text
+        if (titleText != null) {
+            titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+            Log.d(TAG, "Title text updated in onResume.");
         } else {
-            Log.w(TAG, "Could not re-set toolbar in onResume - toolbar or activity null/invalid.");
+            Log.w(TAG, "Could not update title in onResume - titleText is null.");
         }
+        // -------------- Fix Ended for this method(onResume)-----------
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
@@ -628,7 +698,7 @@ public class RecordsFragment extends BaseFragment implements
         
         Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume.");
         loadRecordsList(); // RESTORED: Always reload the list when the fragment resumes
-        updateFabIcons();
+    // no-op: view mode toggle is in Records Options side sheet
         // ----- Fix Start: Always invalidate options menu to ensure correct menu for Records tab -----
         requireActivity().invalidateOptionsMenu();
         // ----- Fix End: Always invalidate options menu to ensure correct menu for Records tab -----
@@ -827,15 +897,7 @@ public class RecordsFragment extends BaseFragment implements
     private void setupFabListeners() {
         Log.d(TAG,"Setting up FAB listeners.");
         // Ensure FABs are not null before setting listeners
-        if (fabToggleView != null) {
-            fabToggleView.setOnClickListener(v -> {
-                Log.d(TAG, "fabToggleView clicked!");
-                toggleViewMode();
-            });
-            Log.d(TAG,"FAB Toggle listener set.");
-        } else {
-            Log.e(TAG, "fabToggleView is null in setupFabListeners!");
-        }
+    // removed FAB toggle; use side sheet's View mode row
 
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setOnClickListener(v -> {
@@ -861,9 +923,7 @@ public class RecordsFragment extends BaseFragment implements
         updateFabIcons();
     }
 
-    private void updateFabIcons() {
-        fabToggleView.setImageResource(isGridView ? R.drawable.ic_list : R.drawable.ic_grid);
-    }
+    private void updateFabIcons() { /* removed FAB */ }
 
     // Load records from Internal or SAF based on preference
 
@@ -1243,28 +1303,63 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     // --- UI Updates ---
-    /** Updates Toolbar, FABs based on whether selection mode is active */
+    // -------------- Fix Start for this method(updateUiForSelectionMode)-----------
+    /** Updates Title, FABs based on whether selection mode is active */
     private void updateUiForSelectionMode() {
-        if (!isAdded() || toolbar == null || getActivity() == null) { Log.w(TAG,"Cannot update selection UI - not ready"); return;}
+        if (!isAdded() || titleText == null || getActivity() == null) { Log.w(TAG,"Cannot update selection UI - not ready"); return;}
 
         if (isInSelectionMode) {
             int count = selectedUris.size();
-            toolbar.setTitle(count > 0 ? count + " selected" : "Select items");
-            toolbar.setNavigationIcon(R.drawable.ic_close); // Ensure you have ic_close drawable
-            toolbar.setNavigationContentDescription("Exit selection mode");
-            toolbar.setNavigationOnClickListener(v -> exitSelectionMode());
+            titleText.setText(count > 0 ? count + " selected" : "Select items");
             fabDeleteSelected.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
-            fabToggleView.setVisibility(View.GONE);
+            // FAB removed
+            // Show left-side close button and hide more-options
+            if (closeButton != null) {
+                closeButton.setVisibility(View.VISIBLE);
+                closeButton.setImageResource(R.drawable.ic_close);
+                closeButton.setContentDescription(getString(R.string.universal_close));
+            }
+            if (menuButton != null) {
+                menuButton.setVisibility(View.GONE);
+            }
+            if (selectAllContainer != null && selectAllCheck != null) {
+                selectAllContainer.setVisibility(View.VISIBLE);
+                boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+                int tint = allSelected ? resolveThemeColor(R.attr.colorToggle) : android.graphics.Color.WHITE;
+                selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(tint));
+                if (allSelected) {
+                    selectAllCheck.setScaleX(1f); selectAllCheck.setScaleY(1f); selectAllCheck.setAlpha(1f);
+                } else {
+                    selectAllCheck.setScaleX(0f); selectAllCheck.setScaleY(0f); selectAllCheck.setAlpha(0f);
+                }
+            }
         } else {
-            toolbar.setTitle(originalToolbarTitle);
-            toolbar.setNavigationIcon(null);
-            toolbar.setNavigationOnClickListener(null);
+            titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
             fabDeleteSelected.setVisibility(View.GONE);
-            fabToggleView.setVisibility(View.VISIBLE);
+            // FAB removed
+            // Restore more-options icon and hide close button
+            if (menuButton != null) {
+                menuButton.setVisibility(View.VISIBLE);
+                // -------------- Fix Start for this method(updateHeaderMenuIcon)-----------
+                menuButton.setImageResource(R.drawable.ic_two_line_hamburger);
+                menuButton.setOnClickListener(v -> showRecordsSidebar());
+                menuButton.setContentDescription(getString(R.string.more_options));
+                // -------------- Fix Ended for this method(updateHeaderMenuIcon)-----------
+            }
+            if (closeButton != null) {
+                closeButton.setVisibility(View.GONE);
+            }
+            if (selectAllContainer != null && selectAllCheck != null) {
+                selectAllContainer.setVisibility(View.GONE);
+                selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+            }
         }
         // Refresh the options menu (to show/hide "More Options")
-        getActivity().invalidateOptionsMenu();
+        if (getActivity() != null) {
+            getActivity().invalidateOptionsMenu();
+        }
     }
+    // -------------- Fix Ended for this method(updateUiForSelectionMode)-----------
     // --- Deletion Logic ---
 
     // Add null check in confirmDeleteSelected just in case
@@ -1365,45 +1460,29 @@ public class RecordsFragment extends BaseFragment implements
     }
     private void confirmDeleteAll() {
         vibrate();
-        // ----- Fix Start for this method(confirmDeleteAll)-----
         int totalVideoCount = videoItems.size();
-        // ----- Fix Ended for this method(confirmDeleteAll)-----
         if (totalVideoCount == 0){
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
         }
-        
-        // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
-        
-        // Use a custom TextView for the message to ensure correct color
-        TextView messageView = new TextView(requireContext());
-        messageView.setText(getString(R.string.delete_all_videos_description) + "\n(" + totalVideoCount + " videos will be removed)");
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-        messageView.setTextSize(16);
-        messageView.setPadding(48, 32, 48, 32);
-        
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
-                .setTitle(getString(R.string.delete_all_videos_title))
-                .setView(messageView)
-                .setPositiveButton(getString(R.string.dialog_del_confirm), (dialog, which) -> deleteAllVideos())
-                .setNegativeButton(getString(R.string.universal_cancel), null);
-                
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        
-        // Set button colors based on theme
-        if (isSnowVeilTheme) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-        } else if (isFadedNightTheme) {
-            // Set white button text for Faded Night theme
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
-        }
+        // -------------- Fix Start for this method(confirmDeleteAll)-----------
+        // Use unified bottom picker as a confirmation sheet
+        final String pickerKey = "records_delete_all_picker";
+        getParentFragmentManager().setFragmentResultListener(pickerKey, this, (key, bundle) -> {
+            if (bundle == null) return;
+            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if ("confirm".equals(sel)) {
+                deleteAllVideos();
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> options = new java.util.ArrayList<>();
+    options.add(new com.fadcam.ui.picker.OptionItem("confirm", getString(R.string.dialog_del_confirm), null, null, R.drawable.ic_delete_all));
+    options.add(new com.fadcam.ui.picker.OptionItem("cancel", getString(R.string.universal_cancel), null, null, R.drawable.ic_close));
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.delete_all_videos_title), options, "", pickerKey, getString(R.string.delete_all_videos_subtitle_short)
+        );
+        sheet.show(getParentFragmentManager(), "RecordsDeleteAllPicker");
+        // -------------- Fix Ended for this method(confirmDeleteAll)-----------
     }
 
     // Inside RecordsFragment.java
@@ -1595,70 +1674,59 @@ public class RecordsFragment extends BaseFragment implements
 
 
     private void showRecordsSidebar() {
-        if (getContext() == null) return;
-        
-        // Create listeners for sort option selection and delete all
-        RecordsOptionsBottomSheet.OnSortOptionSelectedListener sortListener = bottomSheetSortOption -> {
-            // Convert the bottom sheet SortOption to the fragment SortOption
-            SortOption fragmentSortOption;
-            switch (bottomSheetSortOption) {
-                case LATEST_FIRST:
-                    fragmentSortOption = SortOption.LATEST_FIRST;
+        if (getActivity() == null) return;
+        // -------------- Fix Start for this method(showRecordsSidebar)-----------
+        // Use unified overlay: open a sidebar-style fragment to host row-based options.
+    RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), isGridView);
+        // Listen for result events from rows (sort picker, delete all, etc.)
+        final String resultKey = "records_sidebar_result";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            if (!resultKey.equals(key)) return;
+            String action = bundle.getString("action");
+            if (action == null) return;
+            switch (action) {
+                case "sort": {
+                    String sortId = bundle.getString("sort_id");
+                    if (sortId != null) {
+                        SortOption newOption = mapIdToSort(sortId);
+                        if (newOption != currentSortOption) {
+                            currentSortOption = newOption;
+                            performVideoSort();
+                        }
+                    }
                     break;
-                case OLDEST_FIRST:
-                    fragmentSortOption = SortOption.OLDEST_FIRST;
+                }
+                case "delete_all":
+                    confirmDeleteAll();
                     break;
-                case SMALLEST_FILES:
-                    fragmentSortOption = SortOption.SMALLEST_FILES;
-                    break;
-                case LARGEST_FILES:
-                    fragmentSortOption = SortOption.LARGEST_FILES;
-                    break;
-                default:
-                    fragmentSortOption = SortOption.LATEST_FIRST;
+                case "toggle_view_mode":
+                    toggleViewMode();
                     break;
             }
-            
-            if (fragmentSortOption != currentSortOption) {
-                Log.i(TAG, "Sort option changed to: " + fragmentSortOption);
-                currentSortOption = fragmentSortOption;
-                performVideoSort(); // Call the sorting method
-            } else {
-                Log.d(TAG, "Sort option clicked, but no change: " + currentSortOption);
-            }
-        };
-        
-        RecordsOptionsBottomSheet.OnDeleteAllClickedListener deleteListener = this::confirmDeleteAll;
-        
-        // Convert the fragment SortOption to the bottom sheet SortOption
-        RecordsOptionsBottomSheet.SortOption bottomSheetSortOption;
-        switch (currentSortOption) {
-            case LATEST_FIRST:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LATEST_FIRST;
-                break;
-            case OLDEST_FIRST:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.OLDEST_FIRST;
-                break;
-            case SMALLEST_FILES:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.SMALLEST_FILES;
-                break;
-            case LARGEST_FILES:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LARGEST_FILES;
-                break;
-            default:
-                bottomSheetSortOption = RecordsOptionsBottomSheet.SortOption.LATEST_FIRST;
-                break;
-        }
-        
-        // Create and show the custom bottom sheet
-        RecordsOptionsBottomSheet bottomSheet = new RecordsOptionsBottomSheet(
-                sharedPreferencesManager,
-                bottomSheetSortOption,
-                sortListener,
-                deleteListener);
-        
-        bottomSheet.show(getChildFragmentManager(), "RecordsOptionsBottomSheet");
+        });
+    sidebar.setResultKey(resultKey);
+    // Show as a Material side sheet dialog instead of full-screen overlay
+    sidebar.show(getParentFragmentManager(), "RecordsSidebar");
+        // -------------- Fix Ended for this method(showRecordsSidebar)-----------
     }
+
+    // -------------- Fix Start for this class(mapSortHelpers)-----------
+    private String mapSortToId(SortOption opt){
+        switch (opt){
+            case LATEST_FIRST: return "latest";
+            case OLDEST_FIRST: return "oldest";
+            case SMALLEST_FILES: return "smallest";
+            case LARGEST_FILES: return "largest";
+        }
+        return "latest";
+    }
+    private SortOption mapIdToSort(String id){
+        if("oldest".equals(id)) return SortOption.OLDEST_FIRST;
+        if("smallest".equals(id)) return SortOption.SMALLEST_FILES;
+        if("largest".equals(id)) return SortOption.LARGEST_FILES;
+        return SortOption.LATEST_FIRST;
+    }
+    // -------------- Fix Ended for this class(mapSortHelpers)-----------
 
 
     // Updated sorting logic to work with List<VideoItem>
@@ -2116,7 +2184,7 @@ public class RecordsFragment extends BaseFragment implements
         int vis = visible ? View.VISIBLE : View.INVISIBLE;
         if (recyclerView != null) recyclerView.setVisibility(vis);
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(vis);
-        if (fabToggleView != null) fabToggleView.setVisibility(vis);
+    // FAB removed
         if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(vis);
     }
 

@@ -32,23 +32,61 @@ applyTo: '**'
   // -------------- Fix Ended for this method(methodName)-----------
   ```
   
-🧠 Communication
+### 🧠 Communication
+- **Ask when unsure**: If requirements are unclear or ambiguous, ask for clarification before proceeding.
+- **Concise responses**: Keep responses short and focused. Avoid unnecessary explanations or code unless requested.
+- **Complete solutions**: If the fix/update is small, provide the full method or class code block for clarity.
 
-    Ask when unsure: If requirements are unclear or ambiguous, ask for clarification before proceeding.
+### 🧑‍💻 Industry Best Practices
+- **Follow style guides**: Follow Google Java Style Guide or Oracle conventions for naming and formatting.
+- **SOLID principles**: Apply SOLID principles, design patterns, and dependency injection where applicable.
+- **Exception handling**: Handle exceptions gracefully. Do not catch generic Exception unless necessary.
+- **Input validation**: Always validate external inputs and sanitize file/stream access.
+- **Logging**: Use logging frameworks like SLF4J or Log4j instead of System.out.println for production code.
+- **Testing**: Ensure code is scalable, testable, and maintainable with proper unit tests (e.g., JUnit).
+- **Build and install**: After every complete change, run `./gradlew compileDebugJavaWithJavac` to check if the build succeeds. If not, fix the errors and check again. Once successful, run `./gradlew installDebug` so the app is installed on your phone.
 
-    Concise responses: Keep responses short and focused. Avoid unnecessary explanations or code unless requested.
+### 🎯 UI Icon Policy — Material Icons Font (Required)
+- Always use the local Material Icons font for UI icons instead of vector/XML drawables.
+- Font path: `app/src/main/res/font/materialicons.ttf` (referenced as `@font/materialicons`).
+- Rendering approach:
+  - Prefer a `TextView` configured with `android:fontFamily="@font/materialicons"` and set the icon using its ligature text (e.g., `"arrow_upward"`).
+  - When setting programmatically, load once and cache the typeface:
+    - `Typeface tf = ResourcesCompat.getFont(context, R.font.materialicons);`
+    - Reuse the cached instance to avoid repeated loads and crashes.
+- In pickers and side sheets, prefer ligature icons via a dedicated leading symbol `TextView`; keep legacy `ImageView` only as fallback.
+- For new features, select contextual ligatures (e.g., `trending_up`/`trending_down` for size, `arrow_upward`/`arrow_downward` for recency).
+- Do not add new SVG/vector drawables for standard icons; use ligatures unless a brand/logo asset is required.
+ 
+## FadCam UI Styling — Settings Rows & Bottom Pickers
 
-    Complete solutions: If the fix/update is small, provide the full method or class code block for clarity.
+Use this spec when adding new settings or bottom-sheet pickers to keep visuals consistent.
 
-🧑‍💻 Industry Best Practices
+- Shared background and ripple
+  - Use `@drawable/settings_home_row_bg` for all tappable rows and picker items.
+  - Ripple inset must be 4dp uniformly on all sides so the press fill stays off the card edges.
 
-    Follow Google Java Style Guide or Oracle conventions for naming and formatting.
+- Settings rows (inside group cards)
+  - Container: apply `style="@style/SettingsGroupRow"` (center vertical, shared background, no per-row paddings).
+  - Content gutters: paddingStart 14dp, paddingEnd 12dp (provided by the style).
+  - Leading icon/symbol: 24dp square with marginEnd 16dp.
+    - Prefer Material Icons ligatures via a TextView using `@font/materialicons` (per policy); use ImageView only as fallback.
+  - Title: 15sp, bold, color `?attr/colorHeading`.
+  - Subtitle/value text: 12sp, color `@android:color/darker_gray`.
+  - Value-to-arrow gap: add `android:layout_marginEnd="12dp"` on the trailing value TextView before the arrow/switch.
+  - Trailing arrow/icon: 14dp, tinted `@android:color/darker_gray`.
+  - Dividers between rows: use `@style/SettingsDivider` with margins Start 14dp / End 12dp to align with gutters.
 
-    Apply SOLID principles, design patterns, and dependency injection where applicable.
+- Group cards
+  - Wrap related rows in a card using `@drawable/settings_group_card_bg`.
+  - Vertical padding on the card container: 4dp top and 4dp bottom.
 
-    Handle exceptions gracefully. Do not catch generic Exception unless necessary.
+- Bottom pickers (bottom sheets)
+  - Item rows mirror Settings rows: same background, gutters (14dp start / 12dp end), and spacing rules.
+  - Leading symbol/icon: 24dp with marginEnd 16dp; prefer ligatures via `@font/materialicons`.
+  - Trailing switch/chevron: add `layout_marginEnd="12dp"` for breathing room.
+  - Keep optional subtitle at 12sp, `@android:color/darker_gray`.
 
-    Always validate external inputs and sanitize file/stream access.
-
-    Use logging frameworks like SLF4J or Log4j instead of System.out.println for production code.
-    Ensure code is scalable, testable, and maintainable with proper unit tests (e.g., JUnit).
+- Text and resources
+  - Never hardcode UI strings in layouts; always use `@string/...` entries.
+  - Keep spacing/margins centralized via shared styles; avoid per-row overrides unless absolutely necessary.

@@ -1,5 +1,35 @@
 package com.fadcam.ui;
 
+/*
+ * ========================================================================
+ * LEGACY REFERENCE FILE - DO NOT USE OR MODIFY
+ * ========================================================================
+ * 
+ * This file contains the original monolithic SettingsFragment implementation
+ * and is kept ONLY for reference during the settings refactor process.
+ * 
+ * The actual settings UI now uses modular fragments:
+ * - VideoSettingsFragment
+ * - AudioSettingsFragment  
+ * - AppearanceSettingsFragment
+ * - StorageSettingsFragment
+ * - SecuritySettingsFragment
+ * - etc.
+ * 
+ * This file should be used ONLY to:
+ * 1. Reference original logic when implementing new fragments
+ * 2. Compare behavior when debugging migration issues
+ * 3. Understand how features worked in the legacy system
+ * 
+ * DO NOT:
+ * - Modify this file
+ * - Use this file in the app
+ * - Import or reference this class
+ * 
+ * This file will be deleted once the refactor is complete.
+ * ========================================================================
+ */
+
 import static android.content.ContentValues.TAG;
 
 import android.Manifest;
@@ -1782,10 +1812,10 @@ public class SettingsFragment extends BaseFragment {
                     // *** Update Visibility & Dependent Spinners ***
                     updateBackLensSpinnerVisibility(); // Show/Hide lens spinner
 
-                    updateResolutionSpinner();         // Update resolutions for the new camera
-                    updateFrameRateSpinner();          // Update framerates for the new camera
-                    updateZoomRatioSpinner();          // Update zoom ratios for the new camera
-                    updateBitrateInfoAndHelper();      // Update bitrate info for the new camera
+                    updateResolutionSpinner(); // Update resolutions for the new camera
+                    updateFrameRateSpinner(); // Update framerates for the new camera
+                    updateZoomRatioSpinner(); // Update zoom ratios for the new camera
+                    updateBitrateInfoAndHelper(); // Update bitrate info for the new camera
 
                 } else {
                     Log.d(TAG, "Camera main selection didn't change.");
@@ -2175,37 +2205,37 @@ public class SettingsFragment extends BaseFragment {
         });
     }// End setupFrameRateSpinner
 
-
     private void setupZoomRatioSpinner() {
-        if (zoomRatioSpinner == null) return;
-        
+        if (zoomRatioSpinner == null)
+            return;
+
         // Get current camera type and detect hardware-supported max zoom ratio
         CameraType selectedCameraType = sharedPreferencesManager.getCameraSelection();
         float maxZoomRatio = getHardwareSupportedMaxZoomRatio(selectedCameraType);
-        
-        Log.d(TAG_SETTINGS, "Setting up zoom ratio spinner for " + selectedCameraType + " with max zoom: " + maxZoomRatio);
-        
+
+        Log.d(TAG_SETTINGS,
+                "Setting up zoom ratio spinner for " + selectedCameraType + " with max zoom: " + maxZoomRatio);
+
         // Generate dynamic zoom ratio options based on hardware capabilities
         List<String> zoomRatioOptions = new ArrayList<>();
         List<Integer> zoomRatioIntValues = new ArrayList<>();
-        
+
         // Add zoom ratios from 0.5x to maxZoomRatio in 0.5x increments
         for (float zoom = 0.5f; zoom <= maxZoomRatio; zoom += 0.5f) {
             zoomRatioOptions.add(String.format("%.1fx", zoom));
             zoomRatioIntValues.add(Math.round(zoom * 10)); // Scale by 10 for integer storage
         }
-        
+
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
-                zoomRatioOptions
-        );
+                zoomRatioOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         zoomRatioSpinner.setAdapter(adapter);
-        
+
         // Get saved zoom ratio
         float savedZoomRatio = sharedPreferencesManager.getSpecificZoomRatio(selectedCameraType);
-        
+
         // Find the index of the saved zoom ratio
         int selectedIndex = -1;
         int savedZoomRatioScaled = Math.round(savedZoomRatio * 10);
@@ -2215,7 +2245,7 @@ public class SettingsFragment extends BaseFragment {
                 break;
             }
         }
-        
+
         // If saved ratio not found, default to 1.0x (no zoom)
         if (selectedIndex == -1) {
             // Find 1.0x in the list, or use index 1 if available
@@ -2230,10 +2260,10 @@ public class SettingsFragment extends BaseFragment {
             }
             sharedPreferencesManager.setSpecificZoomRatio(selectedCameraType, 1.0f);
         }
-        
+
         zoomRatioSpinner.setSelection(selectedIndex);
         zoomRatioSpinner.setEnabled(true);
-        
+
         zoomRatioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -2242,19 +2272,18 @@ public class SettingsFragment extends BaseFragment {
                     float selectedZoomRatio = zoomRatioIntValues.get(position) / 10.0f;
                     CameraType currentCameraType = sharedPreferencesManager.getCameraSelection();
                     sharedPreferencesManager.setSpecificZoomRatio(currentCameraType, selectedZoomRatio);
-                    Log.d(TAG_SETTINGS, "Zoom ratio preference saved: " + selectedZoomRatio + " for " + currentCameraType);
+                    Log.d(TAG_SETTINGS,
+                            "Zoom ratio preference saved: " + selectedZoomRatio + " for " + currentCameraType);
                 } else {
                     Log.e(TAG_SETTINGS, "Invalid position selected in zoom ratio spinner: " + position);
                 }
             }
-            
+
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
     }
-
-
-
 
     /**
      * Updates the frame rate spinner's adapter and selection based on hardware
@@ -2375,7 +2404,8 @@ public class SettingsFragment extends BaseFragment {
      * Uses Camera2 API to query the CONTROL_ZOOM_RATIO_RANGE characteristic.
      * 
      * @param cameraType The camera type (FRONT or BACK) to query.
-     * @return The maximum zoom ratio supported, or 5.0f as default if not available.
+     * @return The maximum zoom ratio supported, or 5.0f as default if not
+     *         available.
      */
     private float getHardwareSupportedMaxZoomRatio(CameraType cameraType) {
         Log.i(TAG_SETTINGS, "=== Getting Hardware Supported Max Zoom Ratio for CameraType: " + cameraType + " ===");
@@ -2394,7 +2424,8 @@ public class SettingsFragment extends BaseFragment {
 
         String targetCameraId = null;
         try {
-            // Find the primary camera ID for the requested type (Prioritize ID "0" for BACK)
+            // Find the primary camera ID for the requested type (Prioritize ID "0" for
+            // BACK)
             String firstBackIdFallback = null;
             for (String id : manager.getCameraIdList()) {
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
@@ -2419,7 +2450,9 @@ public class SettingsFragment extends BaseFragment {
             // If default BACK "0" wasn't found, use the fallback if available
             if (cameraType == CameraType.BACK && targetCameraId == null && firstBackIdFallback != null) {
                 targetCameraId = firstBackIdFallback;
-                Log.w(TAG_SETTINGS, "Zoom Query: Default Back ID '0' not found/back-facing. Using first available back ID: " + targetCameraId);
+                Log.w(TAG_SETTINGS,
+                        "Zoom Query: Default Back ID '0' not found/back-facing. Using first available back ID: "
+                                + targetCameraId);
             }
         } catch (CameraAccessException | IllegalArgumentException e) {
             Log.e(TAG_SETTINGS, "Zoom Query: Error accessing camera list/characteristics during ID selection", e);
@@ -2435,38 +2468,40 @@ public class SettingsFragment extends BaseFragment {
         // Get the available zoom ratio range for the target camera
         try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(targetCameraId);
-            
+
             // Check for CONTROL_ZOOM_RATIO_RANGE (API 30+)
             if (Build.VERSION.SDK_INT >= 30) {
                 Range<Float> zoomRatioRange = characteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
                 if (zoomRatioRange != null) {
                     float maxZoom = zoomRatioRange.getUpper();
-                    Log.d(TAG_SETTINGS, "Zoom Query: Found CONTROL_ZOOM_RATIO_RANGE: " + zoomRatioRange + ", Max: " + maxZoom);
+                    Log.d(TAG_SETTINGS,
+                            "Zoom Query: Found CONTROL_ZOOM_RATIO_RANGE: " + zoomRatioRange + ", Max: " + maxZoom);
                     return maxZoom;
                 }
             }
-            
+
             // Fallback: Check for sensor size capability
             Size sensorSize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
             if (sensorSize != null) {
                 // Estimate max zoom based on sensor size and typical camera capabilities
                 // Most modern cameras support at least 4x zoom, some up to 10x
                 float estimatedMaxZoom = 4.0f; // Conservative estimate
-                
+
                 // For back cameras, try higher zoom ratios
                 if (cameraType == CameraType.BACK) {
                     estimatedMaxZoom = 8.0f; // Most back cameras support up to 8x
                 }
-                
+
                 Log.d(TAG_SETTINGS, "Zoom Query: Using estimated max zoom: " + estimatedMaxZoom + " for " + cameraType);
                 return estimatedMaxZoom;
             }
-            
+
             Log.w(TAG_SETTINGS, "Zoom Query: No zoom ratio information available, using default: " + defaultMaxZoom);
             return defaultMaxZoom;
-            
+
         } catch (CameraAccessException | IllegalArgumentException e) {
-            Log.e(TAG_SETTINGS, "Zoom Query: Camera access/arg exception getting zoom ratio for ID " + targetCameraId, e);
+            Log.e(TAG_SETTINGS, "Zoom Query: Camera access/arg exception getting zoom ratio for ID " + targetCameraId,
+                    e);
             return defaultMaxZoom;
         } catch (Exception e) {
             Log.e(TAG_SETTINGS, "Zoom Query: Unexpected error getting zoom ratio for ID " + targetCameraId, e);
@@ -2475,14 +2510,16 @@ public class SettingsFragment extends BaseFragment {
     }
 
     /**
-     * Updates the zoom ratio spinner's adapter and selection based on hardware capabilities
+     * Updates the zoom ratio spinner's adapter and selection based on hardware
+     * capabilities
      * and the SAVED PREFERENCE FOR THE CURRENTLY SELECTED CAMERA TYPE.
      */
     private void updateZoomRatioSpinner() {
         // Safety checks
         if (zoomRatioSpinner == null || getContext() == null || sharedPreferencesManager == null) {
             Log.w(TAG_SETTINGS, "updateZoomRatioSpinner: Prerequisites not met (Spinner/Context/PrefsMgr null).");
-            if (zoomRatioSpinner != null) zoomRatioSpinner.setEnabled(false); // Disable spinner if cannot populate
+            if (zoomRatioSpinner != null)
+                zoomRatioSpinner.setEnabled(false); // Disable spinner if cannot populate
             return;
         }
 
@@ -2495,7 +2532,7 @@ public class SettingsFragment extends BaseFragment {
         // 2. Generate dynamic zoom ratio options based on hardware capabilities
         List<String> zoomRatioOptions = new ArrayList<>();
         List<Integer> zoomRatioIntValues = new ArrayList<>();
-        
+
         // Add zoom ratios from 0.5x to maxZoomRatio in 0.5x increments
         for (float zoom = 0.5f; zoom <= maxZoomRatio; zoom += 0.5f) {
             zoomRatioOptions.add(String.format("%.1fx", zoom));
@@ -2506,8 +2543,7 @@ public class SettingsFragment extends BaseFragment {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
-                zoomRatioOptions
-        );
+                zoomRatioOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         zoomRatioSpinner.setAdapter(adapter);
 
@@ -2515,23 +2551,28 @@ public class SettingsFragment extends BaseFragment {
         int selectedIndex = -1; // Default to invalid index
 
         if (!zoomRatioOptions.isEmpty()) {
-            // Get the zoom ratio preference specifically saved for this camera type (FRONT or BACK)
+            // Get the zoom ratio preference specifically saved for this camera type (FRONT
+            // or BACK)
             float savedRatioForThisCameraType = sharedPreferencesManager.getSpecificZoomRatio(selectedCameraType);
-            Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Saved Zoom Ratio Pref for Type " + selectedCameraType + " = " + savedRatioForThisCameraType);
+            Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Saved Zoom Ratio Pref for Type " + selectedCameraType
+                    + " = " + savedRatioForThisCameraType);
 
-            // Check if the saved preference value is actually in the list of supported ratios
+            // Check if the saved preference value is actually in the list of supported
+            // ratios
             int savedRatioScaled = Math.round(savedRatioForThisCameraType * 10);
             for (int i = 0; i < zoomRatioIntValues.size(); i++) {
                 if (zoomRatioIntValues.get(i) == savedRatioScaled) {
                     selectedIndex = i;
-                    Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Selecting SAVED ratio (" + savedRatioForThisCameraType + "x) at index: " + selectedIndex);
+                    Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Selecting SAVED ratio ("
+                            + savedRatioForThisCameraType + "x) at index: " + selectedIndex);
                     break;
                 }
             }
 
             if (selectedIndex == -1) {
                 // Saved ratio is NOT supported/available. Fallback needed.
-                Log.w(TAG_SETTINGS, "Zoom Ratio Spinner Update: Saved ratio (" + savedRatioForThisCameraType + "x) is NOT in the supported list. Falling back.");
+                Log.w(TAG_SETTINGS, "Zoom Ratio Spinner Update: Saved ratio (" + savedRatioForThisCameraType
+                        + "x) is NOT in the supported list. Falling back.");
 
                 // Try falling back to the default ratio (1.0x - no zoom)
                 float defaultRatio = Constants.DEFAULT_ZOOM_RATIO;
@@ -2539,7 +2580,8 @@ public class SettingsFragment extends BaseFragment {
                 for (int i = 0; i < zoomRatioIntValues.size(); i++) {
                     if (zoomRatioIntValues.get(i) == defaultRatioScaled) {
                         selectedIndex = i;
-                        Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Falling back to Default (" + defaultRatio + "x) at index: " + selectedIndex);
+                        Log.d(TAG_SETTINGS, "Zoom Ratio Spinner Update: Falling back to Default (" + defaultRatio
+                                + "x) at index: " + selectedIndex);
                         // Update the preference ONLY because the previously saved one was invalid
                         sharedPreferencesManager.setSpecificZoomRatio(selectedCameraType, defaultRatio);
                         break;
@@ -2547,10 +2589,13 @@ public class SettingsFragment extends BaseFragment {
                 }
 
                 if (selectedIndex == -1 && !zoomRatioIntValues.isEmpty()) {
-                    // If even default 1.0x isn't supported, select the first available ratio in the list
+                    // If even default 1.0x isn't supported, select the first available ratio in the
+                    // list
                     selectedIndex = 0;
                     float firstAvailableRatio = zoomRatioIntValues.get(selectedIndex) / 10.0f;
-                    Log.w(TAG_SETTINGS, "Zoom Ratio Spinner Update: Default (1.0x) also NOT supported. Selecting first available ratio: " + firstAvailableRatio + "x at index 0.");
+                    Log.w(TAG_SETTINGS,
+                            "Zoom Ratio Spinner Update: Default (1.0x) also NOT supported. Selecting first available ratio: "
+                                    + firstAvailableRatio + "x at index 0.");
                     // Update preference to the first valid ratio since saved/default were invalid
                     sharedPreferencesManager.setSpecificZoomRatio(selectedCameraType, firstAvailableRatio);
                 }
@@ -2558,11 +2603,13 @@ public class SettingsFragment extends BaseFragment {
 
             // 5. Set Spinner Selection and Enabled State
             if (selectedIndex >= 0 && selectedIndex < zoomRatioOptions.size()) { // Check index bounds
-                zoomRatioSpinner.setSelection(selectedIndex, false); // Set selection without triggering listener initially
+                zoomRatioSpinner.setSelection(selectedIndex, false); // Set selection without triggering listener
+                                                                     // initially
                 zoomRatioSpinner.setEnabled(true); // Enable spinner as there are options
                 Log.d(TAG_SETTINGS, "Zoom Ratio Spinner: Final selection set to index " + selectedIndex);
             } else {
-                Log.e(TAG_SETTINGS, "Zoom Ratio Spinner Update: Invalid final index (" + selectedIndex + "), cannot set selection. Disabling spinner.");
+                Log.e(TAG_SETTINGS, "Zoom Ratio Spinner Update: Invalid final index (" + selectedIndex
+                        + "), cannot set selection. Disabling spinner.");
                 zoomRatioSpinner.setEnabled(false); // Disable if no valid selection found
             }
 
@@ -2570,16 +2617,18 @@ public class SettingsFragment extends BaseFragment {
             // No ratios were found/supported by getHardwareSupportedMaxZoomRatio
             // If this block is reached, something is inconsistent. Disable the spinner.
             zoomRatioSpinner.setEnabled(false);
-            Log.e(TAG_SETTINGS, "Zoom Ratio Spinner Update: CRITICAL - No zoom ratios found for " + selectedCameraType + ". Disabling spinner.");
+            Log.e(TAG_SETTINGS, "Zoom Ratio Spinner Update: CRITICAL - No zoom ratios found for " + selectedCameraType
+                    + ". Disabling spinner.");
         }
-        
+
         // Update the note text to reflect current selection
         TextView noteTextView = view.findViewById(R.id.zoom_ratio_note_textview);
         if (noteTextView != null) {
             updateZoomRatioNoteText(noteTextView);
         }
-        
-        Log.d(TAG_SETTINGS, "Zoom Ratio Spinner update finished for " + selectedCameraType + ". Enabled: " + zoomRatioSpinner.isEnabled());
+
+        Log.d(TAG_SETTINGS, "Zoom Ratio Spinner update finished for " + selectedCameraType + ". Enabled: "
+                + zoomRatioSpinner.isEnabled());
     } // End updateZoomRatioSpinner
 
     private void setupCodecSpinner() {
@@ -2699,17 +2748,13 @@ public class SettingsFragment extends BaseFragment {
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
                 Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-
-        MaterialButton githubButton = dialogView.findViewById(R.id.github_button);
-        MaterialButton discordButton = dialogView.findViewById(R.id.discord_button);
-        if (githubButton != null) {
-            githubButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
-            githubButton.setTextColor(isSnowVeilTheme ? Color.BLACK : Color.WHITE);
-        }
-        if (discordButton != null) {
-            discordButton.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
-            discordButton.setTextColor(isSnowVeilTheme ? Color.BLACK : Color.WHITE);
-        }
+        // -------------- Fix Start for this method(showReadmeDialog legacy
+        // buttons)-----------
+        // Legacy dialog buttons (github_button / discord_button) removed in refactor to
+        // unified rows.
+        // Keep method minimal for backward compatibility if legacy fragment invoked.
+        // -------------- Fix Ended for this method(showReadmeDialog legacy
+        // buttons)-----------
         builder.setView(dialogView);
         builder.setPositiveButton(android.R.string.ok, null); // Use standard OK text
 
@@ -3054,17 +3099,17 @@ public class SettingsFragment extends BaseFragment {
         CameraType currentSelectedCamera = sharedPreferencesManager.getCameraSelection();
         int currentFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(currentSelectedCamera);
 
-        if (currentFrameRate >= 60) {
+    if (currentFrameRate >= 60) {
             // For high frame rates, show experimental warning with red color for better
             // visibility
-            String warningText = getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE) +
-                    "\n\n<font color='#FF0000'><b>EXPERIMENTAL:</b> " + currentFrameRate
-                    + "fps is an experimental mode " +
-                    (DeviceHelper.isSamsung() ? "for Samsung devices. "
-                            : (DeviceHelper.isHuawei() ? "for Huawei devices. " : ""))
-                    +
-                    "This frame rate may not be supported on all devices and could cause instability. " +
-                    "Use only if your hardware can support it.</font>";
+        // -------------- Fix Start for this method(updateFrameRateNoteText)-----------
+        String warningText = getString(R.string.note_framerate, Constants.DEFAULT_VIDEO_FRAME_RATE) +
+            "\n\n<font color='#FF0000'><b>EXPERIMENTAL:</b> " + currentFrameRate
+            + "fps is an experimental mode " +
+            (DeviceHelper.isSamsung() ? "for Samsung devices. " : "") +
+            "This frame rate may not be supported on all devices and could cause instability. " +
+            "Use only if your hardware can support it.</font>";
+        // -------------- Fix Ended for this method(updateFrameRateNoteText)-----------
 
             noteTextView.setText(Html.fromHtml(warningText, Html.FROM_HTML_MODE_COMPACT));
             noteTextView.setVisibility(View.VISIBLE);
@@ -3088,20 +3133,19 @@ public class SettingsFragment extends BaseFragment {
         }
     }
 
-
     /**
      * Updates the zoom ratio note text to show the default value.
      */
     private void updateZoomRatioNoteText(TextView noteTextView) {
-        if (noteTextView == null) return;
-        
+        if (noteTextView == null)
+            return;
+
         // Always show 1.0x as the default (no zoom)
         noteTextView.setText(getString(R.string.note_zoom_ratio, 1.0f));
         noteTextView.setVisibility(View.VISIBLE);
     }
 
-    private void setupCodecNoteText()
-    {
+    private void setupCodecNoteText() {
         TextView noteTextView = view.findViewById(R.id.codec_note_textview);
         if (noteTextView != null) {
             VideoCodec defaultCodec = Constants.DEFAULT_VIDEO_CODEC;
@@ -3952,14 +3996,7 @@ public class SettingsFragment extends BaseFragment {
                 return enhancedRates;
             }
 
-            // Special handling for high-end Huawei devices
-            if (DeviceHelper.isHuawei() && DeviceHelper.isHighEndDevice() && !detectedRates.contains(60)) {
-                Log.i(TAG_SETTINGS, "High-end Huawei device detected - Adding 60fps support");
-                List<Integer> enhancedRates = new ArrayList<>(detectedRates);
-                enhancedRates.add(60);
-                Collections.sort(enhancedRates);
-                return enhancedRates;
-            }
+            // Huawei-specific handling removed to standardize behavior across devices
 
             return detectedRates;
         } catch (Exception e) {
@@ -4243,9 +4280,8 @@ public class SettingsFragment extends BaseFragment {
     private void showAudioSettingsDialog() {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         View dialogView = inflater.inflate(R.layout.dialog_audio_settings, null);
-        final com.google.android.material.materialswitch.MaterialSwitch noiseSuppressionSwitch = dialogView
-                .findViewById(R.id.noise_suppression_switch);
-        noiseSuppressionSwitch.setChecked(sharedPreferencesManager.isNoiseSuppressionEnabled());
+        // Noise suppression switch removed (now managed in modular
+        // AudioSettingsFragment)
         final TextView summaryText = dialogView.findViewById(R.id.audio_settings_summary);
         final TextView bitrateLabel = dialogView.findViewById(R.id.audio_bitrate_label);
         final TextView samplingRateLabel = dialogView.findViewById(R.id.audio_sampling_rate_label);
@@ -4404,11 +4440,7 @@ public class SettingsFragment extends BaseFragment {
                     int sampling = Integer.parseInt(samplingRateInput.getText().toString().trim());
                     sharedPreferencesManager.setAudioBitrate(bitrate);
                     sharedPreferencesManager.setAudioSamplingRate(sampling);
-                    // ----- Fix Start: Save noise suppression toggle -----
-                    sharedPreferencesManager.setNoiseSuppressionEnabled(noiseSuppressionSwitch.isChecked());
-                    // ----- Fix End: Save noise suppression toggle -----
-                    Log.i(TAG_SETTINGS, "Audio settings saved: bitrate=" + bitrate + ", samplingRate=" + sampling
-                            + ", noiseSuppression=" + noiseSuppressionSwitch.isChecked());
+                    Log.i(TAG_SETTINGS, "Audio settings saved: bitrate=" + bitrate + ", samplingRate=" + sampling);
                     dialog.dismiss();
                 }
             });

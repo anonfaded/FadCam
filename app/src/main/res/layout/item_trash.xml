@@ -33,14 +33,33 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:srcCompat="@drawable/ic_video_placeholder" /> <!-- Placeholder -->
 
-        <CheckBox
-            android:id="@+id/checkbox_trash_item_selected"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="4dp"
+        <FrameLayout
+            android:id="@+id/icon_check_container"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="@id/image_view_trash_thumbnail"
+            app:layout_constraintBottom_toBottomOf="@id/image_view_trash_thumbnail"
+            android:visibility="visible"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+            <ImageView
+                android:id="@+id/icon_check_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="4dp"
+                android:background="@drawable/picker_check_background" />
+            <ImageView
+                android:id="@+id/icon_check"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/avd_check_draw"
+                app:tint="?attr/colorPrimary"
+                android:alpha="0" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tv_trash_item_original_name"
@@ -56,7 +75,7 @@
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/image_view_trash_thumbnail"
             app:layout_constraintTop_toTopOf="@id/image_view_trash_thumbnail"
-            app:layout_constraintEnd_toStartOf="@id/checkbox_trash_item_selected"
+            app:layout_constraintEnd_toStartOf="@id/icon_check_container"
             tools:text="Original Video File Name That Was Trashed.mp4" />
 
         <TextView
@@ -79,7 +98,7 @@
             android:text="Original: Internal Storage"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
             app:layout_constraintStart_toEndOf="@+id/image_view_trash_thumbnail"
-            app:layout_constraintEnd_toStartOf="@+id/checkbox_trash_item_selected"
+            app:layout_constraintEnd_toStartOf="@id/icon_check_container"
             app:layout_constraintTop_toBottomOf="@+id/tv_trash_item_date_trashed"
             android:layout_marginStart="8dp" />
 
@@ -92,7 +111,7 @@
             android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
             android:textColor="@color/colorWarning"
             app:layout_constraintStart_toEndOf="@+id/image_view_trash_thumbnail"
-            app:layout_constraintEnd_toStartOf="@+id/checkbox_trash_item_selected"
+            app:layout_constraintEnd_toStartOf="@id/icon_check_container"
             app:layout_constraintTop_toBottomOf="@+id/tv_trash_item_original_location"
             android:layout_marginStart="8dp" />
 

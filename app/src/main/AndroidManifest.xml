@@ -55,16 +55,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
-
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
 
     <!-- Permission to query all installed packages -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" 
@@ -97,15 +95,25 @@
                 android:resource="@xml/file_paths" />
         </provider>
         <activity
-            android:name=".MainActivity"
-            android:launchMode="singleTop"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
-            android:exported="true">
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.FadCam.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.LegacySettingsActivity"
+            android:exported="false"
+            android:label="Settings (Legacy)" />
 
         <!-- Detective App Icon (Activity Alias) -->
         <activity-alias
@@ -137,11 +145,11 @@
             </intent-filter>
         </activity-alias>
         
-        <!-- Sumud App Icon (Activity Alias) -->
+        <!-- Palestine App Icon (Activity Alias) -->
         <activity-alias
             android:name=".MainActivity.PalestineIcon"
             android:enabled="false"
-            android:label="Sumud (صُمود)"
+            android:label="I❤️Palestine"
             android:icon="@mipmap/ic_launcher_palestine"
             android:roundIcon="@mipmap/ic_launcher_palestine_round"
             android:targetActivity=".MainActivity"
@@ -346,6 +354,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <!-- Black App Icon (Activity Alias) -->
+        <activity-alias
+            android:name=".MainActivity.BlackIcon"
+            android:enabled="false"
+            android:label="@string/app_icon_black_alias_label"
+            android:icon="@mipmap/ic_launcher_black"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         
         <activity
             android:name=".ui.VideoPlayerActivity"
@@ -412,6 +434,22 @@
                 <action android:name="com.fadcam.TOGGLE_TORCH"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
+        </receiver>
+
+        <!-- Clock App Widget Provider -->
+        <receiver
+            android:name=".widgets.ClockWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_clock_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="com.fadcam.widgets.ACTION_UPDATE_CLOCK" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/clock_widget_info" />
         </receiver>
     </application>
 

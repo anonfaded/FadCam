@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock_root_preview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/branding_logo_preview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+    android:maxHeight="160dp"
+    android:translationY="-10dp"
+        android:src="@drawable/fadseclab_flag"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:visibility="gone"
+        android:contentDescription="@null"/>
+
+    <LinearLayout
+        android:id="@+id/time_container_preview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:orientation="horizontal"
+        android:gravity="bottom">
+
+        <TextView
+            android:id="@+id/clock_time_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/ubuntu_regular"
+            android:textSize="32sp"
+            android:text="8:05"
+            android:maxLines="1"/>
+
+        <TextView
+            android:id="@+id/clock_ampm_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#B0B0B0"
+            android:fontFamily="@font/ubuntu_regular"
+            android:textSize="10sp"
+            android:text="PM"
+            android:maxLines="1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/date_container_preview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@id/time_container_preview"
+        android:layout_marginStart="8dp"
+        android:orientation="vertical"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/clock_date_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#E0E0E0"
+            android:fontFamily="@font/ubuntu_regular"
+            android:textSize="12sp"
+            android:text="Wed, 13 Aug"
+            android:maxLines="2"
+            android:gravity="end"
+            android:breakStrategy="simple"
+            android:lineSpacingExtra="1dp"/>
+
+        <TextView
+            android:id="@+id/clock_date_arabic_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#C0C0C0"
+            android:fontFamily="@font/ubuntu_regular"
+            android:textSize="11sp"
+            android:text="٧ صفر ١٤٤٧"
+            android:maxLines="2"
+            android:gravity="end"
+            android:textDirection="rtl"
+            android:textAlignment="viewEnd"
+            android:breakStrategy="simple"
+            android:lineSpacingExtra="1dp"/>
+    </LinearLayout>
+
+</RelativeLayout>
