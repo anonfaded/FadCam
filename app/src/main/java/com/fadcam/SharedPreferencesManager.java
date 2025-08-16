@@ -380,6 +380,18 @@ public class SharedPreferencesManager {
                 Constants.DEFAULT_VIDEO_CODEC.toString());
         return VideoCodec.valueOf(videoCodec);
     }
+    
+    // -------------- Fix Start for this class (SharedPreferencesManager_keep_screen_awake)-----------
+    /** Returns whether the video player should keep the screen on during playback. Default: true. */
+    public boolean isPlayerKeepScreenOn() {
+        return sharedPreferences.getBoolean(Constants.PREF_PLAYER_KEEP_SCREEN_ON, true);
+    }
+
+    /** Sets whether the video player should keep the screen on during playback. */
+    public void setPlayerKeepScreenOn(boolean keepOn) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_PLAYER_KEEP_SCREEN_ON, keepOn).apply();
+    }
+    // -------------- Fix Ended for this class (SharedPreferencesManager_keep_screen_awake)-----------
     // --- End Camera / Video settings ---
 
     // --- STORAGE METHODS ---

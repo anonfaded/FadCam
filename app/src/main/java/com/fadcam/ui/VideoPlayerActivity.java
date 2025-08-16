@@ -43,6 +43,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private static final String RK_VIDEO_SETTINGS = "rk_video_settings";
     private static final String RK_PLAYBACK_SPEED = "rk_playback_speed";
     private static final String RK_QUICK_SPEED = "rk_quick_speed";
+    private static final String RK_KEEP_SCREEN_ON = "rk_keep_screen_on";
     // -------------- Fix Ended for field(video_settings_result_keys)-----------
 
     // Playback speed options
@@ -300,6 +301,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
         boolean mutedPref = SharedPreferencesManager.getInstance(this).isPlaybackMuted();
         String muteSubtitle = mutedPref ? getString(R.string.universal_enable) : getString(R.string.universal_disable);
         items.add(new OptionItem("row_mute_playback", getString(R.string.mute_playback_title), muteSubtitle, null, null, null, null, null, "volume_off", null, null, null));
+    // Row: Keep screen awake
+    boolean keepOn = SharedPreferencesManager.getInstance(this).isPlayerKeepScreenOn();
+    String keepOnSubtitle = keepOn ? getString(R.string.universal_enable) : getString(R.string.universal_disable);
+    items.add(new OptionItem("row_keep_screen_on", getString(R.string.keep_screen_on_title), keepOnSubtitle, null, null, null, null, null, "visibility", null, null, null));
     String helper = getString(R.string.video_player_settings_helper_player);
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.video_player_settings_title), items, null, RK_VIDEO_SETTINGS, helper);
         getSupportFragmentManager().setFragmentResultListener(RK_VIDEO_SETTINGS, this, (key, bundle) -> {
@@ -310,6 +315,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 showQuickSpeedPickerSheet();
             } else if ("row_mute_playback".equals(sel)) {
                 showMuteSwitchSheet();
+            } else if ("row_keep_screen_on".equals(sel)) {
+                showKeepScreenOnSwitchSheet();
             }
         });
         sheet.show(getSupportFragmentManager(), "video_settings_sheet");
@@ -360,6 +367,27 @@ public class VideoPlayerActivity extends AppCompatActivity {
         sheet.show(getSupportFragmentManager(), "video_mute_switch_sheet");
     }
 
+    private void showKeepScreenOnSwitchSheet(){
+        boolean enabled = SharedPreferencesManager.getInstance(this).isPlayerKeepScreenOn();
+        getSupportFragmentManager().setFragmentResultListener(RK_KEEP_SCREEN_ON, this, (k,b)->{
+            if(b.containsKey(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                SharedPreferencesManager.getInstance(this).setPlayerKeepScreenOn(state);
+                // Apply immediately
+                if (state) {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                } else {
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+            }
+        });
+        String helper = getString(R.string.keep_screen_on_helper_picker);
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.keep_screen_on_title), new ArrayList<>(), null, RK_KEEP_SCREEN_ON, helper,
+                getString(R.string.keep_screen_on_title), enabled);
+        sheet.show(getSupportFragmentManager(), "video_keep_screen_on_switch_sheet");
+    }
+
     private void applyMutedStateToPlayer(boolean muted){
         try{
             if(player!=null){ player.setVolume(muted? 0f: 1f); }
@@ -379,8 +407,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Keep screen on during playback
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // Keep screen on during playback if enabled in settings
+        boolean keepAwake = SharedPreferencesManager.getInstance(this).isPlayerKeepScreenOn();
+        if (keepAwake) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
         // Optional: Resume playback if it was paused but ready (useful if app was backgrounded briefly)
         // Consider adding a check if user manually paused vs activity lifecycle pause
         if (player != null && player.getPlaybackState() == ExoPlayer.STATE_READY && !player.isPlaying()) {
@@ -391,8 +424,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // Allow screen to turn off when activity is paused
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    // Allow screen to turn off when activity is paused
+    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // Pause playback when activity goes into background/pause state
         if (player != null && player.isPlaying()) {
             player.pause();
@@ -402,8 +435,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        // Clear screen flags again just in case
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    // Clear screen flags again just in case
+    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onDestroy();
         // *** Release the player ***
         if (player != null) {

@@ -394,6 +394,9 @@
     <string name="playback_speed_helper_settings">Default speed for video playback.</string>
     <string name="playback_speed_helper_player">Affects current playback only. To change the default for future videos, use Settings.</string>
     <string name="quick_speed_helper">Quick Speed applies only while you press and hold during playback.</string>
+    <!-- Keep screen awake setting -->
+    <string name="keep_screen_on_title">Keep screen awake</string>
+    <string name="keep_screen_on_helper_picker">When enabled, the screen won’t sleep while playing a video.</string>
     <!-- Shortcuts customization UI -->
     <string name="shortcuts_customize_title">Customize</string>
     <string name="shortcuts_customize_subtitle">Name and icon</string>

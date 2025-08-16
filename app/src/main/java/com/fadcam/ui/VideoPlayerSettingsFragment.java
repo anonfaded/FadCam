@@ -28,6 +28,8 @@ public class VideoPlayerSettingsFragment extends Fragment {
         LinearLayout rowQuick = root.findViewById(R.id.row_quick_speed);
         TextView subPlayback = root.findViewById(R.id.sub_playback_speed);
         TextView subQuick = root.findViewById(R.id.sub_quick_speed);
+    LinearLayout rowKeepOn = root.findViewById(R.id.row_keep_screen_on);
+    TextView subKeepOn = root.findViewById(R.id.sub_keep_screen_on);
     TextView subMute = root.findViewById(R.id.sub_mute_playback);
 
         // Subtitles
@@ -39,9 +41,12 @@ public class VideoPlayerSettingsFragment extends Fragment {
         subQuick.setText(formatSpeed(quick));
     boolean muted = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isPlaybackMuted();
     subMute.setText(muted? getString(R.string.universal_enable): getString(R.string.universal_disable));
+    boolean keepOn = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isPlayerKeepScreenOn();
+    if (subKeepOn != null) subKeepOn.setText(keepOn? getString(R.string.universal_enable): getString(R.string.universal_disable));
 
         rowPlayback.setOnClickListener(v -> showPlaybackSpeedPicker());
         rowQuick.setOnClickListener(v -> showQuickSpeedPicker());
+    if (rowKeepOn != null) rowKeepOn.setOnClickListener(v -> showKeepScreenOnSwitchSheet());
         // Mute switch row via picker with switch
         View rowMute = root.findViewById(R.id.row_mute_playback);
         if(rowMute!=null){ rowMute.setOnClickListener(v -> showMuteSwitchSheet()); }
@@ -49,6 +54,29 @@ public class VideoPlayerSettingsFragment extends Fragment {
     if(back!=null){ back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity())); }
         // -------------- Fix Ended for this method(onCreateView)-----------
         return root;
+    }
+
+    private void showKeepScreenOnSwitchSheet(){
+        // -------------- Fix Start for this method(showKeepScreenOnSwitchSheet)-----------
+        final String RK = "rk_vps_keep_screen_on_switch";
+        boolean enabled = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isPlayerKeepScreenOn();
+        getParentFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setPlayerKeepScreenOn(state);
+                View root = getView();
+                if(root!=null){
+                    TextView sub = root.findViewById(R.id.sub_keep_screen_on);
+                    if(sub!=null){ sub.setText(state? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
+                }
+            }
+        });
+        String helper = getString(R.string.keep_screen_on_helper_picker);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.keep_screen_on_title), new java.util.ArrayList<>(), null, RK, helper,
+                getString(R.string.keep_screen_on_title), enabled);
+        sheet.show(getParentFragmentManager(), "vps_keep_screen_on_switch_sheet");
+        // -------------- Fix Ended for this method(showKeepScreenOnSwitchSheet)-----------
     }
 
     private void showMuteSwitchSheet(){
