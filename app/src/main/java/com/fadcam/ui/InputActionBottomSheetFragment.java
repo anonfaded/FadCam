@@ -35,10 +35,17 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     private static final String ARG_ACTION_TITLE = "action_title";
     private static final String ARG_ACTION_SUBTITLE = "action_subtitle";
     private static final String ARG_ACTION_ICON = "action_icon";
+    private static final String ARG_INPUT_VALUE = "input_value";
+    private static final String ARG_INPUT_HINT = "input_hint";
     private static final String MODE_PREVIEW = "preview";
     private static final String MODE_RESET = "reset";
+    private static final String MODE_INPUT = "input";
 
-    public interface Callbacks { void onImportConfirmed(JSONObject json); void onResetConfirmed(); }
+    public interface Callbacks {
+        void onImportConfirmed(JSONObject json);
+        void onResetConfirmed();
+        default void onInputConfirmed(String input) { /* optional */ }
+    }
     private Callbacks callbacks; public void setCallbacks(Callbacks cb){ this.callbacks = cb; }
 
     public static InputActionBottomSheetFragment newPreview(String title, String json){
@@ -67,6 +74,21 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
+    /** Create a simple input sheet (single-line) with customizable action row. */
+    public static InputActionBottomSheetFragment newInput(String title, String initialValue, String hint, String actionTitle, String actionSubtitle, int actionIconRes){
+        InputActionBottomSheetFragment f = new InputActionBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_MODE, MODE_INPUT);
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_INPUT_VALUE, initialValue);
+        b.putString(ARG_INPUT_HINT, hint);
+        b.putString(ARG_ACTION_TITLE, actionTitle);
+        b.putString(ARG_ACTION_SUBTITLE, actionSubtitle);
+        b.putInt(ARG_ACTION_ICON, actionIconRes);
+        f.setArguments(b);
+        return f;
+    }
+
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         return inflater.inflate(R.layout.picker_bottom_sheet, container, false);
     }
@@ -76,8 +98,41 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         Bundle args = getArguments(); String mode = args!=null? args.getString(ARG_MODE): null; String title = args!=null? args.getString(ARG_TITLE): null;
         TextView tvTitle = view.findViewById(R.id.picker_title); if(tvTitle!=null && title!=null) tvTitle.setText(title);
         View helper = view.findViewById(R.id.picker_helper); if(helper!=null) helper.setVisibility(View.GONE);
-        LinearLayout list = view.findViewById(R.id.picker_list_container); if(list!=null){ list.removeAllViews(); if(MODE_PREVIEW.equals(mode)){ buildPreview(list, args.getString(ARG_JSON)); } else if(MODE_RESET.equals(mode)){ buildReset(list, args.getString(ARG_REQUIRED_PHRASE)); } }
+        LinearLayout list = view.findViewById(R.id.picker_list_container); if(list!=null){ list.removeAllViews(); if(MODE_PREVIEW.equals(mode)){ buildPreview(list, args.getString(ARG_JSON)); } else if(MODE_RESET.equals(mode)){ buildReset(list, args.getString(ARG_REQUIRED_PHRASE)); } else if(MODE_INPUT.equals(mode)){ buildInput(list, args.getString(ARG_INPUT_VALUE), args.getString(ARG_INPUT_HINT)); } }
     }
+
+    // -------------- Fix Start for this method(buildInput)-----------
+    private void buildInput(LinearLayout parent, String initialValue, String hint){
+        final EditText input = new EditText(requireContext());
+        input.setSingleLine(true);
+        if (initialValue != null) input.setText(initialValue);
+        if (hint != null) input.setHint(hint);
+        input.setBackgroundResource(R.drawable.prefs_input_bg);
+        input.setPadding(dp(12), dp(10), dp(12), dp(10));
+        input.setTextColor(getResources().getColor(android.R.color.white));
+        input.setHintTextColor(0xFF777777);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = dp(8);
+        lp.leftMargin = dp(16);
+        lp.rightMargin = dp(16);
+        parent.addView(input, lp);
+        parent.addView(makeDivider());
+
+        // Allow callers to override the action row's title/subtitle/icon via arguments
+        Bundle args = getArguments();
+        String actionTitle = args != null ? args.getString(ARG_ACTION_TITLE) : null;
+        String actionSubtitle = args != null ? args.getString(ARG_ACTION_SUBTITLE) : null;
+    int actionIcon = args != null ? args.getInt(ARG_ACTION_ICON, R.drawable.ic_edit_cut) : R.drawable.ic_edit_cut;
+
+        final String finalActionTitle = actionTitle != null ? actionTitle : getString(R.string.prefs_reset_label);
+        final String finalActionSubtitle = actionSubtitle != null ? actionSubtitle : "";
+
+        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, v -> {
+            String val = input.getText().toString().trim();
+            if (callbacks != null) { callbacks.onInputConfirmed(val); }
+        }));
+    }
+    // -------------- Fix Ended for this method(buildInput)-----------
 
     // -------------- Fix Start for this method(buildPreview)-----------
     private void buildPreview(LinearLayout parent, String jsonStr){
