@@ -57,6 +57,7 @@ public class NumberInputBottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     private int min, max, value, lowTh, highTh, defaultValue; private String title, hint, lowMsg, highMsg, resultKey; private EditText field; private TextView helper; private Button ok; private TextView descriptionView; private String descriptionText; private Button resetButton; private boolean showReset;
+    private TextView calcView;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.number_input_bottom_sheet, container, false);
@@ -90,13 +91,43 @@ public class NumberInputBottomSheetFragment extends BottomSheetDialogFragment {
         resetButton = view.findViewById(R.id.number_input_reset);
         if(titleView!=null) titleView.setText(title);
         if(field!=null){ field.setHint(hint); field.setText(String.valueOf(value)); field.setSelection(field.getText().length()); }
-        if(descriptionView!=null){ if(descriptionText!=null && !descriptionText.isEmpty()){ descriptionView.setText(descriptionText); descriptionView.setVisibility(View.VISIBLE);} else { descriptionView.setVisibility(View.GONE);} }
+            if(descriptionView!=null){ 
+                if(descriptionText!=null && !descriptionText.isEmpty()){ 
+                    descriptionView.setText(descriptionText); 
+                    descriptionView.setVisibility(View.VISIBLE);
+                } else { 
+                    descriptionView.setVisibility(View.GONE); 
+                } 
+            }
         if(resetButton!=null){
             if(showReset){
                 resetButton.setVisibility(View.VISIBLE);
                 resetButton.setOnClickListener(v-> { field.setText(String.valueOf(defaultValue)); });
             } else { resetButton.setVisibility(View.GONE); }
         }
+            // If a description exists, mirror it also to the persistent helper area so users see guidance at all times
+            if(helper!=null){ 
+                if(descriptionText!=null && !descriptionText.isEmpty()){ 
+                    helper.setText(descriptionText); 
+                } else {
+                    helper.setText(getString(R.string.number_input_default_helper));
+                }
+            }
+            calcView = view.findViewById(R.id.number_input_calc);
+            // Live calculator: treat input as minutes and show hours conversion
+            if(field!=null && calcView!=null){
+                field.addTextChangedListener(new android.text.TextWatcher(){ public void beforeTextChanged(CharSequence s,int a,int b,int c){} public void onTextChanged(CharSequence s,int a,int b,int c){
+                        try{
+                            String txt = s.toString().trim();
+                            if(txt.isEmpty()){ calcView.setVisibility(View.GONE); return; }
+                            int minutes = Integer.parseInt(txt);
+                            double hours = minutes / 60.0;
+                            String human = String.format(getResources().getString(R.string.timer_custom_calc_format), minutes+" min", hours);
+                            calcView.setText(human);
+                            calcView.setVisibility(View.VISIBLE);
+                        }catch(Exception e){ calcView.setVisibility(View.GONE); }
+                } public void afterTextChanged(android.text.Editable e){} });
+            }
         cancel.setOnClickListener(v-> dismiss());
         ok.setOnClickListener(v->{
             Integer parsed = parseField();

@@ -307,6 +307,15 @@ public class VideoPlayerActivity extends AppCompatActivity {
     boolean bg = SharedPreferencesManager.getInstance(this).isBackgroundPlaybackEnabled();
     String bgSubtitle = bg ? getString(R.string.universal_enable) : getString(R.string.universal_disable);
     items.add(new OptionItem("row_background_playback", getString(R.string.background_playback_title), bgSubtitle, null, null, null, null, null, "play_circle", null, null, null));
+    // Row: Background playback timer
+    int timerSec = SharedPreferencesManager.getInstance(this).getBackgroundPlaybackTimerSeconds();
+    String timerSubtitle;
+    if(timerSec==0) timerSubtitle = getString(R.string.timer_off_short);
+    else if(timerSec<60) timerSubtitle = getString(R.string.timer_seconds_short, timerSec);
+    else if(timerSec<3600) timerSubtitle = getString(R.string.timer_minutes_short, timerSec/60);
+    else timerSubtitle = getString(R.string.timer_hours_short, timerSec/3600);
+    boolean bgEnabled = SharedPreferencesManager.getInstance(this).isBackgroundPlaybackEnabled();
+    items.add(new OptionItem("row_background_playback_timer", getString(R.string.background_playback_timer_title_short), timerSubtitle, null, null, null, null, null, "timer", null, null, !bgEnabled));
     String helper = getString(R.string.video_player_settings_helper_player);
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.video_player_settings_title), items, null, RK_VIDEO_SETTINGS, helper);
         getSupportFragmentManager().setFragmentResultListener(RK_VIDEO_SETTINGS, this, (key, bundle) -> {
@@ -321,6 +330,64 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 showKeepScreenOnSwitchSheet();
             } else if ("row_background_playback".equals(sel)) {
                 showBackgroundPlaybackSwitchSheet();
+            } else if ("row_background_playback_timer".equals(sel)) {
+                // Show timer picker directly from activity (mirrors VideoPlayerSettingsFragment implementation)
+                final String RK = "rk_vps_background_playback_timer";
+                java.util.ArrayList<OptionItem> itemsTimer = new java.util.ArrayList<>();
+                itemsTimer.add(new OptionItem("t_off", getString(R.string.timer_off), null, null, null, null, null, null, "block", null, null, null));
+                itemsTimer.add(new OptionItem("t_30s", getString(R.string.timer_30_seconds), null, null, null, null, null, null, "timer", null, null, null));
+                itemsTimer.add(new OptionItem("t_1m", getString(R.string.timer_1_minute), null, null, null, null, null, null, "timer", null, null, null));
+                itemsTimer.add(new OptionItem("t_5m", getString(R.string.timer_5_minutes), null, null, null, null, null, null, "timer", null, null, null));
+                itemsTimer.add(new OptionItem("t_15m", getString(R.string.timer_15_minutes), null, null, null, null, null, null, "timer", null, null, null));
+                itemsTimer.add(new OptionItem("t_30m", getString(R.string.timer_30_minutes), null, null, null, null, null, null, "timer", null, null, null));
+                itemsTimer.add(new OptionItem("t_1h", getString(R.string.timer_1_hour), null, null, null, null, null, null, "timer", null, null, null));
+                itemsTimer.add(new OptionItem("t_custom", getString(R.string.timer_custom_label), null, null, null, null, null, null, "edit", null, null, null));
+                int cur = SharedPreferencesManager.getInstance(this).getBackgroundPlaybackTimerSeconds();
+                String selId = "t_off";
+                if (cur == 30) selId = "t_30s";
+                else if (cur == 60) selId = "t_1m";
+                else if (cur == 300) selId = "t_5m";
+                else if (cur == 900) selId = "t_15m";
+                else if (cur == 1800) selId = "t_30m";
+                else if (cur == 3600) selId = "t_1h";
+                PickerBottomSheetFragment sheetTimer = PickerBottomSheetFragment.newInstance(getString(R.string.background_playback_timer_title), itemsTimer, selId, RK, getString(R.string.background_playback_timer_helper));
+                getSupportFragmentManager().setFragmentResultListener(RK, this, (rkRes, resBundle) -> {
+                    String sel2 = resBundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                    if (sel2 == null) return;
+                    if("t_custom".equals(sel2)){
+                        final String RK_NUM = "rk_vps_background_playback_timer_custom";
+            com.fadcam.ui.picker.NumberInputBottomSheetFragment num = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                getString(R.string.timer_custom_title), 1, 86400, 60, getString(R.string.timer_custom_placeholder), 5, 3600,
+                getString(R.string.timer_custom_low_hint), getString(R.string.timer_custom_high_hint), RK_NUM);
+            android.os.Bundle _b = num.getArguments()!=null? num.getArguments() : new android.os.Bundle();
+            _b.putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.timer_custom_description));
+            num.setArguments(_b);
+                        getSupportFragmentManager().setFragmentResultListener(RK_NUM, this, (rkN, nb) -> {
+                            int minutes = nb.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER, 0);
+                                    if(minutes>0){ int seconds = minutes * 60; SharedPreferencesManager.getInstance(this).setBackgroundPlaybackTimerSeconds(seconds);
+                                        // Update inline subtitle if settings sheet is still visible
+                                        View root = findViewById(android.R.id.content);
+                                        if(root!=null){ TextView sub = root.findViewById(R.id.sub_background_playback_timer); if(sub!=null){ sub.setText(minutes<60? getString(R.string.timer_minutes_short, minutes): getString(R.string.timer_hours_short, minutes/60)); } }
+                                    }
+                        });
+                        num.show(getSupportFragmentManager(), "video_background_playback_timer_custom_sheet");
+                        return;
+                    }
+                    int seconds = 0;
+                    switch (sel2) {
+                        case "t_30s": seconds = 30; break;
+                        case "t_1m": seconds = 60; break;
+                        case "t_5m": seconds = 300; break;
+                        case "t_15m": seconds = 900; break;
+                        case "t_30m": seconds = 1800; break;
+                        case "t_1h": seconds = 3600; break;
+                        default: seconds = 0; break;
+                    }
+                    SharedPreferencesManager.getInstance(this).setBackgroundPlaybackTimerSeconds(seconds);
+                    View root = findViewById(android.R.id.content);
+                    if(root!=null){ TextView sub = root.findViewById(R.id.sub_background_playback_timer); if(sub!=null){ if(seconds==0) sub.setText(getString(R.string.timer_off_short)); else if(seconds<60) sub.setText(getString(R.string.timer_seconds_short, seconds)); else if(seconds<3600) sub.setText(getString(R.string.timer_minutes_short, seconds/60)); else sub.setText(getString(R.string.timer_hours_short, seconds/3600)); } }
+                });
+                sheetTimer.show(getSupportFragmentManager(), "video_background_playback_timer_sheet");
             }
         });
         sheet.show(getSupportFragmentManager(), "video_settings_sheet");
@@ -403,9 +470,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
             }
         });
         String helper = getString(R.string.background_playback_helper_picker);
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitch(
-                getString(R.string.background_playback_title), new ArrayList<>(), null, RK_BACKGROUND_PLAYBACK, helper,
-                getString(R.string.background_playback_title), enabled);
+    java.util.ArrayList<String> deps = new java.util.ArrayList<>(); deps.add("row_background_playback_timer");
+    PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitchDependencies(
+        getString(R.string.background_playback_title), new ArrayList<>(), null, RK_BACKGROUND_PLAYBACK, helper,
+        getString(R.string.background_playback_title), enabled, deps);
         sheet.show(getSupportFragmentManager(), "video_background_playback_switch_sheet");
     }
 

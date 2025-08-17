@@ -184,4 +184,6 @@ public abstract class Constants {
     public static final String PREF_PLAYER_KEEP_SCREEN_ON = "pref_player_keep_screen_on"; // default true
     // Background playback preference
     public static final String PREF_PLAYER_BACKGROUND_PLAYBACK = "pref_player_background_playback"; // default false
+    // Background playback auto-stop timer (seconds). 0 = disabled
+    public static final String PREF_PLAYER_BACKGROUND_TIMER_SECONDS = "pref_player_background_timer_seconds";
 }

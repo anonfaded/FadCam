@@ -3,7 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="16dp"
+    android:background="@drawable/picker_bottom_sheet_gradient_bg">
+
+    <!-- Centered title with divider to match other pickers -->
     <TextView
         android:id="@+id/number_input_title"
         android:layout_width="match_parent"
@@ -12,7 +15,13 @@
         android:textSize="18sp"
         android:gravity="center"
         android:textColor="?attr/colorHeading"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:text="Title"/>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#33FFFFFF"/>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -34,6 +43,15 @@
             android:padding="0dp"/>
     </LinearLayout>
     <TextView
+        android:id="@+id/number_input_calc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="13sp"
+        android:visibility="gone"
+        android:text=""/>
+    <TextView
         android:id="@+id/number_input_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -41,13 +59,15 @@
         android:textColor="@android:color/darker_gray"
         android:textSize="13sp"
         android:visibility="gone"/>
+    <!-- Persistent helper showing format guidance and examples -->
     <TextView
         android:id="@+id/number_input_helper"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textColor="@android:color/darker_gray"
-        android:textSize="13sp"/>
+        android:textSize="13sp"
+        android:text="Enter number of seconds (e.g. 300 for 5 minutes)."/>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

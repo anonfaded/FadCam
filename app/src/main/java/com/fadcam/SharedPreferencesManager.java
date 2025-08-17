@@ -403,6 +403,25 @@ public class SharedPreferencesManager {
     public void setBackgroundPlaybackEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_PLAYER_BACKGROUND_PLAYBACK, enabled).apply();
     }
+    // -------------- Background playback auto-stop timer (in seconds) --------------
+    /** Returns the auto-stop time in seconds. 0 = disabled. Default: 0. */
+    public int getBackgroundPlaybackTimerSeconds() {
+        return sharedPreferences.getInt(Constants.PREF_PLAYER_BACKGROUND_TIMER_SECONDS, 0);
+    }
+
+    /** Sets the auto-stop time in seconds. 0 disables the timer. */
+    public void setBackgroundPlaybackTimerSeconds(int seconds) {
+        sharedPreferences.edit().putInt(Constants.PREF_PLAYER_BACKGROUND_TIMER_SECONDS, seconds).apply();
+    }
+    
+    /** Convenience get/put for long values. */
+    public long getLong(String key, long defValue) {
+        return sharedPreferences.getLong(key, defValue);
+    }
+
+    public void putLong(String key, long value) {
+        sharedPreferences.edit().putLong(key, value).apply();
+    }
     // -------------- Fix Ended for this class (SharedPreferencesManager_background_playback)-----------
     // --- End Camera / Video settings ---
 

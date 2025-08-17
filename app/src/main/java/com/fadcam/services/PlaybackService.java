@@ -51,6 +51,24 @@ public class PlaybackService extends Service {
     private boolean isForeground = false;
     private Handler progressUpdateHandler;
     private final Runnable progressUpdateRunnable = this::updateNotification;
+    // Auto-stop timer
+    private Handler autoStopHandler;
+    private final Runnable autoStopRunnable = () -> {
+        // Stop playback using the same logic as ACTION_STOP
+        try {
+            if (player != null) {
+                player.pause();
+                player.seekTo(0);
+            }
+        } catch (Exception ignored) {}
+        stopProgressUpdates();
+        stopForeground(true);
+        stopSelf();
+    };
+    // Millis timestamp when the auto-stop alarm is scheduled (0 when none)
+    private long autoStopTriggerAtMs = 0L;
+
+    private static final String AUTO_STOP_ALARM_ACTION = "com.fadcam.action.AUTO_STOP_ALARM";
     private String videoTitle = ""; // Store the video filename/title
 
     @Override
@@ -96,6 +114,12 @@ public class PlaybackService extends Service {
             initPlayer(uri, speed, muted, pos, playWhenReady);
             buildAndShowNotification();
             startProgressUpdates();
+            // Restore any persisted auto-stop trigger (in case service restarted)
+            try{
+                long persisted = com.fadcam.SharedPreferencesManager.getInstance(this).getLong("auto_stop_trigger_at_ms", 0L);
+                if(persisted>System.currentTimeMillis()){ autoStopTriggerAtMs = persisted; }
+            }catch(Exception ignored){}
+            scheduleAutoStopIfNeeded();
             return START_STICKY;
         }
 
@@ -191,9 +215,11 @@ public class PlaybackService extends Service {
             if (player.isPlaying()) {
                 player.pause();
                 stopProgressUpdates();
+                cancelAutoStop();
             } else {
                 player.play();
                 startProgressUpdates();
+                scheduleAutoStopIfNeeded();
             }
             buildAndShowNotification();
         } catch (Exception e) { android.util.Log.e("PlaybackService", "play/pause failed", e); }
@@ -234,6 +260,48 @@ public class PlaybackService extends Service {
         if (progressUpdateHandler != null) {
             progressUpdateHandler.removeCallbacks(progressUpdateRunnable);
         }
+    }
+
+    private void scheduleAutoStopIfNeeded(){
+        try{
+            int seconds = com.fadcam.SharedPreferencesManager.getInstance(this).getBackgroundPlaybackTimerSeconds();
+            cancelAutoStop();
+            if(seconds>0){
+                // Schedule an AlarmManager alarm that fires even if the process is idle
+                long triggerAt = System.currentTimeMillis() + seconds * 1000L;
+                android.app.AlarmManager am = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+                Intent alarmIntent = new Intent(this, AutoStopReceiver.class).setAction(AUTO_STOP_ALARM_ACTION);
+                int flags = android.os.Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT : PendingIntent.FLAG_UPDATE_CURRENT;
+                PendingIntent pi = PendingIntent.getBroadcast(this, 12345, alarmIntent, flags);
+                if (am != null) {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                        am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerAt, pi);
+                    } else {
+                        am.setExact(android.app.AlarmManager.RTC_WAKEUP, triggerAt, pi);
+                    }
+                }
+                // Remember the trigger time for notification countdown
+                autoStopTriggerAtMs = triggerAt;
+                try{ com.fadcam.SharedPreferencesManager.getInstance(this).putLong("auto_stop_trigger_at_ms", autoStopTriggerAtMs); }catch(Exception ignored){}
+                // Also schedule in-process handler as a fast fallback when service keeps running
+                if(autoStopHandler==null) autoStopHandler = new Handler(Looper.getMainLooper());
+                autoStopHandler.postDelayed(autoStopRunnable, seconds * 1000L);
+            }
+        }catch(Exception e){ android.util.Log.w("PlaybackService", "scheduleAutoStop failed", e); }
+    }
+
+    private void cancelAutoStop(){
+        try{ if(autoStopHandler!=null) autoStopHandler.removeCallbacks(autoStopRunnable); } catch(Exception ignored){}
+        try{
+            android.app.AlarmManager am = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+            Intent alarmIntent = new Intent(this, AutoStopReceiver.class).setAction(AUTO_STOP_ALARM_ACTION);
+            int flags = android.os.Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT : PendingIntent.FLAG_UPDATE_CURRENT;
+            PendingIntent pi = PendingIntent.getBroadcast(this, 12345, alarmIntent, flags);
+            if(am!=null){ am.cancel(pi); }
+        }catch(Exception ignored){}
+    // Clear remembered trigger
+    autoStopTriggerAtMs = 0L;
+    try{ com.fadcam.SharedPreferencesManager.getInstance(this).putLong("auto_stop_trigger_at_ms", 0L); }catch(Exception ignored){}
     }
     
     private void updateNotification() {
@@ -277,6 +345,16 @@ public class PlaybackService extends Service {
             timeInfo = posStr + " / " + durStr;
         }
 
+        // If we have an auto-stop scheduled, compute remaining time and append to subtext
+        String remainingInfo = null;
+        try{
+            long now = System.currentTimeMillis();
+            if(autoStopTriggerAtMs > now){
+                long rem = autoStopTriggerAtMs - now;
+                remainingInfo = formatTime(rem);
+            }
+        }catch(Exception ignored){}
+
         // Create PendingIntents for media control actions
         int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);
         
@@ -301,7 +379,7 @@ public class PlaybackService extends Service {
                 .setSmallIcon(R.drawable.ic_stat_playback)
                 .setContentTitle(videoTitle != null && !videoTitle.isEmpty() ? videoTitle : getString(R.string.app_name))
                 .setContentText(playing ? getString(R.string.universal_playing) : getString(R.string.universal_paused))
-                .setSubText(timeInfo) // Show time information as subtext
+                .setSubText((timeInfo != null && !timeInfo.isEmpty()) ? (timeInfo + (remainingInfo!=null? " • "+remainingInfo+" left":"")) : (remainingInfo!=null? remainingInfo+" left":"")) // Show time info and optional remaining auto-stop countdown
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setOngoing(playing)
                 .setOnlyAlertOnce(true) // Prevent sounds on updates
