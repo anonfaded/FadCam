@@ -11,7 +11,7 @@
                 <path
                     android:name="play_to_pause_path"
                     android:fillColor="@android:color/white"
-                    android:pathData="M8,5v14l11,-7z" />
+                    android:pathData="M8,5L8,19L11,19L11,5L8,5ZM13,5L13,19L16,19L16,5L13,5Z" />
             </group>
         </vector>
     </aapt:attr>
@@ -19,10 +19,10 @@
     <target android:name="play_to_pause_path">
         <aapt:attr name="android:animation">
             <objectAnimator
-                android:duration="300"
+                android:duration="200"
                 android:propertyName="pathData"
-                android:valueFrom="M8,5v14l11,-7z"
-                android:valueTo="M6,4h4v16H6V4zM14,4h4v16h-4V4z"
+                android:valueFrom="M8,5L19,12L8,19L8,5Z"
+                android:valueTo="M8,5L8,19L11,19L11,5L8,5ZM13,5L13,19L16,19L16,5L13,5Z"
                 android:valueType="pathType"
                 android:interpolator="@android:interpolator/fast_out_slow_in" />
         </aapt:attr>

@@ -50,6 +50,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private ImageButton settingsButton; // For playback speed
     private TextView quickSpeedOverlay;
     private SharedPreferencesManager spm;
+    private com.fadcam.ui.custom.AudioWaveformView audioWaveformView;
+    private android.net.Uri currentVideoUri;
     // Periodic resume-save handler
     private final android.os.Handler resumeSaveHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable resumeSaveRunnable = new Runnable() {
@@ -117,6 +119,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         // *** FIX: Get the video URI using getData() ***
         Uri videoUri = getIntent().getData();
+        this.currentVideoUri = videoUri; // Store for later use
 
         if (videoUri != null) {
             Log.i(TAG, "Received video URI: " + videoUri.toString());
@@ -1118,6 +1121,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // Persist current playback position prior to destruction
         saveCurrentPlaybackPosition();
+        
+        // Clean up waveform analysis
+        if (audioWaveformView != null) {
+            audioWaveformView.cleanup();
+            audioWaveformView = null;
+        }
+        
         super.onDestroy();
         // *** Release the player ***
     // Do not release the shared player here; service may be using it
@@ -1157,87 +1167,51 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // -------------- Fix Start for method(setupAnimatedControls)-----------
     private void setupAnimatedControls() {
         try {
-            // Find the animated play/pause button
-            android.widget.ImageButton playPauseBtn = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play_pause);
+            // Set up periodic waveform updates during playback
+            setupWaveformUpdates();
             
-            if (playPauseBtn != null && player != null) {
-                // Set up player state listener for animated transitions
+            // Set up player state listener for waveform updates only
+            if (player != null) {
                 player.addListener(new com.google.android.exoplayer2.Player.Listener() {
                     @Override
-                    public void onPlaybackStateChanged(int state) {
-                        if (player != null) {
-                            updatePlayPauseAnimation(playPauseBtn, player.isPlaying());
-                        }
-                    }
-                    
-                    @Override
                     public void onIsPlayingChanged(boolean isPlaying) {
-                        updatePlayPauseAnimation(playPauseBtn, isPlaying);
                         updateWaveformProgress();
                     }
                 });
+            }
+            
+            // Set initial waveform visibility based on user preference
+            com.fadcam.ui.custom.AudioWaveformView waveformView = playerView.findViewById(R.id.audio_waveform);
+            if (waveformView != null) {
+                boolean enabled = spm != null ? spm.isAudioWaveformEnabled() : true;
+                waveformView.setVisibility(enabled ? View.VISIBLE : View.GONE);
                 
-                // Set up periodic waveform updates during playback
-                setupWaveformUpdates();
-                
-                // Set initial icon state
-                updatePlayPauseAnimation(playPauseBtn, player.isPlaying());
-                
-                // Set initial waveform visibility based on user preference
-                com.fadcam.ui.custom.AudioWaveformView waveformView = playerView.findViewById(R.id.audio_waveform);
-                if (waveformView != null) {
-                    boolean enabled = spm != null ? spm.isAudioWaveformEnabled() : true;
-                    waveformView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+                // Start real audio analysis if we have a video URI
+                android.net.Uri currentUri = getCurrentVideoUri();
+                if (currentUri != null) {
+                    Log.d(TAG, "Starting real audio analysis for: " + currentUri);
+                    waveformView.analyzeAudioFromVideo(currentUri);
                 }
             }
+            
+            // Store waveform view reference for later use
+            audioWaveformView = waveformView;
+            
         } catch (Exception e) {
-            Log.w(TAG, "Error setting up animated controls", e);
+            Log.w(TAG, "Error setting up controls", e);
         }
     }
     
-    private void updatePlayPauseAnimation(android.widget.ImageButton button, boolean isPlaying) {
-        try {
-            if (button == null) return;
-            
-            if (isPlaying) {
-                // Switch to pause icon with animation
-                android.graphics.drawable.Drawable drawable = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.play_to_pause_anim);
-                if (drawable instanceof android.graphics.drawable.AnimatedVectorDrawable) {
-                    button.setImageDrawable(drawable);
-                    ((android.graphics.drawable.AnimatedVectorDrawable) drawable).start();
-                    Log.d(TAG, "Started play to pause animation");
-                } else {
-                    // Fallback to ExoPlayer's static pause icon
-                    button.setImageDrawable(androidx.core.content.ContextCompat.getDrawable(this, com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_pause));
-                    Log.d(TAG, "Used static pause icon fallback");
-                }
-            } else {
-                // Switch to play icon with animation  
-                android.graphics.drawable.Drawable drawable = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.pause_to_play_anim);
-                if (drawable instanceof android.graphics.drawable.AnimatedVectorDrawable) {
-                    button.setImageDrawable(drawable);
-                    ((android.graphics.drawable.AnimatedVectorDrawable) drawable).start();
-                    Log.d(TAG, "Started pause to play animation");
-                } else {
-                    // Fallback to ExoPlayer's static play icon
-                    button.setImageDrawable(androidx.core.content.ContextCompat.getDrawable(this, com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_play));
-                    Log.d(TAG, "Used static play icon fallback");
-                }
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Error updating play/pause animation", e);
-            // Final fallback to ensure button still works
-            try {
-                if (isPlaying) {
-                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_pause);
-                } else {
-                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_play);
-                }
-            } catch (Exception ignored) {}
-        }
-    }
+
     
     private android.os.Handler waveformHandler;
+    
+    /**
+     * Get the current video URI for audio analysis
+     */
+    private android.net.Uri getCurrentVideoUri() {
+        return currentVideoUri;
+    }
     private Runnable waveformUpdateRunnable;
     
     private void setupWaveformUpdates() {
