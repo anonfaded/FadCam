@@ -395,6 +395,31 @@
     <!-- Background playback setting -->
     <string name="background_playback_title">Play in background</string>
     <string name="background_playback_helper_picker">When enabled, audio continues playing even if you leave the app or turn the screen off.</string>
+    <!-- Background playback auto-stop timer -->
+    <string name="background_playback_timer_title">Background playback timer</string>
+    <string name="background_playback_timer_title_short">Playback timer</string>
+    <string name="background_playback_timer_helper">Choose how long playback should continue in background before automatically stopping. Select Off to disable.</string>
+    <string name="timer_off">Off</string>
+    <string name="timer_off_short">Off</string>
+    <string name="timer_30_seconds">30 seconds</string>
+    <string name="timer_1_minute">1 minute</string>
+    <string name="timer_5_minutes">5 minutes</string>
+    <string name="timer_15_minutes">15 minutes</string>
+    <string name="timer_30_minutes">30 minutes</string>
+    <string name="timer_1_hour">1 hour</string>
+    <string name="timer_seconds_short">%1$ds</string>
+    <string name="timer_minutes_short">%1$dm</string>
+    <string name="timer_hours_short">%1$dh</string>
+    <string name="timer_custom_label">Custom...</string>
+    <string name="timer_custom_title">Custom background timer</string>
+    <string name="number_input_default_helper">Enter a number and press OK to save.</string>
+    <string name="timer_custom_low_hint">Very short timers may stop playback sooner than expected.</string>
+    <string name="timer_custom_high_hint">Very long timers may remain active for a long time. Max 24 hours.</string>
+    <string name="timer_custom_description">Enter number of minutes. Examples: 5 = 5 minutes (300 seconds). The timer will stop playback after this many minutes.</string>
+    <string name="timer_custom_placeholder">e.g. 5 (minutes)</string>
+    <string name="timer_custom_helper_static">Enter minutes (whole number). Use the calculator below to see hours/minutes.</string>
+    <string name="timer_custom_calc_format">Will stop playback after %1$s (%2$.2f hours)</string>
+    <string name="timer_disabled_hint">Background playback is disabled — enable \"Play in background\" to use the timer.</string>
     <!-- Shortcuts customization UI -->
     <string name="shortcuts_customize_title">Customize</string>
     <string name="shortcuts_customize_subtitle">Name and icon</string>
@@ -830,6 +855,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_title_downloading">Downloading</string>
     <string name="notification_title_syncing">Syncing Data</string>
     <string name="notification_title_custom_default">Notification</string>
+    <string name="universal_play">Play</string>
+    <string name="universal_pause">Pause</string>
+    <string name="universal_playing">Playing</string>
+    <string name="universal_paused">Paused</string>
+    <string name="universal_stop">Stop</string>
     <string name="notification_settings_saved">Notification settings saved</string>
     <!-- Additional Notification Customization Strings -->
     <!-- Adding notification appearance strings -->
