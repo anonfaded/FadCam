@@ -656,7 +656,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Update the setThumbnail method to consider scrolling state
     private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
         if (holder.imageViewThumbnail == null || context == null) return;
-        
+        // Honor user preference: hide thumbnails if requested
+        try {
+            if (sharedPreferencesManager != null && sharedPreferencesManager.isHideThumbnailsEnabled()) {
+                // Hide the thumbnail view and show a lightweight placeholder background
+                holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+                holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                return;
+            }
+        } catch (Exception ignored) {}
+
         // Lower resolution during scrolling for performance
         int thumbnailSize = isScrolling ? 100 : THUMBNAIL_SIZE;
         
@@ -674,11 +683,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         
         // Implement loading with scroll-aware options
-        Glide.with(context)
-                .load(videoUri)
-            .apply(options)
-            .thumbnail(0.1f) // Use a small thumbnail first for faster initial loading
-                .into(holder.imageViewThumbnail);
+    Glide.with(context)
+        .load(videoUri)
+        .apply(options)
+        .thumbnail(0.1f) // Use a small thumbnail first for faster initial loading
+        .into(holder.imageViewThumbnail);
     }
 
     // Override onViewRecycled to cancel thumbnail loading for recycled views

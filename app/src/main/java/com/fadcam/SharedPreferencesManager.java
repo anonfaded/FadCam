@@ -542,6 +542,19 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean("pref_audio_waveform_enabled", enabled).apply();
     }
 
+    // ----- Hide thumbnails in Records preference -----
+    private static final String PREF_KEY_HIDE_THUMBNAILS = "pref_hide_thumbnails";
+
+    /** Returns whether thumbnails should be hidden in Records list. Default: false. */
+    public boolean isHideThumbnailsEnabled() {
+        return sharedPreferences.getBoolean(PREF_KEY_HIDE_THUMBNAILS, false);
+    }
+
+    /** Sets whether thumbnails should be hidden in Records list. */
+    public void setHideThumbnailsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_KEY_HIDE_THUMBNAILS, enabled).apply();
+    }
+
     public boolean isLocalisationEnabled() {
         return sharedPreferences.getBoolean(Constants.PREF_LOCATION_DATA, false);
     }

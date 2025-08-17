@@ -1702,6 +1702,25 @@ public class RecordsFragment extends BaseFragment implements
                 case "toggle_view_mode":
                     toggleViewMode();
                     break;
+                case "set_view_mode":
+                    String vm = bundle.getString("view_mode");
+                    if (vm != null) {
+                        boolean toGrid = "grid".equals(vm);
+                        if (isGridView != toGrid) {
+                            // reuse existing toggle logic
+                            toggleViewMode();
+                        }
+                    }
+                    break;
+                case "hide_thumbnails_toggled":
+                    boolean hide = false;
+                    if (bundle.containsKey("hide_thumbnails")) hide = bundle.getBoolean("hide_thumbnails", false);
+                    Log.d(TAG, "Records sidebar: hide_thumbnails_toggled = " + hide);
+                    if (recordsAdapter != null) {
+                        // Adapter will read prefs but force refresh
+                        recordsAdapter.notifyDataSetChanged();
+                    }
+                    break;
             }
         });
     sidebar.setResultKey(resultKey);

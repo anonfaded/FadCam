@@ -14,6 +14,7 @@ import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import androidx.fragment.app.DialogFragment;
 import com.google.android.material.sidesheet.SideSheetDialog;
+import com.fadcam.SharedPreferencesManager;
 
 import java.util.ArrayList;
 
@@ -103,20 +104,67 @@ public class RecordsSidebarFragment extends DialogFragment {
             });
         }
 
-        // View mode row
+        // View mode row - open a picker instead of direct toggle for consistency with other rows
         View viewModeRow = view.findViewById(R.id.row_view_mode);
         TextView viewModeSub = view.findViewById(R.id.row_view_mode_subtitle);
         android.widget.ImageView viewModeIcon = view.findViewById(R.id.row_view_mode_icon);
         if(viewModeSub!=null){ viewModeSub.setText(isGridViewInitial ? R.string.view_mode_grid : R.string.view_mode_list); }
         if(viewModeIcon!=null){ viewModeIcon.setImageResource(isGridViewInitial ? R.drawable.ic_grid : R.drawable.ic_list); }
         if(viewModeRow!=null){
-            viewModeRow.setOnClickListener(v -> {
+            viewModeRow.setOnClickListener(v -> openViewModePicker());
+        }
+
+        // Hide Thumbnails row and switch - update state label and keep toggle behavior
+        View hideRow = view.findViewById(R.id.row_hide_thumbnails);
+        androidx.appcompat.widget.SwitchCompat hideSwitch = view.findViewById(R.id.row_hide_thumbnails_switch);
+        TextView hideState = view.findViewById(R.id.row_hide_thumbnails_state);
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        boolean currentHide = prefs.isHideThumbnailsEnabled();
+        if (hideSwitch != null) {
+            hideSwitch.setChecked(currentHide);
+            if(hideState!=null){ hideState.setText(currentHide ? getString(R.string.enabled) : getString(R.string.disabled)); }
+            hideSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.setHideThumbnailsEnabled(isChecked);
+                if(hideState!=null){ hideState.setText(isChecked ? getString(R.string.enabled) : getString(R.string.disabled)); }
+                // Notify parent fragment to update UI
                 Bundle b = new Bundle();
-                b.putString("action", "toggle_view_mode");
+                b.putString("action", "hide_thumbnails_toggled");
+                b.putBoolean("hide_thumbnails", isChecked);
                 getParentFragmentManager().setFragmentResult(resultKey, b);
-                dismiss();
             });
         }
+        if (hideRow != null) {
+            hideRow.setOnClickListener(v -> {
+                if (hideSwitch != null) {
+                    boolean next = !hideSwitch.isChecked();
+                    hideSwitch.setChecked(next);
+                }
+            });
+        }
+
+    }
+
+    private void openViewModePicker(){
+        final String pickerKey = "records_view_mode_picker";
+        ArrayList<OptionItem> options = new ArrayList<>();
+        options.add(OptionItem.withLigature("grid", getString(R.string.view_mode_grid), "grid_view"));
+        options.add(OptionItem.withLigature("list", getString(R.string.view_mode_list), "view_list"));
+
+        getParentFragmentManager().setFragmentResultListener(pickerKey, this, (k, bundle) -> {
+            String selId = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if(selId!=null){
+                Bundle out = new Bundle();
+                out.putString("action", "set_view_mode");
+                out.putString("view_mode", selId);
+                getParentFragmentManager().setFragmentResult(resultKey, out);
+                dismiss();
+            }
+        });
+
+        PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
+                getString(R.string.records_view_mode_title), options, isGridViewInitial ? "grid" : "list", pickerKey, getString(R.string.records_sort_helper)
+        );
+        picker.show(getParentFragmentManager(), "RecordsViewModePicker");
     }
 
     private void openSortPicker(){
