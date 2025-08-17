@@ -90,3 +90,39 @@ Use this spec when adding new settings or bottom-sheet pickers to keep visuals c
 - Text and resources
   - Never hardcode UI strings in layouts; always use `@string/...` entries.
   - Keep spacing/margins centralized via shared styles; avoid per-row overrides unless absolutely necessary.
+
+## Input bottom sheet (unified input / typed confirmation)
+
+We use a single, reusable bottom-sheet component for small single-line inputs (rename, typed confirmations, etc.). The fragment is `InputActionBottomSheetFragment` and supports three modes: preview, reset (typed confirmation) and input. Use the input mode for all single-line text inputs across the app for consistent UX.
+
+- Purpose: single-line input UI with an action row. Replaces ad-hoc dialogs for rename and similar flows.
+- Factory: call `InputActionBottomSheetFragment.newInput(title, initialValue, hint, actionTitle, actionSubtitle, actionIconRes)` to create the sheet.
+- Callback: register a `Callbacks` instance via `setCallbacks(...)` and implement `onInputConfirmed(String input)` to receive the trimmed text when the user taps the action row.
+- Arguments / keys (for reference): `ARG_INPUT_VALUE`, `ARG_INPUT_HINT`, plus the existing `ARG_ACTION_TITLE`, `ARG_ACTION_SUBTITLE`, `ARG_ACTION_ICON` are honored for customizing the action row.
+
+Usage example (rename):
+```java
+InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newInput(
+  getString(R.string.rename_video_title),
+  baseName,
+  getString(R.string.rename_video_hint),
+  getString(R.string.rename_video_title),
+  getString(R.string.rename_video_hint),
+  R.drawable.ic_edit_cut
+);
+sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks(){
+  @Override public void onInputConfirmed(String input){
+    // sanitize, run rename on background thread, update UI
+  }
+});
+sheet.show(fragmentManager, "rename_123");
+```
+
+UX & implementation notes:
+- The fragment provides the input field + a single action row. The action row click sends the trimmed text to `onInputConfirmed`.
+- Dismissal: decide whether to dismiss immediately on tap (recommended for responsive UX) or dismiss after the background operation succeeds (useful if you want to show inline errors and keep the sheet open). The current app code dismisses immediately for rename and runs the rename async.
+- Validation & sanitization: the fragment doesn't enforce custom validation rules beyond trimming — callers should validate/sanitize input (for example, replacing illegal filesystem characters) and run long-running ops off the UI thread.
+- Accessibility: set appropriate content descriptions or accessible labels for custom action icons and ensure the input field gets focus on show if desired (you can request focus and call `InputMethodManager.showSoftInput(...)`).
+- Reuse: `InputActionBottomSheetFragment` still supports the `newReset(...)` typed-confirmation and `newPreview(...)` modes. Prefer the unified component so behavior and visuals remain consistent.
+
+If you change the fragment's args or callbacks, update this doc and any call-sites (search for `newInput(` and `newReset(` to find usages).
