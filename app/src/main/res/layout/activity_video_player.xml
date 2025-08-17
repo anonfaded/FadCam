@@ -13,14 +13,7 @@
         app:show_timeout="3000"
         app:show_buffering="when_playing"
         app:resize_mode="fit"
-
-        app:played_color="?attr/colorButton"
-        app:unplayed_color="?attr/colorDialog"
-        app:buffered_color="?attr/colorHeading"
-        app:scrubber_color="?attr/colorButton"
-        app:scrubber_enabled_size="14dp"
-        app:scrubber_dragged_size="18dp"
-        app:bar_height="5dp"
+        app:bar_height="6dp"
         />
 
     <ImageButton

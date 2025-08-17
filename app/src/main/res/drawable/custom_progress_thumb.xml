@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- Modern circular thumb with elevation effect -->
+    <solid android:color="?attr/colorButton"/>
+    <size 
+        android:width="16dp"
+        android:height="16dp"/>
+</shape>

@@ -22,6 +22,7 @@
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
     android:background="@drawable/player_control_background_rounded"
+    android:clipToOutline="true"
         android:layoutDirection="ltr">
 
         <LinearLayout

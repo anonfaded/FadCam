@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Background track (unplayed area) -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="3dp"/>
+            <solid android:color="#40FFFFFF"/> <!-- Semi-transparent white -->
+        </shape>
+    </item>
+    
+    <!-- Secondary progress (buffered area) -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="3dp"/>
+                <solid android:color="#60FFFFFF"/> <!-- Slightly more opaque white -->
+            </shape>
+        </clip>
+    </item>
+    
+    <!-- Primary progress (played area) -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="3dp"/>
+                <solid android:color="?attr/colorButton"/> <!-- Theme accent color -->
+            </shape>
+        </clip>
+    </item>
+    
+</layer-list>

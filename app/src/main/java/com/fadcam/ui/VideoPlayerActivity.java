@@ -145,8 +145,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         if (timeBar instanceof com.google.android.exoplayer2.ui.DefaultTimeBar) {
             com.google.android.exoplayer2.ui.DefaultTimeBar bar = (com.google.android.exoplayer2.ui.DefaultTimeBar) timeBar;
             int played = resolveThemeColor(R.attr.colorButton);
-            int unplayed = resolveThemeColor(R.attr.colorDialog);
-            int buffered = resolveThemeColor(R.attr.colorHeading);
+            int unplayed = android.graphics.Color.parseColor("#40FFFFFF"); // Semi-transparent white for unplayed
+            int buffered = android.graphics.Color.parseColor("#60FFFFFF"); // More opaque white for buffered
             int scrubber = resolveThemeColor(R.attr.colorButton);
             bar.setPlayedColor(played);
             bar.setUnplayedColor(unplayed);
