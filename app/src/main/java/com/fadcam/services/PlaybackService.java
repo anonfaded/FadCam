@@ -51,6 +51,7 @@ public class PlaybackService extends Service {
     private boolean isForeground = false;
     private Handler progressUpdateHandler;
     private final Runnable progressUpdateRunnable = this::updateNotification;
+    private String videoTitle = ""; // Store the video filename/title
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -110,13 +111,76 @@ public class PlaybackService extends Service {
                     .setUsage(com.google.android.exoplayer2.C.USAGE_MEDIA)
                     .build(), true);
             player.setPlayWhenReady(playWhenReady);
-            if (uri != null) holder.setMediaIfNeeded(uri);
+            if (uri != null) {
+                holder.setMediaIfNeeded(uri);
+                // Extract and store the filename from the URI
+                extractVideoTitle(uri);
+            }
             player.setPlaybackParameters(new PlaybackParameters(speed));
             try { player.setVolume(muted ? 0f : 1f); } catch (Exception ignored) {}
             if (positionMs > 0) try { player.seekTo(positionMs); } catch (Exception ignored) {}
         } catch (Exception e) {
             android.util.Log.e("PlaybackService", "initPlayer failed", e);
         }
+    }
+    
+    /**
+     * Extracts a user-friendly title from the video URI
+     */
+    private void extractVideoTitle(Uri uri) {
+        if (uri == null) {
+            videoTitle = getString(R.string.app_name);
+            return;
+        }
+        
+        try {
+            // Get just the filename without any path but WITH extension
+            String filename = null;
+            
+            // First try to use the last path segment as that's usually the filename
+            String lastSegment = uri.getLastPathSegment();
+            if (lastSegment != null && !lastSegment.isEmpty()) {
+                // Check if the last segment contains path separators (common in content:// URIs)
+                if (lastSegment.contains("/")) {
+                    // Extract only the part after the last path separator
+                    filename = lastSegment.substring(lastSegment.lastIndexOf('/') + 1);
+                } else {
+                    filename = lastSegment;
+                }
+                
+                // Keep the extension - don't remove it
+                
+                // Keep filename exactly as it is, including underscores and hyphens
+                
+                if (!filename.isEmpty()) {
+                    videoTitle = filename;
+                    return;
+                }
+            }
+            
+            // If that didn't work, try to get metadata from the player
+            if (player != null && player.getCurrentMediaItem() != null && 
+                player.getCurrentMediaItem().mediaMetadata != null && 
+                player.getCurrentMediaItem().mediaMetadata.title != null) {
+                
+                String mediaTitle = player.getCurrentMediaItem().mediaMetadata.title.toString();
+                
+                // If the media title is actually a path, extract just the filename
+                if (mediaTitle.contains("/")) {
+                    videoTitle = mediaTitle.substring(mediaTitle.lastIndexOf('/') + 1);
+                    // Keep the extension - don't remove it
+                } else {
+                    videoTitle = mediaTitle;
+                }
+                // Keep filename exactly as it is, don't replace any characters
+                return;
+            }
+        } catch (Exception e) {
+            android.util.Log.e("PlaybackService", "Error extracting video title", e);
+        }
+        
+        // Fallback to app name if we couldn't get anything useful
+        videoTitle = getString(R.string.app_name);
     }
 
     private void handlePlayPause() {
@@ -235,7 +299,7 @@ public class PlaybackService extends Service {
         // Create media style notification
         NotificationCompat.Builder nb = new NotificationCompat.Builder(ctx, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_playback)
-                .setContentTitle(getString(R.string.app_name))
+                .setContentTitle(videoTitle != null && !videoTitle.isEmpty() ? videoTitle : getString(R.string.app_name))
                 .setContentText(playing ? getString(R.string.universal_playing) : getString(R.string.universal_paused))
                 .setSubText(timeInfo) // Show time information as subtext
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
