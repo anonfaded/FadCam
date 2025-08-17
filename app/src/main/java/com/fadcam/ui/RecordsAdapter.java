@@ -113,9 +113,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     // Simple file-based cache for durations (persist across sessions)
     private final File durationCacheFile;
+    // Debounced persist task (posts to executor)
+    private final Runnable persistDurationTask;
     // Broadcast receiver to listen for playback position updates
     private final androidx.localbroadcastmanager.content.LocalBroadcastManager localBroadcastManager;
     private final android.content.BroadcastReceiver playbackPositionReceiver;
+    private android.content.Context receiverRegisteredContext = null;
 
     private static final String TAG = "RecordsAdapter";
     private final ExecutorService executorService; // Add ExecutorService
@@ -169,8 +172,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Duration cache file inside app cache dir
         File appCache = context.getCacheDir();
         this.durationCacheFile = new File(appCache, "duration_cache.json");
-    // load persisted duration cache
+        // load persisted duration cache
     loadDurationCacheFromDisk();
+
+        // Prepare debounced persist task
+        this.persistDurationTask = () -> {
+            try { this.executorService.execute(this::persistDurationCacheToDisk); } catch (Exception ignored) {}
+        };
 
         // Setup LocalBroadcastReceiver for immediate progress updates
         this.localBroadcastManager = androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context);
@@ -178,18 +186,30 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             @Override
             public void onReceive(android.content.Context ctx, android.content.Intent intent) {
                 if (intent == null) return;
-                String uriStr = intent.getStringExtra("uri");
-                long pos = intent.getLongExtra("position_ms", -1);
+                String uriStr = null;
+                long pos = -1;
+                // support both old and new extra names
+                if (intent.hasExtra("extra_uri")) uriStr = intent.getStringExtra("extra_uri");
+                if (intent.hasExtra("extra_position_ms")) pos = intent.getLongExtra("extra_position_ms", -1);
+                if (uriStr == null) {
+                    uriStr = intent.getStringExtra("uri");
+                }
+                if (pos < 0) {
+                    pos = intent.getLongExtra("position_ms", -1);
+                }
                 if (uriStr == null || pos < 0) return;
                 // Update savedPositionCache and notify specific item
                 synchronized (savedPositionCache) { savedPositionCache.put(uriStr, pos); }
-                int posIndex = findPositionByUri(Uri.parse(uriStr));
+                int posIndex = findPositionByStringUri(uriStr);
                 if (posIndex != -1) {
                     mainHandler.post(() -> notifyItemChanged(posIndex));
                 }
             }
         };
-        try { this.localBroadcastManager.registerReceiver(this.playbackPositionReceiver, new android.content.IntentFilter("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED")); } catch (Exception ignored) {}
+        try {
+            receiverRegisteredContext = context.getApplicationContext();
+            this.localBroadcastManager.registerReceiver(this.playbackPositionReceiver, new android.content.IntentFilter("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED"));
+        } catch (Exception ignored) {}
     }
 
     // *** NEW: Helper method to check if a VideoItem is in the cache directory ***
@@ -390,7 +410,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                             synchronized (durationCache) {
                                 if (durationMs > 0) {
                                     durationCache.put(key, durationMs);
-                                    persistDurationCacheToDisk();
+                                    // schedule persist (debounced)
+                                    mainHandler.removeCallbacks(persistDurationTask);
+                                    mainHandler.postDelayed(persistDurationTask, 2000);
                                 }
                             }
                             synchronized (savedPositionCache) {
@@ -750,6 +772,31 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         Log.v(TAG,"URI not found in adapter list: " + uri); // Use v for verbose logs
         return -1; // Not found
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull androidx.recyclerview.widget.RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        try {
+            if (receiverRegisteredContext != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(receiverRegisteredContext).unregisterReceiver(playbackPositionReceiver);
+            } else {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(recyclerView.getContext()).unregisterReceiver(playbackPositionReceiver);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private int findPositionByStringUri(String uriStr) {
+        if (uriStr == null || records == null) return -1;
+        for (int i = 0; i < records.size(); i++) {
+            VideoItem it = records.get(i);
+            if (it == null) continue;
+            if (uriStr.equals(it.uri == null ? null : it.uri.toString())) return i;
+            // tolerate filename fallback keys (may be stored as plain filenames)
+            String fn = getFileName(it.uri);
+            if (fn != null && fn.equals(uriStr)) return i;
+        }
+        return -1;
     }
 
 

@@ -36,6 +36,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private ExoPlayer player;
     private StyledPlayerView playerView;
+    private android.view.GestureDetector gestureDetector;
+    private static final String ACTION_PLAYBACK_POSITION_UPDATED = "com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED";
+    private static final String EXTRA_URI = "extra_uri";
+    private static final String EXTRA_POSITION_MS = "extra_position_ms";
     private ImageButton backButton;
     private ImageButton settingsButton; // For playback speed
     private TextView quickSpeedOverlay;
@@ -81,6 +85,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private final CharSequence[] speedOptions = {"0.5x", "1x (Normal)", "1.5x", "2x", "3x", "4x", "6x", "8x", "10x"};
     private final float[] speedValues = {0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 10.0f};
     private int currentSpeedIndex = 1; // Index for 1.0x speed
+    // Guard to keep single-tap from being treated as part of double-tap or re-triggering control toggles
+    private long lastSingleTapTime = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,6 +155,49 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //            bar.setTouchTargetHeight((int) (getResources().getDisplayMetrics().density * 32));
         }
         // ----- Fix End: Programmatically set seekbar colors for dynamic theming -----
+        // Setup gesture detector for double-tap seek
+        gestureDetector = new android.view.GestureDetector(this, new android.view.GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapConfirmed(android.view.MotionEvent e) {
+                try {
+                    // Toggle controller visibility on single tap using a safe visibility check
+                    if (playerView != null) {
+                        boolean visible = isControllerVisibleSafe();
+                        if (visible) playerView.hideController(); else playerView.showController();
+                        // record time so ACTION_UP handling can avoid double-processing
+                        lastSingleTapTime = System.currentTimeMillis();
+                    }
+                    return true;
+                } catch (Exception ex) { Log.w(TAG, "singleTap error", ex); return true; }
+            }
+
+            @Override
+            public boolean onDoubleTap(android.view.MotionEvent e) {
+                try {
+                    float x = e.getX();
+                    int w = playerView.getWidth();
+                    if (w <= 0) return true;
+                    boolean forward = x > (w / 2f);
+                    int seekMs = 10_000; // 10 seconds
+                    long current = player != null ? player.getCurrentPosition() : 0L;
+                    long target = forward ? current + seekMs : current - seekMs;
+                    if (target < 0) target = 0;
+                    if (player != null) player.seekTo(target);
+                    // ensure controller is hidden for double-tap seek UX (no toggling)
+                    try { playerView.hideController(); } catch (Exception ignored) {}
+                    // show overlay and save position immediately
+                    showDoubleTapOverlay(forward);
+                    // Save & broadcast immediately
+                    saveCurrentPlaybackPosition();
+                    // avoid single-tap handling for a short grace period
+                    lastSingleTapTime = System.currentTimeMillis();
+                    return true;
+                } catch (Exception ex) { Log.w(TAG, "doubleTap error", ex); return true; }
+            }
+        });
+
+    // Do not set a simple touch listener here; setupPressAndHoldFor2x() will install a combined listener
+    // that handles single-tap, double-tap and press-and-hold behaviors together.
     }
     // Press-and-hold behavior: while pressed, ramp to quick speed; on release, revert to previous speed
     private void setupPressAndHoldFor2x() {
@@ -157,50 +206,87 @@ public class VideoPlayerActivity extends AppCompatActivity {
         final int LONG_PRESS_MS = 220; // threshold for long-press
         final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
         final boolean[] isLongPress = {false};
-        final Runnable longPressRunnable = () -> {
-            isLongPress[0] = true;
-            if (player != null) {
-                float start = player.getPlaybackParameters().speed;
-                float target = spm != null ? spm.getQuickSpeed() : 2.0f;
-                animatePlaybackSpeed(start, target, 200);
-                showQuickOverlay(true);
-                playerView.hideController();
-            }
-        };
 
+        // Combined touch listener: single tap toggles controller, double-tap seeks (no controller show), long-press quick-speed
+        final int touchSlop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
+        final float[] downXY = new float[2];
+        final boolean[] pendingTap = new boolean[]{false};
         playerView.setOnTouchListener((v, ev) -> {
+            boolean gdHandled = false;
+            try {
+                // Feed events to gestureDetector for single/double tap detection
+                gdHandled = gestureDetector.onTouchEvent(ev);
+            } catch (Exception ignored) {}
+
             switch (ev.getActionMasked()) {
-                case android.view.MotionEvent.ACTION_DOWN:
+                case android.view.MotionEvent.ACTION_DOWN: {
                     isLongPress[0] = false;
-                    handler.postDelayed(longPressRunnable, LONG_PRESS_MS);
-                    break;
-                case android.view.MotionEvent.ACTION_POINTER_DOWN:
-                    // treat multi-touch as long-press
-                    handler.post(longPressRunnable);
-                    break;
+                    pendingTap[0] = true;
+                    downXY[0] = ev.getX(); downXY[1] = ev.getY();
+                    handler.postDelayed(() -> {
+                        // On long-press
+                        isLongPress[0] = true;
+                        if (player != null) {
+                            float start = player.getPlaybackParameters().speed;
+                            float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+                            animatePlaybackSpeed(start, target, 200);
+                            showQuickOverlay(true);
+                            try { playerView.hideController(); } catch (Exception ignored) {}
+                        }
+                    }, LONG_PRESS_MS);
+                } break;
+
+                case android.view.MotionEvent.ACTION_POINTER_DOWN: {
+                    // treat multi-touch as long-press trigger
+                    handler.post(() -> {
+                        isLongPress[0] = true;
+                        if (player != null) {
+                            float start = player.getPlaybackParameters().speed;
+                            float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+                            animatePlaybackSpeed(start, target, 200);
+                            showQuickOverlay(true);
+                            try { playerView.hideController(); } catch (Exception ignored) {}
+                        }
+                    });
+                } break;
+
+                case android.view.MotionEvent.ACTION_MOVE: {
+                    if (pendingTap[0]) {
+                        float dx = Math.abs(ev.getX() - downXY[0]);
+                        float dy = Math.abs(ev.getY() - downXY[1]);
+                        if (dx > touchSlop || dy > touchSlop) pendingTap[0] = false;
+                    }
+                } break;
+
                 case android.view.MotionEvent.ACTION_UP:
                 case android.view.MotionEvent.ACTION_POINTER_UP:
-                case android.view.MotionEvent.ACTION_CANCEL:
-                    handler.removeCallbacks(longPressRunnable);
+                case android.view.MotionEvent.ACTION_CANCEL: {
+                    handler.removeCallbacksAndMessages(null);
                     if (isLongPress[0]) {
-                        // Was a long-press; revert without showing controller
                         if (player != null) {
                             float revertSpeed = speedValues[currentSpeedIndex];
                             animatePlaybackSpeed(player.getPlaybackParameters().speed, revertSpeed, 200);
                         }
                         showQuickOverlay(false);
                         isLongPress[0] = false;
-                        // Consume event to avoid controller showing due to tap release
-                        return true;
+                        return true; // consume
                     }
-                    // Not a long-press; allow normal behavior (taps show controller)
-                    break;
+                    if (pendingTap[0]) {
+                        pendingTap[0] = false;
+                        return true; // consume to prevent PlayerView toggles
+                    }
+                    long now = System.currentTimeMillis();
+                    if (now - lastSingleTapTime < 300) return true;
+                } break;
             }
+
+            // If the gesture detector already handled the event, consume it so PlayerView doesn't also toggle the controller
+            if (gdHandled) return true;
             return false;
         });
     }
 
-    // Show a picker to set quick-speed via long-press on settings button
+    // Recreate the quick speed settings hook: long-pressing the settings button opens quick speed picker
     private void setupQuickSpeedSettings() {
         if (settingsButton != null) {
             settingsButton.setOnLongClickListener(v -> {
@@ -360,17 +446,30 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 SharedPreferencesManager spmLoc = SharedPreferencesManager.getInstance(this);
                 spmLoc.setSavedPlaybackPositionMs(cur.toString(), pos);
                 try { String fn = getFileName(cur); if (fn != null && !fn.isEmpty()) spmLoc.setSavedPlaybackPositionMsByFilename(fn, pos); } catch (Exception ignored) {}
-                // Broadcast an update so UI components (adapters) can refresh immediately
+                // Broadcast update so UI components can refresh immediately
                 try {
-                    android.content.Intent b = new android.content.Intent("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED");
-                    b.putExtra("uri", cur.toString());
-                    b.putExtra("position_ms", pos);
-                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(b);
+                    android.content.Intent i = new android.content.Intent(ACTION_PLAYBACK_POSITION_UPDATED);
+                    i.putExtra(EXTRA_URI, cur.toString());
+                    i.putExtra(EXTRA_POSITION_MS, pos);
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(i);
                 } catch (Exception ignored) {}
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to save playback position", e);
         }
+    }
+
+    // Safe check for controller visibility: query the controller view inside StyledPlayerView
+    private boolean isControllerVisibleSafe() {
+        try {
+            if (playerView == null) return false;
+            View controller = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_controller);
+            if (controller != null) return controller.getVisibility() == View.VISIBLE;
+            // Fallback: try DefaultTimeBar visibility instead
+            View timeBar = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+            if (timeBar != null) return timeBar.getVisibility() == View.VISIBLE;
+        } catch (Exception ignored) {}
+        return false;
     }
 
     private void setupBackButton() {
@@ -640,6 +739,50 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     // Do not start the background service while activity is in foreground; handoff occurs onPause only.
         // -------------- Fix Ended for this method(onResume)-----------
+    }
+
+    // Show a temporary overlay on double-tap side (reuse a simple TextView overlay in layout or create one)
+    private void showDoubleTapOverlay(boolean forward) {
+        try {
+            View root = findViewById(android.R.id.content);
+            if (root == null) return;
+            // Reuse the quickSpeedOverlay style if available, otherwise create a small TextView
+            View overlay = quickSpeedOverlay != null ? quickSpeedOverlay : root.findViewWithTag("double_tap_overlay");
+            if (overlay == null) {
+                android.widget.TextView tv = new android.widget.TextView(this);
+                tv.setTag("double_tap_overlay");
+                // Smaller font than quick overlay
+                tv.setTextSize(18);
+                tv.setTextColor(android.graphics.Color.WHITE);
+                tv.setBackgroundColor(0x66000000);
+                int pad = (int) (8 * getResources().getDisplayMetrics().density);
+                tv.setPadding(pad, pad/2, pad, pad/2);
+                tv.setGravity(android.view.Gravity.CENTER);
+                android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+                lp.gravity = forward ? (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END) : (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.START);
+                final android.widget.TextView tvf = tv;
+                root.post(() -> ((android.widget.FrameLayout) root).addView(tvf, lp));
+                overlay = tv;
+            }
+            final View overlayView = overlay;
+            if (overlayView instanceof android.widget.TextView) {
+                ((android.widget.TextView) overlayView).setText(forward ? "+10s" : "-10s");
+                ((android.widget.TextView) overlayView).setTextSize(18);
+            }
+            // Position: update layout gravity so plus is on right, minus on left
+            try {
+                android.view.ViewParent p = overlayView.getParent();
+                if (p instanceof android.widget.FrameLayout) {
+                    android.widget.FrameLayout.LayoutParams lp = (android.widget.FrameLayout.LayoutParams) overlayView.getLayoutParams();
+                    lp.gravity = forward ? (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END) : (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.START);
+                    overlayView.setLayoutParams(lp);
+                }
+            } catch (Exception ignored) {}
+
+            overlayView.setVisibility(View.VISIBLE);
+            overlayView.setAlpha(0f);
+            overlayView.animate().alpha(1f).setDuration(80).withEndAction(() -> overlayView.postDelayed(() -> overlayView.animate().alpha(0f).setDuration(250).withEndAction(() -> overlayView.setVisibility(View.GONE)), 500)).start();
+        } catch (Exception ignored) {}
     }
 
     @Override
