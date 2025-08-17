@@ -13,6 +13,10 @@
         android:icon="@drawable/unknown_icon0"
         android:title="@string/nav_remote" />
     <item
+        android:id="@+id/navigation_faditor_mini"
+        android:icon="@drawable/unknown_icon0"
+        android:title="@string/nav_faditor_mini" />
+    <item
         android:id="@+id/navigation_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/nav_settings" />

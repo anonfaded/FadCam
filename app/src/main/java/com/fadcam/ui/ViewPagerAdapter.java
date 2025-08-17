@@ -20,6 +20,8 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
             case 2:
                 return new RemoteFragment();
             case 3:
+                return new FaditorMiniFragment();
+            case 4:
                 // Phase 1: Use new SettingsHomeFragment (legacy fragment accessible from inside)
                 return new SettingsHomeFragment();
             default:
@@ -29,6 +31,6 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-    return 4; // About tab removed; accessible via Settings overlay
+    return 5; // Added Faditor Mini tab between Remote and Settings
     }
 }

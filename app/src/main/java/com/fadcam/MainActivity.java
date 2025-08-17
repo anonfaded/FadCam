@@ -272,8 +272,10 @@ public class MainActivity extends AppCompatActivity {
                 viewPager.setCurrentItem(1, true);
             } else if (itemId == R.id.navigation_remote) {
                 viewPager.setCurrentItem(2, true);
-            } else if (itemId == R.id.navigation_settings) {
+            } else if (itemId == R.id.navigation_faditor_mini) {
                 viewPager.setCurrentItem(3, true);
+            } else if (itemId == R.id.navigation_settings) {
+                viewPager.setCurrentItem(4, true);
             }
             return true;
         });
@@ -285,7 +287,8 @@ public class MainActivity extends AppCompatActivity {
                     case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
                     case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
                     case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
-                    case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
+                    case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_faditor_mini); break;
+                    case 4: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
                 }
             }
         });
@@ -338,8 +341,8 @@ public class MainActivity extends AppCompatActivity {
             if(reopenAppearance){
                 // Clear flag to avoid loops
                 reopenPrefs.edit().putBoolean("reopen_appearance_after_theme", false).apply();
-                // Ensure Settings tab selected (index 3)
-                if(viewPager!=null){ viewPager.setCurrentItem(3, false); }
+                // Ensure Settings tab selected (index 4)
+                if(viewPager!=null){ viewPager.setCurrentItem(4, false); }
                 // Post to allow SettingsHomeFragment attach
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     try {
@@ -376,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
         if (intent != null && intent.getBooleanExtra("open_shortcuts_widgets", false)) {
             // Navigate to Settings tab and then open Shortcuts & Widgets screen
             if (viewPager != null) {
-                viewPager.setCurrentItem(3, false); // Settings tab
+                viewPager.setCurrentItem(4, false); // Settings tab
             }
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 try {
