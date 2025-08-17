@@ -37,6 +37,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private ExoPlayer player;
     private StyledPlayerView playerView;
     private android.view.GestureDetector gestureDetector;
+    private android.view.ScaleGestureDetector scaleGestureDetector;
+    private float currentScale = 1.0f;
+    private float currentTranslationX = 0f;
+    private float currentTranslationY = 0f;
+    private boolean isPinching = false;
+    private ImageButton resetZoomButton;
     private static final String ACTION_PLAYBACK_POSITION_UPDATED = "com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED";
     private static final String EXTRA_URI = "extra_uri";
     private static final String EXTRA_POSITION_MS = "extra_position_ms";
@@ -107,6 +113,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         playerView = findViewById(com.fadcam.R.id.player_view);
         backButton = findViewById(com.fadcam.R.id.back_button);
+        resetZoomButton = findViewById(com.fadcam.R.id.reset_zoom_button);
 
         // *** FIX: Get the video URI using getData() ***
         Uri videoUri = getIntent().getData();
@@ -120,6 +127,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             initializePlayer(videoUri); // Pass the Uri directly
             setupCustomSettingsAction();
             setupQuickSpeedSettings();
+            setupResetZoomButton();
             setupPressAndHoldFor2x();
         } else {
             // Log error and finish if URI is missing
@@ -144,6 +152,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         View timeBar = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
         if (timeBar instanceof com.google.android.exoplayer2.ui.DefaultTimeBar) {
             com.google.android.exoplayer2.ui.DefaultTimeBar bar = (com.google.android.exoplayer2.ui.DefaultTimeBar) timeBar;
+            
+            // Set colors programmatically for modern look
             int played = resolveThemeColor(R.attr.colorButton);
             int unplayed = android.graphics.Color.parseColor("#40FFFFFF"); // Semi-transparent white for unplayed
             int buffered = android.graphics.Color.parseColor("#60FFFFFF"); // More opaque white for buffered
@@ -152,9 +162,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
             bar.setUnplayedColor(unplayed);
             bar.setBufferedColor(buffered);
             bar.setScrubberColor(scrubber);
-//            bar.setTouchTargetHeight((int) (getResources().getDisplayMetrics().density * 32));
         }
         // ----- Fix End: Programmatically set seekbar colors for dynamic theming -----
+        
+        // Setup animated play/pause button and audio waveform
+        setupAnimatedControls();
+        
         // Setup gesture detector for double-tap seek
         gestureDetector = new android.view.GestureDetector(this, new android.view.GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -197,6 +210,47 @@ public class VideoPlayerActivity extends AppCompatActivity {
             }
         });
 
+        // Setup scale gesture detector for pinch-to-zoom
+        scaleGestureDetector = new android.view.ScaleGestureDetector(this, new android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScaleBegin(android.view.ScaleGestureDetector detector) {
+                isPinching = true; // Set pinching state to disable press-and-hold
+                return true;
+            }
+            
+            @Override
+            public boolean onScale(android.view.ScaleGestureDetector detector) {
+                currentScale *= detector.getScaleFactor();
+                // Constrain scale between 0.5x and 3.0x
+                currentScale = Math.max(0.5f, Math.min(currentScale, 3.0f));
+                
+                // Apply scale only to video surface, not the entire player view with controls
+                applyVideoTransform();
+                
+                // Show reset button if zoomed
+                updateResetZoomButtonVisibility();
+                
+                // Add haptic feedback for smooth zooming
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        playerView.performHapticFeedback(android.view.HapticFeedbackConstants.GESTURE_START);
+                    }
+                } catch (Exception ignored) {}
+                
+                return true;
+            }
+
+            @Override
+            public void onScaleEnd(android.view.ScaleGestureDetector detector) {
+                isPinching = false; // Reset pinching state
+                
+                // Snap to 1.0x if close to normal scale
+                if (Math.abs(currentScale - 1.0f) < 0.1f) {
+                    resetVideoTransform();
+                }
+            }
+        });
+
     // Do not set a simple touch listener here; setupPressAndHoldFor2x() will install a combined listener
     // that handles single-tap, double-tap and press-and-hold behaviors together.
     }
@@ -211,12 +265,22 @@ public class VideoPlayerActivity extends AppCompatActivity {
         // Combined touch listener: single tap toggles controller, double-tap seeks (no controller show), long-press quick-speed
         final int touchSlop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
         final float[] downXY = new float[2];
+        final float[] lastPanXY = new float[2];
         final boolean[] pendingTap = new boolean[]{false};
         playerView.setOnTouchListener((v, ev) -> {
             boolean gdHandled = false;
+            boolean scaleHandled = false;
+            boolean gestureConsumed = false;
+            
             try {
-                // Feed events to gestureDetector for single/double tap detection
-                gdHandled = gestureDetector.onTouchEvent(ev);
+                // Handle scale gestures first
+                scaleHandled = scaleGestureDetector.onTouchEvent(ev);
+                
+                // Only handle other gestures if not currently in a scale gesture
+                if (!scaleGestureDetector.isInProgress() && !isPinching && ev.getPointerCount() == 1) {
+                    // Feed events to gestureDetector for single/double tap detection
+                    gdHandled = gestureDetector.onTouchEvent(ev);
+                }
             } catch (Exception ignored) {}
 
             switch (ev.getActionMasked()) {
@@ -224,65 +288,152 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     isLongPress[0] = false;
                     pendingTap[0] = true;
                     downXY[0] = ev.getX(); downXY[1] = ev.getY();
-                    handler.postDelayed(() -> {
-                        // On long-press
-                        isLongPress[0] = true;
-                        if (player != null) {
-                            float start = player.getPlaybackParameters().speed;
-                            float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
-                            animatePlaybackSpeed(start, target, 200);
-                            showQuickOverlay(true);
-                            try { playerView.hideController(); } catch (Exception ignored) {}
-                        }
-                    }, LONG_PRESS_MS);
+                    lastPanXY[0] = ev.getX(); lastPanXY[1] = ev.getY();
+                    
+                    // Only start long-press timer for single finger and not zoomed
+                    if (ev.getPointerCount() == 1 && !isPinching && currentScale <= 1.1f) {
+                        handler.postDelayed(() -> {
+                            // On long-press - only if still single finger and not pinching/zoomed
+                            if (ev.getPointerCount() <= 1 && !isPinching && currentScale <= 1.1f) {
+                                isLongPress[0] = true;
+                                if (player != null) {
+                                    float start = player.getPlaybackParameters().speed;
+                                    float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+                                    animatePlaybackSpeed(start, target, 200);
+                                    showQuickOverlay(true);
+                                    try { playerView.hideController(); } catch (Exception ignored) {}
+                                }
+                            }
+                        }, LONG_PRESS_MS);
+                    }
                 } break;
 
                 case android.view.MotionEvent.ACTION_POINTER_DOWN: {
-                    // treat multi-touch as long-press trigger
-                    handler.post(() -> {
-                        isLongPress[0] = true;
-                        if (player != null) {
-                            float start = player.getPlaybackParameters().speed;
-                            float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
-                            animatePlaybackSpeed(start, target, 200);
-                            showQuickOverlay(true);
-                            try { playerView.hideController(); } catch (Exception ignored) {}
-                        }
-                    });
+                    // Multi-touch detected - disable long-press and enable pinch mode
+                    isPinching = true;
+                    handler.removeCallbacksAndMessages(null);
+                    // Update last pan position for multi-touch panning
+                    if (ev.getPointerCount() >= 2) {
+                        lastPanXY[0] = (ev.getX(0) + ev.getX(1)) / 2f;
+                        lastPanXY[1] = (ev.getY(0) + ev.getY(1)) / 2f;
+                    }
                 } break;
 
                 case android.view.MotionEvent.ACTION_MOVE: {
-                    if (pendingTap[0]) {
+                    // Advanced panning logic for both single and multi-finger
+                    if (currentScale > 1.0f) {
+                        float currentX = 0f, currentY = 0f;
+                        boolean canPan = false;
+                        
+                        if (ev.getPointerCount() == 1 && !scaleGestureDetector.isInProgress()) {
+                            // Single finger panning
+                            currentX = ev.getX();
+                            currentY = ev.getY();
+                            canPan = true;
+                        } else if (ev.getPointerCount() >= 2 && !scaleGestureDetector.isInProgress()) {
+                            // Two finger panning (center point)
+                            currentX = (ev.getX(0) + ev.getX(1)) / 2f;
+                            currentY = (ev.getY(0) + ev.getY(1)) / 2f;
+                            canPan = true;
+                        }
+                        
+                        if (canPan) {
+                            float deltaX = currentX - lastPanXY[0];
+                            float deltaY = currentY - lastPanXY[1];
+                            
+                            currentTranslationX += deltaX;
+                            currentTranslationY += deltaY;
+                            
+                            // Expanded boundaries - calculate based on screen size and scale
+                            android.view.View contentFrame = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_content_frame);
+                            if (contentFrame != null) {
+                                float screenWidth = playerView.getWidth();
+                                float screenHeight = playerView.getHeight();
+                                
+                                // Allow panning to show corners - much more generous boundaries
+                                float maxTranslationX = (screenWidth * (currentScale - 1.0f)) / 2f;
+                                float maxTranslationY = (screenHeight * (currentScale - 1.0f)) / 2f;
+                                
+                                currentTranslationX = Math.max(-maxTranslationX, Math.min(currentTranslationX, maxTranslationX));
+                                currentTranslationY = Math.max(-maxTranslationY, Math.min(currentTranslationY, maxTranslationY));
+                            }
+                            
+                            applyVideoTransform();
+                            lastPanXY[0] = currentX;
+                            lastPanXY[1] = currentY;
+                            
+                            // Disable other gestures when actively panning
+                            pendingTap[0] = false;
+                            return true;
+                        }
+                    }
+                    
+                    // Regular move handling for touch slop detection (only for single touch when not zoomed)
+                    if (pendingTap[0] && ev.getPointerCount() == 1 && currentScale <= 1.1f) {
                         float dx = Math.abs(ev.getX() - downXY[0]);
                         float dy = Math.abs(ev.getY() - downXY[1]);
-                        if (dx > touchSlop || dy > touchSlop) pendingTap[0] = false;
+                        if (dx > touchSlop || dy > touchSlop) {
+                            pendingTap[0] = false;
+                            // Cancel long press if significant movement detected
+                            handler.removeCallbacksAndMessages(null);
+                        }
+                    }
+                    
+                    // Update last pan position for next iteration
+                    if (ev.getPointerCount() == 1) {
+                        lastPanXY[0] = ev.getX();
+                        lastPanXY[1] = ev.getY();
+                    } else if (ev.getPointerCount() >= 2) {
+                        lastPanXY[0] = (ev.getX(0) + ev.getX(1)) / 2f;
+                        lastPanXY[1] = (ev.getY(0) + ev.getY(1)) / 2f;
                     }
                 } break;
 
                 case android.view.MotionEvent.ACTION_UP:
-                case android.view.MotionEvent.ACTION_POINTER_UP:
                 case android.view.MotionEvent.ACTION_CANCEL: {
                     handler.removeCallbacksAndMessages(null);
-                    if (isLongPress[0]) {
+                    
+                    // Reset pinching state when all fingers are lifted
+                    if (ev.getPointerCount() <= 1) {
+                        isPinching = false;
+                    }
+                    
+                    if (isLongPress[0] && !isPinching) {
                         if (player != null) {
                             float revertSpeed = speedValues[currentSpeedIndex];
                             animatePlaybackSpeed(player.getPlaybackParameters().speed, revertSpeed, 200);
                         }
                         showQuickOverlay(false);
                         isLongPress[0] = false;
-                        return true; // consume
                     }
-                    if (pendingTap[0]) {
-                        pendingTap[0] = false;
-                        return true; // consume to prevent PlayerView toggles
+                } break;
+                
+                case android.view.MotionEvent.ACTION_POINTER_UP: {
+                    // Handle pointer up - check remaining pointers
+                    int remainingPointers = ev.getPointerCount() - 1;
+                    if (remainingPointers <= 1) {
+                        // Less than 2 pointers remaining, disable pinch mode
+                        isPinching = false;
                     }
-                    long now = System.currentTimeMillis();
-                    if (now - lastSingleTapTime < 300) return true;
+                    
+                    // Update pan position for remaining pointers
+                    if (remainingPointers >= 2) {
+                        int index1 = ev.getActionIndex() == 0 ? 1 : 0;
+                        int index2 = ev.getActionIndex() <= 1 ? 2 : 1;
+                        if (index2 < ev.getPointerCount()) {
+                            lastPanXY[0] = (ev.getX(index1) + ev.getX(index2)) / 2f;
+                            lastPanXY[1] = (ev.getY(index1) + ev.getY(index2)) / 2f;
+                        }
+                    } else if (remainingPointers == 1) {
+                        int remainingIndex = ev.getActionIndex() == 0 ? 1 : 0;
+                        lastPanXY[0] = ev.getX(remainingIndex);
+                        lastPanXY[1] = ev.getY(remainingIndex);
+                    }
                 } break;
             }
 
-            // If the gesture detector already handled the event, consume it so PlayerView doesn't also toggle the controller
-            if (gdHandled) return true;
+            // If the gesture detector or scale detector handled the event, consume it so PlayerView doesn't also toggle the controller
+            if (gdHandled || scaleHandled) return true;
             return false;
         });
     }
@@ -962,4 +1113,205 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
     // -------------- Fix Ended for helper(hasPostNotificationsPermission)-----------
+    
+    // -------------- Fix Start for method(setupAnimatedControls)-----------
+    private void setupAnimatedControls() {
+        try {
+            // Find the animated play/pause button
+            android.widget.ImageButton playPauseBtn = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play_pause);
+            
+            if (playPauseBtn != null && player != null) {
+                // Set up player state listener for animated transitions
+                player.addListener(new com.google.android.exoplayer2.Player.Listener() {
+                    @Override
+                    public void onPlaybackStateChanged(int state) {
+                        if (player != null) {
+                            updatePlayPauseAnimation(playPauseBtn, player.isPlaying());
+                        }
+                    }
+                    
+                    @Override
+                    public void onIsPlayingChanged(boolean isPlaying) {
+                        updatePlayPauseAnimation(playPauseBtn, isPlaying);
+                        updateWaveformProgress();
+                    }
+                });
+                
+                // Set up periodic waveform updates during playback
+                setupWaveformUpdates();
+                
+                // Set initial icon state
+                updatePlayPauseAnimation(playPauseBtn, player.isPlaying());
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error setting up animated controls", e);
+        }
+    }
+    
+    private void updatePlayPauseAnimation(android.widget.ImageButton button, boolean isPlaying) {
+        try {
+            if (button == null) return;
+            
+            if (isPlaying) {
+                // Switch to pause icon with animation
+                android.graphics.drawable.Drawable drawable = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.play_to_pause_anim);
+                if (drawable instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                    button.setImageDrawable(drawable);
+                    ((android.graphics.drawable.AnimatedVectorDrawable) drawable).start();
+                } else {
+                    // Fallback to static pause icon
+                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_pause);
+                }
+            } else {
+                // Switch to play icon with animation  
+                android.graphics.drawable.Drawable drawable = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.pause_to_play_anim);
+                if (drawable instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                    button.setImageDrawable(drawable);
+                    ((android.graphics.drawable.AnimatedVectorDrawable) drawable).start();
+                } else {
+                    // Fallback to static play icon
+                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_play);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error updating play/pause animation", e);
+        }
+    }
+    
+    private android.os.Handler waveformHandler;
+    private Runnable waveformUpdateRunnable;
+    
+    private void setupWaveformUpdates() {
+        try {
+            if (waveformHandler == null) {
+                waveformHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+            }
+            
+            if (waveformUpdateRunnable == null) {
+                waveformUpdateRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            updateWaveformProgress();
+                            // Update every 100ms for smooth waveform animation
+                            if (waveformHandler != null) {
+                                waveformHandler.postDelayed(this, 100);
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error in waveform update runnable", e);
+                        }
+                    }
+                };
+            }
+            
+            waveformHandler.post(waveformUpdateRunnable);
+        } catch (Exception e) {
+            Log.w(TAG, "Error setting up waveform updates", e);
+        }
+    }
+    
+    private void updateWaveformProgress() {
+        try {
+            com.fadcam.ui.custom.AudioWaveformView waveformView = playerView.findViewById(R.id.audio_waveform);
+            if (waveformView != null && player != null) {
+                long position = player.getCurrentPosition();
+                long duration = player.getDuration();
+                if (duration > 0) {
+                    float progress = (float) position / duration;
+                    waveformView.setProgress(progress);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error updating waveform progress", e);
+        }
+    }
+    // -------------- Fix Ended for method(setupAnimatedControls)-----------
+    
+    // -------------- Fix Start for method(setupResetZoomButton)-----------
+    private void setupResetZoomButton() {
+        if (resetZoomButton != null) {
+            resetZoomButton.setOnClickListener(v -> resetVideoTransform());
+        }
+    }
+    // -------------- Fix Ended for method(setupResetZoomButton)-----------
+    
+    // -------------- Fix Start for method(applyVideoTransform)-----------
+    private void applyVideoTransform() {
+        if (playerView != null) {
+            try {
+                // Find the content frame to scale only video, not controls
+                android.view.View contentFrame = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_content_frame);
+                if (contentFrame != null) {
+                    contentFrame.setScaleX(currentScale);
+                    contentFrame.setScaleY(currentScale);
+                    contentFrame.setTranslationX(currentTranslationX);
+                    contentFrame.setTranslationY(currentTranslationY);
+                } else {
+                    // Fallback: try to find shutter or surface view
+                    android.view.View shutter = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_shutter);
+                    if (shutter != null) {
+                        shutter.setScaleX(currentScale);
+                        shutter.setScaleY(currentScale);
+                        shutter.setTranslationX(currentTranslationX);
+                        shutter.setTranslationY(currentTranslationY);
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error applying video transform", e);
+            }
+        }
+    }
+    // -------------- Fix Ended for method(applyVideoTransform)-----------
+    
+    // -------------- Fix Start for method(resetVideoTransform)-----------
+    private void resetVideoTransform() {
+        currentScale = 1.0f;
+        currentTranslationX = 0f;
+        currentTranslationY = 0f;
+        
+        if (playerView != null) {
+            try {
+                android.view.View contentFrame = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_content_frame);
+                if (contentFrame != null) {
+                    contentFrame.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .translationX(0f)
+                        .translationY(0f)
+                        .setDuration(200)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
+                } else {
+                    android.view.View shutter = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_shutter);
+                    if (shutter != null) {
+                        shutter.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .translationX(0f)
+                            .translationY(0f)
+                            .setDuration(200)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error resetting video transform", e);
+            }
+        }
+        
+        updateResetZoomButtonVisibility();
+    }
+    // -------------- Fix Ended for method(resetVideoTransform)-----------
+    
+    // -------------- Fix Start for method(updateResetZoomButtonVisibility)-----------
+    private void updateResetZoomButtonVisibility() {
+        if (resetZoomButton != null) {
+            if (Math.abs(currentScale - 1.0f) > 0.1f || Math.abs(currentTranslationX) > 10f || Math.abs(currentTranslationY) > 10f) {
+                resetZoomButton.setVisibility(android.view.View.VISIBLE);
+            } else {
+                resetZoomButton.setVisibility(android.view.View.GONE);
+            }
+        }
+    }
+    // -------------- Fix Ended for method(updateResetZoomButtonVisibility)-----------
 }

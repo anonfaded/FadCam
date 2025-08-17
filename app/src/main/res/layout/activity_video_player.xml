@@ -13,7 +13,9 @@
         app:show_timeout="3000"
         app:show_buffering="when_playing"
         app:resize_mode="fit"
-        app:bar_height="6dp"
+        app:bar_height="4dp"
+        app:bar_gravity="bottom"
+        app:touch_target_height="26dp"
         />
 
     <ImageButton
@@ -24,6 +26,20 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:padding="16dp"
         android:layout_margin="16dp"
+        app:tint="@android:color/white" />
+        
+    <!-- Reset zoom button (appears when video is zoomed) -->
+    <ImageButton
+        android:id="@+id/reset_zoom_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_zoom_out_map"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:padding="12dp"
+        android:layout_margin="16dp"
+        android:layout_gravity="top|end"
+        android:visibility="gone"
+        android:contentDescription="Reset zoom"
         app:tint="@android:color/white" />
 
     <!-- Overlay indicator for quick 2x playback (appears while long-press is active) -->
