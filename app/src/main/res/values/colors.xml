@@ -50,4 +50,8 @@
     <color name="crimson_dark_card_background">#1E0E0E</color>
 
     <color name="midnight_dusk_bg">#111113</color>
+    <!-- Translucent variant of danger red used for destructive cards/backgrounds -->
+    <color name="danger_red_translucent">#33D32F2F</color>
+    <!-- Slightly stronger translucent color used for the ripple pressed state on destructive rows -->
+    <color name="danger_red_ripple">#55D32F2F</color>
 </resources>

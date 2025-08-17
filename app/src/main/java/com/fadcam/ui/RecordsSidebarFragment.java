@@ -133,14 +133,7 @@ public class RecordsSidebarFragment extends DialogFragment {
                 getParentFragmentManager().setFragmentResult(resultKey, b);
             });
         }
-        if (hideRow != null) {
-            hideRow.setOnClickListener(v -> {
-                if (hideSwitch != null) {
-                    boolean next = !hideSwitch.isChecked();
-                    hideSwitch.setChecked(next);
-                }
-            });
-        }
+    // Intentionally do not set a click listener on the whole row so only the Switch toggles the setting.
 
     }
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/danger_red_ripple">
+    <!-- Transparent item so ripple draws over content but uses the mask for clipping -->
+    <item android:drawable="@android:color/transparent" />
+    <mask>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFFFF" />
+            <corners android:radius="26dp" />
+        </shape>
+    </mask>
+</ripple>

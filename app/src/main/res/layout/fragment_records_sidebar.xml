@@ -23,7 +23,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/records_options_title"
-            android:textColor="@android:color/white"
+            android:textColor="@color/danger_red"
             android:textStyle="bold"
             android:textSize="18sp"/>
     </LinearLayout>
@@ -207,7 +207,7 @@
                     android:id="@+id/row_hide_thumbnails_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/records_hide_thumbnails_title"
+                    android:text="@string/records_hide_thumbnails_row_title"
                     android:textColor="?attr/colorHeading"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
@@ -263,14 +263,17 @@
             android:orientation="horizontal"
             android:paddingStart="12dp"
             android:paddingEnd="16dp"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:background="@drawable/settings_home_row_bg_danger"
+            android:clickable="true"
+            android:foreground="@drawable/ripple_danger_rounded">
             <ImageView
                 android:id="@+id/row_delete_all_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_delete_all"
-                android:tint="@android:color/darker_gray"/>
+                android:tint="@color/danger_red"/>
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -281,14 +284,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/delete_all_videos_title"
-                    android:textColor="?attr/colorHeading"
+                    android:textColor="@color/danger_red"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
                 <TextView
                     android:id="@+id/row_delete_all_subtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/darker_gray"
+                    android:textColor="@color/danger_red"
                     android:textSize="12sp"
                     android:text="@string/delete_all_videos_subtitle_short"/>
             </LinearLayout>
@@ -297,7 +300,7 @@
                 android:layout_width="14dp"
                 android:layout_height="14dp"
                 android:src="@drawable/exo_ic_chevron_right"
-                android:tint="@android:color/darker_gray"/>
+                android:tint="@color/danger_red"/>
         </LinearLayout>
     </LinearLayout>
 

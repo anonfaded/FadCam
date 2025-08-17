@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <!-- Slightly transparent danger background to make the whole row feel destructive without being overpowering -->
+    <solid android:color="@color/danger_red_translucent" />
+    <corners android:radius="26dp" />
+</shape>
