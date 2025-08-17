@@ -392,6 +392,18 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(Constants.PREF_PLAYER_KEEP_SCREEN_ON, keepOn).apply();
     }
     // -------------- Fix Ended for this class (SharedPreferencesManager_keep_screen_awake)-----------
+    
+    // -------------- Fix Start for this class (SharedPreferencesManager_background_playback)-----------
+    /** Returns whether background playback is enabled. Default: false. */
+    public boolean isBackgroundPlaybackEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_PLAYER_BACKGROUND_PLAYBACK, false);
+    }
+
+    /** Enable/disable background playback. */
+    public void setBackgroundPlaybackEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_PLAYER_BACKGROUND_PLAYBACK, enabled).apply();
+    }
+    // -------------- Fix Ended for this class (SharedPreferencesManager_background_playback)-----------
     // --- End Camera / Video settings ---
 
     // --- STORAGE METHODS ---

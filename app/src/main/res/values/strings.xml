@@ -397,6 +397,9 @@
     <!-- Keep screen awake setting -->
     <string name="keep_screen_on_title">Keep screen awake</string>
     <string name="keep_screen_on_helper_picker">When enabled, the screen won’t sleep while playing a video.</string>
+    <!-- Background playback setting -->
+    <string name="background_playback_title">Play in background</string>
+    <string name="background_playback_helper_picker">When enabled, audio continues playing even if you leave the app or turn the screen off.</string>
     <!-- Shortcuts customization UI -->
     <string name="shortcuts_customize_title">Customize</string>
     <string name="shortcuts_customize_subtitle">Name and icon</string>

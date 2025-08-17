@@ -138,6 +138,12 @@ public class RecordingService extends Service {
 
     private volatile boolean isStopping = false;
 
+    // -------------- Fix Start for this section(previewStartGateFields)-----------
+    // Gate first-start until preview surface is ready (to avoid first-run EGL race)
+    private boolean waitForPreviewBeforeStart = false;
+    private Runnable previewWaitTimeoutRunnable = null;
+    // -------------- Fix Ended for this section(previewStartGateFields)-----------
+
     // --- Lifecycle Methods ---
     @Override
     public void onCreate() {
@@ -226,7 +232,7 @@ public class RecordingService extends Service {
             return START_STICKY;
         }
         // ----- Fix End: Handle global app background/foreground actions -----
-        if (Constants.INTENT_ACTION_START_RECORDING.equals(action)) {
+    if (Constants.INTENT_ACTION_START_RECORDING.equals(action)) {
             // ----- Check for camera resource cooldown -----
             // Check if camera resources are still being released
             if (isCameraResourceReleasing) {
@@ -264,6 +270,35 @@ public class RecordingService extends Service {
                 // Set up preview surface if provided
                 setupSurfaceTexture(intent);
 
+                // -------------- Fix Start: Defer start until preview surface ready on first run -----------
+                try {
+                    boolean previewEnabled = sharedPreferencesManager != null && sharedPreferencesManager.isPreviewEnabled();
+                    boolean hasValidPreview = (previewSurface != null && previewSurface.isValid());
+                    waitForPreviewBeforeStart = previewEnabled && !hasValidPreview;
+                    Log.d(TAG, "Preview enabled=" + previewEnabled + ", validSurface=" + hasValidPreview + 
+                            ", waitForPreviewBeforeStart=" + waitForPreviewBeforeStart);
+
+                    if (waitForPreviewBeforeStart) {
+                        // Install a short timeout to avoid getting stuck if preview never arrives
+                        if (previewWaitTimeoutRunnable != null) {
+                            try { mainHandler.removeCallbacks(previewWaitTimeoutRunnable); } catch (Throwable ignore) {}
+                        }
+                        previewWaitTimeoutRunnable = () -> {
+                            if (recordingState == RecordingState.STARTING) {
+                                Log.w(TAG, "Preview wait timeout reached; proceeding without preview to start recording safely");
+                                waitForPreviewBeforeStart = false;
+                                attemptStartRecordingIfReady();
+                            }
+                        };
+                        // Give TextureView a moment to initialize on cold start
+                        mainHandler.postDelayed(previewWaitTimeoutRunnable, 1500);
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Error evaluating preview-wait condition; proceeding without wait", e);
+                    waitForPreviewBeforeStart = false;
+                }
+                // -------------- Fix Ended: Defer start until preview surface ready on first run -----------
+
                 // Start foreground service
                 setupRecordingInProgressNotification();
 
@@ -273,8 +308,8 @@ public class RecordingService extends Service {
                     Log.d(TAG, "Setting pendingStartRecording=true, will start recording after camera opens");
                     openCamera();
                 } else {
-                    Log.d(TAG, "Camera already open, starting recording directly");
-                    startRecording();
+                    Log.d(TAG, "Camera already open, attempting gated start (may wait for preview)");
+                    attemptStartRecordingIfReady();
                 }
 
                 // Notify UI that we're starting
@@ -306,10 +341,19 @@ public class RecordingService extends Service {
                 // pipeline
                 glRecordingPipeline.setPreviewSurface(previewSurface);
             }
-            // Only reconfigure the camera session if recording or paused
-            if (isRecording() || isPaused()) {
+            // -------------- Fix Start: Avoid reconfiguring camera session on preview surface change when using GL path -----------
+            // If we're still in STARTING and were waiting for preview, attempt to start now
+            if (recordingState == RecordingState.STARTING && waitForPreviewBeforeStart && previewSurface != null && previewSurface.isValid()) {
+                Log.d(TAG, "Preview surface became ready during STARTING; attempting gated start now");
+                attemptStartRecordingIfReady();
+            }
+            // Do NOT recreate camera session here for GL-based recording, as preview is rendered via EGL in renderer
+            // Reconfiguration during active recording may cause driver instability on first run
+            if (glRecordingPipeline == null && (isRecording() || isPaused())) {
+                // Only reconfigure if we're not on GL path (legacy/fallback)
                 createCameraPreviewSession();
             }
+            // -------------- Fix Ended: Avoid reconfiguring camera session on preview surface change when using GL path -----------
             Log.d(TAG,
                     "ACTION_CHANGE_SURFACE handled: preview surface updated, camera session reconfigured if needed. No pipeline re-init.");
             return START_STICKY;
@@ -987,31 +1031,9 @@ public class RecordingService extends Service {
 
             // Check if we have a pending recording start request
             if (pendingStartRecording) {
-                Log.d(TAG, "Found pendingStartRecording=true, starting recording now");
+                Log.d(TAG, "Found pendingStartRecording=true; attempting gated start (may wait for preview)");
                 pendingStartRecording = false; // Reset the flag
-
-                // Start recording on main thread to avoid threading issues
-                mainHandler.post(() -> {
-                    try {
-                        if (recordingState == RecordingState.STARTING) {
-                            Log.d(TAG, "Starting recording from camera onOpened callback");
-                            startRecording();
-                        } else {
-                            Log.w(TAG, "Camera opened but recording state changed to " + recordingState);
-                            // If state changed while camera was opening, handle accordingly
-                            if (recordingState == RecordingState.NONE) {
-                                Log.d(TAG, "Recording state is NONE, releasing camera");
-                                if (cameraDevice != null) {
-                                    cameraDevice.close();
-                                    cameraDevice = null;
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error starting recording from camera callback", e);
-                        stopRecording();
-                    }
-                });
+                mainHandler.post(RecordingService.this::attemptStartRecordingIfReady);
             } else {
                 Log.d(TAG, "Camera opened but no pending recording start");
                 // If we're not starting recording, create a preview session
@@ -1147,6 +1169,42 @@ public class RecordingService extends Service {
             }
         }
     };
+
+    // -------------- Fix Start: Helper to attempt gated start respecting preview wait -----------
+    private void attemptStartRecordingIfReady() {
+        try {
+            if (recordingState != RecordingState.STARTING) {
+                Log.d(TAG, "attemptStartRecordingIfReady: Not in STARTING state (" + recordingState + ")");
+                return;
+            }
+            // Ensure camera is opened before starting
+            if (cameraDevice == null) {
+                Log.d(TAG, "attemptStartRecordingIfReady: Camera not opened yet; deferring until onOpened");
+                pendingStartRecording = true;
+                return;
+            }
+            if (waitForPreviewBeforeStart) {
+                boolean ready = previewSurface != null && previewSurface.isValid();
+                if (!ready) {
+                    Log.d(TAG, "attemptStartRecordingIfReady: Waiting for preview surface to become valid...");
+                    return;
+                }
+                Log.d(TAG, "attemptStartRecordingIfReady: Preview is now ready; proceeding");
+                waitForPreviewBeforeStart = false;
+            }
+            // Clear timeout if set
+            if (previewWaitTimeoutRunnable != null) {
+                try { mainHandler.removeCallbacks(previewWaitTimeoutRunnable); } catch (Throwable ignore) {}
+                previewWaitTimeoutRunnable = null;
+            }
+            // Finally, start recording
+            startRecording();
+        } catch (Exception e) {
+            Log.e(TAG, "attemptStartRecordingIfReady: error starting", e);
+            stopRecording();
+        }
+    }
+    // -------------- Fix Ended: Helper to attempt gated start respecting preview wait -----------
 
     /**
      * Helper method to resume normal recording after camera reconnection.

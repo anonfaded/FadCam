@@ -159,6 +159,8 @@ public class GLRecordingPipeline {
     // Update watermark on a low-frequency handler to avoid per-frame overhead and sustain 60fps
     private final android.os.Handler watermarkUpdateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable updateWatermarkRunnable;
+    // Queue for GL-thread-safe renderer operations (processed in render loop)
+    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> rendererActions = new java.util.concurrent.ConcurrentLinkedQueue<>();
     // -------------- Fix Ended for GLRecordingPipeline watermark scheduler-----------
 
     // Updated constructor for file path (internal storage)
@@ -272,67 +274,71 @@ public class GLRecordingPipeline {
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation, videoWidth, videoHeight);
                 glRenderer.setUserOrientationSetting(orientation);
                 glRenderer.setRecordingPipeline(this); // Set reference for timestamp synchronization
-                Log.d(TAG, "Initializing renderer EGL context");
-                glRenderer.initializeEGL();
-                
-                // Allow time for the renderer to initialize completely before getting camera surface
-                try {
-                    Log.d(TAG, "Waiting for GL resources to initialize");
-                    Thread.sleep(500); // Increased delay to ensure texture is initialized
-                } catch (InterruptedException e) {
-                    // Ignore
+                // -------------- Fix Start for this method(prepareSurfaces)-----------
+                // Create EGL context and camera surface strictly on the GL render thread
+                // Ensure render thread exists
+                if (renderThread == null || handler == null) {
+                    startRenderLoop(); // Only starts thread/handler; does not start frame loop
                 }
-                
-                // Get the camera input surface
-                Log.d(TAG, "Requesting camera input surface from renderer");
-                cameraInputSurface = glRenderer.getCameraInputSurface();
-                
-                if (cameraInputSurface == null) {
-                    Log.e(TAG, "Failed to get camera input surface - texture may not be initialized");
-                    // Try to check GL errors from renderer if possible
-                    throw new RuntimeException("Failed to get camera input surface");
-                }
-                
-                if (!cameraInputSurface.isValid()) {
-                    Log.e(TAG, "Camera input surface is not valid");
-                    throw new RuntimeException("Camera input surface is not valid");
-                }
-                
-                Log.d(TAG, "Successfully obtained valid camera input surface");
-                
-                // If we have a preview surface, set it on the renderer
-                if (previewSurface != null && previewSurface.isValid()) {
-                    Log.d(TAG, "Setting preview surface during prepareSurfaces");
-                    glRenderer.setPreviewSurface(previewSurface);
-                } else {
-                    Log.d(TAG, "No valid preview surface available, recording will continue without preview");
-                    // Create a dummy surface for initialization if needed
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                        try {
-                            Log.d(TAG, "Creating dummy surface for initialization");
-                            android.util.DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-                            int width = Math.min(metrics.widthPixels, 320);
-                            int height = Math.min(metrics.heightPixels, 240);
-                            
-                            android.media.ImageReader imageReader = android.media.ImageReader.newInstance(
-                                width, height, android.graphics.PixelFormat.RGBA_8888, 1);
-                            Surface dummySurface = imageReader.getSurface();
-                            
-                            try {
-                                // Just initialize the preview surface but don't use it for rendering
-                                glRenderer.initializePreviewSurfaceOnly(dummySurface);
-                                Log.d(TAG, "Dummy surface initialized successfully");
-                            } finally {
-                                if (dummySurface != null) {
-                                    dummySurface.release();
+                final java.util.concurrent.CountDownLatch initLatch = new java.util.concurrent.CountDownLatch(1);
+                final Throwable[] initError = new Throwable[1];
+                handler.post(() -> {
+                    try {
+                        Log.d(TAG, "Initializing renderer EGL context on GL thread");
+                        glRenderer.initializeEGL();
+                        // Request camera input surface now that GL is initialized
+                        Log.d(TAG, "Requesting camera input surface from renderer (GL thread)");
+                        Surface camSurf = glRenderer.getCameraInputSurface();
+                        cameraInputSurface = camSurf;
+                        if (previewSurface != null && previewSurface.isValid()) {
+                            Log.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
+                            glRenderer.setPreviewSurface(previewSurface);
+                        } else {
+                            Log.d(TAG, "No valid preview surface; optional preview warm-up");
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                                try {
+                                    android.util.DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+                                    int w = Math.min(metrics.widthPixels, 320);
+                                    int h = Math.min(metrics.heightPixels, 240);
+                                    android.media.ImageReader ir = android.media.ImageReader.newInstance(
+                                        w, h, android.graphics.PixelFormat.RGBA_8888, 1);
+                                    Surface dummy = ir.getSurface();
+                                    try {
+                                        glRenderer.initializePreviewSurfaceOnly(dummy);
+                                        Log.d(TAG, "Dummy preview surface warmed up (GL thread)");
+                                    } finally {
+                                        try { if (dummy != null) dummy.release(); } catch (Exception ignore) {}
+                                        try { ir.close(); } catch (Exception ignore) {}
+                                    }
+                                } catch (Exception warmEx) {
+                                    Log.w(TAG, "Preview warm-up failed; continuing without", warmEx);
                                 }
                             }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Failed to create dummy surface", e);
-                            // Continue without preview - recording should still work
                         }
+                    } catch (Throwable t) {
+                        initError[0] = t;
+                    } finally {
+                        initLatch.countDown();
                     }
+                });
+                // Wait for GL init to complete so we can return a valid camera surface for Camera2 session
+                try {
+                    if (!initLatch.await(1500, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        throw new RuntimeException("Timed out initializing GL renderer on GL thread");
+                    }
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                 }
+                if (initError[0] != null) {
+                    throw new RuntimeException("GL initialization failed", initError[0]);
+                }
+                // Validate camera surface
+                if (cameraInputSurface == null || !cameraInputSurface.isValid()) {
+                    Log.e(TAG, "Camera input surface is invalid after GL init");
+                    throw new RuntimeException("Camera input surface invalid");
+                }
+                Log.d(TAG, "Successfully obtained valid camera input surface");
+                // -------------- Fix Ended for this method(prepareSurfaces)-----------
                 
                 // Set up the frame listener to trigger rendering when new frames arrive
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
@@ -838,10 +844,7 @@ public class GLRecordingPipeline {
             renderThread.start();
             handler = new Handler(renderThread.getLooper());
         }
-        // Kick off the render loop once; subsequent frames will continue it
-        if (isRecording && handler != null) {
-            handler.post(renderRunnable);
-        }
+    // Do not kick off render loop immediately; wait for first camera frame
         // ----- Fix Ended for this method(startRenderLoop)-----
     }
     
@@ -856,6 +859,15 @@ public class GLRecordingPipeline {
             try {
                 // -------------- Fix Start for this method(renderRunnable)-----------
                 // Do NOT update watermark every frame; a separate timer handles it to avoid FPS drops
+                // Drain any queued GL operations to ensure they run on the GL thread
+                Runnable action;
+                while ((action = rendererActions.poll()) != null) {
+                    try {
+                        action.run();
+                    } catch (Throwable t) {
+                        android.util.Log.w(TAG, "Renderer action failed", t);
+                    }
+                }
                 // -------------- Fix Ended for this method(renderRunnable)-----------
                 
                 if (glRenderer != null) {
@@ -1142,6 +1154,26 @@ public class GLRecordingPipeline {
             handler.removeCallbacksAndMessages(null);
         }
 
+        // Proactively release preview EGL on the GL thread to ensure native disconnect
+        if (handler != null && glRenderer != null) {
+            final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+            try {
+                handler.post(() -> {
+                    try {
+                        glRenderer.releasePreviewEGL();
+                    } catch (Throwable t) {
+                        android.util.Log.w(TAG, "releasePreviewEGL on GL thread failed", t);
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+                // Wait briefly; don't block shutdown too long
+                latch.await(200, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
         // -------------- Fix Start for this method(stopRecording)-----------
         // Stop watermark updates
         try {
@@ -1263,6 +1295,13 @@ public class GLRecordingPipeline {
         audioEncoderStarted = false;
         
         Log.d(TAG, "GLRecordingPipeline stopped and released.");
+    // Reset flags so a new recording can be started cleanly
+    isStopped = false;
+    released = false;
+    isRecording = false;
+    // Clear retry/time bases
+    recordingStartTimeNanos = -1;
+    firstVideoTimestampNanos = -1;
     }
 
     /**
@@ -1389,11 +1428,16 @@ public class GLRecordingPipeline {
     public void setPreviewSurface(Surface surface) {
         this.previewSurface = surface;
         if (glRenderer != null) {
-            if (surface == null || !surface.isValid()) {
-                glRenderer.releasePreviewEGL();
-            } else {
-                glRenderer.setPreviewSurface(surface);
-            }
+            final Surface s = surface;
+            rendererActions.offer(() -> {
+                // -------------- Fix Start for this method(setPreviewSurface)-----------
+                if (s == null || !s.isValid()) {
+                    glRenderer.releasePreviewEGL();
+                } else {
+                    glRenderer.setPreviewSurface(s);
+                }
+                // -------------- Fix Ended for this method(setPreviewSurface)-----------
+            });
         }
     }
 
@@ -1746,19 +1790,19 @@ public class GLRecordingPipeline {
         
         // If we have a valid preview surface, make sure it's set on the renderer
         if (previewSurface != null && previewSurface.isValid() && glRenderer != null) {
-            try {
-                // Update the preview surface
-                glRenderer.setPreviewSurface(previewSurface);
-                
-                // Update surface dimensions if needed
-                if (mSurfaceWidth > 0 && mSurfaceHeight > 0) {
-                    glRenderer.setSurfaceDimensions(mSurfaceWidth, mSurfaceHeight);
+            // Enqueue on GL thread to avoid cross-thread GL calls
+            final Surface s = previewSurface;
+            rendererActions.offer(() -> {
+                try {
+                    glRenderer.setPreviewSurface(s);
+                    if (mSurfaceWidth > 0 && mSurfaceHeight > 0) {
+                        glRenderer.setSurfaceDimensions(mSurfaceWidth, mSurfaceHeight);
+                    }
+                    Log.d(TAG, "Preview surface updated successfully");
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to update preview surface", e);
                 }
-                
-                Log.d(TAG, "Preview surface updated successfully");
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to update preview surface", e);
-            }
+            });
         }
     }
 

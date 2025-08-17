@@ -63,6 +63,9 @@ app/src/main/res/values-in/strings.xml
 app/src/main/res/values-ps/strings.xml
 app/src/main/res/values-tr/strings.xml
 app/src/main/res/values-zh-rCN/strings.xml
+app/src/main/java/com/fadcam/ui/SettingsFragment.java
+app/src/main/assets/update_available_rocket_animation.json
+
 
 .repomixignore
 repomix.config.json

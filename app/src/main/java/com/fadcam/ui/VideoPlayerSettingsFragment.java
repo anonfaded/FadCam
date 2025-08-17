@@ -25,11 +25,13 @@ public class VideoPlayerSettingsFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_video_player_settings, container, false);
         // -------------- Fix Start for this method(onCreateView)-----------
         LinearLayout rowPlayback = root.findViewById(R.id.row_playback_speed);
-        LinearLayout rowQuick = root.findViewById(R.id.row_quick_speed);
+    LinearLayout rowQuick = root.findViewById(R.id.row_quick_speed);
         TextView subPlayback = root.findViewById(R.id.sub_playback_speed);
         TextView subQuick = root.findViewById(R.id.sub_quick_speed);
     LinearLayout rowKeepOn = root.findViewById(R.id.row_keep_screen_on);
     TextView subKeepOn = root.findViewById(R.id.sub_keep_screen_on);
+    LinearLayout rowBgPlayback = root.findViewById(R.id.row_background_playback);
+    TextView subBgPlayback = root.findViewById(R.id.sub_background_playback);
     TextView subMute = root.findViewById(R.id.sub_mute_playback);
 
         // Subtitles
@@ -43,10 +45,13 @@ public class VideoPlayerSettingsFragment extends Fragment {
     subMute.setText(muted? getString(R.string.universal_enable): getString(R.string.universal_disable));
     boolean keepOn = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isPlayerKeepScreenOn();
     if (subKeepOn != null) subKeepOn.setText(keepOn? getString(R.string.universal_enable): getString(R.string.universal_disable));
+    boolean bg = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isBackgroundPlaybackEnabled();
+    if (subBgPlayback != null) subBgPlayback.setText(bg? getString(R.string.universal_enable): getString(R.string.universal_disable));
 
         rowPlayback.setOnClickListener(v -> showPlaybackSpeedPicker());
         rowQuick.setOnClickListener(v -> showQuickSpeedPicker());
     if (rowKeepOn != null) rowKeepOn.setOnClickListener(v -> showKeepScreenOnSwitchSheet());
+    if (rowBgPlayback != null) rowBgPlayback.setOnClickListener(v -> showBackgroundPlaybackSwitchSheet());
         // Mute switch row via picker with switch
         View rowMute = root.findViewById(R.id.row_mute_playback);
         if(rowMute!=null){ rowMute.setOnClickListener(v -> showMuteSwitchSheet()); }
@@ -77,6 +82,27 @@ public class VideoPlayerSettingsFragment extends Fragment {
                 getString(R.string.keep_screen_on_title), enabled);
         sheet.show(getParentFragmentManager(), "vps_keep_screen_on_switch_sheet");
         // -------------- Fix Ended for this method(showKeepScreenOnSwitchSheet)-----------
+    }
+
+    private void showBackgroundPlaybackSwitchSheet(){
+        final String RK = "rk_vps_background_playback_switch";
+        boolean enabled = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isBackgroundPlaybackEnabled();
+        getParentFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setBackgroundPlaybackEnabled(state);
+                View root = getView();
+                if(root!=null){
+                    TextView sub = root.findViewById(R.id.sub_background_playback);
+                    if(sub!=null){ sub.setText(state? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
+                }
+            }
+        });
+        String helper = getString(R.string.background_playback_helper_picker);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.background_playback_title), new java.util.ArrayList<>(), null, RK, helper,
+                getString(R.string.background_playback_title), enabled);
+        sheet.show(getParentFragmentManager(), "vps_background_playback_switch_sheet");
     }
 
     private void showMuteSwitchSheet(){

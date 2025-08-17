@@ -46,12 +46,14 @@ public class GLWatermarkRenderer {
 
     private boolean initialized = false;
 
-    // Preview EGL context/surface management
-    private EGLDisplay previewEglDisplay = EGL14.EGL_NO_DISPLAY;
-    private EGLContext previewEglContext = EGL14.EGL_NO_CONTEXT;
+    // Unified EGL config and preview surface (single display/context)
+    private EGLConfig eglConfig; // store chosen config for creating surfaces
     private EGLSurface previewEglSurface = EGL14.EGL_NO_SURFACE;
     private Surface currentPreviewSurface = null;
-    private EGLConfig previewEglConfig = null;
+    // Backoff for preview surface creation retries
+    private long previewCreateRetryDeadlineNs = 0L;
+    // Gate logging to avoid repeated warnings on frequent binds
+    private boolean warnedNoExternalTexture = false;
 
     // OES shader and draw logic
     private int oesProgram;
@@ -235,14 +237,13 @@ public class GLWatermarkRenderer {
                     
                     if (outputSurface != null) {
                         int[] surfaceAttribs = { EGL14.EGL_NONE };
-                        EGLConfig eglConfig = getEglConfig(eglDisplay);
                         if (eglConfig != null) {
                             eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
                             if (eglSurface == EGL14.EGL_NO_SURFACE) {
                                 throw new RuntimeException("Failed to create EGL surface");
                             }
                         } else {
-                            throw new RuntimeException("Failed to get EGL config");
+                            throw new RuntimeException("EGL config not set");
                         }
                     } else {
                         throw new RuntimeException("Output surface is null");
@@ -274,9 +275,7 @@ public class GLWatermarkRenderer {
                                 
                                 if (outputSurface != null) {
                                     int[] surfaceAttribs = { EGL14.EGL_NONE };
-                                    EGLConfig eglConfig = getEglConfig(eglDisplay);
                                     eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
-                                    
                                     if (eglSurface != EGL14.EGL_NO_SURFACE) {
                                         Log.d(TAG, "Successfully recreated EGL surface");
                                     } else {
@@ -314,13 +313,15 @@ public class GLWatermarkRenderer {
                                 EGLConfig[] configs = new EGLConfig[1];
                                 int[] numConfigs = new int[1];
                                 EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0);
-                                EGLConfig eglConfig = configs[0];
-                                
+                                EGLConfig eglRecoveryConfig = configs[0];
+
                                 int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
-                                eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
+                                eglContext = EGL14.eglCreateContext(eglDisplay, eglRecoveryConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
                                 
                                 int[] surfaceAttribs = { EGL14.EGL_NONE };
-                                eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
+                                eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglRecoveryConfig, outputSurface, surfaceAttribs, 0);
+                                // Keep stored config in sync with the recovered one
+                                eglConfig = eglRecoveryConfig;
                                 
                                 // Try again with the new context
                                 Thread.sleep(50); // Short delay to let things settle
@@ -465,83 +466,73 @@ public class GLWatermarkRenderer {
      * when the app is in the foreground.
      */
     public void renderToPreview() {
-        // ----- Fix Start for this method(renderToPreview)-----
-        // Quick check before acquiring lock to avoid unnecessary synchronization
-        if (!initialized || 
-            currentPreviewSurface == null || 
-            !currentPreviewSurface.isValid() || 
-            previewEglDisplay == EGL14.EGL_NO_DISPLAY ||
-            previewEglContext == EGL14.EGL_NO_CONTEXT ||
-            released) {
-            // No valid preview surface, just return silently
+        // Use unified EGL context/display for preview
+        if (!initialized || currentPreviewSurface == null || !currentPreviewSurface.isValid() || released) {
             return;
         }
-        
         synchronized (previewRenderLock) {
-            // Double-check conditions inside the lock
-            if (!initialized || 
-                currentPreviewSurface == null || 
-                !currentPreviewSurface.isValid() || 
-                previewEglDisplay == EGL14.EGL_NO_DISPLAY ||
-                previewEglContext == EGL14.EGL_NO_CONTEXT ||
-                released) {
+            if (!initialized || currentPreviewSurface == null || !currentPreviewSurface.isValid() || released) {
                 return;
             }
-            
-            // Check if we need to create a surface
+            // Backoff window to avoid repeated creation attempts if native window is currently connected elsewhere
+            if (previewCreateRetryDeadlineNs > 0 && System.nanoTime() < previewCreateRetryDeadlineNs) {
+                return;
+            }
             if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
                 try {
                     int[] surfaceAttribs = { EGL14.EGL_NONE };
-                    previewEglSurface = EGL14.eglCreateWindowSurface(previewEglDisplay, 
-                                                                    previewEglConfig, 
-                                                                    currentPreviewSurface, 
-                                                                    surfaceAttribs, 0);
+                    previewEglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, currentPreviewSurface, surfaceAttribs, 0);
                     if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
-                        Log.e(TAG, "Failed to create preview EGL surface");
+                        Log.e(TAG, "Failed to create EGL surface for preview");
+                        // Backoff a bit before next attempt
+                        previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L; // 200ms
                         return;
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error creating preview surface", e);
+                    Log.e(TAG, "Exception creating EGL surface for preview", e);
+                    previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
                     return;
                 }
             }
-            
-            // Make the preview EGL context current
-            try {
-            if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
-                Log.w(TAG, "renderToPreview: eglMakeCurrent failed, releasing preview EGL");
+            if (!EGL14.eglMakeCurrent(eglDisplay, previewEglSurface, previewEglSurface, eglContext)) {
+                Log.w(TAG, "renderToPreview: eglMakeCurrent failed, releasing preview surface");
                 releasePreviewEGL();
+                previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
                 return;
             }
-                
-                // Get the current texture matrix
-                float[] texMatrix = new float[16];
-                if (cameraSurfaceTexture != null) {
-                    cameraSurfaceTexture.getTransformMatrix(texMatrix);
-                } else {
-                    Matrix.setIdentityM(texMatrix, 0);
-                }
-                // Defensive: check OES texture
-                if (oesTextureId == 0) {
-                    Log.w(TAG, "OES texture ID is 0, skipping draw");
-                    return;
-                }
-                // Draw to preview
-                drawOESTexture(previewMvpMatrix, texMatrix);
-                // Swap buffers to complete the frame
-                if (!EGL14.eglSwapBuffers(previewEglDisplay, previewEglSurface)) {
-                    int error = EGL14.eglGetError();
-                    Log.w(TAG, "Preview eglSwapBuffers failed: " + error);
-                    // If surface is bad, release preview EGL resources
-                    if (error == EGL14.EGL_BAD_SURFACE) {
-                        releasePreviewEGL();
+            // Success: clear retry gate
+            previewCreateRetryDeadlineNs = 0L;
+            float[] texMatrix = new float[16];
+            if (cameraSurfaceTexture != null) {
+                cameraSurfaceTexture.getTransformMatrix(texMatrix);
+            } else {
+                Matrix.setIdentityM(texMatrix, 0);
+            }
+            if (oesTextureId == 0) {
+                Log.w(TAG, "OES texture ID is 0, skipping preview draw");
+                return;
+            }
+            updateMatrices();
+            drawOESTexture(previewMvpMatrix, texMatrix);
+            boolean swapOk = EGL14.eglSwapBuffers(eglDisplay, previewEglSurface);
+            if (!swapOk) {
+                int error = EGL14.eglGetError();
+                Log.w(TAG, "Preview eglSwapBuffers failed: 0x" + Integer.toHexString(error));
+                if (error == EGL14.EGL_BAD_SURFACE) {
+                    // Force recreate next time
+                    try {
+                        EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error destroying bad preview surface", e);
                     }
+                    previewEglSurface = EGL14.EGL_NO_SURFACE;
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Error in renderToPreview", e);
+            }
+            // Restore encoder surface as current
+            if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
             }
         }
-        // ----- Fix Ended for this method(renderToPreview)-----
     }
 
     private void setupEGL() {
@@ -563,19 +554,20 @@ public class GLWatermarkRenderer {
         };
         EGLConfig[] configs = new EGLConfig[1];
         int[] numConfigs = new int[1];
-        EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0);
-        EGLConfig eglConfig = configs[0];
-        previewEglConfig = eglConfig;
+        if (!EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0) || numConfigs[0] <= 0) {
+            throw new RuntimeException("eglChooseConfig failed");
+        }
+        eglConfig = configs[0];
 
         int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
         eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
         if (eglContext == EGL14.EGL_NO_CONTEXT) throw new RuntimeException("eglCreateContext failed");
         
         int[] surfaceAttribs = { EGL14.EGL_NONE };
-        eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
+    eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
         if (eglSurface == EGL14.EGL_NO_SURFACE) throw new RuntimeException("eglCreateWindowSurface failed");
         
-        if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) throw new RuntimeException("eglMakeCurrent failed");
+    if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) throw new RuntimeException("eglMakeCurrent failed");
     }
     
     public void initializeEGL() {
@@ -779,7 +771,10 @@ public class GLWatermarkRenderer {
             int[] textureArray = new int[1];
             GLES20.glGetIntegerv(GLES11Ext.GL_TEXTURE_BINDING_EXTERNAL_OES, textureArray, 0);
             if (textureArray[0] == 0) {
-                Log.w(TAG, "No external texture bound, attempting to rebind");
+                if (!warnedNoExternalTexture) {
+                    Log.w(TAG, "No external texture bound, attempting to rebind");
+                    warnedNoExternalTexture = true;
+                }
                 try {
                     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
                     // Clear any existing GL errors
@@ -791,6 +786,9 @@ public class GLWatermarkRenderer {
                     Log.e(TAG, "Error rebinding texture", e);
                     return;
                 }
+            } else {
+                // Texture is bound; reset the warning gate
+                warnedNoExternalTexture = false;
             }
             // Clear any existing GL errors before drawing
             int error = GLES20.glGetError();
@@ -962,59 +960,37 @@ public class GLWatermarkRenderer {
     public void setPreviewSurface(Surface previewSurface) {
         synchronized (previewRenderLock) {
             if (currentPreviewSurface == previewSurface) return;
-            
-            releasePreviewEGL();
-            currentPreviewSurface = previewSurface;
-
-            if (previewSurface != null) {
+            // Destroy any existing preview EGLSurface tied to old Surface
+            if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
                 try {
-                    previewEglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-                    int[] version = new int[2];
-                    EGL14.eglInitialize(previewEglDisplay, version, 0, version, 1);
-
-                    int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
-                    previewEglContext = EGL14.eglCreateContext(previewEglDisplay, previewEglConfig, eglContext, contextAttribs, 0);
-                    
-                    int[] surfaceAttribs = { EGL14.EGL_NONE };
-                    previewEglSurface = EGL14.eglCreateWindowSurface(previewEglDisplay, previewEglConfig, previewSurface, surfaceAttribs, 0);
-
-                } catch(Exception e) {
-                    Log.e(TAG, "Error creating preview EGL", e);
-                    releasePreviewEGL();
+            try { EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT); } catch (Exception ignore) {}
+            EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
+                } catch (Exception e) {
+                    Log.w(TAG, "Error destroying old preview EGLSurface", e);
                 }
+                previewEglSurface = EGL14.EGL_NO_SURFACE;
             }
+            currentPreviewSurface = previewSurface;
+        // Reset backoff on new surface
+        previewCreateRetryDeadlineNs = 0L;
         }
     }
 
     public void releasePreviewEGL() {
-        // ----- Fix Start for this method(releasePreviewEGL)-----
-        if (previewEglDisplay != EGL14.EGL_NO_DISPLAY) {
-            try {
-                EGL14.eglMakeCurrent(previewEglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-            } catch (Exception e) {
-                Log.w(TAG, "Error releasing current preview context", e);
+        // Unified: only destroy the preview EGLSurface; keep main display/context
+        synchronized (previewRenderLock) {
+            if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
+                try {
+            try { EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT); } catch (Exception ignore) {}
+            EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
+                } catch (Exception e) {
+                    Log.w(TAG, "Error destroying preview EGLSurface", e);
+                }
+                previewEglSurface = EGL14.EGL_NO_SURFACE;
             }
-            try {
-                if (previewEglSurface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(previewEglDisplay, previewEglSurface);
-            } catch (Exception e) {
-                Log.w(TAG, "Error destroying preview surface", e);
-            }
-            try {
-                if (previewEglContext != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(previewEglDisplay, previewEglContext);
-            } catch (Exception e) {
-                Log.w(TAG, "Error destroying preview context", e);
-            }
-            try {
-                EGL14.eglTerminate(previewEglDisplay);
-            } catch (Exception e) {
-                Log.w(TAG, "Error terminating preview display", e);
-            }
+            currentPreviewSurface = null;
+        previewCreateRetryDeadlineNs = 0L;
         }
-        previewEglDisplay = EGL14.EGL_NO_DISPLAY;
-        previewEglContext = EGL14.EGL_NO_CONTEXT;
-        previewEglSurface = EGL14.EGL_NO_SURFACE;
-        currentPreviewSurface = null;
-        // ----- Fix Ended for this method(releasePreviewEGL)-----
     }
     
     public void release() {
@@ -1098,10 +1074,10 @@ public class GLWatermarkRenderer {
                         eglSurface = EGL14.EGL_NO_SURFACE;
                     }
                     
-                    // Create a new EGL surface with the new encoder surface
+                    // Create a new EGL surface with the new encoder surface using stored config
                     int[] surfaceAttribs = { EGL14.EGL_NONE };
                     eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, 
-                                                             getEglConfig(eglDisplay), 
+                                                             eglConfig, 
                                                              outputSurface, 
                                                              surfaceAttribs, 0);
                     
@@ -1252,86 +1228,25 @@ public class GLWatermarkRenderer {
      * @param dummySurface A temporary surface to use for EGL initialization
      */
     public void initializePreviewSurfaceOnly(Surface dummySurface) {
-        // ----- Fix Start for this method(initializePreviewSurfaceOnly)-----
         synchronized (previewRenderLock) {
             if (dummySurface == null || !dummySurface.isValid()) {
                 Log.e(TAG, "Cannot initialize with invalid dummy surface");
                 return;
             }
-            
-            // Release any existing preview EGL resources
-            releasePreviewEGL();
-            
+            // Unified EGL: just create and destroy a temporary preview EGLSurface to warm up drivers
             try {
-                // Initialize preview EGL display
-                previewEglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-                if (previewEglDisplay == EGL14.EGL_NO_DISPLAY) {
-                    Log.e(TAG, "Failed to get EGL display for preview");
-                    return;
-                }
-                
-                // Initialize EGL
-                int[] version = new int[2];
-                if (!EGL14.eglInitialize(previewEglDisplay, version, 0, version, 1)) {
-                    Log.e(TAG, "Failed to initialize EGL for preview");
-                    releasePreviewEGL();
-                    return;
-                }
-                
-                // Get EGL config
-                previewEglConfig = getEglConfig(previewEglDisplay);
-                if (previewEglConfig == null) {
-                    Log.e(TAG, "Failed to get EGL config for preview");
-                    releasePreviewEGL();
-                    return;
-                }
-                
-                // Create EGL context that shares with the main context
-                int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
-                previewEglContext = EGL14.eglCreateContext(previewEglDisplay, previewEglConfig, 
-                                                          eglContext, // Share with main context
-                                                          contextAttribs, 0);
-                if (previewEglContext == EGL14.EGL_NO_CONTEXT) {
-                    Log.e(TAG, "Failed to create EGL context for preview");
-                    releasePreviewEGL();
-                    return;
-                }
-                
-                // Create dummy surface just to complete initialization
                 int[] surfaceAttribs = { EGL14.EGL_NONE };
-                previewEglSurface = EGL14.eglCreateWindowSurface(previewEglDisplay, 
-                                                                previewEglConfig, 
-                                                                dummySurface, 
-                                                                surfaceAttribs, 0);
-                if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
-                    Log.e(TAG, "Failed to create EGL surface for preview");
-                    releasePreviewEGL();
-                    return;
+                EGLSurface temp = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, dummySurface, surfaceAttribs, 0);
+                if (temp != EGL14.EGL_NO_SURFACE) {
+                    // Optionally make current briefly
+                    EGL14.eglMakeCurrent(eglDisplay, temp, temp, eglContext);
+                    EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                    EGL14.eglDestroySurface(eglDisplay, temp);
                 }
-                
-                // Make current briefly to complete initialization
-                if (!EGL14.eglMakeCurrent(previewEglDisplay, previewEglSurface, previewEglSurface, previewEglContext)) {
-                    Log.e(TAG, "Failed to make EGL context current for preview");
-                    releasePreviewEGL();
-                    return;
-                }
-                
-                // Immediately release the current context since we don't need it right now
-                EGL14.eglMakeCurrent(previewEglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-                
-                // We keep the display and context but destroy the temporary surface
-                if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
-                    EGL14.eglDestroySurface(previewEglDisplay, previewEglSurface);
-                    previewEglSurface = EGL14.EGL_NO_SURFACE;
-                }
-                
-                Log.d(TAG, "Preview EGL context initialized successfully with dummy surface");
             } catch (Exception e) {
-                Log.e(TAG, "Error initializing preview EGL with dummy surface", e);
-                releasePreviewEGL();
+                Log.w(TAG, "initializePreviewSurfaceOnly: temp surface warm-up failed", e);
             }
         }
-        // ----- Fix Ended for this method(initializePreviewSurfaceOnly)-----
     }
 
     /**

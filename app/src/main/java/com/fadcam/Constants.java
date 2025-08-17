@@ -182,4 +182,6 @@ public abstract class Constants {
     public static final String PREF_PLAYBACK_MUTED = "pref_playback_muted";
     // Keep screen awake during video playback
     public static final String PREF_PLAYER_KEEP_SCREEN_ON = "pref_player_keep_screen_on"; // default true
+    // Background playback preference
+    public static final String PREF_PLAYER_BACKGROUND_PLAYBACK = "pref_player_background_playback"; // default false
 }

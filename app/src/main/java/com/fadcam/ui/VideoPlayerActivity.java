@@ -44,6 +44,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private static final String RK_PLAYBACK_SPEED = "rk_playback_speed";
     private static final String RK_QUICK_SPEED = "rk_quick_speed";
     private static final String RK_KEEP_SCREEN_ON = "rk_keep_screen_on";
+    private static final String RK_BACKGROUND_PLAYBACK = "rk_background_playback";
     // -------------- Fix Ended for field(video_settings_result_keys)-----------
 
     // Playback speed options
@@ -240,20 +241,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // *** FIX: Modified method signature to accept Uri ***
     private void initializePlayer(Uri videoUri) {
         try {
-            player = new ExoPlayer.Builder(this).build();
+            // Use shared player so service + activity stay in sync
+            com.fadcam.playback.PlayerHolder holder = com.fadcam.playback.PlayerHolder.getInstance();
+            player = holder.getOrCreate(this);
             playerView.setPlayer(player);
-
-            // *** FIX: Use the received Uri directly ***
-            MediaItem mediaItem = MediaItem.fromUri(videoUri);
-
-            player.setMediaItem(mediaItem);
+            holder.setMediaIfNeeded(videoUri);
             // Set initial playback speed
             player.setPlaybackParameters(new PlaybackParameters(speedValues[currentSpeedIndex]));
             // Apply initial mute state from prefs
             boolean muted = SharedPreferencesManager.getInstance(this).isPlaybackMuted();
             try{ player.setVolume(muted? 0f: 1f); }catch(Exception ignored){}
-            player.prepare();
-            player.play(); // Autoplay
+            player.play(); // Autoplay (prepared in holder if needed)
             Log.i(TAG, "ExoPlayer initialized and started for URI: " + videoUri);
 
         } catch (Exception e) { // Catch potential exceptions during initialization
@@ -305,6 +303,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
     boolean keepOn = SharedPreferencesManager.getInstance(this).isPlayerKeepScreenOn();
     String keepOnSubtitle = keepOn ? getString(R.string.universal_enable) : getString(R.string.universal_disable);
     items.add(new OptionItem("row_keep_screen_on", getString(R.string.keep_screen_on_title), keepOnSubtitle, null, null, null, null, null, "visibility", null, null, null));
+    // Row: Background playback
+    boolean bg = SharedPreferencesManager.getInstance(this).isBackgroundPlaybackEnabled();
+    String bgSubtitle = bg ? getString(R.string.universal_enable) : getString(R.string.universal_disable);
+    items.add(new OptionItem("row_background_playback", getString(R.string.background_playback_title), bgSubtitle, null, null, null, null, null, "play_circle", null, null, null));
     String helper = getString(R.string.video_player_settings_helper_player);
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.video_player_settings_title), items, null, RK_VIDEO_SETTINGS, helper);
         getSupportFragmentManager().setFragmentResultListener(RK_VIDEO_SETTINGS, this, (key, bundle) -> {
@@ -317,6 +319,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 showMuteSwitchSheet();
             } else if ("row_keep_screen_on".equals(sel)) {
                 showKeepScreenOnSwitchSheet();
+            } else if ("row_background_playback".equals(sel)) {
+                showBackgroundPlaybackSwitchSheet();
             }
         });
         sheet.show(getSupportFragmentManager(), "video_settings_sheet");
@@ -388,6 +392,23 @@ public class VideoPlayerActivity extends AppCompatActivity {
         sheet.show(getSupportFragmentManager(), "video_keep_screen_on_switch_sheet");
     }
 
+    private void showBackgroundPlaybackSwitchSheet(){
+        boolean enabled = SharedPreferencesManager.getInstance(this).isBackgroundPlaybackEnabled();
+        getSupportFragmentManager().setFragmentResultListener(RK_BACKGROUND_PLAYBACK, this, (k,b)->{
+            if(b.containsKey(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                SharedPreferencesManager.getInstance(this).setBackgroundPlaybackEnabled(state);
+                // If turned on and we're already playing, keep behavior is applied onPause via service handoff.
+                // If turned off, ensure we stop background service when leaving.
+            }
+        });
+        String helper = getString(R.string.background_playback_helper_picker);
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.background_playback_title), new ArrayList<>(), null, RK_BACKGROUND_PLAYBACK, helper,
+                getString(R.string.background_playback_title), enabled);
+        sheet.show(getSupportFragmentManager(), "video_background_playback_switch_sheet");
+    }
+
     private void applyMutedStateToPlayer(boolean muted){
         try{
             if(player!=null){ player.setVolume(muted? 0f: 1f); }
@@ -414,11 +435,29 @@ public class VideoPlayerActivity extends AppCompatActivity {
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
+        // Re-attach shared player to the view when coming to foreground
+        if (playerView != null) {
+            com.fadcam.playback.PlayerHolder holder = com.fadcam.playback.PlayerHolder.getInstance();
+            ExoPlayer p = holder.getOrCreate(this);
+            playerView.setPlayer(p);
+        }
         // Optional: Resume playback if it was paused but ready (useful if app was backgrounded briefly)
         // Consider adding a check if user manually paused vs activity lifecycle pause
         if (player != null && player.getPlaybackState() == ExoPlayer.STATE_READY && !player.isPlaying()) {
             // player.play(); // Uncomment if you want auto-resume on activity resume
         }
+
+        // -------------- Fix Start for this method(onResume)-----------
+        // Request notification permission on Android 13+
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1010);
+                }
+            }
+        } catch (Exception ignored) {}
+    // Do not start background service while activity is in foreground; we'll handoff onPause if needed.
+        // -------------- Fix Ended for this method(onResume)-----------
     }
 
     @Override
@@ -427,10 +466,40 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // Allow screen to turn off when activity is paused
     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // Pause playback when activity goes into background/pause state
-        if (player != null && player.isPlaying()) {
-            player.pause();
-            Log.d(TAG, "Player paused in onPause.");
+        // -------------- Fix Start for this method(onPause)-----------
+        if (player != null) {
+            boolean bg = SharedPreferencesManager.getInstance(this).isBackgroundPlaybackEnabled();
+            boolean isPlaying = false;
+            try { isPlaying = player.isPlaying(); } catch (Exception ignored) {}
+            if (bg && isPlaying && hasPostNotificationsPermission()) {
+                // Only handoff to background service if currently playing
+                try {
+            android.content.Intent svc = new android.content.Intent(this, com.fadcam.services.BackgroundPlaybackService.class)
+                            .setAction(com.fadcam.services.BackgroundPlaybackService.ACTION_START)
+                            .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_URI, getIntent().getData())
+                            .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_SPEED, player.getPlaybackParameters().speed)
+                            .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_MUTED, player.getVolume() == 0f)
+                .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_POSITION_MS, player.getCurrentPosition())
+                .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_PLAY_WHEN_READY, true)
+                .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_FORCE_SHOW_NOTIFICATION, true);
+            androidx.core.content.ContextCompat.startForegroundService(this, svc);
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to start background playback service", e);
+                }
+            } else {
+                // Not playing or background playback disabled: ensure playback is paused and service stopped
+                try { if (isPlaying) player.pause(); } catch (Exception ignored) {}
+                try {
+                    android.content.Intent stop = new android.content.Intent(this, com.fadcam.services.BackgroundPlaybackService.class)
+                            .setAction(com.fadcam.services.BackgroundPlaybackService.ACTION_STOP);
+                    startService(stop);
+                } catch (Exception ignored) {}
+                Log.d(TAG, "Background service stopped (no background playback or paused).");
+            }
         }
+        // -------------- Fix Ended for this method(onPause)-----------
+    // Detach view to let service own playback surface-less
+    if (playerView != null) playerView.setPlayer(null);
     }
 
     @Override
@@ -439,11 +508,15 @@ public class VideoPlayerActivity extends AppCompatActivity {
     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onDestroy();
         // *** Release the player ***
-        if (player != null) {
-            player.release(); // Crucial to release resources
-            player = null;
-            Log.i(TAG, "ExoPlayer released.");
-        }
+    // Do not release the shared player here; service may be using it
+    try { if (player != null) player.pause(); } catch (Exception ignored) {}
+    player = null;
+        // Stop background playback service when activity is destroyed (if pref disabled)
+        try {
+            android.content.Intent stop = new android.content.Intent(this, com.fadcam.services.BackgroundPlaybackService.class)
+                    .setAction(com.fadcam.services.BackgroundPlaybackService.ACTION_STOP);
+            startService(stop);
+        } catch (Exception ignored) {}
     }
     // --- End Lifecycle Management ---
 
@@ -453,4 +526,19 @@ public class VideoPlayerActivity extends AppCompatActivity {
         return new MaterialAlertDialogBuilder(this, dialogTheme);
     }
     // ----- Fix End: Add themedDialogBuilder helper -----
+
+    // -------------- Fix Start for helper(hasPostNotificationsPermission)-----------
+    /**
+     * Returns true if either SDK < 33 or POST_NOTIFICATIONS permission is granted.
+     */
+    private boolean hasPostNotificationsPermission() {
+        if (android.os.Build.VERSION.SDK_INT < 33) return true;
+        try {
+            return androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    // -------------- Fix Ended for helper(hasPostNotificationsPermission)-----------
 }
