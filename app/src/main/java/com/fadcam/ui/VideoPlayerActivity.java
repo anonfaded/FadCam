@@ -81,10 +81,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private static final String RK_BACKGROUND_PLAYBACK = "rk_background_playback";
     // -------------- Fix Ended for field(video_settings_result_keys)-----------
 
-    // Playback speed options
-    private final CharSequence[] speedOptions = {"0.5x", "1x (Normal)", "1.5x", "2x", "3x", "4x", "6x", "8x", "10x"};
-    private final float[] speedValues = {0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 10.0f};
-    private int currentSpeedIndex = 1; // Index for 1.0x speed
+    // Playback speed options (include more slow-speed choices 0.5 -> 0.9)
+    private final CharSequence[] speedOptions = {"0.5x", "0.6x", "0.7x", "0.8x", "0.9x", "1x (Normal)", "1.5x", "2x", "3x", "4x", "6x", "8x", "10x"};
+    private final float[] speedValues = {0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 10.0f};
+    private int currentSpeedIndex = 5; // Index for 1.0x speed in updated speedValues
     // Guard to keep single-tap from being treated as part of double-tap or re-triggering control toggles
     private long lastSingleTapTime = 0L;
 

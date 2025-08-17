@@ -240,9 +240,9 @@ public class VideoPlayerSettingsFragment extends Fragment {
 
     private void showPlaybackSpeedPicker(){
         // -------------- Fix Start for this method(showPlaybackSpeedPicker)-----------
-        final String RK = "rk_vps_playback_speed";
-        float[] speedValues = new float[]{0.5f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
-        CharSequence[] labels = new CharSequence[]{"0.5x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
+    final String RK = "rk_vps_playback_speed";
+    float[] speedValues = new float[]{0.5f,0.6f,0.7f,0.8f,0.9f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
+    CharSequence[] labels = new CharSequence[]{"0.5x","0.6x","0.7x","0.8x","0.9x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         for(int i=0;i<speedValues.length;i++){
             items.add(new com.fadcam.ui.picker.OptionItem("spd_"+speedValues[i], String.valueOf(labels[i]), null, null, null, null, null, null, "speed", null, null, null));
@@ -275,8 +275,8 @@ public class VideoPlayerSettingsFragment extends Fragment {
     private void showQuickSpeedPicker(){
         // -------------- Fix Start for this method(showQuickSpeedPicker)-----------
         final String RK = "rk_vps_quick_speed";
-        float[] speedValues = new float[]{0.5f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
-        CharSequence[] labels = new CharSequence[]{"0.5x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
+    float[] speedValues = new float[]{0.5f,0.6f,0.7f,0.8f,0.9f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
+    CharSequence[] labels = new CharSequence[]{"0.5x","0.6x","0.7x","0.8x","0.9x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         for(int i=0;i<speedValues.length;i++){
             String title = Math.abs(speedValues[i]-2.0f)<0.001f? getString(R.string.quick_speed_option_default): String.valueOf(labels[i]);
