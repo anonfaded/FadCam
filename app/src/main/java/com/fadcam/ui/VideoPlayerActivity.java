@@ -350,6 +350,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 else if (cur == 900) selId = "t_15m";
                 else if (cur == 1800) selId = "t_30m";
                 else if (cur == 3600) selId = "t_1h";
+                else if (cur > 0) selId = "t_custom"; // show Custom checked for non-preset values
                 PickerBottomSheetFragment sheetTimer = PickerBottomSheetFragment.newInstance(getString(R.string.background_playback_timer_title), itemsTimer, selId, RK, getString(R.string.background_playback_timer_helper));
                 getSupportFragmentManager().setFragmentResultListener(RK, this, (rkRes, resBundle) -> {
                     String sel2 = resBundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);

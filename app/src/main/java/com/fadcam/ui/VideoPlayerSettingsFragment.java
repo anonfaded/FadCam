@@ -147,15 +147,16 @@ public class VideoPlayerSettingsFragment extends Fragment {
     items.add(new com.fadcam.ui.picker.OptionItem("t_1h", getString(R.string.timer_1_hour), null, null, null, null, null, null, "timer", null, null, null));
     items.add(new com.fadcam.ui.picker.OptionItem("t_custom", getString(R.string.timer_custom_label), null, null, null, null, null, null, "edit", null, null, null));
 
-        // Determine currently saved seconds
-        int cur = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).getBackgroundPlaybackTimerSeconds();
-        String selectedId = "t_off";
-        if (cur == 30) selectedId = "t_30s";
-        else if (cur == 60) selectedId = "t_1m";
-        else if (cur == 300) selectedId = "t_5m";
-        else if (cur == 900) selectedId = "t_15m";
-        else if (cur == 1800) selectedId = "t_30m";
-        else if (cur == 3600) selectedId = "t_1h";
+    // Determine currently saved seconds
+    int cur = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).getBackgroundPlaybackTimerSeconds();
+    String selectedId = "t_off";
+    if (cur == 30) selectedId = "t_30s";
+    else if (cur == 60) selectedId = "t_1m";
+    else if (cur == 300) selectedId = "t_5m";
+    else if (cur == 900) selectedId = "t_15m";
+    else if (cur == 1800) selectedId = "t_30m";
+    else if (cur == 3600) selectedId = "t_1h";
+    else if (cur > 0) selectedId = "t_custom"; // make custom checked when user set a non-preset value
     com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.background_playback_timer_title_short), items, selectedId, RK, getString(R.string.background_playback_timer_helper));
         getParentFragmentManager().setFragmentResultListener(RK, this, (rkRes, b)->{
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
