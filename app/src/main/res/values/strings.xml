@@ -2,6 +2,7 @@
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Choose an icon and name for your app. This will change how it appears on your home screen.</string>
     <string name="check_for_updates">Check for Updates</string>
+        <string name="accessibility_thumbnail_progress">%1$d%% watched</string>
     <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
 
 

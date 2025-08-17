@@ -86,6 +86,26 @@
                 android:indeterminateTint="@color/white"
                 android:visibility="gone"
                 tools:visibility="visible" />
+            
+            <!-- Last-viewed thin progress bar (shows percent watched) -->
+            <View
+                android:id="@+id/thumbnail_progress_bg"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="bottom"
+                android:background="?attr/colorDialog"
+                android:alpha="0.45"
+                android:visibility="visible"
+                android:importantForAccessibility="no" />
+
+            <View
+                android:id="@+id/thumbnail_progress_fill"
+                android:layout_width="0dp"
+                android:layout_height="4dp"
+                android:layout_gravity="bottom|start"
+                android:background="?attr/colorButton"
+                android:visibility="gone"
+                android:importantForAccessibility="yes" />
             <!-- *** END: Processing Overlay *** -->
 
         </FrameLayout>

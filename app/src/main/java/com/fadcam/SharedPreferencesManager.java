@@ -422,6 +422,57 @@ public class SharedPreferencesManager {
     public void putLong(String key, long value) {
         sharedPreferences.edit().putLong(key, value).apply();
     }
+    // --- Resume position helpers ---
+    private static final String PREF_KEY_VIDEO_POS_PREFIX = "video_pos_"; // appended with encoded URI
+    private static final String PREF_KEY_VIDEO_POS_FILENAME_PREFIX = "video_pos_fn_"; // appended with filename
+
+    /**
+     * Get saved playback position (ms) for a given video URI string. Returns 0 if none saved.
+     */
+    public long getSavedPlaybackPositionMs(String uriString) {
+        if (uriString == null) return 0L;
+        String key = PREF_KEY_VIDEO_POS_PREFIX + uriString;
+        return sharedPreferences.getLong(key, 0L);
+    }
+
+    /**
+     * Save playback position (ms) for a given video URI string.
+     */
+    public void setSavedPlaybackPositionMs(String uriString, long posMs) {
+        if (uriString == null) return;
+        String key = PREF_KEY_VIDEO_POS_PREFIX + uriString;
+        sharedPreferences.edit().putLong(key, posMs).apply();
+    }
+
+    /**
+     * Save playback position (ms) for a given video filename (fallback key).
+     */
+    public void setSavedPlaybackPositionMsByFilename(String filename, long posMs) {
+        if (filename == null) return;
+        String key = PREF_KEY_VIDEO_POS_FILENAME_PREFIX + filename;
+        sharedPreferences.edit().putLong(key, posMs).apply();
+    }
+
+    /**
+     * Get saved playback position (ms) by filename fallback. Returns 0 if none saved.
+     */
+    public long getSavedPlaybackPositionMsByFilename(String filename) {
+        if (filename == null) return 0L;
+        String key = PREF_KEY_VIDEO_POS_FILENAME_PREFIX + filename;
+        return sharedPreferences.getLong(key, 0L);
+    }
+
+    /**
+     * Helper: check URI-keyed position first, then filename-keyed fallback.
+     * @param uriString full URI string (may be null)
+     * @param filename filename (may be null)
+     * @return saved position in ms or 0
+     */
+    public long getSavedPlaybackPositionMsWithFilenameFallback(String uriString, String filename) {
+        long v = getSavedPlaybackPositionMs(uriString);
+        if (v > 0) return v;
+        return getSavedPlaybackPositionMsByFilename(filename);
+    }
     // -------------- Fix Ended for this class (SharedPreferencesManager_background_playback)-----------
     // --- End Camera / Video settings ---
 

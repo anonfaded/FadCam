@@ -96,6 +96,26 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final SparseArray<String> loadedThumbnailCache = new SparseArray<>();
     private static final int THUMBNAIL_SIZE = 200; // Standard size for all thumbnails
     private Set<Uri> currentlyProcessingUris = new HashSet<>(); // Track processing URIs within adapter instance (passed from fragment)
+    // Bounded LRU caches to avoid unbounded memory usage
+    private final java.util.Map<String, Long> durationCache = new java.util.LinkedHashMap<String, Long>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Long> eldest) {
+            return size() > 256; // keep at most 256 entries
+        }
+    };
+    private final java.util.Map<String, Long> savedPositionCache = new java.util.LinkedHashMap<String, Long>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Long> eldest) {
+            return size() > 1024; // keep more entries for saved positions
+        }
+    };
+    // Reuse a single main-thread handler for UI updates
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    // Simple file-based cache for durations (persist across sessions)
+    private final File durationCacheFile;
+    // Broadcast receiver to listen for playback position updates
+    private final androidx.localbroadcastmanager.content.LocalBroadcastManager localBroadcastManager;
+    private final android.content.BroadcastReceiver playbackPositionReceiver;
 
     private static final String TAG = "RecordsAdapter";
     private final ExecutorService executorService; // Add ExecutorService
@@ -146,6 +166,30 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             Log.e(TAG, "Adapter Initialized. External cache dir is null! Cannot reliably identify temp files.");
             this.tempCacheDirectoryPath = null;
         }
+        // Duration cache file inside app cache dir
+        File appCache = context.getCacheDir();
+        this.durationCacheFile = new File(appCache, "duration_cache.json");
+    // load persisted duration cache
+    loadDurationCacheFromDisk();
+
+        // Setup LocalBroadcastReceiver for immediate progress updates
+        this.localBroadcastManager = androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context);
+        this.playbackPositionReceiver = new android.content.BroadcastReceiver() {
+            @Override
+            public void onReceive(android.content.Context ctx, android.content.Intent intent) {
+                if (intent == null) return;
+                String uriStr = intent.getStringExtra("uri");
+                long pos = intent.getLongExtra("position_ms", -1);
+                if (uriStr == null || pos < 0) return;
+                // Update savedPositionCache and notify specific item
+                synchronized (savedPositionCache) { savedPositionCache.put(uriStr, pos); }
+                int posIndex = findPositionByUri(Uri.parse(uriStr));
+                if (posIndex != -1) {
+                    mainHandler.post(() -> notifyItemChanged(posIndex));
+                }
+            }
+        };
+        try { this.localBroadcastManager.registerReceiver(this.playbackPositionReceiver, new android.content.IntentFilter("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED")); } catch (Exception ignored) {}
     }
 
     // *** NEW: Helper method to check if a VideoItem is in the cache directory ***
@@ -324,6 +368,46 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             setThumbnail(holder, videoUri);
         }
 
+        // --- Last-viewed progress bar handling (optimized with caching) ---
+        try {
+            View progressBg = holder.itemView.findViewById(R.id.thumbnail_progress_bg);
+            View progressFill = holder.itemView.findViewById(R.id.thumbnail_progress_fill);
+            if (progressBg != null && progressFill != null) {
+                progressFill.setVisibility(View.GONE);
+                final String key = videoUri.toString();
+                // Try caches first
+                Long cachedSaved = savedPositionCache.get(key);
+                Long cachedDur = durationCache.get(key);
+                if (cachedSaved != null && cachedDur != null) {
+                    applyProgressToView(progressBg, progressFill, cachedSaved, cachedDur);
+                } else {
+                    // Submit one background task to compute missing values
+                    executorService.execute(() -> {
+                        try {
+                            long savedMs = cachedSaved != null ? cachedSaved : sharedPreferencesManager.getSavedPlaybackPositionMsWithFilenameFallback(key, getFileName(videoUri));
+                            long durationMs = cachedDur != null ? cachedDur : getVideoDuration(videoUri);
+                            // Cache results for future bindings (synchronized because LinkedHashMap isn't thread-safe)
+                            synchronized (durationCache) {
+                                if (durationMs > 0) {
+                                    durationCache.put(key, durationMs);
+                                    persistDurationCacheToDisk();
+                                }
+                            }
+                            synchronized (savedPositionCache) {
+                                if (savedMs > 0) savedPositionCache.put(key, savedMs);
+                            }
+                            final long fSaved = savedMs;
+                            final long fDur = durationMs;
+                            mainHandler.post(() -> applyProgressToView(progressBg, progressFill, fSaved, fDur));
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error computing thumbnail progress", e);
+                            mainHandler.post(() -> progressFill.setVisibility(View.GONE));
+                        }
+                    });
+                }
+            }
+        } catch (Exception ignored) {}
+
         // --- 4. Visibility Logic for Overlays/Badges ---
 
         // Warning Dot for TEMP files (only visible if not processing)
@@ -454,6 +538,97 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     @Override
     public int getItemCount() {
         return records == null ? 0 : records.size();
+    }
+
+    // Load duration cache from JSON file
+    private void loadDurationCacheFromDisk() {
+        if (durationCacheFile == null || !durationCacheFile.exists()) return;
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(durationCacheFile)) {
+            byte[] data = new byte[(int) durationCacheFile.length()];
+            fis.read(data);
+            String json = new String(data, java.nio.charset.StandardCharsets.UTF_8);
+            org.json.JSONObject obj = new org.json.JSONObject(json);
+            org.json.JSONArray names = obj.names();
+            if (names != null) {
+                for (int i = 0; i < names.length(); i++) {
+                    String k = names.getString(i);
+                    long v = obj.optLong(k, 0L);
+                    if (v > 0) durationCache.put(k, v);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to load duration cache", e);
+        }
+    }
+
+    // Persist duration cache to disk (best-effort)
+    private void persistDurationCacheToDisk() {
+        if (durationCacheFile == null) return;
+        try {
+            org.json.JSONObject obj = new org.json.JSONObject();
+            synchronized (durationCache) {
+                for (java.util.Map.Entry<String, Long> e : durationCache.entrySet()) {
+                    obj.put(e.getKey(), e.getValue());
+                }
+            }
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(durationCacheFile)) {
+                fos.write(obj.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                fos.getFD().sync();
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to persist duration cache", e);
+        }
+    }
+
+    // Helper to apply computed progress to views on UI thread
+    private void applyProgressToView(View progressBg, View progressFill, long savedMs, long durationMs) {
+        try {
+            if (savedMs > 0 && durationMs > 1000) {
+                int percent = (int) Math.max(1, Math.min(100, (savedMs * 100) / durationMs));
+                int bgW = progressBg.getWidth();
+                if (bgW <= 0) {
+                    progressBg.post(() -> {
+                        int w = progressBg.getWidth();
+                        int target = (w * percent) / 100;
+                        animateProgressWidth(progressFill, target);
+                        progressFill.setVisibility(View.VISIBLE);
+                        // accessibility
+                        progressFill.setContentDescription(progressPercentContentDescription(percent));
+                    });
+                } else {
+                    int target = (bgW * percent) / 100;
+                    animateProgressWidth(progressFill, target);
+                    progressFill.setVisibility(View.VISIBLE);
+                    // accessibility
+                    progressFill.setContentDescription(progressPercentContentDescription(percent));
+                }
+            } else {
+                progressFill.setVisibility(View.GONE);
+                progressFill.setContentDescription(null);
+            }
+        } catch (Exception e) { Log.w(TAG, "applyProgressToView error", e); }
+    }
+
+    // Animate width change for the progress fill for a smooth visual update
+    private void animateProgressWidth(View view, int toWidth) {
+        if (view == null) return;
+        try {
+            int from = view.getLayoutParams().width;
+            if (from < 0) from = 0;
+            android.animation.ValueAnimator va = android.animation.ValueAnimator.ofInt(from, toWidth);
+            va.setDuration(200);
+            va.addUpdateListener(animation -> {
+                int val = (int) animation.getAnimatedValue();
+                view.getLayoutParams().width = val;
+                view.requestLayout();
+            });
+            va.start();
+        } catch (Exception ignored) {}
+    }
+
+    // Accessibility string helper
+    private String progressPercentContentDescription(int percent) {
+        try { return context.getString(R.string.accessibility_thumbnail_progress, percent); } catch (Exception ignored) { return percent + "% watched"; }
     }
 
     // Update the setThumbnail method to consider scrolling state

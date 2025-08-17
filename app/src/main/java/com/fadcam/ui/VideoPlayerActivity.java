@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 
 import androidx.appcompat.app.AppCompatActivity;
+import android.annotation.SuppressLint;
 
 import com.fadcam.R;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -39,6 +40,35 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private ImageButton settingsButton; // For playback speed
     private TextView quickSpeedOverlay;
     private SharedPreferencesManager spm;
+    // Periodic resume-save handler
+    private final android.os.Handler resumeSaveHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable resumeSaveRunnable = new Runnable() {
+        private long lastSavedPos = -1;
+        @Override
+        public void run() {
+            try {
+                if (player == null) return;
+                boolean isPlaying = false;
+                try { isPlaying = player.isPlaying(); } catch (Exception ignored) {}
+                if (isPlaying) {
+                    long pos = player.getCurrentPosition();
+                    if (Math.abs(pos - lastSavedPos) > 1000) { // only save if moved >1s
+                        com.fadcam.playback.PlayerHolder holder = com.fadcam.playback.PlayerHolder.getInstance();
+                        Uri cur = holder.getCurrentUri();
+                        String filename = null;
+                        try { filename = getFileName(cur); } catch (Exception ignored) {}
+                        SharedPreferencesManager spmLoc = SharedPreferencesManager.getInstance(VideoPlayerActivity.this);
+                        if (cur != null) spmLoc.setSavedPlaybackPositionMs(cur.toString(), pos);
+                        if (filename != null && !filename.isEmpty()) spmLoc.setSavedPlaybackPositionMsByFilename(filename, pos);
+                        lastSavedPos = pos;
+                        Log.d(TAG, "Periodic save position: " + pos + " for " + (cur!=null?cur:filename));
+                    }
+                }
+            } catch (Exception e) { Log.w(TAG, "Error during periodic resume save", e); }
+            // Re-post
+            resumeSaveHandler.postDelayed(this, 5000);
+        }
+    };
     // -------------- Fix Start for field(video_settings_result_keys)-----------
     private static final String RK_VIDEO_SETTINGS = "rk_video_settings";
     private static final String RK_PLAYBACK_SPEED = "rk_playback_speed";
@@ -259,13 +289,87 @@ public class VideoPlayerActivity extends AppCompatActivity {
             // Apply initial mute state from prefs
             boolean muted = SharedPreferencesManager.getInstance(this).isPlaybackMuted();
             try{ player.setVolume(muted? 0f: 1f); }catch(Exception ignored){}
-            player.play(); // Autoplay (prepared in holder if needed)
+            // Autoplay (prepared in holder if needed)
+            // Restore saved playback position (resume) if available
+            try {
+                String uriStr = videoUri.toString();
+                String filename = getFileName(videoUri);
+                long savedMs = SharedPreferencesManager.getInstance(this).getSavedPlaybackPositionMsWithFilenameFallback(uriStr, filename);
+                if (savedMs > 0) {
+                    player.seekTo(savedMs);
+                }
+            } catch (Exception ignored) {}
+            player.play();
+            // Listen for seeks so we can save immediately and notify adapters
+            try {
+                player.addListener(new com.google.android.exoplayer2.Player.Listener() {
+                    public void onSeekProcessed() {
+                        // Save and broadcast immediately when user finishes a seek
+                        saveCurrentPlaybackPosition();
+                    }
+                });
+            } catch (Exception ignored) {}
+            // Start periodic saves
+            resumeSaveHandler.postDelayed(resumeSaveRunnable, 5000);
             Log.i(TAG, "ExoPlayer initialized and started for URI: " + videoUri);
 
         } catch (Exception e) { // Catch potential exceptions during initialization
             Log.e(TAG, "Error initializing player for URI: " + videoUri, e);
             Toast.makeText(this, "Error playing video", Toast.LENGTH_SHORT).show();
             finish(); // Close activity if player fails to initialize
+        }
+    }
+
+    // Save current position to prefs keyed by current media URI
+
+                // Get file name from URI (Helper) - used for filename fallback when saving/resuming
+                @SuppressLint("Range") // Suppress lint check for getColumnIndexOrThrow
+                private String getFileName(Uri uri) {
+                    if (this == null || uri == null) return null;
+                    String result = null;
+                    if ("content".equals(uri.getScheme())) {
+                        try (android.database.Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                            if (cursor != null && cursor.moveToFirst()) {
+                                int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                                if (nameIndex != -1) {
+                                    result = cursor.getString(nameIndex);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Could not query display name for content URI: " + uri, e);
+                        }
+                    }
+                    if (result == null) {
+                        String path = uri.getPath();
+                        if (path != null) {
+                            int cut = path.lastIndexOf('/');
+                            if (cut != -1) result = path.substring(cut + 1);
+                            else result = path;
+                        }
+                    }
+                    return result;
+                }
+    private void saveCurrentPlaybackPosition() {
+        try {
+            if (player == null) return;
+            long pos = player.getCurrentPosition();
+            com.fadcam.playback.PlayerHolder holder = com.fadcam.playback.PlayerHolder.getInstance();
+            Uri cur = holder.getCurrentUri();
+            if (cur != null) {
+                // Save both URI-keyed and filename-keyed fallback
+                SharedPreferencesManager spmLoc = SharedPreferencesManager.getInstance(this);
+                spmLoc.setSavedPlaybackPositionMs(cur.toString(), pos);
+                try { String fn = getFileName(cur); if (fn != null && !fn.isEmpty()) spmLoc.setSavedPlaybackPositionMsByFilename(fn, pos); } catch (Exception ignored) {}
+                // Broadcast an update so UI components (adapters) can refresh immediately
+                try {
+                    android.content.Intent b = new android.content.Intent("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED");
+                    b.putExtra("uri", cur.toString());
+                    b.putExtra("position_ms", pos);
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(b);
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to save playback position", e);
         }
     }
 
@@ -576,6 +680,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
             }
         }
         // -------------- Fix Ended for this method(onPause)-----------
+        // Persist current playback position when pausing
+        saveCurrentPlaybackPosition();
+    // Stop periodic saves while paused
+    resumeSaveHandler.removeCallbacks(resumeSaveRunnable);
     // Detach view to let service own playback surface-less
     if (playerView != null) playerView.setPlayer(null);
     }
@@ -584,6 +692,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     protected void onDestroy() {
     // Clear screen flags again just in case
     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // Persist current playback position prior to destruction
+        saveCurrentPlaybackPosition();
         super.onDestroy();
         // *** Release the player ***
     // Do not release the shared player here; service may be using it
