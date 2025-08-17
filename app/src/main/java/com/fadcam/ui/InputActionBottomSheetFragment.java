@@ -32,6 +32,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     private static final String ARG_TITLE = "title";
     private static final String ARG_JSON = "json";
     private static final String ARG_REQUIRED_PHRASE = "phrase";
+    private static final String ARG_ACTION_TITLE = "action_title";
+    private static final String ARG_ACTION_SUBTITLE = "action_subtitle";
+    private static final String ARG_ACTION_ICON = "action_icon";
     private static final String MODE_PREVIEW = "preview";
     private static final String MODE_RESET = "reset";
 
@@ -45,6 +48,23 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     public static InputActionBottomSheetFragment newReset(String title, String phrase){
         InputActionBottomSheetFragment f = new InputActionBottomSheetFragment();
         Bundle b = new Bundle(); b.putString(ARG_MODE, MODE_RESET); b.putString(ARG_TITLE, title); b.putString(ARG_REQUIRED_PHRASE, phrase); f.setArguments(b); return f;
+    }
+
+    /**
+     * More flexible reset constructor allowing callers to customize the action row title, subtitle and icon.
+     * Backwards compatible with existing callers which use the simpler overload.
+     */
+    public static InputActionBottomSheetFragment newReset(String title, String phrase, String actionTitle, String actionSubtitle, int actionIconRes){
+        InputActionBottomSheetFragment f = new InputActionBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_MODE, MODE_RESET);
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_REQUIRED_PHRASE, phrase);
+        b.putString(ARG_ACTION_TITLE, actionTitle);
+        b.putString(ARG_ACTION_SUBTITLE, actionSubtitle);
+        b.putInt(ARG_ACTION_ICON, actionIconRes);
+        f.setArguments(b);
+        return f;
     }
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
@@ -165,8 +185,6 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         input.setSingleLine(true);
         input.setHint(phrase);
         // Removed automatic all-caps transformation so user must manually enter correct uppercase phrase (case sensitive requirement).
-        // input.setAllCaps(true); // removed
-        // input.setFilters(new InputFilter[]{ new InputFilter.AllCaps() }); // removed
         input.setBackgroundResource(R.drawable.prefs_input_bg);
         input.setPadding(dp(12), dp(10), dp(12), dp(10));
         input.setTextColor(getResources().getColor(android.R.color.white));
@@ -177,7 +195,17 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         lp.rightMargin = dp(16);
         parent.addView(input, lp);
         parent.addView(makeDivider());
-        parent.addView(actionRow(R.drawable.ic_delete, getString(R.string.prefs_reset_label), getString(R.string.prefs_reset_subtitle), v -> {
+
+        // Allow callers to override the action row's title/subtitle/icon via arguments
+        Bundle args = getArguments();
+        String actionTitle = args != null ? args.getString(ARG_ACTION_TITLE) : null;
+        String actionSubtitle = args != null ? args.getString(ARG_ACTION_SUBTITLE) : null;
+        int actionIcon = args != null ? args.getInt(ARG_ACTION_ICON, R.drawable.ic_delete) : R.drawable.ic_delete;
+
+        final String finalActionTitle = actionTitle != null ? actionTitle : getString(R.string.prefs_reset_label);
+        final String finalActionSubtitle = actionSubtitle != null ? actionSubtitle : getString(R.string.prefs_reset_subtitle);
+
+        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, v -> {
             String val = input.getText().toString().trim();
             if (phrase != null && phrase.equals(val)) { // case sensitive match
                 if (callbacks != null) { callbacks.onResetConfirmed(); }

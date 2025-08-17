@@ -1465,24 +1465,22 @@ public class RecordsFragment extends BaseFragment implements
             Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
             return;
         }
-        // -------------- Fix Start for this method(confirmDeleteAll)-----------
-        // Use unified bottom picker as a confirmation sheet
-        final String pickerKey = "records_delete_all_picker";
-        getParentFragmentManager().setFragmentResultListener(pickerKey, this, (key, bundle) -> {
-            if (bundle == null) return;
-            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if ("confirm".equals(sel)) {
+        // Use the typed-confirmation bottom sheet (same as Reset All Preferences)
+        // Require the user to type the exact word "DELETE" to proceed.
+        InputActionBottomSheetFragment confirm = InputActionBottomSheetFragment.newReset(
+                getString(R.string.delete_all_videos_title),
+                "DELETE",
+                getString(R.string.delete_all_videos_title),
+                getString(R.string.delete_all_videos_subtitle_short),
+                R.drawable.ic_delete_all
+        );
+        confirm.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override public void onImportConfirmed(org.json.JSONObject json) { /* not used */ }
+            @Override public void onResetConfirmed() {
                 deleteAllVideos();
             }
         });
-        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> options = new java.util.ArrayList<>();
-    options.add(new com.fadcam.ui.picker.OptionItem("confirm", getString(R.string.dialog_del_confirm), null, null, R.drawable.ic_delete_all));
-    options.add(new com.fadcam.ui.picker.OptionItem("cancel", getString(R.string.universal_cancel), null, null, R.drawable.ic_close));
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-                getString(R.string.delete_all_videos_title), options, "", pickerKey, getString(R.string.delete_all_videos_subtitle_short)
-        );
-        sheet.show(getParentFragmentManager(), "RecordsDeleteAllPicker");
-        // -------------- Fix Ended for this method(confirmDeleteAll)-----------
+        confirm.show(getParentFragmentManager(), "delete_sheet_confirm");
     }
 
     // Inside RecordsFragment.java

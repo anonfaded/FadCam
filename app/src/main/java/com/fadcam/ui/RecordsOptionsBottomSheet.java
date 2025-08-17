@@ -113,10 +113,25 @@ public class RecordsOptionsBottomSheet extends BottomSheetDialogFragment {
 
         if (deleteAllOption != null) {
             deleteAllOption.setOnClickListener(v -> {
+                // Close this options sheet and show a typed confirmation dialog to avoid accidental mass-deletes
                 dismiss();
-                if (deleteListener != null) {
-                    deleteListener.onDeleteAllClicked();
-                }
+        // Use the more flexible constructor to show delete-specific action text/icon
+        InputActionBottomSheetFragment confirm = InputActionBottomSheetFragment.newReset(
+            getString(R.string.delete_all_videos_title),
+            "DELETE",
+            getString(R.string.delete_all_videos_title),
+            getString(R.string.delete_all_videos_subtitle_short),
+            R.drawable.ic_delete_all
+        );
+        confirm.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+                    @Override public void onImportConfirmed(org.json.JSONObject json) { /* not used */ }
+                    @Override public void onResetConfirmed() {
+                        if (deleteListener != null) {
+                            deleteListener.onDeleteAllClicked();
+                        }
+                    }
+                });
+                confirm.show(getParentFragmentManager(), "delete_sheet_confirm");
             });
         }
 
