@@ -95,6 +95,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         setupBackButton();
 
+        // Ensure the system status bar matches the header/back-button area color for this activity
+        try {
+            int statusBarColor = resolveThemeColor(R.attr.colorTopBar);
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            getWindow().setStatusBarColor(statusBarColor);
+        } catch (Exception e) { Log.w(TAG, "Failed to set status bar color", e); }
+
         // ----- Fix Start: Programmatically set seekbar colors for dynamic theming -----
         // ExoPlayer's XML attributes may not always apply theme attributes at runtime, so set them here
         View timeBar = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);

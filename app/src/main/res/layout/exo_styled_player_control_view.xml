@@ -19,9 +19,9 @@
         android:layout_marginEnd="16dp"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:background="@drawable/player_control_background_rounded"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/player_control_background_rounded"
         android:layoutDirection="ltr">
 
         <LinearLayout
@@ -69,11 +69,12 @@
                     <ImageButton android:id="@id/exo_repeat_toggle" style="@style/ExoStyledControls.Button.Bottom.RepeatToggle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
                     <ImageButton android:id="@id/exo_subtitle" style="@style/ExoStyledControls.Button.Bottom.CC" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
 
+                    <!-- Use a clear settings/tune glyph for playback settings -->
                     <ImageButton android:id="@id/exo_settings"
                         style="@style/ExoStyledControls.Button.Bottom.Settings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/ic_settings_24"
+                        android:src="@drawable/ic_bitrate"
                         app:tint="@android:color/white"
                         android:contentDescription="@string/settings_title"/>
 
