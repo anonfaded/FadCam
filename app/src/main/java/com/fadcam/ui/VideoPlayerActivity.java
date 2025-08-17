@@ -478,6 +478,38 @@ public class VideoPlayerActivity extends AppCompatActivity {
     }
     // -------------- Fix Ended for this method(showQuickSpeedPickerSheet)-----------
 
+    // -------------- Fix Start for method(showAudioWaveformSwitchSheet)-----------
+    private void showAudioWaveformSwitchSheet() {
+        final String RK = "rk_waveform_switch";
+        boolean enabled = spm != null ? spm.isAudioWaveformEnabled() : true;
+        
+        getSupportFragmentManager().setFragmentResultListener(RK, this, (key, bundle) -> {
+            if(bundle.containsKey(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = bundle.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                if (spm != null) {
+                    spm.setAudioWaveformEnabled(state);
+                    
+                    // Update waveform visibility immediately
+                    com.fadcam.ui.custom.AudioWaveformView waveformView = playerView.findViewById(R.id.audio_waveform);
+                    if (waveformView != null) {
+                        waveformView.setVisibility(state ? View.VISIBLE : View.GONE);
+                    }
+                    
+                    Log.d(TAG, "Audio waveform " + (state ? "enabled" : "disabled"));
+                }
+            }
+        });
+
+        ArrayList<OptionItem> items = new ArrayList<>(); // No options needed, switch only
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitch(
+            "Audio Waveform", items, "", RK, 
+            "Controls whether the audio waveform visualization appears on the progress bar during video playback.",
+            "Enable Audio Waveform", enabled
+        );
+        sheet.show(getSupportFragmentManager(), "waveform_switch_sheet");
+    }
+    // -------------- Fix Ended for method(showAudioWaveformSwitchSheet)-----------
+
     // Animate playback speed from start to target over duration ms
     private void animatePlaybackSpeed(float start, float target, int durationMs) {
         if (player == null) return;
@@ -696,6 +728,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // Row: Seek amount (in seconds)
     int seekSecMain = spm != null ? spm.getPlayerSeekSeconds() : Constants.DEFAULT_PLAYER_SEEK_SECONDS;
     items.add(new OptionItem("row_seek_amount", getString(R.string.seek_amount_title), getString(R.string.seek_amount_subtitle, seekSecMain), null, null, null, null, null, "replay_10", null, null, null));
+
+    // Row: Audio waveform visualization
+    boolean waveformEnabled = spm != null ? spm.isAudioWaveformEnabled() : true;
+    items.add(new OptionItem("row_audio_waveform", "Audio Waveform", waveformEnabled ? "Enabled" : "Disabled", null, null, null, null, waveformEnabled, "graphic_eq", null, null, null));
+
     String helper = getString(R.string.video_player_settings_helper_player);
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.video_player_settings_title), items, null, RK_VIDEO_SETTINGS, helper);
     // Clear any previous listener for this request key to avoid duplicate/cross-sheet callbacks
@@ -825,6 +862,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     }
                 });
                 sheetSeek.show(getSupportFragmentManager(), "video_seek_amount_sheet");
+            } else if ("row_audio_waveform".equals(sel)) {
+                // Toggle audio waveform visibility
+                showAudioWaveformSwitchSheet();
             }
         });
         sheet.show(getSupportFragmentManager(), "video_settings_sheet");
@@ -1142,6 +1182,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 
                 // Set initial icon state
                 updatePlayPauseAnimation(playPauseBtn, player.isPlaying());
+                
+                // Set initial waveform visibility based on user preference
+                com.fadcam.ui.custom.AudioWaveformView waveformView = playerView.findViewById(R.id.audio_waveform);
+                if (waveformView != null) {
+                    boolean enabled = spm != null ? spm.isAudioWaveformEnabled() : true;
+                    waveformView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+                }
             }
         } catch (Exception e) {
             Log.w(TAG, "Error setting up animated controls", e);
@@ -1158,9 +1205,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (drawable instanceof android.graphics.drawable.AnimatedVectorDrawable) {
                     button.setImageDrawable(drawable);
                     ((android.graphics.drawable.AnimatedVectorDrawable) drawable).start();
+                    Log.d(TAG, "Started play to pause animation");
                 } else {
-                    // Fallback to static pause icon
-                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_pause);
+                    // Fallback to ExoPlayer's static pause icon
+                    button.setImageDrawable(androidx.core.content.ContextCompat.getDrawable(this, com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_pause));
+                    Log.d(TAG, "Used static pause icon fallback");
                 }
             } else {
                 // Switch to play icon with animation  
@@ -1168,13 +1217,23 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (drawable instanceof android.graphics.drawable.AnimatedVectorDrawable) {
                     button.setImageDrawable(drawable);
                     ((android.graphics.drawable.AnimatedVectorDrawable) drawable).start();
+                    Log.d(TAG, "Started pause to play animation");
                 } else {
-                    // Fallback to static play icon
-                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_play);
+                    // Fallback to ExoPlayer's static play icon
+                    button.setImageDrawable(androidx.core.content.ContextCompat.getDrawable(this, com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_play));
+                    Log.d(TAG, "Used static play icon fallback");
                 }
             }
         } catch (Exception e) {
             Log.w(TAG, "Error updating play/pause animation", e);
+            // Final fallback to ensure button still works
+            try {
+                if (isPlaying) {
+                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_pause);
+                } else {
+                    button.setImageResource(com.google.android.exoplayer2.ui.R.drawable.exo_styled_controls_play);
+                }
+            } catch (Exception ignored) {}
         }
     }
     
@@ -1212,8 +1271,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
     
     private void updateWaveformProgress() {
         try {
+            // Only update if waveform is enabled
+            boolean enabled = spm != null ? spm.isAudioWaveformEnabled() : true;
+            if (!enabled) return;
+            
             com.fadcam.ui.custom.AudioWaveformView waveformView = playerView.findViewById(R.id.audio_waveform);
-            if (waveformView != null && player != null) {
+            if (waveformView != null && player != null && waveformView.getVisibility() == View.VISIBLE) {
                 long position = player.getCurrentPosition();
                 long duration = player.getDuration();
                 if (duration > 0) {

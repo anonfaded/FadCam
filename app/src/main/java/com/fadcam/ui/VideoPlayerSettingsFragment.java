@@ -35,6 +35,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
     TextView subBgPlayback = root.findViewById(R.id.sub_background_playback);
     TextView subBgTimer = root.findViewById(R.id.sub_background_playback_timer);
     TextView subMute = root.findViewById(R.id.sub_mute_playback);
+    TextView subAudioWaveform = root.findViewById(R.id.sub_audio_waveform);
 
         // Subtitles
     // Show saved default playback speed (defaults to Normal 1x)
@@ -49,6 +50,8 @@ public class VideoPlayerSettingsFragment extends Fragment {
     if(subSeek!=null) subSeek.setText(getString(R.string.seek_amount_subtitle, seekSec));
     boolean muted = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isPlaybackMuted();
     subMute.setText(muted? getString(R.string.universal_enable): getString(R.string.universal_disable));
+    boolean waveformEnabled = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isAudioWaveformEnabled();
+    if(subAudioWaveform!=null) subAudioWaveform.setText(waveformEnabled? getString(R.string.universal_enable): getString(R.string.universal_disable));
     boolean keepOn = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isPlayerKeepScreenOn();
     if (subKeepOn != null) subKeepOn.setText(keepOn? getString(R.string.universal_enable): getString(R.string.universal_disable));
     boolean bg = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isBackgroundPlaybackEnabled();
@@ -83,6 +86,9 @@ public class VideoPlayerSettingsFragment extends Fragment {
         // Mute switch row via picker with switch
         View rowMute = root.findViewById(R.id.row_mute_playback);
         if(rowMute!=null){ rowMute.setOnClickListener(v -> showMuteSwitchSheet()); }
+        // Audio waveform switch row via picker with switch
+        View rowAudioWaveform = root.findViewById(R.id.row_audio_waveform);
+        if(rowAudioWaveform!=null){ rowAudioWaveform.setOnClickListener(v -> showAudioWaveformSwitchSheet()); }
     View back = root.findViewById(R.id.back_button);
     if(back!=null){ back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity())); }
         // -------------- Fix Ended for this method(onCreateView)-----------
@@ -361,5 +367,33 @@ public class VideoPlayerSettingsFragment extends Fragment {
     if (Math.abs(v - 8.0f) < 0.001f) return "8x";
     if (Math.abs(v - 10.0f) < 0.001f) return "10x";
     return formatSpeed(v);
+    }
+
+    private void showAudioWaveformSwitchSheet() {
+        final String RK = "rk_vps_audio_waveform_switch";
+        boolean enabled = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isAudioWaveformEnabled();
+        
+        getParentFragmentManager().setFragmentResultListener(RK, this, (key, bundle) -> {
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setAudioWaveformEnabled(state);
+                
+                View root = getView();
+                if (root != null) {
+                    TextView sub = root.findViewById(R.id.sub_audio_waveform);
+                    if(sub != null) {
+                        sub.setText(state ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
+                    }
+                }
+            }
+        });
+
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>(); // No options needed, switch only
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+            getString(R.string.audio_waveform_title), items, "", RK, 
+            getString(R.string.waveform_helper_text),
+            getString(R.string.waveform_switch_label), enabled
+        );
+        sheet.show(getParentFragmentManager(), "vps_audio_waveform_switch_sheet");
     }
 }

@@ -533,6 +533,15 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putFloat(Constants.PREF_QUICK_SPEED, speed).apply();
     }
 
+    // --- Audio waveform visualization preference ---
+    public boolean isAudioWaveformEnabled() {
+        return sharedPreferences.getBoolean("pref_audio_waveform_enabled", true); // Default enabled
+    }
+
+    public void setAudioWaveformEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean("pref_audio_waveform_enabled", enabled).apply();
+    }
+
     public boolean isLocalisationEnabled() {
         return sharedPreferences.getBoolean(Constants.PREF_LOCATION_DATA, false);
     }

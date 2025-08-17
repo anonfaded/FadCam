@@ -29,23 +29,52 @@ public class AudioWaveformView extends View {
 
     private void init() {
         wavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        wavePaint.setColor(0x40FFFFFF); // Semi-transparent white
-        wavePaint.setStrokeWidth(2f);
+        wavePaint.setColor(0x50FFFFFF); // Better semi-transparent white
+        wavePaint.setStrokeWidth(1.5f);
         wavePaint.setStyle(Paint.Style.STROKE);
 
         playedWavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        playedWavePaint.setColor(0xFFFF4444); // Red for played portion
-        playedWavePaint.setStrokeWidth(2f);
+        playedWavePaint.setColor(0xFFFF4444); // Nice red for played portion - original was better
+        playedWavePaint.setStrokeWidth(1.5f);
         playedWavePaint.setStyle(Paint.Style.STROKE);
 
-        // Generate mock waveform data
-        generateMockWaveform();
+        // Generate more realistic waveform data
+        generateRealisticWaveform();
     }
 
-    private void generateMockWaveform() {
+    private void generateRealisticWaveform() {
         waveformData = new ArrayList<>();
+        
+        // Create more realistic audio waveform patterns
         for (int i = 0; i < 200; i++) {
-            waveformData.add(random.nextFloat() * 0.8f + 0.1f);
+            float amplitude;
+            
+            // Create realistic patterns: quiet parts, loud parts, speech-like patterns
+            if (i < 20 || i > 180) {
+                // Quiet intro/outro
+                amplitude = 0.1f + random.nextFloat() * 0.2f;
+            } else if (i > 60 && i < 80) {
+                // Loud section 
+                amplitude = 0.6f + random.nextFloat() * 0.3f;
+            } else if (i > 120 && i < 140) {
+                // Another loud section
+                amplitude = 0.5f + random.nextFloat() * 0.4f;
+            } else {
+                // Normal speech/music pattern
+                amplitude = 0.2f + random.nextFloat() * 0.4f;
+            }
+            
+            // Add some smoothing to avoid totally random spikes
+            if (i > 0) {
+                float prev = waveformData.get(i - 1);
+                float diff = Math.abs(amplitude - prev);
+                if (diff > 0.3f) {
+                    // Smooth out big jumps
+                    amplitude = prev + (amplitude - prev) * 0.7f;
+                }
+            }
+            
+            waveformData.add(Math.min(amplitude, 0.9f));
         }
     }
 
@@ -72,7 +101,7 @@ public class AudioWaveformView extends View {
         
         for (int i = 0; i < waveformData.size(); i++) {
             float x = i * barWidth;
-            float amplitude = waveformData.get(i) * (height * 0.3f);
+            float amplitude = waveformData.get(i) * (height * 0.35f); // Slightly better amplitude scaling
             
             if (i == 0) {
                 wavePath.moveTo(x, centerY - amplitude);
@@ -90,10 +119,10 @@ public class AudioWaveformView extends View {
             }
         }
 
-        // Draw unplayed waveform
+        // Draw unplayed waveform first (background)
         canvas.drawPath(wavePath, wavePaint);
         
-        // Draw played portion
+        // Draw played portion on top
         canvas.drawPath(playedPath, playedWavePaint);
     }
 }
