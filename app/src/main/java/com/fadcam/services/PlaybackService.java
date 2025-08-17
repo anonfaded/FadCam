@@ -104,7 +104,14 @@ public class PlaybackService extends Service {
     private void buildAndShowNotification() {
         Context ctx = this;
         boolean playing = false;
-        try { playing = player != null && player.isPlaying(); } catch (Exception ignored) {}
+        try { 
+            // Enhance player state detection by checking both isPlaying() and getPlayWhenReady()
+            // This fixes the notification showing "Paused" while audio is still playing
+            playing = player != null && (player.isPlaying() || 
+                     (player.getPlaybackState() != ExoPlayer.STATE_ENDED && 
+                      player.getPlaybackState() != ExoPlayer.STATE_IDLE && 
+                      player.getPlayWhenReady()));
+        } catch (Exception ignored) {}
 
         Intent pp = new Intent(this, PlaybackService.class).setAction(ACTION_PLAY_PAUSE);
         PendingIntent ppIntent = PendingIntent.getService(this, 0, pp,

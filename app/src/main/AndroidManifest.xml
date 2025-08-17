@@ -396,6 +396,17 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- New Media-session backed playback service (uses existing deps only) -->
+        <service
+            android:name=".services.PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+
         <!-- Media button receiver to satisfy MediaSessionCompat requirement for a unique receiver -->
         <receiver
             android:name=".services.MediaButtonReceiver"

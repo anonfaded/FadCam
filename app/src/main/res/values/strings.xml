@@ -898,6 +898,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_title_downloading">Downloading</string>
     <string name="notification_title_syncing">Syncing Data</string>
     <string name="notification_title_custom_default">Notification</string>
+    <string name="universal_play">Play</string>
+    <string name="universal_pause">Pause</string>
+    <string name="universal_playing">Playing</string>
+    <string name="universal_paused">Paused</string>
+    <string name="universal_stop">Stop</string>
     <string name="notification_settings_saved">Notification settings saved</string>
 
     <!-- Additional Notification Customization Strings -->

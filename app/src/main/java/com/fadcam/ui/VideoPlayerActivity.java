@@ -456,7 +456,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception ignored) {}
-    // Do not start background service while activity is in foreground; we'll handoff onPause if needed.
+
+    // Do not start the background service while activity is in foreground; handoff occurs onPause only.
         // -------------- Fix Ended for this method(onResume)-----------
     }
 
@@ -474,14 +475,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
             if (bg && isPlaying && hasPostNotificationsPermission()) {
                 // Only handoff to background service if currently playing
                 try {
-            android.content.Intent svc = new android.content.Intent(this, com.fadcam.services.BackgroundPlaybackService.class)
-                            .setAction(com.fadcam.services.BackgroundPlaybackService.ACTION_START)
-                            .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_URI, getIntent().getData())
-                            .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_SPEED, player.getPlaybackParameters().speed)
-                            .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_MUTED, player.getVolume() == 0f)
-                .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_POSITION_MS, player.getCurrentPosition())
-                .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_PLAY_WHEN_READY, true)
-                .putExtra(com.fadcam.services.BackgroundPlaybackService.EXTRA_FORCE_SHOW_NOTIFICATION, true);
+            android.content.Intent svc = new android.content.Intent(this, com.fadcam.services.PlaybackService.class)
+                            .setAction(com.fadcam.services.PlaybackService.ACTION_START)
+                            .putExtra(com.fadcam.services.PlaybackService.EXTRA_URI, getIntent().getData())
+                            .putExtra(com.fadcam.services.PlaybackService.EXTRA_SPEED, player.getPlaybackParameters().speed)
+                            .putExtra(com.fadcam.services.PlaybackService.EXTRA_MUTED, player.getVolume() == 0f)
+                .putExtra(com.fadcam.services.PlaybackService.EXTRA_POSITION_MS, player.getCurrentPosition())
+                .putExtra(com.fadcam.services.PlaybackService.EXTRA_PLAY_WHEN_READY, true)
+                .putExtra(com.fadcam.services.PlaybackService.EXTRA_FORCE_SHOW_NOTIFICATION, true);
             androidx.core.content.ContextCompat.startForegroundService(this, svc);
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to start background playback service", e);
@@ -490,8 +491,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 // Not playing or background playback disabled: ensure playback is paused and service stopped
                 try { if (isPlaying) player.pause(); } catch (Exception ignored) {}
                 try {
-                    android.content.Intent stop = new android.content.Intent(this, com.fadcam.services.BackgroundPlaybackService.class)
-                            .setAction(com.fadcam.services.BackgroundPlaybackService.ACTION_STOP);
+                    android.content.Intent stop = new android.content.Intent(this, com.fadcam.services.PlaybackService.class)
+                            .setAction(com.fadcam.services.PlaybackService.ACTION_STOP);
                     startService(stop);
                 } catch (Exception ignored) {}
                 Log.d(TAG, "Background service stopped (no background playback or paused).");
@@ -512,11 +513,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
     try { if (player != null) player.pause(); } catch (Exception ignored) {}
     player = null;
         // Stop background playback service when activity is destroyed (if pref disabled)
-        try {
-            android.content.Intent stop = new android.content.Intent(this, com.fadcam.services.BackgroundPlaybackService.class)
-                    .setAction(com.fadcam.services.BackgroundPlaybackService.ACTION_STOP);
-            startService(stop);
-        } catch (Exception ignored) {}
+    try {
+        android.content.Intent stop = new android.content.Intent(this, com.fadcam.services.PlaybackService.class)
+            .setAction(com.fadcam.services.PlaybackService.ACTION_STOP);
+        startService(stop);
+    } catch (Exception ignored) {}
     }
     // --- End Lifecycle Management ---
 
