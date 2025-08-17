@@ -746,20 +746,28 @@ public class VideoPlayerActivity extends AppCompatActivity {
         try {
             View root = findViewById(android.R.id.content);
             if (root == null) return;
-            // Reuse the quickSpeedOverlay style if available, otherwise create a small TextView
-            View overlay = quickSpeedOverlay != null ? quickSpeedOverlay : root.findViewWithTag("double_tap_overlay");
+            // Always use a dedicated double-tap overlay view (do NOT reuse quickSpeedOverlay)
+            View overlay = root.findViewWithTag("double_tap_overlay");
             if (overlay == null) {
                 android.widget.TextView tv = new android.widget.TextView(this);
                 tv.setTag("double_tap_overlay");
-                // Smaller font than quick overlay
-                tv.setTextSize(18);
+                // Match quick-speed styling: white bold text, 16sp, rounded dark background
                 tv.setTextColor(android.graphics.Color.WHITE);
-                tv.setBackgroundColor(0x66000000);
-                int pad = (int) (8 * getResources().getDisplayMetrics().density);
-                tv.setPadding(pad, pad/2, pad, pad/2);
+                tv.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+                tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+                // Use the same rounded background drawable used by quick speed overlay
+                try { tv.setBackgroundResource(R.drawable.quick_speed_bg); } catch (Exception ignored) {}
+                // Same content paddings as quick_speed_overlay in XML (12dp horizontal, 6dp vertical)
+                int hpad = (int) (12 * getResources().getDisplayMetrics().density);
+                int vpad = (int) (6 * getResources().getDisplayMetrics().density);
+                tv.setPadding(hpad, vpad, hpad, vpad);
                 tv.setGravity(android.view.Gravity.CENTER);
                 android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
-                lp.gravity = forward ? (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END) : (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.START);
+                // Equal side margins so left and right overlays are symmetric
+                int sideMargin = (int) (16 * getResources().getDisplayMetrics().density);
+                lp.setMarginStart(sideMargin);
+                lp.setMarginEnd(sideMargin);
+                lp.gravity = android.view.Gravity.CENTER_VERTICAL | (forward ? android.view.Gravity.END : android.view.Gravity.START);
                 final android.widget.TextView tvf = tv;
                 root.post(() -> ((android.widget.FrameLayout) root).addView(tvf, lp));
                 overlay = tv;
@@ -767,14 +775,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
             final View overlayView = overlay;
             if (overlayView instanceof android.widget.TextView) {
                 ((android.widget.TextView) overlayView).setText(forward ? "+10s" : "-10s");
-                ((android.widget.TextView) overlayView).setTextSize(18);
+                // Ensure font size and weight match quick overlay
+                ((android.widget.TextView) overlayView).setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+                ((android.widget.TextView) overlayView).setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
             }
             // Position: update layout gravity so plus is on right, minus on left
             try {
                 android.view.ViewParent p = overlayView.getParent();
                 if (p instanceof android.widget.FrameLayout) {
                     android.widget.FrameLayout.LayoutParams lp = (android.widget.FrameLayout.LayoutParams) overlayView.getLayoutParams();
-                    lp.gravity = forward ? (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END) : (android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.START);
+                    // Respect the created margins; update gravity and ensure symmetric margins
+                    if (forward) lp.gravity = android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END;
+                    else lp.gravity = android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.START;
+                    int sideMargin = (int) (16 * getResources().getDisplayMetrics().density);
+                    lp.setMarginStart(sideMargin);
+                    lp.setMarginEnd(sideMargin);
                     overlayView.setLayoutParams(lp);
                 }
             } catch (Exception ignored) {}
