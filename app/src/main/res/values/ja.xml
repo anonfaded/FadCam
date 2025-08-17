@@ -116,6 +116,7 @@
     <string name="nav_settings">Settings</string>
     <string name="nav_about">About</string>
     <string name="nav_remote">Remote</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="button_settings_readme">Read Me</string>
     <string name="setting_cam_title">Camera Selection</string>
     <string name="note_cam_sele">Select camera \n(Default: Back)</string>
@@ -380,6 +381,10 @@
     <string name="mute_playback_subtitle">Play videos with sound off</string>
     <string name="mute_playback_helper">When enabled, videos will play muted by default. You can toggle this here or from the Video Player screen.</string>
     <string name="mute_playback_helper_picker">When enabled, videos will play muted by default.</string>
+    <string name="audio_waveform_title">Audio Waveform</string>
+    <string name="audio_waveform_subtitle">Show audio visualization on progress bar</string>
+    <string name="waveform_helper_text">Controls whether the audio waveform visualization appears on the progress bar during video playback.</string>
+    <string name="waveform_switch_label">Enable Audio Waveform</string>
     <string name="mute_on_toast">Playback muted</string>
     <string name="mute_off_toast">Playback unmuted</string>
     <string name="video_player_settings_helper_player">You can change these options here or from the Settings tab as well.</string>
@@ -499,6 +504,9 @@
     <string name="coming_soon_toast">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
     <string name="remote_feature_description">Pair FadCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
+    <string name="faditor_mini_title">Faditor Mini</string>
+    <string name="faditor_mini_coming_soon">Coming soon — lightweight editor</string>
+    <string name="faditor_mini_toast">Faditor Mini — coming soon</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>
