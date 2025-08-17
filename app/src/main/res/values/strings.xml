@@ -391,6 +391,13 @@
     <string name="playback_controls_heading">Playback controls</string>
     <string name="playback_controls_helper">Adjust playback speed or set a Quick Speed for press-and-hold. You can change these here or from the Video Player screen.</string>
     <string name="sound_heading">Audio during playback</string>
+    <string name="seek_amount_title">Seek Amount</string>
+    <string name="seek_amount_subtitle">%1$ds</string>
+    <string name="seek_amount_helper">Select how many seconds the rewind/forward buttons and double-tap should seek.</string>
+    <string name="seek_amount_custom">Custom</string>
+    <string name="seek_amount_custom_title">Custom Seek Seconds</string>
+    <string name="seek_amount_custom_low_hint">Enter a value between 1 and 300 seconds</string>
+    <string name="seek_amount_custom_high_hint">Large seek values may skip too far</string>
     <!-- Focused helpers for pickers -->
     <string name="playback_speed_helper_settings">Default speed for video playback.</string>
     <string name="playback_speed_helper_player">Affects current playback only. To change the default for future videos, use Settings.</string>
@@ -419,6 +426,7 @@
     <string name="timer_custom_label">Custom...</string>
     <string name="timer_custom_title">Custom background timer</string>
     <string name="number_input_default_helper">Enter a number and press OK to save.</string>
+    <string name="number_input_ok_helper">Looks good — press OK to save.</string>
     <string name="timer_custom_low_hint">Very short timers may stop playback sooner than expected.</string>
     <string name="timer_custom_high_hint">Very long timers may remain active for a long time. Max 24 hours.</string>
     <string name="timer_custom_description">Enter number of minutes. Examples: 5 = 5 minutes (300 seconds). The timer will stop playback after this many minutes.</string>

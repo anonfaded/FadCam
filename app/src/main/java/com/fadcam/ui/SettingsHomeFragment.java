@@ -138,6 +138,9 @@ public class SettingsHomeFragment extends Fragment {
         // We don't compute dynamic subtitles here; keep concise labels.
         items.add(new com.fadcam.ui.picker.OptionItem("row_playback_speed", getString(R.string.playback_speed_label), null, null, null, null, null, null, "speed", null, null, null));
         items.add(new com.fadcam.ui.picker.OptionItem("row_quick_speed", getString(R.string.quick_speed_title), null, null, null, null, null, null, "bolt", null, null, null));
+        // Seek amount (show current seconds)
+        int seekSec = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).getPlayerSeekSeconds();
+        items.add(new com.fadcam.ui.picker.OptionItem("row_seek_amount", getString(R.string.seek_amount_title), getString(R.string.seek_amount_subtitle, seekSec), null, null, null, null, null, "replay_10", null, null, null));
         final String RK_SETTINGS = "rk_settings_video_player";
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
                 getString(R.string.video_player_settings_title), items, null, RK_SETTINGS, getString(R.string.video_player_settings_helper));
@@ -147,6 +150,40 @@ public class SettingsHomeFragment extends Fragment {
                 showPlaybackSpeedPickerFromSettings();
             } else if("row_quick_speed".equals(sel)){
                 showQuickSpeedPickerFromSettings();
+            } else if("row_seek_amount".equals(sel)){
+                // Show seek amount picker similar to VideoPlayerSettingsFragment
+                final String RK = "rk_settings_seek_amount";
+                java.util.ArrayList<com.fadcam.ui.picker.OptionItem> itemsSeek = new java.util.ArrayList<>();
+                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_5", "5s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_10", "10s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_15", "15s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_30", "30s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_custom", getString(R.string.seek_amount_custom), null, null, null, null, null, null, "edit", null, null, null));
+                String selId = "s_" + seekSec; if(seekSec!=5 && seekSec!=10 && seekSec!=15 && seekSec!=30) selId = "s_custom";
+                com.fadcam.ui.picker.PickerBottomSheetFragment sheetSeek = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.seek_amount_title), itemsSeek, selId, RK, getString(R.string.seek_amount_helper));
+                getParentFragmentManager().setFragmentResultListener(RK, this, (rk, b) -> {
+                    String s = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                    if(s==null) return;
+                        if("s_custom".equals(s)){
+                        final String RK_NUM = "rk_settings_seek_amount_custom";
+                        com.fadcam.ui.picker.NumberInputBottomSheetFragment num = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                            getString(R.string.seek_amount_custom_title), 1, 300, 10, getString(R.string.universal_enter_number), 5, 60,
+                            getString(R.string.seek_amount_custom_low_hint), getString(R.string.seek_amount_custom_high_hint), RK_NUM);
+                        if(num.getArguments()!=null){ num.getArguments().putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.seek_amount_helper)); }
+                        getParentFragmentManager().setFragmentResultListener(RK_NUM, this, (rkn, nb) -> {
+                            int v = nb.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER, 0);
+                            if(v>0) com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setPlayerSeekSeconds(v);
+                        });
+                        // Dismiss parent picker first then show numeric input to avoid cross-sheet helper text
+                        try{ sheetSeek.dismissAllowingStateLoss(); } catch(Exception ignored){}
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> { try{ num.show(getParentFragmentManager(), "settings_seek_amount_custom_sheet"); } catch(Exception ignored){} }, 180);
+                        return;
+                    }
+                    if(s.startsWith("s_")){
+                        try{ int v = Integer.parseInt(s.substring(2)); com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setPlayerSeekSeconds(v); }catch(NumberFormatException ignored){}
+                    }
+                });
+                sheetSeek.show(getParentFragmentManager(), "settings_seek_amount_sheet");
             }
         });
         sheet.show(getParentFragmentManager(), "video_player_settings_sheet_settings_tab");

@@ -178,7 +178,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     int w = playerView.getWidth();
                     if (w <= 0) return true;
                     boolean forward = x > (w / 2f);
-                    int seekMs = 10_000; // 10 seconds
+                    int seekSec = spm != null ? spm.getPlayerSeekSeconds() : Constants.DEFAULT_PLAYER_SEEK_SECONDS;
+                    int seekMs = seekSec * 1000;
                     long current = player != null ? player.getCurrentPosition() : 0L;
                     long target = forward ? current + seekMs : current - seekMs;
                     if (target < 0) target = 0;
@@ -298,7 +299,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     // -------------- Fix Start for this method(showQuickSpeedPickerSheet)-----------
     private void showQuickSpeedPickerSheet() {
-        ArrayList<OptionItem> items = new ArrayList<>();
+    ArrayList<OptionItem> items = new ArrayList<>();
         for (int i = 0; i < speedValues.length; i++) {
             float v = speedValues[i];
             String id = "spd_" + v;
@@ -394,6 +395,20 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         saveCurrentPlaybackPosition();
                     }
                 });
+            } catch (Exception ignored) {}
+            // Wire center rewind/forward buttons to use same seek logic
+            try {
+                View controls = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_center_controls);
+                if (controls != null) {
+                    View rew = controls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_rew);
+                    View ffwd = controls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_ffwd);
+                    if (rew != null) rew.setOnClickListener(v -> {
+                        try { int s = spm!=null? spm.getPlayerSeekSeconds(): Constants.DEFAULT_PLAYER_SEEK_SECONDS; long cur = player.getCurrentPosition(); long target = Math.max(0, cur - s*1000L); player.seekTo(target); showDoubleTapOverlay(false); saveCurrentPlaybackPosition(); } catch (Exception ignored) {}
+                    });
+                    if (ffwd != null) ffwd.setOnClickListener(v -> {
+                        try { int s = spm!=null? spm.getPlayerSeekSeconds(): Constants.DEFAULT_PLAYER_SEEK_SECONDS; long cur = player.getCurrentPosition(); long dur = player.getDuration(); long target = Math.min(dur==com.google.android.exoplayer2.C.TIME_UNSET? Long.MAX_VALUE: dur, cur + s*1000L); if(dur!=com.google.android.exoplayer2.C.TIME_UNSET) player.seekTo(Math.min(target, dur)); else player.seekTo(target); showDoubleTapOverlay(true); saveCurrentPlaybackPosition(); } catch (Exception ignored) {}
+                    });
+                }
             } catch (Exception ignored) {}
             // Start periodic saves
             resumeSaveHandler.postDelayed(resumeSaveRunnable, 5000);
@@ -527,9 +542,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
     else timerSubtitle = getString(R.string.timer_hours_short, timerSec/3600);
     boolean bgEnabled = SharedPreferencesManager.getInstance(this).isBackgroundPlaybackEnabled();
     items.add(new OptionItem("row_background_playback_timer", getString(R.string.background_playback_timer_title_short), timerSubtitle, null, null, null, null, null, "timer", null, null, !bgEnabled));
+    // Row: Seek amount (in seconds)
+    int seekSecMain = spm != null ? spm.getPlayerSeekSeconds() : Constants.DEFAULT_PLAYER_SEEK_SECONDS;
+    items.add(new OptionItem("row_seek_amount", getString(R.string.seek_amount_title), getString(R.string.seek_amount_subtitle, seekSecMain), null, null, null, null, null, "replay_10", null, null, null));
     String helper = getString(R.string.video_player_settings_helper_player);
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(getString(R.string.video_player_settings_title), items, null, RK_VIDEO_SETTINGS, helper);
-        getSupportFragmentManager().setFragmentResultListener(RK_VIDEO_SETTINGS, this, (key, bundle) -> {
+    // Clear any previous listener for this request key to avoid duplicate/cross-sheet callbacks
+    try{ getSupportFragmentManager().clearFragmentResultListener(RK_VIDEO_SETTINGS); } catch (Exception ignored) {}
+    getSupportFragmentManager().setFragmentResultListener(RK_VIDEO_SETTINGS, this, (key, bundle) -> {
             String sel = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if ("row_playback_speed".equals(sel)) {
                 showPlaybackSpeedPickerSheet();
@@ -566,14 +586,19 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 getSupportFragmentManager().setFragmentResultListener(RK, this, (rkRes, resBundle) -> {
                     String sel2 = resBundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
                     if (sel2 == null) return;
-                    if("t_custom".equals(sel2)){
+                        if ("t_custom".equals(sel2)){
                         final String RK_NUM = "rk_vps_background_playback_timer_custom";
             com.fadcam.ui.picker.NumberInputBottomSheetFragment num = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
                 getString(R.string.timer_custom_title), 1, 86400, 60, getString(R.string.timer_custom_placeholder), 5, 3600,
                 getString(R.string.timer_custom_low_hint), getString(R.string.timer_custom_high_hint), RK_NUM);
             android.os.Bundle _b = num.getArguments()!=null? num.getArguments() : new android.os.Bundle();
             _b.putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.timer_custom_description));
+            _b.putBoolean(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_ENABLE_TIMER_CALC, true);
             num.setArguments(_b);
+                        // Add seek-specific description
+                        android.os.Bundle _nb = num.getArguments()!=null? num.getArguments() : new android.os.Bundle();
+                        _nb.putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.seek_amount_helper));
+                        num.setArguments(_nb);
                         getSupportFragmentManager().setFragmentResultListener(RK_NUM, this, (rkN, nb) -> {
                             int minutes = nb.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER, 0);
                                     if(minutes>0){ int seconds = minutes * 60; SharedPreferencesManager.getInstance(this).setBackgroundPlaybackTimerSeconds(seconds);
@@ -582,7 +607,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                         if(root!=null){ TextView sub = root.findViewById(R.id.sub_background_playback_timer); if(sub!=null){ sub.setText(minutes<60? getString(R.string.timer_minutes_short, minutes): getString(R.string.timer_hours_short, minutes/60)); } }
                                     }
                         });
-                        num.show(getSupportFragmentManager(), "video_background_playback_timer_custom_sheet");
+                        // Ensure the parent picker is dismissed before showing the numeric sheet to avoid view overlap
+                        try{ if(sheetTimer != null && sheetTimer.isAdded()) sheetTimer.dismissAllowingStateLoss(); } catch(Exception ignored){}
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            try{ num.show(getSupportFragmentManager(), "video_background_playback_timer_custom_sheet"); } catch(Exception ignored){}
+                        }, 200);
                         return;
                     }
                     int seconds = 0;
@@ -600,6 +629,51 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     if(root!=null){ TextView sub = root.findViewById(R.id.sub_background_playback_timer); if(sub!=null){ if(seconds==0) sub.setText(getString(R.string.timer_off_short)); else if(seconds<60) sub.setText(getString(R.string.timer_seconds_short, seconds)); else if(seconds<3600) sub.setText(getString(R.string.timer_minutes_short, seconds/60)); else sub.setText(getString(R.string.timer_hours_short, seconds/3600)); } }
                 });
                 sheetTimer.show(getSupportFragmentManager(), "video_background_playback_timer_sheet");
+            }
+            else if ("row_seek_amount".equals(sel)){
+                // Show seek amount picker directly in player settings
+                final String RK = "rk_vps_seek_amount_activity";
+                java.util.ArrayList<OptionItem> itemsSeek = new java.util.ArrayList<>();
+                itemsSeek.add(new OptionItem("s_5", "5s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new OptionItem("s_10", "10s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new OptionItem("s_15", "15s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new OptionItem("s_30", "30s", null, null, null, null, null, null, "replay_10", null, null, null));
+                itemsSeek.add(new OptionItem("s_custom", getString(R.string.seek_amount_custom), null, null, null, null, null, null, "edit", null, null, null));
+                int curS = SharedPreferencesManager.getInstance(this).getPlayerSeekSeconds();
+                String selId = "s_" + curS; if(curS!=5 && curS!=10 && curS!=15 && curS!=30) selId = "s_custom";
+                PickerBottomSheetFragment sheetSeek = PickerBottomSheetFragment.newInstance(getString(R.string.seek_amount_title), itemsSeek, selId, RK, getString(R.string.seek_amount_helper));
+                try{ getSupportFragmentManager().clearFragmentResultListener(RK); } catch (Exception ignored) {}
+                getSupportFragmentManager().setFragmentResultListener(RK, this, (rkRes, resBundle) -> {
+                    String s = resBundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                    if(s==null) return;
+                        if("s_custom".equals(s)){
+                        final String RK_NUM = "rk_vps_seek_amount_custom_activity";
+                        com.fadcam.ui.picker.NumberInputBottomSheetFragment num = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                            getString(R.string.seek_amount_custom_title), 1, 300, 10, getString(R.string.universal_enter_number), 5, 60,
+                            getString(R.string.seek_amount_custom_low_hint), getString(R.string.seek_amount_custom_high_hint), RK_NUM);
+                        try{ getSupportFragmentManager().clearFragmentResultListener(RK_NUM); } catch (Exception ignored) {}
+                        getSupportFragmentManager().setFragmentResultListener(RK_NUM, this, (rkN, nb) -> {
+                            int val = nb.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER, 0);
+                            if(val>0){ SharedPreferencesManager.getInstance(this).setPlayerSeekSeconds(val);
+                                View root = findViewById(android.R.id.content);
+                                if(root!=null){ TextView sub = root.findViewById(R.id.sub_seek_amount); if(sub!=null) sub.setText(getString(R.string.seek_amount_subtitle, val)); }
+                            }
+                        });
+                        // Dismiss parent picker first to avoid UI overlap
+                        try{ sheetSeek.dismissAllowingStateLoss(); } catch(Exception ignored){}
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            try{ num.show(getSupportFragmentManager(), "video_seek_amount_custom_sheet"); } catch(Exception ignored){}
+                        }, 180);
+                        return;
+                    }
+                    if(s.startsWith("s_")){
+                        try{ int v = Integer.parseInt(s.substring(2)); SharedPreferencesManager.getInstance(this).setPlayerSeekSeconds(v);
+                            View root = findViewById(android.R.id.content);
+                            if(root!=null){ TextView sub = root.findViewById(R.id.sub_seek_amount); if(sub!=null) sub.setText(getString(R.string.seek_amount_subtitle, v)); }
+                        }catch(NumberFormatException ignored){}
+                    }
+                });
+                sheetSeek.show(getSupportFragmentManager(), "video_seek_amount_sheet");
             }
         });
         sheet.show(getSupportFragmentManager(), "video_settings_sheet");
@@ -772,9 +846,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 root.post(() -> ((android.widget.FrameLayout) root).addView(tvf, lp));
                 overlay = tv;
             }
-            final View overlayView = overlay;
+                final View overlayView = overlay;
             if (overlayView instanceof android.widget.TextView) {
-                ((android.widget.TextView) overlayView).setText(forward ? "+10s" : "-10s");
+                int seekSec = spm != null ? spm.getPlayerSeekSeconds() : Constants.DEFAULT_PLAYER_SEEK_SECONDS;
+                ((android.widget.TextView) overlayView).setText(forward ? "+"+seekSec+"s" : "-"+seekSec+"s");
                 // Ensure font size and weight match quick overlay
                 ((android.widget.TextView) overlayView).setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16);
                 ((android.widget.TextView) overlayView).setTypeface(android.graphics.Typeface.DEFAULT_BOLD);

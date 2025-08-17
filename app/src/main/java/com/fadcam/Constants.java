@@ -186,4 +186,7 @@ public abstract class Constants {
     public static final String PREF_PLAYER_BACKGROUND_PLAYBACK = "pref_player_background_playback"; // default false
     // Background playback auto-stop timer (seconds). 0 = disabled
     public static final String PREF_PLAYER_BACKGROUND_TIMER_SECONDS = "pref_player_background_timer_seconds";
+    // Seek amount (seconds) used by rewind/forward buttons and double-tap
+    public static final String PREF_PLAYER_SEEK_SECONDS = "pref_player_seek_seconds";
+    public static final int DEFAULT_PLAYER_SEEK_SECONDS = 10; // default 10 seconds
 }

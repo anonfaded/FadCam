@@ -391,6 +391,24 @@ public class SharedPreferencesManager {
     public void setPlayerKeepScreenOn(boolean keepOn) {
         sharedPreferences.edit().putBoolean(Constants.PREF_PLAYER_KEEP_SCREEN_ON, keepOn).apply();
     }
+    // --- Player seek seconds preference ---
+    private static final String PREF_KEY_PLAYER_SEEK_SECONDS = Constants.PREF_PLAYER_SEEK_SECONDS;
+
+    /**
+     * Returns the saved seek seconds used by rewind/forward buttons and double-tap.
+     * Defaults to Constants.DEFAULT_PLAYER_SEEK_SECONDS.
+     */
+    public int getPlayerSeekSeconds() {
+        return sharedPreferences.getInt(PREF_KEY_PLAYER_SEEK_SECONDS, Constants.DEFAULT_PLAYER_SEEK_SECONDS);
+    }
+
+    /**
+     * Sets the seek seconds preference.
+     */
+    public void setPlayerSeekSeconds(int seconds) {
+        if (seconds < 1) seconds = Constants.DEFAULT_PLAYER_SEEK_SECONDS;
+        sharedPreferences.edit().putInt(PREF_KEY_PLAYER_SEEK_SECONDS, seconds).apply();
+    }
     // -------------- Fix Ended for this class (SharedPreferencesManager_keep_screen_awake)-----------
     
     // -------------- Fix Start for this class (SharedPreferencesManager_background_playback)-----------
