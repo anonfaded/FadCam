@@ -4,28 +4,36 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.media.app.NotificationCompat.MediaStyle;
 
 import com.fadcam.R;
 import com.fadcam.playback.PlayerHolder;
 import com.fadcam.ui.VideoPlayerActivity;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 
 /**
- * Minimal foreground service: posts a simple notification with Play/Pause and Stop actions.
- * This intentionally avoids MediaSession/PNM complexity and directly controls the shared Player.
+ * Media-style foreground service: posts a media notification with playback controls and progress.
+ * This provides a better user experience for background media playback.
  */
 public class PlaybackService extends Service {
 
     public static final String ACTION_START = "com.fadcam.action.START_BACKGROUND_PLAYBACK";
     public static final String ACTION_STOP = "com.fadcam.action.STOP_BACKGROUND_PLAYBACK";
     public static final String ACTION_PLAY_PAUSE = "com.fadcam.action.PLAY_PAUSE";
+    public static final String ACTION_REWIND = "com.fadcam.action.REWIND";
+    public static final String ACTION_FAST_FORWARD = "com.fadcam.action.FAST_FORWARD";
     public static final String EXTRA_URI = "extra_uri";
     public static final String EXTRA_SPEED = "extra_speed";
     public static final String EXTRA_MUTED = "extra_muted";
@@ -35,15 +43,28 @@ public class PlaybackService extends Service {
 
     private static final int NOTIFICATION_ID = 6001;
     private static final String CHANNEL_ID = "playback_channel_v2";
+    private static final int PROGRESS_UPDATE_INTERVAL = 1000; // Update every second
+    private static final int REWIND_MS = 10000; // 10 seconds
+    private static final int FAST_FORWARD_MS = 30000; // 30 seconds
 
     private ExoPlayer player;
     private boolean isForeground = false;
+    private Handler progressUpdateHandler;
+    private final Runnable progressUpdateRunnable = this::updateNotification;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
         String action = intent.getAction();
         if (ACTION_STOP.equals(action)) {
+            // Make sure to stop playback first, then clean up
+            if (player != null) {
+                try {
+                    player.pause(); // First pause playback
+                    player.seekTo(0); // Rewind to start
+                } catch (Exception ignored) {}
+            }
+            stopProgressUpdates();
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
@@ -51,6 +72,16 @@ public class PlaybackService extends Service {
 
         if (ACTION_PLAY_PAUSE.equals(action)) {
             handlePlayPause();
+            return START_STICKY;
+        }
+
+        if (ACTION_REWIND.equals(action)) {
+            handleRewind();
+            return START_STICKY;
+        }
+
+        if (ACTION_FAST_FORWARD.equals(action)) {
+            handleFastForward();
             return START_STICKY;
         }
 
@@ -63,6 +94,7 @@ public class PlaybackService extends Service {
             ensureChannel();
             initPlayer(uri, speed, muted, pos, playWhenReady);
             buildAndShowNotification();
+            startProgressUpdates();
             return START_STICKY;
         }
 
@@ -94,11 +126,61 @@ public class PlaybackService extends Service {
             }
             if (player.isPlaying()) {
                 player.pause();
+                stopProgressUpdates();
             } else {
                 player.play();
+                startProgressUpdates();
             }
             buildAndShowNotification();
         } catch (Exception e) { android.util.Log.e("PlaybackService", "play/pause failed", e); }
+    }
+    
+    private void handleRewind() {
+        try {
+            if (player != null) {
+                long newPosition = Math.max(0, player.getCurrentPosition() - REWIND_MS);
+                player.seekTo(newPosition);
+                buildAndShowNotification();
+            }
+        } catch (Exception e) { android.util.Log.e("PlaybackService", "rewind failed", e); }
+    }
+    
+    private void handleFastForward() {
+        try {
+            if (player != null) {
+                long duration = player.getDuration();
+                long newPosition = Math.min(duration, player.getCurrentPosition() + FAST_FORWARD_MS);
+                player.seekTo(newPosition);
+                buildAndShowNotification();
+            }
+        } catch (Exception e) { android.util.Log.e("PlaybackService", "fast forward failed", e); }
+    }
+    
+    private void startProgressUpdates() {
+        if (progressUpdateHandler == null) {
+            progressUpdateHandler = new Handler(Looper.getMainLooper());
+        }
+        // Remove any existing callbacks to avoid duplicates
+        stopProgressUpdates();
+        // Start new update cycle
+        progressUpdateHandler.postDelayed(progressUpdateRunnable, PROGRESS_UPDATE_INTERVAL);
+    }
+    
+    private void stopProgressUpdates() {
+        if (progressUpdateHandler != null) {
+            progressUpdateHandler.removeCallbacks(progressUpdateRunnable);
+        }
+    }
+    
+    private void updateNotification() {
+        if (player != null && player.isPlaying()) {
+            // For updates, just silently update the notification
+            buildAndShowNotification();
+            // Schedule the next update
+            if (progressUpdateHandler != null) {
+                progressUpdateHandler.postDelayed(progressUpdateRunnable, PROGRESS_UPDATE_INTERVAL);
+            }
+        }
     }
 
     private void buildAndShowNotification() {
@@ -112,41 +194,93 @@ public class PlaybackService extends Service {
                       player.getPlaybackState() != ExoPlayer.STATE_IDLE && 
                       player.getPlayWhenReady()));
         } catch (Exception ignored) {}
+        
+        // Get media duration and position information
+        long duration = 0;
+        long position = 0;
+        try {
+            if (player != null) {
+                duration = player.getDuration();
+                position = player.getCurrentPosition();
+            }
+        } catch (Exception ignored) {}
+        
+        // Format time for display (only if we have valid duration)
+        String timeInfo = "";
+        if (duration > 0) {
+            String posStr = formatTime(position);
+            String durStr = formatTime(duration);
+            timeInfo = posStr + " / " + durStr;
+        }
 
+        // Create PendingIntents for media control actions
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);
+        
         Intent pp = new Intent(this, PlaybackService.class).setAction(ACTION_PLAY_PAUSE);
-        PendingIntent ppIntent = PendingIntent.getService(this, 0, pp,
-                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
-
+        PendingIntent ppIntent = PendingIntent.getService(this, 0, pp, flags);
+        
+        Intent rewind = new Intent(this, PlaybackService.class).setAction(ACTION_REWIND);
+        PendingIntent rewindIntent = PendingIntent.getService(this, 3, rewind, flags);
+        
+        Intent ff = new Intent(this, PlaybackService.class).setAction(ACTION_FAST_FORWARD);
+        PendingIntent ffIntent = PendingIntent.getService(this, 4, ff, flags);
+        
+        Intent stop = new Intent(this, PlaybackService.class).setAction(ACTION_STOP);
+        PendingIntent stopIntent = PendingIntent.getService(this, 1, stop, flags);
+        
+        // Setup action icons
         int ppIcon = playing ? R.drawable.ic_pause_24 : R.drawable.ic_play_arrow_24;
         String ppText = playing ? getString(R.string.universal_pause) : getString(R.string.universal_play);
 
-        Intent stop = new Intent(this, PlaybackService.class).setAction(ACTION_STOP);
-        PendingIntent stopIntent = PendingIntent.getService(this, 1, stop,
-                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
-
+        // Create media style notification
         NotificationCompat.Builder nb = new NotificationCompat.Builder(ctx, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_playback)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(playing ? getString(R.string.universal_playing) : getString(R.string.universal_paused))
+                .setSubText(timeInfo) // Show time information as subtext
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setOngoing(playing)
-                .addAction(ppIcon, ppText, ppIntent)
-                .addAction(R.drawable.ic_stop_red_24, getString(R.string.universal_stop), stopIntent);
+                .setOnlyAlertOnce(true) // Prevent sounds on updates
+                .setSilent(true) // Ensure updates are silent
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+                
+        // Add media control actions
+        nb.addAction(R.drawable.ic_fast_rewind_24, getString(R.string.universal_rewind), rewindIntent); // Rewind button
+        nb.addAction(ppIcon, ppText, ppIntent); // Play/Pause button
+        nb.addAction(R.drawable.ic_fast_forward_24, getString(R.string.universal_forward), ffIntent); // Fast Forward button
+        
+        // Simple stop button action
+        nb.addAction(R.drawable.ic_stop_red_24, getString(R.string.universal_stop), stopIntent); // Stop button
+        
+        // Apply MediaStyle to show transport controls in compact view
+        MediaStyle style = new MediaStyle()
+                .setShowActionsInCompactView(0, 1, 2); // Show rewind, play/pause, fast-forward in compact view
+        nb.setStyle(style);
+        
+        // Add progress if we have valid duration (>0 and not UNKNOWN)
+        if (duration > 0 && duration != com.google.android.exoplayer2.C.TIME_UNSET) {
+            nb.setProgress((int)duration, (int)position, false);
+            nb.setShowWhen(false); // Hide timestamp since we're showing our own progress
+        }
 
         Intent open = new Intent(this, VideoPlayerActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent openPi = PendingIntent.getActivity(this, 2, open,
-                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+        PendingIntent openPi = PendingIntent.getActivity(this, 2, open, flags);
         nb.setContentIntent(openPi);
 
         android.app.Notification notification = nb.build();
 
         try {
             if (!isForeground) {
+                // First time showing notification, start as foreground
                 startForeground(NOTIFICATION_ID, notification);
                 isForeground = true;
             } else {
+                // Just update the existing notification without sound/visual indicators
                 android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                if (nm != null) nm.notify(NOTIFICATION_ID, notification);
+                if (nm != null) {
+                    // Use FLAG_UPDATE_CURRENT to prevent creating multiple notifications
+                    nm.notify(NOTIFICATION_ID, notification);
+                }
             }
         } catch (Exception e) {
             android.util.Log.e("PlaybackService", "show notification failed", e);
@@ -157,9 +291,12 @@ public class PlaybackService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             if (nm != null && nm.getNotificationChannel(CHANNEL_ID) == null) {
-                android.app.NotificationChannel ch = new android.app.NotificationChannel(CHANNEL_ID, "FadCam Playback", android.app.NotificationManager.IMPORTANCE_HIGH);
+                android.app.NotificationChannel ch = new android.app.NotificationChannel(CHANNEL_ID, "FadCam Playback", android.app.NotificationManager.IMPORTANCE_LOW); // Use LOW importance to prevent sounds
                 ch.setDescription("Background media playback controls");
                 ch.setShowBadge(false);
+                ch.setSound(null, null); // No sound for the channel
+                ch.enableVibration(false); // No vibration
+                ch.enableLights(false); // No notification light
                 ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
                 try { nm.createNotificationChannel(ch); } catch (Exception ignored) {}
             }
@@ -168,6 +305,13 @@ public class PlaybackService extends Service {
 
     @Override
     public void onDestroy() {
+        stopProgressUpdates();
+        // Make sure playback is stopped when service is destroyed
+        if (player != null) {
+            try {
+                player.pause(); // Ensure playback is stopped
+            } catch (Exception ignored) {}
+        }
         try { stopForeground(true); } catch (Exception ignored) {}
         super.onDestroy();
     }
@@ -175,4 +319,20 @@ public class PlaybackService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) { return null; }
+    
+    /**
+     * Format milliseconds to a readable time string (MM:SS or HH:MM:SS)
+     */
+    private String formatTime(long millis) {
+        long totalSeconds = millis / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        
+        if (hours > 0) {
+            return String.format("%d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format("%02d:%02d", minutes, seconds);
+        }
+    }
 }
