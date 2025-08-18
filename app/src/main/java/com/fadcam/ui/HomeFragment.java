@@ -211,6 +211,8 @@ public class HomeFragment extends BaseFragment {
 
     // --- Fields Needed for Stats Update ---
     private SharedPreferencesManager sharedPreferencesManager;
+    // Listener for realtime preference updates (camera/resolution/fps)
+    private SharedPreferences.OnSharedPreferenceChangeListener prefsListener;
     private ExecutorService executorService;
     private BroadcastReceiver recordingCompleteReceiver;
     // Cache last-known available bytes for custom storage (SD card / SAF) when we cannot probe it directly
@@ -512,6 +514,26 @@ public class HomeFragment extends BaseFragment {
         // Initialize ExecutorService if null or shutdown
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
+        }
+
+        // Register SharedPreferences listener for realtime updates to storage widget
+        if (sharedPreferencesManager != null && prefsListener == null) {
+            prefsListener = (sharedPreferences, key) -> {
+                if (key == null) return;
+                switch (key) {
+                    case Constants.PREF_CAMERA_SELECTION:
+                    case Constants.PREF_VIDEO_RESOLUTION_WIDTH:
+                    case Constants.PREF_VIDEO_RESOLUTION_HEIGHT:
+                    case Constants.PREF_VIDEO_FRAME_RATE:
+                    case Constants.PREF_VIDEO_FRAME_RATE_FRONT:
+                    case Constants.PREF_VIDEO_FRAME_RATE_BACK:
+                        refreshPrefsAndUpdateStorage();
+                        break;
+                    default:
+                        break;
+                }
+            };
+            sharedPreferencesManager.sharedPreferences.registerOnSharedPreferenceChangeListener(prefsListener);
         }
 
         // ----- Fix Start: Set default camera resource availability -----
@@ -979,6 +1001,14 @@ public class HomeFragment extends BaseFragment {
         // ----- Fix Start for this method(onStop)-----
         // Call the centralized unregister method
         unregisterBroadcastReceivers(); 
+
+        // Unregister SharedPreferences listener if present
+        if (sharedPreferencesManager != null && prefsListener != null) {
+            try {
+                sharedPreferencesManager.sharedPreferences.unregisterOnSharedPreferenceChangeListener(prefsListener);
+            } catch (Exception ignored) {}
+            prefsListener = null;
+        }
 
         // The following lines for sending surface update on stop if recording
         // should remain, as they are not related to receiver unregistration.
@@ -2793,6 +2823,47 @@ public class HomeFragment extends BaseFragment {
         long recordingMinutes = (recordingSeconds % 3600) / 60;
         
         return String.format(Locale.getDefault(), "%d h %d min", recordingHours, recordingMinutes);
+    }
+
+    /**
+     * Re-read relevant shared preferences and refresh the storage widget and related UI.
+     * Called from the SharedPreferences listener to ensure changes (camera/resolution/fps)
+     * are reflected immediately on the Home screen.
+     */
+    private void refreshPrefsAndUpdateStorage() {
+        Log.d(TAG, "refreshPrefsAndUpdateStorage: preference change detected, refreshing UI");
+
+        // Ensure fragment is attached before attempting UI updates
+        if (!isAdded() || getActivity() == null) {
+            Log.w(TAG, "refreshPrefsAndUpdateStorage: fragment not added or activity null, skipping refresh");
+            return;
+        }
+
+        // Ensure SharedPreferencesManager is available
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "refreshPrefsAndUpdateStorage: failed to obtain SharedPreferencesManager", e);
+        }
+
+        // Update UI on the main thread
+        getActivity().runOnUiThread(() -> {
+            try {
+                // Re-evaluate storage widget values and update UI
+                updateStorageInfo();
+
+                // Update camera indicator & preview visibility which may depend on camera selection
+                try { showCurrentCameraSelection(); } catch (Exception ignored) {}
+                try { updatePreviewVisibility(); } catch (Exception ignored) {}
+
+                // Also trigger stats recalculation in background (file counts / sizes)
+                try { updateStats(); } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Log.e(TAG, "refreshPrefsAndUpdateStorage: error updating UI", e);
+            }
+        });
     }
 
     //    update storage and stats in real time while recording is started
