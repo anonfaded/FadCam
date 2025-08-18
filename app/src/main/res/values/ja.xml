@@ -93,6 +93,15 @@
     <string name="video_recording_paused">Recording paused</string>
     <string name="video_recording_resumed">Recording resumed</string>
     <string name="current_camera">Current camera</string>
+    <string name="mainpage_camera_front">Front Camera</string>
+    <string name="mainpage_camera_back">Back Camera</string>
+    <string name="mainpage_recording_to_sd">Recording to SD card</string>
+    <string name="tips_title">Tips</string>
+    <string name="tips_subtitle">Helpful usage tips</string>
+    <string name="home_menu">Home Menu</string>
+    <string name="home_sidebar_title">Home</string>
+    <string name="home_options_title">Home Options</string>
+    <string name="help_section">Help</string>
     <string name="back">Back</string>
     <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
