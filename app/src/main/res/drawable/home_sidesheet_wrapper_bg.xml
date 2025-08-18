@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Fully transparent base to neutralize default backgrounds -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+    <!-- Our gradient shape for Home sidebar (rounded right corners) -->
+    <item android:drawable="@drawable/home_sidesheet_gradient_bg"/>
+</layer-list>

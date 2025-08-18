@@ -139,7 +139,17 @@ public class HomeFragment extends BaseFragment {
     private boolean isTypingIn = true;
     private String currentTip = "";
 
-    private TextView tvStorageInfo;
+    private TextView tvCameraTitle;
+    private TextView tvCameraSubtitle;
+    private TextView tvEstimateTitle;
+    private TextView tvEstimateSubtitle;
+    private TextView tvSpaceTitle;
+    private TextView tvSpaceSubtitle;
+    private TextView tvElapsedTitle;
+    private TextView tvElapsedSubtitle;
+    private TextView tvRemainingTitle;
+    private TextView tvRemainingSubtitle;
+    private ImageView btnHamburgerMenu;
     private TextView tvPreviewPlaceholder;
     private MaterialButton buttonStartStop;
     private MaterialButton buttonPauseResume;
@@ -153,7 +163,6 @@ public class HomeFragment extends BaseFragment {
     private TextView tvClock, tvDateEnglish, tvDateArabic;
 
     //FragmentActivity tipres = requireActivity();
-    private TextView tvTip;
     private String[] tips;
 
     private int currentTipIndex = 0;
@@ -1735,7 +1744,6 @@ public class HomeFragment extends BaseFragment {
         CardView cardPreview = view.findViewById(R.id.cardPreview);
         CardView cardStats = view.findViewById(R.id.cardStats);
         CardView cardStorage = view.findViewById(R.id.cardStorage);
-        CardView cardTips = view.findViewById(R.id.cardTips);
         // Clock card is intentionally NOT included here as it has its own color logic
 
         String themeName = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
@@ -1754,11 +1762,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(redSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(redSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(redSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, redHeading, redTextSecondary);
             setTextColorsRecursive(cardStats, redHeading, redTextSecondary);
             setTextColorsRecursive(cardStorage, redHeading, redTextSecondary);
-            setTextColorsRecursive(cardTips, redHeading, redTextSecondary);
         } else if ("Premium Gold".equals(themeName)) {
             int goldSurface = ContextCompat.getColor(requireContext(), R.color.gold_theme_surface_dark);
             int goldHeading = ContextCompat.getColor(requireContext(), R.color.gold_theme_heading);
@@ -1766,11 +1772,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(goldSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(goldSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(goldSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, goldHeading, goldTextSecondary);
             setTextColorsRecursive(cardStats, goldHeading, goldTextSecondary);
             setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
-            setTextColorsRecursive(cardTips, goldHeading, goldTextSecondary);
         } else if ("Silent Forest".equals(themeName)) {
             // Silent Forest theme (green/teal)
             int forestSurface = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_surface_dark);
@@ -1779,11 +1783,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(forestSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(forestSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(forestSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, forestHeading, forestTextSecondary);
             setTextColorsRecursive(cardStats, forestHeading, forestTextSecondary);
             setTextColorsRecursive(cardStorage, forestHeading, forestTextSecondary);
-            setTextColorsRecursive(cardTips, Color.WHITE, Color.LTGRAY);
         } else if ("Shadow Alloy".equals(themeName)) {
             // Shadow Alloy theme (silver/metallic)
             int alloySurface = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_surface_dark);
@@ -1792,11 +1794,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(alloySurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(alloySurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(alloySurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, alloyHeading, alloyTextSecondary);
             setTextColorsRecursive(cardStats, alloyHeading, alloyTextSecondary);
             setTextColorsRecursive(cardStorage, alloyHeading, alloyTextSecondary);
-            setTextColorsRecursive(cardTips, alloyHeading, alloyTextSecondary);
         } else if ("Pookie Pink".equals(themeName)) {
             // Pookie Pink theme (pink)
             int pinkSurface = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_surface_dark);
@@ -1805,11 +1805,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(pinkSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(pinkSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(pinkSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, pinkHeading, pinkTextSecondary);
             setTextColorsRecursive(cardStats, pinkHeading, pinkTextSecondary);
             setTextColorsRecursive(cardStorage, pinkHeading, pinkTextSecondary);
-            setTextColorsRecursive(cardTips, pinkHeading, pinkTextSecondary);
         } else if ("Snow Veil".equals(themeName)) {
             // Snow Veil theme (white/light)
             // ----- Fix Start: Use darker gray for preview area in Snow Veil theme -----
@@ -1820,11 +1818,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(snowSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(snowSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(snowSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, snowHeading, snowTextSecondary);
             setTextColorsRecursive(cardStats, snowHeading, snowTextSecondary);
             setTextColorsRecursive(cardStorage, snowHeading, snowTextSecondary);
-            setTextColorsRecursive(cardTips, snowHeading, snowTextSecondary);
             
             // Apply additional contrast improvements for the Snow Veil theme
             applySnowVeilThemeToUI(view);
@@ -1835,11 +1831,9 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(amoledSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(amoledSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(amoledSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, amoledHeading, amoledTextSecondary);
             setTextColorsRecursive(cardStats, amoledHeading, amoledTextSecondary);
             setTextColorsRecursive(cardStorage, amoledHeading, amoledTextSecondary);
-            setTextColorsRecursive(cardTips, amoledHeading, amoledTextSecondary);
         } else if ("Midnight Dusk".equals(themeName)) {
             int darkSurface = ContextCompat.getColor(requireContext(), R.color.dark_purple_bar);
             int darkHeading = ContextCompat.getColor(requireContext(), R.color.colorHeading);
@@ -1847,21 +1841,17 @@ public class HomeFragment extends BaseFragment {
             if (cardPreview != null) cardPreview.setCardBackgroundColor(darkSurface);
             if (cardStats != null) cardStats.setCardBackgroundColor(darkSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(darkSurface);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, darkHeading, darkTextSecondary);
             setTextColorsRecursive(cardStats, darkHeading, darkTextSecondary);
             setTextColorsRecursive(cardStorage, darkHeading, darkTextSecondary);
-            setTextColorsRecursive(cardTips, darkHeading, darkTextSecondary);
         } else {
             // Fallback for other themes: use dialog color for cards
             if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
             if (cardStats != null) cardStats.setCardBackgroundColor(colorDialog);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(colorDialog);
-            if (cardTips != null) cardTips.setCardBackgroundColor(colorTransparent);
             setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
             setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
             setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
-            setTextColorsRecursive(cardTips, colorTextPrimary, colorTextSecondary);
         }
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force override for AMOLED and Red, use *_surface_dark) -----
 
@@ -1925,7 +1915,6 @@ public class HomeFragment extends BaseFragment {
         resetTimers();
         copyFontToInternalStorage();
         updateStorageInfo();
-        updateTip();
         // Initial stats update
         Log.d(TAG, "onViewCreated: Triggering initial stats update.");
         updateStats();
@@ -1935,7 +1924,6 @@ public class HomeFragment extends BaseFragment {
         updateClock();
 
         // updateTip(); // Duplicate call? Check if startTipsAnimation is sufficient
-        startTipsAnimation();
         setupButtonListeners();
         setupLongPressListener();
         updatePreviewVisibility(); // CRUCIAL: Update visibility based on the loaded state
@@ -2687,37 +2675,40 @@ public class HomeFragment extends BaseFragment {
         else cameraLabel = getString(R.string.mainpage_camera_back);
     } catch (Exception ignored) { cameraLabel = ""; }
 
-    // Build storage info with camera heading and only selected resolution
-    String qualityText = selectedRes != null ? String.format(Locale.getDefault(), "%dx%d", selectedRes.getWidth(), selectedRes.getHeight()) : "Unknown";
-    
-    String storageInfo = String.format(Locale.getDefault(),
-        "<font color='#FFFFFF' style='font-size:14sp;'><b>%s</b></font><br>" +
-        "<font color='#CCCCCC' style='font-size:12sp;'>%s</font><br><br>" +
-        "<font color='#FFFFFF' style='font-size:14sp;'><b>Available:</b></font><br>" +
-        "<font color='#CCCCCC' style='font-size:12sp;'>%.2f GB / %.2f GB</font><br><br>" +
-        "<font color='#FFFFFF' style='font-size:14sp;'><b>Record time (est.):</b></font><br>" +
-        "<font color='#CCCCCC' style='font-size:12sp;'>%s</font><br><br>" +
-        "<font color='#FFFFFF' style='font-size:14sp;'><b>Elapsed time:</b></font><br>" +
-        "<font color='#77DD77' style='font-size:12sp;'>%02d:%02d</font><br>" +
-        "<font color='#FFFFFF' style='font-size:14sp;'><b>Remaining time:</b></font><br>" +
-        "<font color='#E43C3C' style='font-size:12sp;'>%s</font>",
-        cameraLabel,
-        qualityText,
-        gbAvailable, gbTotal,
-        selectedEstimate,
-        elapsedMinutes, elapsedSeconds,
-        formatRemainingTime(days, hours, minutes, seconds)
-    );
-
-    Spanned formattedText = Html.fromHtml(storageInfo, Html.FROM_HTML_MODE_LEGACY);
+    // Prepare individual components for the new row-based design (make final for lambda)
+    final String finalCameraLabel = cameraLabel;
+    final String qualityText = selectedRes != null ? String.format(Locale.getDefault(), "%dx%d", selectedRes.getWidth(), selectedRes.getHeight()) : "Unknown";
+    final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
+    final String cameraSubtitle = qualityText + " • " + fpsText;
+    final String availableSpace = String.format(Locale.getDefault(), "%.2f GB", gbAvailable);
+    final String finalSelectedEstimate = selectedEstimate;
+    final String elapsedTimeText = String.format(Locale.getDefault(), "%02d:%02d", elapsedMinutes, elapsedSeconds);
+    final String remainingTimeText = formatRemainingTime(days, hours, minutes, seconds);
 
     // Update UI on the main thread
     if (getActivity() != null) {
         getActivity().runOnUiThread(() -> {
-            if (tvStorageInfo != null) {
-                tvStorageInfo.setText(formattedText);
-                Log.d(TAG, "updateStorageInfo: UI updated with elapsed=" + elapsedMinutes + "m " + elapsedSeconds + "s");
-            }
+            // Camera row
+            if (tvCameraTitle != null) tvCameraTitle.setText(finalCameraLabel);
+            if (tvCameraSubtitle != null) tvCameraSubtitle.setText(cameraSubtitle);
+            
+            // Estimate row
+            if (tvEstimateTitle != null) tvEstimateTitle.setText(finalSelectedEstimate);
+            if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText("Estimated time");
+            
+            // Space row
+            if (tvSpaceTitle != null) tvSpaceTitle.setText(availableSpace);
+            if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText("Available space");
+            
+            // Elapsed row
+            if (tvElapsedTitle != null) tvElapsedTitle.setText(elapsedTimeText);
+            if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText("Elapsed time");
+            
+            // Remaining row
+            if (tvRemainingTitle != null) tvRemainingTitle.setText(remainingTimeText);
+            if (tvRemainingSubtitle != null) tvRemainingSubtitle.setText("Remaining time");
+            
+            Log.d(TAG, "updateStorageInfo: UI updated with elapsed=" + elapsedMinutes + "m " + elapsedSeconds + "s");
         });
     }
     }
@@ -2805,40 +2796,6 @@ public class HomeFragment extends BaseFragment {
             handlerClock.removeCallbacks(updateInfoRunnable);
             updateInfoRunnable = null;
         }
-    }
-
-    private void startTipsAnimation() {
-        if (tips.length > 0) {
-            animateTip(tips[currentTipIndex], tvTip, 100); // Adjust delay as needed
-        }
-    }
-
-    private void updateTip() {
-        currentTip = tips[currentTipIndex];
-        typingIndex = 0;
-        isTypingIn = true;
-        // animateTip(); this line is giving errors so i commented it
-    }
-
-    private void animateTip(String fullText, TextView textView, int delay) {
-        final Handler handler = new Handler(Looper.getMainLooper());
-        final int[] index = {0};
-
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                if (index[0] <= fullText.length()) {
-                    textView.setText(fullText.substring(0, index[0]));
-                    index[0]++;
-                    handler.postDelayed(this, 40); // add delay in typing the tips
-                } else {
-                    currentTipIndex = (currentTipIndex + 1) % tips.length;
-                    handler.postDelayed(() -> animateTip(tips[currentTipIndex], textView, delay), 5000); // Wait 2 seconds before next tip
-                }
-            }
-        };
-
-        handler.post(runnable);
     }
 
     // --- BroadcastReceiver Implementation ---
@@ -3612,7 +3569,26 @@ public class HomeFragment extends BaseFragment {
     // ----- Fix Start for this class (HomeFragment) -----
     private void initializeViews(View view) {
         Log.d(TAG, "initializeViews: Finding UI elements.");
-        tvStorageInfo = view.findViewById(R.id.tvStorageInfo);
+        tvCameraTitle = view.findViewById(R.id.tvCameraTitle);
+        tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
+        tvEstimateTitle = view.findViewById(R.id.tvEstimateTitle);
+        tvEstimateSubtitle = view.findViewById(R.id.tvEstimateSubtitle);
+        tvSpaceTitle = view.findViewById(R.id.tvSpaceTitle);
+        tvSpaceSubtitle = view.findViewById(R.id.tvSpaceSubtitle);
+        tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
+        tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
+        tvRemainingTitle = view.findViewById(R.id.tvRemainingTitle);
+        tvRemainingSubtitle = view.findViewById(R.id.tvRemainingSubtitle);
+        btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
+        
+        // Set up hamburger menu click handler
+        if (btnHamburgerMenu != null) {
+            btnHamburgerMenu.setOnClickListener(v -> {
+                HomeSidebarFragment sidebar = HomeSidebarFragment.newInstance();
+                sidebar.show(getParentFragmentManager(), "HomeSidebar");
+            });
+        }
+        
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
@@ -3631,9 +3607,6 @@ public class HomeFragment extends BaseFragment {
         tvClock = view.findViewById(R.id.tvClock);
         tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
         tvDateArabic = view.findViewById(R.id.tvDateArabic);
-
-        // Tip view
-        tvTip = view.findViewById(R.id.tvTip);
 
         // Stats view
         tvStats = view.findViewById(R.id.tvStats); // Assuming R.id.tvStats for video count/size
@@ -4070,7 +4043,6 @@ public class HomeFragment extends BaseFragment {
         CardView cardStats = rootView.findViewById(R.id.cardStats);
         CardView cardStorage = rootView.findViewById(R.id.cardStorage);
         CardView cardClock = rootView.findViewById(R.id.cardClock);
-        CardView cardTips = rootView.findViewById(R.id.cardTips);
         
         // Stats card text - this card shows videos space info below the clock
         if (cardStats != null) {
@@ -4128,11 +4100,6 @@ public class HomeFragment extends BaseFragment {
             forceForceMakeAllTextBlack(cardStorage);
         }
         
-        // Tips card text
-        if (cardTips != null) {
-            forceForceMakeAllTextBlack(cardTips);
-        }
-        
         // Direct access to known TextViews for clock
         if (tvClock != null) {
             tvClock.setTextColor(Color.BLACK);
@@ -4146,15 +4113,18 @@ public class HomeFragment extends BaseFragment {
             tvDateArabic.setTextColor(Color.BLACK);
         }
         
-        // Direct access to storage info TextView
-        if (tvStorageInfo != null) {
-            tvStorageInfo.setTextColor(Color.BLACK);
-        }
+        // Update colors for storage widget TextViews
+        if (tvCameraTitle != null) tvCameraTitle.setTextColor(Color.BLACK);
+        if (tvCameraSubtitle != null) tvCameraSubtitle.setTextColor(Color.BLACK);
+        if (tvEstimateTitle != null) tvEstimateTitle.setTextColor(Color.BLACK);
+        if (tvEstimateSubtitle != null) tvEstimateSubtitle.setTextColor(Color.BLACK);
+        if (tvSpaceTitle != null) tvSpaceTitle.setTextColor(Color.BLACK);
+        if (tvSpaceSubtitle != null) tvSpaceSubtitle.setTextColor(Color.BLACK);
+        if (tvElapsedTitle != null) tvElapsedTitle.setTextColor(Color.BLACK);
+        if (tvElapsedSubtitle != null) tvElapsedSubtitle.setTextColor(Color.BLACK);
+        if (tvRemainingTitle != null) tvRemainingTitle.setTextColor(Color.BLACK);
+        if (tvRemainingSubtitle != null) tvRemainingSubtitle.setTextColor(Color.BLACK);
         
-        // Direct access to tips TextView
-        if (tvTip != null) {
-            tvTip.setTextColor(Color.BLACK);
-        }
     }
     
     /**
