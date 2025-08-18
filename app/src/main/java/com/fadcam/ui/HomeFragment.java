@@ -43,6 +43,7 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
 import android.text.style.ForegroundColorSpan;
+import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
@@ -1764,7 +1765,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(redSurface);
             setTextColorsRecursive(cardPreview, redHeading, redTextSecondary);
             setTextColorsRecursive(cardStats, redHeading, redTextSecondary);
-            setTextColorsRecursive(cardStorage, redHeading, redTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, redHeading, redTextSecondary);
         } else if ("Premium Gold".equals(themeName)) {
             int goldSurface = ContextCompat.getColor(requireContext(), R.color.gold_theme_surface_dark);
             int goldHeading = ContextCompat.getColor(requireContext(), R.color.gold_theme_heading);
@@ -1774,7 +1776,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(goldSurface);
             setTextColorsRecursive(cardPreview, goldHeading, goldTextSecondary);
             setTextColorsRecursive(cardStats, goldHeading, goldTextSecondary);
-            setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
         } else if ("Silent Forest".equals(themeName)) {
             // Silent Forest theme (green/teal)
             int forestSurface = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_surface_dark);
@@ -1785,7 +1788,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(forestSurface);
             setTextColorsRecursive(cardPreview, forestHeading, forestTextSecondary);
             setTextColorsRecursive(cardStats, forestHeading, forestTextSecondary);
-            setTextColorsRecursive(cardStorage, forestHeading, forestTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, forestHeading, forestTextSecondary);
         } else if ("Shadow Alloy".equals(themeName)) {
             // Shadow Alloy theme (silver/metallic)
             int alloySurface = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_surface_dark);
@@ -1796,7 +1800,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(alloySurface);
             setTextColorsRecursive(cardPreview, alloyHeading, alloyTextSecondary);
             setTextColorsRecursive(cardStats, alloyHeading, alloyTextSecondary);
-            setTextColorsRecursive(cardStorage, alloyHeading, alloyTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, alloyHeading, alloyTextSecondary);
         } else if ("Pookie Pink".equals(themeName)) {
             // Pookie Pink theme (pink)
             int pinkSurface = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_surface_dark);
@@ -1807,7 +1812,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(pinkSurface);
             setTextColorsRecursive(cardPreview, pinkHeading, pinkTextSecondary);
             setTextColorsRecursive(cardStats, pinkHeading, pinkTextSecondary);
-            setTextColorsRecursive(cardStorage, pinkHeading, pinkTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, pinkHeading, pinkTextSecondary);
         } else if ("Snow Veil".equals(themeName)) {
             // Snow Veil theme (white/light)
             // ----- Fix Start: Use darker gray for preview area in Snow Veil theme -----
@@ -1820,7 +1826,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(snowSurface);
             setTextColorsRecursive(cardPreview, snowHeading, snowTextSecondary);
             setTextColorsRecursive(cardStats, snowHeading, snowTextSecondary);
-            setTextColorsRecursive(cardStorage, snowHeading, snowTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, snowHeading, snowTextSecondary);
             
             // Apply additional contrast improvements for the Snow Veil theme
             applySnowVeilThemeToUI(view);
@@ -1833,7 +1840,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(amoledSurface);
             setTextColorsRecursive(cardPreview, amoledHeading, amoledTextSecondary);
             setTextColorsRecursive(cardStats, amoledHeading, amoledTextSecondary);
-            setTextColorsRecursive(cardStorage, amoledHeading, amoledTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, amoledHeading, amoledTextSecondary);
         } else if ("Midnight Dusk".equals(themeName)) {
             int darkSurface = ContextCompat.getColor(requireContext(), R.color.dark_purple_bar);
             int darkHeading = ContextCompat.getColor(requireContext(), R.color.colorHeading);
@@ -1843,7 +1851,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(darkSurface);
             setTextColorsRecursive(cardPreview, darkHeading, darkTextSecondary);
             setTextColorsRecursive(cardStats, darkHeading, darkTextSecondary);
-            setTextColorsRecursive(cardStorage, darkHeading, darkTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, darkHeading, darkTextSecondary);
         } else {
             // Fallback for other themes: use dialog color for cards
             if (cardPreview != null) cardPreview.setCardBackgroundColor(colorDialog);
@@ -1851,7 +1860,8 @@ public class HomeFragment extends BaseFragment {
             if (cardStorage != null) cardStorage.setCardBackgroundColor(colorDialog);
             setTextColorsRecursive(cardPreview, colorTextPrimary, colorTextSecondary);
             setTextColorsRecursive(cardStats, colorTextPrimary, colorTextSecondary);
-            setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
+            // Skip storage widget to preserve semantic colors
+            // setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
         }
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force override for AMOLED and Red, use *_surface_dark) -----
 
@@ -2677,7 +2687,7 @@ public class HomeFragment extends BaseFragment {
 
     // Prepare individual components for the new row-based design (make final for lambda)
     final String finalCameraLabel = cameraLabel;
-    final String qualityText = selectedRes != null ? String.format(Locale.getDefault(), "%dx%d", selectedRes.getWidth(), selectedRes.getHeight()) : "Unknown";
+    final String qualityText = getResolutionDisplayName(selectedRes);
     final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
     final String cameraSubtitle = qualityText + " • " + fpsText;
     final String availableSpace = String.format(Locale.getDefault(), "%.2f GB", gbAvailable);
@@ -2716,18 +2726,49 @@ public class HomeFragment extends BaseFragment {
     private String formatRemainingTime(long days, long hours, long minutes, long seconds) {
         StringBuilder remainingTime = new StringBuilder();
         if (days > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>days</font> ", days));
+            remainingTime.append(String.format(Locale.getDefault(), "%d days ", days));
         }
         if (hours > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>h</font> ", hours));
+            remainingTime.append(String.format(Locale.getDefault(), "%dh ", hours));
         }
         if (minutes > 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>m</font> ", minutes));
+            remainingTime.append(String.format(Locale.getDefault(), "%dm ", minutes));
         }
         if (seconds > 0 || remainingTime.length() == 0) {
-            remainingTime.append(String.format(Locale.getDefault(), "<font color='#E43C3C'>%d</font><font color='#CCCCCC'>s</font>", seconds));
+            remainingTime.append(String.format(Locale.getDefault(), "%ds", seconds));
         }
-        return remainingTime.toString();
+        return remainingTime.toString().trim();
+    }
+
+    /**
+     * Converts a resolution Size to a friendly display name (e.g., "FHD", "4K", "HD")
+     */
+    private String getResolutionDisplayName(Size resolution) {
+        if (resolution == null) {
+            return "Unknown";
+        }
+
+        String resKey = resolution.getWidth() + "x" + resolution.getHeight();
+        String[] resolutionKeys = getResources().getStringArray(R.array.video_resolutions_keys);
+        String[] resolutionValues = getResources().getStringArray(R.array.video_resolutions_values);
+
+        // Look for exact match in our resolution mapping
+        for (int i = 0; i < resolutionKeys.length && i < resolutionValues.length; i++) {
+            if (resolutionKeys[i].equals(resKey)) {
+                return resolutionValues[i];
+            }
+        }
+
+        // If no exact match found, return a friendly approximation
+        int width = resolution.getWidth();
+        int height = resolution.getHeight();
+
+        if (width >= 7680 && height >= 4320) return "8K";
+        else if (width >= 3840 && height >= 2160) return "4K";
+        else if (width >= 2560 && height >= 1440) return "2K";
+        else if (width >= 1920 && height >= 1080) return "FHD";
+        else if (width >= 1280 && height >= 720) return "HD";
+        else return "SD";
     }
 
     private String getRecordingTimeEstimate(long availableBytes, long bitrate) {

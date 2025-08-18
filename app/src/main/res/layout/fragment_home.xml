@@ -75,17 +75,17 @@
             android:layout_marginTop="10dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            app:cardBackgroundColor="@color/gray"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorDialog"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
             app:strokeColor="#4CAF50"
-            app:strokeWidth="2dp">
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="16dp">
 
                 <!-- Camera Row -->
                 <LinearLayout
@@ -93,16 +93,16 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="12dp">
 
                     <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="14dp"
                         android:fontFamily="@font/materialicons"
                         android:text="camera_alt"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
+                        android:textColor="#4CAF50"
+                        android:textSize="18sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -117,7 +117,7 @@
                             android:layout_height="wrap_content"
                             android:text="Rear Camera"
                             android:textColor="#FFFFFF"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -125,8 +125,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="4K • 60fps"
-                            android:textColor="#AAAAAA"
-                            android:textSize="12sp" />
+                            android:textColor="#B0B0B0"
+                            android:textSize="13sp" />
 
                     </LinearLayout>
 
@@ -138,16 +138,16 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="12dp">
 
                     <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="14dp"
                         android:fontFamily="@font/materialicons"
                         android:text="schedule"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
+                        android:textColor="#FF9800"
+                        android:textSize="18sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -162,7 +162,7 @@
                             android:layout_height="wrap_content"
                             android:text="1h 30min"
                             android:textColor="#FFFFFF"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -170,8 +170,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Estimated time"
-                            android:textColor="#AAAAAA"
-                            android:textSize="12sp" />
+                            android:textColor="#B0B0B0"
+                            android:textSize="13sp" />
 
                     </LinearLayout>
 
@@ -183,16 +183,16 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="12dp">
 
                     <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="14dp"
                         android:fontFamily="@font/materialicons"
                         android:text="storage"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
+                        android:textColor="#2196F3"
+                        android:textSize="18sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -207,7 +207,7 @@
                             android:layout_height="wrap_content"
                             android:text="1.13 GB"
                             android:textColor="#FFFFFF"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -215,8 +215,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Available space"
-                            android:textColor="#AAAAAA"
-                            android:textSize="12sp" />
+                            android:textColor="#B0B0B0"
+                            android:textSize="13sp" />
 
                     </LinearLayout>
 
@@ -228,16 +228,16 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="12dp">
 
                     <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="14dp"
                         android:fontFamily="@font/materialicons"
                         android:text="play_arrow"
-                        android:textColor="#77DD77"
-                        android:textSize="16sp"
+                        android:textColor="#4CAF50"
+                        android:textSize="18sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -251,8 +251,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="00:00"
-                            android:textColor="#77DD77"
-                            android:textSize="14sp"
+                            android:textColor="#4CAF50"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -260,8 +260,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Elapsed time"
-                            android:textColor="#AAAAAA"
-                            android:textSize="12sp" />
+                            android:textColor="#B0B0B0"
+                            android:textSize="13sp" />
 
                     </LinearLayout>
 
@@ -275,13 +275,13 @@
                     android:gravity="center_vertical">
 
                     <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="14dp"
                         android:fontFamily="@font/materialicons"
                         android:text="timer"
-                        android:textColor="#E43C3C"
-                        android:textSize="16sp"
+                        android:textColor="#F44336"
+                        android:textSize="18sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -295,8 +295,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="20m 27s"
-                            android:textColor="#E43C3C"
-                            android:textSize="14sp"
+                            android:textColor="#F44336"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -304,8 +304,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Remaining time"
-                            android:textColor="#AAAAAA"
-                            android:textSize="12sp" />
+                            android:textColor="#B0B0B0"
+                            android:textSize="13sp" />
 
                     </LinearLayout>
 
