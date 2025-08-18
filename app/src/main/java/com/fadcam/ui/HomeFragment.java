@@ -2673,27 +2673,53 @@ public class HomeFragment extends BaseFragment {
         Log.d(TAG, "updateStorageInfo: Formatted elapsed time = " + elapsedMinutes + ":" + 
               String.format(Locale.US, "%02d", elapsedSeconds));
 
-        String storageInfo = String.format(Locale.getDefault(),
-                getString(R.string.mainpage_storage_indicator),
-                gbAvailable, gbTotal,
-                getRecordingTimeEstimate(bytesAvailable, (10 * 1024 * 1024) / 2), // 50% of 10 Mbps
-                getRecordingTimeEstimate(bytesAvailable, (5 * 1024 * 1024) / 2),  // 50% of 5 Mbps
-                getRecordingTimeEstimate(bytesAvailable, (1024 * 1024) / 2),      // 50% of 1 Mbps
-                elapsedMinutes, elapsedSeconds,
-                formatRemainingTime(days, hours, minutes, seconds)
-        );
+    // Compute estimate only for selected resolution to keep the widget concise
+    android.util.Size selectedRes = sharedPreferencesManager.getCameraResolution();
+    int selectedFps = sharedPreferencesManager.getVideoFrameRate();
+    long selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
+    String selectedEstimate = getRecordingTimeEstimate(bytesAvailable, selectedBitrate);
 
-        Spanned formattedText = Html.fromHtml(storageInfo, Html.FROM_HTML_MODE_LEGACY);
+    // Camera indicator (Front/Back)
+    String cameraLabel = "";
+    try {
+        com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
+        if (camType == com.fadcam.CameraType.FRONT) cameraLabel = getString(R.string.mainpage_camera_front);
+        else cameraLabel = getString(R.string.mainpage_camera_back);
+    } catch (Exception ignored) { cameraLabel = ""; }
 
-        // Update UI on the main thread
-        if (getActivity() != null) {
-            getActivity().runOnUiThread(() -> {
-                if (tvStorageInfo != null) {
-                    tvStorageInfo.setText(formattedText);
-                    Log.d(TAG, "updateStorageInfo: UI updated with elapsed=" + elapsedMinutes + "m " + elapsedSeconds + "s");
-                }
-            });
-        }
+    // Build storage info with camera heading and only selected resolution
+    String qualityText = selectedRes != null ? String.format(Locale.getDefault(), "%dx%d", selectedRes.getWidth(), selectedRes.getHeight()) : "Unknown";
+    
+    String storageInfo = String.format(Locale.getDefault(),
+        "<font color='#FFFFFF' style='font-size:14sp;'><b>%s</b></font><br>" +
+        "<font color='#CCCCCC' style='font-size:12sp;'>%s</font><br><br>" +
+        "<font color='#FFFFFF' style='font-size:14sp;'><b>Available:</b></font><br>" +
+        "<font color='#CCCCCC' style='font-size:12sp;'>%.2f GB / %.2f GB</font><br><br>" +
+        "<font color='#FFFFFF' style='font-size:14sp;'><b>Record time (est.):</b></font><br>" +
+        "<font color='#CCCCCC' style='font-size:12sp;'>%s</font><br><br>" +
+        "<font color='#FFFFFF' style='font-size:14sp;'><b>Elapsed time:</b></font><br>" +
+        "<font color='#77DD77' style='font-size:12sp;'>%02d:%02d</font><br>" +
+        "<font color='#FFFFFF' style='font-size:14sp;'><b>Remaining time:</b></font><br>" +
+        "<font color='#E43C3C' style='font-size:12sp;'>%s</font>",
+        cameraLabel,
+        qualityText,
+        gbAvailable, gbTotal,
+        selectedEstimate,
+        elapsedMinutes, elapsedSeconds,
+        formatRemainingTime(days, hours, minutes, seconds)
+    );
+
+    Spanned formattedText = Html.fromHtml(storageInfo, Html.FROM_HTML_MODE_LEGACY);
+
+    // Update UI on the main thread
+    if (getActivity() != null) {
+        getActivity().runOnUiThread(() -> {
+            if (tvStorageInfo != null) {
+                tvStorageInfo.setText(formattedText);
+                Log.d(TAG, "updateStorageInfo: UI updated with elapsed=" + elapsedMinutes + "m " + elapsedSeconds + "s");
+            }
+        });
+    }
     }
 
     private String formatRemainingTime(long days, long hours, long minutes, long seconds) {
@@ -4123,34 +4149,6 @@ public class HomeFragment extends BaseFragment {
         // Direct access to storage info TextView
         if (tvStorageInfo != null) {
             tvStorageInfo.setTextColor(Color.BLACK);
-            
-            // This TextView likely contains HTML/styled text that needs special handling
-            CharSequence text = tvStorageInfo.getText();
-            if (text instanceof Spanned) {
-                // Try to extract any spans and convert them
-                Spanned spanned = (Spanned) text;
-                Object[] spans = spanned.getSpans(0, spanned.length(), Object.class);
-                
-                // Create a new SpannableString to modify
-                SpannableString newText = new SpannableString(text);
-                
-                // Copy over all spans except ForegroundColorSpan (we'll add our own)
-                for (Object span : spans) {
-                    if (!(span instanceof ForegroundColorSpan)) {
-                        newText.setSpan(span, 
-                            spanned.getSpanStart(span),
-                            spanned.getSpanEnd(span),
-                            spanned.getSpanFlags(span));
-                    }
-                }
-                
-                // Add black color spans for the entire text
-                newText.setSpan(new ForegroundColorSpan(Color.BLACK), 
-                    0, newText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                
-                // Set the new text
-                tvStorageInfo.setText(newText);
-            }
         }
         
         // Direct access to tips TextView
