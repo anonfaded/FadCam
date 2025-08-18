@@ -111,6 +111,7 @@
     <string name="toast_no_youtube_app">YouTube app not found</string>
     <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
+    <string name="records_hide_thumbnails_row_title">Hide</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>
     <string name="nav_settings">Settings</string>
@@ -387,6 +388,8 @@
     <string name="waveform_switch_label">Enable Audio Waveform</string>
     <string name="mute_on_toast">Playback muted</string>
     <string name="mute_off_toast">Playback unmuted</string>
+    <string name="records_hide_thumbnails_title">Hide Thumbnails</string>
+    <string name="records_hide_thumbnails_subtitle">Show a minimal list without thumbnails</string>
     <string name="video_player_settings_helper_player">You can change these options here or from the Settings tab as well.</string>
     <string name="playback_controls_heading">Playback controls</string>
     <string name="playback_controls_helper">Adjust playback speed or set a Quick Speed for press-and-hold. You can change these here or from the Video Player screen.</string>
@@ -839,6 +842,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="sort_largest_first">Largest Files First</string>
     <string name="no_videos_found">No videos found</string>
     <string name="no_recordings_yet">No Recordings Yet</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
     <!-- Notification Customization Strings -->
     <string name="setting_notification_customization_title">Notification Customization</string>
     <string name="setting_notification_customization_description">Customize the recording notification appearance</string>
