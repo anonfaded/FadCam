@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit; // Required for time conversions
 import java.text.ParseException; // Add this import
 
 import androidx.annotation.StringRes;
+import android.net.Uri;
+import java.io.File;
 
 public class Utils {
 
@@ -183,6 +185,27 @@ public class Utils {
                     });
         } catch (Exception e) {
             Log.e("Utils", "Error during MediaScannerConnection.scanFile for path: " + filePath, e);
+        }
+    }
+
+    /**
+     * Try to resolve a java.io.File from a given SAF/URI if possible.
+     * This is intentionally conservative: it only maps file:// URIs directly.
+     * For SAF/content URIs this will return null (caller should handle gracefully).
+     */
+    public static File getFileFromSafUriIfPossible(Context context, Uri uri) {
+        if (uri == null) return null;
+        try {
+            String scheme = uri.getScheme();
+            if (scheme == null) return null;
+            if (scheme.equals("file")) {
+                return new File(uri.getPath());
+            }
+            // For content:// or tree:// URIs we cannot reliably map to a File path here.
+            return null;
+        } catch (Exception e) {
+            Log.w("Utils", "getFileFromSafUriIfPossible: failed to resolve URI: " + uri, e);
+            return null;
         }
     }
 }

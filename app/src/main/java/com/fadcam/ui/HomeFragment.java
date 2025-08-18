@@ -203,6 +203,8 @@ public class HomeFragment extends BaseFragment {
     private SharedPreferencesManager sharedPreferencesManager;
     private ExecutorService executorService;
     private BroadcastReceiver recordingCompleteReceiver;
+    // Cache last-known available bytes for custom storage (SD card / SAF) when we cannot probe it directly
+    private long lastKnownCustomAvailableBytes = -1;
     // ----- Fix Start for this class (HomeFragment) -----
     // private boolean isStatsReceiverRegistered = false; // This seemed to be for the general recordingCompleteReceiver
     private boolean isSegmentCompleteStatsReceiverRegistered = false;
@@ -2537,9 +2539,66 @@ public class HomeFragment extends BaseFragment {
 
     private void updateStorageInfo() {
         Log.d(TAG, "updateStorageInfo: Updating storage information");
+        // Default to internal external storage stats
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
         long bytesAvailable = stat.getAvailableBytes();
         long bytesTotal = stat.getTotalBytes();
+
+        // If user selected custom storage (SD card / SAF), try to use that instead of internal storage
+        String storageMode = sharedPreferencesManager.getStorageMode();
+        String customUriString = sharedPreferencesManager.getCustomStorageUri();
+        boolean usingCustomStorage = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null;
+        // By default assume custom is on primary (internal) storage; we'll detect removable volumes via docId heuristics
+        boolean customIsOnPrimary = true;
+        if (usingCustomStorage) {
+            try {
+                android.net.Uri treeUri = android.net.Uri.parse(customUriString);
+                // Heuristics: if the tree document id indicates a non-primary volume (like a UUID), treat it as removable
+                try {
+                    String docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+                    if (docId != null) {
+                        if (docId.startsWith("primary:")) {
+                            customIsOnPrimary = true;
+                        } else if (docId.startsWith("raw:")) {
+                            String rawPath = docId.substring("raw:".length());
+                            if (rawPath.startsWith(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+                                customIsOnPrimary = true;
+                            } else {
+                                customIsOnPrimary = false;
+                            }
+                        } else if (docId.contains(":")) {
+                            String volumeId = docId.split(":", 2)[0];
+                            customIsOnPrimary = "primary".equalsIgnoreCase(volumeId);
+                        }
+                    }
+                } catch (Exception ignore) {
+                    // best-effort only
+                }
+
+                // Try to resolve a usable path via DocumentFile and StatFs on persisted URI if possible
+                if (hasSafPermission(treeUri)) {
+                    java.io.File probe = Utils.getFileFromSafUriIfPossible(requireContext(), treeUri);
+                    if (probe != null && probe.exists()) {
+                        StatFs customStat = new StatFs(probe.getAbsolutePath());
+                        bytesAvailable = customStat.getAvailableBytes();
+                        bytesTotal = customStat.getTotalBytes();
+                        lastKnownCustomAvailableBytes = bytesAvailable;
+                    } else if (lastKnownCustomAvailableBytes > 0) {
+                        // Fall back to last known custom value if we cannot probe right now
+                        bytesAvailable = lastKnownCustomAvailableBytes;
+                    } else {
+                        // If we cannot probe custom storage, avoid subtracting estimated bytes from internal storage
+                        // by setting a flag (handled below) so the UI doesn't falsely decrease internal available space.
+                        Log.d(TAG, "updateStorageInfo: Using custom storage but unable to probe its stats; will avoid updating internal available.");
+                        // leave bytesAvailable as internal; we'll skip subtract later if custom is removable
+                    }
+                } else {
+                    Log.w(TAG, "updateStorageInfo: No SAF permission for custom storage URI: " + customUriString);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "updateStorageInfo: Error while probing custom storage stats", e);
+            }
+        }
 
         double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
         double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
@@ -2579,7 +2638,15 @@ public class HomeFragment extends BaseFragment {
         }
 
         // Update available space based on estimated bytes used
-        bytesAvailable -= estimatedBytesUsed;
+        // If using custom storage but we couldn't probe it (and lastKnownCustomAvailableBytes <= 0),
+        // avoid subtracting estimatedBytesUsed from internal storage because recording is happening elsewhere.
+        // If custom storage is used and it is on a removable volume (not primary), and we cannot probe it,
+        // skip subtracting estimated bytes from internal storage.
+        if (!(usingCustomStorage && !customIsOnPrimary && (lastKnownCustomAvailableBytes <= 0 && (customUriString != null)))) {
+            bytesAvailable -= estimatedBytesUsed;
+        } else {
+            Log.d(TAG, "updateStorageInfo: Skipping subtracting estimated bytes from internal storage because recording target is removable custom storage and unknown.");
+        }
         // Ensure we never show negative available space
         bytesAvailable = Math.max(0, bytesAvailable);
         gbAvailable = Math.max(0, bytesAvailable / (1024.0 * 1024.0 * 1024.0));
