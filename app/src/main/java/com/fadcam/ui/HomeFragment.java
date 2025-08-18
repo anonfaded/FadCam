@@ -528,6 +528,10 @@ public class HomeFragment extends BaseFragment {
                     case Constants.PREF_VIDEO_FRAME_RATE:
                     case Constants.PREF_VIDEO_FRAME_RATE_FRONT:
                     case Constants.PREF_VIDEO_FRAME_RATE_BACK:
+                    case Constants.PREF_AUDIO_BITRATE: // audio bitrate changed
+                    case "bitrate_mode_custom": // custom bitrate mode toggled
+                    case "bitrate_custom_value": // custom bitrate value changed (kbps)
+                    case Constants.PREF_VIDEO_BITRATE:
                         refreshPrefsAndUpdateStorage();
                         break;
                     default:
@@ -2653,12 +2657,35 @@ public class HomeFragment extends BaseFragment {
                   ", currentTime=" + SystemClock.elapsedRealtime() + 
                   ", calculated elapsedTime=" + elapsedTime + "ms");
             
+            // Determine effective bitrate (bps) to use for runtime accounting.
+            long effectiveBitrate = 0;
+            try {
+                // Get video component (bps) from prefs/current helper
+                long videoComponent = sharedPreferencesManager.getCurrentBitrate();
+                // Get audio component (bps) from prefs
+                long audioComponent = sharedPreferencesManager.getAudioBitrate();
+                // Sum both to get effective total bitrate
+                effectiveBitrate = videoComponent + audioComponent;
+            } catch (Exception ex) {
+                // Fallback to previously cached value or estimator
+                try {
+                    long videoComponent = videoBitrate > 0 ? videoBitrate : Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+                    long audioComponent = 0;
+                    try { audioComponent = sharedPreferencesManager.getAudioBitrate(); } catch (Exception ignore) {}
+                    effectiveBitrate = videoComponent + audioComponent;
+                } catch (Exception ignore) {
+                    effectiveBitrate = 0;
+                }
+            }
+            // Cache video-only component on the fragment field for other consumers
+            videoBitrate = Math.max(0, effectiveBitrate - sharedPreferencesManager.getAudioBitrate());
+
             // Only calculate if we have valid values
-            if (elapsedTime > 0 && videoBitrate > 0) {
-                estimatedBytesUsed = (elapsedTime * videoBitrate) / 8000; // Convert ms and bits to bytes
+            if (elapsedTime > 0 && effectiveBitrate > 0) {
+                estimatedBytesUsed = (elapsedTime * effectiveBitrate) / 8000; // Convert ms and bits to bytes
                 // Safety check: don't let estimated bytes exceed available bytes
                 estimatedBytesUsed = Math.min(estimatedBytesUsed, bytesAvailable);
-                Log.d(TAG, "updateStorageInfo: Elapsed=" + elapsedTime + "ms, Est. bytes used=" + estimatedBytesUsed);
+                Log.d(TAG, "updateStorageInfo: Elapsed=" + elapsedTime + "ms, Est. bytes used=" + estimatedBytesUsed + ", bitrate=" + effectiveBitrate);
             }
         } else {
             // Reset recording start time when not recording
@@ -2680,10 +2707,19 @@ public class HomeFragment extends BaseFragment {
         bytesAvailable = Math.max(0, bytesAvailable);
         gbAvailable = Math.max(0, bytesAvailable / (1024.0 * 1024.0 * 1024.0));
 
-        // Calculate remaining recording time based on available space and bitrate
+        // Calculate remaining recording time based on available space and the full effective bitrate
+        // Use video + audio here so bytesAvailable (which was reduced using effective bitrate)
+        // aligns with the denominator. This prevents the paradox where lowering video-only
+        // bitrate can produce a smaller remaining time because estimatedBytesUsed used
+        // the combined bitrate earlier.
         long remainingTime = 0;
-        if (videoBitrate > 0) {
-            remainingTime = (bytesAvailable * 8) / videoBitrate; 
+        long audioBps = 0;
+        try {
+            audioBps = (sharedPreferencesManager != null) ? sharedPreferencesManager.getAudioBitrate() : 0;
+        } catch (Exception ignore) {}
+        long effectiveForRemaining = Math.max(0L, videoBitrate) + Math.max(0L, audioBps);
+        if (effectiveForRemaining > 0) {
+            remainingTime = (bytesAvailable * 8) / effectiveForRemaining;
         }
         // Ensure remaining time is never negative
         remainingTime = Math.max(0, remainingTime);
@@ -2705,7 +2741,19 @@ public class HomeFragment extends BaseFragment {
     // Compute estimate only for selected resolution to keep the widget concise
     android.util.Size selectedRes = sharedPreferencesManager.getCameraResolution();
     int selectedFps = sharedPreferencesManager.getVideoFrameRate();
-    long selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
+    long selectedBitrate;
+    try {
+        // If user selected custom bitrate mode, use that (prefs store kbps)
+        boolean customMode = sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false);
+        if (customMode) {
+            int customKbps = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000);
+            selectedBitrate = (long) customKbps * 1000L; // convert kbps to bps
+        } else {
+            selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
+        }
+    } catch (Exception e) {
+        selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
+    }
     String selectedEstimate = getRecordingTimeEstimate(bytesAvailable, selectedBitrate);
 
     // Camera indicator (Front/Back)
@@ -3181,7 +3229,11 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void setVideoBitrate() {
-        videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+        try {
+            videoBitrate = sharedPreferencesManager.getCurrentBitrate();
+        } catch (Exception e) {
+            videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+        }
         Log.d(TAG, "setVideoBitrate: Set to " + videoBitrate + " bps");
     }
 
