@@ -146,6 +146,7 @@ public class HomeFragment extends BaseFragment {
     private TextView tvEstimateSubtitle;
     private TextView tvSpaceTitle;
     private TextView tvSpaceSubtitle;
+    // inline total will be rendered in tvSpaceTitle using spans
     private TextView tvElapsedTitle;
     private TextView tvElapsedSubtitle;
     private TextView tvRemainingTitle;
@@ -2727,6 +2728,7 @@ public class HomeFragment extends BaseFragment {
 
     // Update UI on the main thread
     if (getActivity() != null) {
+        final double finalGbTotal = gbTotal;
         getActivity().runOnUiThread(() -> {
             // Camera row
             if (tvCameraTitle != null) tvCameraTitle.setText(finalCameraLabel);
@@ -2736,8 +2738,27 @@ public class HomeFragment extends BaseFragment {
             if (tvEstimateTitle != null) tvEstimateTitle.setText(finalSelectedEstimate);
             if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText("Estimated time");
             
-            // Space row
-            if (tvSpaceTitle != null) tvSpaceTitle.setText(availableSpace);
+            // Space row: render "available / total" in the same TextView with a dimmer smaller total
+            if (tvSpaceTitle != null) {
+                try {
+                    String avail = availableSpace;
+                    String totalStr = String.format(Locale.getDefault(), "%.2f GB", finalGbTotal);
+                    String combined = avail + " / " + totalStr;
+                    android.text.SpannableString ss = new android.text.SpannableString(combined);
+                    // make the total part dimmer and smaller
+                    // include the slash as part of the dimmed smaller segment for a cleaner inline look
+                    int slashIndex = combined.indexOf("/");
+                    int start = (slashIndex >= 0) ? slashIndex : (combined.indexOf("/ ") + 2);
+                    int end = combined.length();
+                    if (start >= 0 && end > start) {
+                        ss.setSpan(new android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#9E9E9E")), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        ss.setSpan(new android.text.style.RelativeSizeSpan(0.85f), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                    tvSpaceTitle.setText(ss);
+                } catch (Exception e) {
+                    tvSpaceTitle.setText(availableSpace);
+                }
+            }
             if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText("Available space");
             
             // Elapsed row
@@ -3687,6 +3708,7 @@ public class HomeFragment extends BaseFragment {
         tvEstimateSubtitle = view.findViewById(R.id.tvEstimateSubtitle);
         tvSpaceTitle = view.findViewById(R.id.tvSpaceTitle);
         tvSpaceSubtitle = view.findViewById(R.id.tvSpaceSubtitle);
+    // ...existing code...
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
         tvRemainingTitle = view.findViewById(R.id.tvRemainingTitle);
