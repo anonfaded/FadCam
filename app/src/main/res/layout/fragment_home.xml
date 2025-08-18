@@ -68,7 +68,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topAppBar">
 
-        <androidx.cardview.widget.CardView
+            <androidx.cardview.widget.CardView
             android:id="@+id/cardStorage"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -85,7 +85,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="8dp">
+                android:padding="4dp">
 
                 <!-- Camera Row -->
                 <LinearLayout
@@ -93,32 +93,33 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="4dp">
 
                     <TextView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="4dp"
                         android:fontFamily="@font/materialicons"
                         android:text="camera_alt"
                         android:textColor="#4CAF50"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="4dp">
 
                         <TextView
                             android:id="@+id/tvCameraTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Rear Camera"
-                                android:textColor="#FFFFFF"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvCameraSubtitle"
@@ -126,7 +127,7 @@
                             android:layout_height="wrap_content"
                             android:text="4K • 60fps"
                             android:textColor="#B0B0B0"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -138,23 +139,24 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="4dp">
 
                     <TextView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="4dp"
                         android:fontFamily="@font/materialicons"
                         android:text="schedule"
                         android:textColor="#FF9800"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="4dp">
 
                         <TextView
                             android:id="@+id/tvEstimateTitle"
@@ -162,7 +164,7 @@
                             android:layout_height="wrap_content"
                             android:text="1h 30min"
                             android:textColor="#FFFFFF"
-                            android:textSize="14sp"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -171,7 +173,7 @@
                             android:layout_height="wrap_content"
                             android:text="Estimated time"
                             android:textColor="#B0B0B0"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -183,23 +185,24 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="4dp">
 
                     <TextView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="4dp"
                         android:fontFamily="@font/materialicons"
                         android:text="storage"
                         android:textColor="#2196F3"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="4dp">
 
                         <TextView
                             android:id="@+id/tvSpaceTitle"
@@ -207,7 +210,7 @@
                             android:layout_height="wrap_content"
                             android:text="1.13 GB"
                             android:textColor="#FFFFFF"
-                            android:textSize="14sp"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -216,7 +219,7 @@
                             android:layout_height="wrap_content"
                             android:text="Available space"
                             android:textColor="#B0B0B0"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
 
                         <!-- Dimmer smaller total storage value -->
                         <!-- total shown inline with available space (rendered programmatically) -->
@@ -231,23 +234,24 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="4dp">
 
                     <TextView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="4dp"
                         android:fontFamily="@font/materialicons"
                         android:text="play_arrow"
                         android:textColor="#4CAF50"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="4dp">
 
                         <TextView
                             android:id="@+id/tvElapsedTitle"
@@ -255,7 +259,7 @@
                             android:layout_height="wrap_content"
                             android:text="00:00"
                             android:textColor="#4CAF50"
-                            android:textSize="14sp"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -264,7 +268,7 @@
                             android:layout_height="wrap_content"
                             android:text="Elapsed time"
                             android:textColor="#B0B0B0"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -278,13 +282,13 @@
                     android:gravity="center_vertical">
 
                     <TextView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="12dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="8dp"
                         android:fontFamily="@font/materialicons"
                         android:text="timer"
                         android:textColor="#F44336"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -299,7 +303,7 @@
                             android:layout_height="wrap_content"
                             android:text="20m 27s"
                             android:textColor="#F44336"
-                            android:textSize="14sp"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -308,7 +312,7 @@
                             android:layout_height="wrap_content"
                             android:text="Remaining time"
                             android:textColor="#B0B0B0"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -339,16 +343,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="8dp">
+                    android:padding="4dp">
 
                     <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="4dp"
                         android:fontFamily="@font/materialicons"
                         android:text="access_time"
                         android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <LinearLayout
@@ -356,7 +361,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
-                        android:layout_marginStart="8dp">
+                        android:layout_marginStart="4dp">
 
                         <TextView
                             android:id="@+id/tvClock"
@@ -402,16 +407,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="8dp">
+                    android:padding="4dp">
 
                     <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:layout_gravity="center"
+                        android:layout_marginEnd="4dp"
                         android:fontFamily="@font/materialicons"
                         android:text="folder"
                         android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
+                        android:textSize="20sp"
                         android:gravity="center" />
 
                     <TextView
@@ -419,7 +425,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:layout_marginStart="5dp"
+                        android:layout_marginStart="4dp"
                         android:layout_marginTop="0dp"
                         android:textColor="?attr/colorHeading"
                         android:text="Stats" />
