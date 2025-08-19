@@ -2769,7 +2769,12 @@ public class HomeFragment extends BaseFragment {
     final String qualityText = getResolutionDisplayName(selectedRes);
     final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
     final String cameraSubtitle = qualityText + " • " + fpsText;
-    final String availableSpace = String.format(Locale.getDefault(), "%.2f GB", gbAvailable);
+    // Format numbers: French locale uses comma as decimal separator by default.
+    // The product UX requires a dot (.) as decimal separator in the storage widget for French.
+    // Use Locale.US for number formatting when the device language is French; otherwise use the default locale.
+    Locale currentLocaleForFormatting = Locale.getDefault();
+    Locale numberFormatLocale = (currentLocaleForFormatting != null && "fr".equalsIgnoreCase(currentLocaleForFormatting.getLanguage())) ? Locale.US : currentLocaleForFormatting;
+    final String availableSpace = String.format(numberFormatLocale, "%.2f GB", gbAvailable);
     final String finalSelectedEstimate = selectedEstimate;
     final String elapsedTimeText = String.format(Locale.getDefault(), "%02d:%02d", elapsedMinutes, elapsedSeconds);
     final String remainingTimeText = formatRemainingTime(days, hours, minutes, seconds);
@@ -2790,7 +2795,7 @@ public class HomeFragment extends BaseFragment {
             if (tvSpaceTitle != null) {
                 try {
                     String avail = availableSpace;
-                    String totalStr = String.format(Locale.getDefault(), "%.2f GB", finalGbTotal);
+                    String totalStr = String.format(numberFormatLocale, "%.2f GB", finalGbTotal);
                     String combined = avail + " / " + totalStr;
                     android.text.SpannableString ss = new android.text.SpannableString(combined);
                     // make the total part dimmer and smaller

@@ -6,8 +6,7 @@
     <string name="fadsec_info">FadCam fait partie de la suite FadSec Lab. Pour plus d\'informations, cliquez sur \'Voir code source\' ci-dessous.</string>
 
 
-    <string name="app_description">"
-    <![CDATA[
+    <string name="app_description"><![CDATA[
     FadCam est une application d\'enregistrement vidéo open-source sans publicité qui priorise la confidentialité en ne suivant ni ne collectant aucune donnée. Il est disponible exclusivement sur GitHub et via les liens officiels mentionnés dans le README.    <br/><br/>
     FadCam a été présenté dans les chaînes YouTube populaires comme <font color="#cfbafd">HowToMen</font> et <font color="#cfbafd">Xtream Droid</font>, ainsi que discuté dans <font color="#cfbafd">GrapheneOS</font> et 55+ autres endroits notables.
     ]]>
@@ -47,7 +46,7 @@
     <string name="mainpage_video_info">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Vidéos : </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
-    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Espace Utilisé :</font>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Utilisé</b></font><br>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
     <string name="button_start">Démarrer</string>
