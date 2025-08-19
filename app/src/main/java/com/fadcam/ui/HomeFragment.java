@@ -2169,8 +2169,8 @@ public class HomeFragment extends BaseFragment {
             // Create circular background with more prominent styling
             android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
             drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            drawable.setStroke(8, 0xFF00FF00); // Bright green thick ring
-            drawable.setColor(0x4400FF00); // Semi-transparent green fill
+            drawable.setStroke(8, 0xFFFF0000); // Bright red thick ring
+            drawable.setColor(0x44FF0000); // Semi-transparent red fill
             focusIndicator.setBackground(drawable);
             focusIndicator.setLayoutParams(params);
             focusIndicator.setAlpha(0f);
