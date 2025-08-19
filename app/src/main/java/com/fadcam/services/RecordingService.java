@@ -97,6 +97,11 @@ import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 import com.fadcam.opengl.GLRecordingPipeline;
 import com.fadcam.opengl.WatermarkInfoProvider;
 
+import android.util.Range;
+import android.graphics.Rect;
+import android.hardware.camera2.params.MeteringRectangle;
+import android.hardware.camera2.CameraMetadata;
+
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
@@ -107,6 +112,7 @@ public class RecordingService extends Service {
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
     private CaptureRequest.Builder captureRequestBuilder;
+    private CameraCharacteristics currentCameraCharacteristics;
     private Surface previewSurface; // Surface from UI if preview enabled
     private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
 
@@ -191,6 +197,113 @@ public class RecordingService extends Service {
         broadcastCameraResourceAvailability(true);
         Log.d(TAG, "Broadcasting initial camera resource availability: true");
     }
+
+    // -------------- Fix Start for this method(applyExposureCompensation)-----------
+    /**
+     * Apply exposure compensation index if supported by the camera.
+     * This will update the existing captureRequestBuilder and call setRepeatingRequest.
+     */
+    private void applyExposureCompensation(int evIndex) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
+        Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+        if (range == null) return;
+        int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evIndex));
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore failures silently to avoid crashing the service
+        }
+    }
+    // -------------- Fix Ended for this method(applyExposureCompensation)-----------
+
+    // -------------- Fix Start for this method(applyAeLock)-----------
+    /**
+     * Toggle AE lock during a running session.
+     */
+    private void applyAeLock(boolean lock) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
+        Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
+        if (aeLockSupported == null || !aeLockSupported) return;
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, lock);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+    // -------------- Fix Ended for this method(applyAeLock)-----------
+
+    // -------------- Fix Start for this method(applyAfMode)-----------
+    /**
+     * Change AF mode (e.g., continuous video, off, etc.) when supported.
+     */
+    private void applyAfMode(int afMode) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
+        int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+        if (modes == null) return;
+        boolean supported = false;
+        for (int m : modes) if (m == afMode) { supported = true; break; }
+        if (!supported) return;
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
+            // If switching to auto or continuous, ensure the AF trigger is reset
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+    // -------------- Fix Ended for this method(applyAfMode)-----------
+
+    // -------------- Fix Start for this method(performTapToFocus)-----------
+    /**
+     * Perform a tap-to-focus at normalized preview coordinates (0..1).
+     * This method maps preview coordinates into sensor region space and issues AF regions + trigger.
+     */
+    private void performTapToFocus(float nx, float ny) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null || cameraDevice == null) return;
+        // Metering regions require sensor coordinates. We'll map normalized preview coords to - if available - active array size.
+        Rect activeArray = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        if (activeArray == null) return;
+
+        int x = activeArray.left + (int) (nx * activeArray.width());
+        int y = activeArray.top + (int) (ny * activeArray.height());
+
+        // Create a small region around the tap point
+        int half = Math.max(10, Math.min(activeArray.width(), activeArray.height()) / 20);
+        Rect area = new Rect(
+                Math.max(activeArray.left, x - half),
+                Math.max(activeArray.top, y - half),
+                Math.min(activeArray.right, x + half),
+                Math.min(activeArray.bottom, y + half)
+        );
+
+        MeteringRectangle mr = new MeteringRectangle(area, MeteringRectangle.METERING_WEIGHT_MAX - 1);
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{mr});
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{mr});
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+            captureSession.capture(captureRequestBuilder.build(), null, backgroundHandler);
+
+            // After trigger, return to continuous-video mode if supported
+            int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+            boolean hasContinuous = false;
+            if (modes != null) {
+                for (int m : modes) if (m == CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO) { hasContinuous = true; break; }
+            }
+            if (hasContinuous) {
+                // schedule a revert to continuous mode by updating repeating request
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            }
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+    // -------------- Fix Ended for this method(performTapToFocus)-----------
 
     // --- onStartCommand (Ensure START action ignores processing state) ---
 
@@ -368,6 +481,30 @@ public class RecordingService extends Service {
         } else if (Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH.equals(action)) {
             // Handle torch toggle requests
             toggleRecordingTorch();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION.equals(action)) {
+            // Set exposure compensation index while recording
+            if (intent.hasExtra(Constants.EXTRA_EXPOSURE_COMPENSATION)) {
+                int ev = intent.getIntExtra(Constants.EXTRA_EXPOSURE_COMPENSATION, 0);
+                applyExposureCompensation(ev);
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TOGGLE_AE_LOCK.equals(action)) {
+            boolean lock = intent.getBooleanExtra(Constants.EXTRA_AE_LOCK, false);
+            applyAeLock(lock);
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_AF_MODE.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_AF_MODE)) {
+                int afMode = intent.getIntExtra(Constants.EXTRA_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                applyAfMode(afMode);
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TAP_TO_FOCUS.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_FOCUS_X) && intent.hasExtra(Constants.EXTRA_FOCUS_Y)) {
+                float nx = intent.getFloatExtra(Constants.EXTRA_FOCUS_X, 0.5f);
+                float ny = intent.getFloatExtra(Constants.EXTRA_FOCUS_Y, 0.5f);
+                performTapToFocus(nx, ny);
+            }
             return START_STICKY;
         }
 
@@ -1319,8 +1456,10 @@ public class RecordingService extends Service {
             }
 
             if (useHighSpeedSession) {
+                currentCameraCharacteristics = characteristics;
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
+                currentCameraCharacteristics = characteristics;
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
             // -------------- Fix Ended for this
@@ -1408,9 +1547,11 @@ public class RecordingService extends Service {
             // Create the appropriate type of session
             if (useHighSpeedSession) {
                 // For high-speed sessions
+                currentCameraCharacteristics = characteristics;
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
                 // Create a standard session with appropriate frame rate settings
+                currentCameraCharacteristics = characteristics;
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
         } catch (CameraAccessException e) {
@@ -2448,6 +2589,13 @@ public class RecordingService extends Service {
             captureRequestBuilder = HighSpeedCaptureHelper.configureHighSpeedRequestBuilder(
                     cameraDevice, null, targetFrameRate, characteristics);
 
+            // Apply saved user camera prefs (if any) so recording respects user choices on start
+            try {
+                applySavedCameraPrefsToBuilder(captureRequestBuilder);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to apply saved camera prefs to high-speed builder: " + e.getMessage());
+            }
+
             if (captureRequestBuilder == null) {
                 Log.d(TAG, "Failed to create high-speed request builder");
                 // Fallback to standard session
@@ -2524,6 +2672,46 @@ public class RecordingService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create standard session", e);
             stopRecording();
+        }
+    }
+
+    /** Apply saved AF/AE/EV preferences into the provided builder where supported. */
+    private void applySavedCameraPrefsToBuilder(CaptureRequest.Builder builder) {
+        if (builder == null || sharedPreferencesManager == null) return;
+        try {
+            int savedEv = sharedPreferencesManager.getSavedExposureCompensation();
+            Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
+            int afModePref = sharedPreferencesManager.getSavedAfMode();
+
+            if (currentCameraCharacteristics != null) {
+                // Apply EV if supported
+                Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+                if (range != null) {
+                    int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), savedEv));
+                    builder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
+                    Log.d(TAG, "Applied saved EV=" + clamped + " to request builder");
+                }
+
+                // Apply AE lock if supported
+                Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
+                if (aeLockSupported != null && aeLockSupported) {
+                    builder.set(CaptureRequest.CONTROL_AE_LOCK, aeLock != null && aeLock);
+                    Log.d(TAG, "Applied saved AE lock=" + aeLock + " to request builder");
+                }
+
+                // Apply AF mode if supported
+                int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                if (modes != null && modes.length > 0) {
+                    boolean supported = false;
+                    for (int m : modes) if (m == afModePref) { supported = true; break; }
+                    if (supported) {
+                        builder.set(CaptureRequest.CONTROL_AF_MODE, afModePref);
+                        Log.d(TAG, "Applied saved AF mode=" + afModePref + " to request builder");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error applying saved camera prefs: " + e.getMessage());
         }
     }
 

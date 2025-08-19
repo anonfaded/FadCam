@@ -54,6 +54,8 @@ public class GLWatermarkRenderer {
     private long previewCreateRetryDeadlineNs = 0L;
     // Gate logging to avoid repeated warnings on frequent binds
     private boolean warnedNoExternalTexture = false;
+    // Timestamp of last warning to avoid flooding logs (ms)
+    private long lastNoExternalTextureWarnMs = 0L;
 
     // OES shader and draw logic
     private int oesProgram;
@@ -771,9 +773,11 @@ public class GLWatermarkRenderer {
             int[] textureArray = new int[1];
             GLES20.glGetIntegerv(GLES11Ext.GL_TEXTURE_BINDING_EXTERNAL_OES, textureArray, 0);
             if (textureArray[0] == 0) {
-                if (!warnedNoExternalTexture) {
+                long now = System.currentTimeMillis();
+                if (!warnedNoExternalTexture || now - lastNoExternalTextureWarnMs > 5000) {
                     Log.w(TAG, "No external texture bound, attempting to rebind");
                     warnedNoExternalTexture = true;
+                    lastNoExternalTextureWarnMs = now;
                 }
                 try {
                     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
+    android:weightSum="5">
+
+    <!-- AF mode toggle (continuous / off) -->
+    <TextView
+        android:id="@+id/tile_af_toggle"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/colorDialog"
+        android:gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:text="center_focus_strong"
+        android:contentDescription="Autofocus toggle"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="18sp"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- AE lock toggle -->
+    <TextView
+        android:id="@+id/tile_ae_lock"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/colorDialog"
+        android:gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:text="lock_open"
+        android:contentDescription="AE lock toggle"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="18sp"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Exposure - -->
+    <TextView
+        android:id="@+id/tile_exp_minus"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/colorDialog"
+        android:gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:text="exposure_minus_1"
+        android:contentDescription="Decrease exposure"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="18sp"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Exposure + -->
+    <TextView
+        android:id="@+id/tile_exp_plus"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/colorDialog"
+        android:gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:text="exposure_plus_1"
+        android:contentDescription="Increase exposure"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="18sp"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Tap-to-focus (instructional) -->
+    <TextView
+        android:id="@+id/tile_tap_focus"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:background="?attr/colorDialog"
+        android:gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:text="touch_app"
+        android:contentDescription="Tap to focus instruction"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="18sp"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

@@ -171,6 +171,18 @@ public class HomeFragment extends BaseFragment {
 
     private TextView tvStats;
 
+    // Recording tile controls
+    private TextView tileAfToggle;
+    private TextView tileAeLock;
+    private TextView tileExpMinus;
+    private TextView tileExpPlus;
+    private TextView tileTapFocus;
+
+    // local control state
+    private boolean aeLocked = false;
+    private int currentEvIndex = 0; // exposure compensation index
+    private int afMode = android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+
     private List<String> messageQueue;
     private List<String> recentlyShownMessages;
     private final Random random = new Random();
@@ -1977,6 +1989,9 @@ public class HomeFragment extends BaseFragment {
         initializeTorch();
         setupTorchButton();
 
+    // Setup the small recording tiles row and listeners
+    setupRecordingTiles(view);
+
 
         // Attempt to find camera with flash
         try {
@@ -3231,6 +3246,87 @@ public class HomeFragment extends BaseFragment {
             recordingServiceIntent.putExtra("SURFACE", new Surface(surfaceTexture));
         }
         requireActivity().startService(recordingServiceIntent);
+    }
+
+    private void setupRecordingTiles(View root) {
+        try {
+            tileAfToggle = root.findViewById(R.id.tile_af_toggle);
+            tileAeLock = root.findViewById(R.id.tile_ae_lock);
+            tileExpMinus = root.findViewById(R.id.tile_exp_minus);
+            tileExpPlus = root.findViewById(R.id.tile_exp_plus);
+            tileTapFocus = root.findViewById(R.id.tile_tap_focus);
+
+            tileAfToggle.setOnClickListener(v -> {
+                if (afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO) {
+                    afMode = android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF;
+                } else {
+                    afMode = android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+                }
+                com.fadcam.Log.d(TAG, "AF toggle clicked. New AF mode=" + afMode);
+                tileAfToggle.setSelected(afMode != android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                // Persist preference if service not running; otherwise send runtime intent
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                    sp.setSavedAfMode(afMode);
+                    com.fadcam.Log.d(TAG, "AF mode saved to prefs (service not running)");
+                } else {
+                    Intent i = com.fadcam.RecordingControlIntents.setAfMode(requireContext(), afMode);
+                    requireActivity().startService(i);
+                }
+            });
+
+            tileAeLock.setOnClickListener(v -> {
+                aeLocked = !aeLocked;
+                com.fadcam.Log.d(TAG, "AE lock toggle clicked. New AE locked=" + aeLocked);
+                tileAeLock.setSelected(aeLocked);
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                    sp.setSavedAeLock(aeLocked);
+                    com.fadcam.Log.d(TAG, "AE lock saved to prefs (service not running)");
+                } else {
+                    Intent i = com.fadcam.RecordingControlIntents.toggleAeLock(requireContext(), aeLocked);
+                    requireActivity().startService(i);
+                }
+            });
+
+            tileExpMinus.setOnClickListener(v -> {
+                currentEvIndex = currentEvIndex - 1;
+                com.fadcam.Log.d(TAG, "EV decrease clicked. New EV index=" + currentEvIndex);
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                    sp.setSavedExposureCompensation(currentEvIndex);
+                    com.fadcam.Log.d(TAG, "Exposure saved to prefs (service not running)");
+                } else {
+                    Intent i = com.fadcam.RecordingControlIntents.setExposureCompensation(requireContext(), currentEvIndex);
+                    requireActivity().startService(i);
+                }
+                Toast.makeText(requireContext(), "Exposure: " + currentEvIndex, Toast.LENGTH_SHORT).show();
+            });
+
+            tileExpPlus.setOnClickListener(v -> {
+                currentEvIndex = currentEvIndex + 1;
+                com.fadcam.Log.d(TAG, "EV increase clicked. New EV index=" + currentEvIndex);
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                    sp.setSavedExposureCompensation(currentEvIndex);
+                    com.fadcam.Log.d(TAG, "Exposure saved to prefs (service not running)");
+                } else {
+                    Intent i = com.fadcam.RecordingControlIntents.setExposureCompensation(requireContext(), currentEvIndex);
+                    requireActivity().startService(i);
+                }
+                Toast.makeText(requireContext(), "Exposure: " + currentEvIndex, Toast.LENGTH_SHORT).show();
+            });
+
+            tileTapFocus.setOnClickListener(v -> {
+                com.fadcam.Log.d(TAG, "Tap-to-focus tile clicked. Instructing user to tap preview to focus.");
+                Toast.makeText(requireContext(), "Tap on preview to focus", Toast.LENGTH_SHORT).show();
+                // visual feedback
+                tileTapFocus.setAlpha(0.6f);
+                tileTapFocus.postDelayed(() -> tileTapFocus.setAlpha(1f), 300);
+            });
+        } catch (Exception e) {
+            com.fadcam.Log.w(TAG, "setupRecordingTiles: UI not available or error: " + e.getMessage());
+        }
     }
 
     private void setVideoBitrate() {
