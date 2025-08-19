@@ -45,11 +45,13 @@ import android.text.format.Formatter;
 import android.text.style.ForegroundColorSpan;
 import android.util.Size;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -77,6 +79,7 @@ import com.fadcam.SharedPreferencesManager;
 
 import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
+import com.fadcam.RecordingControlIntents;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -2147,8 +2150,177 @@ public class HomeFragment extends BaseFragment {
     }
     // ----- Fix End: Apply theme color to top bar and buttons in HomeFragment -----
 
+    /**
+     * Show visual focus indicator at tap location
+     */
+    private void showFocusIndicator(float x, float y) {
+        try {
+            if (getView() == null) return;
+            
+            Log.d(TAG, "Showing focus indicator at: " + x + ", " + y);
+            
+            // Create focus indicator (simple circle animation)
+            View focusIndicator = new View(requireContext());
+            int size = (int) (80 * getResources().getDisplayMetrics().density); // 80dp - larger and more visible
+            android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(size, size);
+            params.leftMargin = (int) (x - size / 2f);
+            params.topMargin = (int) (y - size / 2f);
+            
+            // Create circular background with more prominent styling
+            android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
+            drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            drawable.setStroke(8, 0xFF00FF00); // Bright green thick ring
+            drawable.setColor(0x4400FF00); // Semi-transparent green fill
+            focusIndicator.setBackground(drawable);
+            focusIndicator.setLayoutParams(params);
+            focusIndicator.setAlpha(0f);
+            focusIndicator.setElevation(20f); // High elevation to ensure visibility
+            
+            // Find the parent layout that contains the TextureView
+            ViewGroup parentLayout = (ViewGroup) textureView.getParent();
+            if (parentLayout != null) {
+                parentLayout.addView(focusIndicator);
+                Log.d(TAG, "Added focus indicator to parent layout");
+            } else {
+                Log.w(TAG, "Could not find parent layout for focus indicator");
+                return;
+            }
+            
+            // Animate: quick fade in, scale pulse, fade out
+            ObjectAnimator fadeIn = ObjectAnimator.ofFloat(focusIndicator, "alpha", 0f, 1f);
+            ObjectAnimator scaleXIn = ObjectAnimator.ofFloat(focusIndicator, "scaleX", 1.5f, 1f);
+            ObjectAnimator scaleYIn = ObjectAnimator.ofFloat(focusIndicator, "scaleY", 1.5f, 1f);
+            ObjectAnimator scaleXOut = ObjectAnimator.ofFloat(focusIndicator, "scaleX", 1f, 0.8f);
+            ObjectAnimator scaleYOut = ObjectAnimator.ofFloat(focusIndicator, "scaleY", 1f, 0.8f);
+            ObjectAnimator fadeOut = ObjectAnimator.ofFloat(focusIndicator, "alpha", 1f, 0f);
+            
+            AnimatorSet animSet = new AnimatorSet();
+            animSet.play(fadeIn).with(scaleXIn).with(scaleYIn);
+            animSet.play(scaleXOut).with(scaleYOut).after(fadeIn);
+            animSet.play(fadeOut).after(scaleXOut);
+            
+            fadeIn.setDuration(100);
+            scaleXIn.setDuration(200);
+            scaleYIn.setDuration(200);
+            scaleXOut.setDuration(400);
+            scaleYOut.setDuration(400);
+            fadeOut.setDuration(200);
+            
+            animSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    try {
+                        if (parentLayout != null) {
+                            parentLayout.removeView(focusIndicator);
+                            Log.d(TAG, "Removed focus indicator from parent layout");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error removing focus indicator: " + e.getMessage());
+                    }
+                }
+            });
+            
+            animSet.start();
+            Log.d(TAG, "Focus indicator animation started");
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing focus indicator: " + e.getMessage(), e);
+        }
+    }
+
     private void setupTextureView(@NonNull View view) {
         textureView = view.findViewById(R.id.textureView);
+        
+        Log.d(TAG, "setupTextureView: TextureView found: " + (textureView != null));
+        if (textureView != null) {
+            Log.d(TAG, "TextureView dimensions: " + textureView.getWidth() + "x" + textureView.getHeight());
+            Log.d(TAG, "TextureView visibility: " + textureView.getVisibility());
+            Log.d(TAG, "TextureView clickable: " + textureView.isClickable());
+            Log.d(TAG, "TextureView enabled: " + textureView.isEnabled());
+        }
+        
+        // Check if the placeholder TextView is interfering
+        TextView tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
+        if (tvPreviewPlaceholder != null) {
+            Log.d(TAG, "Preview placeholder visibility: " + tvPreviewPlaceholder.getVisibility());
+            Log.d(TAG, "Preview placeholder clickable: " + tvPreviewPlaceholder.isClickable());
+            
+            // Make sure placeholder doesn't intercept touches
+            tvPreviewPlaceholder.setClickable(false);
+            tvPreviewPlaceholder.setFocusable(false);
+        }
+        
+        // Setup tap-to-focus on the preview
+        textureView.setOnTouchListener((v, event) -> {
+            Log.d(TAG, "TextureView touch event: action=" + event.getAction() + ", recording=" + isRecordingOrPaused());
+            
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                Log.d(TAG, "ACTION_DOWN detected on TextureView");
+            }
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                Log.d(TAG, "ACTION_UP detected on TextureView");
+            }
+            
+            if (event.getAction() == MotionEvent.ACTION_UP && isRecordingOrPaused()) {
+                float x = event.getX();
+                float y = event.getY();
+                int width = v.getWidth();
+                int height = v.getHeight();
+                
+                Log.d(TAG, "Touch UP detected: x=" + x + ", y=" + y + ", view size=" + width + "x" + height);
+                
+                if (width > 0 && height > 0) {
+                    // Convert touch coordinates to normalized coordinates (0..1)
+                    float normalizedX = x / width;
+                    float normalizedY = y / height;
+                    
+                    Log.d(TAG, "Tap-to-focus triggered at normalized: " + normalizedX + ", " + normalizedY);
+                    
+                    // Send tap-to-focus intent to recording service
+                    Intent tapToFocusIntent = RecordingControlIntents.tapToFocus(requireContext(), normalizedX, normalizedY);
+                    requireContext().startService(tapToFocusIntent);
+                    
+                    // Show visual feedback
+                    showFocusIndicator(x, y);
+                    
+                    return true;
+                } else {
+                    Log.w(TAG, "Touch detected but view size is invalid");
+                }
+            } else {
+                Log.d(TAG, "Touch ignored: action=" + event.getAction() + ", recording=" + isRecordingOrPaused());
+            }
+            return false;
+        });
+        
+        // Also try setting clickable and focusable
+        textureView.setClickable(true);
+        textureView.setFocusable(true);
+        textureView.setEnabled(true);
+        
+        // Add a simple click listener as a test
+        textureView.setOnClickListener(v -> {
+            Log.d(TAG, "TextureView OnClickListener triggered!");
+            if (isRecordingOrPaused()) {
+                Toast.makeText(requireContext(), "TextureView clicked! (fallback)", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // Also set up touch listener on parent FrameLayout as backup
+        View parentFrame = (View) textureView.getParent();
+        if (parentFrame instanceof FrameLayout) {
+            Log.d(TAG, "Setting up touch listener on parent FrameLayout as backup");
+            parentFrame.setOnTouchListener((v, event) -> {
+                Log.d(TAG, "FrameLayout touch event: action=" + event.getAction());
+                if (event.getAction() == MotionEvent.ACTION_UP && isRecordingOrPaused()) {
+                    // Forward to TextureView's touch listener
+                    return textureView.dispatchTouchEvent(event);
+                }
+                return false;
+            });
+        }
+        
+        Log.d(TAG, "TextureView touch listener and click listener set up successfully");
+        
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
@@ -3322,9 +3494,19 @@ public class HomeFragment extends BaseFragment {
                 // show overlay to pick AF mode
                 com.fadcam.Log.d(TAG, "AF tile clicked. Opening AF mode picker");
                 ArrayList<com.fadcam.ui.picker.OptionItem> afItems = new ArrayList<>();
-                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO), "Continuous AF", null, null, null, null));
-                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF), "AF Off", null, null, null, null));
-                com.fadcam.ui.picker.PickerBottomSheetFragment afSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance("AF Mode", afItems, String.valueOf(afMode), Constants.RK_AF_MODE);
+                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO), 
+                    getString(R.string.af_continuous_title), 
+                    getString(R.string.af_continuous_description), 
+                    null, null, null));
+                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_AUTO), 
+                    getString(R.string.af_single_title), 
+                    getString(R.string.af_single_description), 
+                    null, null, null));
+                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF), 
+                    getString(R.string.af_manual_title), 
+                    getString(R.string.af_manual_description), 
+                    null, null, null));
+                com.fadcam.ui.picker.PickerBottomSheetFragment afSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.af_mode_title), afItems, String.valueOf(afMode), Constants.RK_AF_MODE);
                 afSheet.show(getParentFragmentManager(), "af_mode_sheet");
             });
 
@@ -3358,10 +3540,8 @@ public class HomeFragment extends BaseFragment {
             });
 
             tileTapFocus.setOnClickListener(v -> {
-                com.fadcam.Log.d(TAG, "Tap-to-focus tile clicked. Instructing user to tap preview to focus.");
-                // instruct user to tap preview; keep visual feedback
-                // legacy overlay removed; no-op here
-                Toast.makeText(requireContext(), "Tap on preview to focus", Toast.LENGTH_SHORT).show();
+                com.fadcam.Log.d(TAG, "Tap-to-focus info clicked");
+                Toast.makeText(requireContext(), getString(R.string.tap_to_focus_help), Toast.LENGTH_LONG).show();
                 tileTapFocus.setAlpha(0.6f);
                 tileTapFocus.postDelayed(() -> tileTapFocus.setAlpha(1f), 300);
             });

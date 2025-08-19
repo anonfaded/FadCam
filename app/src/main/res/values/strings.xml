@@ -419,6 +419,17 @@
     <string name="playback_speed_helper_settings">Default speed for video playback.</string>
     <string name="playback_speed_helper_player">Affects current playback only. To change the default for future videos, use Settings.</string>
     <string name="quick_speed_helper">Quick Speed applies only while you press and hold during playback.</string>
+    
+    <!-- Auto Focus and Tap-to-Focus strings -->
+    <string name="af_mode_title">Auto Focus Mode</string>
+    <string name="af_continuous_title">Continuous Auto Focus</string>
+    <string name="af_continuous_description">Camera continuously adjusts focus automatically. Tap preview for manual focus.</string>
+    <string name="af_single_title">Auto Focus (Single)</string>
+    <string name="af_single_description">Camera focuses once when triggered. Tap preview to focus.</string>
+    <string name="af_manual_title">Manual Focus</string>
+    <string name="af_manual_description">Focus is locked at current position. Tap preview attempts to focus.</string>
+    <string name="tap_to_focus_help">Tap anywhere on the camera preview to focus</string>
+    <string name="tap_to_focus_instruction">Tap on preview to focus</string>
     <!-- Keep screen awake setting -->
     <string name="keep_screen_on_title">Keep screen awake</string>
     <string name="keep_screen_on_helper_picker">When enabled, the screen won’t sleep while playing a video.</string>

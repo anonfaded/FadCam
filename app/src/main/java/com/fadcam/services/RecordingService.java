@@ -380,13 +380,24 @@ public class RecordingService extends Service {
      * This method maps preview coordinates into sensor region space and issues AF regions + trigger.
      */
     private void performTapToFocus(float nx, float ny) {
-        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null || cameraDevice == null) return;
+        Log.d(TAG, "performTapToFocus called with normalized coords: " + nx + ", " + ny);
+        
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null || cameraDevice == null) {
+            Log.w(TAG, "Cannot perform tap-to-focus: camera components not ready");
+            return;
+        }
+        
         // Metering regions require sensor coordinates. We'll map normalized preview coords to - if available - active array size.
         Rect activeArray = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-        if (activeArray == null) return;
+        if (activeArray == null) {
+            Log.w(TAG, "Cannot perform tap-to-focus: active array size not available");
+            return;
+        }
 
         int x = activeArray.left + (int) (nx * activeArray.width());
         int y = activeArray.top + (int) (ny * activeArray.height());
+        
+        Log.d(TAG, "Mapped to sensor coords: " + x + ", " + y + " (active array: " + activeArray + ")");
 
         // Create a small region around the tap point
         int half = Math.max(10, Math.min(activeArray.width(), activeArray.height()) / 20);
@@ -399,23 +410,52 @@ public class RecordingService extends Service {
 
         MeteringRectangle mr = new MeteringRectangle(area, MeteringRectangle.METERING_WEIGHT_MAX - 1);
         try {
+            // Store the current AF mode to restore it later
+            Integer currentAfMode = captureRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE);
+            
+            // Set focus and metering regions
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{mr});
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{mr});
+            
+            // Always switch to AUTO mode for tap-to-focus, regardless of current mode
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+            
+            Log.d(TAG, "Tap-to-focus triggered at normalized coords: " + nx + ", " + ny + " -> sensor coords: " + x + ", " + y);
+            
             captureSession.capture(captureRequestBuilder.build(), null, backgroundHandler);
 
-            // After trigger, return to continuous-video mode if supported
-            int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
-            boolean hasContinuous = false;
-            if (modes != null) {
-                for (int m : modes) if (m == CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO) { hasContinuous = true; break; }
-            }
-            if (hasContinuous) {
-                // schedule a revert to continuous mode by updating repeating request
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
-                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            // After a short delay, restore the previous AF mode (or use runtime/saved preferences)
+            if (backgroundHandler != null) {
+                backgroundHandler.postDelayed(() -> {
+                    try {
+                        // Restore AF mode: use runtime value if available, otherwise saved preference, otherwise continuous
+                        int afModeToRestore = (runtimeAfMode != null) ? runtimeAfMode : 
+                                            (currentAfMode != null) ? currentAfMode : 
+                                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+                        
+                        // Verify the mode is supported
+                        int[] supportedModes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                        boolean isSupported = false;
+                        if (supportedModes != null) {
+                            for (int mode : supportedModes) {
+                                if (mode == afModeToRestore) {
+                                    isSupported = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (isSupported) {
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afModeToRestore);
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+                            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                            Log.d(TAG, "Restored AF mode to: " + afModeToRestore + " after tap-to-focus");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error restoring AF mode after tap-to-focus: " + e.getMessage());
+                    }
+                }, 1000); // 1 second delay to allow focus to complete
             }
         } catch (CameraAccessException | IllegalStateException e) {
             // ignore
@@ -618,10 +658,14 @@ public class RecordingService extends Service {
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_TAP_TO_FOCUS.equals(action)) {
+            Log.d(TAG, "Received TAP_TO_FOCUS intent");
             if (intent.hasExtra(Constants.EXTRA_FOCUS_X) && intent.hasExtra(Constants.EXTRA_FOCUS_Y)) {
                 float nx = intent.getFloatExtra(Constants.EXTRA_FOCUS_X, 0.5f);
                 float ny = intent.getFloatExtra(Constants.EXTRA_FOCUS_Y, 0.5f);
+                Log.d(TAG, "TAP_TO_FOCUS intent has coordinates: " + nx + ", " + ny);
                 performTapToFocus(nx, ny);
+            } else {
+                Log.w(TAG, "TAP_TO_FOCUS intent missing coordinates");
             }
             return START_STICKY;
         }
