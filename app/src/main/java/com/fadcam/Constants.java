@@ -44,6 +44,10 @@ public abstract class Constants {
     public static final String PREF_EXPOSURE_COMPENSATION = "pref_exposure_compensation"; // int
     public static final String PREF_AE_LOCK = "pref_ae_lock"; // boolean
     public static final String PREF_AF_MODE = "pref_af_mode"; // int
+    // Fragment result keys used by PickerBottomSheetFragment listeners
+    public static final String RK_EXPOSURE_COMPENSATION = "rk_exposure_compensation";
+    public static final String RK_AE_LOCK = "rk_ae_lock";
+    public static final String RK_AF_MODE = "rk_af_mode";
     public static final String PREF_RECORD_AUDIO = "pref_record_audio";
     public static final String PREF_AUDIO_BITRATE = "audio_bitrate";
     public static final String PREF_AUDIO_SAMPLING_RATE = "audio_sampling_rate";

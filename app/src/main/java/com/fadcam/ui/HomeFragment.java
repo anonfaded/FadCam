@@ -174,9 +174,11 @@ public class HomeFragment extends BaseFragment {
     // Recording tile controls
     private TextView tileAfToggle;
     private TextView tileAeLock;
-    private TextView tileExpMinus;
-    private TextView tileExpPlus;
+    private TextView tileExp;
     private TextView tileTapFocus;
+
+    // overlay (removed - using PickerBottomSheetFragment instead)
+    // private com.fadcam.ui.CompactControlOverlay compactOverlay;
 
     // local control state
     private boolean aeLocked = false;
@@ -1736,6 +1738,13 @@ public class HomeFragment extends BaseFragment {
         // Initialize SharedPreferencesManager
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
+        // Initialize camera control state from saved preferences
+        currentEvIndex = sharedPreferencesManager.getSavedExposureCompensation();
+        aeLocked = sharedPreferencesManager.isAeLockedSaved();
+        afMode = sharedPreferencesManager.getSavedAfMode();
+        com.fadcam.Log.d(TAG, "Initialized camera control state: EV=" + currentEvIndex + 
+                         ", AE Lock=" + aeLocked + ", AF Mode=" + afMode);
+
         // Initialize isAmoledTheme at the top of the method for use throughout
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isAmoledTheme = currentTheme != null && 
@@ -1779,6 +1788,60 @@ public class HomeFragment extends BaseFragment {
         }
 
         initializeViews(view);
+        // Fragment result listeners for pickers
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_EXPOSURE_COMPENSATION, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            // Slider returns an int under BUNDLE_SLIDER_VALUE; fall back to selected id string for backward compatibility
+            int sliderVal = bundle.getInt(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE, Integer.MIN_VALUE);
+            if(sliderVal!=Integer.MIN_VALUE){
+                currentEvIndex = sliderVal;
+                // Debug: record that we received slider update (will only write to debug log when enabled)
+                com.fadcam.Log.d(TAG, "Received exposure slider value: index=" + sliderVal);
+            } else {
+                String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+                if(sel!=null){ try { currentEvIndex = Integer.parseInt(sel); } catch (Exception ignored) {} }
+            }
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                sp.setSavedExposureCompensation(currentEvIndex);
+                com.fadcam.Log.d(TAG, "Exposure saved to prefs via picker");
+            } else {
+                Intent i = com.fadcam.RecordingControlIntents.setExposureCompensation(requireContext(), currentEvIndex);
+                requireActivity().startService(i);
+                com.fadcam.Log.d(TAG, "Exposure intent sent via picker");
+            }
+        });
+
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_AE_LOCK, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            boolean state = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, aeLocked);
+            aeLocked = state;
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                sp.setSavedAeLock(aeLocked);
+                com.fadcam.Log.d(TAG, "AE lock saved to prefs via picker");
+            } else {
+                Intent i = com.fadcam.RecordingControlIntents.toggleAeLock(requireContext(), aeLocked);
+                requireActivity().startService(i);
+                com.fadcam.Log.d(TAG, "AE lock intent sent via picker");
+            }
+        });
+
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_AF_MODE, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+            if(sel==null) return;
+            try { afMode = Integer.parseInt(sel); } catch (Exception ignored) {}
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                sp.setSavedAfMode(afMode);
+                com.fadcam.Log.d(TAG, "AF mode saved to prefs via picker");
+            } else {
+                Intent i = com.fadcam.RecordingControlIntents.setAfMode(requireContext(), afMode);
+                requireActivity().startService(i);
+                com.fadcam.Log.d(TAG, "AF mode intent sent via picker");
+            }
+        });
         setupTextureView(view);
         setupButtonListeners();
         setupLongPressListener(); // For Easter eggs on title
@@ -3252,75 +3315,53 @@ public class HomeFragment extends BaseFragment {
         try {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
             tileAeLock = root.findViewById(R.id.tile_ae_lock);
-            tileExpMinus = root.findViewById(R.id.tile_exp_minus);
-            tileExpPlus = root.findViewById(R.id.tile_exp_plus);
+            tileExp = root.findViewById(R.id.tile_exp);
             tileTapFocus = root.findViewById(R.id.tile_tap_focus);
 
             tileAfToggle.setOnClickListener(v -> {
-                if (afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO) {
-                    afMode = android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF;
-                } else {
-                    afMode = android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
-                }
-                com.fadcam.Log.d(TAG, "AF toggle clicked. New AF mode=" + afMode);
-                tileAfToggle.setSelected(afMode != android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
-                // Persist preference if service not running; otherwise send runtime intent
-                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
-                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
-                    sp.setSavedAfMode(afMode);
-                    com.fadcam.Log.d(TAG, "AF mode saved to prefs (service not running)");
-                } else {
-                    Intent i = com.fadcam.RecordingControlIntents.setAfMode(requireContext(), afMode);
-                    requireActivity().startService(i);
-                }
+                // show overlay to pick AF mode
+                com.fadcam.Log.d(TAG, "AF tile clicked. Opening AF mode picker");
+                ArrayList<com.fadcam.ui.picker.OptionItem> afItems = new ArrayList<>();
+                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO), "Continuous AF", null, null, null, null));
+                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF), "AF Off", null, null, null, null));
+                com.fadcam.ui.picker.PickerBottomSheetFragment afSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance("AF Mode", afItems, String.valueOf(afMode), Constants.RK_AF_MODE);
+                afSheet.show(getParentFragmentManager(), "af_mode_sheet");
             });
 
             tileAeLock.setOnClickListener(v -> {
-                aeLocked = !aeLocked;
-                com.fadcam.Log.d(TAG, "AE lock toggle clicked. New AE locked=" + aeLocked);
-                tileAeLock.setSelected(aeLocked);
-                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
-                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
-                    sp.setSavedAeLock(aeLocked);
-                    com.fadcam.Log.d(TAG, "AE lock saved to prefs (service not running)");
-                } else {
-                    Intent i = com.fadcam.RecordingControlIntents.toggleAeLock(requireContext(), aeLocked);
-                    requireActivity().startService(i);
-                }
+                // show overlay to toggle AE lock
+                com.fadcam.Log.d(TAG, "AE tile clicked. Opening AE lock picker (switch)");
+                ArrayList<com.fadcam.ui.picker.OptionItem> aeItems = new ArrayList<>();
+                // we provide an empty items list but use the switch feature
+                com.fadcam.ui.picker.PickerBottomSheetFragment aeSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch("AE Lock", aeItems, null, Constants.RK_AE_LOCK, "Auto Exposure Lock", "Lock AE", aeLocked);
+                aeSheet.show(getParentFragmentManager(), "ae_lock_sheet");
             });
 
-            tileExpMinus.setOnClickListener(v -> {
-                currentEvIndex = currentEvIndex - 1;
-                com.fadcam.Log.d(TAG, "EV decrease clicked. New EV index=" + currentEvIndex);
-                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
-                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
-                    sp.setSavedExposureCompensation(currentEvIndex);
-                    com.fadcam.Log.d(TAG, "Exposure saved to prefs (service not running)");
-                } else {
-                    Intent i = com.fadcam.RecordingControlIntents.setExposureCompensation(requireContext(), currentEvIndex);
-                    requireActivity().startService(i);
-                }
-                Toast.makeText(requireContext(), "Exposure: " + currentEvIndex, Toast.LENGTH_SHORT).show();
-            });
-
-            tileExpPlus.setOnClickListener(v -> {
-                currentEvIndex = currentEvIndex + 1;
-                com.fadcam.Log.d(TAG, "EV increase clicked. New EV index=" + currentEvIndex);
-                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
-                if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
-                    sp.setSavedExposureCompensation(currentEvIndex);
-                    com.fadcam.Log.d(TAG, "Exposure saved to prefs (service not running)");
-                } else {
-                    Intent i = com.fadcam.RecordingControlIntents.setExposureCompensation(requireContext(), currentEvIndex);
-                    requireActivity().startService(i);
-                }
-                Toast.makeText(requireContext(), "Exposure: " + currentEvIndex, Toast.LENGTH_SHORT).show();
+            tileExp.setOnClickListener(v -> {
+                com.fadcam.Log.d(TAG, "Exposure tile clicked. Opening slider exposure picker");
+                int min = -4, max = 4, step = 1;
+                float stepFloat = 1f;
+                try {
+                    if(cameraManager != null && cameraId != null){
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(cameraId);
+                        android.util.Range<Integer> range = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+                        if(range!=null){ min = range.getLower(); max = range.getUpper(); }
+                        // CONTROL_AE_COMPENSATION_STEP is provided as a Rational in CameraCharacteristics
+                        android.util.Rational stepRat = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                        if(stepRat != null){
+                            stepFloat = stepRat.floatValue();
+                        }
+                    }
+                } catch (Exception ignored) {}
+                com.fadcam.ui.picker.PickerBottomSheetFragment evSlider = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSlider("Exposure Compensation", min, max, step, stepFloat, currentEvIndex, Constants.RK_EXPOSURE_COMPENSATION, "Adjust exposure compensation (EV)");
+                evSlider.show(getParentFragmentManager(), "ev_slider_sheet");
             });
 
             tileTapFocus.setOnClickListener(v -> {
                 com.fadcam.Log.d(TAG, "Tap-to-focus tile clicked. Instructing user to tap preview to focus.");
+                // instruct user to tap preview; keep visual feedback
+                // legacy overlay removed; no-op here
                 Toast.makeText(requireContext(), "Tap on preview to focus", Toast.LENGTH_SHORT).show();
-                // visual feedback
                 tileTapFocus.setAlpha(0.6f);
                 tileTapFocus.postDelayed(() -> tileTapFocus.setAlpha(1f), 300);
             });
@@ -3900,6 +3941,8 @@ public class HomeFragment extends BaseFragment {
 
         // Torch button (already initialized elsewhere, but good to have it consistently)
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
+
+    // Compact overlay handling removed: we now use PickerBottomSheetFragment for controls.
 
         // Initialize other views as needed here.
         // textureView is handled by setupTextureView

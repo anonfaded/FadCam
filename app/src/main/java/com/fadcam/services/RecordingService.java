@@ -148,6 +148,11 @@ public class RecordingService extends Service {
     // Gate first-start until preview surface is ready (to avoid first-run EGL race)
     private boolean waitForPreviewBeforeStart = false;
     private Runnable previewWaitTimeoutRunnable = null;
+    
+    // Runtime camera control values that override saved preferences during active recording
+    private Integer runtimeExposureCompensation = null;
+    private Boolean runtimeAeLock = null;
+    private Integer runtimeAfMode = null;
     // -------------- Fix Ended for this section(previewStartGateFields)-----------
 
     // --- Lifecycle Methods ---
@@ -208,11 +213,116 @@ public class RecordingService extends Service {
         Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
         if (range == null) return;
         int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evIndex));
+        
+        // Track runtime exposure compensation to override saved preferences
+        runtimeExposureCompensation = clamped;
+        
+        // CRITICAL: Apply exposure through GL pipeline for immediate visual effect
+        // Convert EV index to actual EV stops for GL shader
+        float evStops = 0.0f;
         try {
+            android.util.Rational stepRational = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+            if (stepRational != null) {
+                evStops = clamped * stepRational.floatValue();
+            } else {
+                // Fallback: assume 1/3 EV step (common default)
+                evStops = clamped * 0.33f;
+            }
+        } catch (Exception e) {
+            evStops = clamped * 0.33f; // Safe fallback
+        }
+        
+        // Apply exposure through GL pipeline for immediate visual effect in preview and recording
+        if (glRecordingPipeline != null) {
+            glRecordingPipeline.setExposureCompensation(evStops);
+            Log.d(TAG, "Applied EV compensation through GL pipeline: index=" + clamped + " -> " + evStops + " EV stops");
+        }
+        
+        try {
+            // CRITICAL: Ensure AE mode is ON for exposure compensation to work
+            // Many camera drivers ignore exposure compensation if AE mode is not explicitly set
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            
+            // If AE lock was enabled, changing exposure compensation may be ignored by the driver.
+            // Detect and temporarily clear AE lock so the AE algorithm can apply the compensation.
+            Boolean aeLockNow = captureRequestBuilder.get(CaptureRequest.CONTROL_AE_LOCK);
+            boolean hadAeLock = aeLockNow != null && aeLockNow;
+            if (hadAeLock) {
+                Log.d(TAG, "applyExposureCompensation: AE lock was enabled; temporarily clearing to apply EV");
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+            }
+
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
-            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
-        } catch (CameraAccessException | IllegalStateException e) {
-            // ignore failures silently to avoid crashing the service
+            Log.d(TAG, "applyExposureCompensation: setting EV index=" + clamped + " (hadAeLock=" + hadAeLock + ") with AE_MODE_ON");
+            // If we're in a constrained high-speed session, we must use setRepeatingBurst
+            try {
+                // AGGRESSIVE: Multiple attempts for stubborn camera drivers
+                // Some drivers need multiple capture/setRepeating calls to apply exposure compensation
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        // Do a capture first to prime the driver with logging
+                        captureSession.capture(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                            @Override
+                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, 
+                                                         @NonNull CaptureRequest request, 
+                                                         @NonNull android.hardware.camera2.TotalCaptureResult result) {
+                                Integer appliedEv = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
+                                Integer aeMode = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_MODE);
+                                Log.d(TAG, "EV prime capture completed: Applied EV=" + appliedEv + 
+                                          ", AE Mode=" + aeMode + ", Target EV=" + clamped);
+                            }
+                            
+                            @Override
+                            public void onCaptureFailed(@NonNull CameraCaptureSession session, 
+                                                       @NonNull CaptureRequest request, 
+                                                       @NonNull android.hardware.camera2.CaptureFailure failure) {
+                                Log.w(TAG, "EV prime capture failed: " + failure.getReason());
+                            }
+                        }, backgroundHandler);
+                        
+                        // Small delay to let the driver process the capture
+                        if (backgroundHandler != null) {
+                            backgroundHandler.post(() -> {
+                                try {
+                                    // Then update the repeating request
+                                    if (captureSession instanceof android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession) {
+                                        android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession hs = (android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession) captureSession;
+                                        java.util.List<android.hardware.camera2.CaptureRequest> highSpeedRequests = hs.createHighSpeedRequestList(captureRequestBuilder.build());
+                                        hs.setRepeatingBurst(highSpeedRequests, null, backgroundHandler);
+                                        Log.d(TAG, "Updated high-speed repeating burst with EV=" + clamped);
+                                    } else {
+                                        captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                                        Log.d(TAG, "Updated standard repeating request with EV=" + clamped);
+                                    }
+                                } catch (Exception e) {
+                                    Log.d(TAG, "Delayed setRepeating failed: " + e.getMessage());
+                                }
+                            });
+                        }
+                        
+                        // If first attempt succeeded, break
+                        break;
+                    } catch (Exception attemptEx) {
+                        Log.d(TAG, "applyExposureCompensation: attempt " + (attempt + 1) + " failed: " + attemptEx.getMessage());
+                        if (attempt == 0) {
+                            // Wait a bit before retry
+                            try { Thread.sleep(50); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                        }
+                    }
+                }
+            } catch (Exception outerEx) {
+                // Final fallback: simple setRepeatingRequest
+                try {
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                } catch (Exception fallbackEx) {
+                    Log.d(TAG, "Even fallback setRepeating failed: " + fallbackEx.getMessage());
+                }
+            }
+            // Note: we intentionally do not re-enable AE lock here. Restoring it immediately can prevent the
+            // exposure compensation from taking effect on some devices. The AE lock tile controls AE lock explicitly.
+        } catch (Exception e) {
+            // Catch any remaining exceptions to avoid crashing the service
+            Log.w(TAG, "applyExposureCompensation: Unexpected error: " + e.getMessage());
         }
     }
     // -------------- Fix Ended for this method(applyExposureCompensation)-----------
@@ -225,6 +335,10 @@ public class RecordingService extends Service {
         if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
         Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
         if (aeLockSupported == null || !aeLockSupported) return;
+        
+        // Track runtime AE lock to override saved preferences
+        runtimeAeLock = lock;
+        
         try {
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, lock);
             captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
@@ -245,6 +359,10 @@ public class RecordingService extends Service {
         boolean supported = false;
         for (int m : modes) if (m == afMode) { supported = true; break; }
         if (!supported) return;
+        
+        // Track runtime AF mode to override saved preferences
+        runtimeAfMode = afMode;
+        
         try {
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
             // If switching to auto or continuous, ensure the AF trigger is reset
@@ -1579,6 +1697,16 @@ public class RecordingService extends Service {
             try {
                 // Set auto control mode
                 captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+                
+                // CRITICAL: Re-apply camera preferences in session callback to ensure they stick
+                // This ensures AE mode, exposure compensation, and other settings are not lost
+                try {
+                    applySavedCameraPrefsToBuilder(captureRequestBuilder);
+                    Log.d(TAG, "Re-applied camera prefs in session callback");
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to re-apply camera prefs in callback: " + e.getMessage());
+                }
+                
                 // Set torch/flash mode
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
                         isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
@@ -2657,6 +2785,15 @@ public class RecordingService extends Service {
             // Apply frame rate settings
             applyFrameRateSettings(captureRequestBuilder, targetFrameRate, characteristics);
 
+            // CRITICAL: Apply saved camera preferences for standard session too!
+            // This was missing and causing exposure/AE/AF controls to not work
+            try {
+                applySavedCameraPrefsToBuilder(captureRequestBuilder);
+                Log.d(TAG, "Applied saved camera prefs to standard session");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to apply saved camera prefs to standard builder: " + e.getMessage());
+            }
+
             // Apply zoom settings for back camera
             applyZoomSettings(captureRequestBuilder, cameraType);
 
@@ -2679,39 +2816,49 @@ public class RecordingService extends Service {
     private void applySavedCameraPrefsToBuilder(CaptureRequest.Builder builder) {
         if (builder == null || sharedPreferencesManager == null) return;
         try {
+            // CRITICAL: Always enable AE mode for exposure compensation to work
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            Log.d(TAG, "Set AE_MODE_ON for exposure compensation support");
+            
             int savedEv = sharedPreferencesManager.getSavedExposureCompensation();
             Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
             int afModePref = sharedPreferencesManager.getSavedAfMode();
 
             if (currentCameraCharacteristics != null) {
-                // Apply EV if supported
+                // Apply EV: use runtime value if available, otherwise saved value
                 Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
                 if (range != null) {
-                    int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), savedEv));
+                    int evToUse = (runtimeExposureCompensation != null) ? runtimeExposureCompensation : savedEv;
+                    int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evToUse));
                     builder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
-                    Log.d(TAG, "Applied saved EV=" + clamped + " to request builder");
+                    Log.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") + 
+                           " EV=" + clamped + " to request builder");
                 }
 
-                // Apply AE lock if supported
+                // Apply AE lock: use runtime value if available, otherwise saved value
                 Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
                 if (aeLockSupported != null && aeLockSupported) {
-                    builder.set(CaptureRequest.CONTROL_AE_LOCK, aeLock != null && aeLock);
-                    Log.d(TAG, "Applied saved AE lock=" + aeLock + " to request builder");
+                    boolean lockToUse = (runtimeAeLock != null) ? runtimeAeLock : (aeLock != null && aeLock);
+                    builder.set(CaptureRequest.CONTROL_AE_LOCK, lockToUse);
+                    Log.d(TAG, "Applied " + (runtimeAeLock != null ? "runtime" : "saved") + 
+                           " AE lock=" + lockToUse + " to request builder");
                 }
 
-                // Apply AF mode if supported
+                // Apply AF mode: use runtime value if available, otherwise saved value
                 int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
                 if (modes != null && modes.length > 0) {
+                    int afModeToUse = (runtimeAfMode != null) ? runtimeAfMode : afModePref;
                     boolean supported = false;
-                    for (int m : modes) if (m == afModePref) { supported = true; break; }
+                    for (int m : modes) if (m == afModeToUse) { supported = true; break; }
                     if (supported) {
-                        builder.set(CaptureRequest.CONTROL_AF_MODE, afModePref);
-                        Log.d(TAG, "Applied saved AF mode=" + afModePref + " to request builder");
+                        builder.set(CaptureRequest.CONTROL_AF_MODE, afModeToUse);
+                        Log.d(TAG, "Applied " + (runtimeAfMode != null ? "runtime" : "saved") + 
+                               " AF mode=" + afModeToUse + " to request builder");
                     }
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error applying saved camera prefs: " + e.getMessage());
+            Log.w(TAG, "Error applying camera prefs: " + e.getMessage());
         }
     }
 

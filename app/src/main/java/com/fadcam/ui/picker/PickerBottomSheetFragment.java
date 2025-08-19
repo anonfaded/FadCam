@@ -40,6 +40,14 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_USE_GRADIENT = "use_gradient_bg";
     public static final String ARG_GRID_MODE = "grid_mode"; // for icon grid
     public static final String ARG_HIDE_CHECK = "hide_check"; // hide selection checkmark UI
+    // Slider mode args
+    public static final String ARG_SLIDER_MODE = "slider_mode";
+    public static final String ARG_SLIDER_MIN = "slider_min";
+    public static final String ARG_SLIDER_MAX = "slider_max";
+    public static final String ARG_SLIDER_STEP = "slider_step"; // integer step (index step)
+    public static final String ARG_SLIDER_STEP_FLOAT = "slider_step_float"; // EV per index as float (e.g., 0.5)
+    public static final String ARG_SLIDER_INITIAL = "slider_initial";
+    public static final String BUNDLE_SLIDER_VALUE = "slider_value";
 
     public static PickerBottomSheetFragment newInstance(String title, ArrayList<OptionItem> items, String selectedId, String resultKey){
         PickerBottomSheetFragment f = new PickerBottomSheetFragment();
@@ -89,6 +97,22 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
+    public static PickerBottomSheetFragment newInstanceSlider(String title, int min, int max, int step, float stepFloat, int initialValue, String resultKey, String helper){
+        PickerBottomSheetFragment f = new PickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putBoolean(ARG_SLIDER_MODE, true);
+        b.putInt(ARG_SLIDER_MIN, min);
+        b.putInt(ARG_SLIDER_MAX, max);
+        b.putInt(ARG_SLIDER_STEP, step);
+        b.putFloat(ARG_SLIDER_STEP_FLOAT, stepFloat);
+        b.putInt(ARG_SLIDER_INITIAL, initialValue);
+        b.putString(ARG_HELPER_TEXT, helper);
+        f.setArguments(b);
+        return f;
+    }
+
 
     private ArrayList<OptionItem> items = new ArrayList<>();
     private String selectedId;
@@ -101,10 +125,17 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
     private boolean hideCheck = false;
+    private boolean sliderMode = false;
+    private int sliderMin = 0, sliderMax = 0, sliderStep = 1, sliderInitial = 0;
+    private float sliderStepFloat = 1f; // EV per index
     private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Bundle args = getArguments();
+        if(args!=null && args.getBoolean(ARG_SLIDER_MODE, false)){
+            return inflater.inflate(R.layout.picker_bottom_sheet_slider, container, false);
+        }
         return inflater.inflate(R.layout.picker_bottom_sheet, container, false);
     }
 
@@ -129,6 +160,14 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
     gridMode = args.getBoolean(ARG_GRID_MODE, false);
         hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
+        sliderMode = args.getBoolean(ARG_SLIDER_MODE, false);
+        if(sliderMode){
+            sliderMin = args.getInt(ARG_SLIDER_MIN, 0);
+            sliderMax = args.getInt(ARG_SLIDER_MAX, 0);
+            sliderStep = args.getInt(ARG_SLIDER_STEP, 1);
+            sliderStepFloat = args.getFloat(ARG_SLIDER_STEP_FLOAT, 1f);
+            sliderInitial = args.getInt(ARG_SLIDER_INITIAL, 0);
+        }
         }
         TextView titleView = view.findViewById(R.id.picker_title);
         if(titleView!=null) titleView.setText(title);
@@ -145,6 +184,57 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
     LinearLayout containerLayout = view.findViewById(R.id.picker_list_container);
     containerLayoutRef = containerLayout;
+    // If slider mode, wire up slider controls
+    if(sliderMode){
+        try {
+            View sliderRoot = view.findViewById(R.id.picker_slider_root);
+            com.google.android.material.slider.Slider slider = view.findViewById(R.id.picker_slider);
+            TextView tvVal = view.findViewById(R.id.picker_slider_value);
+            TextView minus = view.findViewById(R.id.picker_slider_minus);
+            TextView plus = view.findViewById(R.id.picker_slider_plus);
+            TextView reset = view.findViewById(R.id.picker_slider_reset);
+            if(slider!=null){
+                // Configure slider to map to integer steps between min..max
+                int steps = (sliderMax - sliderMin) / Math.max(1, sliderStep);
+                slider.setValueFrom(0f);
+                slider.setValueTo((float) steps);
+                slider.setStepSize(1f);
+                float startPos = (float) (sliderInitial - sliderMin) / Math.max(1, sliderStep);
+                // clamp startPos
+                if (startPos < 0f) startPos = 0f;
+                if (startPos > steps) startPos = (float) steps;
+                slider.setValue(startPos);
+                tvVal.setText(String.valueOf(sliderInitial));
+
+                slider.setLabelFormatter(value -> {
+                    int intVal = sliderMin + Math.round(value) * sliderStep;
+                    float evFloat = intVal * sliderStepFloat;
+                    String sign = evFloat > 0 ? "+" : "";
+                    return sign + String.format(java.util.Locale.US, "%.1f", evFloat);
+                });
+
+                slider.addOnChangeListener((s, value, fromUser) -> {
+                    int intVal = sliderMin + Math.round(value) * sliderStep;
+                    float evFloat = intVal * sliderStepFloat;
+                    String sign = evFloat > 0 ? "+" : "";
+                    tvVal.setText(sign + String.format(java.util.Locale.US, "%.1f", evFloat));
+                    // Live update: post result so callers can react immediately while recording
+                    Bundle result = new Bundle();
+                    result.putInt(BUNDLE_SLIDER_VALUE, intVal);
+                    getParentFragmentManager().setFragmentResult(resultKey, result);
+                });
+
+                // +/- buttons
+                if(minus!=null){ minus.setOnClickListener(v-> { slider.setValue(Math.max(0f, slider.getValue()-1f)); }); }
+                if(plus!=null){ plus.setOnClickListener(v-> { slider.setValue(Math.min(slider.getValueTo(), slider.getValue()+1f)); }); }
+                if(reset!=null){ reset.setOnClickListener(v-> {
+                    float zeroPos = (float)(0 - sliderMin) / Math.max(1, sliderStep);
+                    zeroPos = Math.max(0f, Math.min(zeroPos, slider.getValueTo()));
+                    slider.setValue(zeroPos);
+                }); }
+            }
+        } catch (Exception ignored) {}
+    }
     TextView helperView = view.findViewById(R.id.picker_helper);
         LayoutInflater li = LayoutInflater.from(view.getContext());
     // Optional switch row

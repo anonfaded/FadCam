@@ -6,7 +6,7 @@
     android:gravity="center_vertical"
     android:paddingTop="6dp"
     android:paddingBottom="6dp"
-    android:weightSum="5">
+    android:weightSum="4">
 
     <!-- AF mode toggle (continuous / off) -->
     <TextView
@@ -44,27 +44,9 @@
         android:clickable="true"
         android:focusable="true" />
 
-    <!-- Exposure - -->
+    <!-- Exposure (single tile opens slider picker) -->
     <TextView
-        android:id="@+id/tile_exp_minus"
-        android:layout_width="0dp"
-        android:layout_height="40dp"
-        android:layout_weight="1"
-        android:layout_marginEnd="4dp"
-        android:background="?attr/colorDialog"
-        android:gravity="center"
-        android:fontFamily="@font/materialicons"
-        android:text="exposure_minus_1"
-        android:contentDescription="Decrease exposure"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
-        android:padding="6dp"
-        android:clickable="true"
-        android:focusable="true" />
-
-    <!-- Exposure + -->
-    <TextView
-        android:id="@+id/tile_exp_plus"
+        android:id="@+id/tile_exp"
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
@@ -73,7 +55,7 @@
         android:gravity="center"
         android:fontFamily="@font/materialicons"
         android:text="exposure_plus_1"
-        android:contentDescription="Increase exposure"
+        android:contentDescription="Exposure compensation"
         android:textColor="?attr/colorOnSurface"
         android:textSize="18sp"
         android:padding="6dp"

@@ -56,8 +56,11 @@ public class Texture2dProgram {
             "precision mediump float;\n" +
             "varying vec2 vTextureCoord;\n" +
             "uniform samplerExternalOES sTexture;\n" +
+            "uniform float uExposureCompensation;\n" +
             "void main() {\n" +
-            "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
+            "    vec4 color = texture2D(sTexture, vTextureCoord);\n" +
+            "    color.rgb *= pow(2.0, uExposureCompensation);\n" +
+            "    gl_FragColor = color;\n" +
             "}\n";
 
     public enum ProgramType {
@@ -68,6 +71,7 @@ public class Texture2dProgram {
     private int mProgramHandle;
     private int muMVPMatrixLoc;
     private int muTexMatrixLoc;
+    private int muExposureCompensationLoc;
     private int maPositionLoc;
     private int maTextureCoordLoc;
 
@@ -103,6 +107,12 @@ public class Texture2dProgram {
         GlUtil.checkLocation(muMVPMatrixLoc, "uMVPMatrix");
         muTexMatrixLoc = GLES20.glGetUniformLocation(mProgramHandle, "uTexMatrix");
         GlUtil.checkLocation(muTexMatrixLoc, "uTexMatrix");
+        
+        // Get exposure compensation uniform location (only for TEXTURE_EXT shaders)
+        muExposureCompensationLoc = GLES20.glGetUniformLocation(mProgramHandle, "uExposureCompensation");
+        if (muExposureCompensationLoc >= 0) {
+            Log.d(TAG, "Found exposure compensation uniform at location: " + muExposureCompensationLoc);
+        }
     }
 
     /**
@@ -205,6 +215,14 @@ public class Texture2dProgram {
         GLES20.glDisableVertexAttribArray(maTextureCoordLoc);
         GLES20.glBindTexture(mTextureTarget, 0);
         GLES20.glUseProgram(0);
+    }
+
+    /**
+     * Returns the exposure compensation uniform location.
+     * Returns -1 if the uniform is not found in the shader.
+     */
+    public int getExposureCompensationLocation() {
+        return muExposureCompensationLoc;
     }
 
     /**
