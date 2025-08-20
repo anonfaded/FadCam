@@ -243,7 +243,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     // If the slider layout was inflated it doesn't include picker_list_container.
     // Fallback to the slider root or the overall picker root so we can add rows
     // (switch row / dividers) without NPEs.
-    if(containerLayout == null){
+        if(containerLayout == null){
         View sliderRoot = view.findViewById(R.id.picker_slider_root);
         if(sliderRoot instanceof LinearLayout){
             containerLayout = (LinearLayout) sliderRoot;
@@ -254,6 +254,14 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             }
         }
     }
+        // If this fragment contains the AE Lock switch, prefer the persisted lock state so the UI
+        // stays disabled/enabled consistently across openings.
+        try {
+            if (switchPresent && "Lock AE".equals(switchTitle) && getContext() != null) {
+                boolean saved = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isAeLockedSaved();
+                switchState = saved;
+            }
+        } catch (Exception ignored) {}
     containerLayoutRef = containerLayout;
     // Make an effectively-final reference for use inside lambdas below
     final LinearLayout listContainer = containerLayoutRef;
@@ -400,12 +408,12 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 TextView tvVal = root.findViewById(R.id.picker_slider_value);
                 TextView minus = root.findViewById(R.id.picker_slider_minus);
                 TextView plus = root.findViewById(R.id.picker_slider_plus);
-                TextView reset = root.findViewById(R.id.picker_slider_reset_icon);
+                android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
                 if(s!=null){ s.setEnabled(!switchState); s.setAlpha(switchState?0.4f:1f); }
                 if(tvVal!=null) tvVal.setAlpha(switchState?0.4f:1f);
-                if(minus!=null) minus.setAlpha(switchState?0.4f:1f);
-                if(plus!=null) plus.setAlpha(switchState?0.4f:1f);
-                if(reset!=null) reset.setAlpha(switchState?0.4f:1f);
+                if(minus!=null) { minus.setEnabled(!switchState); minus.setClickable(!switchState); minus.setAlpha(switchState?0.4f:1f); }
+                if(plus!=null) { plus.setEnabled(!switchState); plus.setClickable(!switchState); plus.setAlpha(switchState?0.4f:1f); }
+                if(reset!=null) { reset.setEnabled(!switchState); reset.setClickable(!switchState); reset.setAlpha(switchState?0.4f:1f); }
             } catch (Exception ignored) {}
             swc.setOnCheckedChangeListener((b,checked) -> {
                 // send fragment result - use RK_AE_LOCK for AE Lock switch
@@ -422,9 +430,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
                     if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
                     if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
-                    if(minus!=null) minus.setAlpha(checked?0.4f:1f);
-                    if(plus!=null) plus.setAlpha(checked?0.4f:1f);
-                    if(reset!=null) reset.setAlpha(checked?0.4f:1f);
+                    if(minus!=null) { minus.setEnabled(!checked); minus.setClickable(!checked); minus.setAlpha(checked?0.4f:1f); }
+                    if(plus!=null) { plus.setEnabled(!checked); plus.setClickable(!checked); plus.setAlpha(checked?0.4f:1f); }
+                    if(reset!=null) { reset.setEnabled(!checked); reset.setClickable(!checked); reset.setAlpha(checked?0.4f:1f); }
                 } catch (Exception ignored) {}
                 updateDependentRows(checked);
             });
