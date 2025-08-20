@@ -161,6 +161,7 @@
     <string name="ae_lock_title">AE Lock</string>
     <string name="ae_lock_helper">When enabled, auto-exposure is held at the current brightness so the camera won\'t re-adjust exposure while recording. Use the Exposure tile to make manual exposure adjustments.</string>
     <string name="ae_lock_switch_label">Lock AE</string>
+    <string name="exposure_title">Exposure Compensation (EV)</string>
     <string-array name="easter_eggs_array">
         <item>Alert! This is a restricted area. Start recording to gain access.</item>
         <item>You\'ve found the secret button! It does nothing lol</item>

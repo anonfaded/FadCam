@@ -3645,7 +3645,7 @@ public class HomeFragment extends BaseFragment {
                     }
                 } catch (Exception ignored) {}
                 com.fadcam.ui.picker.PickerBottomSheetFragment evSlider = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderWithSwitch(
-                    getString(R.string.ae_lock_title),
+                    getString(R.string.exposure_title),
                     min, max, step, stepFloat,
                     currentEvIndex,
                     Constants.RK_EXPOSURE_COMPENSATION,
