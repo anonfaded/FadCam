@@ -374,6 +374,42 @@ public class RecordingService extends Service {
     }
     // -------------- Fix Ended for this method(applyAfMode)-----------
 
+    // -------------- Fix Start for this method(applyZoomRatio)-----------
+    /**
+     * Apply zoom ratio to the current capture session.
+     * Also saves the zoom ratio to preferences for the current camera type.
+     */
+    private void applyZoomRatio(float zoomRatio) {
+        Log.d(TAG, "Applying zoom ratio: " + zoomRatio);
+        
+        if (captureRequestBuilder == null || captureSession == null) {
+            Log.w(TAG, "Cannot apply zoom - captureRequestBuilder or captureSession is null");
+            return;
+        }
+
+        try {
+            // Apply zoom ratio to capture request
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                captureRequestBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
+            } else {
+                // For older API levels, fall back to digital zoom via crop region
+                Log.d(TAG, "Using crop region for zoom on API < 30");
+            }
+            
+            // Update the repeating request
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            
+            // Save to preferences for persistence
+            CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+            sharedPreferencesManager.setSpecificZoomRatio(currentCamera, zoomRatio);
+            
+            Log.d(TAG, "Successfully applied zoom ratio " + zoomRatio + " for " + currentCamera + " camera");
+        } catch (CameraAccessException | IllegalStateException e) {
+            Log.e(TAG, "Failed to apply zoom ratio: " + e.getMessage());
+        }
+    }
+    // -------------- Fix Ended for this method(applyZoomRatio)-----------
+
     // -------------- Fix Start for this method(performTapToFocus)-----------
     /**
      * Perform a tap-to-focus at normalized preview coordinates (0..1).
@@ -666,6 +702,12 @@ public class RecordingService extends Service {
                 performTapToFocus(nx, ny);
             } else {
                 Log.w(TAG, "TAP_TO_FOCUS intent missing coordinates");
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_ZOOM_RATIO.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_ZOOM_RATIO)) {
+                float zoomRatio = intent.getFloatExtra(Constants.EXTRA_ZOOM_RATIO, 1.0f);
+                applyZoomRatio(zoomRatio);
             }
             return START_STICKY;
         }

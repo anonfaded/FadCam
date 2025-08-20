@@ -17,6 +17,7 @@ import com.fadcam.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * PickerBottomSheetFragment
@@ -47,6 +48,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_SLIDER_STEP = "slider_step"; // integer step (index step)
     public static final String ARG_SLIDER_STEP_FLOAT = "slider_step_float"; // EV per index as float (e.g., 0.5)
     public static final String ARG_SLIDER_INITIAL = "slider_initial";
+    public static final String ARG_SLIDER_ZOOM_MODE = "slider_zoom_mode"; // Special zoom formatting
     public static final String BUNDLE_SLIDER_VALUE = "slider_value";
 
     public static PickerBottomSheetFragment newInstance(String title, ArrayList<OptionItem> items, String selectedId, String resultKey){
@@ -132,6 +134,38 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
+    public static PickerBottomSheetFragment newInstanceSliderZoom(String title, List<Float> zoomRatios, float currentZoom, String resultKey, String helper){
+        PickerBottomSheetFragment f = new PickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putBoolean(ARG_SLIDER_MODE, true);
+        b.putBoolean(ARG_SLIDER_ZOOM_MODE, true);
+        // For zoom, we'll map indices to actual zoom values
+        b.putInt(ARG_SLIDER_MIN, 0);
+        b.putInt(ARG_SLIDER_MAX, zoomRatios.size() - 1);
+        b.putInt(ARG_SLIDER_STEP, 1);
+        b.putFloat(ARG_SLIDER_STEP_FLOAT, 1.0f); // Will be overridden by zoom logic
+        // Find current zoom index
+        int currentIndex = 0;
+        for (int i = 0; i < zoomRatios.size(); i++) {
+            if (Math.abs(zoomRatios.get(i) - currentZoom) < 0.01f) {
+                currentIndex = i;
+                break;
+            }
+        }
+        b.putInt(ARG_SLIDER_INITIAL, currentIndex);
+        b.putString(ARG_HELPER_TEXT, helper);
+        // Store zoom ratios as a float array for use in formatting
+        float[] ratioArray = new float[zoomRatios.size()];
+        for (int i = 0; i < zoomRatios.size(); i++) {
+            ratioArray[i] = zoomRatios.get(i);
+        }
+        b.putFloatArray("zoom_ratios", ratioArray);
+        f.setArguments(b);
+        return f;
+    }
+
 
     private ArrayList<OptionItem> items = new ArrayList<>();
     private String selectedId;
@@ -145,6 +179,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private boolean gridMode = false;
     private boolean hideCheck = false;
     private boolean sliderMode = false;
+    private boolean sliderZoomMode = false;
+    private float[] zoomRatios = null;
     private int sliderMin = 0, sliderMax = 0, sliderStep = 1, sliderInitial = 0;
     private float sliderStepFloat = 1f; // EV per index
     private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
@@ -181,6 +217,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
         sliderMode = args.getBoolean(ARG_SLIDER_MODE, false);
         if(sliderMode){
+            sliderZoomMode = args.getBoolean(ARG_SLIDER_ZOOM_MODE, false);
+            zoomRatios = args.getFloatArray("zoom_ratios");
             sliderMin = args.getInt(ARG_SLIDER_MIN, 0);
             sliderMax = args.getInt(ARG_SLIDER_MAX, 0);
             sliderStep = args.getInt(ARG_SLIDER_STEP, 1);
@@ -239,20 +277,37 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if (startPos < 0f) startPos = 0f;
                 if (startPos > steps) startPos = (float) steps;
                 slider.setValue(startPos);
-                tvVal.setText(String.valueOf(sliderInitial));
+                // Set initial text value based on mode
+                if (sliderZoomMode && zoomRatios != null && sliderInitial >= 0 && sliderInitial < zoomRatios.length) {
+                    tvVal.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[sliderInitial]));
+                } else {
+                    tvVal.setText(String.valueOf(sliderInitial));
+                }
 
                 slider.setLabelFormatter(value -> {
                     int intVal = sliderMin + Math.round(value) * sliderStep;
-                    float evFloat = intVal * sliderStepFloat;
-                    String sign = evFloat > 0 ? "+" : "";
-                    return sign + String.format(java.util.Locale.US, "%.1f", evFloat);
+                    if (sliderZoomMode && zoomRatios != null && intVal >= 0 && intVal < zoomRatios.length) {
+                        // Zoom mode: show zoom ratio with 'x' suffix
+                        return String.format(java.util.Locale.US, "%.1fx", zoomRatios[intVal]);
+                    } else {
+                        // EV mode: show with +/- sign
+                        float evFloat = intVal * sliderStepFloat;
+                        String sign = evFloat > 0 ? "+" : "";
+                        return sign + String.format(java.util.Locale.US, "%.1f", evFloat);
+                    }
                 });
 
                 slider.addOnChangeListener((s, value, fromUser) -> {
                     int intVal = sliderMin + Math.round(value) * sliderStep;
-                    float evFloat = intVal * sliderStepFloat;
-                    String sign = evFloat > 0 ? "+" : "";
-                    tvVal.setText(sign + String.format(java.util.Locale.US, "%.1f", evFloat));
+                    if (sliderZoomMode && zoomRatios != null && intVal >= 0 && intVal < zoomRatios.length) {
+                        // Zoom mode: show zoom ratio
+                        tvVal.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[intVal]));
+                    } else {
+                        // EV mode: show with +/- sign
+                        float evFloat = intVal * sliderStepFloat;
+                        String sign = evFloat > 0 ? "+" : "";
+                        tvVal.setText(sign + String.format(java.util.Locale.US, "%.1f", evFloat));
+                    }
                     // Live update: post result so callers can react immediately while recording
                     Bundle result = new Bundle();
                     result.putInt(BUNDLE_SLIDER_VALUE, intVal);
@@ -263,9 +318,23 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if(minus!=null){ minus.setOnClickListener(v-> { slider.setValue(Math.max(0f, slider.getValue()-1f)); }); }
                 if(plus!=null){ plus.setOnClickListener(v-> { slider.setValue(Math.min(slider.getValueTo(), slider.getValue()+1f)); }); }
                 if(reset!=null){ reset.setOnClickListener(v-> {
-                    float zeroPos = (float)(0 - sliderMin) / Math.max(1, sliderStep);
-                    zeroPos = Math.max(0f, Math.min(zeroPos, slider.getValueTo()));
-                    slider.setValue(zeroPos);
+                    float resetPos;
+                    if (sliderZoomMode && zoomRatios != null) {
+                        // For zoom mode, reset to 1.0x
+                        int resetIndex = 0;
+                        for (int i = 0; i < zoomRatios.length; i++) {
+                            if (Math.abs(zoomRatios[i] - 1.0f) < 0.01f) {
+                                resetIndex = i;
+                                break;
+                            }
+                        }
+                        resetPos = (float)(resetIndex - sliderMin) / Math.max(1, sliderStep);
+                    } else {
+                        // For EV mode, reset to 0
+                        resetPos = (float)(0 - sliderMin) / Math.max(1, sliderStep);
+                    }
+                    resetPos = Math.max(0f, Math.min(resetPos, slider.getValueTo()));
+                    slider.setValue(resetPos);
                 }); }
             }
         } catch (Exception ignored) {}

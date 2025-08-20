@@ -50,20 +50,18 @@
 
     </FrameLayout>
 
-    <!-- Tap-to-focus (instructional) -->
-    <TextView
-        android:id="@+id/tile_tap_focus"
+    <!-- Zoom ratio (quick access to zoom settings) -->
+    <ImageView
+        android:id="@+id/tile_zoom"
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
         android:background="?attr/colorDialog"
-        android:gravity="center"
-        android:fontFamily="@font/materialicons"
-        android:text="info"
-        android:contentDescription="Tap-to-focus help: Tap preview to focus"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
         android:padding="6dp"
+        android:scaleType="center"
+        android:src="@drawable/ic_zoom"
+        android:contentDescription="Zoom ratio"
+        android:tint="?attr/colorOnSurface"
         android:clickable="true"
         android:focusable="true" />
 

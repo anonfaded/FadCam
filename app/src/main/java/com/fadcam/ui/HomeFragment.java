@@ -43,6 +43,7 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
 import android.text.style.ForegroundColorSpan;
+import android.util.Range;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -177,7 +178,7 @@ public class HomeFragment extends BaseFragment {
     // Recording tile controls
     private TextView tileAfToggle;
     private ImageView tileExp;
-    private TextView tileTapFocus;
+    private ImageView tileZoom;
 
     // overlay (removed - using PickerBottomSheetFragment instead)
     // private com.fadcam.ui.CompactControlOverlay compactOverlay;
@@ -1871,6 +1872,43 @@ public class HomeFragment extends BaseFragment {
                 }
             } catch (Exception ignored) {}
         });
+
+        // Listen for Zoom Ratio picker result
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_ZOOM_RATIO, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            int sliderIndex = bundle.getInt(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE, -1);
+            if(sliderIndex==-1) return;
+            
+            try {
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                CameraType currentCamera = sp.getCameraSelection();
+                
+                // Rebuild zoom ratios to map index back to actual value
+                List<Float> zoomRatios = buildZoomRatioOptions(currentCamera);
+                if (sliderIndex >= 0 && sliderIndex < zoomRatios.size()) {
+                    float zoomRatio = zoomRatios.get(sliderIndex);
+                    com.fadcam.Log.d(TAG, "Zoom slider changed: " + zoomRatio + "x (index: " + sliderIndex + ")");
+                    
+                    // Save zoom ratio to preferences
+                    sp.setSpecificZoomRatio(currentCamera, zoomRatio);
+                    
+                    // If recording service is running, apply zoom immediately
+                    if (isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                        Intent intent = com.fadcam.RecordingControlIntents.setZoomRatio(requireContext(), zoomRatio);
+                        requireActivity().startService(intent);
+                        com.fadcam.Log.d(TAG, "Zoom ratio " + zoomRatio + "x sent to recording service");
+                    } else {
+                        com.fadcam.Log.d(TAG, "Zoom ratio " + zoomRatio + "x saved to preferences");
+                    }
+                } else {
+                    com.fadcam.Log.w(TAG, "Invalid zoom slider index: " + sliderIndex);
+                }
+            } catch (Exception e) {
+                com.fadcam.Log.w(TAG, "Failed to apply zoom ratio from slider index: " + sliderIndex + " - " + e.getMessage());
+            }
+        });
+
+        
         setupTextureView(view);
         setupButtonListeners();
         setupLongPressListener(); // For Easter eggs on title
@@ -3479,7 +3517,7 @@ public class HomeFragment extends BaseFragment {
         try {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
             tileExp = root.findViewById(R.id.tile_exp);
-            tileTapFocus = root.findViewById(R.id.tile_tap_focus);
+            tileZoom = root.findViewById(R.id.tile_zoom);
 
             // Initialize AF tile icon from saved afMode and apply Material Icons typeface
             try { 
@@ -3566,16 +3604,126 @@ public class HomeFragment extends BaseFragment {
                 evSlider.show(getParentFragmentManager(), "ev_slider_sheet");
             });
 
-            tileTapFocus.setOnClickListener(v -> {
-                com.fadcam.Log.d(TAG, "Tap-to-focus info clicked");
-                Toast.makeText(requireContext(), getString(R.string.tap_to_focus_help), Toast.LENGTH_LONG).show();
-                tileTapFocus.setAlpha(0.6f);
-                tileTapFocus.postDelayed(() -> tileTapFocus.setAlpha(1f), 300);
+            tileZoom.setOnClickListener(v -> {
+                com.fadcam.Log.d(TAG, "Zoom tile clicked. Opening zoom slider picker");
+                
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                CameraType currentCamera = sp.getCameraSelection();
+                
+                // Build zoom options using the same logic as VideoSettingsFragment
+                List<Float> zoomRatios = buildZoomRatioOptions(currentCamera);
+                if (zoomRatios.isEmpty()) {
+                    Toast.makeText(requireContext(), "Zoom not available", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+                
+                com.fadcam.ui.picker.PickerBottomSheetFragment zoomSlider = 
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderZoom(
+                        "Zoom Ratio",
+                        zoomRatios,
+                        currentZoom,
+                        Constants.RK_ZOOM_RATIO,
+                        "Adjust zoom level for recording. Ultra-wide lens limited to 0.5x."
+                    );
+                zoomSlider.show(getParentFragmentManager(), "zoom_slider_sheet");
             });
         } catch (Exception e) {
             com.fadcam.Log.w(TAG, "setupRecordingTiles: UI not available or error: " + e.getMessage());
         }
     }
+
+    /**
+     * Build zoom ratio options for the given camera type.
+     * Uses the same logic as VideoSettingsFragment to ensure consistency.
+     */
+    private List<Float> buildZoomRatioOptions(CameraType cam) {
+        List<Float> list = new ArrayList<>();
+        float max = getHardwareSupportedMaxZoomRatio(cam);
+        
+        // Add from 0.5x up to max in 0.5 increments; ensure 1.0 included
+        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
+            list.add(((float) Math.round(z * 10)) / 10f);
+        }
+        if (!list.contains(1.0f)) {
+            list.add(1.0f);
+        }
+        Collections.sort(list);
+        return list;
+    }
+
+    /**
+     * Get hardware supported maximum zoom ratio for the given camera type.
+     * Uses the same logic as VideoSettingsFragment.
+     */
+    private float getHardwareSupportedMaxZoomRatio(CameraType cam) {
+        final float defaultMaxZoom = 5.0f; // legacy default
+        Context ctx = getContext();
+        if (ctx == null) return defaultMaxZoom;
+        
+        try {
+            CameraManager manager = (CameraManager) ctx.getSystemService(Context.CAMERA_SERVICE);
+            String id = getActualCameraIdForType(cam);
+            if (id == null) return defaultMaxZoom;
+            
+            CameraCharacteristics ch = manager.getCameraCharacteristics(id);
+            if (Build.VERSION.SDK_INT >= 30) {
+                Range<Float> range = ch.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+                if (range != null) {
+                    return range.getUpper();
+                }
+            }
+        } catch (Exception e) {
+            com.fadcam.Log.w(TAG, "Zoom ratio query failed: " + e.getMessage());
+        }
+        return defaultMaxZoom;
+    }
+
+    /**
+     * Get the actual camera ID for the given camera type.
+     * Helper method for zoom functionality.
+     */
+    private String getActualCameraIdForType(CameraType cameraType) {
+        try {
+            if (cameraManager != null) {
+                if (cameraType == CameraType.FRONT) {
+                    // Find front camera
+                    for (String id : cameraManager.getCameraIdList()) {
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                        Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                        if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                            return id;
+                        }
+                    }
+                } else {
+                    // Find back camera - use selected back camera if available
+                    SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                    String selectedBackId = sp.getSelectedBackCameraId();
+                    if (selectedBackId != null) {
+                        return selectedBackId;
+                    }
+                    // Fallback to first available back camera
+                    for (String id : cameraManager.getCameraIdList()) {
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                        Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                        if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                            return id;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            com.fadcam.Log.w(TAG, "getActualCameraIdForType failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    // Zoom methods removed - using navigation to settings instead
+
+    // Zoom methods removed - using navigation to settings instead
+
+    // Helper method removed - using navigation to settings instead
 
     private void setVideoBitrate() {
         try {
