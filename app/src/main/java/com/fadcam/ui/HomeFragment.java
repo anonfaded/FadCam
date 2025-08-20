@@ -1818,6 +1818,9 @@ public class HomeFragment extends BaseFragment {
             if(bundle==null) return;
             boolean state = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, aeLocked);
             aeLocked = state;
+            
+            com.fadcam.Log.d(TAG, "AE Lock listener triggered: " + state + ", tileExp null? " + (tileExp == null));
+            
             SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
             if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
                 sp.setSavedAeLock(aeLocked);
@@ -1830,15 +1833,21 @@ public class HomeFragment extends BaseFragment {
             // Update exposure tile visual: tint orange when locked, reset when unlocked
             try {
                 if(tileExp!=null){
-                    int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
-                    int white = getResources().getColor(android.R.color.white, requireContext().getTheme());
-                    android.content.res.ColorStateList tint = android.content.res.ColorStateList.valueOf(aeLocked? orange : white);
-                    tileExp.setImageTintList(tint);
+                    if(aeLocked) {
+                        int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                        tileExp.setColorFilter(orange, android.graphics.PorterDuff.Mode.SRC_IN);
+                        com.fadcam.Log.d(TAG, "Applied orange tint to exposure tile");
+                    } else {
+                        tileExp.clearColorFilter();
+                        com.fadcam.Log.d(TAG, "Cleared tint from exposure tile");
+                    }
                     // subtle scale to indicate active
                     tileExp.setScaleX(aeLocked?1.05f:1f);
                     tileExp.setScaleY(aeLocked?1.05f:1f);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                com.fadcam.Log.e(TAG, "Error updating exposure tile tint: " + e.getMessage());
+            }
         });
 
         getParentFragmentManager().setFragmentResultListener(Constants.RK_AF_MODE, this, (requestKey, bundle) -> {

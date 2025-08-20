@@ -299,10 +299,11 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if(reset!=null) reset.setAlpha(switchState?0.4f:1f);
             } catch (Exception ignored) {}
             swc.setOnCheckedChangeListener((b,checked) -> {
-                // send fragment result
+                // send fragment result - use RK_AE_LOCK for AE Lock switch
                 Bundle result = new Bundle();
                 result.putBoolean(BUNDLE_SWITCH_STATE, checked);
-                getParentFragmentManager().setFragmentResult(resultKey, result);
+                String switchResultKey = "Lock AE".equals(switchTitle) ? com.fadcam.Constants.RK_AE_LOCK : resultKey;
+                getParentFragmentManager().setFragmentResult(switchResultKey, result);
                 // Gray out slider controls when AE lock is on
                 try {
                     com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
