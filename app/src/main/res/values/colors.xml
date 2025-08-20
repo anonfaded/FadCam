@@ -23,6 +23,7 @@
 
     <!-- Added for Trash Item Remaining Time Display -->
     <color name="colorWarning">#FFA726</color> <!-- Orange A400 -->
+    <color name="orange_accent">#FFA726</color>
     <color name="gray_text_light">#BDBDBD</color> <!-- Grey 400 -->
     <color name="gray_text_very_light">#E0E0E0</color> <!-- Grey 300 -->
 

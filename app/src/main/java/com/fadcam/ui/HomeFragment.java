@@ -176,8 +176,7 @@ public class HomeFragment extends BaseFragment {
 
     // Recording tile controls
     private TextView tileAfToggle;
-    private TextView tileAeLock;
-    private TextView tileExp;
+    private ImageView tileExp;
     private TextView tileTapFocus;
 
     // overlay (removed - using PickerBottomSheetFragment instead)
@@ -1823,19 +1822,21 @@ public class HomeFragment extends BaseFragment {
             if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
                 sp.setSavedAeLock(aeLocked);
                 com.fadcam.Log.d(TAG, "AE lock saved to prefs via picker");
-                // Update AF tile icon to reflect selected mode
-                try { if (tileAfToggle != null) tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak"); } catch (Exception ignored) {}
             } else {
                 Intent i = com.fadcam.RecordingControlIntents.toggleAeLock(requireContext(), aeLocked);
                 requireActivity().startService(i);
                 com.fadcam.Log.d(TAG, "AE lock intent sent via picker");
-                // Also update the tile icon when AF mode is applied at runtime
-                try { if (tileAfToggle != null) tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak"); } catch (Exception ignored) {}
             }
-            // Update tile icon to match AE lock state
+            // Update exposure tile visual: tint orange when locked, reset when unlocked
             try {
-                if (tileAeLock != null) {
-                    tileAeLock.setText(aeLocked ? "lock" : "lock_open");
+                if(tileExp!=null){
+                    int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                    int white = getResources().getColor(android.R.color.white, requireContext().getTheme());
+                    android.content.res.ColorStateList tint = android.content.res.ColorStateList.valueOf(aeLocked? orange : white);
+                    tileExp.setImageTintList(tint);
+                    // subtle scale to indicate active
+                    tileExp.setScaleX(aeLocked?1.05f:1f);
+                    tileExp.setScaleY(aeLocked?1.05f:1f);
                 }
             } catch (Exception ignored) {}
         });
@@ -1854,6 +1855,12 @@ public class HomeFragment extends BaseFragment {
                 requireActivity().startService(i);
                 com.fadcam.Log.d(TAG, "AF mode intent sent via picker");
             }
+            // Update AF tile icon when mode changes
+            try {
+                if (tileAfToggle != null) {
+                    tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak");
+                }
+            } catch (Exception ignored) {}
         });
         setupTextureView(view);
         setupButtonListeners();
@@ -3462,16 +3469,31 @@ public class HomeFragment extends BaseFragment {
     private void setupRecordingTiles(View root) {
         try {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
-            tileAeLock = root.findViewById(R.id.tile_ae_lock);
             tileExp = root.findViewById(R.id.tile_exp);
             tileTapFocus = root.findViewById(R.id.tile_tap_focus);
 
-            // Ensure AE tile shows correct icon on startup
-            try { if(tileAeLock!=null) tileAeLock.setText(aeLocked ? "lock" : "lock_open"); } catch (Exception ignored) {}
-            // Use a friendlier exposure icon ligature
-            try { if(tileExp!=null) tileExp.setText("wb_sunny"); } catch (Exception ignored) {}
-            // Initialize AF tile icon from saved afMode
-            try { if (tileAfToggle != null) tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak"); } catch (Exception ignored) {}
+            // Initialize AF tile icon from saved afMode and apply Material Icons typeface
+            try { 
+                if (tileAfToggle != null) {
+                    // Load Material Icons typeface for ligatures
+                    android.graphics.Typeface materialIconsTypeface = null;
+                    try {
+                        materialIconsTypeface = androidx.core.content.res.ResourcesCompat.getFont(requireContext(), R.font.materialicons);
+                    } catch (Exception e) {
+                        materialIconsTypeface = android.graphics.Typeface.DEFAULT;
+                    }
+                    tileAfToggle.setTypeface(materialIconsTypeface);
+                    tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak");
+                }
+            } catch (Exception ignored) {}
+            // Apply initial exposure tile tint and size adjustments
+            try {
+                if(tileExp!=null){
+                    android.content.res.ColorStateList tint = android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.white, requireContext().getTheme()));
+                    tileExp.setImageTintList(tint);
+                    tileExp.setScaleX(1f); tileExp.setScaleY(1f);
+                }
+            } catch (Exception ignored) {}
 
             tileAfToggle.setOnClickListener(v -> {
                 // show overlay to pick AF mode
@@ -3505,22 +3527,7 @@ public class HomeFragment extends BaseFragment {
                 afSheet.show(getParentFragmentManager(), "af_mode_sheet");
             });
 
-            tileAeLock.setOnClickListener(v -> {
-                // show overlay to toggle AE lock
-                com.fadcam.Log.d(TAG, "AE tile clicked. Opening AE lock picker (switch)");
-                ArrayList<com.fadcam.ui.picker.OptionItem> aeItems = new ArrayList<>();
-                // we provide an empty items list but use the switch feature
-                com.fadcam.ui.picker.PickerBottomSheetFragment aeSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
-                    getString(R.string.ae_lock_title),
-                    aeItems,
-                    null,
-                    Constants.RK_AE_LOCK,
-                    getString(R.string.ae_lock_helper),
-                    getString(R.string.ae_lock_switch_label),
-                    aeLocked
-                );
-                aeSheet.show(getParentFragmentManager(), "ae_lock_sheet");
-            });
+            // AE lock control moved into Exposure slider sheet (handled below)
 
             tileExp.setOnClickListener(v -> {
                 com.fadcam.Log.d(TAG, "Exposure tile clicked. Opening slider exposure picker");
@@ -3538,7 +3545,15 @@ public class HomeFragment extends BaseFragment {
                         }
                     }
                 } catch (Exception ignored) {}
-                com.fadcam.ui.picker.PickerBottomSheetFragment evSlider = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSlider("Exposure Compensation", min, max, step, stepFloat, currentEvIndex, Constants.RK_EXPOSURE_COMPENSATION, "Adjust exposure compensation (EV)");
+                com.fadcam.ui.picker.PickerBottomSheetFragment evSlider = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderWithSwitch(
+                    "Exposure Compensation",
+                    min, max, step, stepFloat,
+                    currentEvIndex,
+                    Constants.RK_EXPOSURE_COMPENSATION,
+                    getString(R.string.ae_lock_helper),
+                    getString(R.string.ae_lock_switch_label),
+                    aeLocked
+                );
                 evSlider.show(getParentFragmentManager(), "ev_slider_sheet");
             });
 

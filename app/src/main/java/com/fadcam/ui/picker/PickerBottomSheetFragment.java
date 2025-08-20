@@ -113,6 +113,25 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
+    public static PickerBottomSheetFragment newInstanceSliderWithSwitch(String title, int min, int max, int step, float stepFloat, int initialValue, String resultKey, String helper, String switchTitle, boolean switchState){
+        PickerBottomSheetFragment f = new PickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putBoolean(ARG_SLIDER_MODE, true);
+        b.putInt(ARG_SLIDER_MIN, min);
+        b.putInt(ARG_SLIDER_MAX, max);
+        b.putInt(ARG_SLIDER_STEP, step);
+        b.putFloat(ARG_SLIDER_STEP_FLOAT, stepFloat);
+        b.putInt(ARG_SLIDER_INITIAL, initialValue);
+        b.putString(ARG_HELPER_TEXT, helper);
+        b.putBoolean(ARG_SWITCH_PRESENT, true);
+        b.putString(ARG_SWITCH_TITLE, switchTitle);
+        b.putBoolean(ARG_SWITCH_STATE, switchState);
+        f.setArguments(b);
+        return f;
+    }
+
 
     private ArrayList<OptionItem> items = new ArrayList<>();
     private String selectedId;
@@ -121,7 +140,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private String helperText;
     private boolean switchPresent = false; private String switchTitle; private boolean switchState;
     private ArrayList<String> switchDependentIds = new ArrayList<>();
-    private LinearLayout containerLayoutRef; private android.widget.Switch switchRef;
+    private LinearLayout containerLayoutRef; private android.widget.CompoundButton switchRef;
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
     private boolean hideCheck = false;
@@ -183,7 +202,23 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             divider.animate().alpha(1f).setDuration(260).start();
         }
     LinearLayout containerLayout = view.findViewById(R.id.picker_list_container);
+    // If the slider layout was inflated it doesn't include picker_list_container.
+    // Fallback to the slider root or the overall picker root so we can add rows
+    // (switch row / dividers) without NPEs.
+    if(containerLayout == null){
+        View sliderRoot = view.findViewById(R.id.picker_slider_root);
+        if(sliderRoot instanceof LinearLayout){
+            containerLayout = (LinearLayout) sliderRoot;
+        } else {
+            View pickerRoot = view.findViewById(R.id.picker_root);
+            if(pickerRoot instanceof LinearLayout){
+                containerLayout = (LinearLayout) pickerRoot;
+            }
+        }
+    }
     containerLayoutRef = containerLayout;
+    // Make an effectively-final reference for use inside lambdas below
+    final LinearLayout listContainer = containerLayoutRef;
     // If slider mode, wire up slider controls
     if(sliderMode){
         try {
@@ -237,40 +272,52 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     }
     TextView helperView = view.findViewById(R.id.picker_helper);
         LayoutInflater li = LayoutInflater.from(view.getContext());
-    // Optional switch row
+    // Optional switch row: the slider layout has a dedicated switch row and divider
     if(switchPresent){
-        LinearLayout switchRow = new LinearLayout(requireContext());
-        switchRow.setOrientation(LinearLayout.HORIZONTAL);
-        switchRow.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        switchRow.setPadding(dp(16), dp(12), dp(16), dp(12));
-    TextView label = new TextView(requireContext());
-        label.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        label.setText(switchTitle);
-    label.setTextColor(getResources().getColor(android.R.color.white, requireContext().getTheme()));
-        label.setTextSize(16f);
-        label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
-        android.widget.Switch sw = new android.widget.Switch(requireContext());
-        sw.setChecked(switchState);
-        switchRef = sw;
-        sw.setOnCheckedChangeListener((btn,checked)->{
-            Bundle result = new Bundle();
-            result.putBoolean(BUNDLE_SWITCH_STATE, checked);
-            getParentFragmentManager().setFragmentResult(resultKey, result);
-            updateDependentRows(checked);
-        });
-        switchRow.addView(label);
-        switchRow.addView(sw);
-        containerLayout.addView(switchRow);
-        if(!items.isEmpty()){
-            View switchDivider = new View(view.getContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
-            // -------------- Fix Start for this method(onViewCreated)-----------
-            // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
-            lp.setMargins(dp(14), 0, dp(12), 0);
-            // -------------- Fix Ended for this method(onViewCreated)-----------
-            switchDivider.setLayoutParams(lp);
-            switchDivider.setBackgroundColor(0x33FFFFFF);
-            containerLayout.addView(switchDivider);
+        View root = view;
+        View switchRow = root.findViewById(R.id.picker_switch_row);
+        View switchDivider = root.findViewById(R.id.picker_switch_divider);
+        androidx.appcompat.widget.SwitchCompat swc = root.findViewById(R.id.picker_switch);
+        TextView switchLabel = root.findViewById(R.id.picker_switch_label);
+        if(switchRow!=null && swc!=null && switchLabel!=null){
+            switchRow.setVisibility(View.VISIBLE);
+            if(switchDivider!=null) switchDivider.setVisibility(View.VISIBLE);
+            switchLabel.setText(switchTitle);
+            swc.setChecked(switchState);
+            switchRef = swc;
+            // initial apply to slider controls
+            try {
+                com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
+                TextView tvVal = root.findViewById(R.id.picker_slider_value);
+                TextView minus = root.findViewById(R.id.picker_slider_minus);
+                TextView plus = root.findViewById(R.id.picker_slider_plus);
+                TextView reset = root.findViewById(R.id.picker_slider_reset);
+                if(s!=null){ s.setEnabled(!switchState); s.setAlpha(switchState?0.4f:1f); }
+                if(tvVal!=null) tvVal.setAlpha(switchState?0.4f:1f);
+                if(minus!=null) minus.setAlpha(switchState?0.4f:1f);
+                if(plus!=null) plus.setAlpha(switchState?0.4f:1f);
+                if(reset!=null) reset.setAlpha(switchState?0.4f:1f);
+            } catch (Exception ignored) {}
+            swc.setOnCheckedChangeListener((b,checked) -> {
+                // send fragment result
+                Bundle result = new Bundle();
+                result.putBoolean(BUNDLE_SWITCH_STATE, checked);
+                getParentFragmentManager().setFragmentResult(resultKey, result);
+                // Gray out slider controls when AE lock is on
+                try {
+                    com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
+                    TextView tvVal = root.findViewById(R.id.picker_slider_value);
+                    TextView minus = root.findViewById(R.id.picker_slider_minus);
+                    TextView plus = root.findViewById(R.id.picker_slider_plus);
+                    TextView reset = root.findViewById(R.id.picker_slider_reset);
+                    if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
+                    if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
+                    if(minus!=null) minus.setAlpha(checked?0.4f:1f);
+                    if(plus!=null) plus.setAlpha(checked?0.4f:1f);
+                    if(reset!=null) reset.setAlpha(checked?0.4f:1f);
+                } catch (Exception ignored) {}
+                updateDependentRows(checked);
+            });
         }
     }
     if(gridMode){
@@ -431,9 +478,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 
                 // Clear old selection visual
                 if(!hideCheck){
-                    int childCount = containerLayout.getChildCount();
+                    int childCount = listContainer.getChildCount();
                     for(int i=0;i<childCount;i++){
-                        View child = containerLayout.getChildAt(i);
+                        View child = listContainer.getChildAt(i);
                         View cc = child.findViewById(R.id.picker_item_check_container);
                         ImageView ci = child.findViewById(R.id.picker_item_check);
                         if(cc!=null && ci!=null){
@@ -640,6 +687,40 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                 }
             }
+            // If slider mode and switchPresent, wire switch row (optional AE lock switch)
+            try {
+                View root = getView();
+                if (root != null) {
+                    View switchRow = root.findViewById(R.id.picker_switch_row);
+                    TextView switchLabel = root.findViewById(R.id.picker_switch_label);
+                    androidx.appcompat.widget.SwitchCompat swc = root.findViewById(R.id.picker_switch);
+                    if(switchPresent && switchRow!=null && switchLabel!=null && swc!=null){
+                        switchRow.setVisibility(View.VISIBLE);
+                        switchLabel.setText(switchTitle);
+                        swc.setChecked(switchState);
+                        swc.setOnCheckedChangeListener((b, checked) -> {
+                            Bundle result = new Bundle();
+                            result.putBoolean(BUNDLE_SWITCH_STATE, checked);
+                            getParentFragmentManager().setFragmentResult(resultKey, result);
+                            // Gray out slider controls when switch (AE lock) is on
+                            try {
+                                com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
+                                TextView tvVal = root.findViewById(R.id.picker_slider_value);
+                                TextView minus = root.findViewById(R.id.picker_slider_minus);
+                                TextView plus = root.findViewById(R.id.picker_slider_plus);
+                                TextView reset = root.findViewById(R.id.picker_slider_reset);
+                                if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
+                                if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
+                                if(minus!=null) minus.setAlpha(checked?0.4f:1f); if(plus!=null) plus.setAlpha(checked?0.4f:1f); if(reset!=null) reset.setAlpha(checked?0.4f:1f);
+                            } catch (Exception ignored) {}
+                        });
+                        // Apply initial disabled state
+                        if(switchState){
+                            try { com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider); if(s!=null){ s.setEnabled(false); s.setAlpha(0.4f); } } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
         }
     }
     // -------------- Fix Ended for this method(updateDependentRows)-----------

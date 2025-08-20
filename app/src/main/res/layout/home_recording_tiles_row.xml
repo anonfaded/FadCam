@@ -6,7 +6,7 @@
     android:gravity="center_vertical"
     android:paddingTop="6dp"
     android:paddingBottom="6dp"
-    android:weightSum="4">
+    android:weightSum="3">
 
     <!-- AF mode toggle (continuous / off) -->
     <TextView
@@ -26,41 +26,29 @@
         android:clickable="true"
         android:focusable="true" />
 
-    <!-- AE lock toggle -->
-    <TextView
-        android:id="@+id/tile_ae_lock"
-        android:layout_width="0dp"
-        android:layout_height="40dp"
-        android:layout_weight="1"
-        android:layout_marginEnd="4dp"
-        android:background="?attr/colorDialog"
-        android:gravity="center"
-        android:fontFamily="@font/materialicons"
-        android:text="lock_open"
-        android:contentDescription="AE lock toggle"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
-        android:padding="6dp"
-        android:clickable="true"
-        android:focusable="true" />
+
 
     <!-- Exposure (single tile opens slider picker) -->
-    <TextView
-        android:id="@+id/tile_exp"
+    <FrameLayout
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
         android:layout_marginEnd="4dp"
         android:background="?attr/colorDialog"
-        android:gravity="center"
-        android:fontFamily="@font/materialicons"
-        android:text="exposure_plus_1"
-        android:contentDescription="Exposure compensation"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
-        android:padding="6dp"
-        android:clickable="true"
-        android:focusable="true" />
+        android:padding="6dp">
+
+        <ImageView
+            android:id="@+id/tile_exp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:contentDescription="Exposure compensation"
+            android:src="@drawable/exposure_24px"
+            android:tint="?attr/colorOnSurface"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </FrameLayout>
 
     <!-- Tap-to-focus (instructional) -->
     <TextView
