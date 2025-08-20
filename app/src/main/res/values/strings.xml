@@ -132,6 +132,10 @@
     <string name="setting_quailty_title">Video Quality</string>
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="setting_zoom_ratio_title">Zoom Ratio</string>
+    <string name="zoom_not_available_toast">Zoom not available</string>
+    <string name="zoom_slider_title">Zoom Ratio</string>
+    <string name="zoom_slider_helper">Adjust zoom level for recording. For ultra-wide lens recordings, use the 0.5x option to record with the ultra-wide field of view.</string>
+    <string name="icon_zoom_in_ligature">zoom_in</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
     <string name="note_zoom_ratio">Choose zoom ratio\n(Default: %1$.1fx - no zoom)</string>

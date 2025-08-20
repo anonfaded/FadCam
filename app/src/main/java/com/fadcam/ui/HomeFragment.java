@@ -3579,7 +3579,7 @@ public class HomeFragment extends BaseFragment {
                         materialIconsTypeface = android.graphics.Typeface.DEFAULT;
                     }
                     tileZoom.setTypeface(materialIconsTypeface);
-                    tileZoom.setText("zoom_in");
+                    tileZoom.setText(getString(R.string.icon_zoom_in_ligature));
                     tileZoom.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 24);
                     
                     // Apply orange tint if zoom is not at default (1.0x)
@@ -3645,7 +3645,7 @@ public class HomeFragment extends BaseFragment {
                     }
                 } catch (Exception ignored) {}
                 com.fadcam.ui.picker.PickerBottomSheetFragment evSlider = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderWithSwitch(
-                    "Exposure Compensation",
+                    getString(R.string.ae_lock_title),
                     min, max, step, stepFloat,
                     currentEvIndex,
                     Constants.RK_EXPOSURE_COMPENSATION,
@@ -3665,7 +3665,7 @@ public class HomeFragment extends BaseFragment {
                 // Build zoom options using the same logic as VideoSettingsFragment
                 List<Float> zoomRatios = buildZoomRatioOptions(currentCamera);
                 if (zoomRatios.isEmpty()) {
-                    Toast.makeText(requireContext(), "Zoom not available", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.zoom_not_available_toast), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 
@@ -3673,11 +3673,11 @@ public class HomeFragment extends BaseFragment {
                 
                 com.fadcam.ui.picker.PickerBottomSheetFragment zoomSlider = 
                     com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderZoom(
-                        "Zoom Ratio",
+                        getString(R.string.zoom_slider_title),
                         zoomRatios,
                         currentZoom,
                         Constants.RK_ZOOM_RATIO,
-                        "Adjust zoom level for recording. Ultra-wide lens limited to 0.5x."
+                        getString(R.string.zoom_slider_helper)
                     );
                 zoomSlider.show(getParentFragmentManager(), "zoom_slider_sheet");
             });
