@@ -475,6 +475,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             index++;
         }
     }
+        // Only show helper if the caller explicitly provided one
         if(helperView!=null && helperText!=null && !helperText.isEmpty()){
             helperView.setText(helperText);
             helperView.setVisibility(View.VISIBLE);

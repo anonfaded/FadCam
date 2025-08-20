@@ -3494,19 +3494,31 @@ public class HomeFragment extends BaseFragment {
                 // show overlay to pick AF mode
                 com.fadcam.Log.d(TAG, "AF tile clicked. Opening AF mode picker");
                 ArrayList<com.fadcam.ui.picker.OptionItem> afItems = new ArrayList<>();
-                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO), 
-                    getString(R.string.af_continuous_title), 
-                    getString(R.string.af_continuous_description), 
-                    null, null, null));
-                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_AUTO), 
-                    getString(R.string.af_single_title), 
-                    getString(R.string.af_single_description), 
-                    null, null, null));
-                afItems.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF), 
-                    getString(R.string.af_manual_title), 
-                    getString(R.string.af_manual_description), 
-                    null, null, null));
-                com.fadcam.ui.picker.PickerBottomSheetFragment afSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.af_mode_title), afItems, String.valueOf(afMode), Constants.RK_AF_MODE);
+                // Keep only Continuous (enabled) and Manual (locked) to match common camera app UX.
+                afItems.add(new com.fadcam.ui.picker.OptionItem(
+                    String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO),
+                    getString(R.string.af_continuous_title),
+                    getString(R.string.af_continuous_description),
+                    null, // colorInt
+                    null, // iconResId (we use ligature instead)
+                    null, // trailingIconResId
+                    null, // hasSwitch
+                    null, // switchState
+                    "center_focus_strong" // Material icon ligature for focus
+                ));
+
+                afItems.add(new com.fadcam.ui.picker.OptionItem(
+                    String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF),
+                    getString(R.string.af_manual_title),
+                    getString(R.string.af_manual_description),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "lock" // Material icon ligature for locked focus
+                ));
+                com.fadcam.ui.picker.PickerBottomSheetFragment afSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.af_mode_title), afItems, String.valueOf(afMode), Constants.RK_AF_MODE, getString(R.string.af_picker_helper));
                 afSheet.show(getParentFragmentManager(), "af_mode_sheet");
             });
 

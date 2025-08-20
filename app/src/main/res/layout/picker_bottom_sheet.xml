@@ -36,7 +36,9 @@
         android:layout_height="wrap_content"
         android:overScrollMode="ifContentScrolls"
         android:fillViewport="true"
-        android:maxHeight="700dp">
+        android:maxHeight="700dp"
+    android:clipToPadding="false"
+        android:paddingBottom="4dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -60,16 +62,19 @@
                     android:paddingStart="0dp"
                     android:paddingEnd="0dp"/>
             </LinearLayout>
-            <TextView
-                android:id="@+id/picker_helper"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:paddingStart="14dp"
-                android:paddingEnd="12dp"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="13sp"
-                android:visibility="gone"/>
         </LinearLayout>
     </ScrollView>
+
+    <!-- Helper anchored below the scrollable options so it remains above system nav bars -->
+    <TextView
+        android:id="@+id/picker_helper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="10dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="13sp"
+        android:visibility="gone"/>
 </LinearLayout>
