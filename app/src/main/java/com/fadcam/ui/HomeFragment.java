@@ -178,7 +178,7 @@ public class HomeFragment extends BaseFragment {
     // Recording tile controls
     private TextView tileAfToggle;
     private ImageView tileExp;
-    private ImageView tileZoom;
+    private TextView tileZoom;
 
     // overlay (removed - using PickerBottomSheetFragment instead)
     // private com.fadcam.ui.CompactControlOverlay compactOverlay;
@@ -1813,6 +1813,19 @@ public class HomeFragment extends BaseFragment {
                 requireActivity().startService(i);
                 com.fadcam.Log.d(TAG, "Exposure intent sent via picker");
             }
+            
+            // Update exposure tile tinting based on current exposure and AE lock state
+            try {
+                if (tileExp != null) {
+                    // Show orange tint if AE locked or exposure compensation is not at 0
+                    if (aeLocked || currentEvIndex != 0) {
+                        int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                        tileExp.setColorFilter(orange, android.graphics.PorterDuff.Mode.SRC_IN);
+                    } else {
+                        tileExp.clearColorFilter();
+                    }
+                }
+            } catch (Exception ignored) {}
         });
 
         getParentFragmentManager().setFragmentResultListener(Constants.RK_AE_LOCK, this, (requestKey, bundle) -> {
@@ -1834,7 +1847,8 @@ public class HomeFragment extends BaseFragment {
             // Update exposure tile visual: tint orange when locked, reset when unlocked
             try {
                 if(tileExp!=null){
-                    if(aeLocked) {
+                    // ImageView handling with colorFilter
+                    if(aeLocked || currentEvIndex != 0) {
                         int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
                         tileExp.setColorFilter(orange, android.graphics.PorterDuff.Mode.SRC_IN);
                         com.fadcam.Log.d(TAG, "Applied orange tint to exposure tile");
@@ -1891,6 +1905,17 @@ public class HomeFragment extends BaseFragment {
                     
                     // Save zoom ratio to preferences
                     sp.setSpecificZoomRatio(currentCamera, zoomRatio);
+                    
+                    // Update zoom tile tinting
+                    try {
+                        if (tileZoom != null) {
+                            if (Math.abs(zoomRatio - 1.0f) > 0.01f) { // Not at 1.0x default
+                                tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
+                            } else {
+                                tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                            }
+                        }
+                    } catch (Exception ignored) {}
                     
                     // If recording service is running, apply zoom immediately
                     if (isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
@@ -3530,15 +3555,42 @@ public class HomeFragment extends BaseFragment {
                         materialIconsTypeface = android.graphics.Typeface.DEFAULT;
                     }
                     tileAfToggle.setTypeface(materialIconsTypeface);
+                    tileAfToggle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 24); // Match zoom icon size
                     tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak");
                 }
             } catch (Exception ignored) {}
             // Apply initial exposure tile tint and size adjustments
             try {
                 if(tileExp!=null){
+                    // Legacy ImageView handling - just make it bigger to match zoom
                     android.content.res.ColorStateList tint = android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.white, requireContext().getTheme()));
                     tileExp.setImageTintList(tint);
-                    tileExp.setScaleX(1f); tileExp.setScaleY(1f);
+                    tileExp.setScaleX(1.2f); tileExp.setScaleY(1.2f); // Make bigger to match zoom
+                }
+            } catch (Exception ignored) {}
+
+            // Initialize zoom tile with proper tinting
+            try {
+                if (tileZoom != null) {
+                    android.graphics.Typeface materialIconsTypeface = null;
+                    try {
+                        materialIconsTypeface = androidx.core.content.res.ResourcesCompat.getFont(requireContext(), R.font.materialicons);
+                    } catch (Exception e) {
+                        materialIconsTypeface = android.graphics.Typeface.DEFAULT;
+                    }
+                    tileZoom.setTypeface(materialIconsTypeface);
+                    tileZoom.setText("zoom_in");
+                    tileZoom.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 24);
+                    
+                    // Apply orange tint if zoom is not at default (1.0x)
+                    SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                    CameraType currentCamera = sp.getCameraSelection();
+                    float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+                    if (Math.abs(currentZoom - 1.0f) > 0.01f) { // Not at 1.0x default
+                        tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
+                    } else {
+                        tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                    }
                 }
             } catch (Exception ignored) {}
 
