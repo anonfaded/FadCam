@@ -1823,11 +1823,21 @@ public class HomeFragment extends BaseFragment {
             if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
                 sp.setSavedAeLock(aeLocked);
                 com.fadcam.Log.d(TAG, "AE lock saved to prefs via picker");
+                // Update AF tile icon to reflect selected mode
+                try { if (tileAfToggle != null) tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak"); } catch (Exception ignored) {}
             } else {
                 Intent i = com.fadcam.RecordingControlIntents.toggleAeLock(requireContext(), aeLocked);
                 requireActivity().startService(i);
                 com.fadcam.Log.d(TAG, "AE lock intent sent via picker");
+                // Also update the tile icon when AF mode is applied at runtime
+                try { if (tileAfToggle != null) tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak"); } catch (Exception ignored) {}
             }
+            // Update tile icon to match AE lock state
+            try {
+                if (tileAeLock != null) {
+                    tileAeLock.setText(aeLocked ? "lock" : "lock_open");
+                }
+            } catch (Exception ignored) {}
         });
 
         getParentFragmentManager().setFragmentResultListener(Constants.RK_AF_MODE, this, (requestKey, bundle) -> {
@@ -3234,40 +3244,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    // --- BroadcastReceiver Implementation ---
-
-    // private void registerStatsReceiver() {
-    //     if (!isStatsReceiverRegistered && getContext() != null) {
-    //         if (recordingCompleteReceiver == null) {
-    //             recordingCompleteReceiver = new BroadcastReceiver() {
-    //                 @Override
-    //                 public void onReceive(Context context, Intent intent) {
-    //                     if (intent != null && Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
-    //                         android.util.Log.i(TAG, "Received ACTION_RECORDING_COMPLETE in HomeFragment, updating stats...");
-    //                         updateStats(); // Trigger stats recalculation
-    //                     }
-    //                 }
-    //             };
-    //         }
-    //         IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
-    //         ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
-    //         isStatsReceiverRegistered = true;
-    //         Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver registered.");
-    //     }
-    // }
-
-//    private void unregisterStatsReceiver() {
-//        if (isStatsReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
-//            try {
-//                requireContext().unregisterReceiver(recordingCompleteReceiver);
-//                isStatsReceiverRegistered = false;
-//                Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver unregistered.");
-//            } catch (IllegalArgumentException e) {
-//                Log.w(TAG,"Attempted to unregister stats receiver but it wasn't registered?");
-//                isStatsReceiverRegistered = false; // Ensure flag is reset
-//            }
-//        }
-//    }
 
     // --- Updated updateStats Method ---
 
@@ -3490,6 +3466,13 @@ public class HomeFragment extends BaseFragment {
             tileExp = root.findViewById(R.id.tile_exp);
             tileTapFocus = root.findViewById(R.id.tile_tap_focus);
 
+            // Ensure AE tile shows correct icon on startup
+            try { if(tileAeLock!=null) tileAeLock.setText(aeLocked ? "lock" : "lock_open"); } catch (Exception ignored) {}
+            // Use a friendlier exposure icon ligature
+            try { if(tileExp!=null) tileExp.setText("wb_sunny"); } catch (Exception ignored) {}
+            // Initialize AF tile icon from saved afMode
+            try { if (tileAfToggle != null) tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak"); } catch (Exception ignored) {}
+
             tileAfToggle.setOnClickListener(v -> {
                 // show overlay to pick AF mode
                 com.fadcam.Log.d(TAG, "AF tile clicked. Opening AF mode picker");
@@ -3527,7 +3510,15 @@ public class HomeFragment extends BaseFragment {
                 com.fadcam.Log.d(TAG, "AE tile clicked. Opening AE lock picker (switch)");
                 ArrayList<com.fadcam.ui.picker.OptionItem> aeItems = new ArrayList<>();
                 // we provide an empty items list but use the switch feature
-                com.fadcam.ui.picker.PickerBottomSheetFragment aeSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch("AE Lock", aeItems, null, Constants.RK_AE_LOCK, "Auto Exposure Lock", "Lock AE", aeLocked);
+                com.fadcam.ui.picker.PickerBottomSheetFragment aeSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                    getString(R.string.ae_lock_title),
+                    aeItems,
+                    null,
+                    Constants.RK_AE_LOCK,
+                    getString(R.string.ae_lock_helper),
+                    getString(R.string.ae_lock_switch_label),
+                    aeLocked
+                );
                 aeSheet.show(getParentFragmentManager(), "ae_lock_sheet");
             });
 
