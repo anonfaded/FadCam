@@ -265,7 +265,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             TextView tvVal = view.findViewById(R.id.picker_slider_value);
             TextView minus = view.findViewById(R.id.picker_slider_minus);
             TextView plus = view.findViewById(R.id.picker_slider_plus);
-            TextView reset = view.findViewById(R.id.picker_slider_reset);
+            android.widget.ImageView reset = view.findViewById(R.id.picker_slider_reset_icon);
             if(slider!=null){
                 // Configure slider to map to integer steps between min..max
                 int steps = (sliderMax - sliderMin) / Math.max(1, sliderStep);
@@ -277,12 +277,44 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if (startPos < 0f) startPos = 0f;
                 if (startPos > steps) startPos = (float) steps;
                 slider.setValue(startPos);
+                // Configure initial enabled state for +/- controls
+                try {
+                    int curIndex = sliderMin + Math.round(slider.getValue()) * sliderStep;
+                    if (minus != null) minus.setEnabled(curIndex > sliderMin);
+                    if (plus != null) plus.setEnabled(curIndex < sliderMax);
+                    if (minus != null) minus.setAlpha((minus.isEnabled()) ? 1f : 0.4f);
+                    if (plus != null) plus.setAlpha((plus.isEnabled()) ? 1f : 0.4f);
+                } catch (Exception ignored) {}
                 // Set initial text value based on mode
                 if (sliderZoomMode && zoomRatios != null && sliderInitial >= 0 && sliderInitial < zoomRatios.length) {
                     tvVal.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[sliderInitial]));
                 } else {
                     tvVal.setText(String.valueOf(sliderInitial));
                 }
+                // Configure label row (min / mid / max)
+                try {
+                    TextView lblMin = view.findViewById(R.id.picker_slider_label_min);
+                    TextView lblMid = view.findViewById(R.id.picker_slider_label_mid);
+                    TextView lblMax = view.findViewById(R.id.picker_slider_label_max);
+                    View labelsRow = view.findViewById(R.id.picker_slider_labels);
+                    if (labelsRow != null && lblMin != null && lblMid != null && lblMax != null) {
+                        if (sliderZoomMode && zoomRatios != null && zoomRatios.length > 0) {
+                            // Show zoom min/max only (hide mid label to avoid misleading values)
+                            lblMin.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[0]));
+                            lblMid.setVisibility(View.GONE);
+                            lblMax.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[zoomRatios.length-1]));
+                            labelsRow.setVisibility(View.VISIBLE);
+                        } else {
+                            // EV mode: show min / 0 / max using sliderStepFloat
+                            float evMin = sliderMin * sliderStepFloat;
+                            float evMax = sliderMax * sliderStepFloat;
+                            lblMin.setText(String.format(java.util.Locale.US, "%.1f", evMin));
+                            lblMid.setText(String.format(java.util.Locale.US, "%.1f", 0f));
+                            lblMax.setText(String.format(java.util.Locale.US, "%.1f", evMax));
+                            labelsRow.setVisibility(View.VISIBLE);
+                        }
+                    }
+                } catch (Exception ignored) {}
 
                 slider.setLabelFormatter(value -> {
                     int intVal = sliderMin + Math.round(value) * sliderStep;
@@ -312,6 +344,14 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     Bundle result = new Bundle();
                     result.putInt(BUNDLE_SLIDER_VALUE, intVal);
                     getParentFragmentManager().setFragmentResult(resultKey, result);
+                    // Disable/enable +/- buttons based on current slider position
+                    try {
+                        if (minus != null) minus.setEnabled(intVal > sliderMin);
+                        if (plus != null) plus.setEnabled(intVal < sliderMax);
+                        // reflect visual alpha for disabled state
+                        if (minus != null) minus.setAlpha((minus.isEnabled()) ? 1f : 0.4f);
+                        if (plus != null) plus.setAlpha((plus.isEnabled()) ? 1f : 0.4f);
+                    } catch (Exception ignored) {}
                 });
 
                 // +/- buttons
@@ -360,7 +400,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 TextView tvVal = root.findViewById(R.id.picker_slider_value);
                 TextView minus = root.findViewById(R.id.picker_slider_minus);
                 TextView plus = root.findViewById(R.id.picker_slider_plus);
-                TextView reset = root.findViewById(R.id.picker_slider_reset);
+                TextView reset = root.findViewById(R.id.picker_slider_reset_icon);
                 if(s!=null){ s.setEnabled(!switchState); s.setAlpha(switchState?0.4f:1f); }
                 if(tvVal!=null) tvVal.setAlpha(switchState?0.4f:1f);
                 if(minus!=null) minus.setAlpha(switchState?0.4f:1f);
@@ -379,7 +419,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     TextView tvVal = root.findViewById(R.id.picker_slider_value);
                     TextView minus = root.findViewById(R.id.picker_slider_minus);
                     TextView plus = root.findViewById(R.id.picker_slider_plus);
-                    TextView reset = root.findViewById(R.id.picker_slider_reset);
+                    android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
                     if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
                     if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
                     if(minus!=null) minus.setAlpha(checked?0.4f:1f);
@@ -778,7 +818,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                                 TextView tvVal = root.findViewById(R.id.picker_slider_value);
                                 TextView minus = root.findViewById(R.id.picker_slider_minus);
                                 TextView plus = root.findViewById(R.id.picker_slider_plus);
-                                TextView reset = root.findViewById(R.id.picker_slider_reset);
+                                android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
                                 if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
                                 if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
                                 if(minus!=null) minus.setAlpha(checked?0.4f:1f); if(plus!=null) plus.setAlpha(checked?0.4f:1f); if(reset!=null) reset.setAlpha(checked?0.4f:1f);

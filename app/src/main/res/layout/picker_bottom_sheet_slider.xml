@@ -125,64 +125,139 @@
                             android:paddingTop="12dp"
                             android:paddingBottom="12dp" />
 
-                        <!-- Plus/minus centered below the slider -->
+                        <!-- Labels row: min / mid / max (e.g., -4.0 / 0.0 / +4.0) placed under the slider -->
+                        <LinearLayout
+                            android:id="@+id/picker_slider_labels"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="20dp"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="12dp">
+
+                            <TextView
+                                android:id="@+id/picker_slider_label_min"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="-"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="13sp"
+                                android:gravity="start" />
+
+                            <TextView
+                                android:id="@+id/picker_slider_label_mid"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="13sp"
+                                android:gravity="center" />
+
+                            <TextView
+                                android:id="@+id/picker_slider_label_max"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="+"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="13sp"
+                                android:gravity="end" />
+
+                        </LinearLayout>
+
+                        <!-- Plus/minus centered below the labels -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:gravity="center"
-                            android:paddingTop="8dp"
+                            android:gravity="center_vertical"
+                            android:paddingTop="4dp"
                             android:paddingBottom="8dp">
 
-                            <TextView
-                                android:id="@+id/picker_slider_minus"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:gravity="center"
-                                android:fontFamily="@font/materialicons"
-                                android:text="remove"
-                                android:textSize="20sp"
-                                android:textColor="?attr/colorOnSurface"
-                                android:contentDescription="Decrease"
-                                android:clickable="true"
-                                android:focusable="true" />
+                            <!-- Left spacer to center the control group -->
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
 
-                            <TextView
-                                android:id="@+id/picker_slider_value"
+                            <!-- Centered control group: minus, value, plus -->
+                            <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:layout_marginEnd="16dp"
-                                android:textSize="16sp"
-                                android:textColor="?attr/colorOnSurface"
-                                android:text="0" />
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
 
-                            <TextView
-                                android:id="@+id/picker_slider_plus"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:gravity="center"
-                                android:fontFamily="@font/materialicons"
-                                android:text="add"
-                                android:textSize="20sp"
-                                android:textColor="?attr/colorOnSurface"
-                                android:contentDescription="Increase"
-                                android:clickable="true"
-                                android:focusable="true" />
+                                <TextView
+                                    android:id="@+id/picker_slider_minus"
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:gravity="center"
+                                    android:fontFamily="@font/materialicons"
+                                    android:text="remove"
+                                    android:textSize="16sp"
+                                    android:textColor="?attr/colorOnPrimary"
+                                    android:background="@drawable/picker_circle_btn_tinted"
+                                    android:contentDescription="Decrease"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:padding="3dp" />
 
-                            <TextView
-                                android:id="@+id/picker_slider_reset"
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:id="@+id/picker_slider_value"
+                                    android:layout_width="48dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_marginEnd="10dp"
+                                    android:gravity="center"
+                                    android:textSize="15sp"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:text="0" />
+
+                                <TextView
+                                    android:id="@+id/picker_slider_plus"
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:gravity="center"
+                                    android:fontFamily="@font/materialicons"
+                                    android:text="add"
+                                    android:textSize="16sp"
+                                    android:textColor="?attr/colorOnPrimary"
+                                    android:background="@drawable/picker_circle_btn_tinted"
+                                    android:contentDescription="Increase"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:padding="3dp" />
+
+                            </LinearLayout>
+
+                            <!-- Right container: takes remaining space and right-aligns reset -->
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:textSize="14sp"
-                                android:textColor="?attr/colorOnSurface"
-                                android:text="Reset"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:layout_marginLeft="12dp" />
+                                android:layout_weight="1"
+                                android:gravity="end|center_vertical"
+                                android:paddingEnd="6dp">
+
+                                <ImageView
+                                    android:id="@+id/picker_slider_reset_icon"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:contentDescription="Reset"
+                                    android:src="@drawable/undo_24px"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:tint="?attr/colorPrimary"
+                                    android:padding="4dp" />
+
+                            </LinearLayout>
 
                         </LinearLayout>
+
+                        <!-- labels moved up -->
 
                     </LinearLayout>
 
