@@ -3542,6 +3542,7 @@ public class HomeFragment extends BaseFragment {
         try {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
             tileExp = root.findViewById(R.id.tile_exp);
+            View tileExpContainer = root.findViewById(R.id.tile_exp_container);
             tileZoom = root.findViewById(R.id.tile_zoom);
 
             // Initialize AF tile icon from saved afMode and apply Material Icons typeface
@@ -3566,6 +3567,14 @@ public class HomeFragment extends BaseFragment {
                     android.content.res.ColorStateList tint = android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.white, requireContext().getTheme()));
                     tileExp.setImageTintList(tint);
                     tileExp.setScaleX(1.2f); tileExp.setScaleY(1.2f); // Make bigger to match zoom
+                }
+                // Ensure the whole tile container responds to clicks (not just the icon)
+                if (tileExpContainer != null) {
+                    tileExpContainer.setOnClickListener(v -> {
+                        try {
+                            if (tileExp != null) tileExp.performClick();
+                        } catch (Exception e) { Log.e(TAG, "Error opening exposure picker", e); }
+                    });
                 }
             } catch (Exception ignored) {}
 

@@ -4,8 +4,8 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingTop="6dp"
-    android:paddingBottom="6dp"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp"
     android:weightSum="3">
 
     <!-- AF mode toggle (continuous / off) -->
@@ -15,7 +15,7 @@
         android:layout_height="40dp"
         android:layout_weight="1"
         android:layout_marginEnd="4dp"
-        android:background="?attr/colorDialog"
+        android:background="@drawable/home_tile_bg"
         android:gravity="center"
         android:fontFamily="@font/materialicons"
         android:text="center_focus_strong"
@@ -34,8 +34,11 @@
         android:layout_height="40dp"
         android:layout_weight="1"
         android:layout_marginEnd="4dp"
-        android:background="?attr/colorDialog"
-        android:padding="6dp">
+        android:id="@+id/tile_exp_container"
+        android:background="@drawable/home_tile_bg"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true">
 
         <ImageView
             android:id="@+id/tile_exp"
@@ -44,9 +47,7 @@
             android:layout_gravity="center"
             android:contentDescription="Exposure compensation"
             android:src="@drawable/exposure_24px"
-            android:tint="?attr/colorOnSurface"
-            android:clickable="true"
-            android:focusable="true" />
+            android:tint="?attr/colorOnSurface" />
 
     </FrameLayout>
 
@@ -56,7 +57,7 @@
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
-        android:background="?attr/colorDialog"
+        android:background="@drawable/home_tile_bg"
         android:padding="6dp"
         android:gravity="center"
         android:text="zoom_in"

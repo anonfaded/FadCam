@@ -439,17 +439,31 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                app:strokeColor="#4CAF50"
-                app:strokeWidth="2dp">
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="6dp">
+
+                    <TextView
+                        android:id="@+id/tv_recording_controls_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/recording_controls_title"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="6dp"
+                        android:includeFontPadding="false" />
 
                     <include
                         android:id="@+id/includeRecordingTiles"
