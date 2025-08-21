@@ -96,6 +96,7 @@
                     android:layout_marginBottom="4dp">
 
                     <TextView
+                        android:id="@+id/ivCameraIcon"
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginEnd="4dp"
@@ -141,15 +142,15 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="4dp">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginEnd="4dp"
-                        android:fontFamily="@font/materialicons"
-                        android:text="schedule"
-                        android:textColor="#FF9800"
-                        android:textSize="20sp"
-                        android:gravity="center" />
+                        android:padding="4dp"
+                        android:src="@drawable/hourglass_top_24px"
+                        android:tint="#FF9800"
+                        android:contentDescription="Estimated time icon"
+                        android:scaleType="centerInside" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -187,15 +188,15 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="4dp">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginEnd="4dp"
-                        android:fontFamily="@font/materialicons"
-                        android:text="storage"
-                        android:textColor="#2196F3"
-                        android:textSize="20sp"
-                        android:gravity="center" />
+                        android:padding="4dp"
+                        android:src="@drawable/database_24px"
+                        android:tint="#2196F3"
+                        android:contentDescription="Available space icon"
+                        android:scaleType="centerInside" />
 
                     <LinearLayout
                         android:layout_width="0dp"

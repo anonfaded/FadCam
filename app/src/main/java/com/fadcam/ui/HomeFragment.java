@@ -146,6 +146,7 @@ public class HomeFragment extends BaseFragment {
 
     private TextView tvCameraTitle;
     private TextView tvCameraSubtitle;
+    private TextView ivCameraIcon;
     private TextView tvEstimateTitle;
     private TextView tvEstimateSubtitle;
     private TextView tvSpaceTitle;
@@ -3131,6 +3132,14 @@ public class HomeFragment extends BaseFragment {
             // Camera row
             if (tvCameraTitle != null) tvCameraTitle.setText(finalCameraLabel);
             if (tvCameraSubtitle != null) tvCameraSubtitle.setText(cameraSubtitle);
+            // Update camera icon glyph to reflect current camera (front/back)
+            try {
+                com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
+                if (ivCameraIcon != null) {
+                    if (camType == com.fadcam.CameraType.FRONT) ivCameraIcon.setText("camera_front");
+                    else ivCameraIcon.setText("camera_alt");
+                }
+            } catch (Exception ignored) {}
             
             // Estimate row
             if (tvEstimateTitle != null) tvEstimateTitle.setText(finalSelectedEstimate);
@@ -4312,7 +4321,8 @@ public class HomeFragment extends BaseFragment {
     private void initializeViews(View view) {
         Log.d(TAG, "initializeViews: Finding UI elements.");
         tvCameraTitle = view.findViewById(R.id.tvCameraTitle);
-        tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
+    tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
+    ivCameraIcon = view.findViewById(R.id.ivCameraIcon);
         tvEstimateTitle = view.findViewById(R.id.tvEstimateTitle);
         tvEstimateSubtitle = view.findViewById(R.id.tvEstimateSubtitle);
         tvSpaceTitle = view.findViewById(R.id.tvSpaceTitle);
