@@ -198,6 +198,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
         Bundle args = getArguments();
+        android.util.Log.d("PickerBottomSheet", "onViewCreated called, args=" + args);
+        com.fadcam.Log.d("PickerBottomSheet", "onViewCreated called, args=" + args);
     if(args!=null){
             title = args.getString(ARG_TITLE, "");
             selectedId = args.getString(ARG_SELECTED_ID, null);
@@ -216,6 +218,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     gridMode = args.getBoolean(ARG_GRID_MODE, false);
         hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
         sliderMode = args.getBoolean(ARG_SLIDER_MODE, false);
+        android.util.Log.d("PickerBottomSheet", "Slider mode detected: " + sliderMode + ", title: " + title + ", resultKey: " + resultKey);
+        com.fadcam.Log.d("PickerBottomSheet", "Slider mode detected: " + sliderMode + ", title: " + title + ", resultKey: " + resultKey);
         if(sliderMode){
             sliderZoomMode = args.getBoolean(ARG_SLIDER_ZOOM_MODE, false);
             zoomRatios = args.getFloatArray("zoom_ratios");
@@ -275,6 +279,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             TextView plus = view.findViewById(R.id.picker_slider_plus);
             android.widget.ImageView reset = view.findViewById(R.id.picker_slider_reset_icon);
             if(slider!=null){
+                android.util.Log.d("PickerBottomSheet", "Setting up slider: min=" + sliderMin + ", max=" + sliderMax + ", step=" + sliderStep + ", initial=" + sliderInitial);
+                com.fadcam.Log.d("PickerBottomSheet", "Setting up slider: min=" + sliderMin + ", max=" + sliderMax + ", step=" + sliderStep + ", initial=" + sliderInitial);
                 // Configure slider to map to integer steps between min..max
                 int steps = (sliderMax - sliderMin) / Math.max(1, sliderStep);
                 slider.setValueFrom(0f);
@@ -285,6 +291,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if (startPos < 0f) startPos = 0f;
                 if (startPos > steps) startPos = (float) steps;
                 slider.setValue(startPos);
+                com.fadcam.Log.d("PickerBottomSheet", "Slider configured: steps=" + steps + ", startPos=" + startPos);
                 // Configure initial enabled state for +/- controls
                 try {
                     int curIndex = sliderMin + Math.round(slider.getValue()) * sliderStep;
@@ -337,8 +344,13 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                 });
 
+                android.util.Log.d("PickerBottomSheet", "Attaching OnChangeListener to slider, resultKey=" + resultKey);
+                com.fadcam.Log.d("PickerBottomSheet", "Attaching OnChangeListener to slider, resultKey=" + resultKey);
                 slider.addOnChangeListener((s, value, fromUser) -> {
+                    android.util.Log.d("PickerBottomSheet", "Slider onChange triggered: value=" + value + ", fromUser=" + fromUser);
+                    com.fadcam.Log.d("PickerBottomSheet", "Slider onChange triggered: value=" + value + ", fromUser=" + fromUser);
                     int intVal = sliderMin + Math.round(value) * sliderStep;
+                    com.fadcam.Log.d("PickerBottomSheet", "Calculated intVal=" + intVal + ", sliderMin=" + sliderMin + ", sliderStep=" + sliderStep);
                     if (sliderZoomMode && zoomRatios != null && intVal >= 0 && intVal < zoomRatios.length) {
                         // Zoom mode: show zoom ratio
                         tvVal.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[intVal]));
@@ -351,6 +363,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     // Live update: post result so callers can react immediately while recording
                     Bundle result = new Bundle();
                     result.putInt(BUNDLE_SLIDER_VALUE, intVal);
+                    android.util.Log.d("PickerBottomSheet", "Picker sending fragment result: key=" + resultKey + ", sliderValue=" + intVal);
+                    android.util.Log.d("PickerBottomSheet", "Using FragmentManager: " + getParentFragmentManager() + ", this fragment: " + this);
+                    com.fadcam.Log.d("PickerBottomSheet", "Picker sending fragment result: key=" + resultKey + ", sliderValue=" + intVal);
                     getParentFragmentManager().setFragmentResult(resultKey, result);
                     // Disable/enable +/- buttons based on current slider position
                     try {

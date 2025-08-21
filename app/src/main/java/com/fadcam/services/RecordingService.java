@@ -2909,6 +2909,14 @@ public class RecordingService extends Service {
             int savedEv = sharedPreferencesManager.getSavedExposureCompensation();
             Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
             int afModePref = sharedPreferencesManager.getSavedAfMode();
+            
+            // -------------- Fix Start (debug_saved_prefs)-----------
+            Log.d(TAG, "applySavedCameraPrefsToBuilder: savedEv=" + savedEv + ", aeLock=" + aeLock + 
+                       ", afMode=" + afModePref);
+            Log.d(TAG, "Runtime overrides: runtimeEv=" + runtimeExposureCompensation + 
+                       ", runtimeAeLock=" + runtimeAeLock + ", runtimeAfMode=" + runtimeAfMode);
+            Log.d(TAG, "currentCameraCharacteristics available: " + (currentCameraCharacteristics != null));
+            // -------------- Fix Ended (debug_saved_prefs)-----------
 
             if (currentCameraCharacteristics != null) {
                 // Apply EV: use runtime value if available, otherwise saved value
@@ -2918,7 +2926,31 @@ public class RecordingService extends Service {
                     int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evToUse));
                     builder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
                     Log.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") + 
-                           " EV=" + clamped + " to request builder");
+                           " EV=" + clamped + " to request builder (range: " + range + ")");
+                           
+                    // CRITICAL: Also apply EV to GL pipeline for visual effect
+                    // Convert EV index to actual EV stops for GL shader
+                    float evStops = 0.0f;
+                    try {
+                        android.util.Rational stepRational = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                        if (stepRational != null) {
+                            evStops = clamped * stepRational.floatValue();
+                        } else {
+                            // Fallback: assume 1/3 EV step (common default)
+                            evStops = clamped * 0.33f;
+                        }
+                    } catch (Exception e) {
+                        evStops = clamped * 0.33f; // Safe fallback
+                    }
+                    
+                    // Apply exposure through GL pipeline for immediate visual effect in preview and recording
+                    if (glRecordingPipeline != null) {
+                        glRecordingPipeline.setExposureCompensation(evStops);
+                        Log.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") + 
+                               " EV to GL pipeline: index=" + clamped + " -> " + evStops + " EV stops");
+                    }
+                } else {
+                    Log.w(TAG, "EV compensation range not available from camera characteristics");
                 }
 
                 // Apply AE lock: use runtime value if available, otherwise saved value
@@ -2928,6 +2960,8 @@ public class RecordingService extends Service {
                     builder.set(CaptureRequest.CONTROL_AE_LOCK, lockToUse);
                     Log.d(TAG, "Applied " + (runtimeAeLock != null ? "runtime" : "saved") + 
                            " AE lock=" + lockToUse + " to request builder");
+                } else {
+                    Log.w(TAG, "AE lock not supported by camera characteristics");
                 }
 
                 // Apply AF mode: use runtime value if available, otherwise saved value
@@ -2940,8 +2974,14 @@ public class RecordingService extends Service {
                         builder.set(CaptureRequest.CONTROL_AF_MODE, afModeToUse);
                         Log.d(TAG, "Applied " + (runtimeAfMode != null ? "runtime" : "saved") + 
                                " AF mode=" + afModeToUse + " to request builder");
+                    } else {
+                        Log.w(TAG, "AF mode " + afModeToUse + " not supported, available modes: " + java.util.Arrays.toString(modes));
                     }
+                } else {
+                    Log.w(TAG, "AF modes not available from camera characteristics");
                 }
+            } else {
+                Log.e(TAG, "applySavedCameraPrefsToBuilder: currentCameraCharacteristics is null!");
             }
         } catch (Exception e) {
             Log.w(TAG, "Error applying camera prefs: " + e.getMessage());
@@ -3212,6 +3252,15 @@ public class RecordingService extends Service {
             Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
             return;
         }
+        
+        // -------------- Fix Start (clear_runtime_overrides_on_startup)-----------
+        // Clear runtime overrides so saved preferences take priority on fresh recording session
+        runtimeExposureCompensation = null;
+        runtimeAeLock = null;
+        runtimeAfMode = null;
+        Log.d(TAG, "Cleared runtime camera overrides for fresh recording session");
+        // -------------- Fix Ended (clear_runtime_overrides_on_startup)-----------
+        
         createNotificationChannel();
 
         if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {

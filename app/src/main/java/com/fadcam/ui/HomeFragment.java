@@ -1793,16 +1793,26 @@ public class HomeFragment extends BaseFragment {
 
         initializeViews(view);
         // Fragment result listeners for pickers
+        android.util.Log.d("HomeFragment", "REGISTERING fragment result listener for exposure compensation");
+        com.fadcam.Log.d(TAG, "Registering fragment result listener for exposure compensation with key: " + Constants.RK_EXPOSURE_COMPENSATION);
+        android.util.Log.d("HomeFragment", "Using FragmentManager: " + getParentFragmentManager() + ", this fragment: " + this);
         getParentFragmentManager().setFragmentResultListener(Constants.RK_EXPOSURE_COMPENSATION, this, (requestKey, bundle) -> {
-            if(bundle==null) return;
+            android.util.Log.d("HomeFragment", "FRAGMENT RESULT RECEIVED: requestKey=" + requestKey + ", bundle=" + bundle);
+            com.fadcam.Log.d(TAG, "Fragment result listener triggered for exposure: requestKey=" + requestKey + ", bundle=" + bundle);
+            if(bundle==null) {
+                com.fadcam.Log.w(TAG, "Exposure listener received null bundle");
+                return;
+            }
             // Slider returns an int under BUNDLE_SLIDER_VALUE; fall back to selected id string for backward compatibility
             int sliderVal = bundle.getInt(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE, Integer.MIN_VALUE);
+            com.fadcam.Log.d(TAG, "Exposure bundle contents: sliderVal=" + sliderVal + ", keys=" + bundle.keySet());
             if(sliderVal!=Integer.MIN_VALUE){
                 currentEvIndex = sliderVal;
                 // Debug: record that we received slider update (will only write to debug log when enabled)
                 com.fadcam.Log.d(TAG, "Received exposure slider value: index=" + sliderVal);
             } else {
                 String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+                com.fadcam.Log.d(TAG, "Slider value not found, checking selected ID: " + sel);
                 if(sel!=null){ try { currentEvIndex = Integer.parseInt(sel); } catch (Exception ignored) {} }
             }
             SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
@@ -3583,6 +3593,29 @@ public class HomeFragment extends BaseFragment {
                         drawables[1].setBounds(0, 0, 48, 48); // 24dp * 2 for density
                         tileExp.setCompoundDrawables(null, drawables[1], null, null);
                     }
+                    
+                    // CRITICAL: Apply initial exposure tint based on saved preferences
+                    SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                    int savedEvIndex = sp.getSavedExposureCompensation();
+                    boolean savedAeLock = sp.isAeLockedSaved();
+                    
+                    // Apply orange tint if AE locked or exposure compensation is not at 0
+                    if (savedAeLock || savedEvIndex != 0) {
+                        int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                        tileExp.setTextColor(orange);
+                        // subtle scale to indicate active
+                        tileExp.setScaleX(savedAeLock ? 1.05f : 1f);
+                        tileExp.setScaleY(savedAeLock ? 1.05f : 1f);
+                        com.fadcam.Log.d(TAG, "Applied initial orange tint to exposure tile (EV=" + savedEvIndex + ", AeLock=" + savedAeLock + ")");
+                    } else {
+                        // Reset to default theme color
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                        tileExp.setTextColor(typedValue.data);
+                        tileExp.setScaleX(1f);
+                        tileExp.setScaleY(1f);
+                        com.fadcam.Log.d(TAG, "Applied initial default tint to exposure tile");
+                    }
                 }
             } catch (Exception ignored) {}
 
@@ -3647,6 +3680,7 @@ public class HomeFragment extends BaseFragment {
 
             tileExp.setOnClickListener(v -> {
                 com.fadcam.Log.d(TAG, "Exposure tile clicked. Opening slider exposure picker");
+                android.util.Log.d("HomeFragment", "EXPOSURE TILE CLICKED - creating picker");
                 int min = -4, max = 4, step = 1;
                 float stepFloat = 1f;
                 try {
@@ -3670,6 +3704,7 @@ public class HomeFragment extends BaseFragment {
                     getString(R.string.ae_lock_switch_label),
                     aeLocked
                 );
+                android.util.Log.d("HomeFragment", "EXPOSURE PICKER CREATED - showing dialog");
                 evSlider.show(getParentFragmentManager(), "ev_slider_sheet");
             });
 
