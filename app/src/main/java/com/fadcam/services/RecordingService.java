@@ -97,6 +97,11 @@ import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 import com.fadcam.opengl.GLRecordingPipeline;
 import com.fadcam.opengl.WatermarkInfoProvider;
 
+import android.util.Range;
+import android.graphics.Rect;
+import android.hardware.camera2.params.MeteringRectangle;
+import android.hardware.camera2.CameraMetadata;
+
 public class RecordingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
@@ -107,6 +112,7 @@ public class RecordingService extends Service {
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
     private CaptureRequest.Builder captureRequestBuilder;
+    private CameraCharacteristics currentCameraCharacteristics;
     private Surface previewSurface; // Surface from UI if preview enabled
     private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
 
@@ -142,6 +148,11 @@ public class RecordingService extends Service {
     // Gate first-start until preview surface is ready (to avoid first-run EGL race)
     private boolean waitForPreviewBeforeStart = false;
     private Runnable previewWaitTimeoutRunnable = null;
+    
+    // Runtime camera control values that override saved preferences during active recording
+    private Integer runtimeExposureCompensation = null;
+    private Boolean runtimeAeLock = null;
+    private Integer runtimeAfMode = null;
     // -------------- Fix Ended for this section(previewStartGateFields)-----------
 
     // --- Lifecycle Methods ---
@@ -191,6 +202,302 @@ public class RecordingService extends Service {
         broadcastCameraResourceAvailability(true);
         Log.d(TAG, "Broadcasting initial camera resource availability: true");
     }
+
+    // -------------- Fix Start for this method(applyExposureCompensation)-----------
+    /**
+     * Apply exposure compensation index if supported by the camera.
+     * This will update the existing captureRequestBuilder and call setRepeatingRequest.
+     */
+    private void applyExposureCompensation(int evIndex) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
+        Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+        if (range == null) return;
+        int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evIndex));
+        
+        // Track runtime exposure compensation to override saved preferences
+        runtimeExposureCompensation = clamped;
+        
+        // CRITICAL: Apply exposure through GL pipeline for immediate visual effect
+        // Convert EV index to actual EV stops for GL shader
+        float evStops = 0.0f;
+        try {
+            android.util.Rational stepRational = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+            if (stepRational != null) {
+                evStops = clamped * stepRational.floatValue();
+            } else {
+                // Fallback: assume 1/3 EV step (common default)
+                evStops = clamped * 0.33f;
+            }
+        } catch (Exception e) {
+            evStops = clamped * 0.33f; // Safe fallback
+        }
+        
+        // Apply exposure through GL pipeline for immediate visual effect in preview and recording
+        if (glRecordingPipeline != null) {
+            glRecordingPipeline.setExposureCompensation(evStops);
+            Log.d(TAG, "Applied EV compensation through GL pipeline: index=" + clamped + " -> " + evStops + " EV stops");
+        }
+        
+        try {
+            // CRITICAL: Ensure AE mode is ON for exposure compensation to work
+            // Many camera drivers ignore exposure compensation if AE mode is not explicitly set
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            
+            // If AE lock was enabled, changing exposure compensation may be ignored by the driver.
+            // Detect and temporarily clear AE lock so the AE algorithm can apply the compensation.
+            Boolean aeLockNow = captureRequestBuilder.get(CaptureRequest.CONTROL_AE_LOCK);
+            boolean hadAeLock = aeLockNow != null && aeLockNow;
+            if (hadAeLock) {
+                Log.d(TAG, "applyExposureCompensation: AE lock was enabled; temporarily clearing to apply EV");
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+            }
+
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
+            Log.d(TAG, "applyExposureCompensation: setting EV index=" + clamped + " (hadAeLock=" + hadAeLock + ") with AE_MODE_ON");
+            // If we're in a constrained high-speed session, we must use setRepeatingBurst
+            try {
+                // AGGRESSIVE: Multiple attempts for stubborn camera drivers
+                // Some drivers need multiple capture/setRepeating calls to apply exposure compensation
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        // Do a capture first to prime the driver with logging
+                        captureSession.capture(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                            @Override
+                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, 
+                                                         @NonNull CaptureRequest request, 
+                                                         @NonNull android.hardware.camera2.TotalCaptureResult result) {
+                                Integer appliedEv = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
+                                Integer aeMode = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_MODE);
+                                Log.d(TAG, "EV prime capture completed: Applied EV=" + appliedEv + 
+                                          ", AE Mode=" + aeMode + ", Target EV=" + clamped);
+                            }
+                            
+                            @Override
+                            public void onCaptureFailed(@NonNull CameraCaptureSession session, 
+                                                       @NonNull CaptureRequest request, 
+                                                       @NonNull android.hardware.camera2.CaptureFailure failure) {
+                                Log.w(TAG, "EV prime capture failed: " + failure.getReason());
+                            }
+                        }, backgroundHandler);
+                        
+                        // Small delay to let the driver process the capture
+                        if (backgroundHandler != null) {
+                            backgroundHandler.post(() -> {
+                                try {
+                                    // Then update the repeating request
+                                    if (captureSession instanceof android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession) {
+                                        android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession hs = (android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession) captureSession;
+                                        java.util.List<android.hardware.camera2.CaptureRequest> highSpeedRequests = hs.createHighSpeedRequestList(captureRequestBuilder.build());
+                                        hs.setRepeatingBurst(highSpeedRequests, null, backgroundHandler);
+                                        Log.d(TAG, "Updated high-speed repeating burst with EV=" + clamped);
+                                    } else {
+                                        captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                                        Log.d(TAG, "Updated standard repeating request with EV=" + clamped);
+                                    }
+                                } catch (Exception e) {
+                                    Log.d(TAG, "Delayed setRepeating failed: " + e.getMessage());
+                                }
+                            });
+                        }
+                        
+                        // If first attempt succeeded, break
+                        break;
+                    } catch (Exception attemptEx) {
+                        Log.d(TAG, "applyExposureCompensation: attempt " + (attempt + 1) + " failed: " + attemptEx.getMessage());
+                        if (attempt == 0) {
+                            // Wait a bit before retry
+                            try { Thread.sleep(50); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                        }
+                    }
+                }
+            } catch (Exception outerEx) {
+                // Final fallback: simple setRepeatingRequest
+                try {
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                } catch (Exception fallbackEx) {
+                    Log.d(TAG, "Even fallback setRepeating failed: " + fallbackEx.getMessage());
+                }
+            }
+            // Note: we intentionally do not re-enable AE lock here. Restoring it immediately can prevent the
+            // exposure compensation from taking effect on some devices. The AE lock tile controls AE lock explicitly.
+        } catch (Exception e) {
+            // Catch any remaining exceptions to avoid crashing the service
+            Log.w(TAG, "applyExposureCompensation: Unexpected error: " + e.getMessage());
+        }
+    }
+    // -------------- Fix Ended for this method(applyExposureCompensation)-----------
+
+    // -------------- Fix Start for this method(applyAeLock)-----------
+    /**
+     * Toggle AE lock during a running session.
+     */
+    private void applyAeLock(boolean lock) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
+        Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
+        if (aeLockSupported == null || !aeLockSupported) return;
+        
+        // Track runtime AE lock to override saved preferences
+        runtimeAeLock = lock;
+        
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, lock);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+    // -------------- Fix Ended for this method(applyAeLock)-----------
+
+    // -------------- Fix Start for this method(applyAfMode)-----------
+    /**
+     * Change AF mode (e.g., continuous video, off, etc.) when supported.
+     */
+    private void applyAfMode(int afMode) {
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null) return;
+        int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+        if (modes == null) return;
+        boolean supported = false;
+        for (int m : modes) if (m == afMode) { supported = true; break; }
+        if (!supported) return;
+        
+        // Track runtime AF mode to override saved preferences
+        runtimeAfMode = afMode;
+        
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
+            // If switching to auto or continuous, ensure the AF trigger is reset
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+    // -------------- Fix Ended for this method(applyAfMode)-----------
+
+    // -------------- Fix Start for this method(applyZoomRatio)-----------
+    /**
+     * Apply zoom ratio to the current capture session.
+     * Also saves the zoom ratio to preferences for the current camera type.
+     */
+    private void applyZoomRatio(float zoomRatio) {
+        Log.d(TAG, "Applying zoom ratio: " + zoomRatio);
+        
+        if (captureRequestBuilder == null || captureSession == null) {
+            Log.w(TAG, "Cannot apply zoom - captureRequestBuilder or captureSession is null");
+            return;
+        }
+
+        try {
+            // Apply zoom ratio to capture request
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                captureRequestBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
+            } else {
+                // For older API levels, fall back to digital zoom via crop region
+                Log.d(TAG, "Using crop region for zoom on API < 30");
+            }
+            
+            // Update the repeating request
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            
+            // Save to preferences for persistence
+            CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+            sharedPreferencesManager.setSpecificZoomRatio(currentCamera, zoomRatio);
+            
+            Log.d(TAG, "Successfully applied zoom ratio " + zoomRatio + " for " + currentCamera + " camera");
+        } catch (CameraAccessException | IllegalStateException e) {
+            Log.e(TAG, "Failed to apply zoom ratio: " + e.getMessage());
+        }
+    }
+    // -------------- Fix Ended for this method(applyZoomRatio)-----------
+
+    // -------------- Fix Start for this method(performTapToFocus)-----------
+    /**
+     * Perform a tap-to-focus at normalized preview coordinates (0..1).
+     * This method maps preview coordinates into sensor region space and issues AF regions + trigger.
+     */
+    private void performTapToFocus(float nx, float ny) {
+        Log.d(TAG, "performTapToFocus called with normalized coords: " + nx + ", " + ny);
+        
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null || cameraDevice == null) {
+            Log.w(TAG, "Cannot perform tap-to-focus: camera components not ready");
+            return;
+        }
+        
+        // Metering regions require sensor coordinates. We'll map normalized preview coords to - if available - active array size.
+        Rect activeArray = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        if (activeArray == null) {
+            Log.w(TAG, "Cannot perform tap-to-focus: active array size not available");
+            return;
+        }
+
+        int x = activeArray.left + (int) (nx * activeArray.width());
+        int y = activeArray.top + (int) (ny * activeArray.height());
+        
+        Log.d(TAG, "Mapped to sensor coords: " + x + ", " + y + " (active array: " + activeArray + ")");
+
+        // Create a small region around the tap point
+        int half = Math.max(10, Math.min(activeArray.width(), activeArray.height()) / 20);
+        Rect area = new Rect(
+                Math.max(activeArray.left, x - half),
+                Math.max(activeArray.top, y - half),
+                Math.min(activeArray.right, x + half),
+                Math.min(activeArray.bottom, y + half)
+        );
+
+        MeteringRectangle mr = new MeteringRectangle(area, MeteringRectangle.METERING_WEIGHT_MAX - 1);
+        try {
+            // Store the current AF mode to restore it later
+            Integer currentAfMode = captureRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE);
+            
+            // Set focus and metering regions
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{mr});
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{mr});
+            
+            // Always switch to AUTO mode for tap-to-focus, regardless of current mode
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+            
+            Log.d(TAG, "Tap-to-focus triggered at normalized coords: " + nx + ", " + ny + " -> sensor coords: " + x + ", " + y);
+            
+            captureSession.capture(captureRequestBuilder.build(), null, backgroundHandler);
+
+            // After a short delay, restore the previous AF mode (or use runtime/saved preferences)
+            if (backgroundHandler != null) {
+                backgroundHandler.postDelayed(() -> {
+                    try {
+                        // Restore AF mode: use runtime value if available, otherwise saved preference, otherwise continuous
+                        int afModeToRestore = (runtimeAfMode != null) ? runtimeAfMode : 
+                                            (currentAfMode != null) ? currentAfMode : 
+                                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+                        
+                        // Verify the mode is supported
+                        int[] supportedModes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                        boolean isSupported = false;
+                        if (supportedModes != null) {
+                            for (int mode : supportedModes) {
+                                if (mode == afModeToRestore) {
+                                    isSupported = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (isSupported) {
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afModeToRestore);
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+                            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                            Log.d(TAG, "Restored AF mode to: " + afModeToRestore + " after tap-to-focus");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error restoring AF mode after tap-to-focus: " + e.getMessage());
+                    }
+                }, 1000); // 1 second delay to allow focus to complete
+            }
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+    // -------------- Fix Ended for this method(performTapToFocus)-----------
 
     // --- onStartCommand (Ensure START action ignores processing state) ---
 
@@ -368,6 +675,40 @@ public class RecordingService extends Service {
         } else if (Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH.equals(action)) {
             // Handle torch toggle requests
             toggleRecordingTorch();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION.equals(action)) {
+            // Set exposure compensation index while recording
+            if (intent.hasExtra(Constants.EXTRA_EXPOSURE_COMPENSATION)) {
+                int ev = intent.getIntExtra(Constants.EXTRA_EXPOSURE_COMPENSATION, 0);
+                applyExposureCompensation(ev);
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TOGGLE_AE_LOCK.equals(action)) {
+            boolean lock = intent.getBooleanExtra(Constants.EXTRA_AE_LOCK, false);
+            applyAeLock(lock);
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_AF_MODE.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_AF_MODE)) {
+                int afMode = intent.getIntExtra(Constants.EXTRA_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                applyAfMode(afMode);
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TAP_TO_FOCUS.equals(action)) {
+            Log.d(TAG, "Received TAP_TO_FOCUS intent");
+            if (intent.hasExtra(Constants.EXTRA_FOCUS_X) && intent.hasExtra(Constants.EXTRA_FOCUS_Y)) {
+                float nx = intent.getFloatExtra(Constants.EXTRA_FOCUS_X, 0.5f);
+                float ny = intent.getFloatExtra(Constants.EXTRA_FOCUS_Y, 0.5f);
+                Log.d(TAG, "TAP_TO_FOCUS intent has coordinates: " + nx + ", " + ny);
+                performTapToFocus(nx, ny);
+            } else {
+                Log.w(TAG, "TAP_TO_FOCUS intent missing coordinates");
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_ZOOM_RATIO.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_ZOOM_RATIO)) {
+                float zoomRatio = intent.getFloatExtra(Constants.EXTRA_ZOOM_RATIO, 1.0f);
+                applyZoomRatio(zoomRatio);
+            }
             return START_STICKY;
         }
 
@@ -1319,8 +1660,10 @@ public class RecordingService extends Service {
             }
 
             if (useHighSpeedSession) {
+                currentCameraCharacteristics = characteristics;
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
+                currentCameraCharacteristics = characteristics;
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
             // -------------- Fix Ended for this
@@ -1408,9 +1751,11 @@ public class RecordingService extends Service {
             // Create the appropriate type of session
             if (useHighSpeedSession) {
                 // For high-speed sessions
+                currentCameraCharacteristics = characteristics;
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
                 // Create a standard session with appropriate frame rate settings
+                currentCameraCharacteristics = characteristics;
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
         } catch (CameraAccessException e) {
@@ -1438,6 +1783,16 @@ public class RecordingService extends Service {
             try {
                 // Set auto control mode
                 captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+                
+                // CRITICAL: Re-apply camera preferences in session callback to ensure they stick
+                // This ensures AE mode, exposure compensation, and other settings are not lost
+                try {
+                    applySavedCameraPrefsToBuilder(captureRequestBuilder);
+                    Log.d(TAG, "Re-applied camera prefs in session callback");
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to re-apply camera prefs in callback: " + e.getMessage());
+                }
+                
                 // Set torch/flash mode
                 captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
                         isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
@@ -2448,6 +2803,13 @@ public class RecordingService extends Service {
             captureRequestBuilder = HighSpeedCaptureHelper.configureHighSpeedRequestBuilder(
                     cameraDevice, null, targetFrameRate, characteristics);
 
+            // Apply saved user camera prefs (if any) so recording respects user choices on start
+            try {
+                applySavedCameraPrefsToBuilder(captureRequestBuilder);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to apply saved camera prefs to high-speed builder: " + e.getMessage());
+            }
+
             if (captureRequestBuilder == null) {
                 Log.d(TAG, "Failed to create high-speed request builder");
                 // Fallback to standard session
@@ -2509,6 +2871,15 @@ public class RecordingService extends Service {
             // Apply frame rate settings
             applyFrameRateSettings(captureRequestBuilder, targetFrameRate, characteristics);
 
+            // CRITICAL: Apply saved camera preferences for standard session too!
+            // This was missing and causing exposure/AE/AF controls to not work
+            try {
+                applySavedCameraPrefsToBuilder(captureRequestBuilder);
+                Log.d(TAG, "Applied saved camera prefs to standard session");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to apply saved camera prefs to standard builder: " + e.getMessage());
+            }
+
             // Apply zoom settings for back camera
             applyZoomSettings(captureRequestBuilder, cameraType);
 
@@ -2524,6 +2895,96 @@ public class RecordingService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create standard session", e);
             stopRecording();
+        }
+    }
+
+    /** Apply saved AF/AE/EV preferences into the provided builder where supported. */
+    private void applySavedCameraPrefsToBuilder(CaptureRequest.Builder builder) {
+        if (builder == null || sharedPreferencesManager == null) return;
+        try {
+            // CRITICAL: Always enable AE mode for exposure compensation to work
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            Log.d(TAG, "Set AE_MODE_ON for exposure compensation support");
+            
+            int savedEv = sharedPreferencesManager.getSavedExposureCompensation();
+            Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
+            int afModePref = sharedPreferencesManager.getSavedAfMode();
+            
+            // -------------- Fix Start (debug_saved_prefs)-----------
+            Log.d(TAG, "applySavedCameraPrefsToBuilder: savedEv=" + savedEv + ", aeLock=" + aeLock + 
+                       ", afMode=" + afModePref);
+            Log.d(TAG, "Runtime overrides: runtimeEv=" + runtimeExposureCompensation + 
+                       ", runtimeAeLock=" + runtimeAeLock + ", runtimeAfMode=" + runtimeAfMode);
+            Log.d(TAG, "currentCameraCharacteristics available: " + (currentCameraCharacteristics != null));
+            // -------------- Fix Ended (debug_saved_prefs)-----------
+
+            if (currentCameraCharacteristics != null) {
+                // Apply EV: use runtime value if available, otherwise saved value
+                Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+                if (range != null) {
+                    int evToUse = (runtimeExposureCompensation != null) ? runtimeExposureCompensation : savedEv;
+                    int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evToUse));
+                    builder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
+                    Log.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") + 
+                           " EV=" + clamped + " to request builder (range: " + range + ")");
+                           
+                    // CRITICAL: Also apply EV to GL pipeline for visual effect
+                    // Convert EV index to actual EV stops for GL shader
+                    float evStops = 0.0f;
+                    try {
+                        android.util.Rational stepRational = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                        if (stepRational != null) {
+                            evStops = clamped * stepRational.floatValue();
+                        } else {
+                            // Fallback: assume 1/3 EV step (common default)
+                            evStops = clamped * 0.33f;
+                        }
+                    } catch (Exception e) {
+                        evStops = clamped * 0.33f; // Safe fallback
+                    }
+                    
+                    // Apply exposure through GL pipeline for immediate visual effect in preview and recording
+                    if (glRecordingPipeline != null) {
+                        glRecordingPipeline.setExposureCompensation(evStops);
+                        Log.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") + 
+                               " EV to GL pipeline: index=" + clamped + " -> " + evStops + " EV stops");
+                    }
+                } else {
+                    Log.w(TAG, "EV compensation range not available from camera characteristics");
+                }
+
+                // Apply AE lock: use runtime value if available, otherwise saved value
+                Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
+                if (aeLockSupported != null && aeLockSupported) {
+                    boolean lockToUse = (runtimeAeLock != null) ? runtimeAeLock : (aeLock != null && aeLock);
+                    builder.set(CaptureRequest.CONTROL_AE_LOCK, lockToUse);
+                    Log.d(TAG, "Applied " + (runtimeAeLock != null ? "runtime" : "saved") + 
+                           " AE lock=" + lockToUse + " to request builder");
+                } else {
+                    Log.w(TAG, "AE lock not supported by camera characteristics");
+                }
+
+                // Apply AF mode: use runtime value if available, otherwise saved value
+                int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                if (modes != null && modes.length > 0) {
+                    int afModeToUse = (runtimeAfMode != null) ? runtimeAfMode : afModePref;
+                    boolean supported = false;
+                    for (int m : modes) if (m == afModeToUse) { supported = true; break; }
+                    if (supported) {
+                        builder.set(CaptureRequest.CONTROL_AF_MODE, afModeToUse);
+                        Log.d(TAG, "Applied " + (runtimeAfMode != null ? "runtime" : "saved") + 
+                               " AF mode=" + afModeToUse + " to request builder");
+                    } else {
+                        Log.w(TAG, "AF mode " + afModeToUse + " not supported, available modes: " + java.util.Arrays.toString(modes));
+                    }
+                } else {
+                    Log.w(TAG, "AF modes not available from camera characteristics");
+                }
+            } else {
+                Log.e(TAG, "applySavedCameraPrefsToBuilder: currentCameraCharacteristics is null!");
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error applying camera prefs: " + e.getMessage());
         }
     }
 
@@ -2791,6 +3252,15 @@ public class RecordingService extends Service {
             Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
             return;
         }
+        
+        // -------------- Fix Start (clear_runtime_overrides_on_startup)-----------
+        // Clear runtime overrides so saved preferences take priority on fresh recording session
+        runtimeExposureCompensation = null;
+        runtimeAeLock = null;
+        runtimeAfMode = null;
+        Log.d(TAG, "Cleared runtime camera overrides for fresh recording session");
+        // -------------- Fix Ended (clear_runtime_overrides_on_startup)-----------
+        
         createNotificationChannel();
 
         if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {

@@ -96,6 +96,7 @@
                     android:layout_marginBottom="4dp">
 
                     <TextView
+                        android:id="@+id/ivCameraIcon"
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginEnd="4dp"
@@ -141,15 +142,15 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="4dp">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginEnd="4dp"
-                        android:fontFamily="@font/materialicons"
-                        android:text="schedule"
-                        android:textColor="#FF9800"
-                        android:textSize="20sp"
-                        android:gravity="center" />
+                        android:padding="4dp"
+                        android:src="@drawable/hourglass_top_24px"
+                        android:tint="#FF9800"
+                        android:contentDescription="Estimated time icon"
+                        android:scaleType="centerInside" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -187,15 +188,15 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="4dp">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginEnd="4dp"
-                        android:fontFamily="@font/materialicons"
-                        android:text="storage"
-                        android:textColor="#2196F3"
-                        android:textSize="20sp"
-                        android:gravity="center" />
+                        android:padding="4dp"
+                        android:src="@drawable/database_24px"
+                        android:tint="#2196F3"
+                        android:contentDescription="Available space icon"
+                        android:scaleType="centerInside" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -431,6 +432,48 @@
                         android:text="Stats" />
 
                 </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Recording controls card: small horizontal tiles row placed below Stats -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardRecordingControls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:id="@+id/tv_recording_controls_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/recording_controls_title"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="6dp"
+                        android:includeFontPadding="false" />
+
+                    <include
+                        android:id="@+id/includeRecordingTiles"
+                        layout="@layout/home_recording_tiles_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+
             </androidx.cardview.widget.CardView>
 
         </LinearLayout>

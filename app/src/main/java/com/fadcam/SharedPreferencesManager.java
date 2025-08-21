@@ -370,7 +370,7 @@ public class SharedPreferencesManager {
     public void setSpecificZoomRatio(CameraType cameraType, float zoomRatio) {
         String specificKey = (cameraType == CameraType.FRONT) ? Constants.PREF_ZOOM_RATIO_FRONT
                 : Constants.PREF_ZOOM_RATIO_BACK;
-        sharedPreferences.edit().putFloat(specificKey, zoomRatio).apply();
+        sharedPreferences.edit().putFloat(specificKey, zoomRatio).commit();
     }
 
     // --- End New Zoom Ratio Methods ---
@@ -601,6 +601,31 @@ public class SharedPreferencesManager {
 
     public void setRecordAudioEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_RECORD_AUDIO, enabled).apply();
+    }
+    
+    // ----- Camera runtime controls persistence -----
+    public int getSavedExposureCompensation() {
+        return sharedPreferences.getInt(Constants.PREF_EXPOSURE_COMPENSATION, 0);
+    }
+
+    public void setSavedExposureCompensation(int evIndex) {
+        sharedPreferences.edit().putInt(Constants.PREF_EXPOSURE_COMPENSATION, evIndex).commit();
+    }
+
+    public boolean isAeLockedSaved() {
+        return sharedPreferences.getBoolean(Constants.PREF_AE_LOCK, false);
+    }
+
+    public void setSavedAeLock(boolean locked) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_AE_LOCK, locked).commit();
+    }
+
+    public int getSavedAfMode() {
+        return sharedPreferences.getInt(Constants.PREF_AF_MODE, android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+    }
+
+    public void setSavedAfMode(int afMode) {
+        sharedPreferences.edit().putInt(Constants.PREF_AF_MODE, afMode).commit();
     }
     // --- End Other methods ---
 

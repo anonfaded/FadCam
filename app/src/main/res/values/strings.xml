@@ -90,6 +90,7 @@
     <string name="video_recording_paused">Recording paused</string>
     <string name="video_recording_resumed">Recording resumed</string>
     <string name="current_camera">Current camera</string>
+    <string name="recording_controls_title">AF · Exposure · Zoom</string>
     <string name="mainpage_camera_front">Front Camera</string>
     <string name="mainpage_camera_back">Back Camera</string>
     <string name="mainpage_recording_to_sd">Recording to SD card</string>
@@ -132,6 +133,10 @@
     <string name="setting_quailty_title">Video Quality</string>
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="setting_zoom_ratio_title">Zoom Ratio</string>
+    <string name="zoom_not_available_toast">Zoom not available</string>
+    <string name="zoom_slider_title">Zoom Ratio</string>
+    <string name="zoom_slider_helper">Adjust zoom level for recording. For ultra-wide lens recordings, use the 0.5x option to record with the ultra-wide field of view.</string>
+    <string name="icon_zoom_in_ligature">zoom_in</string>
     <string name="note_quailty">Choose quality\n(Default: HD)</string>
     <string name="note_framerate">Choose framerate\n(Default: %1$d)</string>
     <string name="note_zoom_ratio">Choose zoom ratio\n(Default: %1$.1fx - no zoom)</string>
@@ -154,6 +159,10 @@
     <string name="ui_preview_area">Preview Area</string>
     <string name="preview_enabled">Preview enabled</string>
     <string name="preview_disabled">Preview disabled</string>
+    <string name="ae_lock_title">AE Lock</string>
+    <string name="ae_lock_helper">When enabled, auto-exposure is held at the current brightness so the camera won\'t re-adjust exposure while recording. Use the Exposure tile to make manual exposure adjustments.</string>
+    <string name="ae_lock_switch_label">Lock AE</string>
+    <string name="exposure_title">Exposure Compensation (EV)</string>
     <string-array name="easter_eggs_array">
         <item>Alert! This is a restricted area. Start recording to gain access.</item>
         <item>You\'ve found the secret button! It does nothing lol</item>
@@ -419,6 +428,17 @@
     <string name="playback_speed_helper_settings">Default speed for video playback.</string>
     <string name="playback_speed_helper_player">Affects current playback only. To change the default for future videos, use Settings.</string>
     <string name="quick_speed_helper">Quick Speed applies only while you press and hold during playback.</string>
+    
+    <!-- Auto Focus and Tap-to-Focus strings -->
+    <string name="af_mode_title">Auto Focus Mode</string>
+    <string name="af_continuous_title">Continuous Auto Focus</string>
+    <string name="af_continuous_description">Camera continuously adjusts focus automatically. Tap preview for manual focus.</string>
+    <!-- Single AF option removed to simplify UX; kept Continuous and Locked options -->
+    <string name="af_manual_title">Locked Focus</string>
+    <string name="af_manual_description">Focus is locked. Tap the preview to focus manually.</string>
+    <string name="tap_to_focus_help">Tap anywhere on the camera preview to focus</string>
+    <string name="tap_to_focus_instruction">Tap on preview to focus</string>
+    <string name="af_picker_helper">Default option is Continuous Auto Focus.</string>
     <!-- Keep screen awake setting -->
     <string name="keep_screen_on_title">Keep screen awake</string>
     <string name="keep_screen_on_helper_picker">When enabled, the screen won’t sleep while playing a video.</string>

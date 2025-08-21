@@ -50,6 +50,10 @@ public class GLRecordingPipeline {
     private final String outputFilePath;
     private final FileDescriptor outputFd;
     private Surface previewSurface;
+    // Pending preview apply support to debounce rapid preview surface changes
+    private Surface pendingPreviewToApply = null;
+    private Runnable pendingPreviewApplyRunnable = null;
+    private final Object previewApplyLock = new Object();
     private final String orientation;
     private final int sensorOrientation;
     
@@ -1422,22 +1426,67 @@ public class GLRecordingPipeline {
     }
 
     /**
+     * Sets the exposure compensation for the GL shader.
+     * This applies exposure changes in the OpenGL pipeline, affecting both preview and recording.
+     * 
+     * @param evStops Exposure compensation in EV stops (e.g., -2.0 to +2.0)
+     */
+    public void setExposureCompensation(float evStops) {
+        Log.d(TAG, "GLRecordingPipeline: Setting exposure compensation to " + evStops + " EV stops");
+        if (glRenderer != null) {
+            glRenderer.setExposureCompensation(evStops);
+        }
+    }
+
+    /**
      * Sets the preview surface for rendering the camera feed.
      * @param surface The Surface to render the preview on.
      */
     public void setPreviewSurface(Surface surface) {
         this.previewSurface = surface;
+        // Debounce rapid preview surface swaps to avoid EGL create/destroy churn
         if (glRenderer != null) {
-            final Surface s = surface;
-            rendererActions.offer(() -> {
-                // -------------- Fix Start for this method(setPreviewSurface)-----------
-                if (s == null || !s.isValid()) {
-                    glRenderer.releasePreviewEGL();
-                } else {
-                    glRenderer.setPreviewSurface(s);
+            // If we have a GL-thread handler, schedule a delayed apply so multiple
+            // quick changes are coalesced into a single create/destroy operation.
+            if (handler != null) {
+                synchronized (previewApplyLock) {
+                    // Cancel any previously scheduled apply
+                    if (pendingPreviewApplyRunnable != null) {
+                        try { handler.removeCallbacks(pendingPreviewApplyRunnable); } catch (Throwable ignore) {}
+                    }
+                    // Store the latest surface to apply
+                    pendingPreviewToApply = surface;
+                    pendingPreviewApplyRunnable = () -> {
+                        final Surface s = pendingPreviewToApply;
+                        try {
+                            if (s == null || !s.isValid()) {
+                                glRenderer.releasePreviewEGL();
+                            } else {
+                                glRenderer.setPreviewSurface(s);
+                            }
+                        } catch (Throwable t) {
+                            Log.w(TAG, "Deferred preview apply failed", t);
+                        } finally {
+                            synchronized (previewApplyLock) {
+                                pendingPreviewApplyRunnable = null;
+                                pendingPreviewToApply = null;
+                            }
+                        }
+                    };
+                    // Small debounce delay: 200ms (coalesce frequent toggles)
+                    handler.postDelayed(pendingPreviewApplyRunnable, 200);
                 }
-                // -------------- Fix Ended for this method(setPreviewSurface)-----------
-            });
+            } else {
+                // No handler yet - fall back to immediate apply via rendererActions
+                final Surface s = surface;
+                rendererActions.offer(() -> {
+                    if (s == null || !s.isValid()) {
+                        glRenderer.releasePreviewEGL();
+                    } else {
+                        glRenderer.setPreviewSurface(s);
+                    }
+                });
+            }
         }
     }
 

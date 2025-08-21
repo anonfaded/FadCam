@@ -54,6 +54,10 @@ public class GLWatermarkRenderer {
     private long previewCreateRetryDeadlineNs = 0L;
     // Gate logging to avoid repeated warnings on frequent binds
     private boolean warnedNoExternalTexture = false;
+    // Timestamp of last warning to avoid flooding logs (ms)
+    private long lastNoExternalTextureWarnMs = 0L;
+    // Global verbosity gate - set to false to suppress noisy GL warnings in normal runs
+    private static boolean VERBOSE_GL_LOGS = false;
 
     // OES shader and draw logic
     private int oesProgram;
@@ -62,9 +66,13 @@ public class GLWatermarkRenderer {
     private int oesTextureHandle;
     private int oesMvpMatrixHandle;
     private int oesTexMatrixHandle;
+    private int oesExposureHandle; // Handle for exposure compensation uniform
 
     private FloatBuffer vertexBuffer;
     private FloatBuffer texCoordBuffer;
+
+    // Exposure compensation value (EV stops, e.g., -2.0 to +2.0)
+    private float currentExposureCompensation = 0.0f;
 
     // Using matrices in real-time for the first time in this app!
     // These 2x4 matrices define the vertex coordinates and texture mapping
@@ -748,8 +756,13 @@ public class GLWatermarkRenderer {
             "precision mediump float;\n" +
             "varying vec2 vTextureCoord;\n" +
             "uniform samplerExternalOES uTexture;\n" +
+            "uniform float uExposureCompensation;\n" +
             "void main() {\n" +
-            "    gl_FragColor = texture2D(uTexture, vTextureCoord);\n" +
+            "    vec4 color = texture2D(uTexture, vTextureCoord);\n" +
+            "    // Apply exposure compensation as power of 2 (EV stops)\n" +
+            "    float exposureFactor = pow(2.0, uExposureCompensation);\n" +
+            "    color.rgb *= exposureFactor;\n" +
+            "    gl_FragColor = color;\n" +
             "}\n";
             
         oesProgram = createProgram(vertexShaderCode, fragmentShaderCode);
@@ -758,6 +771,7 @@ public class GLWatermarkRenderer {
         oesTextureHandle = GLES20.glGetUniformLocation(oesProgram, "uTexture");
         oesMvpMatrixHandle = GLES20.glGetUniformLocation(oesProgram, "uMVPMatrix");
         oesTexMatrixHandle = GLES20.glGetUniformLocation(oesProgram, "uTexMatrix");
+        oesExposureHandle = GLES20.glGetUniformLocation(oesProgram, "uExposureCompensation");
     }
 
     private void drawOESTexture(float[] mvpMatrix, float[] texMatrix) {
@@ -771,9 +785,16 @@ public class GLWatermarkRenderer {
             int[] textureArray = new int[1];
             GLES20.glGetIntegerv(GLES11Ext.GL_TEXTURE_BINDING_EXTERNAL_OES, textureArray, 0);
             if (textureArray[0] == 0) {
-                if (!warnedNoExternalTexture) {
-                    Log.w(TAG, "No external texture bound, attempting to rebind");
+                long now = System.currentTimeMillis();
+                if (!warnedNoExternalTexture || now - lastNoExternalTextureWarnMs > 5000) {
+                            long nowMs = System.currentTimeMillis();
+                            // Rate-limit: log at most once every 2000ms unless verbose enabled
+                            if (VERBOSE_GL_LOGS || nowMs - lastNoExternalTextureWarnMs > 2000) {
+                                Log.w(TAG, "No external texture bound, attempting to rebind");
+                                lastNoExternalTextureWarnMs = nowMs;
+                            }
                     warnedNoExternalTexture = true;
+                    lastNoExternalTextureWarnMs = now;
                 }
                 try {
                     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
@@ -805,6 +826,14 @@ public class GLWatermarkRenderer {
                             int currentProgram = currentProgramArray[0];
                             int programHandle = program.getProgramHandle();
                             GLES20.glUseProgram(programHandle);
+                            
+                            // Set exposure compensation uniform if available
+                            int exposureLoc = program.getExposureCompensationLocation();
+                            if (exposureLoc >= 0) {
+                                GLES20.glUniform1f(exposureLoc, currentExposureCompensation);
+                                Log.d(TAG, "Set exposure compensation to Grafika shader: " + currentExposureCompensation);
+                            }
+                            
                             int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");
                             if (mvpLoc >= 0) {
                                 GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
@@ -866,6 +895,9 @@ public class GLWatermarkRenderer {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
             GLES20.glUniform1i(oesTextureHandle, 0);
+            
+            // Set exposure compensation uniform
+            GLES20.glUniform1f(oesExposureHandle, currentExposureCompensation);
 
             // Draw
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -1042,6 +1074,18 @@ public class GLWatermarkRenderer {
     public void setEncoderDimensions(int width, int height) {
         this.encoderWidth = width;
         this.encoderHeight = height;
+    }
+
+    /**
+     * Sets the exposure compensation value for the GL shader.
+     * This method is thread-safe and can be called from any thread.
+     *
+     * @param evStops Exposure compensation in EV stops (e.g., -2.0 to +2.0)
+     */
+    public void setExposureCompensation(float evStops) {
+        // Clamp to reasonable range to prevent shader overflow
+        currentExposureCompensation = Math.max(-4.0f, Math.min(4.0f, evStops));
+        Log.d(TAG, "GL exposure compensation set to " + currentExposureCompensation + " EV stops");
     }
 
     /**

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp"
+    android:weightSum="3">
+
+    <!-- AF mode toggle (continuous / off) -->
+    <TextView
+        android:id="@+id/tile_af_toggle"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/home_tile_bg"
+        android:gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:text="center_focus_strong"
+        android:contentDescription="Autofocus toggle"
+        android:textColor="?attr/colorOnSurface"
+    android:textSize="24sp"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+
+
+    <!-- Exposure (single tile opens slider picker) -->
+    <TextView
+        android:id="@+id/tile_exp"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/home_tile_bg"
+        android:gravity="center"
+        android:text="exposure"
+        android:fontFamily="@font/materialicons"
+    android:textSize="24sp"
+        android:contentDescription="Exposure compensation"
+        android:textColor="?attr/colorOnSurface"
+        android:padding="6dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Zoom ratio (quick access to zoom settings) -->
+    <TextView
+        android:id="@+id/tile_zoom"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:background="@drawable/home_tile_bg"
+        android:padding="6dp"
+        android:gravity="center"
+        android:text="zoom_in"
+        android:fontFamily="@font/materialicons"
+        android:textSize="24sp"
+        android:contentDescription="Zoom ratio"
+        android:textColor="?attr/colorOnSurface"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

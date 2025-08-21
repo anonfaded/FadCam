@@ -43,13 +43,16 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.format.Formatter;
 import android.text.style.ForegroundColorSpan;
+import android.util.Range;
 import android.util.Size;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -77,6 +80,7 @@ import com.fadcam.SharedPreferencesManager;
 
 import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
+import com.fadcam.RecordingControlIntents;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -142,6 +146,7 @@ public class HomeFragment extends BaseFragment {
 
     private TextView tvCameraTitle;
     private TextView tvCameraSubtitle;
+    private TextView ivCameraIcon;
     private TextView tvEstimateTitle;
     private TextView tvEstimateSubtitle;
     private TextView tvSpaceTitle;
@@ -170,6 +175,19 @@ public class HomeFragment extends BaseFragment {
     private int currentTipIndex = 0;
 
     private TextView tvStats;
+
+    // Recording tile controls
+    private TextView tileAfToggle;
+    private TextView tileExp;
+    private TextView tileZoom;
+
+    // overlay (removed - using PickerBottomSheetFragment instead)
+    // private com.fadcam.ui.CompactControlOverlay compactOverlay;
+
+    // local control state
+    private boolean aeLocked = false;
+    private int currentEvIndex = 0; // exposure compensation index
+    private int afMode = android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
 
     private List<String> messageQueue;
     private List<String> recentlyShownMessages;
@@ -1724,6 +1742,13 @@ public class HomeFragment extends BaseFragment {
         // Initialize SharedPreferencesManager
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
+        // Initialize camera control state from saved preferences
+        currentEvIndex = sharedPreferencesManager.getSavedExposureCompensation();
+        aeLocked = sharedPreferencesManager.isAeLockedSaved();
+        afMode = sharedPreferencesManager.getSavedAfMode();
+        com.fadcam.Log.d(TAG, "Initialized camera control state: EV=" + currentEvIndex + 
+                         ", AE Lock=" + aeLocked + ", AF Mode=" + afMode);
+
         // Initialize isAmoledTheme at the top of the method for use throughout
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         boolean isAmoledTheme = currentTheme != null && 
@@ -1767,6 +1792,165 @@ public class HomeFragment extends BaseFragment {
         }
 
         initializeViews(view);
+        // Fragment result listeners for pickers
+        android.util.Log.d("HomeFragment", "REGISTERING fragment result listener for exposure compensation");
+        com.fadcam.Log.d(TAG, "Registering fragment result listener for exposure compensation with key: " + Constants.RK_EXPOSURE_COMPENSATION);
+        android.util.Log.d("HomeFragment", "Using FragmentManager: " + getParentFragmentManager() + ", this fragment: " + this);
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_EXPOSURE_COMPENSATION, this, (requestKey, bundle) -> {
+            android.util.Log.d("HomeFragment", "FRAGMENT RESULT RECEIVED: requestKey=" + requestKey + ", bundle=" + bundle);
+            com.fadcam.Log.d(TAG, "Fragment result listener triggered for exposure: requestKey=" + requestKey + ", bundle=" + bundle);
+            if(bundle==null) {
+                com.fadcam.Log.w(TAG, "Exposure listener received null bundle");
+                return;
+            }
+            // Slider returns an int under BUNDLE_SLIDER_VALUE; fall back to selected id string for backward compatibility
+            int sliderVal = bundle.getInt(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE, Integer.MIN_VALUE);
+            com.fadcam.Log.d(TAG, "Exposure bundle contents: sliderVal=" + sliderVal + ", keys=" + bundle.keySet());
+            if(sliderVal!=Integer.MIN_VALUE){
+                currentEvIndex = sliderVal;
+                // Debug: record that we received slider update (will only write to debug log when enabled)
+                com.fadcam.Log.d(TAG, "Received exposure slider value: index=" + sliderVal);
+            } else {
+                String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+                com.fadcam.Log.d(TAG, "Slider value not found, checking selected ID: " + sel);
+                if(sel!=null){ try { currentEvIndex = Integer.parseInt(sel); } catch (Exception ignored) {} }
+            }
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                sp.setSavedExposureCompensation(currentEvIndex);
+                com.fadcam.Log.d(TAG, "Exposure saved to prefs via picker");
+            } else {
+                Intent i = com.fadcam.RecordingControlIntents.setExposureCompensation(requireContext(), currentEvIndex);
+                requireActivity().startService(i);
+                com.fadcam.Log.d(TAG, "Exposure intent sent via picker");
+            }
+            
+            // Update exposure tile tinting based on current exposure and AE lock state
+            try {
+                if (tileExp != null) {
+                    // Show orange tint if AE locked or exposure compensation is not at 0
+                    if (aeLocked || currentEvIndex != 0) {
+                        int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                        tileExp.setTextColor(orange);
+                    } else {
+                        // Reset to default theme color by getting the original color from theme
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                        tileExp.setTextColor(typedValue.data);
+                    }
+                }
+            } catch (Exception ignored) {}
+        });
+
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_AE_LOCK, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            boolean state = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, aeLocked);
+            aeLocked = state;
+            
+            com.fadcam.Log.d(TAG, "AE Lock listener triggered: " + state + ", tileExp null? " + (tileExp == null));
+            
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                sp.setSavedAeLock(aeLocked);
+                com.fadcam.Log.d(TAG, "AE lock saved to prefs via picker");
+            } else {
+                Intent i = com.fadcam.RecordingControlIntents.toggleAeLock(requireContext(), aeLocked);
+                requireActivity().startService(i);
+                com.fadcam.Log.d(TAG, "AE lock intent sent via picker");
+            }
+            // Update exposure tile visual: tint orange when locked, reset when unlocked
+            try {
+                if(tileExp!=null){
+                    // TextView Material Icons font handling with textColor
+                    if(aeLocked || currentEvIndex != 0) {
+                        int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                        tileExp.setTextColor(orange);
+                        com.fadcam.Log.d(TAG, "Applied orange tint to exposure tile");
+                    } else {
+                        // Reset to default theme color by getting the original color from theme
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                        tileExp.setTextColor(typedValue.data);
+                        com.fadcam.Log.d(TAG, "Cleared tint from exposure tile");
+                    }
+                    // subtle scale to indicate active
+                    tileExp.setScaleX(aeLocked?1.05f:1f);
+                    tileExp.setScaleY(aeLocked?1.05f:1f);
+                }
+            } catch (Exception e) {
+                com.fadcam.Log.e(TAG, "Error updating exposure tile tint: " + e.getMessage());
+            }
+        });
+
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_AF_MODE, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+            if(sel==null) return;
+            try { afMode = Integer.parseInt(sel); } catch (Exception ignored) {}
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                sp.setSavedAfMode(afMode);
+                com.fadcam.Log.d(TAG, "AF mode saved to prefs via picker");
+            } else {
+                Intent i = com.fadcam.RecordingControlIntents.setAfMode(requireContext(), afMode);
+                requireActivity().startService(i);
+                com.fadcam.Log.d(TAG, "AF mode intent sent via picker");
+            }
+            // Update AF tile icon when mode changes
+            try {
+                if (tileAfToggle != null) {
+                    tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak");
+                }
+            } catch (Exception ignored) {}
+        });
+
+        // Listen for Zoom Ratio picker result
+        getParentFragmentManager().setFragmentResultListener(Constants.RK_ZOOM_RATIO, this, (requestKey, bundle) -> {
+            if(bundle==null) return;
+            int sliderIndex = bundle.getInt(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE, -1);
+            if(sliderIndex==-1) return;
+            
+            try {
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                CameraType currentCamera = sp.getCameraSelection();
+                
+                // Rebuild zoom ratios to map index back to actual value
+                List<Float> zoomRatios = buildZoomRatioOptions(currentCamera);
+                if (sliderIndex >= 0 && sliderIndex < zoomRatios.size()) {
+                    float zoomRatio = zoomRatios.get(sliderIndex);
+                    com.fadcam.Log.d(TAG, "Zoom slider changed: " + zoomRatio + "x (index: " + sliderIndex + ")");
+                    
+                    // Save zoom ratio to preferences
+                    sp.setSpecificZoomRatio(currentCamera, zoomRatio);
+                    
+                    // Update zoom tile tinting
+                    try {
+                        if (tileZoom != null) {
+                            if (Math.abs(zoomRatio - 1.0f) > 0.01f) { // Not at 1.0x default
+                                tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
+                            } else {
+                                tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    
+                    // If recording service is running, apply zoom immediately
+                    if (isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+                        Intent intent = com.fadcam.RecordingControlIntents.setZoomRatio(requireContext(), zoomRatio);
+                        requireActivity().startService(intent);
+                        com.fadcam.Log.d(TAG, "Zoom ratio " + zoomRatio + "x sent to recording service");
+                    } else {
+                        com.fadcam.Log.d(TAG, "Zoom ratio " + zoomRatio + "x saved to preferences");
+                    }
+                } else {
+                    com.fadcam.Log.w(TAG, "Invalid zoom slider index: " + sliderIndex);
+                }
+            } catch (Exception e) {
+                com.fadcam.Log.w(TAG, "Failed to apply zoom ratio from slider index: " + sliderIndex + " - " + e.getMessage());
+            }
+        });
+
+        
         setupTextureView(view);
         setupButtonListeners();
         setupLongPressListener(); // For Easter eggs on title
@@ -1977,6 +2161,9 @@ public class HomeFragment extends BaseFragment {
         initializeTorch();
         setupTorchButton();
 
+    // Setup the small recording tiles row and listeners
+    setupRecordingTiles(view);
+
 
         // Attempt to find camera with flash
         try {
@@ -2069,8 +2256,177 @@ public class HomeFragment extends BaseFragment {
     }
     // ----- Fix End: Apply theme color to top bar and buttons in HomeFragment -----
 
+    /**
+     * Show visual focus indicator at tap location
+     */
+    private void showFocusIndicator(float x, float y) {
+        try {
+            if (getView() == null) return;
+            
+            Log.d(TAG, "Showing focus indicator at: " + x + ", " + y);
+            
+            // Create focus indicator (simple circle animation)
+            View focusIndicator = new View(requireContext());
+            int size = (int) (80 * getResources().getDisplayMetrics().density); // 80dp - larger and more visible
+            android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(size, size);
+            params.leftMargin = (int) (x - size / 2f);
+            params.topMargin = (int) (y - size / 2f);
+            
+            // Create circular background with more prominent styling
+            android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
+            drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            drawable.setStroke(8, 0xFFFF0000); // Bright red thick ring
+            drawable.setColor(0x44FF0000); // Semi-transparent red fill
+            focusIndicator.setBackground(drawable);
+            focusIndicator.setLayoutParams(params);
+            focusIndicator.setAlpha(0f);
+            focusIndicator.setElevation(20f); // High elevation to ensure visibility
+            
+            // Find the parent layout that contains the TextureView
+            ViewGroup parentLayout = (ViewGroup) textureView.getParent();
+            if (parentLayout != null) {
+                parentLayout.addView(focusIndicator);
+                Log.d(TAG, "Added focus indicator to parent layout");
+            } else {
+                Log.w(TAG, "Could not find parent layout for focus indicator");
+                return;
+            }
+            
+            // Animate: quick fade in, scale pulse, fade out
+            ObjectAnimator fadeIn = ObjectAnimator.ofFloat(focusIndicator, "alpha", 0f, 1f);
+            ObjectAnimator scaleXIn = ObjectAnimator.ofFloat(focusIndicator, "scaleX", 1.5f, 1f);
+            ObjectAnimator scaleYIn = ObjectAnimator.ofFloat(focusIndicator, "scaleY", 1.5f, 1f);
+            ObjectAnimator scaleXOut = ObjectAnimator.ofFloat(focusIndicator, "scaleX", 1f, 0.8f);
+            ObjectAnimator scaleYOut = ObjectAnimator.ofFloat(focusIndicator, "scaleY", 1f, 0.8f);
+            ObjectAnimator fadeOut = ObjectAnimator.ofFloat(focusIndicator, "alpha", 1f, 0f);
+            
+            AnimatorSet animSet = new AnimatorSet();
+            animSet.play(fadeIn).with(scaleXIn).with(scaleYIn);
+            animSet.play(scaleXOut).with(scaleYOut).after(fadeIn);
+            animSet.play(fadeOut).after(scaleXOut);
+            
+            fadeIn.setDuration(100);
+            scaleXIn.setDuration(200);
+            scaleYIn.setDuration(200);
+            scaleXOut.setDuration(400);
+            scaleYOut.setDuration(400);
+            fadeOut.setDuration(200);
+            
+            animSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    try {
+                        if (parentLayout != null) {
+                            parentLayout.removeView(focusIndicator);
+                            Log.d(TAG, "Removed focus indicator from parent layout");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error removing focus indicator: " + e.getMessage());
+                    }
+                }
+            });
+            
+            animSet.start();
+            Log.d(TAG, "Focus indicator animation started");
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing focus indicator: " + e.getMessage(), e);
+        }
+    }
+
     private void setupTextureView(@NonNull View view) {
         textureView = view.findViewById(R.id.textureView);
+        
+        Log.d(TAG, "setupTextureView: TextureView found: " + (textureView != null));
+        if (textureView != null) {
+            Log.d(TAG, "TextureView dimensions: " + textureView.getWidth() + "x" + textureView.getHeight());
+            Log.d(TAG, "TextureView visibility: " + textureView.getVisibility());
+            Log.d(TAG, "TextureView clickable: " + textureView.isClickable());
+            Log.d(TAG, "TextureView enabled: " + textureView.isEnabled());
+        }
+        
+        // Check if the placeholder TextView is interfering
+        TextView tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
+        if (tvPreviewPlaceholder != null) {
+            Log.d(TAG, "Preview placeholder visibility: " + tvPreviewPlaceholder.getVisibility());
+            Log.d(TAG, "Preview placeholder clickable: " + tvPreviewPlaceholder.isClickable());
+            
+            // Make sure placeholder doesn't intercept touches
+            tvPreviewPlaceholder.setClickable(false);
+            tvPreviewPlaceholder.setFocusable(false);
+        }
+        
+        // Setup tap-to-focus on the preview
+        textureView.setOnTouchListener((v, event) -> {
+            Log.d(TAG, "TextureView touch event: action=" + event.getAction() + ", recording=" + isRecordingOrPaused());
+            
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                Log.d(TAG, "ACTION_DOWN detected on TextureView");
+            }
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                Log.d(TAG, "ACTION_UP detected on TextureView");
+            }
+            
+            if (event.getAction() == MotionEvent.ACTION_UP && isRecordingOrPaused()) {
+                float x = event.getX();
+                float y = event.getY();
+                int width = v.getWidth();
+                int height = v.getHeight();
+                
+                Log.d(TAG, "Touch UP detected: x=" + x + ", y=" + y + ", view size=" + width + "x" + height);
+                
+                if (width > 0 && height > 0) {
+                    // Convert touch coordinates to normalized coordinates (0..1)
+                    float normalizedX = x / width;
+                    float normalizedY = y / height;
+                    
+                    Log.d(TAG, "Tap-to-focus triggered at normalized: " + normalizedX + ", " + normalizedY);
+                    
+                    // Send tap-to-focus intent to recording service
+                    Intent tapToFocusIntent = RecordingControlIntents.tapToFocus(requireContext(), normalizedX, normalizedY);
+                    requireContext().startService(tapToFocusIntent);
+                    
+                    // Show visual feedback
+                    showFocusIndicator(x, y);
+                    
+                    return true;
+                } else {
+                    Log.w(TAG, "Touch detected but view size is invalid");
+                }
+            } else {
+                Log.d(TAG, "Touch ignored: action=" + event.getAction() + ", recording=" + isRecordingOrPaused());
+            }
+            return false;
+        });
+        
+        // Also try setting clickable and focusable
+        textureView.setClickable(true);
+        textureView.setFocusable(true);
+        textureView.setEnabled(true);
+        
+        // Add a simple click listener as a test
+        textureView.setOnClickListener(v -> {
+            Log.d(TAG, "TextureView OnClickListener triggered!");
+            if (isRecordingOrPaused()) {
+                Toast.makeText(requireContext(), "TextureView clicked! (fallback)", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // Also set up touch listener on parent FrameLayout as backup
+        View parentFrame = (View) textureView.getParent();
+        if (parentFrame instanceof FrameLayout) {
+            Log.d(TAG, "Setting up touch listener on parent FrameLayout as backup");
+            parentFrame.setOnTouchListener((v, event) -> {
+                Log.d(TAG, "FrameLayout touch event: action=" + event.getAction());
+                if (event.getAction() == MotionEvent.ACTION_UP && isRecordingOrPaused()) {
+                    // Forward to TextureView's touch listener
+                    return textureView.dispatchTouchEvent(event);
+                }
+                return false;
+            });
+        }
+        
+        Log.d(TAG, "TextureView touch listener and click listener set up successfully");
+        
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
@@ -2786,6 +3142,14 @@ public class HomeFragment extends BaseFragment {
             // Camera row
             if (tvCameraTitle != null) tvCameraTitle.setText(finalCameraLabel);
             if (tvCameraSubtitle != null) tvCameraSubtitle.setText(cameraSubtitle);
+            // Update camera icon glyph to reflect current camera (front/back)
+            try {
+                com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
+                if (ivCameraIcon != null) {
+                    if (camType == com.fadcam.CameraType.FRONT) ivCameraIcon.setText("camera_front");
+                    else ivCameraIcon.setText("camera_alt");
+                }
+            } catch (Exception ignored) {}
             
             // Estimate row
             if (tvEstimateTitle != null) tvEstimateTitle.setText(finalSelectedEstimate);
@@ -2984,40 +3348,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    // --- BroadcastReceiver Implementation ---
-
-    // private void registerStatsReceiver() {
-    //     if (!isStatsReceiverRegistered && getContext() != null) {
-    //         if (recordingCompleteReceiver == null) {
-    //             recordingCompleteReceiver = new BroadcastReceiver() {
-    //                 @Override
-    //                 public void onReceive(Context context, Intent intent) {
-    //                     if (intent != null && Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
-    //                         android.util.Log.i(TAG, "Received ACTION_RECORDING_COMPLETE in HomeFragment, updating stats...");
-    //                         updateStats(); // Trigger stats recalculation
-    //                     }
-    //                 }
-    //             };
-    //         }
-    //         IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_COMPLETE);
-    //         ContextCompat.registerReceiver(requireContext(), recordingCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
-    //         isStatsReceiverRegistered = true;
-    //         Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver registered.");
-    //     }
-    // }
-
-//    private void unregisterStatsReceiver() {
-//        if (isStatsReceiverRegistered && recordingCompleteReceiver != null && getContext() != null) {
-//            try {
-//                requireContext().unregisterReceiver(recordingCompleteReceiver);
-//                isStatsReceiverRegistered = false;
-//                Log.d(TAG, "Stats ACTION_RECORDING_COMPLETE receiver unregistered.");
-//            } catch (IllegalArgumentException e) {
-//                Log.w(TAG,"Attempted to unregister stats receiver but it wasn't registered?");
-//                isStatsReceiverRegistered = false; // Ensure flag is reset
-//            }
-//        }
-//    }
 
     // --- Updated updateStats Method ---
 
@@ -3232,6 +3562,272 @@ public class HomeFragment extends BaseFragment {
         }
         requireActivity().startService(recordingServiceIntent);
     }
+
+    private void setupRecordingTiles(View root) {
+        try {
+            tileAfToggle = root.findViewById(R.id.tile_af_toggle);
+            tileExp = root.findViewById(R.id.tile_exp);
+            tileZoom = root.findViewById(R.id.tile_zoom);
+
+            // Initialize AF tile icon from saved afMode and apply Material Icons typeface
+            try { 
+                if (tileAfToggle != null) {
+                    // Load Material Icons typeface for ligatures
+                    android.graphics.Typeface materialIconsTypeface = null;
+                    try {
+                        materialIconsTypeface = androidx.core.content.res.ResourcesCompat.getFont(requireContext(), R.font.materialicons);
+                    } catch (Exception e) {
+                        materialIconsTypeface = android.graphics.Typeface.DEFAULT;
+                    }
+                    tileAfToggle.setTypeface(materialIconsTypeface);
+                    tileAfToggle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 24); // Match zoom icon size
+                    tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak");
+                }
+            } catch (Exception ignored) {}
+            // Apply initial exposure tile adjustments - now it's a TextView with compound drawable
+            try {
+                if(tileExp != null){
+                    // Set drawable size to match other icons
+                    android.graphics.drawable.Drawable[] drawables = tileExp.getCompoundDrawables();
+                    if (drawables[1] != null) { // drawableTop
+                        drawables[1].setBounds(0, 0, 48, 48); // 24dp * 2 for density
+                        tileExp.setCompoundDrawables(null, drawables[1], null, null);
+                    }
+                    
+                    // CRITICAL: Apply initial exposure tint based on saved preferences
+                    SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                    int savedEvIndex = sp.getSavedExposureCompensation();
+                    boolean savedAeLock = sp.isAeLockedSaved();
+                    
+                    // Apply orange tint if AE locked or exposure compensation is not at 0
+                    if (savedAeLock || savedEvIndex != 0) {
+                        int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
+                        tileExp.setTextColor(orange);
+                        // subtle scale to indicate active
+                        tileExp.setScaleX(savedAeLock ? 1.05f : 1f);
+                        tileExp.setScaleY(savedAeLock ? 1.05f : 1f);
+                        com.fadcam.Log.d(TAG, "Applied initial orange tint to exposure tile (EV=" + savedEvIndex + ", AeLock=" + savedAeLock + ")");
+                    } else {
+                        // Reset to default theme color
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                        tileExp.setTextColor(typedValue.data);
+                        tileExp.setScaleX(1f);
+                        tileExp.setScaleY(1f);
+                        com.fadcam.Log.d(TAG, "Applied initial default tint to exposure tile");
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            // Initialize zoom tile with proper tinting
+            try {
+                if (tileZoom != null) {
+                    android.graphics.Typeface materialIconsTypeface = null;
+                    try {
+                        materialIconsTypeface = androidx.core.content.res.ResourcesCompat.getFont(requireContext(), R.font.materialicons);
+                    } catch (Exception e) {
+                        materialIconsTypeface = android.graphics.Typeface.DEFAULT;
+                    }
+                    tileZoom.setTypeface(materialIconsTypeface);
+                    tileZoom.setText(getString(R.string.icon_zoom_in_ligature));
+                    tileZoom.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 24);
+                    
+                    // Apply orange tint if zoom is not at default (1.0x)
+                    SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                    CameraType currentCamera = sp.getCameraSelection();
+                    float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+                    if (Math.abs(currentZoom - 1.0f) > 0.01f) { // Not at 1.0x default
+                        tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
+                    } else {
+                        tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            tileAfToggle.setOnClickListener(v -> {
+                // show overlay to pick AF mode
+                com.fadcam.Log.d(TAG, "AF tile clicked. Opening AF mode picker");
+                ArrayList<com.fadcam.ui.picker.OptionItem> afItems = new ArrayList<>();
+                // Keep only Continuous (enabled) and Manual (locked) to match common camera app UX.
+                afItems.add(new com.fadcam.ui.picker.OptionItem(
+                    String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO),
+                    getString(R.string.af_continuous_title),
+                    getString(R.string.af_continuous_description),
+                    null, // colorInt
+                    null, // iconResId (we use ligature instead)
+                    null, // trailingIconResId
+                    null, // hasSwitch
+                    null, // switchState
+                    "center_focus_strong" // Material icon ligature for focus
+                ));
+
+                afItems.add(new com.fadcam.ui.picker.OptionItem(
+                    String.valueOf(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_OFF),
+                    getString(R.string.af_manual_title),
+                    getString(R.string.af_manual_description),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "lock" // Material icon ligature for locked focus
+                ));
+                com.fadcam.ui.picker.PickerBottomSheetFragment afSheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.af_mode_title), afItems, String.valueOf(afMode), Constants.RK_AF_MODE, getString(R.string.af_picker_helper));
+                afSheet.show(getParentFragmentManager(), "af_mode_sheet");
+            });
+
+            // AE lock control moved into Exposure slider sheet (handled below)
+
+            tileExp.setOnClickListener(v -> {
+                com.fadcam.Log.d(TAG, "Exposure tile clicked. Opening slider exposure picker");
+                android.util.Log.d("HomeFragment", "EXPOSURE TILE CLICKED - creating picker");
+                int min = -4, max = 4, step = 1;
+                float stepFloat = 1f;
+                try {
+                    if(cameraManager != null && cameraId != null){
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(cameraId);
+                        android.util.Range<Integer> range = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+                        if(range!=null){ min = range.getLower(); max = range.getUpper(); }
+                        // CONTROL_AE_COMPENSATION_STEP is provided as a Rational in CameraCharacteristics
+                        android.util.Rational stepRat = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                        if(stepRat != null){
+                            stepFloat = stepRat.floatValue();
+                        }
+                    }
+                } catch (Exception ignored) {}
+                com.fadcam.ui.picker.PickerBottomSheetFragment evSlider = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderWithSwitch(
+                    getString(R.string.exposure_title),
+                    min, max, step, stepFloat,
+                    currentEvIndex,
+                    Constants.RK_EXPOSURE_COMPENSATION,
+                    getString(R.string.ae_lock_helper),
+                    getString(R.string.ae_lock_switch_label),
+                    aeLocked
+                );
+                android.util.Log.d("HomeFragment", "EXPOSURE PICKER CREATED - showing dialog");
+                evSlider.show(getParentFragmentManager(), "ev_slider_sheet");
+            });
+
+            tileZoom.setOnClickListener(v -> {
+                com.fadcam.Log.d(TAG, "Zoom tile clicked. Opening zoom slider picker");
+                
+                SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                CameraType currentCamera = sp.getCameraSelection();
+                
+                // Build zoom options using the same logic as VideoSettingsFragment
+                List<Float> zoomRatios = buildZoomRatioOptions(currentCamera);
+                if (zoomRatios.isEmpty()) {
+                    Toast.makeText(requireContext(), getString(R.string.zoom_not_available_toast), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+                
+                com.fadcam.ui.picker.PickerBottomSheetFragment zoomSlider = 
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderZoom(
+                        getString(R.string.zoom_slider_title),
+                        zoomRatios,
+                        currentZoom,
+                        Constants.RK_ZOOM_RATIO,
+                        getString(R.string.zoom_slider_helper)
+                    );
+                zoomSlider.show(getParentFragmentManager(), "zoom_slider_sheet");
+            });
+        } catch (Exception e) {
+            com.fadcam.Log.w(TAG, "setupRecordingTiles: UI not available or error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Build zoom ratio options for the given camera type.
+     * Uses the same logic as VideoSettingsFragment to ensure consistency.
+     */
+    private List<Float> buildZoomRatioOptions(CameraType cam) {
+        List<Float> list = new ArrayList<>();
+        float max = getHardwareSupportedMaxZoomRatio(cam);
+        
+        // Add from 0.5x up to max in 0.5 increments; ensure 1.0 included
+        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
+            list.add(((float) Math.round(z * 10)) / 10f);
+        }
+        if (!list.contains(1.0f)) {
+            list.add(1.0f);
+        }
+        Collections.sort(list);
+        return list;
+    }
+
+    /**
+     * Get hardware supported maximum zoom ratio for the given camera type.
+     * Uses the same logic as VideoSettingsFragment.
+     */
+    private float getHardwareSupportedMaxZoomRatio(CameraType cam) {
+        final float defaultMaxZoom = 5.0f; // legacy default
+        Context ctx = getContext();
+        if (ctx == null) return defaultMaxZoom;
+        
+        try {
+            CameraManager manager = (CameraManager) ctx.getSystemService(Context.CAMERA_SERVICE);
+            String id = getActualCameraIdForType(cam);
+            if (id == null) return defaultMaxZoom;
+            
+            CameraCharacteristics ch = manager.getCameraCharacteristics(id);
+            if (Build.VERSION.SDK_INT >= 30) {
+                Range<Float> range = ch.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+                if (range != null) {
+                    return range.getUpper();
+                }
+            }
+        } catch (Exception e) {
+            com.fadcam.Log.w(TAG, "Zoom ratio query failed: " + e.getMessage());
+        }
+        return defaultMaxZoom;
+    }
+
+    /**
+     * Get the actual camera ID for the given camera type.
+     * Helper method for zoom functionality.
+     */
+    private String getActualCameraIdForType(CameraType cameraType) {
+        try {
+            if (cameraManager != null) {
+                if (cameraType == CameraType.FRONT) {
+                    // Find front camera
+                    for (String id : cameraManager.getCameraIdList()) {
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                        Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                        if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                            return id;
+                        }
+                    }
+                } else {
+                    // Find back camera - use selected back camera if available
+                    SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+                    String selectedBackId = sp.getSelectedBackCameraId();
+                    if (selectedBackId != null) {
+                        return selectedBackId;
+                    }
+                    // Fallback to first available back camera
+                    for (String id : cameraManager.getCameraIdList()) {
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                        Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                        if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                            return id;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            com.fadcam.Log.w(TAG, "getActualCameraIdForType failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    // Zoom methods removed - using navigation to settings instead
+
+    // Zoom methods removed - using navigation to settings instead
+
+    // Helper method removed - using navigation to settings instead
 
     private void setVideoBitrate() {
         try {
@@ -3760,7 +4356,8 @@ public class HomeFragment extends BaseFragment {
     private void initializeViews(View view) {
         Log.d(TAG, "initializeViews: Finding UI elements.");
         tvCameraTitle = view.findViewById(R.id.tvCameraTitle);
-        tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
+    tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
+    ivCameraIcon = view.findViewById(R.id.ivCameraIcon);
         tvEstimateTitle = view.findViewById(R.id.tvEstimateTitle);
         tvEstimateSubtitle = view.findViewById(R.id.tvEstimateSubtitle);
         tvSpaceTitle = view.findViewById(R.id.tvSpaceTitle);
@@ -3804,6 +4401,8 @@ public class HomeFragment extends BaseFragment {
 
         // Torch button (already initialized elsewhere, but good to have it consistently)
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
+
+    // Compact overlay handling removed: we now use PickerBottomSheetFragment for controls.
 
         // Initialize other views as needed here.
         // textureView is handled by setupTextureView

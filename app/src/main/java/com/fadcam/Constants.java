@@ -40,6 +40,15 @@ public abstract class Constants {
      */
     public static final String DEFAULT_APP_THEME = "Crimson Bloom"; // Default theme changed from Midnight Dusk to Crimson Bloom
     public static final String PREF_IS_RECORDING_IN_PROGRESS = "is_recording_in_progress";
+    // Camera runtime control preferences (persisted when user changes controls while not recording)
+    public static final String PREF_EXPOSURE_COMPENSATION = "pref_exposure_compensation"; // int
+    public static final String PREF_AE_LOCK = "pref_ae_lock"; // boolean
+    public static final String PREF_AF_MODE = "pref_af_mode"; // int
+    // Fragment result keys used by PickerBottomSheetFragment listeners
+    public static final String RK_EXPOSURE_COMPENSATION = "rk_exposure_compensation";
+    public static final String RK_AE_LOCK = "rk_ae_lock";
+    public static final String RK_AF_MODE = "rk_af_mode";
+    public static final String RK_ZOOM_RATIO = "rk_zoom_ratio";
     public static final String PREF_RECORD_AUDIO = "pref_record_audio";
     public static final String PREF_AUDIO_BITRATE = "audio_bitrate";
     public static final String PREF_AUDIO_SAMPLING_RATE = "audio_sampling_rate";
@@ -57,6 +66,20 @@ public abstract class Constants {
     public static final String INTENT_ACTION_STOP_RECORDING = "ACTION_STOP_RECORDING";
     public static final String INTENT_ACTION_CHANGE_SURFACE = "ACTION_CHANGE_SURFACE";
     public static final String INTENT_ACTION_RESUME_RECORDING = "ACTION_RESUME_RECORDING";
+    // New intent actions for runtime camera controls (exposure/AE/AF)
+    public static final String INTENT_ACTION_SET_EXPOSURE_COMPENSATION = "com.fadcam.ACTION_SET_EXPOSURE_COMPENSATION";
+    public static final String INTENT_ACTION_TOGGLE_AE_LOCK = "com.fadcam.ACTION_TOGGLE_AE_LOCK";
+    public static final String INTENT_ACTION_SET_AF_MODE = "com.fadcam.ACTION_SET_AF_MODE";
+    public static final String INTENT_ACTION_TAP_TO_FOCUS = "com.fadcam.ACTION_TAP_TO_FOCUS";
+    public static final String INTENT_ACTION_SET_ZOOM_RATIO = "com.fadcam.ACTION_SET_ZOOM_RATIO";
+
+    // Extras for the above intents
+    public static final String EXTRA_EXPOSURE_COMPENSATION = "com.fadcam.EXTRA_EXPOSURE_COMPENSATION"; // int
+    public static final String EXTRA_AE_LOCK = "com.fadcam.EXTRA_AE_LOCK"; // boolean
+    public static final String EXTRA_AF_MODE = "com.fadcam.EXTRA_AF_MODE"; // int (CaptureRequest.CONTROL_AF_MODE values)
+    public static final String EXTRA_FOCUS_X = "com.fadcam.EXTRA_FOCUS_X"; // float (normalized 0..1)
+    public static final String EXTRA_FOCUS_Y = "com.fadcam.EXTRA_FOCUS_Y"; // float (normalized 0..1)
+    public static final String EXTRA_ZOOM_RATIO = "com.fadcam.EXTRA_ZOOM_RATIO"; // float
     public static final String INTENT_ACTION_PAUSE_RECORDING = "ACTION_PAUSE_RECORDING";
     public static final String INTENT_ACTION_START_RECORDING = "ACTION_START_RECORDING";
     public static final String INTENT_ACTION_TOGGLE_TORCH = "ACTION_TOGGLE_TORCH";

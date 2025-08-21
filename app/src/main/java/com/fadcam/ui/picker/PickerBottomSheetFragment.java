@@ -17,6 +17,7 @@ import com.fadcam.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * PickerBottomSheetFragment
@@ -40,6 +41,15 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_USE_GRADIENT = "use_gradient_bg";
     public static final String ARG_GRID_MODE = "grid_mode"; // for icon grid
     public static final String ARG_HIDE_CHECK = "hide_check"; // hide selection checkmark UI
+    // Slider mode args
+    public static final String ARG_SLIDER_MODE = "slider_mode";
+    public static final String ARG_SLIDER_MIN = "slider_min";
+    public static final String ARG_SLIDER_MAX = "slider_max";
+    public static final String ARG_SLIDER_STEP = "slider_step"; // integer step (index step)
+    public static final String ARG_SLIDER_STEP_FLOAT = "slider_step_float"; // EV per index as float (e.g., 0.5)
+    public static final String ARG_SLIDER_INITIAL = "slider_initial";
+    public static final String ARG_SLIDER_ZOOM_MODE = "slider_zoom_mode"; // Special zoom formatting
+    public static final String BUNDLE_SLIDER_VALUE = "slider_value";
 
     public static PickerBottomSheetFragment newInstance(String title, ArrayList<OptionItem> items, String selectedId, String resultKey){
         PickerBottomSheetFragment f = new PickerBottomSheetFragment();
@@ -89,6 +99,73 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
+    public static PickerBottomSheetFragment newInstanceSlider(String title, int min, int max, int step, float stepFloat, int initialValue, String resultKey, String helper){
+        PickerBottomSheetFragment f = new PickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putBoolean(ARG_SLIDER_MODE, true);
+        b.putInt(ARG_SLIDER_MIN, min);
+        b.putInt(ARG_SLIDER_MAX, max);
+        b.putInt(ARG_SLIDER_STEP, step);
+        b.putFloat(ARG_SLIDER_STEP_FLOAT, stepFloat);
+        b.putInt(ARG_SLIDER_INITIAL, initialValue);
+        b.putString(ARG_HELPER_TEXT, helper);
+        f.setArguments(b);
+        return f;
+    }
+
+    public static PickerBottomSheetFragment newInstanceSliderWithSwitch(String title, int min, int max, int step, float stepFloat, int initialValue, String resultKey, String helper, String switchTitle, boolean switchState){
+        PickerBottomSheetFragment f = new PickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putBoolean(ARG_SLIDER_MODE, true);
+        b.putInt(ARG_SLIDER_MIN, min);
+        b.putInt(ARG_SLIDER_MAX, max);
+        b.putInt(ARG_SLIDER_STEP, step);
+        b.putFloat(ARG_SLIDER_STEP_FLOAT, stepFloat);
+        b.putInt(ARG_SLIDER_INITIAL, initialValue);
+        b.putString(ARG_HELPER_TEXT, helper);
+        b.putBoolean(ARG_SWITCH_PRESENT, true);
+        b.putString(ARG_SWITCH_TITLE, switchTitle);
+        b.putBoolean(ARG_SWITCH_STATE, switchState);
+        f.setArguments(b);
+        return f;
+    }
+
+    public static PickerBottomSheetFragment newInstanceSliderZoom(String title, List<Float> zoomRatios, float currentZoom, String resultKey, String helper){
+        PickerBottomSheetFragment f = new PickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putBoolean(ARG_SLIDER_MODE, true);
+        b.putBoolean(ARG_SLIDER_ZOOM_MODE, true);
+        // For zoom, we'll map indices to actual zoom values
+        b.putInt(ARG_SLIDER_MIN, 0);
+        b.putInt(ARG_SLIDER_MAX, zoomRatios.size() - 1);
+        b.putInt(ARG_SLIDER_STEP, 1);
+        b.putFloat(ARG_SLIDER_STEP_FLOAT, 1.0f); // Will be overridden by zoom logic
+        // Find current zoom index
+        int currentIndex = 0;
+        for (int i = 0; i < zoomRatios.size(); i++) {
+            if (Math.abs(zoomRatios.get(i) - currentZoom) < 0.01f) {
+                currentIndex = i;
+                break;
+            }
+        }
+        b.putInt(ARG_SLIDER_INITIAL, currentIndex);
+        b.putString(ARG_HELPER_TEXT, helper);
+        // Store zoom ratios as a float array for use in formatting
+        float[] ratioArray = new float[zoomRatios.size()];
+        for (int i = 0; i < zoomRatios.size(); i++) {
+            ratioArray[i] = zoomRatios.get(i);
+        }
+        b.putFloatArray("zoom_ratios", ratioArray);
+        f.setArguments(b);
+        return f;
+    }
+
 
     private ArrayList<OptionItem> items = new ArrayList<>();
     private String selectedId;
@@ -97,14 +174,23 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private String helperText;
     private boolean switchPresent = false; private String switchTitle; private boolean switchState;
     private ArrayList<String> switchDependentIds = new ArrayList<>();
-    private LinearLayout containerLayoutRef; private android.widget.Switch switchRef;
+    private LinearLayout containerLayoutRef; private android.widget.CompoundButton switchRef;
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
     private boolean hideCheck = false;
+    private boolean sliderMode = false;
+    private boolean sliderZoomMode = false;
+    private float[] zoomRatios = null;
+    private int sliderMin = 0, sliderMax = 0, sliderStep = 1, sliderInitial = 0;
+    private float sliderStepFloat = 1f; // EV per index
     private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Bundle args = getArguments();
+        if(args!=null && args.getBoolean(ARG_SLIDER_MODE, false)){
+            return inflater.inflate(R.layout.picker_bottom_sheet_slider, container, false);
+        }
         return inflater.inflate(R.layout.picker_bottom_sheet, container, false);
     }
 
@@ -112,6 +198,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
         Bundle args = getArguments();
+        android.util.Log.d("PickerBottomSheet", "onViewCreated called, args=" + args);
+        com.fadcam.Log.d("PickerBottomSheet", "onViewCreated called, args=" + args);
     if(args!=null){
             title = args.getString(ARG_TITLE, "");
             selectedId = args.getString(ARG_SELECTED_ID, null);
@@ -129,6 +217,18 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
     gridMode = args.getBoolean(ARG_GRID_MODE, false);
         hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
+        sliderMode = args.getBoolean(ARG_SLIDER_MODE, false);
+        android.util.Log.d("PickerBottomSheet", "Slider mode detected: " + sliderMode + ", title: " + title + ", resultKey: " + resultKey);
+        com.fadcam.Log.d("PickerBottomSheet", "Slider mode detected: " + sliderMode + ", title: " + title + ", resultKey: " + resultKey);
+        if(sliderMode){
+            sliderZoomMode = args.getBoolean(ARG_SLIDER_ZOOM_MODE, false);
+            zoomRatios = args.getFloatArray("zoom_ratios");
+            sliderMin = args.getInt(ARG_SLIDER_MIN, 0);
+            sliderMax = args.getInt(ARG_SLIDER_MAX, 0);
+            sliderStep = args.getInt(ARG_SLIDER_STEP, 1);
+            sliderStepFloat = args.getFloat(ARG_SLIDER_STEP_FLOAT, 1f);
+            sliderInitial = args.getInt(ARG_SLIDER_INITIAL, 0);
+        }
         }
         TextView titleView = view.findViewById(R.id.picker_title);
         if(titleView!=null) titleView.setText(title);
@@ -144,43 +244,213 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             divider.animate().alpha(1f).setDuration(260).start();
         }
     LinearLayout containerLayout = view.findViewById(R.id.picker_list_container);
+    // If the slider layout was inflated it doesn't include picker_list_container.
+    // Fallback to the slider root or the overall picker root so we can add rows
+    // (switch row / dividers) without NPEs.
+        if(containerLayout == null){
+        View sliderRoot = view.findViewById(R.id.picker_slider_root);
+        if(sliderRoot instanceof LinearLayout){
+            containerLayout = (LinearLayout) sliderRoot;
+        } else {
+            View pickerRoot = view.findViewById(R.id.picker_root);
+            if(pickerRoot instanceof LinearLayout){
+                containerLayout = (LinearLayout) pickerRoot;
+            }
+        }
+    }
+        // If this fragment contains the AE Lock switch, prefer the persisted lock state so the UI
+        // stays disabled/enabled consistently across openings.
+        try {
+            if (switchPresent && "Lock AE".equals(switchTitle) && getContext() != null) {
+                boolean saved = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).isAeLockedSaved();
+                switchState = saved;
+            }
+        } catch (Exception ignored) {}
     containerLayoutRef = containerLayout;
+    // Make an effectively-final reference for use inside lambdas below
+    final LinearLayout listContainer = containerLayoutRef;
+    // If slider mode, wire up slider controls
+    if(sliderMode){
+        try {
+            View sliderRoot = view.findViewById(R.id.picker_slider_root);
+            com.google.android.material.slider.Slider slider = view.findViewById(R.id.picker_slider);
+            TextView tvVal = view.findViewById(R.id.picker_slider_value);
+            TextView minus = view.findViewById(R.id.picker_slider_minus);
+            TextView plus = view.findViewById(R.id.picker_slider_plus);
+            android.widget.ImageView reset = view.findViewById(R.id.picker_slider_reset_icon);
+            if(slider!=null){
+                android.util.Log.d("PickerBottomSheet", "Setting up slider: min=" + sliderMin + ", max=" + sliderMax + ", step=" + sliderStep + ", initial=" + sliderInitial);
+                com.fadcam.Log.d("PickerBottomSheet", "Setting up slider: min=" + sliderMin + ", max=" + sliderMax + ", step=" + sliderStep + ", initial=" + sliderInitial);
+                // Configure slider to map to integer steps between min..max
+                int steps = (sliderMax - sliderMin) / Math.max(1, sliderStep);
+                slider.setValueFrom(0f);
+                slider.setValueTo((float) steps);
+                slider.setStepSize(1f);
+                float startPos = (float) (sliderInitial - sliderMin) / Math.max(1, sliderStep);
+                // clamp startPos
+                if (startPos < 0f) startPos = 0f;
+                if (startPos > steps) startPos = (float) steps;
+                slider.setValue(startPos);
+                com.fadcam.Log.d("PickerBottomSheet", "Slider configured: steps=" + steps + ", startPos=" + startPos);
+                // Configure initial enabled state for +/- controls
+                try {
+                    int curIndex = sliderMin + Math.round(slider.getValue()) * sliderStep;
+                    if (minus != null) minus.setEnabled(curIndex > sliderMin);
+                    if (plus != null) plus.setEnabled(curIndex < sliderMax);
+                    if (minus != null) minus.setAlpha((minus.isEnabled()) ? 1f : 0.4f);
+                    if (plus != null) plus.setAlpha((plus.isEnabled()) ? 1f : 0.4f);
+                } catch (Exception ignored) {}
+                // Set initial text value based on mode
+                if (sliderZoomMode && zoomRatios != null && sliderInitial >= 0 && sliderInitial < zoomRatios.length) {
+                    tvVal.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[sliderInitial]));
+                } else {
+                    tvVal.setText(String.valueOf(sliderInitial));
+                }
+                // Configure label row (min / mid / max)
+                try {
+                    TextView lblMin = view.findViewById(R.id.picker_slider_label_min);
+                    TextView lblMid = view.findViewById(R.id.picker_slider_label_mid);
+                    TextView lblMax = view.findViewById(R.id.picker_slider_label_max);
+                    View labelsRow = view.findViewById(R.id.picker_slider_labels);
+                    if (labelsRow != null && lblMin != null && lblMid != null && lblMax != null) {
+                        if (sliderZoomMode && zoomRatios != null && zoomRatios.length > 0) {
+                            // Show zoom min/max only (hide mid label to avoid misleading values)
+                            lblMin.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[0]));
+                            lblMid.setVisibility(View.GONE);
+                            lblMax.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[zoomRatios.length-1]));
+                            labelsRow.setVisibility(View.VISIBLE);
+                        } else {
+                            // EV mode: show min / 0 / max using sliderStepFloat
+                            float evMin = sliderMin * sliderStepFloat;
+                            float evMax = sliderMax * sliderStepFloat;
+                            lblMin.setText(String.format(java.util.Locale.US, "%.1f", evMin));
+                            lblMid.setText(String.format(java.util.Locale.US, "%.1f", 0f));
+                            lblMax.setText(String.format(java.util.Locale.US, "%.1f", evMax));
+                            labelsRow.setVisibility(View.VISIBLE);
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                slider.setLabelFormatter(value -> {
+                    int intVal = sliderMin + Math.round(value) * sliderStep;
+                    if (sliderZoomMode && zoomRatios != null && intVal >= 0 && intVal < zoomRatios.length) {
+                        // Zoom mode: show zoom ratio with 'x' suffix
+                        return String.format(java.util.Locale.US, "%.1fx", zoomRatios[intVal]);
+                    } else {
+                        // EV mode: show with +/- sign
+                        float evFloat = intVal * sliderStepFloat;
+                        String sign = evFloat > 0 ? "+" : "";
+                        return sign + String.format(java.util.Locale.US, "%.1f", evFloat);
+                    }
+                });
+
+                android.util.Log.d("PickerBottomSheet", "Attaching OnChangeListener to slider, resultKey=" + resultKey);
+                com.fadcam.Log.d("PickerBottomSheet", "Attaching OnChangeListener to slider, resultKey=" + resultKey);
+                slider.addOnChangeListener((s, value, fromUser) -> {
+                    android.util.Log.d("PickerBottomSheet", "Slider onChange triggered: value=" + value + ", fromUser=" + fromUser);
+                    com.fadcam.Log.d("PickerBottomSheet", "Slider onChange triggered: value=" + value + ", fromUser=" + fromUser);
+                    int intVal = sliderMin + Math.round(value) * sliderStep;
+                    com.fadcam.Log.d("PickerBottomSheet", "Calculated intVal=" + intVal + ", sliderMin=" + sliderMin + ", sliderStep=" + sliderStep);
+                    if (sliderZoomMode && zoomRatios != null && intVal >= 0 && intVal < zoomRatios.length) {
+                        // Zoom mode: show zoom ratio
+                        tvVal.setText(String.format(java.util.Locale.US, "%.1fx", zoomRatios[intVal]));
+                    } else {
+                        // EV mode: show with +/- sign
+                        float evFloat = intVal * sliderStepFloat;
+                        String sign = evFloat > 0 ? "+" : "";
+                        tvVal.setText(sign + String.format(java.util.Locale.US, "%.1f", evFloat));
+                    }
+                    // Live update: post result so callers can react immediately while recording
+                    Bundle result = new Bundle();
+                    result.putInt(BUNDLE_SLIDER_VALUE, intVal);
+                    android.util.Log.d("PickerBottomSheet", "Picker sending fragment result: key=" + resultKey + ", sliderValue=" + intVal);
+                    android.util.Log.d("PickerBottomSheet", "Using FragmentManager: " + getParentFragmentManager() + ", this fragment: " + this);
+                    com.fadcam.Log.d("PickerBottomSheet", "Picker sending fragment result: key=" + resultKey + ", sliderValue=" + intVal);
+                    getParentFragmentManager().setFragmentResult(resultKey, result);
+                    // Disable/enable +/- buttons based on current slider position
+                    try {
+                        if (minus != null) minus.setEnabled(intVal > sliderMin);
+                        if (plus != null) plus.setEnabled(intVal < sliderMax);
+                        // reflect visual alpha for disabled state
+                        if (minus != null) minus.setAlpha((minus.isEnabled()) ? 1f : 0.4f);
+                        if (plus != null) plus.setAlpha((plus.isEnabled()) ? 1f : 0.4f);
+                    } catch (Exception ignored) {}
+                });
+
+                // +/- buttons
+                if(minus!=null){ minus.setOnClickListener(v-> { slider.setValue(Math.max(0f, slider.getValue()-1f)); }); }
+                if(plus!=null){ plus.setOnClickListener(v-> { slider.setValue(Math.min(slider.getValueTo(), slider.getValue()+1f)); }); }
+                if(reset!=null){ reset.setOnClickListener(v-> {
+                    float resetPos;
+                    if (sliderZoomMode && zoomRatios != null) {
+                        // For zoom mode, reset to 1.0x
+                        int resetIndex = 0;
+                        for (int i = 0; i < zoomRatios.length; i++) {
+                            if (Math.abs(zoomRatios[i] - 1.0f) < 0.01f) {
+                                resetIndex = i;
+                                break;
+                            }
+                        }
+                        resetPos = (float)(resetIndex - sliderMin) / Math.max(1, sliderStep);
+                    } else {
+                        // For EV mode, reset to 0
+                        resetPos = (float)(0 - sliderMin) / Math.max(1, sliderStep);
+                    }
+                    resetPos = Math.max(0f, Math.min(resetPos, slider.getValueTo()));
+                    slider.setValue(resetPos);
+                }); }
+            }
+        } catch (Exception ignored) {}
+    }
     TextView helperView = view.findViewById(R.id.picker_helper);
         LayoutInflater li = LayoutInflater.from(view.getContext());
-    // Optional switch row
+    // Optional switch row: the slider layout has a dedicated switch row and divider
     if(switchPresent){
-        LinearLayout switchRow = new LinearLayout(requireContext());
-        switchRow.setOrientation(LinearLayout.HORIZONTAL);
-        switchRow.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        switchRow.setPadding(dp(16), dp(12), dp(16), dp(12));
-    TextView label = new TextView(requireContext());
-        label.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        label.setText(switchTitle);
-    label.setTextColor(getResources().getColor(android.R.color.white, requireContext().getTheme()));
-        label.setTextSize(16f);
-        label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
-        android.widget.Switch sw = new android.widget.Switch(requireContext());
-        sw.setChecked(switchState);
-        switchRef = sw;
-        sw.setOnCheckedChangeListener((btn,checked)->{
-            Bundle result = new Bundle();
-            result.putBoolean(BUNDLE_SWITCH_STATE, checked);
-            getParentFragmentManager().setFragmentResult(resultKey, result);
-            updateDependentRows(checked);
-        });
-        switchRow.addView(label);
-        switchRow.addView(sw);
-        containerLayout.addView(switchRow);
-        if(!items.isEmpty()){
-            View switchDivider = new View(view.getContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
-            // -------------- Fix Start for this method(onViewCreated)-----------
-            // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
-            lp.setMargins(dp(14), 0, dp(12), 0);
-            // -------------- Fix Ended for this method(onViewCreated)-----------
-            switchDivider.setLayoutParams(lp);
-            switchDivider.setBackgroundColor(0x33FFFFFF);
-            containerLayout.addView(switchDivider);
+        View root = view;
+        View switchRow = root.findViewById(R.id.picker_switch_row);
+        View switchDivider = root.findViewById(R.id.picker_switch_divider);
+        androidx.appcompat.widget.SwitchCompat swc = root.findViewById(R.id.picker_switch);
+        TextView switchLabel = root.findViewById(R.id.picker_switch_label);
+        if(switchRow!=null && swc!=null && switchLabel!=null){
+            switchRow.setVisibility(View.VISIBLE);
+            if(switchDivider!=null) switchDivider.setVisibility(View.VISIBLE);
+            switchLabel.setText(switchTitle);
+            swc.setChecked(switchState);
+            switchRef = swc;
+            // initial apply to slider controls
+            try {
+                com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
+                TextView tvVal = root.findViewById(R.id.picker_slider_value);
+                TextView minus = root.findViewById(R.id.picker_slider_minus);
+                TextView plus = root.findViewById(R.id.picker_slider_plus);
+                android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
+                if(s!=null){ s.setEnabled(!switchState); s.setAlpha(switchState?0.4f:1f); }
+                if(tvVal!=null) tvVal.setAlpha(switchState?0.4f:1f);
+                if(minus!=null) { minus.setEnabled(!switchState); minus.setClickable(!switchState); minus.setAlpha(switchState?0.4f:1f); }
+                if(plus!=null) { plus.setEnabled(!switchState); plus.setClickable(!switchState); plus.setAlpha(switchState?0.4f:1f); }
+                if(reset!=null) { reset.setEnabled(!switchState); reset.setClickable(!switchState); reset.setAlpha(switchState?0.4f:1f); }
+            } catch (Exception ignored) {}
+            swc.setOnCheckedChangeListener((b,checked) -> {
+                // send fragment result - use RK_AE_LOCK for AE Lock switch
+                Bundle result = new Bundle();
+                result.putBoolean(BUNDLE_SWITCH_STATE, checked);
+                String switchResultKey = "Lock AE".equals(switchTitle) ? com.fadcam.Constants.RK_AE_LOCK : resultKey;
+                getParentFragmentManager().setFragmentResult(switchResultKey, result);
+                // Gray out slider controls when AE lock is on
+                try {
+                    com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
+                    TextView tvVal = root.findViewById(R.id.picker_slider_value);
+                    TextView minus = root.findViewById(R.id.picker_slider_minus);
+                    TextView plus = root.findViewById(R.id.picker_slider_plus);
+                    android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
+                    if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
+                    if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
+                    if(minus!=null) { minus.setEnabled(!checked); minus.setClickable(!checked); minus.setAlpha(checked?0.4f:1f); }
+                    if(plus!=null) { plus.setEnabled(!checked); plus.setClickable(!checked); plus.setAlpha(checked?0.4f:1f); }
+                    if(reset!=null) { reset.setEnabled(!checked); reset.setClickable(!checked); reset.setAlpha(checked?0.4f:1f); }
+                } catch (Exception ignored) {}
+                updateDependentRows(checked);
+            });
         }
     }
     if(gridMode){
@@ -341,9 +611,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 
                 // Clear old selection visual
                 if(!hideCheck){
-                    int childCount = containerLayout.getChildCount();
+                    int childCount = listContainer.getChildCount();
                     for(int i=0;i<childCount;i++){
-                        View child = containerLayout.getChildAt(i);
+                        View child = listContainer.getChildAt(i);
                         View cc = child.findViewById(R.id.picker_item_check_container);
                         ImageView ci = child.findViewById(R.id.picker_item_check);
                         if(cc!=null && ci!=null){
@@ -385,6 +655,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             index++;
         }
     }
+        // Only show helper if the caller explicitly provided one
         if(helperView!=null && helperText!=null && !helperText.isEmpty()){
             helperView.setText(helperText);
             helperView.setVisibility(View.VISIBLE);
@@ -549,6 +820,40 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                 }
             }
+            // If slider mode and switchPresent, wire switch row (optional AE lock switch)
+            try {
+                View root = getView();
+                if (root != null) {
+                    View switchRow = root.findViewById(R.id.picker_switch_row);
+                    TextView switchLabel = root.findViewById(R.id.picker_switch_label);
+                    androidx.appcompat.widget.SwitchCompat swc = root.findViewById(R.id.picker_switch);
+                    if(switchPresent && switchRow!=null && switchLabel!=null && swc!=null){
+                        switchRow.setVisibility(View.VISIBLE);
+                        switchLabel.setText(switchTitle);
+                        swc.setChecked(switchState);
+                        swc.setOnCheckedChangeListener((b, checked) -> {
+                            Bundle result = new Bundle();
+                            result.putBoolean(BUNDLE_SWITCH_STATE, checked);
+                            getParentFragmentManager().setFragmentResult(resultKey, result);
+                            // Gray out slider controls when switch (AE lock) is on
+                            try {
+                                com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider);
+                                TextView tvVal = root.findViewById(R.id.picker_slider_value);
+                                TextView minus = root.findViewById(R.id.picker_slider_minus);
+                                TextView plus = root.findViewById(R.id.picker_slider_plus);
+                                android.widget.ImageView reset = root.findViewById(R.id.picker_slider_reset_icon);
+                                if(s!=null){ s.setEnabled(!checked); s.setAlpha(checked?0.4f:1f); }
+                                if(tvVal!=null) tvVal.setAlpha(checked?0.4f:1f);
+                                if(minus!=null) minus.setAlpha(checked?0.4f:1f); if(plus!=null) plus.setAlpha(checked?0.4f:1f); if(reset!=null) reset.setAlpha(checked?0.4f:1f);
+                            } catch (Exception ignored) {}
+                        });
+                        // Apply initial disabled state
+                        if(switchState){
+                            try { com.google.android.material.slider.Slider s = root.findViewById(R.id.picker_slider); if(s!=null){ s.setEnabled(false); s.setAlpha(0.4f); } } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
         }
     }
     // -------------- Fix Ended for this method(updateDependentRows)-----------
