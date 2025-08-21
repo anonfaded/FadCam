@@ -21,7 +21,7 @@
         android:text="center_focus_strong"
         android:contentDescription="Autofocus toggle"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
+    android:textSize="24sp"
         android:padding="6dp"
         android:clickable="true"
         android:focusable="true" />
@@ -29,27 +29,22 @@
 
 
     <!-- Exposure (single tile opens slider picker) -->
-    <FrameLayout
+    <TextView
+        android:id="@+id/tile_exp"
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
         android:layout_marginEnd="4dp"
-        android:id="@+id/tile_exp_container"
         android:background="@drawable/home_tile_bg"
+        android:gravity="center"
+        android:text="exposure"
+        android:fontFamily="@font/materialicons"
+    android:textSize="24sp"
+        android:contentDescription="Exposure compensation"
+        android:textColor="?attr/colorOnSurface"
         android:padding="6dp"
         android:clickable="true"
-        android:focusable="true">
-
-        <ImageView
-            android:id="@+id/tile_exp"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_gravity="center"
-            android:contentDescription="Exposure compensation"
-            android:src="@drawable/exposure_24px"
-            android:tint="?attr/colorOnSurface" />
-
-    </FrameLayout>
+        android:focusable="true" />
 
     <!-- Zoom ratio (quick access to zoom settings) -->
     <TextView

@@ -177,7 +177,7 @@ public class HomeFragment extends BaseFragment {
 
     // Recording tile controls
     private TextView tileAfToggle;
-    private ImageView tileExp;
+    private TextView tileExp;
     private TextView tileZoom;
 
     // overlay (removed - using PickerBottomSheetFragment instead)
@@ -1820,9 +1820,12 @@ public class HomeFragment extends BaseFragment {
                     // Show orange tint if AE locked or exposure compensation is not at 0
                     if (aeLocked || currentEvIndex != 0) {
                         int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
-                        tileExp.setColorFilter(orange, android.graphics.PorterDuff.Mode.SRC_IN);
+                        tileExp.setTextColor(orange);
                     } else {
-                        tileExp.clearColorFilter();
+                        // Reset to default theme color by getting the original color from theme
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                        tileExp.setTextColor(typedValue.data);
                     }
                 }
             } catch (Exception ignored) {}
@@ -1847,13 +1850,16 @@ public class HomeFragment extends BaseFragment {
             // Update exposure tile visual: tint orange when locked, reset when unlocked
             try {
                 if(tileExp!=null){
-                    // ImageView handling with colorFilter
+                    // TextView Material Icons font handling with textColor
                     if(aeLocked || currentEvIndex != 0) {
                         int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
-                        tileExp.setColorFilter(orange, android.graphics.PorterDuff.Mode.SRC_IN);
+                        tileExp.setTextColor(orange);
                         com.fadcam.Log.d(TAG, "Applied orange tint to exposure tile");
                     } else {
-                        tileExp.clearColorFilter();
+                        // Reset to default theme color by getting the original color from theme
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                        tileExp.setTextColor(typedValue.data);
                         com.fadcam.Log.d(TAG, "Cleared tint from exposure tile");
                     }
                     // subtle scale to indicate active
@@ -3542,7 +3548,6 @@ public class HomeFragment extends BaseFragment {
         try {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
             tileExp = root.findViewById(R.id.tile_exp);
-            View tileExpContainer = root.findViewById(R.id.tile_exp_container);
             tileZoom = root.findViewById(R.id.tile_zoom);
 
             // Initialize AF tile icon from saved afMode and apply Material Icons typeface
@@ -3560,21 +3565,15 @@ public class HomeFragment extends BaseFragment {
                     tileAfToggle.setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ? "center_focus_strong" : "center_focus_weak");
                 }
             } catch (Exception ignored) {}
-            // Apply initial exposure tile tint and size adjustments
+            // Apply initial exposure tile adjustments - now it's a TextView with compound drawable
             try {
-                if(tileExp!=null){
-                    // Legacy ImageView handling - just make it bigger to match zoom
-                    android.content.res.ColorStateList tint = android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.white, requireContext().getTheme()));
-                    tileExp.setImageTintList(tint);
-                    tileExp.setScaleX(1.2f); tileExp.setScaleY(1.2f); // Make bigger to match zoom
-                }
-                // Ensure the whole tile container responds to clicks (not just the icon)
-                if (tileExpContainer != null) {
-                    tileExpContainer.setOnClickListener(v -> {
-                        try {
-                            if (tileExp != null) tileExp.performClick();
-                        } catch (Exception e) { Log.e(TAG, "Error opening exposure picker", e); }
-                    });
+                if(tileExp != null){
+                    // Set drawable size to match other icons
+                    android.graphics.drawable.Drawable[] drawables = tileExp.getCompoundDrawables();
+                    if (drawables[1] != null) { // drawableTop
+                        drawables[1].setBounds(0, 0, 48, 48); // 24dp * 2 for density
+                        tileExp.setCompoundDrawables(null, drawables[1], null, null);
+                    }
                 }
             } catch (Exception ignored) {}
 
