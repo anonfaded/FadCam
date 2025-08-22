@@ -285,7 +285,18 @@ public class MainActivity extends AppCompatActivity {
             public void onPageSelected(int position) {
                 switch (position) {
                     case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
-                    case 1: bottomNavigationView.setSelectedItemId(R.id.navigation_records); break;
+                    case 1: 
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_records);
+                        // Trigger lazy loading when user navigates to Records tab
+                        try {
+                            Fragment recordsFragment = getSupportFragmentManager().findFragmentByTag("f" + position);
+                            if (recordsFragment instanceof RecordsFragment) {
+                                ((RecordsFragment) recordsFragment).onFragmentBecameVisible();
+                            }
+                        } catch (Exception e) {
+                            Log.e("MainActivity", "Error triggering Records lazy load", e);
+                        }
+                        break;
                     case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
                     case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_faditor_mini); break;
                     case 4: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;

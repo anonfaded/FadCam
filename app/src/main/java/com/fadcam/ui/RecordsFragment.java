@@ -138,8 +138,9 @@ public class RecordsFragment extends BaseFragment implements
                     skeletonItems.add(VideoItem.createSkeleton());
                 }
 
-                // -------------- Fix Start (showSkeletonLoading) - Proper skeleton setup -----------
-                
+                // -------------- Fix Start (showSkeletonLoading) - Proper skeleton setup
+                // -----------
+
                 // Show skeleton items immediately without triggering updateRecords
                 if (recordsAdapter != null) {
                     recordsAdapter.setSkeletonMode(true);
@@ -147,11 +148,12 @@ public class RecordsFragment extends BaseFragment implements
                     allLoadedItems.addAll(skeletonItems);
                     videoItems.clear();
                     videoItems.addAll(skeletonItems);
-                    
-                    // Directly set skeleton data without calling updateRecords to preserve skeleton mode
+
+                    // Directly set skeleton data without calling updateRecords to preserve skeleton
+                    // mode
                     recordsAdapter.setSkeletonData(skeletonItems);
                 }
-                
+
                 // -------------- Fix End (showSkeletonLoading) -----------
 
                 // CRITICAL: Show RecyclerView immediately to prevent empty flash
@@ -896,7 +898,22 @@ public class RecordsFragment extends BaseFragment implements
         if (videoItems == null || videoItems.isEmpty()) { // videoItems might be retained across config changes
             if (videoItems == null)
                 videoItems = new ArrayList<>(); // Ensure list exists
-            Log.d(TAG, "onViewCreated: No existing data, initiating loadRecordsList.");
+
+            // -------------- CRITICAL FIX: Only load when fragment is actually visible
+            // -----------
+            androidx.viewpager2.widget.ViewPager2 viewPager2 = getActivity() != null
+                    ? getActivity().findViewById(R.id.view_pager)
+                    : null;
+            boolean isCurrentlyVisible = viewPager2 != null && viewPager2.getCurrentItem() == 1 && isVisible();
+
+            if (!isCurrentlyVisible) {
+                Log.d(TAG,
+                        "onViewCreated: Fragment not currently visible, deferring load until user navigates here. ViewPager position: "
+                                + (viewPager2 != null ? viewPager2.getCurrentItem() : "null"));
+                return; // Don't load anything yet
+            }
+
+            Log.d(TAG, "onViewCreated: Fragment is visible, initiating loadRecordsList.");
 
             // -------------- Fix Start (immediate skeleton) - Show skeleton immediately to
             // prevent flash -----------
@@ -986,6 +1003,21 @@ public class RecordsFragment extends BaseFragment implements
         // -------------- Fix Start (onResume) - Smart loading to prevent duplication
         // -----------
 
+        // -------------- CRITICAL FIX: Only load when fragment is actually visible to
+        // user -----------
+        androidx.viewpager2.widget.ViewPager2 viewPager2 = getActivity() != null
+                ? getActivity().findViewById(R.id.view_pager)
+                : null;
+        boolean isCurrentlyVisible = viewPager2 != null && viewPager2.getCurrentItem() == 1 && isVisible();
+
+        if (!isCurrentlyVisible) {
+            Log.d(TAG, "onResume: Fragment not currently visible to user, skipping load. ViewPager position: "
+                    + (viewPager2 != null ? viewPager2.getCurrentItem() : "null") + ", isVisible: " + isVisible());
+            return;
+        }
+
+        Log.d(TAG, "onResume: Fragment is visible to user, proceeding with load check");
+
         // -------------- Fix Start (onResume) - Prevent duplicate loading -----------
 
         // Only reload if we actually need to (no data or cache invalidated)
@@ -1012,6 +1044,38 @@ public class RecordsFragment extends BaseFragment implements
         requireActivity().invalidateOptionsMenu();
         // ----- Fix End: Always invalidate options menu to ensure correct menu for
         // Records tab -----
+    }
+
+    /**
+     * Call this method when the fragment becomes visible to the user for the first
+     * time
+     * or when they navigate back to it. This handles lazy loading.
+     */
+    public void onFragmentBecameVisible() {
+        Log.d(TAG, "onFragmentBecameVisible: Fragment is now visible to user");
+
+        // Check if we need to load data for the first time
+        if ((videoItems == null || videoItems.isEmpty()) && !isLoading) {
+            Log.d(TAG, "onFragmentBecameVisible: No data loaded yet, starting initial load");
+
+            if (videoItems == null) {
+                videoItems = new ArrayList<>();
+            }
+
+            // Show skeleton loading
+            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+            if (estimatedCount <= 0) {
+                estimatedCount = 12;
+            }
+            Log.d(TAG, "onFragmentBecameVisible: Showing " + estimatedCount + " skeleton items");
+            showSkeletonLoading(estimatedCount);
+
+            isInitialLoad = true;
+            loadRecordsList();
+        } else {
+            Log.d(TAG, "onFragmentBecameVisible: Data already loaded (" + videoItems.size() + " items)");
+            updateUiVisibility();
+        }
     }
 
     @Override
@@ -2325,45 +2389,10 @@ public class RecordsFragment extends BaseFragment implements
     }
     // -------------- Fix End (getTempCacheRecordsList) -----------
 
-    /**
-     * Helper method to scan a specific directory for files starting with "temp_"
-     * and ending with the video extension. Adds found files as VideoItems to the
-     * list.
-     * 
-     * @param directory The directory to scan.
-     * @param items     The list to add found VideoItems to.
-     */
-    private void scanDirectoryForTempVideos(File directory, List<VideoItem> items) {
-        if (directory.exists() && directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isFile()
-                            && file.getName().startsWith("temp_")
-                            && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
-                        // Basic check if file has content
-                        if (file.length() > 0) {
-                            Log.d(TAG, "Found temp video: " + file.getName());
-                            VideoItem tempItem = new VideoItem(
-                                    Uri.fromFile(file), // Cache files are standard files
-                                    file.getName(),
-                                    file.length(),
-                                    file.lastModified());
-                            tempItem.isTemporary = true;
-                            tempItem.isNew = false; // Temp files from cache are not 'new'
-                            items.add(tempItem);
-                        } else {
-                            Log.w(TAG, "Skipping empty temp file: " + file.getName());
-                        }
-                    }
-                }
-            } else {
-                Log.w(TAG, "Could not list files in cache directory: " + directory.getPath());
-            }
-        } else {
-            Log.d(TAG, "Cache directory does not exist or is not a directory: " + directory.getPath());
-        }
-    }
+    // -------------- Fix Start (Remove obsolete temp file system) --------------
+    // Removed scanDirectoryForTempVideos method - temp file system is obsolete
+    // Now using OpenGL pipeline, no longer need temp file scanning
+    // -------------- Fix End (Remove obsolete temp file system) --------------
 
     // ----- Fix Start for this class (RecordsFragment_segment_receiver_fields)
     // -----
@@ -2822,34 +2851,35 @@ public class RecordsFragment extends BaseFragment implements
     private void loadRecordsList() {
         Log.i(TAG, "loadRecordsList: Starting optimized progressive loading");
 
-        // Debug: Log current cache state
-        boolean hasCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid();
-        int cachedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
-        Log.d(TAG, "DEBUG: Cache state - hasCache: " + hasCache + ", cachedCount: " + cachedCount);
-
-        // CRITICAL FIX: Always show skeleton FIRST to prevent empty flash
-        int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
-        if (estimatedCount <= 0) {
-            estimatedCount = 12; // Default skeleton count
-        }
-
-        // Show skeleton immediately if not already showing
-        if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
-            Log.d(TAG, "Showing " + estimatedCount + " skeleton items immediately");
-            showSkeletonLoading(estimatedCount);
-        }
-
-        // -------------- Fix Start (loadRecordsList) - Proper cache utilization
+        // -------------- Fix Start (cache debug) - Enhanced cache state logging
         // -----------
 
-        // Step 1: Check in-memory session cache first
-        if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
-            Log.d(TAG, "INSTANT CACHE HIT: Using " + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size()
-                    + " cached videos");
-            List<VideoItem> cachedVideos = new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos());
+        // Debug: Log current cache state with more details
+        boolean hasSessionCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid();
+        boolean hasPersistentCache = com.fadcam.utils.VideoSessionCache.hasCachedData(sharedPreferencesManager);
+        int cachedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+        boolean hasExistingData = !videoItems.isEmpty();
+
+        Log.d(TAG, "CACHE DEBUG: sessionCache=" + hasSessionCache + ", persistentCache=" + hasPersistentCache +
+                ", cachedCount=" + cachedCount + ", existingData=" + hasExistingData +
+                ", videoItems.size=" + videoItems.size() + ", isInitialLoad=" + isInitialLoad);
+
+        // -------------- Fix End (cache debug) -----------
+
+        // Step 1: Check in-memory session cache first, with disk fallback
+        List<VideoItem> cachedVideos = com.fadcam.utils.VideoSessionCache.getSessionCachedVideos(requireContext());
+        if (!cachedVideos.isEmpty()) {
+            Log.d(TAG, "CACHE HIT: Using " + cachedVideos.size() + " cached videos (from memory or disk)");
 
             // Sort cached videos
             sortItems(cachedVideos, currentSortOption);
+
+            // Show skeleton first, then replace
+            int estimatedCount = cachedVideos.size();
+            if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
+                Log.d(TAG, "Showing " + estimatedCount + " skeleton items for cache hit");
+                showSkeletonLoading(estimatedCount);
+            }
 
             // Replace skeleton with cached data immediately
             replaceSkeletonsWithData(cachedVideos);
@@ -2858,14 +2888,29 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
 
-        // Step 2: Check if we should skip loading entirely (already have data)
+        // Step 2: Check if we should skip loading entirely (already have data and not
+        // initial load)
         if (!videoItems.isEmpty() && !isInitialLoad) {
             Log.d(TAG, "Already have " + videoItems.size() + " videos loaded, skipping reload");
             isLoading = false;
+            updateUiVisibility();
             return;
         }
 
-        // -------------- Fix End (loadRecordsList) -----------
+        // Step 3: Show skeleton loading based on cached count
+        int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+        if (estimatedCount <= 0) {
+            estimatedCount = 12; // Default skeleton count
+        }
+
+        // Show skeleton immediately if not already showing
+        if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
+            Log.d(TAG, "Showing " + estimatedCount + " skeleton items for fresh load");
+            showSkeletonLoading(estimatedCount);
+        }
+
+        // -------------- Fix Start (loadRecordsList) - Proper cache utilization
+        // -----------
 
         // Step 2: No cache - load progressively in background
         if (isLoading) {
@@ -2884,17 +2929,11 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 Log.d(TAG, "Background progressive loading started");
 
-                // Skip temp files - obsolete system removed
-                List<VideoItem> tempItems = new ArrayList<>();
-                Log.d(TAG, "Skipped obsolete temp file scanning");
-
-                // Load primary videos progressively
+                // Load primary videos progressively (temp file system removed)
                 List<VideoItem> primaryItems = loadPrimaryVideosProgressively();
 
-                // Combine all videos
-                List<VideoItem> allVideos = new ArrayList<>();
-                allVideos.addAll(primaryItems);
-                allVideos.addAll(tempItems);
+                // Use primary items directly (no temp files to combine)
+                List<VideoItem> allVideos = new ArrayList<>(primaryItems);
 
                 // Remove duplicates
                 List<VideoItem> uniqueItems = removeDuplicateVideos(allVideos);
@@ -2906,7 +2945,7 @@ public class RecordsFragment extends BaseFragment implements
                 Log.d(TAG, "Progressive loading complete: " + uniqueItems.size() + " total videos");
 
                 // Update cache for next time with persistence
-                com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems);
+                com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems, requireContext());
                 com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size(), sharedPreferencesManager);
 
                 // -------------- Fix Start (shimmer delay) - Show shimmer for minimum time

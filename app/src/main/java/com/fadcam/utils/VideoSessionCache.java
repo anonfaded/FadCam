@@ -1,10 +1,16 @@
 // -------------- Fix Start (VideoSessionCache Utility)-----------
 package com.fadcam.utils;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.fadcam.ui.VideoItem;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +27,9 @@ public class VideoSessionCache {
     private static final String PREF_CACHE_TIMESTAMP = "session_cache_timestamp";
     private static final String PREF_CACHE_INVALIDATED = "session_cache_invalidated";
     
+    // Disk cache file name
+    private static final String CACHE_FILE_NAME = "video_cache.dat";
+    
     // Session-level cache shared across all fragments
     private static List<VideoItem> sSessionCachedVideos = null;
     private static long sSessionCacheTimestamp = 0;
@@ -32,7 +41,10 @@ public class VideoSessionCache {
      * Initialize cache from persistent storage on first access
      */
     private static synchronized void initializeCacheIfNeeded(com.fadcam.SharedPreferencesManager sharedPrefs) {
-        if (sCacheInitialized) return;
+        if (sCacheInitialized) {
+            Log.v(TAG, "Cache already initialized, skipping");
+            return;
+        }
         
         try {
             // Load persistent cache metadata
@@ -40,8 +52,12 @@ public class VideoSessionCache {
             sSessionCacheTimestamp = sharedPrefs.sharedPreferences.getLong(PREF_CACHE_TIMESTAMP, 0);
             sForceRefreshOnNextAccess = sharedPrefs.sharedPreferences.getBoolean(PREF_CACHE_INVALIDATED, false);
             
-            Log.d(TAG, "Cache initialized from persistent storage: count=" + sCachedVideoCount + 
-                      ", timestamp=" + sSessionCacheTimestamp + ", invalidated=" + sForceRefreshOnNextAccess);
+            // Note: Disk cache loading will be done when first accessed via getSessionCachedVideos
+            // to avoid needing context in initialization
+            
+            Log.d(TAG, "CACHE INIT: Loaded from persistent storage - count=" + sCachedVideoCount + 
+                      ", timestamp=" + sSessionCacheTimestamp + ", invalidated=" + sForceRefreshOnNextAccess +
+                      ", sessionVideos=" + (sSessionCachedVideos != null ? sSessionCachedVideos.size() : "null"));
             
             sCacheInitialized = true;
         } catch (Exception e) {
@@ -56,7 +72,11 @@ public class VideoSessionCache {
      * @return true if cache exists and should be used
      */
     public static synchronized boolean isSessionCacheValid() {
-        return sSessionCachedVideos != null && !sForceRefreshOnNextAccess;
+        boolean valid = sSessionCachedVideos != null && !sForceRefreshOnNextAccess;
+        Log.v(TAG, "CACHE CHECK: isSessionCacheValid=" + valid + 
+                   " (videos=" + (sSessionCachedVideos != null ? sSessionCachedVideos.size() : "null") + 
+                   ", forceRefresh=" + sForceRefreshOnNextAccess + ")");
+        return valid;
     }
     
     /**
@@ -65,7 +85,10 @@ public class VideoSessionCache {
      */
     public static synchronized boolean hasCachedData(com.fadcam.SharedPreferencesManager sharedPrefs) {
         initializeCacheIfNeeded(sharedPrefs);
-        return sCachedVideoCount > 0 && !sForceRefreshOnNextAccess;
+        boolean hasData = sCachedVideoCount > 0 && !sForceRefreshOnNextAccess;
+        Log.v(TAG, "CACHE CHECK: hasCachedData=" + hasData + 
+                   " (count=" + sCachedVideoCount + ", forceRefresh=" + sForceRefreshOnNextAccess + ")");
+        return hasData;
     }
     
     /**
@@ -78,10 +101,39 @@ public class VideoSessionCache {
     }
     
     /**
-     * Gets a copy of the cached video items.
+     * Gets a copy of the cached video items, loading from disk if needed.
      * @return Copy of cached videos, or empty list if cache is invalid
      */
     public static synchronized List<VideoItem> getSessionCachedVideos() {
+        // Try to load from disk if session cache is empty but we have cached count
+        if (sSessionCachedVideos == null && !sForceRefreshOnNextAccess && sCachedVideoCount > 0) {
+            Log.d(TAG, "Session cache empty but have cached count, attempting disk load");
+            // We'll need context for this, so return empty for now and let caller handle
+            return new ArrayList<>();
+        }
+        
+        if (!isSessionCacheValid()) {
+            Log.d(TAG, "Session cache invalid or needs refresh");
+            return new ArrayList<>();
+        }
+        Log.d(TAG, "Using cached videos: " + sSessionCachedVideos.size() + " items");
+        return new ArrayList<>(sSessionCachedVideos);
+    }
+    
+    /**
+     * Gets cached videos with context for disk loading
+     */
+    public static synchronized List<VideoItem> getSessionCachedVideos(Context context) {
+        // Try to load from disk if session cache is empty but we have cached count
+        if (sSessionCachedVideos == null && !sForceRefreshOnNextAccess && sCachedVideoCount > 0) {
+            Log.d(TAG, "Session cache empty but have cached count, loading from disk");
+            List<VideoItem> diskCache = loadCacheFromDisk(context);
+            if (!diskCache.isEmpty()) {
+                sSessionCachedVideos = diskCache;
+                Log.d(TAG, "DISK CACHE HIT: Loaded " + diskCache.size() + " videos from disk");
+            }
+        }
+        
         if (!isSessionCacheValid()) {
             Log.d(TAG, "Session cache invalid or needs refresh");
             return new ArrayList<>();
@@ -99,6 +151,120 @@ public class VideoSessionCache {
         sSessionCacheTimestamp = System.currentTimeMillis();
         sForceRefreshOnNextAccess = false; // Reset invalidation flag
         Log.d(TAG, "Session cache updated with " + videos.size() + " videos");
+    }
+    
+    /**
+     * Updates the session cache with new video data and saves to disk.
+     * @param videos List of video items to cache
+     * @param context Context for disk operations
+     */
+    public static synchronized void updateSessionCache(List<VideoItem> videos, Context context) {
+        sSessionCachedVideos = new ArrayList<>(videos);
+        sSessionCacheTimestamp = System.currentTimeMillis();
+        sForceRefreshOnNextAccess = false; // Reset invalidation flag
+        Log.d(TAG, "Session cache updated with " + videos.size() + " videos");
+        
+        // Save to disk asynchronously for persistence across app restarts
+        saveCacheToDisk(videos, context);
+    }
+    
+    /**
+     * Saves video cache to disk for persistence across app restarts
+     */
+    private static void saveCacheToDisk(List<VideoItem> videos, Context context) {
+        try {
+            // Use a background thread to avoid blocking UI
+            new Thread(() -> {
+                try {
+                    File cacheFile = new File(context.getCacheDir(), CACHE_FILE_NAME);
+                    
+                    // Create a serializable list (VideoItem needs to be Serializable)
+                    List<SerializableVideoItem> serializableVideos = new ArrayList<>();
+                    for (VideoItem video : videos) {
+                        if (video != null && video.uri != null) {
+                            serializableVideos.add(new SerializableVideoItem(video));
+                        }
+                    }
+                    
+                    try (FileOutputStream fos = new FileOutputStream(cacheFile);
+                         ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+                        oos.writeObject(serializableVideos);
+                        oos.flush();
+                        Log.d(TAG, "Successfully saved " + serializableVideos.size() + " videos to disk cache");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error saving cache to disk", e);
+                }
+            }).start();
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting cache save thread", e);
+        }
+    }
+    
+    /**
+     * Loads video cache from disk
+     */
+    @SuppressWarnings("unchecked")
+    private static List<VideoItem> loadCacheFromDisk(Context context) {
+        try {
+            File cacheFile = new File(context.getCacheDir(), CACHE_FILE_NAME);
+            if (!cacheFile.exists()) {
+                Log.d(TAG, "No disk cache file found");
+                return new ArrayList<>();
+            }
+            
+            try (FileInputStream fis = new FileInputStream(cacheFile);
+                 ObjectInputStream ois = new ObjectInputStream(fis)) {
+                
+                List<SerializableVideoItem> serializableVideos = (List<SerializableVideoItem>) ois.readObject();
+                List<VideoItem> videos = new ArrayList<>();
+                
+                for (SerializableVideoItem item : serializableVideos) {
+                    videos.add(item.toVideoItem());
+                }
+                
+                Log.d(TAG, "Successfully loaded " + videos.size() + " videos from disk cache");
+                return videos;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading cache from disk", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Serializable wrapper for VideoItem to enable disk caching
+     */
+    private static class SerializableVideoItem implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+        
+        public final String uriString;
+        public final String displayName;
+        public final long size;
+        public final long lastModified;
+        public final boolean isTemporary;
+        public final boolean isNew;
+        
+        public SerializableVideoItem(VideoItem videoItem) {
+            this.uriString = videoItem.uri.toString();
+            this.displayName = videoItem.displayName;
+            this.size = videoItem.size;
+            this.lastModified = videoItem.lastModified;
+            this.isTemporary = videoItem.isTemporary;
+            this.isNew = videoItem.isNew;
+        }
+        
+        public VideoItem toVideoItem() {
+            VideoItem item = new VideoItem(
+                android.net.Uri.parse(uriString),
+                displayName,
+                size,
+                lastModified
+            );
+            item.isTemporary = isTemporary;
+            item.isNew = isNew;
+            return item;
+        }
     }
     
     /**
