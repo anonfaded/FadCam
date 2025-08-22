@@ -6,6 +6,7 @@
     <attr name="colorHeading" format="color" />
     <attr name="colorButton" format="color" />
     <attr name="colorToggle" format="color" />
+    <attr name="colorSwitchTrack" format="color" />
     <attr name="colorDialog" format="color" />
     <attr name="colorStatusBar" format="color" />
     <!-- Fix End: Add custom theme attributes for all major UI elements -->

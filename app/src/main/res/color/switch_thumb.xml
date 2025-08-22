@@ -2,8 +2,8 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Disabled state -->
     <item android:state_enabled="false" android:color="#BDBDBD"/>
-    <!-- Checked/on state -->
-    <item android:state_checked="true" android:color="#E43C3C"/>
+    <!-- Checked/on state (use theme toggle color) -->
+    <item android:state_checked="true" android:color="?attr/colorToggle"/>
     <!-- Default/off state -->
     <item android:color="#BDBDBD"/>
 </selector>

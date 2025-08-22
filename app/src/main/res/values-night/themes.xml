@@ -11,6 +11,7 @@
         <item name="colorHeading">@color/colorHeading</item>
         <item name="colorButton">@color/colorButton</item>
         <item name="colorToggle">@color/colorToggle</item>
+        <item name="colorSwitchTrack">@color/gray</item>
         <item name="colorDialog">@color/colorDialog</item>
         <item name="colorStatusBar">@color/colorStatusBar</item>
     </style>

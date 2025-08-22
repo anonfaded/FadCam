@@ -11,11 +11,15 @@
         <item name="colorHeading">@color/colorPrimary</item>
         <item name="colorButton">@color/colorPrimary</item>
         <item name="colorToggle">@color/greenPastel</item>
+        <item name="colorSwitchTrack">@color/gray500</item>
         <item name="colorDialog">@color/gray</item>
         <item name="colorStatusBar">@color/gray</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
 
     <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
@@ -60,11 +64,15 @@
         <!-- Card and surface styles -->
         <item name="cardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
         <item name="bottomNavigationStyle">@style/Theme.FadCam.AmoledBottomNavigation</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
         <item name="colorTopBar">@color/amoled_background</item>
         <item name="colorBottomNav">@color/amoled_background</item>
         <item name="colorHeading">@color/amoled_heading</item>
         <item name="colorButton">#232323</item>
         <item name="colorToggle">#44484D</item>
+        <item name="colorSwitchTrack">#6A6E73</item>
         <item name="colorDialog">@color/amoled_surface</item>
         <item name="colorStatusBar">@color/amoled_background</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
@@ -99,6 +107,7 @@
         <item name="colorHeading">@color/red_theme_primary</item>
         <item name="colorButton">@color/red_theme_primary</item>
         <item name="colorToggle">@color/red_theme_accent</item>
+        <item name="colorSwitchTrack">@color/red_theme_primary_variant</item>
         <item name="colorDialog">@color/red_theme_dialog</item>
         <item name="colorStatusBar">@color/red_theme_primary_variant</item>
         <item name="android:colorBackground">@color/red_theme_background_dark</item>
@@ -125,8 +134,9 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
     <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
-    <!-- Ensure switches use red accent instead of purple -->
-    <item name="switchStyle">@style/Widget.FadCam.Red.Switch</item>
+    <!-- Switch styling -->
+    <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+    <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -148,12 +158,11 @@
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <!-- Fix Start: Add red switch style to match Theme.FadCam.Red accents -->
-    <style name="Widget.FadCam.Red.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+    <!-- Universal switch style that adapts to theme colors -->
+    <style name="Widget.FadCam.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track</item>
     </style>
-    <!-- Fix End: Add red switch style to match Theme.FadCam.Red accents -->
 
     <style name="Theme.FadCam.Gold" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/gold_theme_primary_variant</item>
@@ -161,6 +170,7 @@
         <item name="colorHeading">@color/gold_theme_primary</item>
         <item name="colorButton">@color/gold_theme_primary</item>
         <item name="colorToggle">@color/gold_theme_accent</item>
+        <item name="colorSwitchTrack">@color/gold_theme_primary_variant</item>
         <item name="colorDialog">@color/gold_theme_dialog</item>
         <item name="colorStatusBar">@color/gold_theme_primary_variant</item>
         <item name="android:colorBackground">@color/gold_theme_background_dark</item>
@@ -187,6 +197,9 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Gold.Dialog</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -214,6 +227,7 @@
         <item name="colorHeading">@color/silentforest_theme_primary</item>
         <item name="colorButton">@color/silentforest_theme_primary</item>
         <item name="colorToggle">@color/silentforest_theme_accent</item>
+        <item name="colorSwitchTrack">@color/silentforest_theme_primary_variant</item>
         <item name="colorDialog">@color/silentforest_theme_dialog</item>
         <item name="colorStatusBar">@color/silentforest_theme_primary_variant</item>
         <item name="android:colorBackground">@color/silentforest_theme_background_dark</item>
@@ -240,6 +254,9 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -267,6 +284,7 @@
         <item name="colorHeading">@color/shadowalloy_theme_primary</item>
         <item name="colorButton">@color/shadowalloy_theme_primary</item>
         <item name="colorToggle">@color/shadowalloy_theme_accent</item>
+        <item name="colorSwitchTrack">@color/shadowalloy_theme_primary_variant</item>
         <item name="colorDialog">@color/shadowalloy_theme_dialog</item>
         <item name="colorStatusBar">@color/shadowalloy_theme_primary_variant</item>
         <item name="android:colorBackground">@color/shadowalloy_theme_background_dark</item>
@@ -293,6 +311,9 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.ShadowAlloy.Dialog</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.ShadowAlloy.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -320,6 +341,7 @@
         <item name="colorHeading">@color/pookiepink_theme_primary</item>
         <item name="colorButton">@color/pookiepink_theme_primary</item>
         <item name="colorToggle">@color/pookiepink_theme_accent</item>
+        <item name="colorSwitchTrack">@color/pookiepink_theme_primary_variant</item>
         <item name="colorDialog">@color/pookiepink_theme_dialog</item>
         <item name="colorStatusBar">@color/pookiepink_theme_primary_variant</item>
         <item name="android:colorBackground">@color/pookiepink_theme_background_dark</item>
@@ -346,6 +368,9 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.PookiePink.Dialog</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.PookiePink.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -373,6 +398,7 @@
         <item name="colorHeading">@color/snowveil_theme_primary</item>
         <item name="colorButton">@color/snowveil_theme_primary</item>
         <item name="colorToggle">@color/snowveil_theme_accent</item>
+        <item name="colorSwitchTrack">@color/snowveil_theme_primary_variant</item>
         <item name="colorDialog">@color/snowveil_theme_dialog</item>
         <item name="colorStatusBar">@color/snowveil_theme_primary_variant</item>
         <item name="android:colorBackground">@color/snowveil_theme_background_light</item>
@@ -408,7 +434,9 @@
         <item name="colorSwitchThumbNormal">@color/black</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="switchStyle">@style/Widget.FadCam.SnowVeil.Switch</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
         <item name="checkboxStyle">@style/Widget.FadCam.SnowVeil.Checkbox</item>
         <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
     </style>
@@ -518,6 +546,7 @@
         <item name="colorHeading">@color/colorHeading</item>
         <item name="colorButton">@color/colorButton</item>
         <item name="colorToggle">@color/greenPastel</item>
+        <item name="colorSwitchTrack">@color/gray500</item>
         <item name="colorDialog">@color/gray</item>
         <item name="colorStatusBar">@color/gray</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
@@ -540,6 +569,9 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/gray_text_light</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
     </style>
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
 </resources>

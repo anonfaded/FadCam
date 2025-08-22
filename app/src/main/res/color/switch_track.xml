@@ -2,8 +2,8 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Disabled state -->
     <item android:state_enabled="false" android:color="#33212121"/>
-    <!-- Checked/on state (semi-transparent red track) -->
-    <item android:state_checked="true" android:color="#33E43C3C"/>
+    <!-- Checked/on state (use custom switch track color) -->
+    <item android:state_checked="true" android:color="?attr/colorSwitchTrack"/>
     <!-- Default/off state (semi-transparent gray) -->
     <item android:color="#33757575"/>
 </selector>
