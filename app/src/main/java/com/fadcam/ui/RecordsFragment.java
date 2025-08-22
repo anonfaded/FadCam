@@ -112,6 +112,158 @@ public class RecordsFragment extends BaseFragment implements
     // ** NEW: Set to track URIs currently being processed **
     private Set<Uri> currentlyProcessingUris = new HashSet<>();
     private static final String TAG = "RecordsFragment";
+    
+    // Remove duplicate session cache - now using shared VideoSessionCache utility
+    // (Moved to com.fadcam.utils.VideoSessionCache for cross-fragment sharing)
+    
+    // -------------- Fix Start (Skeleton Loading Methods) --------------
+    
+    /**
+     * Shows skeleton loading placeholders immediately for professional UX
+     */
+    private void showSkeletonLoading(int estimatedCount) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (!isAdded()) return;
+                
+                Log.d(TAG, "Showing skeleton loading with " + estimatedCount + " items");
+                
+                // Create skeleton items
+                List<VideoItem> skeletonItems = new ArrayList<>();
+                for (int i = 0; i < estimatedCount; i++) {
+                    skeletonItems.add(VideoItem.createSkeleton()); // We'll need to add this method
+                }
+                
+                // Show skeleton items immediately
+                if (recordsAdapter != null) {
+                    recordsAdapter.setSkeletonMode(true);
+                    allLoadedItems.clear();
+                    allLoadedItems.addAll(skeletonItems);
+                    videoItems.clear();
+                    videoItems.addAll(skeletonItems);
+                    recordsAdapter.notifyDataSetChanged();
+                }
+                
+                // Show RecyclerView, hide loading indicator
+                if (loadingIndicator != null) {
+                    loadingIndicator.setVisibility(View.GONE);
+                }
+                if (recyclerView != null) {
+                    recyclerView.setVisibility(View.VISIBLE);
+                }
+                if (emptyStateContainer != null) {
+                    emptyStateContainer.setVisibility(View.GONE);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Replaces skeleton items with actual video data in one smooth transition
+     */
+    private void replaceSkeletonsWithData(List<VideoItem> actualItems) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (!isAdded()) return;
+                
+                Log.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size() + " actual videos");
+                
+                // -------------- Fix Start (replaceSkeletonsWithData) - Ensure proper refresh state handling -----------
+                
+                // Disable skeleton mode
+                if (recordsAdapter != null) {
+                    recordsAdapter.setSkeletonMode(false);
+                }
+                
+                // Replace data in all collections
+                allLoadedItems.clear();
+                allLoadedItems.addAll(actualItems);
+                videoItems.clear();
+                videoItems.addAll(actualItems);
+                
+                // CRITICAL FIX: Update adapter's internal records list
+                if (recordsAdapter != null) {
+                    recordsAdapter.updateRecords(actualItems);
+                    Log.d(TAG, "Adapter updated with " + actualItems.size() + " videos");
+                }
+                
+                // Update UI visibility
+                updateUiVisibility();
+                isLoading = false;
+                
+                // Ensure refresh indicator is stopped
+                if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                    Log.d(TAG, "Refresh indicator stopped in replaceSkeletonsWithData");
+                }
+                
+                Log.d(TAG, "Skeleton replacement complete - smooth transition achieved with refresh state cleared");
+                
+                // -------------- Fix End (replaceSkeletonsWithData) -----------
+            });
+        }
+    }
+    
+    /**
+     * Hides skeleton loading and shows error or empty state
+     */
+    private void hideSkeletonLoading() {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (!isAdded()) return;
+                
+                // -------------- Fix Start (hideSkeletonLoading) - Proper state cleanup -----------
+                
+                if (recordsAdapter != null) {
+                    recordsAdapter.setSkeletonMode(false);
+                }
+                
+                allLoadedItems.clear();
+                videoItems.clear();
+                if (recordsAdapter != null) {
+                    recordsAdapter.notifyDataSetChanged();
+                }
+                
+                updateUiVisibility();
+                isLoading = false;
+                
+                // Ensure refresh indicator is stopped on error/empty state
+                if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                    Log.d(TAG, "Refresh indicator stopped in hideSkeletonLoading");
+                }
+                
+                // -------------- Fix End (hideSkeletonLoading) -----------
+            });
+        }
+    }
+    
+    /**
+     * Gets primary video files without progressive callbacks for silent background loading
+     */
+    private List<VideoItem> getPrimaryVideoFiles() {
+        String safUriString = sharedPreferencesManager.getCustomStorageUri();
+        
+        if (safUriString != null) {
+            try {
+                Uri treeUri = Uri.parse(safUriString);
+                if (hasSafPermission(treeUri)) {
+                    // Use progressive method but without callbacks for silent loading
+                    return getSafRecordsListProgressive(treeUri, null);
+                } else {
+                    Log.w(TAG, "No persistent permission for SAF URI: " + safUriString);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error processing SAF URI", e);
+            }
+        }
+        
+        // Fallback to internal storage
+        return getInternalRecordsList();
+    }
+    
+    // -------------- Fix Ended (Skeleton Loading Methods) --------------
+    
     private AlertDialog progressDialog; // Field to hold the dialog for Save to Gallery
     private AlertDialog moveTrashProgressDialog; // Changed from ProgressDialog to AlertDialog
     private RecyclerView recyclerView;
@@ -609,7 +761,12 @@ public class RecordsFragment extends BaseFragment implements
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "Swipe to refresh triggered.");
                 
-                // Clear adapter caches before refresh to ensure clean reload
+                // -------------- Fix Start (onRefresh) - Professional refresh handling with skeleton -----------
+                
+                // Clear session cache to force fresh data
+                com.fadcam.utils.VideoSessionCache.clearSessionCache();
+                
+                // Clear adapter caches
                 if (recordsAdapter != null) {
                     Log.d(TAG, "Swipe refresh: Clearing adapter caches for hard refresh");
                     recordsAdapter.clearCaches();
@@ -620,9 +777,20 @@ public class RecordsFragment extends BaseFragment implements
                 allLoadedItems.clear();
                 hasMoreItems = true;
                 videoItemPositionCache.clear();
+                isLoading = false; // Reset loading state
                 
-                // Load records will handle the full refresh including setting swipeRefreshLayout.setRefreshing(false)
+                // Show skeleton immediately for smooth UX
+                int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount();
+                if (estimatedCount <= 0) {
+                    estimatedCount = Math.max(6, videoItems.size()); // Use previous count or minimum 6
+                }
+                
+                showSkeletonLoading(estimatedCount);
+                
+                // Load fresh data silently in background (loadRecordsList will handle stopping refresh indicator)
                 loadRecordsList(); 
+                
+                // -------------- Fix End (onRefresh) -----------
             });
         } else {
             Log.e(TAG, "SwipeRefreshLayout is null after findViewById!");
@@ -633,6 +801,16 @@ public class RecordsFragment extends BaseFragment implements
         if (videoItems == null || videoItems.isEmpty()) { // videoItems might be retained across config changes
             if(videoItems == null) videoItems = new ArrayList<>(); // Ensure list exists
             Log.d(TAG, "onViewCreated: No existing data, initiating loadRecordsList.");
+            
+            // -------------- Fix Start (immediate skeleton) - Show skeleton immediately to prevent flash -----------
+            // Show skeleton immediately to prevent "no recordings" flash
+            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount();
+            if (estimatedCount <= 0) {
+                estimatedCount = 12; // Default reasonable skeleton count
+            }
+            showSkeletonLoading(estimatedCount);
+            // -------------- Fix End (immediate skeleton) -----------
+            
             loadRecordsList();
         } else {
             Log.d(TAG, "onViewCreated: Existing data found ("+videoItems.size()+" items), updating UI visibility.");
@@ -1018,6 +1196,13 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private List<VideoItem> getSafRecordsList(Uri treeUri) {
+        return getSafRecordsListProgressive(treeUri, null);
+    }
+
+    /**
+     * Progressive SAF loading with chunked processing to avoid main thread blocking
+     */
+    private List<VideoItem> getSafRecordsListProgressive(Uri treeUri, ProgressCallback callback) {
         Log.d(TAG, "LOG_GET_SAF: getSafRecordsList START for URI: " + treeUri);
         List<VideoItem> safVideoItems = new ArrayList<>();
         if (getContext() == null || treeUri == null) {
@@ -1028,9 +1213,6 @@ public class RecordsFragment extends BaseFragment implements
         DocumentFile targetDir = DocumentFile.fromTreeUri(getContext(), treeUri);
         if (targetDir == null || !targetDir.isDirectory() || !targetDir.canRead()) {
             Log.e(TAG, "LOG_GET_SAF: Cannot access or read from SAF directory: " + treeUri);
-            // Optionally, revoke permission if it seems persistently invalid
-            // getContext().getContentResolver().releasePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            // sharedPreferencesManager.setCustomStorageUri(null);
             return safVideoItems;
         }
         Log.d(TAG, "LOG_GET_SAF: SAF Directory " + targetDir.getName() + " is accessible. Listing files.");
@@ -1038,66 +1220,100 @@ public class RecordsFragment extends BaseFragment implements
         DocumentFile[] files = targetDir.listFiles();
         Log.d(TAG, "LOG_GET_SAF: Found " + files.length + " files/dirs in SAF location.");
 
-        for (DocumentFile docFile : files) {
-            if (docFile == null || !docFile.isFile()) {
-                Log.d(TAG, "LOG_GET_SAF: Skipped item (not a file or null): " + (docFile != null ? docFile.getName() : "null"));
-                continue;
-            }
+        // Progressive processing: process files in chunks to avoid blocking
+        final int CHUNK_SIZE = 10; // Process 10 files at a time
+        int totalFiles = files.length;
+        
+        for (int i = 0; i < totalFiles; i += CHUNK_SIZE) {
+            int endIndex = Math.min(i + CHUNK_SIZE, totalFiles);
+            
+            // Process chunk
+            for (int j = i; j < endIndex; j++) {
+                DocumentFile docFile = files[j];
+                if (docFile == null || !docFile.isFile()) {
+                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a file or null): " + (docFile != null ? docFile.getName() : "null"));
+                    continue;
+                }
 
-            String fileName = docFile.getName();
-            String mimeType = docFile.getType();
+                String fileName = docFile.getName();
+                String mimeType = docFile.getType();
 
-            if (fileName != null && mimeType != null && mimeType.startsWith("video/")) {
-                if (fileName.endsWith(Constants.RECORDING_FILE_EXTENSION)) {
-                    if (fileName.startsWith("temp_")) {
-                        Log.d(TAG, "LOG_GET_SAF: Found temporary SAF video: " + fileName);
-                        VideoItem tempVideoItem = new VideoItem(
-                                docFile.getUri(),
-                                fileName,
-                                docFile.length(),
-                                docFile.lastModified()
-                        );
-                        tempVideoItem.isTemporary = true;
-                        tempVideoItem.isNew = false;
-                        // Check if this temp file is currently being processed
-                        if (currentlyProcessingUris.contains(docFile.getUri())) {
-                            tempVideoItem.isProcessingUri = true;
-                            Log.d(TAG, "LOG_GET_SAF: Temporary SAF video " + fileName + " is marked as processing.");
+                if (fileName != null && mimeType != null && mimeType.startsWith("video/")) {
+                    if (fileName.endsWith(Constants.RECORDING_FILE_EXTENSION)) {
+                        if (fileName.startsWith("temp_")) {
+                            Log.d(TAG, "LOG_GET_SAF: Found temporary SAF video: " + fileName);
+                            VideoItem tempVideoItem = new VideoItem(
+                                    docFile.getUri(),
+                                    fileName,
+                                    docFile.length(),
+                                    docFile.lastModified()
+                            );
+                            tempVideoItem.isTemporary = true;
+                            tempVideoItem.isNew = false;
+                            // Check if this temp file is currently being processed
+                            if (currentlyProcessingUris.contains(docFile.getUri())) {
+                                tempVideoItem.isProcessingUri = true;
+                                Log.d(TAG, "LOG_GET_SAF: Temporary SAF video " + fileName + " is marked as processing.");
+                            }
+                            safVideoItems.add(tempVideoItem);
+                        } else if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) {
+                            Log.d(TAG, "LOG_GET_SAF: Added SAF item: " + fileName);
+                            VideoItem newItem = new VideoItem(
+                                    docFile.getUri(),
+                                    fileName,
+                                    docFile.length(),
+                                    docFile.lastModified()
+                            );
+                            newItem.isTemporary = false;
+                            newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
+                            safVideoItems.add(newItem);
+                        } else {
+                            // Log other video files that don't match temp or standard FadCam prefix but are video type
+                            Log.d(TAG, "LOG_GET_SAF: Added OTHER video item (non-FadCam, non-temp): " + fileName);
+                            VideoItem newItem = new VideoItem(
+                                    docFile.getUri(),
+                                    fileName,
+                                    docFile.length(),
+                                    docFile.lastModified()
+                            );
+                            newItem.isTemporary = false;
+                            newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
+                            safVideoItems.add(newItem);
                         }
-                        safVideoItems.add(tempVideoItem);
-                    } else if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) {
-                        Log.d(TAG, "LOG_GET_SAF: Added SAF item: " + fileName);
-                        VideoItem newItem = new VideoItem(
-                                docFile.getUri(),
-                                fileName,
-                                docFile.length(),
-                                docFile.lastModified()
-                        );
-                        newItem.isTemporary = false;
-                        newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
-                        safVideoItems.add(newItem);
                     } else {
-                        // Log other video files that don't match temp or standard FadCam prefix but are video type
-                        Log.d(TAG, "LOG_GET_SAF: Added OTHER video item (non-FadCam, non-temp): " + fileName);
-                        VideoItem newItem = new VideoItem(
-                                docFile.getUri(),
-                                fileName,
-                                docFile.length(),
-                                docFile.lastModified()
-                        );
-                        newItem.isTemporary = false;
-                        newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
-                        safVideoItems.add(newItem);
+                        Log.d(TAG, "LOG_GET_SAF: Skipped item (not a video file with correct extension): " + fileName + " | type: " + mimeType);
                     }
                 } else {
-                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a video file with correct extension): " + fileName + " | type: " + mimeType);
+                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + fileName + " | isFile: " + docFile.isFile() + " | type: " + mimeType);
                 }
-            } else {
-                Log.d(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + fileName + " | isFile: " + docFile.isFile() + " | type: " + mimeType);
+            }
+            
+            // Progressive callback: update UI with current progress
+            if (callback != null && !safVideoItems.isEmpty()) {
+                int progress = Math.round(((float) endIndex / totalFiles) * 100);
+                callback.onProgress(new ArrayList<>(safVideoItems), progress, endIndex < totalFiles);
+            }
+            
+            // Small delay between chunks to prevent overwhelming the system
+            if (endIndex < totalFiles) {
+                try {
+                    Thread.sleep(10); // 10ms pause between chunks
+                } catch (InterruptedException e) {
+                    Log.w(TAG, "LOG_GET_SAF: Progressive loading interrupted");
+                    break;
+                }
             }
         }
+        
         Log.d(TAG, "LOG_GET_SAF: Found " + safVideoItems.size() + " SAF records. END.");
         return safVideoItems;
+    }
+
+    /**
+     * Callback interface for progressive loading updates
+     */
+    public interface ProgressCallback {
+        void onProgress(List<VideoItem> currentItems, int progressPercent, boolean hasMore);
     }
 
     // --- Permission Check ---
@@ -2306,86 +2522,73 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     /**
-     * Loads the list of videos from all sources and updates the UI
+     * Loads the list of videos from all sources and updates the UI with professional skeleton loading
      */
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
-        Log.i(TAG, "loadRecordsList: Starting load with efficient lazy loading");
+        Log.i(TAG, "loadRecordsList: Starting professional skeleton-based loading");
         
-        // Show loading indicators
-        if (loadingIndicator != null) {
-            loadingIndicator.setVisibility(View.VISIBLE);
-        }
-        if (recyclerView != null) {
-            recyclerView.setVisibility(View.GONE);
-        }
-        if (emptyStateContainer != null) {
-            emptyStateContainer.setVisibility(View.GONE);
-        }
-
-        // Reset state
-        isLoading = true;
-        isInitialLoad = true;
-        totalItems = 0;
+        // -------------- Fix Start (loadRecordsList) - Immediate skeleton display and proper refresh handling -----------
         
-        // Clear caches
-        cachedInternalItems.clear();
-        cachedSafItems.clear();
-        cachedTempItems.clear();
-        
-        // Clear the adapter's cache
-        if (recordsAdapter != null) {
-            recordsAdapter.clearCaches();
-        }
-
-        executorService.execute(() -> {
-            try {
-                // Step 1: Load temporary videos first (these are fast to load and show immediate feedback)
-                cachedTempItems.clear();
-                cachedTempItems.addAll(getTempCacheRecordsList());
-                
-                // Show temp videos immediately for better responsiveness
-                updateUiWithVideos(new ArrayList<>(cachedTempItems), true);
-                
-                // Step 2: Load videos from either SAF or internal storage based on preference
-                boolean loadedFromSaf = false;
-                String safUriString = sharedPreferencesManager.getCustomStorageUri();
-
-                if (safUriString != null) {
-                    try {
-                        Uri treeUri = Uri.parse(safUriString);
-                        if (hasSafPermission(treeUri)) {
-                            // Load videos from SAF in background
-                            cachedSafItems.clear();
-                            cachedSafItems.addAll(getSafRecordsList(treeUri));
-                            loadedFromSaf = true;
-                        } else {
-                            Log.w(TAG, "No persistent permission for SAF URI: " + safUriString);
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error processing SAF URI", e);
+        // Step 1: Check session cache first for instant loading
+        if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
+            Log.d(TAG, "Using session cache with " + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size() + " videos (cache age: " + com.fadcam.utils.VideoSessionCache.getCacheAgeMs() + "ms)");
+            updateUiWithVideos(new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos()), false);
+            isLoading = false;
+            isInitialLoad = false;
+            
+            // Stop refresh indicator immediately when using cache
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                        Log.d(TAG, "Refresh indicator stopped - using cached data");
                     }
-                }
-
-                // If not using SAF, load from internal storage
-                if (!loadedFromSaf) {
-                    cachedInternalItems.clear();
-                    cachedInternalItems.addAll(getInternalRecordsList());
-                }
-
-                // Step 3: Combine all unique videos
+                });
+            }
+            return;
+        }
+        
+        // Step 2: Show skeleton IMMEDIATELY if not already showing to prevent "no recordings" flash
+        if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
+            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount();
+            if (estimatedCount <= 0) {
+                estimatedCount = 12; // Default reasonable skeleton count
+            }
+            
+            Log.d(TAG, "Showing " + estimatedCount + " skeleton items immediately");
+            showSkeletonLoading(estimatedCount);
+        }
+        
+        // Step 3: Load all data silently in background (only if not already loading)
+        if (isLoading) {
+            Log.d(TAG, "Already loading data, skipping duplicate request");
+            return;
+        }
+        
+        isLoading = true;
+        isInitialLoad = false; // Skeleton is already showing
+        
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
+        
+        executorService.submit(() -> {
+            try {
+                Log.d(TAG, "Background scan started - session cache miss or expired");
+                
+                // Load data without progressive callbacks for smooth UX
+                List<VideoItem> tempItems = getTempCacheRecordsList();
+                Log.d(TAG, "Found " + tempItems.size() + " temporary video files in cache.");
+                
+                List<VideoItem> primaryItems = getPrimaryVideoFiles();
+                
+                // Combine and sort all in background
                 List<VideoItem> combinedVideos = new ArrayList<>();
+                combinedVideos.addAll(primaryItems);
+                combinedVideos.addAll(tempItems);
                 
-                // Add videos in order of priority (temp first, then others)
-                combinedVideos.addAll(cachedTempItems);
-                
-                if (loadedFromSaf) {
-                    combinedVideos.addAll(cachedSafItems);
-                } else {
-                    combinedVideos.addAll(cachedInternalItems);
-                }
-                
-                // Deduplicate videos based on URI
+                // Remove duplicates
                 List<VideoItem> uniqueItems = new ArrayList<>();
                 Set<Uri> uniqueUris = new HashSet<>();
                 for (VideoItem item : combinedVideos) {
@@ -2393,31 +2596,39 @@ public class RecordsFragment extends BaseFragment implements
                         uniqueItems.add(item);
                     }
                 }
-
-                // Step 4: Sort all items
+                
+                // Sort all items
                 sortItems(uniqueItems, currentSortOption);
                 totalItems = uniqueItems.size();
                 
-                // Step 5: Update UI with all items
-                updateUiWithVideos(uniqueItems, false);
+                // Cache results for future use
+                com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems);
+                com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size());
+                
+                // Replace skeletons with actual data in one smooth operation
+                replaceSkeletonsWithData(uniqueItems);
                 
             } catch (Exception e) {
                 Log.e(TAG, "Error loading videos", e);
-                // Ensure we reset loading state even on error
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        isLoading = false;
+                        hideSkeletonLoading();
                         updateUiVisibility();
                         if (loadingIndicator != null) {
                             loadingIndicator.setVisibility(View.GONE);
                         }
-                        if (swipeRefreshLayout != null) {
+                        // Ensure refresh indicator is stopped on error
+                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                             swipeRefreshLayout.setRefreshing(false);
+                            Log.d(TAG, "Refresh indicator stopped after error");
                         }
+                        isLoading = false;
                     });
                 }
             }
         });
+        
+        // -------------- Fix End (loadRecordsList) -----------
     }
 
     /**

@@ -81,6 +81,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
 import com.fadcam.RecordingControlIntents;
+import com.fadcam.utils.StorageInfoCache;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -100,6 +101,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.Objects;
 import java.util.Random;
 import java.util.HashSet; // For combining lists
@@ -136,6 +139,9 @@ public class HomeFragment extends BaseFragment {
     private Handler handlerClock = new Handler();
     private Runnable updateInfoRunnable;
     private Runnable updateClockRunnable; // Declare here
+    
+    // Storage calculation executor for background processing
+    private ExecutorService executorService;
 
     private TextureView textureView;
 
@@ -232,7 +238,6 @@ public class HomeFragment extends BaseFragment {
     private SharedPreferencesManager sharedPreferencesManager;
     // Listener for realtime preference updates (camera/resolution/fps)
     private SharedPreferences.OnSharedPreferenceChangeListener prefsListener;
-    private ExecutorService executorService;
     private BroadcastReceiver recordingCompleteReceiver;
     // Cache last-known available bytes for custom storage (SD card / SAF) when we cannot probe it directly
     private long lastKnownCustomAvailableBytes = -1;
@@ -2928,267 +2933,209 @@ public class HomeFragment extends BaseFragment {
 
     private void updateStorageInfo() {
         Log.d(TAG, "updateStorageInfo: Updating storage information");
-        // Default to internal external storage stats
-        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
-        long bytesAvailable = stat.getAvailableBytes();
-        long bytesTotal = stat.getTotalBytes();
-
-        // If user selected custom storage (SD card / SAF), try to use that instead of internal storage
-        String storageMode = sharedPreferencesManager.getStorageMode();
-        String customUriString = sharedPreferencesManager.getCustomStorageUri();
-        boolean usingCustomStorage = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null;
-        // By default assume custom is on primary (internal) storage; we'll detect removable volumes via docId heuristics
-        boolean customIsOnPrimary = true;
-        if (usingCustomStorage) {
-            try {
-                android.net.Uri treeUri = android.net.Uri.parse(customUriString);
-                // Heuristics: if the tree document id indicates a non-primary volume (like a UUID), treat it as removable
-                try {
-                    String docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
-                    if (docId != null) {
-                        if (docId.startsWith("primary:")) {
-                            customIsOnPrimary = true;
-                        } else if (docId.startsWith("raw:")) {
-                            String rawPath = docId.substring("raw:".length());
-                            if (rawPath.startsWith(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                                customIsOnPrimary = true;
-                            } else {
-                                customIsOnPrimary = false;
-                            }
-                        } else if (docId.contains(":")) {
-                            String volumeId = docId.split(":", 2)[0];
-                            customIsOnPrimary = "primary".equalsIgnoreCase(volumeId);
-                        }
-                    }
-                } catch (Exception ignore) {
-                    // best-effort only
-                }
-
-                // Try to resolve a usable path via DocumentFile and StatFs on persisted URI if possible
-                if (hasSafPermission(treeUri)) {
-                    java.io.File probe = Utils.getFileFromSafUriIfPossible(requireContext(), treeUri);
-                    if (probe != null && probe.exists()) {
-                        StatFs customStat = new StatFs(probe.getAbsolutePath());
-                        bytesAvailable = customStat.getAvailableBytes();
-                        bytesTotal = customStat.getTotalBytes();
-                        lastKnownCustomAvailableBytes = bytesAvailable;
-                    } else if (lastKnownCustomAvailableBytes > 0) {
-                        // Fall back to last known custom value if we cannot probe right now
-                        bytesAvailable = lastKnownCustomAvailableBytes;
-                    } else {
-                        // If we cannot probe custom storage, avoid subtracting estimated bytes from internal storage
-                        // by setting a flag (handled below) so the UI doesn't falsely decrease internal available space.
-                        Log.d(TAG, "updateStorageInfo: Using custom storage but unable to probe its stats; will avoid updating internal available.");
-                        // leave bytesAvailable as internal; we'll skip subtract later if custom is removable
-                    }
-                } else {
-                    Log.w(TAG, "updateStorageInfo: No SAF permission for custom storage URI: " + customUriString);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "updateStorageInfo: Error while probing custom storage stats", e);
-            }
+        
+        // -------------- Fix Start (updateStorageInfo) - Professional storage caching -----------
+        
+        // Step 1: Try to use cached storage info for instant display
+        StorageInfoCache.StorageInfo cachedInfo = StorageInfoCache.getCachedStorageInfo();
+        if (cachedInfo != null) {
+            Log.d(TAG, "Using cached storage info - displaying instantly");
+            updateStorageUiWithCachedInfo(cachedInfo);
+            return;
         }
-
-        double gbAvailable = bytesAvailable / (1024.0 * 1024.0 * 1024.0);
-        double gbTotal = bytesTotal / (1024.0 * 1024.0 * 1024.0);
-
-        // Only calculate estimated bytes used if we're actually recording
+        
+        // Step 2: Calculate fresh storage info in background to avoid blocking UI
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
+        
+        executorService.submit(() -> {
+            try {
+                // Calculate fresh storage information
+                StorageInfoCache.StorageInfo storageInfo = StorageInfoCache.calculateAndCacheStorageInfo(
+                    requireContext(), sharedPreferencesManager);
+                
+                // Update UI on main thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> updateStorageUiWithCachedInfo(storageInfo));
+                }
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error calculating storage info", e);
+            }
+        });
+        
+        // -------------- Fix End (updateStorageInfo) -----------
+    }
+    
+    /**
+     * Updates storage UI with cached storage information for instant display
+     */
+    private void updateStorageUiWithCachedInfo(StorageInfoCache.StorageInfo storageInfo) {
+        // Calculate elapsed time and estimates
         long elapsedTime = 0;
         long estimatedBytesUsed = 0;
         
         if (isRecording() || isPaused()) {
-            // Check if recordingStartTime is valid, otherwise reset it
+            // Check if recordingStartTime is valid
             if (recordingStartTime <= 0) {
                 recordingStartTime = SystemClock.elapsedRealtime();
                 Log.w(TAG, "updateStorageInfo: Invalid recordingStartTime detected, resetting to current time");
             }
             
-            // Always calculate elapsed time since recording started
-            elapsedTime = SystemClock.elapsedRealtime() - recordingStartTime;
+            elapsedTime = Math.max(0, SystemClock.elapsedRealtime() - recordingStartTime);
             
-            // Force elapsed time to be non-negative
-            elapsedTime = Math.max(0, elapsedTime);
-            
-            Log.d(TAG, "updateStorageInfo: recordingStartTime=" + recordingStartTime + 
-                  ", currentTime=" + SystemClock.elapsedRealtime() + 
-                  ", calculated elapsedTime=" + elapsedTime + "ms");
-            
-            // Determine effective bitrate (bps) to use for runtime accounting.
+            // Calculate estimated bytes used during recording
             long effectiveBitrate = 0;
             try {
-                // Get video component (bps) from prefs/current helper
                 long videoComponent = sharedPreferencesManager.getCurrentBitrate();
-                // Get audio component (bps) from prefs
                 long audioComponent = sharedPreferencesManager.getAudioBitrate();
-                // Sum both to get effective total bitrate
                 effectiveBitrate = videoComponent + audioComponent;
             } catch (Exception ex) {
-                // Fallback to previously cached value or estimator
                 try {
-                    long videoComponent = videoBitrate > 0 ? videoBitrate : Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
-                    long audioComponent = 0;
-                    try { audioComponent = sharedPreferencesManager.getAudioBitrate(); } catch (Exception ignore) {}
+                    long videoComponent = videoBitrate > 0 ? videoBitrate : Utils.estimateBitrate(
+                        sharedPreferencesManager.getCameraResolution(), sharedPreferencesManager.getVideoFrameRate());
+                    long audioComponent = sharedPreferencesManager.getAudioBitrate();
                     effectiveBitrate = videoComponent + audioComponent;
                 } catch (Exception ignore) {
                     effectiveBitrate = 0;
                 }
             }
-            // Cache video-only component on the fragment field for other consumers
-            videoBitrate = Math.max(0, effectiveBitrate - sharedPreferencesManager.getAudioBitrate());
-
-            // Only calculate if we have valid values
+            
             if (elapsedTime > 0 && effectiveBitrate > 0) {
-                estimatedBytesUsed = (elapsedTime * effectiveBitrate) / 8000; // Convert ms and bits to bytes
-                // Safety check: don't let estimated bytes exceed available bytes
-                estimatedBytesUsed = Math.min(estimatedBytesUsed, bytesAvailable);
-                Log.d(TAG, "updateStorageInfo: Elapsed=" + elapsedTime + "ms, Est. bytes used=" + estimatedBytesUsed + ", bitrate=" + effectiveBitrate);
+                estimatedBytesUsed = (elapsedTime * effectiveBitrate) / 8000;
+                estimatedBytesUsed = Math.min(estimatedBytesUsed, storageInfo.availableBytes);
             }
+            
+            videoBitrate = Math.max(0, effectiveBitrate - sharedPreferencesManager.getAudioBitrate());
         } else {
-            // Reset recording start time when not recording
             recordingStartTime = 0;
-            Log.d(TAG, "updateStorageInfo: Not recording, reset recordingStartTime=0");
         }
-
-        // Update available space based on estimated bytes used
-        // If using custom storage but we couldn't probe it (and lastKnownCustomAvailableBytes <= 0),
-        // avoid subtracting estimatedBytesUsed from internal storage because recording is happening elsewhere.
-        // If custom storage is used and it is on a removable volume (not primary), and we cannot probe it,
-        // skip subtracting estimated bytes from internal storage.
-        if (!(usingCustomStorage && !customIsOnPrimary && (lastKnownCustomAvailableBytes <= 0 && (customUriString != null)))) {
-            bytesAvailable -= estimatedBytesUsed;
-        } else {
-            Log.d(TAG, "updateStorageInfo: Skipping subtracting estimated bytes from internal storage because recording target is removable custom storage and unknown.");
+        
+        // Adjust available bytes for recording
+        long adjustedAvailable = storageInfo.availableBytes - estimatedBytesUsed;
+        
+        // Skip subtracting if using custom removable storage that can't be probed
+        if (storageInfo.usingCustomStorage && !storageInfo.customIsOnPrimary && adjustedAvailable < 0) {
+            adjustedAvailable = storageInfo.availableBytes;
+            Log.d(TAG, "updateStorageInfo: Skipping estimated bytes subtraction for removable custom storage");
         }
-        // Ensure we never show negative available space
-        bytesAvailable = Math.max(0, bytesAvailable);
-        gbAvailable = Math.max(0, bytesAvailable / (1024.0 * 1024.0 * 1024.0));
-
-        // Calculate remaining recording time based on available space and the full effective bitrate
-        // Use video + audio here so bytesAvailable (which was reduced using effective bitrate)
-        // aligns with the denominator. This prevents the paradox where lowering video-only
-        // bitrate can produce a smaller remaining time because estimatedBytesUsed used
-        // the combined bitrate earlier.
+        
+        adjustedAvailable = Math.max(0, adjustedAvailable);
+        double gbAvailable = Math.max(0, adjustedAvailable / (1024.0 * 1024.0 * 1024.0));
+        double gbTotal = storageInfo.getTotalGB();
+        
+        // Calculate remaining recording time
         long remainingTime = 0;
         long audioBps = 0;
         try {
-            audioBps = (sharedPreferencesManager != null) ? sharedPreferencesManager.getAudioBitrate() : 0;
+            audioBps = sharedPreferencesManager.getAudioBitrate();
         } catch (Exception ignore) {}
         long effectiveForRemaining = Math.max(0L, videoBitrate) + Math.max(0L, audioBps);
         if (effectiveForRemaining > 0) {
-            remainingTime = (bytesAvailable * 8) / effectiveForRemaining;
+            remainingTime = (adjustedAvailable * 8) / effectiveForRemaining;
         }
-        // Ensure remaining time is never negative
         remainingTime = Math.max(0, remainingTime);
         
-        // Calculate days, hours, minutes, and seconds for remaining time
+        // Calculate time components
         long days = remainingTime / (24 * 3600);
         long hours = (remainingTime % (24 * 3600)) / 3600;
         long minutes = (remainingTime % 3600) / 60;
         long seconds = remainingTime % 60;
-
-        // Calculate elapsed minutes and seconds - ensure they're always non-negative
-        long elapsedMinutes = elapsedTime / 60000;  // Convert ms to minutes
-        long elapsedSeconds = (elapsedTime / 1000) % 60;  // Get seconds part
         
-        // Log elapsed time values for debugging
-        Log.d(TAG, "updateStorageInfo: Formatted elapsed time = " + elapsedMinutes + ":" + 
-              String.format(Locale.US, "%02d", elapsedSeconds));
-
-    // Compute estimate only for selected resolution to keep the widget concise
-    android.util.Size selectedRes = sharedPreferencesManager.getCameraResolution();
-    int selectedFps = sharedPreferencesManager.getVideoFrameRate();
-    long selectedBitrate;
-    try {
-        // If user selected custom bitrate mode, use that (prefs store kbps)
-        boolean customMode = sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false);
-        if (customMode) {
-            int customKbps = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000);
-            selectedBitrate = (long) customKbps * 1000L; // convert kbps to bps
-        } else {
+        long elapsedMinutes = elapsedTime / 60000;
+        long elapsedSeconds = (elapsedTime / 1000) % 60;
+        
+        // Prepare UI data
+        android.util.Size selectedRes = sharedPreferencesManager.getCameraResolution();
+        int selectedFps = sharedPreferencesManager.getVideoFrameRate();
+        long selectedBitrate;
+        try {
+            boolean customMode = sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false);
+            if (customMode) {
+                int customKbps = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000);
+                selectedBitrate = (long) customKbps * 1000L;
+            } else {
+                selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
+            }
+        } catch (Exception e) {
             selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
         }
-    } catch (Exception e) {
-        selectedBitrate = Utils.estimateBitrate(selectedRes, selectedFps);
-    }
-    String selectedEstimate = getRecordingTimeEstimate(bytesAvailable, selectedBitrate);
-
-    // Camera indicator (Front/Back)
-    String cameraLabel = "";
-    try {
-        com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
-        if (camType == com.fadcam.CameraType.FRONT) cameraLabel = getString(R.string.mainpage_camera_front);
-        else cameraLabel = getString(R.string.mainpage_camera_back);
-    } catch (Exception ignored) { cameraLabel = ""; }
-
-    // Prepare individual components for the new row-based design (make final for lambda)
-    final String finalCameraLabel = cameraLabel;
-    final String qualityText = getResolutionDisplayName(selectedRes);
-    final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
-    final String cameraSubtitle = qualityText + " • " + fpsText;
-    // Format numbers: French locale uses comma as decimal separator by default.
-    // The product UX requires a dot (.) as decimal separator in the storage widget for French.
-    // Use Locale.US for number formatting when the device language is French; otherwise use the default locale.
-    Locale currentLocaleForFormatting = Locale.getDefault();
-    Locale numberFormatLocale = (currentLocaleForFormatting != null && "fr".equalsIgnoreCase(currentLocaleForFormatting.getLanguage())) ? Locale.US : currentLocaleForFormatting;
-    final String availableSpace = String.format(numberFormatLocale, "%.2f GB", gbAvailable);
-    final String finalSelectedEstimate = selectedEstimate;
-    final String elapsedTimeText = String.format(Locale.getDefault(), "%02d:%02d", elapsedMinutes, elapsedSeconds);
-    final String remainingTimeText = formatRemainingTime(days, hours, minutes, seconds);
-
-    // Update UI on the main thread
-    if (getActivity() != null) {
-        final double finalGbTotal = gbTotal;
-        getActivity().runOnUiThread(() -> {
-            // Camera row
-            if (tvCameraTitle != null) tvCameraTitle.setText(finalCameraLabel);
-            if (tvCameraSubtitle != null) tvCameraSubtitle.setText(cameraSubtitle);
-            // Update camera icon glyph to reflect current camera (front/back)
-            try {
-                com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
-                if (ivCameraIcon != null) {
-                    if (camType == com.fadcam.CameraType.FRONT) ivCameraIcon.setText("camera_front");
-                    else ivCameraIcon.setText("camera_alt");
-                }
-            } catch (Exception ignored) {}
-            
-            // Estimate row
-            if (tvEstimateTitle != null) tvEstimateTitle.setText(finalSelectedEstimate);
-            if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText("Estimated time");
-            
-            // Space row: render "available / total" in the same TextView with a dimmer smaller total
-            if (tvSpaceTitle != null) {
+        String selectedEstimate = getRecordingTimeEstimate(adjustedAvailable, selectedBitrate);
+        
+        String cameraLabel = "";
+        try {
+            com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
+            cameraLabel = camType == com.fadcam.CameraType.FRONT ? 
+                getString(R.string.mainpage_camera_front) : getString(R.string.mainpage_camera_back);
+        } catch (Exception ignored) { 
+            cameraLabel = ""; 
+        }
+        
+        final String finalCameraLabel = cameraLabel;
+        final String qualityText = getResolutionDisplayName(selectedRes);
+        final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
+        final String cameraSubtitle = qualityText + " • " + fpsText;
+        
+        Locale numberFormatLocale = (Locale.getDefault() != null && "fr".equalsIgnoreCase(Locale.getDefault().getLanguage())) 
+            ? Locale.US : Locale.getDefault();
+        final String availableSpace = String.format(numberFormatLocale, "%.2f GB", gbAvailable);
+        final String finalSelectedEstimate = selectedEstimate;
+        final String elapsedTimeText = String.format(Locale.getDefault(), "%02d:%02d", elapsedMinutes, elapsedSeconds);
+        final String remainingTimeText = formatRemainingTime(days, hours, minutes, seconds);
+        
+        // Update UI on main thread
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                // Camera row
+                if (tvCameraTitle != null) tvCameraTitle.setText(finalCameraLabel);
+                if (tvCameraSubtitle != null) tvCameraSubtitle.setText(cameraSubtitle);
+                
+                // Update camera icon
                 try {
-                    String avail = availableSpace;
-                    String totalStr = String.format(numberFormatLocale, "%.2f GB", finalGbTotal);
-                    String combined = avail + " / " + totalStr;
-                    android.text.SpannableString ss = new android.text.SpannableString(combined);
-                    // make the total part dimmer and smaller
-                    // include the slash as part of the dimmed smaller segment for a cleaner inline look
-                    int slashIndex = combined.indexOf("/");
-                    int start = (slashIndex >= 0) ? slashIndex : (combined.indexOf("/ ") + 2);
-                    int end = combined.length();
-                    if (start >= 0 && end > start) {
-                        ss.setSpan(new android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#9E9E9E")), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        ss.setSpan(new android.text.style.RelativeSizeSpan(0.85f), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    com.fadcam.CameraType camType = sharedPreferencesManager.getCameraSelection();
+                    if (ivCameraIcon != null) {
+                        ivCameraIcon.setText(camType == com.fadcam.CameraType.FRONT ? "camera_front" : "camera_alt");
                     }
-                    tvSpaceTitle.setText(ss);
-                } catch (Exception e) {
-                    tvSpaceTitle.setText(availableSpace);
+                } catch (Exception ignored) {}
+                
+                // Estimate row
+                if (tvEstimateTitle != null) tvEstimateTitle.setText(finalSelectedEstimate);
+                if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText("Estimated time");
+                
+                // Space row with styled text
+                if (tvSpaceTitle != null) {
+                    try {
+                        String avail = availableSpace;
+                        String totalStr = String.format(numberFormatLocale, "%.2f GB", gbTotal);
+                        String combined = avail + " / " + totalStr;
+                        android.text.SpannableString ss = new android.text.SpannableString(combined);
+                        
+                        int slashIndex = combined.indexOf("/");
+                        int start = (slashIndex >= 0) ? slashIndex : (combined.indexOf("/ ") + 2);
+                        int end = combined.length();
+                        if (start >= 0 && end > start) {
+                            ss.setSpan(new android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#9E9E9E")), 
+                                      start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            ss.setSpan(new android.text.style.RelativeSizeSpan(0.85f), 
+                                      start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        }
+                        tvSpaceTitle.setText(ss);
+                    } catch (Exception e) {
+                        tvSpaceTitle.setText(availableSpace);
+                    }
                 }
-            }
-            if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText("Available space");
-            
-            // Elapsed row
-            if (tvElapsedTitle != null) tvElapsedTitle.setText(elapsedTimeText);
-            if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText("Elapsed time");
-            
-            // Remaining row
-            if (tvRemainingTitle != null) tvRemainingTitle.setText(remainingTimeText);
-            if (tvRemainingSubtitle != null) tvRemainingSubtitle.setText("Remaining time");
-            
-            Log.d(TAG, "updateStorageInfo: UI updated with elapsed=" + elapsedMinutes + "m " + elapsedSeconds + "s");
-        });
-    }
+                if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText("Available space");
+                
+                // Elapsed row
+                if (tvElapsedTitle != null) tvElapsedTitle.setText(elapsedTimeText);
+                if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText("Elapsed time");
+                
+                // Remaining row
+                if (tvRemainingTitle != null) tvRemainingTitle.setText(remainingTimeText);
+                if (tvRemainingSubtitle != null) tvRemainingSubtitle.setText("Remaining time");
+            });
+        }
     }
 
     private String formatRemainingTime(long days, long hours, long minutes, long seconds) {
@@ -3366,20 +3313,31 @@ public class HomeFragment extends BaseFragment {
             List<VideoItem> primaryItems;
             List<VideoItem> tempItems;
 
-            // --- Load File Lists (Same logic as RecordsFragment) ---
-            Log.d(TAG,"updateStats BG: Loading file lists. Mode: "+storageMode);
-            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
-                Uri treeUri = null; try { treeUri = Uri.parse(customUriString); } catch (Exception e) { Log.e(TAG,"BG updateStats: Error parsing custom URI", e);}
-                if (treeUri != null && hasSafPermission(treeUri)) {
-                    primaryItems = getSafRecordsList(treeUri);
-                } else {
-                    Log.e(TAG,"BG updateStats: Permission error or invalid URI for custom location: "+ customUriString);
-                    primaryItems = new ArrayList<>();
-                }
+            // --- Try to use shared session cache first (from VideoSessionCache) ---
+            Log.d(TAG,"updateStats BG: Checking for shared session cache...");
+            if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
+                Log.d(TAG,"updateStats BG: Using shared session cache (" + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size() + " items)");
+                primaryItems = new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos());
+                tempItems = getTempCacheRecordsList();
             } else {
-                primaryItems = getInternalRecordsList();
+                // --- Load File Lists (Same logic as RecordsFragment) ---
+                Log.d(TAG,"updateStats BG: Loading file lists. Mode: "+storageMode);
+                if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) && customUriString != null) {
+                    Uri treeUri = null; try { treeUri = Uri.parse(customUriString); } catch (Exception e) { Log.e(TAG,"BG updateStats: Error parsing custom URI", e);}
+                    if (treeUri != null && hasSafPermission(treeUri)) {
+                        primaryItems = getSafRecordsListProgressive(treeUri, null); // No UI callback for stats
+                    } else {
+                        Log.e(TAG,"BG updateStats: Permission error or invalid URI for custom location: "+ customUriString);
+                        primaryItems = new ArrayList<>();
+                    }
+                } else {
+                    primaryItems = getInternalRecordsList();
+                }
+                tempItems = getTempCacheRecordsList();
+                
+                // Update shared session cache for other fragments
+                com.fadcam.utils.VideoSessionCache.updateSessionCache(primaryItems);
             }
-            tempItems = getTempCacheRecordsList();
 
             // Combine (ok to run on background thread)
             List<VideoItem> combinedItems = combineVideoLists(primaryItems, tempItems);
@@ -3477,25 +3435,92 @@ public class HomeFragment extends BaseFragment {
         return items;
     }
 
-    private List<VideoItem> getSafRecordsList(Uri treeUri) {
+    // -------------- Fix Start (getSafRecordsListProgressive)-----------
+    
+    /**
+     * Progressive SAF directory scanning with chunked processing to avoid blocking main thread.
+     * Processes files in small batches with delays between chunks for better performance.
+     * @param treeUri The SAF directory URI to scan
+     * @param callback Optional callback for UI updates (can be null for background operations)
+     * @return List of VideoItem objects found in the directory
+     */
+    private List<VideoItem> getSafRecordsListProgressive(Uri treeUri, ProgressCallback callback) {
         List<VideoItem> items = new ArrayList<>();
         Context context = getContext();
-        if (context == null || treeUri == null) { Log.e(TAG,"Context or treeUri null in getSafRecordsList"); return items;}
+        if (context == null || treeUri == null) { 
+            Log.e(TAG,"Context or treeUri null in getSafRecordsListProgressive"); 
+            return items;
+        }
+        
         DocumentFile dir = DocumentFile.fromTreeUri(context, treeUri);
-        if (dir != null && dir.isDirectory() && dir.canRead()) {
-            try {
-                for (DocumentFile file : dir.listFiles()) {
+        if (dir == null || !dir.isDirectory() || !dir.canRead()) {
+            Log.e(TAG, "Cannot read/access SAF dir in getSafRecordsListProgressive: " + treeUri);
+            return items;
+        }
+        
+        try {
+            DocumentFile[] allFiles = dir.listFiles();
+            if (allFiles == null) {
+                Log.w(TAG, "No files found in SAF directory: " + treeUri);
+                return items;
+            }
+            
+            Log.d(TAG, "Progressive SAF scan starting: " + allFiles.length + " files to process");
+            
+            // Process files in chunks to avoid blocking
+            final int CHUNK_SIZE = 10;
+            final int CHUNK_DELAY_MS = 10;
+            
+            for (int i = 0; i < allFiles.length; i += CHUNK_SIZE) {
+                int endIndex = Math.min(i + CHUNK_SIZE, allFiles.length);
+                
+                // Process chunk
+                for (int j = i; j < endIndex; j++) {
+                    DocumentFile file = allFiles[j];
                     if (file != null && file.isFile() && file.getName() != null &&
-                            (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || "video/mp4".equals(file.getType())) &&
+                            (file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) || 
+                             "video/mp4".equals(file.getType())) &&
                             !file.getName().startsWith("temp_"))
                     {
                         items.add(new VideoItem(file.getUri(), file.getName(), file.length(), file.lastModified()));
                     }
                 }
-            } catch (Exception e) { Log.e(TAG, "Error listing SAF files in updateStats for " + treeUri, e); }
-        } else { Log.e(TAG, "Cannot read/access SAF dir in updateStats: " + treeUri); }
+                
+                // Notify progress if callback provided
+                if (callback != null) {
+                    final int currentProgress = endIndex;
+                    final int totalFiles = allFiles.length;
+                    callback.onProgress(currentProgress, totalFiles);
+                }
+                
+                // Small delay between chunks to prevent blocking
+                if (endIndex < allFiles.length) {
+                    try {
+                        Thread.sleep(CHUNK_DELAY_MS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        Log.w(TAG, "Progressive SAF scan interrupted");
+                        break;
+                    }
+                }
+            }
+            
+            Log.d(TAG, "Progressive SAF scan completed: " + items.size() + " video items found");
+            
+        } catch (Exception e) { 
+            Log.e(TAG, "Error in progressive SAF scan for " + treeUri, e); 
+        }
         return items;
     }
+
+    // Keep old method for backward compatibility but mark as deprecated
+    @Deprecated
+    private List<VideoItem> getSafRecordsList(Uri treeUri) {
+        // Redirect to progressive version without callback
+        return getSafRecordsListProgressive(treeUri, null);
+    }
+    
+    // -------------- Fix Ended (getSafRecordsListProgressive)-----------
 
     private List<VideoItem> getTempCacheRecordsList() {
         List<VideoItem> items = new ArrayList<>();
@@ -3945,6 +3970,12 @@ public class HomeFragment extends BaseFragment {
                 Log.w(TAG, "Torch receiver was not registered or already unregistered");
             }
             torchReceiver = null;
+        }
+        
+        // Clean up executor service
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+            executorService = null;
         }
         
         stopUpdatingInfo();
@@ -4976,4 +5007,18 @@ public class HomeFragment extends BaseFragment {
         }
         return latest.length > current.length || (latest.length == current.length && currentIsBeta);
     }
+    
+    // -------------- Fix Start (ProgressCallback Interface)-----------
+    /**
+     * Callback interface for progressive loading operations to update UI incrementally.
+     */
+    public interface ProgressCallback {
+        /**
+         * Called when progress is made during file loading.
+         * @param current Current number of files processed
+         * @param total Total number of files to process
+         */
+        void onProgress(int current, int total);
+    }
+    // -------------- Fix Ended (ProgressCallback Interface)-----------
 }

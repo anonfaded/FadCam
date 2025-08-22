@@ -48,6 +48,7 @@ import androidx.core.text.HtmlCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
+import com.fadcam.utils.ShimmerEffectHelper;
 import com.fadcam.Constants;
 import com.fadcam.R;
 // Ensure VideoItem import is correct
@@ -135,6 +136,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final String tempCacheDirectoryPath;
     // Add field to track scrolling state
     private boolean isScrolling = false;
+    // Add skeleton mode for professional loading experience
+    private boolean isSkeletonMode = false;
     // --- Interfaces Updated ---
     public interface OnVideoClickListener {
         void onVideoClick(VideoItem videoItem); // Pass VideoItem
@@ -274,6 +277,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Optimize onBindViewHolder to reduce work on the UI thread
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
+        // --- 0. Handle Skeleton Mode ---
+        if (isSkeletonMode) {
+            bindSkeletonItem(holder, position);
+            return;
+        }
+        
+        // -------------- Fix Start (clearSkeletonEffects) - Clear skeleton state when binding real data -----------
+        clearSkeletonEffects(holder);
+        // -------------- Fix End (clearSkeletonEffects) -----------
+        
         // --- 1. Basic Checks & Get Data ---
         if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) {
             Log.e(TAG,"onBindViewHolder: Invalid item/data at position " + position);
@@ -1943,6 +1956,144 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     public void setScrolling(boolean scrolling) {
         this.isScrolling = scrolling;
+    }
+    
+    /**
+     * Sets skeleton mode for professional loading experience
+     * @param skeletonMode true to show skeleton placeholders, false for normal content
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setSkeletonMode(boolean skeletonMode) {
+        if (this.isSkeletonMode != skeletonMode) {
+            this.isSkeletonMode = skeletonMode;
+            Log.d(TAG, "Skeleton mode " + (skeletonMode ? "enabled" : "disabled"));
+            notifyDataSetChanged(); // Refresh all views
+        }
+    }
+    
+    /**
+     * Checks if adapter is currently in skeleton mode
+     * @return true if showing skeleton placeholders
+     */
+    public boolean isSkeletonMode() {
+        return isSkeletonMode;
+    }
+    
+    /**
+     * Binds skeleton placeholder content to view holder with shimmer effect
+     */
+    private void bindSkeletonItem(@NonNull RecordViewHolder holder, int position) {
+        // -------------- Fix Start (bindSkeletonItem) - Professional shimmer skeleton -----------
+        
+        // Step 1: Clear any existing content and animations
+        holder.itemView.clearAnimation();
+        holder.imageViewThumbnail.clearAnimation();
+        
+        // Step 2: Clear text content and set placeholder appearance
+        holder.textViewRecord.setText("████████████████");  // Placeholder text
+        holder.textViewFileSize.setText("██ MB");
+        holder.textViewFileTime.setText("██████");
+        
+        // Make text views appear as placeholder blocks
+        holder.textViewRecord.setAlpha(0.1f);
+        holder.textViewFileSize.setAlpha(0.1f);
+        holder.textViewFileTime.setAlpha(0.1f);
+        
+        // Step 3: Set placeholder for thumbnail
+        holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+        holder.imageViewThumbnail.setAlpha(0.3f); // Dimmed placeholder
+        holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Step 4: Hide interactive elements during skeleton state
+        if (holder.textViewStatusBadge != null) {
+            holder.textViewStatusBadge.setText("");
+            holder.textViewStatusBadge.setVisibility(View.GONE);
+        }
+        if (holder.textViewSerialNumber != null) {
+            holder.textViewSerialNumber.setVisibility(View.GONE);
+        }
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setVisibility(View.GONE);
+        }
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setText("███████");
+            holder.textViewTimeAgo.setAlpha(0.1f);
+        }
+        
+        // Step 5: Hide processing and selection elements
+        if (holder.processingScrim != null) {
+            holder.processingScrim.setVisibility(View.GONE);
+        }
+        if (holder.processingSpinner != null) {
+            holder.processingSpinner.setVisibility(View.GONE);
+        }
+        if (holder.iconCheckContainer != null) {
+            holder.iconCheckContainer.setVisibility(View.GONE);
+        }
+        
+        // Step 6: Apply professional shimmer effect to the entire card
+        ShimmerEffectHelper.applyShimmerEffect(holder.itemView);
+        
+        // Step 7: Disable all click events for skeleton items
+        holder.itemView.setOnClickListener(null);
+        holder.itemView.setOnLongClickListener(null);
+        holder.imageViewThumbnail.setOnClickListener(null);
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setOnClickListener(null);
+        }
+        
+        Log.v(TAG, "Professional shimmer skeleton bound at position " + position);
+        
+        // -------------- Fix End (bindSkeletonItem) -----------
+    }
+    
+    /**
+     * Clears skeleton effects and restores normal appearance for data binding
+     */
+    private void clearSkeletonEffects(@NonNull RecordViewHolder holder) {
+        // -------------- Fix Start (clearSkeletonEffects) - Remove skeleton effects when binding real data -----------
+        
+        // Step 1: Remove shimmer effect from the card
+        ShimmerEffectHelper.removeShimmerEffect(holder.itemView);
+        
+        // Step 2: Stop any running animations
+        holder.itemView.clearAnimation();
+        holder.imageViewThumbnail.clearAnimation();
+        
+        // Step 3: Restore normal text appearance
+        holder.textViewRecord.setAlpha(1.0f);
+        holder.textViewFileSize.setAlpha(1.0f);
+        holder.textViewFileTime.setAlpha(1.0f);
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setAlpha(1.0f);
+        }
+        
+        // Step 4: Clear shimmer backgrounds from all elements
+        holder.textViewRecord.setBackground(null);
+        holder.textViewFileSize.setBackground(null);
+        holder.textViewFileTime.setBackground(null);
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setBackground(null);
+        }
+        
+        // Step 5: Clear shimmer from thumbnail and restore normal appearance
+        holder.imageViewThumbnail.setBackground(null);
+        holder.imageViewThumbnail.setAlpha(1.0f);
+        
+        // Step 6: Restore visibility for hidden elements
+        if (holder.textViewSerialNumber != null) {
+            holder.textViewSerialNumber.setVisibility(View.VISIBLE);
+        }
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setVisibility(View.VISIBLE);
+        }
+        
+        // Step 7: Restore normal item appearance
+        holder.itemView.setAlpha(1.0f);
+        
+        Log.v(TAG, "Skeleton effects cleared for data binding");
+        
+        // -------------- Fix End (clearSkeletonEffects) -----------
     }
 
     // --- Delete Helper (Must be accessible or copied here) ---
