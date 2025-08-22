@@ -15,6 +15,9 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.animation.ObjectAnimator;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.DocumentsContract;
@@ -168,7 +171,7 @@ public class RecordsFragment extends BaseFragment implements
                 
                 Log.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size() + " actual videos");
                 
-                // -------------- Fix Start (replaceSkeletonsWithData) - Ensure proper refresh state handling -----------
+                // -------------- Fix Start (replaceSkeletonsWithData) - Fixed positioning and ordering -----------
                 
                 // Disable skeleton mode
                 if (recordsAdapter != null) {
@@ -191,13 +194,21 @@ public class RecordsFragment extends BaseFragment implements
                 updateUiVisibility();
                 isLoading = false;
                 
+                // CRITICAL FIX: Ensure RecyclerView scrolls to top after loading
+                if (recyclerView != null && actualItems.size() > 0) {
+                    recyclerView.scrollToPosition(0);
+                    Log.d(TAG, "RecyclerView scrolled to position 0 to show first video");
+                }
+                
                 // Ensure refresh indicator is stopped
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
                     Log.d(TAG, "Refresh indicator stopped in replaceSkeletonsWithData");
                 }
                 
-                Log.d(TAG, "Skeleton replacement complete - smooth transition achieved with refresh state cleared");
+                Log.d(TAG, "Skeleton replacement complete - proper positioning and ordering achieved");
+                
+                // -------------- Fix End (replaceSkeletonsWithData) -----------
                 
                 // -------------- Fix End (replaceSkeletonsWithData) -----------
             });
@@ -272,6 +283,9 @@ public class RecordsFragment extends BaseFragment implements
     private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
     private FloatingActionButton fabDeleteSelected;
+    private FloatingActionButton fabScrollNavigation; // Navigation FAB for scroll to top/bottom
+    private boolean isScrollingDown = true; // Track scroll direction for FAB icon
+    private ObjectAnimator currentRotationAnimator; // Smooth rotation animation for FAB icon
 
     // ----- Fix Start: Add AppLock overlay view field -----
     private View applockOverlay;
@@ -757,7 +771,8 @@ public class RecordsFragment extends BaseFragment implements
         recyclerView = view.findViewById(R.id.recycler_view_records);
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); 
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
-        fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
+    fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
+    fabScrollNavigation = view.findViewById(R.id.fab_scroll_navigation);
         applockOverlay = view.findViewById(R.id.applock_overlay);
 
         setupRecyclerView();
@@ -885,8 +900,20 @@ public class RecordsFragment extends BaseFragment implements
         }
         // ----- Fix End: Check for theme changes and update adapter -----
         
-        Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume.");
-        loadRecordsList(); // RESTORED: Always reload the list when the fragment resumes
+        // -------------- Fix Start (onResume) - Smart loading to prevent duplication -----------
+        
+        // Only call loadRecordsList if we don't have valid cached data or if it's forced refresh
+        // This prevents the duplicate loading issue user reported
+        if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid() && 
+            recordsAdapter != null && recordsAdapter.getItemCount() > 0) {
+            Log.d(TAG, "onResume: Using existing valid cache, skipping duplicate load");
+            updateUiVisibility(); // Just update visibility state
+        } else {
+            Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume - cache invalid or empty");
+            loadRecordsList();
+        }
+        
+        // -------------- Fix End (onResume) -----------
     // no-op: view mode toggle is in Records Options side sheet
         // ----- Fix Start: Always invalidate options menu to ensure correct menu for Records tab -----
         requireActivity().invalidateOptionsMenu();
@@ -1013,32 +1040,61 @@ public class RecordsFragment extends BaseFragment implements
                 if (wasScrolling && !isScrolling) {
                     refreshVisibleItems();
                 }
+
+                // Show FAB when user starts scrolling from the top downward; pin until we return to top
+                if (isScrolling) {
+                    // Will be made visible in onScrolled when necessary
+                }
             }
             
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 
+                // -------------- Fix Start (onScrolled) - Navigation FAB management with scroll direction tracking -----------
+
+                // Track scroll direction based on dy parameter
+                if (dy > 0) {
+                    isScrollingDown = true; // User is scrolling down
+                } else if (dy < 0) {
+                    isScrollingDown = false; // User is scrolling up
+                }
+                
+                // Update navigation FAB based on current scroll position and direction
+                updateNavigationFab();
+                
+                // Determine whether to show/pin/hide FAB: if user has scrolled down from top (firstVisible>0) and not at end
+                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+                int firstVisible = 0;
+                int lastVisibleItemPosition = 0;
+                int totalItemCount = 0;
+                if (layoutManager instanceof GridLayoutManager) {
+                    firstVisible = ((GridLayoutManager) layoutManager).findFirstVisibleItemPosition();
+                    lastVisibleItemPosition = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
+                    totalItemCount = layoutManager.getItemCount();
+                } else if (layoutManager instanceof LinearLayoutManager) {
+                    firstVisible = ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
+                    lastVisibleItemPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+                    totalItemCount = layoutManager.getItemCount();
+                }
+                if (firstVisible > 0 && lastVisibleItemPosition < totalItemCount - 1) {
+                    // Pinned visible
+                    showNavigationFab();
+                } else {
+                    // At top or at end: hide FAB
+                    if (fabScrollNavigation != null) {
+                        fabScrollNavigation.animate().alpha(0f).setDuration(180).withEndAction(() -> fabScrollNavigation.setVisibility(View.GONE)).start();
+                    }
+                }
+
+                // -------------- Fix End (onScrolled) -----------
+                
                 // Don't do any loading if we're in selection mode or search mode
                 if (isInSelectionMode() || isSearchActive() || isLoading) {
                     return;
                 }
                 
-                // Get layout manager and last visible position
-                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-                if (layoutManager == null) return;
-                
-                int lastVisibleItemPosition;
-                int totalItemCount = layoutManager.getItemCount();
-                
-                if (layoutManager instanceof GridLayoutManager) {
-                    lastVisibleItemPosition = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
-                } else {
-                    lastVisibleItemPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
-                }
-                
-                // If we're close to the end of the list, load more items (no action needed for this approach)
-                // We've eliminated paging, so all items are already loaded
+                // ...existing code...
             }
         });
         
@@ -1103,6 +1159,24 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             Log.w(TAG, "fabDeleteSelected is null in setupFabListeners (Might be initially GONE).");
         }
+        
+        // -------------- Fix Start (setupFabListeners) - Navigation FAB setup -----------
+        
+        if (fabScrollNavigation != null) {
+            fabScrollNavigation.setOnClickListener(v -> {
+                Log.d(TAG, "fabScrollNavigation CLICKED!");
+                if (!isAdded() || getContext() == null || recyclerView == null) {
+                    Log.e(TAG, "fabScrollNavigation clicked but fragment/view not ready!");
+                    return;
+                }
+                handleNavigationFabClick();
+            });
+            Log.d(TAG, "FAB Navigation listener set.");
+        } else {
+            Log.w(TAG, "fabScrollNavigation is null in setupFabListeners.");
+        }
+        
+        // -------------- Fix End (setupFabListeners) -----------
     }
 
     private void toggleViewMode() {
@@ -2335,10 +2409,14 @@ public class RecordsFragment extends BaseFragment implements
         if (isEmpty) {
             if (recyclerView != null) recyclerView.setVisibility(View.GONE);
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
+            // Hide navigation FAB when empty
+            if (fabScrollNavigation != null) fabScrollNavigation.setVisibility(View.GONE);
             Log.d(TAG,"LOG_UI_VISIBILITY: Showing empty state (Recycler GONE, Empty VISIBLE).");
         } else {
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
             if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+            // Update navigation FAB when videos are visible
+            updateNavigationFab();
             Log.d(TAG,"LOG_UI_VISIBILITY: Showing recycler view (Empty GONE, Recycler VISIBLE).");
         }
         if (loadingIndicator != null && loadingIndicator.getVisibility() == View.VISIBLE) {
@@ -2539,24 +2617,35 @@ public class RecordsFragment extends BaseFragment implements
     private void loadRecordsList() {
         Log.i(TAG, "loadRecordsList: Starting professional skeleton-based loading");
         
-        // -------------- Fix Start (loadRecordsList) - Immediate skeleton display and proper refresh handling -----------
+        // -------------- Fix Start (loadRecordsList) - Synchronized loading with HomeFragment and fixed positioning -----------
         
         // Step 1: Check session cache first for instant loading
         if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
             Log.d(TAG, "Using session cache with " + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size() + " videos (cache age: " + com.fadcam.utils.VideoSessionCache.getCacheAgeMs() + "ms)");
-            updateUiWithVideos(new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos()), false);
-            isLoading = false;
-            isInitialLoad = false;
+            List<VideoItem> cachedVideos = new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos());
             
-            // Stop refresh indicator immediately when using cache
+            // CRITICAL FIX: Ensure cached videos are properly sorted before display
+            sortItems(cachedVideos, currentSortOption);
+            Log.d(TAG, "Cached videos sorted with " + currentSortOption + " before display");
+            
+            updateUiWithVideos(cachedVideos, false);
+            
+            // CRITICAL FIX: Scroll to top to ensure proper list position
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
+                    if (recyclerView != null) {
+                        recyclerView.scrollToPosition(0);
+                        Log.d(TAG, "RecyclerView scrolled to position 0 after cache load");
+                    }
                     if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                         swipeRefreshLayout.setRefreshing(false);
                         Log.d(TAG, "Refresh indicator stopped - using cached data");
                     }
                 });
             }
+            
+            isLoading = false;
+            isInitialLoad = false;
             return;
         }
         
@@ -2599,7 +2688,7 @@ public class RecordsFragment extends BaseFragment implements
                 combinedVideos.addAll(primaryItems);
                 combinedVideos.addAll(tempItems);
                 
-                // Remove duplicates
+                // Remove duplicates and ensure proper ordering
                 List<VideoItem> uniqueItems = new ArrayList<>();
                 Set<Uri> uniqueUris = new HashSet<>();
                 for (VideoItem item : combinedVideos) {
@@ -2608,13 +2697,15 @@ public class RecordsFragment extends BaseFragment implements
                     }
                 }
                 
-                // Sort all items
+                // CRITICAL FIX: Sort ALL items BEFORE any display to prevent "dancing" effect
+                Log.d(TAG, "Sorting " + uniqueItems.size() + " videos with " + currentSortOption + " before display");
                 sortItems(uniqueItems, currentSortOption);
                 totalItems = uniqueItems.size();
                 
-                // Cache results for future use
+                // Cache results for future use and synchronization with HomeFragment
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems);
                 com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size());
+                Log.d(TAG, "Session cache updated for cross-fragment synchronization");
                 
                 // Replace skeletons with actual data in one smooth operation
                 replaceSkeletonsWithData(uniqueItems);
@@ -2690,4 +2781,103 @@ public class RecordsFragment extends BaseFragment implements
             isInitialLoad = false;
         });
     }
+    
+    // -------------- Fix Start (Navigation FAB Methods) - Scroll navigation functionality -----------
+    
+    /**
+     * Updates navigation FAB visibility and icon based on scroll direction
+     */
+    private void updateNavigationFab() {
+        if (fabScrollNavigation == null || recyclerView == null) return;
+        
+        RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+        if (layoutManager == null) return;
+        
+        int totalItemCount = layoutManager.getItemCount();
+        if (totalItemCount <= 5) {
+            // Hide FAB if there are too few items to need scrolling
+            fabScrollNavigation.setVisibility(View.GONE);
+            return;
+        }
+        
+        // Show FAB (actual visibility controlled by animation helpers)
+        // Use single drawable and flip based on scroll direction with smooth animation
+        fabScrollNavigation.setVisibility(View.VISIBLE);
+        
+        // Cancel any running rotation animation
+        if (currentRotationAnimator != null && currentRotationAnimator.isRunning()) {
+            currentRotationAnimator.cancel();
+        }
+        float targetRotation;
+        String contentDescription;
+        if (isScrollingDown) {
+            targetRotation = 90f;
+            contentDescription = getString(R.string.scroll_to_bottom);
+        } else {
+            targetRotation = -90f;
+            contentDescription = getString(R.string.scroll_to_top);
+        }
+        float currentRotation = fabScrollNavigation.getRotation();
+        if (Math.abs(currentRotation - targetRotation) > 1f) {
+            currentRotationAnimator = ObjectAnimator.ofFloat(fabScrollNavigation, "rotation", currentRotation, targetRotation);
+            currentRotationAnimator.setDuration(300);
+            currentRotationAnimator.setInterpolator(new android.view.animation.OvershootInterpolator(0.3f));
+            currentRotationAnimator.start();
+        } else {
+            fabScrollNavigation.setRotation(targetRotation);
+        }
+        fabScrollNavigation.setContentDescription(contentDescription);
+    }
+    
+    /**
+     * Handles navigation FAB click - scrolls based on current scroll direction
+     */
+    private void handleNavigationFabClick() {
+        if (recyclerView == null) return;
+        
+        RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+        if (layoutManager == null) return;
+        
+        int totalItemCount = layoutManager.getItemCount();
+        if (totalItemCount == 0) return;
+        
+        // Vibrate for feedback
+        vibrate();
+        
+        // Scroll based on current scroll direction (what the icon is indicating)
+        if (isScrollingDown) {
+            // FAB shows down arrow - scroll to bottom
+            recyclerView.smoothScrollToPosition(totalItemCount - 1);
+            Log.d(TAG, "Navigation FAB: Scrolling to bottom (user was scrolling down)");
+        } else {
+            // FAB shows up arrow - scroll to top
+            recyclerView.smoothScrollToPosition(0);
+            Log.d(TAG, "Navigation FAB: Scrolling to top (user was scrolling up)");
+        }
+        
+        // Update FAB icon after a short delay to reflect new position
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            updateNavigationFab();
+        }, 500);
+    }
+
+    // (No delayed hide) Fade animation helper
+    private void showNavigationFab() {
+        if (fabScrollNavigation == null) return;
+        // Ensure fully visible
+        if (fabScrollNavigation.getVisibility() != View.VISIBLE) {
+            fabScrollNavigation.setAlpha(0f);
+            fabScrollNavigation.setVisibility(View.VISIBLE);
+            // Apply dark gray background color
+            try {
+                int darkGrayColor = ContextCompat.getColor(requireContext(), R.color.gray_button_filled);
+                fabScrollNavigation.setBackgroundTintList(android.content.res.ColorStateList.valueOf(darkGrayColor));
+            } catch (Exception ignored) {}
+            fabScrollNavigation.animate().alpha(1f).setDuration(200).start();
+        } else {
+            fabScrollNavigation.animate().alpha(1f).setDuration(150).start();
+        }
+    }
+    
+    // -------------- Fix End (Navigation FAB Methods) -----------
 }

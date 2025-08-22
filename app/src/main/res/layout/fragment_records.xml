@@ -155,6 +155,22 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- Navigation FAB for scroll to top/bottom (mini size, circular, dark gray) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_scroll_navigation"
+        style="?attr/floatingActionButtonSmallStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        app:useCompatPadding="true"
+        app:backgroundTint="@color/gray_button_filled"
+        app:srcCompat="@drawable/ic_double_chevron"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/scroll_to_top"
+        android:rotation="-90" />
+
     <!-- Fix Start: AppLock full-screen overlay (initially gone)  -->
     <FrameLayout
         android:id="@+id/applock_overlay"

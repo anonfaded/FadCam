@@ -1055,4 +1055,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="debug_log_empty">No debug log yet</string>
     <string name="debug_log_share_fail">Share failed</string>
     <string name="debug_log_open_fail">Open failed</string>
+    
+    <!-- Scroll navigation -->
+    <string name="scroll_to_top">Scroll to top</string>
+    <string name="scroll_to_bottom">Scroll to bottom</string>
 </resources>

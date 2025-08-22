@@ -3338,9 +3338,12 @@ public class HomeFragment extends BaseFragment {
             // --- Try to use shared session cache first (from VideoSessionCache) ---
             Log.d(TAG,"updateStats BG: Checking for shared session cache...");
             if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
-                Log.d(TAG,"updateStats BG: Using shared session cache (" + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size() + " items)");
+                Log.d(TAG,"updateStats BG: Using shared session cache (" + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size() + " items) - eliminating duplicate scanning");
                 primaryItems = new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos());
                 tempItems = getTempCacheRecordsList();
+                
+                // CRITICAL FIX: Since we're using shared cache, populate it for future cross-fragment use
+                com.fadcam.utils.VideoSessionCache.updateSessionCache(primaryItems);
             } else {
                 // --- Load File Lists (Same logic as RecordsFragment) ---
                 Log.d(TAG,"updateStats BG: Loading file lists. Mode: "+storageMode);
@@ -3383,9 +3386,17 @@ public class HomeFragment extends BaseFragment {
 
             Log.d(TAG,"updateStats BG: Calculation complete. Count="+numVideos+", Size="+totalSizeFormatted);
 
-            // --- Cache the fresh stats for instant future access ---
+            // --- Cache the fresh stats and video list for cross-fragment synchronization ---
             VideoStatsCache.updateStats(sharedPreferencesManager, numVideos, totalSizeMB);
-            Log.d(TAG, "Updated stats cache with fresh data");
+            
+            // CRITICAL FIX: Update shared session cache to prevent RecordsFragment from rescanning
+            if (!com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
+                com.fadcam.utils.VideoSessionCache.updateSessionCache(primaryItems);
+                com.fadcam.utils.VideoSessionCache.setCachedVideoCount(numVideos);
+                Log.d(TAG, "Updated session cache from HomeFragment to prevent duplicate scanning in RecordsFragment");
+            }
+            
+            Log.d(TAG, "Updated stats cache with fresh data - cross-fragment synchronization complete");
 
             // --- Update UI on Main Thread ---
             updateStatsUI(numVideos, totalSizeMB);
