@@ -27,8 +27,12 @@ public class VideoSessionCache {
     private static final String PREF_CACHE_TIMESTAMP = "session_cache_timestamp";
     private static final String PREF_CACHE_INVALIDATED = "session_cache_invalidated";
     
-    // Disk cache file name
+    // Disk cache file names
     private static final String CACHE_FILE_NAME = "video_cache.dat";
+    private static final String THUMBNAIL_CACHE_DIR = "video_thumbnails";
+    
+    // In-memory thumbnail cache
+    private static final java.util.Map<String, byte[]> sThumbnailCache = new java.util.concurrent.ConcurrentHashMap<>();
     
     // Session-level cache shared across all fragments
     private static List<VideoItem> sSessionCachedVideos = null;
@@ -233,25 +237,34 @@ public class VideoSessionCache {
     }
     
     /**
-     * Serializable wrapper for VideoItem to enable disk caching
+     * Serializable wrapper for VideoItem to enable disk caching with thumbnails
      */
     private static class SerializableVideoItem implements java.io.Serializable {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 3L; // Updated to remove isTemporary
         
         public final String uriString;
         public final String displayName;
         public final long size;
         public final long lastModified;
-        public final boolean isTemporary;
         public final boolean isNew;
+        public final byte[] thumbnailData; // Cached thumbnail as byte array
         
         public SerializableVideoItem(VideoItem videoItem) {
             this.uriString = videoItem.uri.toString();
             this.displayName = videoItem.displayName;
             this.size = videoItem.size;
             this.lastModified = videoItem.lastModified;
-            this.isTemporary = videoItem.isTemporary;
             this.isNew = videoItem.isNew;
+            this.thumbnailData = null; // Will be set separately for existing items
+        }
+        
+        public SerializableVideoItem(VideoItem videoItem, byte[] thumbnailData) {
+            this.uriString = videoItem.uri.toString();
+            this.displayName = videoItem.displayName;
+            this.size = videoItem.size;
+            this.lastModified = videoItem.lastModified;
+            this.isNew = videoItem.isNew;
+            this.thumbnailData = thumbnailData;
         }
         
         public VideoItem toVideoItem() {
@@ -261,7 +274,6 @@ public class VideoSessionCache {
                 size,
                 lastModified
             );
-            item.isTemporary = isTemporary;
             item.isNew = isNew;
             return item;
         }
@@ -358,6 +370,107 @@ public class VideoSessionCache {
         } catch (Exception e) {
             Log.e(TAG, "Error persisting cached video count", e);
         }
+    }
+    
+    // -------------- Thumbnail Caching Methods --------------
+    
+    /**
+     * Caches a thumbnail for a video URI
+     */
+    public static void cacheThumbnail(String uriString, byte[] thumbnailData) {
+        if (uriString == null || thumbnailData == null) return;
+        
+        sThumbnailCache.put(uriString, thumbnailData);
+        Log.v(TAG, "Cached thumbnail for: " + uriString + " (" + thumbnailData.length + " bytes)");
+    }
+    
+    /**
+     * Gets cached thumbnail for a video URI
+     */
+    public static byte[] getCachedThumbnail(String uriString) {
+        if (uriString == null) return null;
+        
+        byte[] thumbnail = sThumbnailCache.get(uriString);
+        if (thumbnail != null) {
+            Log.v(TAG, "Thumbnail cache hit for: " + uriString);
+        }
+        return thumbnail;
+    }
+    
+    /**
+     * Saves thumbnail to disk cache
+     */
+    public static void saveThumbnailToDisk(Context context, String uriString, byte[] thumbnailData) {
+        if (context == null || uriString == null || thumbnailData == null) return;
+        
+        new Thread(() -> {
+            try {
+                File thumbnailDir = new File(context.getCacheDir(), THUMBNAIL_CACHE_DIR);
+                if (!thumbnailDir.exists()) {
+                    thumbnailDir.mkdirs();
+                }
+                
+                // Use hash of URI as filename to avoid filesystem issues
+                String filename = String.valueOf(uriString.hashCode()) + ".thumb";
+                File thumbnailFile = new File(thumbnailDir, filename);
+                
+                try (FileOutputStream fos = new FileOutputStream(thumbnailFile)) {
+                    fos.write(thumbnailData);
+                    fos.flush();
+                    Log.v(TAG, "Saved thumbnail to disk: " + filename);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving thumbnail to disk", e);
+            }
+        }).start();
+    }
+    
+    /**
+     * Loads thumbnail from disk cache
+     */
+    public static byte[] loadThumbnailFromDisk(Context context, String uriString) {
+        if (context == null || uriString == null) return null;
+        
+        try {
+            File thumbnailDir = new File(context.getCacheDir(), THUMBNAIL_CACHE_DIR);
+            String filename = String.valueOf(uriString.hashCode()) + ".thumb";
+            File thumbnailFile = new File(thumbnailDir, filename);
+            
+            if (!thumbnailFile.exists()) {
+                return null;
+            }
+            
+            try (FileInputStream fis = new FileInputStream(thumbnailFile)) {
+                byte[] data = new byte[(int) thumbnailFile.length()];
+                fis.read(data);
+                Log.v(TAG, "Loaded thumbnail from disk: " + filename);
+                return data;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading thumbnail from disk", e);
+            return null;
+        }
+    }
+    
+    /**
+     * Gets thumbnail with disk fallback
+     */
+    public static byte[] getThumbnailWithFallback(Context context, String uriString) {
+        // Try memory cache first
+        byte[] thumbnail = getCachedThumbnail(uriString);
+        if (thumbnail != null) {
+            return thumbnail;
+        }
+        
+        // Try disk cache
+        thumbnail = loadThumbnailFromDisk(context, uriString);
+        if (thumbnail != null) {
+            // Cache in memory for next time
+            cacheThumbnail(uriString, thumbnail);
+            return thumbnail;
+        }
+        
+        return null;
     }
 }
 // -------------- Fix Ended (VideoSessionCache Utility)-----------

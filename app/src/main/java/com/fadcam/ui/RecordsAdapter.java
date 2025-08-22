@@ -379,6 +379,18 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 
                 // Calculate duration on background thread - this is one of the main causes of lag
                 executorService.execute(() -> {
+                    // -------------- Fix Start (duration calculation for new videos) -----------
+                    // Add a small delay for newly recorded videos to ensure file is fully written
+                    if (videoItem.isNew) {
+                        try {
+                            Thread.sleep(500); // 500ms delay for new videos
+                            Log.d(TAG, "Added delay for new video duration calculation: " + videoItem.displayName);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    // -------------- Fix End (duration calculation for new videos) -----------
+                    
                     long duration = getVideoDuration(videoUri);
                     String formattedDuration = formatVideoDuration(duration);
                     loadedThumbnailCache.put(position, formattedDuration);
@@ -555,6 +567,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (allowGeneralInteractions && longClickListener != null) { longClickListener.onVideoLongClick(videoItem, true); }
             return allowGeneralInteractions;
         });
+        
+        // -------------- Fix Start (thumbnail click listener) -----------
+        // Set the same click listener on the thumbnail for better UX
+        if (holder.imageViewThumbnail != null) {
+            holder.imageViewThumbnail.setOnClickListener(v -> {
+                if (allowGeneralInteractions && clickListener != null) { clickListener.onVideoClick(videoItem); }
+            });
+        }
+        // -------------- Fix End (thumbnail click listener) -----------
 
         // INSTEAD, set a click listener on the menuButtonContainer
         if (holder.menuButtonContainer != null) {
@@ -671,7 +692,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         try { return context.getString(R.string.accessibility_thumbnail_progress, percent); } catch (Exception ignored) { return percent + "% watched"; }
     }
 
-    // Update the setThumbnail method to consider scrolling state
+    // Update the setThumbnail method to consider scrolling state with caching
     private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
         if (holder.imageViewThumbnail == null || context == null) return;
         // Honor user preference: hide thumbnails if requested
@@ -684,6 +705,32 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
         } catch (Exception ignored) {}
 
+        // -------------- Fix Start (loadThumbnail with cache)-----------
+        // Skip Glide loading for skeleton URIs
+        if ("skeleton".equals(videoUri.getScheme())) {
+            holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+            return;
+        }
+        
+        String uriString = videoUri.toString();
+        
+        // Try to get cached thumbnail first
+        byte[] cachedThumbnail = com.fadcam.utils.VideoSessionCache.getThumbnailWithFallback(context, uriString);
+        if (cachedThumbnail != null) {
+            // Load from cache - instant display
+            try {
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(cachedThumbnail, 0, cachedThumbnail.length);
+                if (bitmap != null) {
+                    holder.imageViewThumbnail.setImageBitmap(bitmap);
+                    holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    Log.v(TAG, "Loaded thumbnail from cache for: " + uriString);
+                    return;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error loading cached thumbnail", e);
+            }
+        }
+
         // Lower resolution during scrolling for performance
         int thumbnailSize = isScrolling ? 100 : THUMBNAIL_SIZE;
         
@@ -693,27 +740,53 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             .skipMemoryCache(false)
             .centerCrop()
             .override(thumbnailSize, thumbnailSize)
-            .placeholder(R.drawable.ic_video_placeholder);
+            .placeholder(R.drawable.ic_video_placeholder)
+            .error(R.drawable.ic_video_placeholder);
         
         if (isScrolling) {
             // During scrolling, use low-quality thumbnails for speed
             options = options.dontAnimate();
         }
         
-        // -------------- Fix Start (loadThumbnail)-----------
-        // Skip Glide loading for skeleton URIs
-        if ("skeleton".equals(videoUri.getScheme())) {
-            holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
-            return;
-        }
-        // -------------- Fix End (loadThumbnail)-----------
-        
-        // Implement loading with scroll-aware options
-    Glide.with(context)
-        .load(videoUri)
-        .apply(options)
-        .thumbnail(0.1f) // Use a small thumbnail first for faster initial loading
-        .into(holder.imageViewThumbnail);
+        // Load with Glide and cache the result
+        Glide.with(context)
+            .asBitmap()
+            .load(videoUri)
+            .apply(options)
+            .thumbnail(0.1f)
+            .into(new com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull android.graphics.Bitmap resource, 
+                                          @androidx.annotation.Nullable com.bumptech.glide.request.transition.Transition<? super android.graphics.Bitmap> transition) {
+                    // Set the image
+                    holder.imageViewThumbnail.setImageBitmap(resource);
+                    holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    
+                    // Cache the thumbnail for future use
+                    executorService.execute(() -> {
+                        try {
+                            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                            resource.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, baos);
+                            byte[] thumbnailData = baos.toByteArray();
+                            
+                            // Cache in memory and disk
+                            com.fadcam.utils.VideoSessionCache.cacheThumbnail(uriString, thumbnailData);
+                            com.fadcam.utils.VideoSessionCache.saveThumbnailToDisk(context, uriString, thumbnailData);
+                            
+                            Log.v(TAG, "Cached new thumbnail for: " + uriString);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error caching thumbnail", e);
+                        }
+                    });
+                }
+                
+                @Override
+                public void onLoadCleared(@androidx.annotation.Nullable android.graphics.drawable.Drawable placeholder) {
+                    // Set placeholder if load is cleared
+                    holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+                }
+            });
+        // -------------- Fix End (loadThumbnail with cache)-----------
     }
 
     // Override onViewRecycled to cancel thumbnail loading for recycled views
@@ -2173,6 +2246,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     public void clearCaches() {
         loadedThumbnailCache.clear();
+        // -------------- Fix Start (clear duration cache) -----------
+        // Also clear duration cache to prevent stale duration data for new videos
+        synchronized (durationCache) {
+            durationCache.clear();
+        }
+        synchronized (savedPositionCache) {
+            savedPositionCache.clear();
+        }
+        Log.d(TAG, "Cleared all adapter caches including duration and position caches");
+        // -------------- Fix End (clear duration cache) -----------
     }
 
     // For dialogs, use themed MaterialAlertDialogBuilder as in SettingsFragment

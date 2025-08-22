@@ -631,6 +631,16 @@ public class RecordsFragment extends BaseFragment implements
                         if (success && finalUriString != null) {
                             Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString
                                     + ". Refreshing list.");
+                            // -------------- Fix Start (invalidate cache for new recording) -----------
+                            // Clear adapter caches to prevent stale duration data
+                            if (recordsAdapter != null) {
+                                recordsAdapter.clearCaches();
+                                Log.d(TAG, "Cleared adapter caches for new recording");
+                            }
+                            // Invalidate cache so loadRecordsList will load fresh data including the new video
+                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                            Log.d(TAG, "Cache invalidated for new recording, forcing fresh load");
+                            // -------------- Fix End (invalidate cache for new recording) -----------
                             // For non-SAF or if originalTempSafUriString was null, a full refresh is often
                             // simplest
                             // as the new item should be discoverable by loadRecordsList.
@@ -638,8 +648,31 @@ public class RecordsFragment extends BaseFragment implements
                         } else if (!success) {
                             Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
                                     + ". Refreshing list.");
+                            // -------------- Fix Start (invalidate cache for failed recording) -----------
+                            // Clear adapter caches to prevent stale data
+                            if (recordsAdapter != null) {
+                                recordsAdapter.clearCaches();
+                                Log.d(TAG, "Cleared adapter caches for failed recording");
+                            }
+                            // Invalidate cache so loadRecordsList will load fresh data and clear any temp states
+                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                            Log.d(TAG, "Cache invalidated for failed recording, forcing fresh load");
+                            // -------------- Fix End (invalidate cache for failed recording) -----------
                             // Still refresh, as a temp file might need its processing state cleared
                             loadRecordsList();
+                        } else if (success && finalUriString == null) {
+                            // -------------- Fix Start (handle success without URI) -----------
+                            // Recording was successful but no specific URI provided - refresh anyway
+                            Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success without URI. Refreshing list to detect new video.");
+                            // Clear adapter caches to prevent stale duration data
+                            if (recordsAdapter != null) {
+                                recordsAdapter.clearCaches();
+                                Log.d(TAG, "Cleared adapter caches for successful recording without URI");
+                            }
+                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                            Log.d(TAG, "Cache invalidated for successful recording without URI, forcing fresh load");
+                            loadRecordsList(); // This will re-scan and find the new video
+                            // -------------- Fix End (handle success without URI) -----------
                         }
                     }
                 };

@@ -3269,6 +3269,8 @@ public class HomeFragment extends BaseFragment {
         
         // Create a new runnable
         updateInfoRunnable = new Runnable() {
+            private int updateCounter = 0; // Counter for less frequent stats updates
+            
             @Override
             public void run() {
                 if ((isRecording() || isPaused()) && isAdded()) {
@@ -3279,9 +3281,17 @@ public class HomeFragment extends BaseFragment {
                         Log.w(TAG, "startUpdatingInfo: Invalid recordingStartTime detected, resetting to current time: " + recordingStartTime);
                     }
                     
-                    Log.d(TAG, "Update timer: Refreshing storage info and stats, recordingStartTime=" + recordingStartTime);
+                    // Always update storage info (lightweight)
                     updateStorageInfo();
-                    updateStats();
+                    
+                    // Update stats every 5 seconds during recording to avoid performance impact
+                    updateCounter++;
+                    if (updateCounter >= 5) {
+                        Log.d(TAG, "Update timer: Refreshing stats during recording (every 5s)");
+                        updateStats();
+                        updateCounter = 0;
+                    }
+                    
                     handlerClock.postDelayed(this, 1000); // Update every second
                 } else {
                     Log.d(TAG, "Update timer: Not recording or fragment detached, stopping updates");
@@ -3309,14 +3319,21 @@ public class HomeFragment extends BaseFragment {
     private void updateStats() {
         Log.d(TAG, "updateStats: Starting calculation...");
         
-        // -------------- Fix Start (updateStats) - Instant stats display with caching -----------
+        // -------------- Fix Start (updateStats) - Live stats during recording -----------
         
-        // Step 1: Try to display cached stats instantly
-        VideoStatsCache.VideoStats cachedStats = VideoStatsCache.getCachedStats(sharedPreferencesManager);
-        if (cachedStats != null && cachedStats.isValid()) {
-            Log.d(TAG, "Using cached stats for instant display: " + cachedStats.videoCount + " videos, " + cachedStats.totalSizeMB + "MB");
-            updateStatsUI(cachedStats.videoCount, cachedStats.totalSizeMB);
-            return; // Show cached data instantly, no need to recalculate unless invalidated
+        // Check if recording is in progress - if so, force fresh calculation for live updates
+        boolean isRecording = sharedPreferencesManager.isRecordingInProgress();
+        
+        // Step 1: Try to display cached stats instantly (only if not recording)
+        if (!isRecording) {
+            VideoStatsCache.VideoStats cachedStats = VideoStatsCache.getCachedStats(sharedPreferencesManager);
+            if (cachedStats != null && cachedStats.isValid()) {
+                Log.d(TAG, "Using cached stats for instant display: " + cachedStats.videoCount + " videos, " + cachedStats.totalSizeMB + "MB");
+                updateStatsUI(cachedStats.videoCount, cachedStats.totalSizeMB);
+                return; // Show cached data instantly, no need to recalculate unless invalidated
+            }
+        } else {
+            Log.d(TAG, "Recording in progress - forcing fresh stats calculation for live updates");
         }
         
         Log.d(TAG, "No valid cached stats found - calculating fresh stats");
