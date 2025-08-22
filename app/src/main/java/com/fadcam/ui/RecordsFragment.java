@@ -35,7 +35,7 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 import android.widget.CheckBox;
 // Import ImageView
-import android.widget.TextView;     // Import TextView
+import android.widget.TextView; // Import TextView
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog; // Import AlertDialog
@@ -78,12 +78,12 @@ import java.util.concurrent.TimeUnit;
 
 import android.graphics.Rect;
 
-import android.content.BroadcastReceiver;  // ** ADD **
+import android.content.BroadcastReceiver; // ** ADD **
 // ** ADD **
 // ** ADD **
-import android.content.IntentFilter;     // ** ADD **
+import android.content.IntentFilter; // ** ADD **
 // Use this for app-internal
-import androidx.core.content.ContextCompat;  // ** ADD **
+import androidx.core.content.ContextCompat; // ** ADD **
 // Use ContextCompat for receiver reg
 
 import java.util.Set; // Need Set import
@@ -115,146 +115,159 @@ public class RecordsFragment extends BaseFragment implements
     // ** NEW: Set to track URIs currently being processed **
     private Set<Uri> currentlyProcessingUris = new HashSet<>();
     private static final String TAG = "RecordsFragment";
-    
+
     // Remove duplicate session cache - now using shared VideoSessionCache utility
     // (Moved to com.fadcam.utils.VideoSessionCache for cross-fragment sharing)
-    
+
     // -------------- Fix Start (Skeleton Loading Methods) --------------
-    
+
     /**
      * Shows skeleton loading placeholders immediately for professional UX
      */
     private void showSkeletonLoading(int estimatedCount) {
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
-                if (!isAdded()) return;
-                
+                if (!isAdded())
+                    return;
+
                 Log.d(TAG, "Showing skeleton loading with " + estimatedCount + " items");
-                
+
                 // Create skeleton items
                 List<VideoItem> skeletonItems = new ArrayList<>();
                 for (int i = 0; i < estimatedCount; i++) {
-                    skeletonItems.add(VideoItem.createSkeleton()); // We'll need to add this method
+                    skeletonItems.add(VideoItem.createSkeleton());
                 }
+
+                // -------------- Fix Start (showSkeletonLoading) - Proper skeleton setup -----------
                 
-                // Show skeleton items immediately
+                // Show skeleton items immediately without triggering updateRecords
                 if (recordsAdapter != null) {
                     recordsAdapter.setSkeletonMode(true);
                     allLoadedItems.clear();
                     allLoadedItems.addAll(skeletonItems);
                     videoItems.clear();
                     videoItems.addAll(skeletonItems);
-                    recordsAdapter.notifyDataSetChanged();
+                    
+                    // Directly set skeleton data without calling updateRecords to preserve skeleton mode
+                    recordsAdapter.setSkeletonData(skeletonItems);
                 }
                 
-                // Show RecyclerView, hide loading indicator
-                if (loadingIndicator != null) {
-                    loadingIndicator.setVisibility(View.GONE);
-                }
+                // -------------- Fix End (showSkeletonLoading) -----------
+
+                // CRITICAL: Show RecyclerView immediately to prevent empty flash
                 if (recyclerView != null) {
                     recyclerView.setVisibility(View.VISIBLE);
                 }
                 if (emptyStateContainer != null) {
                     emptyStateContainer.setVisibility(View.GONE);
                 }
+                if (loadingIndicator != null) {
+                    loadingIndicator.setVisibility(View.GONE);
+                }
             });
         }
     }
-    
+
     /**
      * Replaces skeleton items with actual video data in one smooth transition
      */
     private void replaceSkeletonsWithData(List<VideoItem> actualItems) {
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
-                if (!isAdded()) return;
-                
-                Log.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size() + " actual videos");
-                
-                // -------------- Fix Start (replaceSkeletonsWithData) - Fixed positioning and ordering -----------
-                
+                if (!isAdded())
+                    return;
+
+                Log.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size()
+                        + " actual videos");
+
+                // -------------- Fix Start (replaceSkeletonsWithData) - Fixed positioning and
+                // ordering -----------
+
                 // Disable skeleton mode
                 if (recordsAdapter != null) {
                     recordsAdapter.setSkeletonMode(false);
                 }
-                
+
                 // Replace data in all collections
                 allLoadedItems.clear();
                 allLoadedItems.addAll(actualItems);
                 videoItems.clear();
                 videoItems.addAll(actualItems);
-                
+
                 // CRITICAL FIX: Update adapter's internal records list
                 if (recordsAdapter != null) {
                     recordsAdapter.updateRecords(actualItems);
                     Log.d(TAG, "Adapter updated with " + actualItems.size() + " videos");
                 }
-                
+
                 // Update UI visibility
                 updateUiVisibility();
                 isLoading = false;
-                
+
                 // CRITICAL FIX: Ensure RecyclerView scrolls to top after loading
                 if (recyclerView != null && actualItems.size() > 0) {
                     recyclerView.scrollToPosition(0);
                     Log.d(TAG, "RecyclerView scrolled to position 0 to show first video");
                 }
-                
+
                 // Ensure refresh indicator is stopped
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
                     Log.d(TAG, "Refresh indicator stopped in replaceSkeletonsWithData");
                 }
-                
+
                 Log.d(TAG, "Skeleton replacement complete - proper positioning and ordering achieved");
-                
+
                 // -------------- Fix End (replaceSkeletonsWithData) -----------
-                
+
                 // -------------- Fix End (replaceSkeletonsWithData) -----------
             });
         }
     }
-    
+
     /**
      * Hides skeleton loading and shows error or empty state
      */
     private void hideSkeletonLoading() {
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
-                if (!isAdded()) return;
-                
-                // -------------- Fix Start (hideSkeletonLoading) - Proper state cleanup -----------
-                
+                if (!isAdded())
+                    return;
+
+                // -------------- Fix Start (hideSkeletonLoading) - Proper state cleanup
+                // -----------
+
                 if (recordsAdapter != null) {
                     recordsAdapter.setSkeletonMode(false);
                 }
-                
+
                 allLoadedItems.clear();
                 videoItems.clear();
                 if (recordsAdapter != null) {
                     recordsAdapter.notifyDataSetChanged();
                 }
-                
+
                 updateUiVisibility();
                 isLoading = false;
-                
+
                 // Ensure refresh indicator is stopped on error/empty state
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
                     Log.d(TAG, "Refresh indicator stopped in hideSkeletonLoading");
                 }
-                
+
                 // -------------- Fix End (hideSkeletonLoading) -----------
             });
         }
     }
-    
+
     /**
-     * Gets primary video files without progressive callbacks for silent background loading
+     * Gets primary video files without progressive callbacks for silent background
+     * loading
      */
     private List<VideoItem> getPrimaryVideoFiles() {
         String safUriString = sharedPreferencesManager.getCustomStorageUri();
-        
+
         if (safUriString != null) {
             try {
                 Uri treeUri = Uri.parse(safUriString);
@@ -268,13 +281,13 @@ public class RecordsFragment extends BaseFragment implements
                 Log.e(TAG, "Error processing SAF URI", e);
             }
         }
-        
+
         // Fallback to internal storage
         return getInternalRecordsList();
     }
-    
+
     // -------------- Fix Ended (Skeleton Loading Methods) --------------
-    
+
     private AlertDialog progressDialog; // Field to hold the dialog for Save to Gallery
     private AlertDialog moveTrashProgressDialog; // Changed from ProgressDialog to AlertDialog
     private RecyclerView recyclerView;
@@ -313,15 +326,16 @@ public class RecordsFragment extends BaseFragment implements
     private boolean isInSelectionMode = false;
     private List<Uri> selectedUris = new ArrayList<>(); // Manage the actual selected URIs here
     // *** IMPLEMENT THE NEW INTERFACE METHOD ***
+
     @Override
     public void onDeletionFinishedCheckEmptyState() {
         Log.d(TAG, "Adapter signaled deletion finished. Checking empty state...");
         // This method is called AFTER the adapter has removed the item
         // and notified itself. Now, we update the Fragment's overall UI visibility.
-        if(getView() != null){ // Ensure view is available
+        if (getView() != null) { // Ensure view is available
             getActivity().runOnUiThread(this::updateUiVisibility); // Use the existing helper
         } else {
-            Log.w(TAG,"onDeletionFinishedCheckEmptyState called but view is null.");
+            Log.w(TAG, "onDeletionFinishedCheckEmptyState called but view is null.");
         }
     }
 
@@ -331,7 +345,8 @@ public class RecordsFragment extends BaseFragment implements
         if (videoItem == null || videoItem.uri == null) {
             Log.e(TAG, "onMoveToTrashRequested: Received null videoItem or URI.");
             if (getContext() != null) {
-                Toast.makeText(getContext(), getString(R.string.delete_video_error_null_toast), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.delete_video_error_null_toast), Toast.LENGTH_SHORT)
+                        .show();
             }
             onMoveToTrashFinished(false, "Error: Null item provided.");
             return;
@@ -340,15 +355,18 @@ public class RecordsFragment extends BaseFragment implements
         Log.i(TAG, "Delete requested for: " + videoItem.displayName);
 
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog
+                : R.style.ThemeOverlay_FadCam_Dialog;
 
         // Use a custom TextView for the message to ensure correct color
         TextView messageView = new TextView(requireContext());
         messageView.setText(getString(R.string.delete_video_dialog_message, videoItem.displayName));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(),
+                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         messageView.setTextSize(16);
         messageView.setPadding(48, 32, 48, 32);
 
@@ -364,36 +382,41 @@ public class RecordsFragment extends BaseFragment implements
                     }
                     executorService.submit(() -> {
                         boolean success = moveToTrashVideoItem(videoItem);
-                        final String message = success ? getString(R.string.delete_video_success_toast, videoItem.displayName) :
-                                getString(R.string.delete_video_fail_toast, videoItem.displayName);
+                        final String message = success
+                                ? getString(R.string.delete_video_success_toast, videoItem.displayName)
+                                : getString(R.string.delete_video_fail_toast, videoItem.displayName);
                         onMoveToTrashFinished(success, message);
 
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
                                 if (success) {
+                                    // Invalidate cache when video is deleted
+                                    com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+
                                     // Perform a complete refresh to ensure serial numbers are updated
-                                    Log.d(TAG, "Single video deleted, performing full refresh to update serial numbers");
+                                    Log.d(TAG,
+                                            "Single video deleted, performing full refresh to update serial numbers");
                                     if (recordsAdapter != null) {
                                         recordsAdapter.clearCaches(); // Clear any cached data
                                     }
                                     loadRecordsList(); // Complete refresh
                                 }
                                 if (isInSelectionMode && selectedUris.contains(videoItem.uri)) {
-                                     selectedUris.remove(videoItem.uri);
-                                     if(selectedUris.isEmpty()) {
-                                         exitSelectionMode();
-                                     } else {
-                                         updateUiForSelectionMode();
-                                     }
+                                    selectedUris.remove(videoItem.uri);
+                                    if (selectedUris.isEmpty()) {
+                                        exitSelectionMode();
+                                    } else {
+                                        updateUiForSelectionMode();
+                                    }
                                 }
                             });
                         }
                     });
                 });
-        
+
         AlertDialog dialog = builder.create();
         dialog.show();
-        
+
         // Set button colors based on theme
         if (isSnowVeilTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
@@ -411,27 +434,32 @@ public class RecordsFragment extends BaseFragment implements
 
     @Override
     public void onMoveToTrashStarted(String videoName) {
-        if (getActivity() == null) return;
+        if (getActivity() == null)
+            return;
         getActivity().runOnUiThread(() -> {
             if (moveTrashProgressDialog != null && moveTrashProgressDialog.isShowing()) {
                 moveTrashProgressDialog.dismiss(); // Dismiss previous if any
             }
 
             // Check for Snow Veil theme
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+            String currentTheme = sharedPreferencesManager.sharedPreferences
+                    .getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-            int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+            int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog
+                    : R.style.ThemeOverlay_FadCam_Dialog;
 
             MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme);
             LayoutInflater inflater = LayoutInflater.from(getContext());
-            View dialogView = inflater.inflate(R.layout.dialog_progress, null); // Assuming R.layout.dialog_progress exists
+            View dialogView = inflater.inflate(R.layout.dialog_progress, null); // Assuming R.layout.dialog_progress
+                                                                                // exists
 
-            TextView progressText = dialogView.findViewById(R.id.progress_text); // Assuming R.id.progress_text exists in dialog_progress.xml
+            TextView progressText = dialogView.findViewById(R.id.progress_text); // Assuming R.id.progress_text exists
+                                                                                 // in dialog_progress.xml
             if (progressText != null) {
                 progressText.setText(getString(R.string.delete_video_progress, videoName));
                 // Set text color based on theme
-                progressText.setTextColor(ContextCompat.getColor(requireContext(), 
-                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
+                progressText.setTextColor(ContextCompat.getColor(requireContext(),
+                        isSnowVeilTheme ? android.R.color.black : android.R.color.white));
             }
 
             builder.setView(dialogView);
@@ -452,8 +480,9 @@ public class RecordsFragment extends BaseFragment implements
             com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess();
             Log.d(TAG, "Invalidated video caches after successful video deletion");
         }
-        
-        if (getActivity() == null) return;
+
+        if (getActivity() == null)
+            return;
         getActivity().runOnUiThread(() -> {
             if (moveTrashProgressDialog != null && moveTrashProgressDialog.isShowing()) {
                 moveTrashProgressDialog.dismiss();
@@ -507,7 +536,8 @@ public class RecordsFragment extends BaseFragment implements
                 };
             }
             IntentFilter filter = new IntentFilter(Constants.ACTION_STORAGE_LOCATION_CHANGED);
-            ContextCompat.registerReceiver(requireContext(), storageLocationChangedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            ContextCompat.registerReceiver(requireContext(), storageLocationChangedReceiver, filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
             isStorageReceiverRegistered = true;
             Log.d(TAG, "ACTION_STORAGE_LOCATION_CHANGED receiver registered.");
         }
@@ -542,9 +572,11 @@ public class RecordsFragment extends BaseFragment implements
                         Log.d(TAG, "Received ACTION_RECORDING_COMPLETE broadcast. Current items: " + videoItems.size());
                         boolean success = intent.getBooleanExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
                         String finalUriString = intent.getStringExtra(Constants.EXTRA_RECORDING_URI_STRING);
-                        String originalTempSafUriString = intent.getStringExtra(Constants.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING);
+                        String originalTempSafUriString = intent
+                                .getStringExtra(Constants.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING);
 
-                        Log.d(TAG, "  Success: " + success + ", Final URI: " + finalUriString + ", OriginalTempSAF: " + originalTempSafUriString);
+                        Log.d(TAG, "  Success: " + success + ", Final URI: " + finalUriString + ", OriginalTempSAF: "
+                                + originalTempSafUriString);
 
                         if (originalTempSafUriString != null) {
                             Uri originalTempSafUri = Uri.parse(originalTempSafUriString);
@@ -554,7 +586,7 @@ public class RecordsFragment extends BaseFragment implements
                                     videoItems.remove(i);
                                     foundAndRemoved = true;
                                     Log.d(TAG, "Removed temporary SAF VideoItem: " + originalTempSafUri);
-                                    break; 
+                                    break;
                                 }
                             }
 
@@ -566,8 +598,7 @@ public class RecordsFragment extends BaseFragment implements
                                             finalUri,
                                             finalDocFile.getName(),
                                             finalDocFile.length(),
-                                            finalDocFile.lastModified()
-                                    );
+                                            finalDocFile.lastModified());
                                     newItem.isTemporary = false;
                                     newItem.isNew = true;
                                     videoItems.add(0, newItem); // Add to top, assuming latest
@@ -576,9 +607,11 @@ public class RecordsFragment extends BaseFragment implements
                                     Log.w(TAG, "Final SAF DocumentFile does not exist or is null: " + finalUriString);
                                 }
                             } else if (!success) {
-                                Log.w(TAG, "Processing failed for original temp SAF URI: " + originalTempSafUriString + ". It was removed from list if present.");
+                                Log.w(TAG, "Processing failed for original temp SAF URI: " + originalTempSafUriString
+                                        + ". It was removed from list if present.");
                                 // If processing failed, the temp SAF item (if it was ever added) is removed.
-                                // The actual temp file on disk might still be there if deletion in service failed.
+                                // The actual temp file on disk might still be there if deletion in service
+                                // failed.
                             }
 
                             if (foundAndRemoved || (success && finalUriString != null)) {
@@ -594,20 +627,25 @@ public class RecordsFragment extends BaseFragment implements
 
                         // Existing logic for non-SAF replacement (mostly internal storage)
                         if (success && finalUriString != null) {
-                            Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString + ". Refreshing list.");
-                            // For non-SAF or if originalTempSafUriString was null, a full refresh is often simplest
+                            Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString
+                                    + ". Refreshing list.");
+                            // For non-SAF or if originalTempSafUriString was null, a full refresh is often
+                            // simplest
                             // as the new item should be discoverable by loadRecordsList.
                             loadRecordsList(); // This will re-scan and update everything.
                         } else if (!success) {
-                            Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString + ". Refreshing list.");
+                            Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
+                                    + ". Refreshing list.");
                             // Still refresh, as a temp file might need its processing state cleared
                             loadRecordsList();
                         }
                     }
                 };
             }
-            // LocalBroadcastManager.getInstance(getContext()).registerReceiver(recordingCompleteReceiver, new IntentFilter(Constants.ACTION_RECORDING_COMPLETE));
-            ContextCompat.registerReceiver(getContext(), recordingCompleteReceiver, new IntentFilter(Constants.ACTION_RECORDING_COMPLETE), ContextCompat.RECEIVER_NOT_EXPORTED);
+            // LocalBroadcastManager.getInstance(getContext()).registerReceiver(recordingCompleteReceiver,
+            // new IntentFilter(Constants.ACTION_RECORDING_COMPLETE));
+            ContextCompat.registerReceiver(getContext(), recordingCompleteReceiver,
+                    new IntentFilter(Constants.ACTION_RECORDING_COMPLETE), ContextCompat.RECEIVER_NOT_EXPORTED);
 
             isReceiverRegistered = true;
             Log.d(TAG, "RecordingCompleteReceiver registered.");
@@ -620,8 +658,8 @@ public class RecordsFragment extends BaseFragment implements
                 requireContext().unregisterReceiver(recordingCompleteReceiver);
                 isReceiverRegistered = false; // Mark as unregistered
                 Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver unregistered.");
-            } catch (IllegalArgumentException e){
-                Log.w(TAG,"Attempted to unregister recording complete receiver but it wasn't registered?");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Attempted to unregister recording complete receiver but it wasn't registered?");
                 isReceiverRegistered = false; // Ensure flag is reset even on error
             }
         }
@@ -638,13 +676,14 @@ public class RecordsFragment extends BaseFragment implements
 
         // Initialize SharedPreferencesManager (can be done here or later if needed)
         // If it's definitely needed before onCreateView, initialize here.
-        // Ensure context is available - using requireContext() is safe within/after onCreate.
+        // Ensure context is available - using requireContext() is safe within/after
+        // onCreate.
         if (sharedPreferencesManager == null) {
             try {
                 sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
                 Log.d(TAG, "SharedPreferencesManager initialized in onCreate.");
             } catch (IllegalStateException e) {
-                Log.e(TAG,"Error getting context in onCreate: Fragment not attached?", e);
+                Log.e(TAG, "Error getting context in onCreate: Fragment not attached?", e);
                 // Handle error appropriately - maybe defer init to onViewCreated?
             }
         }
@@ -656,11 +695,13 @@ public class RecordsFragment extends BaseFragment implements
         }
         // --- Back Press Handling ---
         requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override public void handleOnBackPressed() {
-                if (isInSelectionMode) exitSelectionMode();
-                else { 
-                    if (isEnabled()) { 
-                        setEnabled(false); 
+            @Override
+            public void handleOnBackPressed() {
+                if (isInSelectionMode)
+                    exitSelectionMode();
+                else {
+                    if (isEnabled()) {
+                        setEnabled(false);
                         requireActivity().getOnBackPressedDispatcher().onBackPressed();
                     }
                 }
@@ -669,7 +710,6 @@ public class RecordsFragment extends BaseFragment implements
         // *** Other initialization code specific to the fragment's creation ***
         // (like setting arguments, retaining instance, etc., if applicable)
     }
-
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -689,14 +729,14 @@ public class RecordsFragment extends BaseFragment implements
 
         // -------------- Fix Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        
+
         // Initialize header elements
         titleText = view.findViewById(R.id.title_text);
-    menuButton = view.findViewById(R.id.action_more_options);
-    closeButton = view.findViewById(R.id.action_close);
-    selectAllContainer = view.findViewById(R.id.action_select_all_container);
-    selectAllCheck = view.findViewById(R.id.action_select_all_check);
-        
+        menuButton = view.findViewById(R.id.action_more_options);
+        closeButton = view.findViewById(R.id.action_close);
+        selectAllContainer = view.findViewById(R.id.action_select_all_container);
+        selectAllCheck = view.findViewById(R.id.action_select_all_check);
+
         // Setup menu button click listener
         if (menuButton != null) {
             menuButton.setOnClickListener(v -> showRecordsSidebar());
@@ -706,17 +746,20 @@ public class RecordsFragment extends BaseFragment implements
         }
         if (selectAllContainer != null && selectAllCheck != null) {
             selectAllContainer.setOnClickListener(v -> {
-                if (!isInSelectionMode) return; // ignore when not selecting
+                if (!isInSelectionMode)
+                    return; // ignore when not selecting
                 boolean willSelectAll = selectedUris.size() != videoItems.size() || videoItems.isEmpty();
                 if (willSelectAll) {
                     selectedUris.clear();
                     for (VideoItem item : videoItems) {
-                        if (item != null && item.uri != null) selectedUris.add(item.uri);
+                        if (item != null && item.uri != null)
+                            selectedUris.add(item.uri);
                     }
                 } else {
                     selectedUris.clear();
                 }
-                if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+                if (recordsAdapter != null)
+                    recordsAdapter.setSelectionModeActive(true, selectedUris);
                 // animate the header check like picker does
                 boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
                 // Use unified bounce+fade animation for header check
@@ -727,95 +770,121 @@ public class RecordsFragment extends BaseFragment implements
                         android.graphics.drawable.Drawable d = selectAllCheck.getDrawable();
                         if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
                             androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat avd = (androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) d;
-                            avd.stop(); avd.start();
-                        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && d instanceof android.graphics.drawable.AnimatedVectorDrawable) {
+                            avd.stop();
+                            avd.start();
+                        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP
+                                && d instanceof android.graphics.drawable.AnimatedVectorDrawable) {
                             android.graphics.drawable.AnimatedVectorDrawable av = (android.graphics.drawable.AnimatedVectorDrawable) d;
-                            av.stop(); av.start();
+                            av.stop();
+                            av.start();
                         } else {
                             // fallback to a quick fade in
-                            selectAllCheck.setAlpha(0f); selectAllCheck.setScaleX(0f); selectAllCheck.setScaleY(0f);
-                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_X, 0f, 1f);
-                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_Y, 0f, 1f);
-                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, 0f, 1f);
-                            sx.setDuration(200); sy.setDuration(200); a.setDuration(160);
+                            selectAllCheck.setAlpha(0f);
+                            selectAllCheck.setScaleX(0f);
+                            selectAllCheck.setScaleY(0f);
+                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.SCALE_X, 0f, 1f);
+                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.SCALE_Y, 0f, 1f);
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.ALPHA, 0f, 1f);
+                            sx.setDuration(200);
+                            sy.setDuration(200);
+                            a.setDuration(160);
                             android.animation.AnimatorSet set = new android.animation.AnimatorSet();
-                            set.playTogether(sx, sy, a); set.start();
+                            set.playTogether(sx, sy, a);
+                            set.start();
                         }
-                    } catch (Exception e) { /* ignore and fallback */ }
+                    } catch (Exception e) {
+                        /* ignore and fallback */ }
                 } else {
                     // uncheck: fade/erase fallback; if AVD present, just fade out
                     try {
                         android.graphics.drawable.Drawable d = selectAllCheck.getDrawable();
                         if (d instanceof androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat) {
                             // can't reliably reverse; fade out the view
-                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
-                            a.setDuration(180); a.setInterpolator(new android.view.animation.AccelerateInterpolator()); a.start();
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
+                            a.setDuration(180);
+                            a.setInterpolator(new android.view.animation.AccelerateInterpolator());
+                            a.start();
                         } else {
-                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
-                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_X, selectAllCheck.getScaleX(), 0f);
-                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(selectAllCheck, View.SCALE_Y, selectAllCheck.getScaleY(), 0f);
-                            a.setDuration(180); sx.setDuration(180); sy.setDuration(180);
-                            android.animation.AnimatorSet set = new android.animation.AnimatorSet(); set.playTogether(a, sx, sy); set.start();
+                            android.animation.ObjectAnimator a = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.ALPHA, selectAllCheck.getAlpha(), 0f);
+                            android.animation.ObjectAnimator sx = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.SCALE_X, selectAllCheck.getScaleX(), 0f);
+                            android.animation.ObjectAnimator sy = android.animation.ObjectAnimator
+                                    .ofFloat(selectAllCheck, View.SCALE_Y, selectAllCheck.getScaleY(), 0f);
+                            a.setDuration(180);
+                            sx.setDuration(180);
+                            sy.setDuration(180);
+                            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+                            set.playTogether(a, sx, sy);
+                            set.start();
                         }
-                    } catch (Exception e) { /* ignore */ }
+                    } catch (Exception e) {
+                        /* ignore */ }
                     selectAllContainer.setVisibility(View.VISIBLE);
                 }
                 updateUiForSelectionMode();
             });
         }
-        
-        originalToolbarTitle = getString(R.string.records_title);
-        // -------------- Fix Ended for this method(onViewCreated)----------- 
 
-        loadingIndicator = view.findViewById(R.id.loading_indicator); 
+        originalToolbarTitle = getString(R.string.records_title);
+        // -------------- Fix Ended for this method(onViewCreated)-----------
+
+        loadingIndicator = view.findViewById(R.id.loading_indicator);
         recyclerView = view.findViewById(R.id.recycler_view_records);
-        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout); 
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
-    fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
-    fabScrollNavigation = view.findViewById(R.id.fab_scroll_navigation);
+        fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
+        fabScrollNavigation = view.findViewById(R.id.fab_scroll_navigation);
         applockOverlay = view.findViewById(R.id.applock_overlay);
 
         setupRecyclerView();
-    setupFabListeners();
+        setupFabListeners();
 
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "Swipe to refresh triggered.");
-                
-                // -------------- Fix Start (onRefresh) - Professional refresh handling with skeleton -----------
-                
+
+                // -------------- Fix Start (onRefresh) - Professional refresh handling with
+                // skeleton -----------
+
                 // Clear session cache to force fresh data
                 com.fadcam.utils.VideoSessionCache.clearSessionCache();
-                
+                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+
                 // Invalidate stats cache for manual refresh
                 com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
                 Log.d(TAG, "Invalidated video caches for manual refresh");
-                
+
                 // Clear adapter caches
                 if (recordsAdapter != null) {
                     Log.d(TAG, "Swipe refresh: Clearing adapter caches for hard refresh");
                     recordsAdapter.clearCaches();
                 }
-                
+
                 // Reset pagination and state variables
                 currentPage = 0;
                 allLoadedItems.clear();
                 hasMoreItems = true;
                 videoItemPositionCache.clear();
                 isLoading = false; // Reset loading state
-                
+
                 // Show skeleton immediately for smooth UX
-                int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount();
+                int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
                 if (estimatedCount <= 0) {
                     estimatedCount = Math.max(6, videoItems.size()); // Use previous count or minimum 6
                 }
-                
+
                 showSkeletonLoading(estimatedCount);
-                
-                // Load fresh data silently in background (loadRecordsList will handle stopping refresh indicator)
-                loadRecordsList(); 
-                
+
+                // Load fresh data silently in background (loadRecordsList will handle stopping
+                // refresh indicator)
+                loadRecordsList();
+
                 // -------------- Fix End (onRefresh) -----------
             });
         } else {
@@ -825,26 +894,32 @@ public class RecordsFragment extends BaseFragment implements
         // --- Initial Data Load ---
         // Load data *after* adapter is set up
         if (videoItems == null || videoItems.isEmpty()) { // videoItems might be retained across config changes
-            if(videoItems == null) videoItems = new ArrayList<>(); // Ensure list exists
+            if (videoItems == null)
+                videoItems = new ArrayList<>(); // Ensure list exists
             Log.d(TAG, "onViewCreated: No existing data, initiating loadRecordsList.");
-            
-            // -------------- Fix Start (immediate skeleton) - Show skeleton immediately to prevent flash -----------
-            // Show skeleton immediately to prevent "no recordings" flash
-            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount();
+
+            // -------------- Fix Start (immediate skeleton) - Show skeleton immediately to
+            // prevent flash -----------
+            // CRITICAL: Show skeleton IMMEDIATELY to prevent empty flash
+            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
             if (estimatedCount <= 0) {
                 estimatedCount = 12; // Default reasonable skeleton count
             }
+            Log.d(TAG, "onViewCreated: Showing " + estimatedCount + " skeleton items immediately");
             showSkeletonLoading(estimatedCount);
             // -------------- Fix End (immediate skeleton) -----------
-            
+
+            isInitialLoad = true; // Mark as initial load
             loadRecordsList();
         } else {
-            Log.d(TAG, "onViewCreated: Existing data found ("+videoItems.size()+" items), updating UI visibility.");
+            Log.d(TAG, "onViewCreated: Existing data found (" + videoItems.size() + " items), updating UI visibility.");
             // If data exists (e.g., fragment recreated), update adapter & UI
-            if(recordsAdapter != null) recordsAdapter.updateRecords(videoItems); // Make sure adapter has the data
+            if (recordsAdapter != null)
+                recordsAdapter.updateRecords(videoItems); // Make sure adapter has the data
             updateUiVisibility();
         }
-        // ----- Fix Start: Show AppLock overlay immediately if required and not unlocked (session-based) -----
+        // ----- Fix Start: Show AppLock overlay immediately if required and not
+        // unlocked (session-based) -----
         boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
         boolean isSessionUnlocked = sharedPreferencesManager.isAppLockSessionUnlocked();
         if (isAppLockEnabled && !isSessionUnlocked && com.guardanis.applock.AppLock.isEnrolled(requireContext())) {
@@ -852,20 +927,25 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             fadeOverlay(false);
         }
-        // ----- Fix End: Show AppLock overlay immediately if required and not unlocked (session-based) -----
+        // ----- Fix End: Show AppLock overlay immediately if required and not unlocked
+        // (session-based) -----
 
-        // ----- Fix Start: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
+        // ----- Fix Start: Apply theme colors to FABs, top bar, and bottom sheet in
+        // RecordsFragment -----
         // -------------- Fix Start for this method(applyTheme)-----------
-        // Apply theme to top bar - header bar background is handled by ?attr/colorTopBar in XML
+        // Apply theme to top bar - header bar background is handled by
+        // ?attr/colorTopBar in XML
         // No need to set background color programmatically
         // -------------- Fix Ended for this method(applyTheme)-----------
         // Apply theme to FABs
         int colorButton = resolveThemeColor(R.attr.colorButton);
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
-            fabDeleteSelected.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+            fabDeleteSelected
+                    .setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
         }
-        // ----- Fix End: Apply theme colors to FABs, top bar, and bottom sheet in RecordsFragment -----
+        // ----- Fix End: Apply theme colors to FABs, top bar, and bottom sheet in
+        // RecordsFragment -----
     } // End onViewCreated
 
     @Override
@@ -874,7 +954,9 @@ public class RecordsFragment extends BaseFragment implements
         Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
 
         // Always update toolbar/menu and AppLock state
-        androidx.viewpager2.widget.ViewPager2 viewPager = getActivity() != null ? getActivity().findViewById(R.id.view_pager) : null;
+        androidx.viewpager2.widget.ViewPager2 viewPager = getActivity() != null
+                ? getActivity().findViewById(R.id.view_pager)
+                : null;
         if (viewPager != null && viewPager.getCurrentItem() == 1 && isVisible()) {
             checkAppLock();
         }
@@ -890,34 +972,46 @@ public class RecordsFragment extends BaseFragment implements
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
-        
+
         // ----- Fix Start: Check for theme changes and update adapter -----
         if (recordsAdapter != null && sharedPreferencesManager != null) {
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+            String currentTheme = sharedPreferencesManager.sharedPreferences
+                    .getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
             Log.d(TAG, "onResume: Updated Snow Veil theme flag on adapter: " + isSnowVeilTheme);
         }
         // ----- Fix End: Check for theme changes and update adapter -----
-        
-        // -------------- Fix Start (onResume) - Smart loading to prevent duplication -----------
-        
-        // Only call loadRecordsList if we don't have valid cached data or if it's forced refresh
-        // This prevents the duplicate loading issue user reported
-        if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid() && 
-            recordsAdapter != null && recordsAdapter.getItemCount() > 0) {
-            Log.d(TAG, "onResume: Using existing valid cache, skipping duplicate load");
+
+        // -------------- Fix Start (onResume) - Smart loading to prevent duplication
+        // -----------
+
+        // -------------- Fix Start (onResume) - Prevent duplicate loading -----------
+
+        // Only reload if we actually need to (no data or cache invalidated)
+        boolean hasData = recordsAdapter != null && recordsAdapter.getItemCount() > 0 && !videoItems.isEmpty();
+        boolean hasValidCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid() ||
+                com.fadcam.utils.VideoSessionCache.hasCachedData(sharedPreferencesManager);
+
+        if (hasData && hasValidCache && !isLoading) {
+            Log.d(TAG, "onResume: Already have " + videoItems.size() + " videos loaded, skipping duplicate load");
             updateUiVisibility(); // Just update visibility state
-        } else {
-            Log.i(TAG, "LOG_REFRESH: Calling loadRecordsList() from onResume - cache invalid or empty");
+        } else if (!isLoading) {
+            Log.i(TAG, "LOG_REFRESH: Loading from onResume - hasData: " + hasData + ", hasCache: " + hasValidCache);
             loadRecordsList();
+        } else {
+            Log.d(TAG, "onResume: Already loading, skipping duplicate request");
         }
-        
+
         // -------------- Fix End (onResume) -----------
-    // no-op: view mode toggle is in Records Options side sheet
-        // ----- Fix Start: Always invalidate options menu to ensure correct menu for Records tab -----
+
+        // -------------- Fix End (onResume) -----------
+        // no-op: view mode toggle is in Records Options side sheet
+        // ----- Fix Start: Always invalidate options menu to ensure correct menu for
+        // Records tab -----
         requireActivity().invalidateOptionsMenu();
-        // ----- Fix End: Always invalidate options menu to ensure correct menu for Records tab -----
+        // ----- Fix End: Always invalidate options menu to ensure correct menu for
+        // Records tab -----
     }
 
     @Override
@@ -925,21 +1019,24 @@ public class RecordsFragment extends BaseFragment implements
         super.onPause();
         // Reset unlock state when leaving the fragment
         // isUnlocked = false;
-        
+
         // ... existing code ...
     }
 
     @Override
     public void onSaveToGalleryStarted(String fileName) {
-        if (getContext() == null) return; // Check context
+        if (getContext() == null)
+            return; // Check context
         if (progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss(); // Dismiss any previous dialog
         }
 
         // Check for Snow Veil theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog
+                : R.style.ThemeOverlay_FadCam_Dialog;
 
         // Create and show the progress dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext(), dialogTheme);
@@ -950,8 +1047,8 @@ public class RecordsFragment extends BaseFragment implements
         if (progressText != null) {
             progressText.setText("Saving '" + fileName + "'..."); // Indicate which file
             // Set text color based on theme
-            progressText.setTextColor(ContextCompat.getColor(requireContext(), 
-                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
+            progressText.setTextColor(ContextCompat.getColor(requireContext(),
+                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         }
 
         builder.setView(dialogView);
@@ -976,82 +1073,85 @@ public class RecordsFragment extends BaseFragment implements
             Toast.makeText(getContext(), message, success ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
         }
 
-        // Optional: Refresh the list if needed, e.g., if saving could somehow affect displayed items,
+        // Optional: Refresh the list if needed, e.g., if saving could somehow affect
+        // displayed items,
         // though usually not necessary for 'Save to Gallery' which is a copy operation.
         // if (success) { loadRecordsList(); }
     }
 
     // --- End Implementation of RecordActionListener ---
 
-// ** In RecordsFragment.java **
+    // ** In RecordsFragment.java **
 
     private void setupRecyclerView() {
         Log.d(TAG, "Setting up RecyclerView...");
-        
+
         // Initialize view components
         emptyStateContainer = getView().findViewById(R.id.empty_state_container);
         recyclerView = getView().findViewById(R.id.recycler_view_records);
         loadingIndicator = getView().findViewById(R.id.loading_indicator);
-        
+
         // Apply optimized layout settings
         recyclerView.setItemViewCacheSize(20); // Increase view cache size
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
         recyclerView.setHasFixedSize(true); // Use if all items have the same size
-        
+
         recyclerView.addItemDecoration(itemDecoration = new SpacesItemDecoration(4)); // Default spacing
-        
+
         // Create RecordsAdapter and setup
         recordsAdapter = new RecordsAdapter(
                 getContext(),
                 videoItems,
                 executorService,
                 sharedPreferencesManager,
-                this,  // OnVideoClickListener
-                this,  // OnVideoLongClickListener
-                this   // RecordActionListener
+                this, // OnVideoClickListener
+                this, // OnVideoLongClickListener
+                this // RecordActionListener
         );
-        
+
         // Set any theme preferences the adapter needs
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(
                 com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         recordsAdapter.setSnowVeilTheme("Snow Veil".equals(currentTheme));
-        
+
         // Set the layout manager
         setLayoutManager();
-        
+
         // Set adapter
         recyclerView.setAdapter(recordsAdapter);
-        
+
         // Setup RecyclerView scroll listener for optimized loading
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 boolean wasScrolling = isScrolling;
-                
+
                 // Update scrolling state for efficient thumbnail loading
                 isScrolling = newState != RecyclerView.SCROLL_STATE_IDLE;
                 if (recordsAdapter != null) {
                     recordsAdapter.setScrolling(isScrolling);
                 }
-                
+
                 // When scrolling stops, refresh visible items for better quality thumbnails
                 if (wasScrolling && !isScrolling) {
                     refreshVisibleItems();
                 }
 
-                // Show FAB when user starts scrolling from the top downward; pin until we return to top
+                // Show FAB when user starts scrolling from the top downward; pin until we
+                // return to top
                 if (isScrolling) {
                     // Will be made visible in onScrolled when necessary
                 }
             }
-            
+
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                
-                // -------------- Fix Start (onScrolled) - Navigation FAB management with scroll direction tracking -----------
+
+                // -------------- Fix Start (onScrolled) - Navigation FAB management with scroll
+                // direction tracking -----------
 
                 // Track scroll direction based on dy parameter
                 if (dy > 0) {
@@ -1059,11 +1159,12 @@ public class RecordsFragment extends BaseFragment implements
                 } else if (dy < 0) {
                     isScrollingDown = false; // User is scrolling up
                 }
-                
+
                 // Update navigation FAB based on current scroll position and direction
                 updateNavigationFab();
-                
-                // Determine whether to show/pin/hide FAB: if user has scrolled down from top (firstVisible>0) and not at end
+
+                // Determine whether to show/pin/hide FAB: if user has scrolled down from top
+                // (firstVisible>0) and not at end
                 RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
                 int firstVisible = 0;
                 int lastVisibleItemPosition = 0;
@@ -1083,37 +1184,40 @@ public class RecordsFragment extends BaseFragment implements
                 } else {
                     // At top or at end: hide FAB
                     if (fabScrollNavigation != null) {
-                        fabScrollNavigation.animate().alpha(0f).setDuration(180).withEndAction(() -> fabScrollNavigation.setVisibility(View.GONE)).start();
+                        fabScrollNavigation.animate().alpha(0f).setDuration(180)
+                                .withEndAction(() -> fabScrollNavigation.setVisibility(View.GONE)).start();
                     }
                 }
 
                 // -------------- Fix End (onScrolled) -----------
-                
+
                 // Don't do any loading if we're in selection mode or search mode
                 if (isInSelectionMode() || isSearchActive() || isLoading) {
                     return;
                 }
-                
+
                 // ...existing code...
             }
         });
-        
+
         // Make sure spinner is visible during initial load
         if (loadingIndicator != null) {
             loadingIndicator.setVisibility(View.VISIBLE);
         }
     }
-    
+
     /**
      * Refreshes the thumbnails of currently visible items for better quality
      * when scrolling stops
      */
     private void refreshVisibleItems() {
-        if (recyclerView == null || recordsAdapter == null || getContext() == null) return;
-        
+        if (recyclerView == null || recordsAdapter == null || getContext() == null)
+            return;
+
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-        if (layoutManager == null) return;
-        
+        if (layoutManager == null)
+            return;
+
         int firstVisible, lastVisible;
         if (layoutManager instanceof GridLayoutManager) {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) layoutManager;
@@ -1124,11 +1228,13 @@ public class RecordsFragment extends BaseFragment implements
             firstVisible = linearLayoutManager.findFirstVisibleItemPosition();
             lastVisible = linearLayoutManager.findLastVisibleItemPosition();
         }
-        
+
         // Limit the range to valid indices
-        if (firstVisible < 0) firstVisible = 0;
-        if (lastVisible >= recordsAdapter.getItemCount()) lastVisible = recordsAdapter.getItemCount() - 1;
-        
+        if (firstVisible < 0)
+            firstVisible = 0;
+        if (lastVisible >= recordsAdapter.getItemCount())
+            lastVisible = recordsAdapter.getItemCount() - 1;
+
         // Notify these items to refresh their thumbnails
         if (lastVisible >= firstVisible) {
             recordsAdapter.notifyItemRangeChanged(firstVisible, lastVisible - firstVisible + 1, "refreshThumbnail");
@@ -1137,12 +1243,12 @@ public class RecordsFragment extends BaseFragment implements
 
     // --- End Implementation of RecordActionListener ---
 
-// ** In RecordsFragment.java **
+    // ** In RecordsFragment.java **
 
     private void setupFabListeners() {
-        Log.d(TAG,"Setting up FAB listeners.");
+        Log.d(TAG, "Setting up FAB listeners.");
         // Ensure FABs are not null before setting listeners
-    // removed FAB toggle; use side sheet's View mode row
+        // removed FAB toggle; use side sheet's View mode row
 
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setOnClickListener(v -> {
@@ -1155,13 +1261,14 @@ public class RecordsFragment extends BaseFragment implements
                 }
                 confirmDeleteSelected(); // Call the confirmation dialog method
             });
-            Log.d(TAG,"FAB Delete listener set.");
+            Log.d(TAG, "FAB Delete listener set.");
         } else {
             Log.w(TAG, "fabDeleteSelected is null in setupFabListeners (Might be initially GONE).");
         }
-        
-        // -------------- Fix Start (setupFabListeners) - Navigation FAB setup -----------
-        
+
+        // -------------- Fix Start (setupFabListeners) - Navigation FAB setup
+        // -----------
+
         if (fabScrollNavigation != null) {
             fabScrollNavigation.setOnClickListener(v -> {
                 Log.d(TAG, "fabScrollNavigation CLICKED!");
@@ -1175,7 +1282,7 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             Log.w(TAG, "fabScrollNavigation is null in setupFabListeners.");
         }
-        
+
         // -------------- Fix End (setupFabListeners) -----------
     }
 
@@ -1186,12 +1293,12 @@ public class RecordsFragment extends BaseFragment implements
         updateFabIcons();
     }
 
-    private void updateFabIcons() { /* removed FAB */ }
+    private void updateFabIcons() {
+        /* removed FAB */ }
 
     // Load records from Internal or SAF based on preference
 
-
-// ** In RecordsFragment.java **
+    // ** In RecordsFragment.java **
 
     // --- Remove the paging related fields ---
     private static final int PAGE_SIZE = 30; // Number of videos to load per page
@@ -1250,15 +1357,16 @@ public class RecordsFragment extends BaseFragment implements
             if (files != null) {
                 Log.d(TAG, "LOG_GET_INTERNAL: Found " + files.length + " files/dirs in internal storage.");
                 for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION) && !file.getName().startsWith("temp_")) {
+                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)
+                            && !file.getName().startsWith("temp_")) {
                         long lastModifiedMeta = file.lastModified();
                         long timestampFromFile = Utils.parseTimestampFromFilename(file.getName());
-                        long finalTimestamp = lastModifiedMeta; 
+                        long finalTimestamp = lastModifiedMeta;
 
-                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) { 
+                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) {
                             finalTimestamp = timestampFromFile;
                         } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
-                            finalTimestamp = System.currentTimeMillis(); 
+                            finalTimestamp = System.currentTimeMillis();
                         }
                         Uri uri = Uri.fromFile(file);
                         VideoItem newItem = new VideoItem(uri, file.getName(), file.length(), finalTimestamp);
@@ -1267,14 +1375,16 @@ public class RecordsFragment extends BaseFragment implements
                         items.add(newItem);
                         Log.v(TAG, "LOG_GET_INTERNAL: Added internal item: " + file.getName());
                     } else {
-                        Log.v(TAG, "LOG_GET_INTERNAL: Skipped item (not a valid video file or is temp): " + file.getName());
+                        Log.v(TAG, "LOG_GET_INTERNAL: Skipped item (not a valid video file or is temp): "
+                                + file.getName());
                     }
                 }
             } else {
                 Log.w(TAG, "LOG_GET_INTERNAL: Internal FadCam directory listFiles returned null.");
             }
         } else {
-            Log.i(TAG, "LOG_GET_INTERNAL: Internal FadCam directory does not exist yet: " + fadCamDir.getAbsolutePath());
+            Log.i(TAG,
+                    "LOG_GET_INTERNAL: Internal FadCam directory does not exist yet: " + fadCamDir.getAbsolutePath());
         }
         Log.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " internal records. END.");
         return items;
@@ -1308,15 +1418,16 @@ public class RecordsFragment extends BaseFragment implements
         // Progressive processing: process files in chunks to avoid blocking
         final int CHUNK_SIZE = 10; // Process 10 files at a time
         int totalFiles = files.length;
-        
+
         for (int i = 0; i < totalFiles; i += CHUNK_SIZE) {
             int endIndex = Math.min(i + CHUNK_SIZE, totalFiles);
-            
+
             // Process chunk
             for (int j = i; j < endIndex; j++) {
                 DocumentFile docFile = files[j];
                 if (docFile == null || !docFile.isFile()) {
-                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a file or null): " + (docFile != null ? docFile.getName() : "null"));
+                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a file or null): "
+                            + (docFile != null ? docFile.getName() : "null"));
                     continue;
                 }
 
@@ -1331,14 +1442,14 @@ public class RecordsFragment extends BaseFragment implements
                                     docFile.getUri(),
                                     fileName,
                                     docFile.length(),
-                                    docFile.lastModified()
-                            );
+                                    docFile.lastModified());
                             tempVideoItem.isTemporary = true;
                             tempVideoItem.isNew = false;
                             // Check if this temp file is currently being processed
                             if (currentlyProcessingUris.contains(docFile.getUri())) {
                                 tempVideoItem.isProcessingUri = true;
-                                Log.d(TAG, "LOG_GET_SAF: Temporary SAF video " + fileName + " is marked as processing.");
+                                Log.d(TAG,
+                                        "LOG_GET_SAF: Temporary SAF video " + fileName + " is marked as processing.");
                             }
                             safVideoItems.add(tempVideoItem);
                         } else if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) {
@@ -1347,38 +1458,39 @@ public class RecordsFragment extends BaseFragment implements
                                     docFile.getUri(),
                                     fileName,
                                     docFile.length(),
-                                    docFile.lastModified()
-                            );
+                                    docFile.lastModified());
                             newItem.isTemporary = false;
                             newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
                             safVideoItems.add(newItem);
                         } else {
-                            // Log other video files that don't match temp or standard FadCam prefix but are video type
+                            // Log other video files that don't match temp or standard FadCam prefix but are
+                            // video type
                             Log.d(TAG, "LOG_GET_SAF: Added OTHER video item (non-FadCam, non-temp): " + fileName);
                             VideoItem newItem = new VideoItem(
                                     docFile.getUri(),
                                     fileName,
                                     docFile.length(),
-                                    docFile.lastModified()
-                            );
+                                    docFile.lastModified());
                             newItem.isTemporary = false;
                             newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
                             safVideoItems.add(newItem);
                         }
                     } else {
-                        Log.d(TAG, "LOG_GET_SAF: Skipped item (not a video file with correct extension): " + fileName + " | type: " + mimeType);
+                        Log.d(TAG, "LOG_GET_SAF: Skipped item (not a video file with correct extension): " + fileName
+                                + " | type: " + mimeType);
                     }
                 } else {
-                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + fileName + " | isFile: " + docFile.isFile() + " | type: " + mimeType);
+                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + fileName
+                            + " | isFile: " + docFile.isFile() + " | type: " + mimeType);
                 }
             }
-            
+
             // Progressive callback: update UI with current progress
             if (callback != null && !safVideoItems.isEmpty()) {
                 int progress = Math.round(((float) endIndex / totalFiles) * 100);
                 callback.onProgress(new ArrayList<>(safVideoItems), progress, endIndex < totalFiles);
             }
-            
+
             // Small delay between chunks to prevent overwhelming the system
             if (endIndex < totalFiles) {
                 try {
@@ -1389,7 +1501,7 @@ public class RecordsFragment extends BaseFragment implements
                 }
             }
         }
-        
+
         Log.d(TAG, "LOG_GET_SAF: Found " + safVideoItems.size() + " SAF records. END.");
         return safVideoItems;
     }
@@ -1405,21 +1517,23 @@ public class RecordsFragment extends BaseFragment implements
 
     private boolean hasSafPermission(Uri treeUri) {
         Context context = getContext();
-        if (context == null || treeUri == null) return false;
+        if (context == null || treeUri == null)
+            return false;
 
         try {
             // Check if we still have persistent permission
             List<UriPermission> persistedUris = context.getContentResolver().getPersistedUriPermissions();
             boolean permissionFound = false;
             for (UriPermission uriPermission : persistedUris) {
-                if (uriPermission.getUri().equals(treeUri) && uriPermission.isReadPermission() && uriPermission.isWritePermission()) {
+                if (uriPermission.getUri().equals(treeUri) && uriPermission.isReadPermission()
+                        && uriPermission.isWritePermission()) {
                     permissionFound = true;
                     break;
                 }
             }
 
             if (!permissionFound) {
-                Log.w(TAG,"No persisted R/W permission found for URI: " + treeUri);
+                Log.w(TAG, "No persisted R/W permission found for URI: " + treeUri);
                 return false;
             }
 
@@ -1428,15 +1542,15 @@ public class RecordsFragment extends BaseFragment implements
             if (docDir != null && docDir.canRead()) {
                 return true; // Both permission entry exists and basic read check passes
             } else {
-                Log.w(TAG, "Persisted permission found, but DocumentFile check failed (cannot read or null). URI: "+ treeUri);
+                Log.w(TAG, "Persisted permission found, but DocumentFile check failed (cannot read or null). URI: "
+                        + treeUri);
                 return false;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error checking SAF permission for URI: "+ treeUri, e);
+            Log.e(TAG, "Error checking SAF permission for URI: " + treeUri, e);
             return false;
         }
     }
-
 
     // --- Click Listeners & Selection ---
 
@@ -1444,20 +1558,32 @@ public class RecordsFragment extends BaseFragment implements
 
     @Override
     public void onVideoClick(VideoItem videoItem) {
-        if (videoItem == null || videoItem.uri == null) return;
+        if (videoItem == null || videoItem.uri == null)
+            return;
 
         if (isInSelectionMode) {
             // Mode ACTIVE: Click toggles selection
-            Log.d(TAG,"Fragment onVideoClick: Toggling selection for " + videoItem.displayName);
+            Log.d(TAG, "Fragment onVideoClick: Toggling selection for " + videoItem.displayName);
             toggleSelection(videoItem.uri); // Toggle the item
         } else {
             // Mode INACTIVE: Click plays video
-            Log.d(TAG,"Fragment onVideoClick: Playing video " + videoItem.displayName);
+            Log.d(TAG, "Fragment onVideoClick: Playing video " + videoItem.displayName);
             String uriString = videoItem.uri.toString();
             sharedPreferencesManager.addOpenedVideoUri(uriString);
-            if(recordsAdapter != null){ int pos = recordsAdapter.findPositionByUri(videoItem.uri); if(pos!=-1) recordsAdapter.notifyItemChanged(pos);}
-            Intent intent = new Intent(getActivity(), VideoPlayerActivity.class); intent.setData(videoItem.uri); intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            try { startActivity(intent); } catch (Exception e) { Log.e(TAG, "Failed to start player", e); Toast.makeText(getContext(), "Error opening video", Toast.LENGTH_SHORT).show();}
+            if (recordsAdapter != null) {
+                int pos = recordsAdapter.findPositionByUri(videoItem.uri);
+                if (pos != -1)
+                    recordsAdapter.notifyItemChanged(pos);
+            }
+            Intent intent = new Intent(getActivity(), VideoPlayerActivity.class);
+            intent.setData(videoItem.uri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            try {
+                startActivity(intent);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start player", e);
+                Toast.makeText(getContext(), "Error opening video", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -1472,7 +1598,10 @@ public class RecordsFragment extends BaseFragment implements
                 public void onReceive(Context context, Intent intent) {
                     if (intent != null && intent.getAction() != null) {
                         String uriString = intent.getStringExtra(Constants.EXTRA_PROCESSING_URI_STRING);
-                        if (uriString == null) { Log.w(TAG, "Received processing broadcast without URI."); return; }
+                        if (uriString == null) {
+                            Log.w(TAG, "Received processing broadcast without URI.");
+                            return;
+                        }
                         Uri fileUri = Uri.parse(uriString);
                         boolean changed = false;
 
@@ -1482,37 +1611,38 @@ public class RecordsFragment extends BaseFragment implements
                         } else if (Constants.ACTION_PROCESSING_FINISHED.equals(intent.getAction())) {
                             Log.i(TAG, "Processing finished for: " + fileUri);
                             changed = currentlyProcessingUris.remove(fileUri);
-                            
+
                             // Clear our current cache and force a complete refresh of the view
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
                             }
-                            
+
                             // Force a full refresh of the data
                             currentPage = 0;
                             allLoadedItems.clear();
                             videoItems.clear();
-                            
+
                             // Perform complete data reload from scratch
                             loadRecordsList();
-                            
+
                             // Also update the adapter to ensure the processing indicator is gone
                             if (recordsAdapter != null) {
                                 recordsAdapter.updateProcessingUris(currentlyProcessingUris);
                                 recordsAdapter.notifyDataSetChanged();
                             }
-                            
+
                             // If using SwipeRefreshLayout, ensure it's not showing refresh state
                             if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                                 swipeRefreshLayout.setRefreshing(false);
                             }
-                            
+
                             return; // Exit early, we've handled everything
                         }
 
                         // If processing started/stopped and the set changed, update adapter state
                         if (changed && recordsAdapter != null) {
-                            Log.d(TAG, "Updating adapter processing state. Processing count: " + currentlyProcessingUris.size());
+                            Log.d(TAG, "Updating adapter processing state. Processing count: "
+                                    + currentlyProcessingUris.size());
                             recordsAdapter.updateProcessingUris(currentlyProcessingUris);
                             // Note: updateProcessingUris in adapter calls notifyDataSetChanged,
                             // which might be slightly inefficient but ensures consistency for now.
@@ -1524,7 +1654,8 @@ public class RecordsFragment extends BaseFragment implements
             IntentFilter filter = new IntentFilter();
             filter.addAction(Constants.ACTION_PROCESSING_STARTED);
             filter.addAction(Constants.ACTION_PROCESSING_FINISHED);
-            ContextCompat.registerReceiver(requireContext(), processingStateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            ContextCompat.registerReceiver(requireContext(), processingStateReceiver, filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
             isProcessingReceiverRegistered = true;
             Log.d(TAG, "Processing state receivers registered.");
         }
@@ -1532,16 +1663,21 @@ public class RecordsFragment extends BaseFragment implements
 
     private void unregisterProcessingStateReceivers() {
         if (isProcessingReceiverRegistered && processingStateReceiver != null && getContext() != null) {
-            try { requireContext().unregisterReceiver(processingStateReceiver); } catch (Exception e) { /* ignore */}
+            try {
+                requireContext().unregisterReceiver(processingStateReceiver);
+            } catch (Exception e) {
+                /* ignore */}
             isProcessingReceiverRegistered = false;
             Log.d(TAG, "Processing state receivers unregistered.");
         }
     }
 
     @Override
-    public void onVideoLongClick(VideoItem videoItem, boolean isSelectedIntention) { // isSelectedIntention is less relevant here
-        if (videoItem == null || videoItem.uri == null) return;
-        Log.d(TAG,"Fragment onVideoLongClick: " + videoItem.displayName);
+    public void onVideoLongClick(VideoItem videoItem, boolean isSelectedIntention) { // isSelectedIntention is less
+                                                                                     // relevant here
+        if (videoItem == null || videoItem.uri == null)
+            return;
+        Log.d(TAG, "Fragment onVideoLongClick: " + videoItem.displayName);
 
         if (!isInSelectionMode) {
             enterSelectionMode(); // Enter selection mode on the FIRST long press
@@ -1551,52 +1687,57 @@ public class RecordsFragment extends BaseFragment implements
         vibrate(); // Haptic feedback
     }
 
-
     // --- Selection Management ---
     private void enterSelectionMode() {
-        if (isInSelectionMode) return;
+        if (isInSelectionMode)
+            return;
         isInSelectionMode = true;
         selectedUris.clear(); // Start fresh
         Log.i(TAG, ">>> Entering Selection Mode <<<");
-        if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+        if (recordsAdapter != null)
+            recordsAdapter.setSelectionModeActive(true, selectedUris);
         updateUiForSelectionMode(); // Update toolbar/FABs
     }
 
     private void exitSelectionMode() {
-        if (!isInSelectionMode) return;
+        if (!isInSelectionMode)
+            return;
         isInSelectionMode = false;
         selectedUris.clear();
         Log.i(TAG, "<<< Exiting Selection Mode >>>");
-        if (recordsAdapter != null) recordsAdapter.setSelectionModeActive(false, selectedUris);
+        if (recordsAdapter != null)
+            recordsAdapter.setSelectionModeActive(false, selectedUris);
         updateUiForSelectionMode(); // Update toolbar/FABs
     }
 
     private void updateDeleteButtonVisibility() {
-        if(fabDeleteSelected != null) {
+        if (fabDeleteSelected != null) {
             fabDeleteSelected.setVisibility(selectedVideosUris.isEmpty() ? View.GONE : View.VISIBLE);
         }
     }
 
-
     private void toggleSelection(Uri videoUri) {
         if (!isInSelectionMode) { // Should theoretically not happen if called correctly
-            Log.w(TAG,"toggleSelection called but not in selection mode!");
+            Log.w(TAG, "toggleSelection called but not in selection mode!");
             enterSelectionMode(); // Enter mode if accidentally called outside
             // return; // Or return after entering? Let's proceed to select/deselect.
         }
 
         boolean changed = false;
         if (selectedUris.contains(videoUri)) {
-            selectedUris.remove(videoUri); changed = true;
-            Log.d(TAG,"Deselected URI: "+videoUri);
+            selectedUris.remove(videoUri);
+            changed = true;
+            Log.d(TAG, "Deselected URI: " + videoUri);
         } else {
-            selectedUris.add(videoUri); changed = true;
-            Log.d(TAG,"Selected URI: "+videoUri);
+            selectedUris.add(videoUri);
+            changed = true;
+            Log.d(TAG, "Selected URI: " + videoUri);
         }
 
         if (changed) {
             // ** CRITICAL: Update the adapter with the new selection list **
-            if(recordsAdapter != null) recordsAdapter.setSelectionModeActive(true, selectedUris);
+            if (recordsAdapter != null)
+                recordsAdapter.setSelectionModeActive(true, selectedUris);
             updateUiForSelectionMode(); // Update toolbar count and FAB visibility
         }
         // Exit selection mode if list becomes empty again? User preference.
@@ -1607,7 +1748,10 @@ public class RecordsFragment extends BaseFragment implements
     // -------------- Fix Start for this method(updateUiForSelectionMode)-----------
     /** Updates Title, FABs based on whether selection mode is active */
     private void updateUiForSelectionMode() {
-        if (!isAdded() || titleText == null || getActivity() == null) { Log.w(TAG,"Cannot update selection UI - not ready"); return;}
+        if (!isAdded() || titleText == null || getActivity() == null) {
+            Log.w(TAG, "Cannot update selection UI - not ready");
+            return;
+        }
 
         if (isInSelectionMode) {
             int count = selectedUris.size();
@@ -1629,9 +1773,13 @@ public class RecordsFragment extends BaseFragment implements
                 int tint = allSelected ? resolveThemeColor(R.attr.colorToggle) : android.graphics.Color.WHITE;
                 selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(tint));
                 if (allSelected) {
-                    selectAllCheck.setScaleX(1f); selectAllCheck.setScaleY(1f); selectAllCheck.setAlpha(1f);
+                    selectAllCheck.setScaleX(1f);
+                    selectAllCheck.setScaleY(1f);
+                    selectAllCheck.setAlpha(1f);
                 } else {
-                    selectAllCheck.setScaleX(0f); selectAllCheck.setScaleY(0f); selectAllCheck.setAlpha(0f);
+                    selectAllCheck.setScaleX(0f);
+                    selectAllCheck.setScaleY(0f);
+                    selectAllCheck.setAlpha(0f);
                 }
             }
         } else {
@@ -1652,7 +1800,8 @@ public class RecordsFragment extends BaseFragment implements
             }
             if (selectAllContainer != null && selectAllCheck != null) {
                 selectAllContainer.setVisibility(View.GONE);
-                selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+                selectAllCheck
+                        .setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
             }
         }
         // Refresh the options menu (to show/hide "More Options")
@@ -1667,34 +1816,39 @@ public class RecordsFragment extends BaseFragment implements
     private void confirmDeleteSelected() {
         vibrate();
         if (!isAdded() || getContext() == null || selectedUris.isEmpty()) { // Added safety checks
-            Log.w(TAG,"confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
+            Log.w(TAG,
+                    "confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
             return;
         }
         int count = selectedUris.size();
-        Log.d(TAG,"Showing confirm delete dialog for " + count + " items.");
-        
+        Log.d(TAG, "Showing confirm delete dialog for " + count + " items.");
+
         // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog : R.style.ThemeOverlay_FadCam_Dialog;
-        
+        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog
+                : R.style.ThemeOverlay_FadCam_Dialog;
+
         // Use a custom TextView for the message to ensure correct color
         TextView messageView = new TextView(requireContext());
         messageView.setText(getResources().getString(R.string.dialog_multi_video_del_note));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(), isSnowVeilTheme ? android.R.color.black : android.R.color.white));
+        messageView.setTextColor(ContextCompat.getColor(requireContext(),
+                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
         messageView.setTextSize(16);
         messageView.setPadding(48, 32, 48, 32);
-        
+
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
-                .setTitle(getResources().getString(R.string.dialog_multi_video_del_title) + " ("+count+")")
+                .setTitle(getResources().getString(R.string.dialog_multi_video_del_title) + " (" + count + ")")
                 .setView(messageView)
                 .setNegativeButton(getResources().getString(R.string.dialog_multi_video_del_no), null)
-                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes), (dialog, which) -> deleteSelectedVideos());
-        
+                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes),
+                        (dialog, which) -> deleteSelectedVideos());
+
         AlertDialog dialog = builder.create();
         dialog.show();
-        
+
         // Set button colors based on theme
         if (isSnowVeilTheme) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
@@ -1710,7 +1864,11 @@ public class RecordsFragment extends BaseFragment implements
     /** Handles deletion of selected videos */
     private void deleteSelectedVideos() {
         final List<Uri> itemsToDeleteUris = new ArrayList<>(selectedUris);
-        if(itemsToDeleteUris.isEmpty()){ Log.d(TAG,"Deletion requested but selectedUris is empty."); exitSelectionMode(); return; }
+        if (itemsToDeleteUris.isEmpty()) {
+            Log.d(TAG, "Deletion requested but selectedUris is empty.");
+            exitSelectionMode();
+            return;
+        }
 
         Log.i(TAG, getString(R.string.delete_videos_log, itemsToDeleteUris.size()));
         exitSelectionMode();
@@ -1718,12 +1876,15 @@ public class RecordsFragment extends BaseFragment implements
         // Show progress dialog for batch deletion with count information
         onMoveToTrashStarted(itemsToDeleteUris.size() + " videos");
 
-        if (executorService == null || executorService.isShutdown()){ executorService = Executors.newSingleThreadExecutor(); }
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
         executorService.submit(() -> {
-            int successCount = 0; int failCount = 0;
+            int successCount = 0;
+            int failCount = 0;
             List<VideoItem> allCurrentItems = new ArrayList<>(videoItems); // Copy for safe iteration
 
-            for(Uri uri: itemsToDeleteUris) {
+            for (Uri uri : itemsToDeleteUris) {
                 VideoItem itemToTrash = findVideoItemByUri(allCurrentItems, uri);
                 if (itemToTrash != null) {
                     if (moveToTrashVideoItem(itemToTrash)) {
@@ -1736,19 +1897,20 @@ public class RecordsFragment extends BaseFragment implements
                     failCount++;
                 }
             }
-            Log.d(TAG,"BG Trash Operation Finished. Success: "+successCount+", Fail: "+failCount);
+            Log.d(TAG, "BG Trash Operation Finished. Success: " + successCount + ", Fail: " + failCount);
             // Post results and UI refresh back to main thread
-            final int finalSuccessCount = successCount; final int finalFailCount = failCount;
-            if(getActivity()!=null){
-                getActivity().runOnUiThread(()->{
+            final int finalSuccessCount = successCount;
+            final int finalFailCount = failCount;
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
                     // Hide the progress dialog
                     onMoveToTrashFinished(finalSuccessCount > 0, null);
-                    
-                    String message = (finalFailCount > 0) ?
-                             getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
-                             getString(R.string.delete_videos_success_toast, finalSuccessCount);
+
+                    String message = (finalFailCount > 0)
+                            ? getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount)
+                            : getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    
+
                     // Perform a complete refresh of the data to ensure proper serial numbers
                     Log.d(TAG, "Performing full refresh after deletion to update serial numbers");
                     if (recordsAdapter != null) {
@@ -1759,11 +1921,12 @@ public class RecordsFragment extends BaseFragment implements
             }
         });
     }
+
     private void confirmDeleteAll() {
         vibrate();
         int totalVideoCount = videoItems.size();
-        if (totalVideoCount == 0){
-            Toast.makeText(requireContext(),"No videos to delete.",Toast.LENGTH_SHORT).show();
+        if (totalVideoCount == 0) {
+            Toast.makeText(requireContext(), "No videos to delete.", Toast.LENGTH_SHORT).show();
             return;
         }
         // Use the typed-confirmation bottom sheet (same as Reset All Preferences)
@@ -1773,11 +1936,14 @@ public class RecordsFragment extends BaseFragment implements
                 "DELETE",
                 getString(R.string.delete_all_videos_title),
                 getString(R.string.delete_all_videos_subtitle_short),
-                R.drawable.ic_delete_all
-        );
+                R.drawable.ic_delete_all);
         confirm.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
-            @Override public void onImportConfirmed(org.json.JSONObject json) { /* not used */ }
-            @Override public void onResetConfirmed() {
+            @Override
+            public void onImportConfirmed(org.json.JSONObject json) {
+                /* not used */ }
+
+            @Override
+            public void onResetConfirmed() {
                 deleteAllVideos();
             }
         });
@@ -1789,15 +1955,16 @@ public class RecordsFragment extends BaseFragment implements
         // ----- Fix Start for this method(deleteAllVideos)-----
         // Check if videoItems has content, if not show toast
         if (videoItems.isEmpty()) {
-             if(getContext() != null) Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
-             return;
+            if (getContext() != null)
+                Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         // Create a copy of videoItems to avoid concurrent modification issues
         List<VideoItem> itemsToTrash = new ArrayList<>(videoItems);
         Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
         // ----- Fix Ended for this method(deleteAllVideos)-----
-        
+
         // Show progress dialog for deleting all videos with count information
         onMoveToTrashStarted("all " + itemsToTrash.size() + " videos");
 
@@ -1828,12 +1995,12 @@ public class RecordsFragment extends BaseFragment implements
                 getActivity().runOnUiThread(() -> {
                     // Hide the progress dialog
                     onMoveToTrashFinished(finalSuccessCount > 0, null);
-                    
-                    String message = (finalFailCount > 0) ?
-                            getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount) :
-                            getString(R.string.delete_videos_success_toast, finalSuccessCount);
+
+                    String message = (finalFailCount > 0)
+                            ? getString(R.string.delete_videos_partial_success_toast, finalSuccessCount, finalFailCount)
+                            : getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                    
+
                     // Perform a complete refresh of the data to ensure proper serial numbers
                     Log.d(TAG, "Performing full refresh after deletion to update serial numbers");
                     if (recordsAdapter != null) {
@@ -1847,7 +2014,8 @@ public class RecordsFragment extends BaseFragment implements
 
     // Helper to find VideoItem by URI from a list
     private VideoItem findVideoItemByUri(List<VideoItem> items, Uri uri) {
-        if (uri == null || items == null) return null;
+        if (uri == null || items == null)
+            return null;
         for (VideoItem item : items) {
             if (item != null && uri.equals(item.uri)) {
                 return item;
@@ -1875,7 +2043,8 @@ public class RecordsFragment extends BaseFragment implements
         // Determine if it's an SAF source. Content URIs are typically from SAF.
         boolean isSafSource = "content".equals(uri.getScheme());
 
-        Log.i(TAG, "Attempting to move to trash: " + originalDisplayName + " (URI: " + uri + ", isSAF: " + isSafSource + ")");
+        Log.i(TAG, "Attempting to move to trash: " + originalDisplayName + " (URI: " + uri + ", isSAF: " + isSafSource
+                + ")");
 
         if (TrashManager.moveToTrash(context, uri, originalDisplayName, isSafSource)) {
             Log.i(TAG, "Successfully moved to trash: " + originalDisplayName);
@@ -1884,31 +2053,37 @@ public class RecordsFragment extends BaseFragment implements
             Log.e(TAG, "Failed to move to trash: " + originalDisplayName);
             // Optionally, show a specific toast for this failure if needed,
             // but batch operations will show a summary.
-            // if(getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(context, "Failed to move '" + originalDisplayName + "' to trash.", Toast.LENGTH_SHORT).show());
+            // if(getActivity() != null) getActivity().runOnUiThread(() ->
+            // Toast.makeText(context, "Failed to move '" + originalDisplayName + "' to
+            // trash.", Toast.LENGTH_SHORT).show());
             return false;
         }
     }
 
-    // OLD deleteVideoUri - to be removed or commented out after confirming moveToTrashVideoItem is used everywhere
+    // OLD deleteVideoUri - to be removed or commented out after confirming
+    // moveToTrashVideoItem is used everywhere
     private boolean deleteVideoUri(Uri uri) {
         // THIS METHOD IS NOW REPLACED BY moveToTrashVideoItem(VideoItem item)
         // To use the new method, you need the VideoItem object, not just the URI,
-        // because we need the originalDisplayName and to determine if it's an SAF source.
+        // because we need the originalDisplayName and to determine if it's an SAF
+        // source.
 
         // Find the VideoItem corresponding to this URI from your main list (videoItems)
         VideoItem itemToTrash = null;
-        List<VideoItem> currentItems = new ArrayList<>(videoItems); // Use a copy to avoid issues if list is modified elsewhere
+        List<VideoItem> currentItems = new ArrayList<>(videoItems); // Use a copy to avoid issues if list is modified
+                                                                    // elsewhere
         itemToTrash = findVideoItemByUri(currentItems, uri);
 
         if (itemToTrash != null) {
             Log.d(TAG, "Redirecting deleteVideoUri for " + uri + " to moveToTrashVideoItem.");
             return moveToTrashVideoItem(itemToTrash);
         } else {
-            Log.e(TAG, "deleteVideoUri called for URI not found in videoItems: " + uri + ". Attempting direct delete as fallback (SHOULD NOT HAPPEN).");
-             // Fallback to old deletion logic if item not found (should not happen ideally)
+            Log.e(TAG, "deleteVideoUri called for URI not found in videoItems: " + uri
+                    + ". Attempting direct delete as fallback (SHOULD NOT HAPPEN).");
+            // Fallback to old deletion logic if item not found (should not happen ideally)
             // This part should ideally be removed if moveToTrashVideoItem is robustly used.
             Context context = getContext();
-            if(context == null) {
+            if (context == null) {
                 Log.e(TAG, "Fallback delete failed: context is null for URI: " + uri);
                 return false;
             }
@@ -1920,7 +2095,8 @@ public class RecordsFragment extends BaseFragment implements
                         Log.i(TAG, "Fallback: Deleted internal file: " + file.getName());
                         return true;
                     } else {
-                        Log.e(TAG, "Fallback: Failed to delete internal file: " + uri.getPath() + " Exists=" + file.exists());
+                        Log.e(TAG, "Fallback: Failed to delete internal file: " + uri.getPath() + " Exists="
+                                + file.exists());
                         return false;
                     }
                 } else if ("content".equals(uri.getScheme())) {
@@ -1929,19 +2105,25 @@ public class RecordsFragment extends BaseFragment implements
                         return true;
                     } else {
                         DocumentFile doc = DocumentFile.fromSingleUri(context, uri);
-                        if(doc == null || !doc.exists()){
-                            Log.w(TAG,"Fallback: deleteDocument returned false, but file doesn't exist or became null. Treating as success. URI: "+ uri);
+                        if (doc == null || !doc.exists()) {
+                            Log.w(TAG,
+                                    "Fallback: deleteDocument returned false, but file doesn't exist or became null. Treating as success. URI: "
+                                            + uri);
                             return true; // If it's gone, it's 'deleted'
                         }
-                        Log.e(TAG, "Fallback: Failed to delete SAF document (deleteDocument returned false and file still exists): " + uri);
+                        Log.e(TAG,
+                                "Fallback: Failed to delete SAF document (deleteDocument returned false and file still exists): "
+                                        + uri);
                         return false;
                     }
                 }
-                 Log.w(TAG, "Fallback: Unknown URI scheme for direct delete: " + uri.getScheme());
+                Log.w(TAG, "Fallback: Unknown URI scheme for direct delete: " + uri.getScheme());
                 return false;
             } catch (SecurityException se) {
-                 Log.e(TAG, "Fallback: SecurityException deleting URI: " + uri, se);
-                if(getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(context, "Permission denied during fallback delete.", Toast.LENGTH_SHORT).show());
+                Log.e(TAG, "Fallback: SecurityException deleting URI: " + uri, se);
+                if (getActivity() != null)
+                    getActivity().runOnUiThread(() -> Toast
+                            .makeText(context, "Permission denied during fallback delete.", Toast.LENGTH_SHORT).show());
                 return false;
             } catch (Exception e) {
                 Log.e(TAG, "Fallback: Exception deleting URI: " + uri, e);
@@ -1971,18 +2153,20 @@ public class RecordsFragment extends BaseFragment implements
         return super.onOptionsItemSelected(item);
     }
 
-
     private void showRecordsSidebar() {
-        if (getActivity() == null) return;
+        if (getActivity() == null)
+            return;
         // -------------- Fix Start for this method(showRecordsSidebar)-----------
         // Use unified overlay: open a sidebar-style fragment to host row-based options.
-    RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), isGridView);
+        RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), isGridView);
         // Listen for result events from rows (sort picker, delete all, etc.)
         final String resultKey = "records_sidebar_result";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
-            if (!resultKey.equals(key)) return;
+            if (!resultKey.equals(key))
+                return;
             String action = bundle.getString("action");
-            if (action == null) return;
+            if (action == null)
+                return;
             switch (action) {
                 case "sort": {
                     String sortId = bundle.getString("sort_id");
@@ -2013,7 +2197,8 @@ public class RecordsFragment extends BaseFragment implements
                     break;
                 case "hide_thumbnails_toggled":
                     boolean hide = false;
-                    if (bundle.containsKey("hide_thumbnails")) hide = bundle.getBoolean("hide_thumbnails", false);
+                    if (bundle.containsKey("hide_thumbnails"))
+                        hide = bundle.getBoolean("hide_thumbnails", false);
                     Log.d(TAG, "Records sidebar: hide_thumbnails_toggled = " + hide);
                     if (recordsAdapter != null) {
                         // Adapter will read prefs but force refresh
@@ -2022,30 +2207,37 @@ public class RecordsFragment extends BaseFragment implements
                     break;
             }
         });
-    sidebar.setResultKey(resultKey);
-    // Show as a Material side sheet dialog instead of full-screen overlay
-    sidebar.show(getParentFragmentManager(), "RecordsSidebar");
+        sidebar.setResultKey(resultKey);
+        // Show as a Material side sheet dialog instead of full-screen overlay
+        sidebar.show(getParentFragmentManager(), "RecordsSidebar");
         // -------------- Fix Ended for this method(showRecordsSidebar)-----------
     }
 
     // -------------- Fix Start for this class(mapSortHelpers)-----------
-    private String mapSortToId(SortOption opt){
-        switch (opt){
-            case LATEST_FIRST: return "latest";
-            case OLDEST_FIRST: return "oldest";
-            case SMALLEST_FILES: return "smallest";
-            case LARGEST_FILES: return "largest";
+    private String mapSortToId(SortOption opt) {
+        switch (opt) {
+            case LATEST_FIRST:
+                return "latest";
+            case OLDEST_FIRST:
+                return "oldest";
+            case SMALLEST_FILES:
+                return "smallest";
+            case LARGEST_FILES:
+                return "largest";
         }
         return "latest";
     }
-    private SortOption mapIdToSort(String id){
-        if("oldest".equals(id)) return SortOption.OLDEST_FIRST;
-        if("smallest".equals(id)) return SortOption.SMALLEST_FILES;
-        if("largest".equals(id)) return SortOption.LARGEST_FILES;
+
+    private SortOption mapIdToSort(String id) {
+        if ("oldest".equals(id))
+            return SortOption.OLDEST_FIRST;
+        if ("smallest".equals(id))
+            return SortOption.SMALLEST_FILES;
+        if ("largest".equals(id))
+            return SortOption.LARGEST_FILES;
         return SortOption.LATEST_FIRST;
     }
     // -------------- Fix Ended for this class(mapSortHelpers)-----------
-
 
     // Updated sorting logic to work with List<VideoItem>
     private void performVideoSort() {
@@ -2067,7 +2259,8 @@ public class RecordsFragment extends BaseFragment implements
 
     // Centralized sorting logic
     private void sortItems(List<VideoItem> items, SortOption sortOption) {
-        if(items == null) return;
+        if (items == null)
+            return;
         try {
             switch (sortOption) {
                 case LATEST_FIRST:
@@ -2089,19 +2282,22 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     // Enum for sort options
-    private enum SortOption { LATEST_FIRST, OLDEST_FIRST, SMALLEST_FILES, LARGEST_FILES }
+    private enum SortOption {
+        LATEST_FIRST, OLDEST_FIRST, SMALLEST_FILES, LARGEST_FILES
+    }
 
     // --- Utility ---
 
     private void vibrate() {
         Context context = getContext();
-        if(context == null) return;
+        if (context == null)
+            return;
         Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
             } else {
-                //noinspection deprecation
+                // noinspection deprecation
                 vibrator.vibrate(50);
             }
         }
@@ -2110,50 +2306,32 @@ public class RecordsFragment extends BaseFragment implements
     // In RecordsFragment.java
 
     /**
-     * Scans the relevant external cache directories for lingering temporary video files.
+     * Scans the relevant external cache directories for lingering temporary video
+     * files.
+     * 
      * @return A List of VideoItem objects representing the found temp files.
      */
+    // -------------- Fix Start (getTempCacheRecordsList) - Remove obsolete temp
+    // system -----------
+    /**
+     * OBSOLETE: Temp cache system removed - now using OpenGL real-time processing
+     * 
+     * @deprecated This method is no longer used as temp file system was replaced
+     */
+    @Deprecated
     private List<VideoItem> getTempCacheRecordsList() {
-        List<VideoItem> items = new ArrayList<>();
-        Context context = getContext();
-        if (context == null) {
-            Log.e(TAG,"Context is null in getTempCacheRecordsList");
-            return items;
-        }
-
-        File cacheBaseDir = context.getExternalCacheDir();
-        if (cacheBaseDir == null) {
-            Log.e(TAG, "External cache dir is null, cannot scan for temp files.");
-            return items;
-        }
-
-        // Directory where MediaRecorder saves the initial temp file
-        File recordingTempDir = new File(cacheBaseDir, "recording_temp");
-        Log.d(TAG, "Scanning for temp files in: " + recordingTempDir.getAbsolutePath());
-        scanDirectoryForTempVideos(recordingTempDir, items);
-
-        // --- Optional: Scan the processed temp directory ---
-        // Only include this if your RecordingService FFmpeg command explicitly writes
-        // *another* temp file to a different cache location *before* the final move/copy.
-        // If FFmpeg writes directly to the final destination (internal) or creates
-        // its temp processed file in the *same* recording_temp dir, this second scan is NOT needed.
-        /*
-        File processedTempDir = new File(cacheBaseDir, "processed_temp");
-        if (!processedTempDir.equals(recordingTempDir)) { // Avoid scanning same dir twice
-             Log.d(TAG, "Scanning for temp files in: " + processedTempDir.getAbsolutePath());
-             scanDirectoryForTempVideos(processedTempDir, items);
-        }
-        */
-
-        Log.d(TAG, "Found " + items.size() + " temporary video files in cache.");
-        return items;
+        Log.d(TAG, "getTempCacheRecordsList: Obsolete temp cache system - returning empty list");
+        return new ArrayList<>();
     }
+    // -------------- Fix End (getTempCacheRecordsList) -----------
 
     /**
      * Helper method to scan a specific directory for files starting with "temp_"
-     * and ending with the video extension. Adds found files as VideoItems to the list.
+     * and ending with the video extension. Adds found files as VideoItems to the
+     * list.
+     * 
      * @param directory The directory to scan.
-     * @param items The list to add found VideoItems to.
+     * @param items     The list to add found VideoItems to.
      */
     private void scanDirectoryForTempVideos(File directory, List<VideoItem> items) {
         if (directory.exists() && directory.isDirectory()) {
@@ -2162,8 +2340,7 @@ public class RecordsFragment extends BaseFragment implements
                 for (File file : files) {
                     if (file.isFile()
                             && file.getName().startsWith("temp_")
-                            && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION))
-                    {
+                            && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)) {
                         // Basic check if file has content
                         if (file.length() > 0) {
                             Log.d(TAG, "Found temp video: " + file.getName());
@@ -2171,30 +2348,31 @@ public class RecordsFragment extends BaseFragment implements
                                     Uri.fromFile(file), // Cache files are standard files
                                     file.getName(),
                                     file.length(),
-                                    file.lastModified()
-                            );
+                                    file.lastModified());
                             tempItem.isTemporary = true;
                             tempItem.isNew = false; // Temp files from cache are not 'new'
                             items.add(tempItem);
                         } else {
-                            Log.w(TAG,"Skipping empty temp file: "+file.getName());
+                            Log.w(TAG, "Skipping empty temp file: " + file.getName());
                         }
                     }
                 }
             } else {
-                Log.w(TAG, "Could not list files in cache directory: "+directory.getPath());
+                Log.w(TAG, "Could not list files in cache directory: " + directory.getPath());
             }
         } else {
-            Log.d(TAG, "Cache directory does not exist or is not a directory: "+directory.getPath());
+            Log.d(TAG, "Cache directory does not exist or is not a directory: " + directory.getPath());
         }
     }
 
-    // ----- Fix Start for this class (RecordsFragment_segment_receiver_fields) -----
+    // ----- Fix Start for this class (RecordsFragment_segment_receiver_fields)
+    // -----
     private BroadcastReceiver segmentCompleteReceiver;
     private boolean isSegmentReceiverRegistered = false;
     // ----- Fix End: Add search-related fields at class level -----
 
-    // ----- Fix Start for this class (RecordsFragment_segment_receiver_methods) -----
+    // ----- Fix Start for this class (RecordsFragment_segment_receiver_methods)
+    // -----
     private void registerSegmentCompleteReceiver() {
         if (getContext() == null || isSegmentReceiverRegistered) {
             return;
@@ -2230,7 +2408,8 @@ public class RecordsFragment extends BaseFragment implements
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requireContext().registerReceiver(segmentCompleteReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
-            ContextCompat.registerReceiver(requireContext(), segmentCompleteReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            ContextCompat.registerReceiver(requireContext(), segmentCompleteReceiver, filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
         }
         isSegmentReceiverRegistered = true;
         Log.d(TAG, "SegmentCompleteReceiver registered.");
@@ -2247,7 +2426,8 @@ public class RecordsFragment extends BaseFragment implements
             }
         }
     }
-    // ----- Fix Ended for this class (RecordsFragment_segment_receiver_methods) -----
+    // ----- Fix Ended for this class (RecordsFragment_segment_receiver_methods)
+    // -----
 
     // ----- Fix Start: Add search-related fields at class level -----
     private SearchView searchView;
@@ -2257,6 +2437,7 @@ public class RecordsFragment extends BaseFragment implements
     // ----- Fix Start: Add search-related methods -----
     /**
      * Checks if search functionality is currently active
+     * 
      * @return true if search is active, false otherwise
      */
     private boolean isSearchActive() {
@@ -2280,6 +2461,7 @@ public class RecordsFragment extends BaseFragment implements
     // ----- Fix Start: Add isInSelectionMode() method -----
     /**
      * Checks if the fragment is currently in selection mode
+     * 
      * @return true if in selection mode, false otherwise
      */
     private boolean isInSelectionMode() {
@@ -2295,15 +2477,15 @@ public class RecordsFragment extends BaseFragment implements
             clearSearch();
             return true;
         }
-        
+
         // If in selection mode, exit selection mode instead of navigating back
         if (isInSelectionMode()) {
             exitSelectionMode();
             return true;
         }
-        
+
         // Handle any other specific cases here
-        
+
         // For normal cases, let the default implementation handle it
         return false;
     }
@@ -2334,12 +2516,15 @@ public class RecordsFragment extends BaseFragment implements
                 Thread.currentThread().interrupt();
             }
         }
-        
+
         // Clear video lists to free memory
-        if (videoItems != null) videoItems.clear();
-        if (allLoadedItems != null) allLoadedItems.clear();
-        if (selectedUris != null) selectedUris.clear();
-        
+        if (videoItems != null)
+            videoItems.clear();
+        if (allLoadedItems != null)
+            allLoadedItems.clear();
+        if (selectedUris != null)
+            selectedUris.clear();
+
         // Clear thumbnail caches
         if (getContext() != null) {
             Glide.get(getContext()).clearMemory();
@@ -2352,7 +2537,7 @@ public class RecordsFragment extends BaseFragment implements
                 }
             }).start();
         }
-        
+
         // Release references
         recordsAdapter = null;
         Log.d(TAG, "Resources cleared in onDestroy");
@@ -2361,8 +2546,9 @@ public class RecordsFragment extends BaseFragment implements
     // Restore this important method that was removed
     private void setLayoutManager() {
         if (recyclerView != null) {
-            RecyclerView.LayoutManager layoutManager = isGridView ?
-                    new GridLayoutManager(getContext(), 2) : // 2 columns for grid
+            RecyclerView.LayoutManager layoutManager = isGridView ? new GridLayoutManager(getContext(), 2) : // 2
+                                                                                                             // columns
+                                                                                                             // for grid
                     new LinearLayoutManager(getContext());
             recyclerView.setLayoutManager(layoutManager);
             Log.d(TAG, "LayoutManager set to: " + (isGridView ? "GridLayout" : "LinearLayout"));
@@ -2379,12 +2565,12 @@ public class RecordsFragment extends BaseFragment implements
 
         int endIndex = Math.min(startIndex + PAGE_SIZE, allLoadedItems.size());
         List<VideoItem> pageItems = new ArrayList<>(allLoadedItems.subList(startIndex, endIndex));
-        
+
         // If this is the last page, set hasMoreItems to false
         if (endIndex >= allLoadedItems.size()) {
             hasMoreItems = false;
         }
-        
+
         return pageItems;
     }
 
@@ -2398,30 +2584,37 @@ public class RecordsFragment extends BaseFragment implements
         boolean isEmpty;
         if (recordsAdapter != null) {
             isEmpty = recordsAdapter.getItemCount() == 0;
-            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter found. Item count: " + recordsAdapter.getItemCount() + ". Is empty: " + isEmpty);
+            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter found. Item count: " + recordsAdapter.getItemCount() + ". Is empty: "
+                    + isEmpty);
         } else {
             isEmpty = videoItems.isEmpty();
-            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter is NULL. videoItems list size: " + videoItems.size() + ". Is empty: " + isEmpty);
+            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter is NULL. videoItems list size: " + videoItems.size() + ". Is empty: "
+                    + isEmpty);
         }
 
         Log.i(TAG, "LOG_UI_VISIBILITY: updateUiVisibility called. Final decision: isEmpty = " + isEmpty);
 
         if (isEmpty) {
-            if (recyclerView != null) recyclerView.setVisibility(View.GONE);
-            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
+            if (recyclerView != null)
+                recyclerView.setVisibility(View.GONE);
+            if (emptyStateContainer != null)
+                emptyStateContainer.setVisibility(View.VISIBLE);
             // Hide navigation FAB when empty
-            if (fabScrollNavigation != null) fabScrollNavigation.setVisibility(View.GONE);
-            Log.d(TAG,"LOG_UI_VISIBILITY: Showing empty state (Recycler GONE, Empty VISIBLE).");
+            if (fabScrollNavigation != null)
+                fabScrollNavigation.setVisibility(View.GONE);
+            Log.d(TAG, "LOG_UI_VISIBILITY: Showing empty state (Recycler GONE, Empty VISIBLE).");
         } else {
-            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
-            if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+            if (emptyStateContainer != null)
+                emptyStateContainer.setVisibility(View.GONE);
+            if (recyclerView != null)
+                recyclerView.setVisibility(View.VISIBLE);
             // Update navigation FAB when videos are visible
             updateNavigationFab();
-            Log.d(TAG,"LOG_UI_VISIBILITY: Showing recycler view (Empty GONE, Recycler VISIBLE).");
+            Log.d(TAG, "LOG_UI_VISIBILITY: Showing recycler view (Empty GONE, Recycler VISIBLE).");
         }
         if (loadingIndicator != null && loadingIndicator.getVisibility() == View.VISIBLE) {
             loadingIndicator.setVisibility(View.GONE);
-            Log.d(TAG,"LOG_UI_VISIBILITY: Loading indicator was visible, set to GONE.");
+            Log.d(TAG, "LOG_UI_VISIBILITY: Loading indicator was visible, set to GONE.");
         }
     }
 
@@ -2436,7 +2629,7 @@ public class RecordsFragment extends BaseFragment implements
 
         @Override
         public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
-                                   @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
 
             // Apply consistent spacing to all sides for simplicity here
             // More complex logic needed for perfect grid edge spacing
@@ -2457,7 +2650,7 @@ public class RecordsFragment extends BaseFragment implements
         if (getContext() != null) {
             Glide.get(getContext()).clearMemory();
         }
-        
+
         // Clear adapter cache
         if (recordsAdapter != null) {
             recordsAdapter.clearCaches();
@@ -2473,24 +2666,26 @@ public class RecordsFragment extends BaseFragment implements
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
         boolean isSessionUnlocked = sharedPreferencesManager.isAppLockSessionUnlocked();
-        
+
         if (isAppLockEnabled && !isSessionUnlocked && AppLock.isEnrolled(requireContext())) {
-            // ----- Fix Start: Fade overlay after successful unlock and restore UI state correctly -----
+            // ----- Fix Start: Fade overlay after successful unlock and restore UI state
+            // correctly -----
             new UnlockDialogBuilder(requireActivity())
-                .onUnlocked(() -> {
-                    sharedPreferencesManager.setAppLockSessionUnlocked(true);
-                    fadeOverlay(false);
-                    updateUiVisibility();
-                    updateFabIcons();
-                })
-                .onCanceled(() -> {
-                    if (getActivity() instanceof MainActivity) {
-                        ((MainActivity) getActivity()).skipNextBackExitHandling();
-                        requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                    }
-                })
-                .show();
-            // ----- Fix End: Fade overlay after successful unlock and restore UI state correctly -----
+                    .onUnlocked(() -> {
+                        sharedPreferencesManager.setAppLockSessionUnlocked(true);
+                        fadeOverlay(false);
+                        updateUiVisibility();
+                        updateFabIcons();
+                    })
+                    .onCanceled(() -> {
+                        if (getActivity() instanceof MainActivity) {
+                            ((MainActivity) getActivity()).skipNextBackExitHandling();
+                            requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                        }
+                    })
+                    .show();
+            // ----- Fix End: Fade overlay after successful unlock and restore UI state
+            // correctly -----
         } else {
             fadeOverlay(false);
             updateUiVisibility();
@@ -2500,30 +2695,36 @@ public class RecordsFragment extends BaseFragment implements
 
     /**
      * Sets the visibility of all sensitive content in the Records tab.
+     * 
      * @param visible true to show, false to hide (set INVISIBLE)
      */
     private void setSensitiveContentVisibility(boolean visible) {
         int vis = visible ? View.VISIBLE : View.INVISIBLE;
-        if (recyclerView != null) recyclerView.setVisibility(vis);
-        if (emptyStateContainer != null) emptyStateContainer.setVisibility(vis);
-    // FAB removed
-        if (fabDeleteSelected != null) fabDeleteSelected.setVisibility(vis);
+        if (recyclerView != null)
+            recyclerView.setVisibility(vis);
+        if (emptyStateContainer != null)
+            emptyStateContainer.setVisibility(vis);
+        // FAB removed
+        if (fabDeleteSelected != null)
+            fabDeleteSelected.setVisibility(vis);
     }
 
     /**
      * Fades the AppLock overlay in or out with animation.
+     * 
      * @param show true to fade in (show), false to fade out (hide)
      */
     private void fadeOverlay(final boolean show) {
-        if (applockOverlay == null) return;
+        if (applockOverlay == null)
+            return;
         if (show) {
             applockOverlay.setAlpha(0f);
             applockOverlay.setVisibility(View.VISIBLE);
             applockOverlay.animate().alpha(1f).setDuration(250).start();
         } else {
             applockOverlay.animate().alpha(0f).setDuration(250)
-                .withEndAction(() -> applockOverlay.setVisibility(View.GONE))
-                .start();
+                    .withEndAction(() -> applockOverlay.setVisibility(View.GONE))
+                    .start();
         }
     }
 
@@ -2571,11 +2772,13 @@ public class RecordsFragment extends BaseFragment implements
      * This is more efficient than notifying the entire dataset changed
      */
     private void updateVisibleArea() {
-        if (recyclerView == null || recordsAdapter == null) return;
-        
+        if (recyclerView == null || recordsAdapter == null)
+            return;
+
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-        if (layoutManager == null) return;
-        
+        if (layoutManager == null)
+            return;
+
         int firstVisible, lastVisible;
         if (layoutManager instanceof GridLayoutManager) {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) layoutManager;
@@ -2586,11 +2789,11 @@ public class RecordsFragment extends BaseFragment implements
             firstVisible = linearLayoutManager.findFirstVisibleItemPosition();
             lastVisible = linearLayoutManager.findLastVisibleItemPosition();
         }
-        
+
         // Extend the range slightly to preload adjacent items
         firstVisible = Math.max(0, firstVisible - 2);
         lastVisible = Math.min(recordsAdapter.getItemCount() - 1, lastVisible + 2);
-        
+
         if (lastVisible >= firstVisible) {
             recordsAdapter.notifyItemRangeChanged(firstVisible, lastVisible - firstVisible + 1);
             Log.d(TAG, "updateVisibleArea: Updated items " + firstVisible + " to " + lastVisible);
@@ -2599,172 +2802,227 @@ public class RecordsFragment extends BaseFragment implements
 
     /**
      * Creates optimized Glide options for efficient thumbnail loading
+     * 
      * @return RequestOptions for Glide
      */
     public RequestOptions getOptimizedGlideOptions() {
         return new RequestOptions()
-            .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache both original & resized images
-            .skipMemoryCache(false) // Use memory cache for faster loading
-            .centerCrop() // Crop images to fit the view
-            .override(200, 200) // Standardized thumbnail size for all items
-            .placeholder(R.drawable.ic_video_placeholder); // Show placeholder while loading
+                .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache both original & resized images
+                .skipMemoryCache(false) // Use memory cache for faster loading
+                .centerCrop() // Crop images to fit the view
+                .override(200, 200) // Standardized thumbnail size for all items
+                .placeholder(R.drawable.ic_video_placeholder); // Show placeholder while loading
     }
 
     /**
-     * Loads the list of videos from all sources and updates the UI with professional skeleton loading
+     * Loads the list of videos from all sources and updates the UI with
+     * professional skeleton loading
      */
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
-        Log.i(TAG, "loadRecordsList: Starting professional skeleton-based loading");
-        
-        // -------------- Fix Start (loadRecordsList) - Synchronized loading with HomeFragment and fixed positioning -----------
-        
-        // Step 1: Check session cache first for instant loading
-        if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
-            Log.d(TAG, "Using session cache with " + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size() + " videos (cache age: " + com.fadcam.utils.VideoSessionCache.getCacheAgeMs() + "ms)");
-            List<VideoItem> cachedVideos = new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos());
-            
-            // CRITICAL FIX: Ensure cached videos are properly sorted before display
-            sortItems(cachedVideos, currentSortOption);
-            Log.d(TAG, "Cached videos sorted with " + currentSortOption + " before display");
-            
-            updateUiWithVideos(cachedVideos, false);
-            
-            // CRITICAL FIX: Scroll to top to ensure proper list position
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    if (recyclerView != null) {
-                        recyclerView.scrollToPosition(0);
-                        Log.d(TAG, "RecyclerView scrolled to position 0 after cache load");
-                    }
-                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                        swipeRefreshLayout.setRefreshing(false);
-                        Log.d(TAG, "Refresh indicator stopped - using cached data");
-                    }
-                });
-            }
-            
-            isLoading = false;
-            isInitialLoad = false;
-            return;
+        Log.i(TAG, "loadRecordsList: Starting optimized progressive loading");
+
+        // Debug: Log current cache state
+        boolean hasCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid();
+        int cachedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+        Log.d(TAG, "DEBUG: Cache state - hasCache: " + hasCache + ", cachedCount: " + cachedCount);
+
+        // CRITICAL FIX: Always show skeleton FIRST to prevent empty flash
+        int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+        if (estimatedCount <= 0) {
+            estimatedCount = 12; // Default skeleton count
         }
-        
-        // Step 2: Show skeleton IMMEDIATELY if not already showing to prevent "no recordings" flash
+
+        // Show skeleton immediately if not already showing
         if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
-            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount();
-            if (estimatedCount <= 0) {
-                estimatedCount = 12; // Default reasonable skeleton count
-            }
-            
             Log.d(TAG, "Showing " + estimatedCount + " skeleton items immediately");
             showSkeletonLoading(estimatedCount);
         }
-        
-        // Step 3: Load all data silently in background (only if not already loading)
+
+        // -------------- Fix Start (loadRecordsList) - Proper cache utilization
+        // -----------
+
+        // Step 1: Check in-memory session cache first
+        if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
+            Log.d(TAG, "INSTANT CACHE HIT: Using " + com.fadcam.utils.VideoSessionCache.getSessionCachedVideos().size()
+                    + " cached videos");
+            List<VideoItem> cachedVideos = new ArrayList<>(com.fadcam.utils.VideoSessionCache.getSessionCachedVideos());
+
+            // Sort cached videos
+            sortItems(cachedVideos, currentSortOption);
+
+            // Replace skeleton with cached data immediately
+            replaceSkeletonsWithData(cachedVideos);
+
+            isLoading = false;
+            return;
+        }
+
+        // Step 2: Check if we should skip loading entirely (already have data)
+        if (!videoItems.isEmpty() && !isInitialLoad) {
+            Log.d(TAG, "Already have " + videoItems.size() + " videos loaded, skipping reload");
+            isLoading = false;
+            return;
+        }
+
+        // -------------- Fix End (loadRecordsList) -----------
+
+        // Step 2: No cache - load progressively in background
         if (isLoading) {
             Log.d(TAG, "Already loading data, skipping duplicate request");
             return;
         }
-        
+
         isLoading = true;
-        isInitialLoad = false; // Skeleton is already showing
-        
+
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
         }
-        
+
+        // Load data progressively in background
         executorService.submit(() -> {
             try {
-                Log.d(TAG, "Background scan started - session cache miss or expired");
-                
-                // Load data without progressive callbacks for smooth UX
-                List<VideoItem> tempItems = getTempCacheRecordsList();
-                Log.d(TAG, "Found " + tempItems.size() + " temporary video files in cache.");
-                
-                List<VideoItem> primaryItems = getPrimaryVideoFiles();
-                
-                // Combine and sort all in background
-                List<VideoItem> combinedVideos = new ArrayList<>();
-                combinedVideos.addAll(primaryItems);
-                combinedVideos.addAll(tempItems);
-                
-                // Remove duplicates and ensure proper ordering
-                List<VideoItem> uniqueItems = new ArrayList<>();
-                Set<Uri> uniqueUris = new HashSet<>();
-                for (VideoItem item : combinedVideos) {
-                    if (item != null && item.uri != null && uniqueUris.add(item.uri)) {
-                        uniqueItems.add(item);
-                    }
-                }
-                
-                // CRITICAL FIX: Sort ALL items BEFORE any display to prevent "dancing" effect
-                Log.d(TAG, "Sorting " + uniqueItems.size() + " videos with " + currentSortOption + " before display");
+                Log.d(TAG, "Background progressive loading started");
+
+                // Skip temp files - obsolete system removed
+                List<VideoItem> tempItems = new ArrayList<>();
+                Log.d(TAG, "Skipped obsolete temp file scanning");
+
+                // Load primary videos progressively
+                List<VideoItem> primaryItems = loadPrimaryVideosProgressively();
+
+                // Combine all videos
+                List<VideoItem> allVideos = new ArrayList<>();
+                allVideos.addAll(primaryItems);
+                allVideos.addAll(tempItems);
+
+                // Remove duplicates
+                List<VideoItem> uniqueItems = removeDuplicateVideos(allVideos);
+
+                // Sort all items
                 sortItems(uniqueItems, currentSortOption);
                 totalItems = uniqueItems.size();
-                
-                // Cache results for future use and synchronization with HomeFragment
+
+                Log.d(TAG, "Progressive loading complete: " + uniqueItems.size() + " total videos");
+
+                // Update cache for next time with persistence
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems);
-                com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size());
-                Log.d(TAG, "Session cache updated for cross-fragment synchronization");
-                
-                // Replace skeletons with actual data in one smooth operation
-                replaceSkeletonsWithData(uniqueItems);
-                
+                com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size(), sharedPreferencesManager);
+
+                // -------------- Fix Start (shimmer delay) - Show shimmer for minimum time
+                // -----------
+
+                // Add minimum delay to show shimmer animation (professional UX)
+                long minShimmerTime = 1000; // Minimum 1 second to show shimmer
+
+                Log.d(TAG, "Adding " + minShimmerTime + "ms delay to show shimmer animation");
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    replaceSkeletonsWithData(uniqueItems);
+                }, minShimmerTime);
+
+                // -------------- Fix End (shimmer delay) -----------
+
             } catch (Exception e) {
-                Log.e(TAG, "Error loading videos", e);
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        hideSkeletonLoading();
-                        updateUiVisibility();
-                        if (loadingIndicator != null) {
-                            loadingIndicator.setVisibility(View.GONE);
-                        }
-                        // Ensure refresh indicator is stopped on error
-                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                            swipeRefreshLayout.setRefreshing(false);
-                            Log.d(TAG, "Refresh indicator stopped after error");
-                        }
-                        isLoading = false;
-                    });
-                }
+                Log.e(TAG, "Error in progressive loading", e);
+                handleLoadingError();
             }
         });
-        
-        // -------------- Fix End (loadRecordsList) -----------
     }
 
     /**
-     * Updates the UI with a list of videos, either completely replacing the current list
+     * Load primary videos with progressive updates to UI
+     */
+    private List<VideoItem> loadPrimaryVideosProgressively() {
+        String safUriString = sharedPreferencesManager.getCustomStorageUri();
+
+        if (safUriString != null) {
+            try {
+                Uri treeUri = Uri.parse(safUriString);
+                if (hasSafPermission(treeUri)) {
+                    return getSafRecordsListProgressive(treeUri, null);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading SAF videos", e);
+            }
+        }
+
+        // Fallback to internal storage
+        return getInternalRecordsList();
+    }
+
+    /**
+     * Remove duplicate videos from combined list
+     */
+    private List<VideoItem> removeDuplicateVideos(List<VideoItem> videos) {
+        List<VideoItem> uniqueItems = new ArrayList<>();
+        Set<Uri> uniqueUris = new HashSet<>();
+
+        for (VideoItem item : videos) {
+            if (item != null && item.uri != null && uniqueUris.add(item.uri)) {
+                uniqueItems.add(item);
+            }
+        }
+
+        return uniqueItems;
+    }
+
+    /**
+     * Handle loading errors gracefully
+     */
+    private void handleLoadingError() {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                hideSkeletonLoading();
+                updateUiVisibility();
+
+                if (loadingIndicator != null) {
+                    loadingIndicator.setVisibility(View.GONE);
+                }
+                if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+
+                isLoading = false;
+            });
+        }
+    }
+
+    /**
+     * Updates the UI with a list of videos, either completely replacing the current
+     * list
      * or appending to it.
      * 
      * @param newVideos The list of videos to display
-     * @param isPartial Whether this is a partial update (true) or complete update (false)
+     * @param isPartial Whether this is a partial update (true) or complete update
+     *                  (false)
      */
     private void updateUiWithVideos(final List<VideoItem> newVideos, boolean isPartial) {
-        if (getActivity() == null) return;
-        
+        if (getActivity() == null)
+            return;
+
         Log.d(TAG, "updateUiWithVideos: Updating UI with " + newVideos.size() + " videos, isPartial=" + isPartial);
-        
+
         getActivity().runOnUiThread(() -> {
             if (isPartial) {
                 // For partial updates (e.g., just temp videos), we want to show them right away
                 videoItems.clear();
                 videoItems.addAll(newVideos);
-                
+
                 if (recordsAdapter != null) {
                     recordsAdapter.updateRecords(videoItems);
-                    if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+                    if (recyclerView != null)
+                        recyclerView.setVisibility(View.VISIBLE);
                 }
                 // Don't hide loading indicator yet for partial updates
             } else {
                 // For complete updates, replace everything
                 videoItems.clear();
                 videoItems.addAll(newVideos);
-                
+
                 if (recordsAdapter != null) {
                     recordsAdapter.updateRecords(videoItems);
                 }
-                
+
                 updateUiVisibility();
                 if (loadingIndicator != null) {
                     loadingIndicator.setVisibility(View.GONE);
@@ -2776,34 +3034,37 @@ public class RecordsFragment extends BaseFragment implements
                     recyclerView.setVisibility(View.VISIBLE);
                 }
             }
-            
+
             isLoading = false;
             isInitialLoad = false;
         });
     }
-    
-    // -------------- Fix Start (Navigation FAB Methods) - Scroll navigation functionality -----------
-    
+
+    // -------------- Fix Start (Navigation FAB Methods) - Scroll navigation
+    // functionality -----------
+
     /**
      * Updates navigation FAB visibility and icon based on scroll direction
      */
     private void updateNavigationFab() {
-        if (fabScrollNavigation == null || recyclerView == null) return;
-        
+        if (fabScrollNavigation == null || recyclerView == null)
+            return;
+
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-        if (layoutManager == null) return;
-        
+        if (layoutManager == null)
+            return;
+
         int totalItemCount = layoutManager.getItemCount();
         if (totalItemCount <= 5) {
             // Hide FAB if there are too few items to need scrolling
             fabScrollNavigation.setVisibility(View.GONE);
             return;
         }
-        
+
         // Show FAB (actual visibility controlled by animation helpers)
         // Use single drawable and flip based on scroll direction with smooth animation
         fabScrollNavigation.setVisibility(View.VISIBLE);
-        
+
         // Cancel any running rotation animation
         if (currentRotationAnimator != null && currentRotationAnimator.isRunning()) {
             currentRotationAnimator.cancel();
@@ -2819,7 +3080,8 @@ public class RecordsFragment extends BaseFragment implements
         }
         float currentRotation = fabScrollNavigation.getRotation();
         if (Math.abs(currentRotation - targetRotation) > 1f) {
-            currentRotationAnimator = ObjectAnimator.ofFloat(fabScrollNavigation, "rotation", currentRotation, targetRotation);
+            currentRotationAnimator = ObjectAnimator.ofFloat(fabScrollNavigation, "rotation", currentRotation,
+                    targetRotation);
             currentRotationAnimator.setDuration(300);
             currentRotationAnimator.setInterpolator(new android.view.animation.OvershootInterpolator(0.3f));
             currentRotationAnimator.start();
@@ -2828,22 +3090,25 @@ public class RecordsFragment extends BaseFragment implements
         }
         fabScrollNavigation.setContentDescription(contentDescription);
     }
-    
+
     /**
      * Handles navigation FAB click - scrolls based on current scroll direction
      */
     private void handleNavigationFabClick() {
-        if (recyclerView == null) return;
-        
+        if (recyclerView == null)
+            return;
+
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-        if (layoutManager == null) return;
-        
+        if (layoutManager == null)
+            return;
+
         int totalItemCount = layoutManager.getItemCount();
-        if (totalItemCount == 0) return;
-        
+        if (totalItemCount == 0)
+            return;
+
         // Vibrate for feedback
         vibrate();
-        
+
         // Scroll based on current scroll direction (what the icon is indicating)
         if (isScrollingDown) {
             // FAB shows down arrow - scroll to bottom
@@ -2854,7 +3119,7 @@ public class RecordsFragment extends BaseFragment implements
             recyclerView.smoothScrollToPosition(0);
             Log.d(TAG, "Navigation FAB: Scrolling to top (user was scrolling up)");
         }
-        
+
         // Update FAB icon after a short delay to reflect new position
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             updateNavigationFab();
@@ -2863,7 +3128,8 @@ public class RecordsFragment extends BaseFragment implements
 
     // (No delayed hide) Fade animation helper
     private void showNavigationFab() {
-        if (fabScrollNavigation == null) return;
+        if (fabScrollNavigation == null)
+            return;
         // Ensure fully visible
         if (fabScrollNavigation.getVisibility() != View.VISIBLE) {
             fabScrollNavigation.setAlpha(0f);
@@ -2872,12 +3138,13 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 int darkGrayColor = ContextCompat.getColor(requireContext(), R.color.gray_button_filled);
                 fabScrollNavigation.setBackgroundTintList(android.content.res.ColorStateList.valueOf(darkGrayColor));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             fabScrollNavigation.animate().alpha(1f).setDuration(200).start();
         } else {
             fabScrollNavigation.animate().alpha(1f).setDuration(150).start();
         }
     }
-    
+
     // -------------- Fix End (Navigation FAB Methods) -----------
 }

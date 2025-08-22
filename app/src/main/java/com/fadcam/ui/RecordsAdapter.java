@@ -700,6 +700,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             options = options.dontAnimate();
         }
         
+        // -------------- Fix Start (loadThumbnail)-----------
+        // Skip Glide loading for skeleton URIs
+        if ("skeleton".equals(videoUri.getScheme())) {
+            holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+            return;
+        }
+        // -------------- Fix End (loadThumbnail)-----------
+        
         // Implement loading with scroll-aware options
     Glide.with(context)
         .load(videoUri)
@@ -1681,11 +1689,20 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         Log.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) + 
                    " to " + newRecords.size() + " records");
         
-        // CRITICAL FIX: Handle skeleton mode transition properly
-        if (isSkeletonMode) {
-            Log.d(TAG, "updateRecords: Still in skeleton mode - disabling it first");
+        // -------------- Fix Start (updateRecords) - Only disable skeleton mode for real data -----------
+        
+        // Check if we're updating with skeleton data or real data
+        boolean isSkeletonData = !newRecords.isEmpty() && newRecords.get(0).isSkeleton;
+        
+        if (isSkeletonMode && !isSkeletonData) {
+            Log.d(TAG, "updateRecords: Transitioning from skeleton to real data - disabling skeleton mode");
             setSkeletonMode(false);
+        } else if (isSkeletonMode && isSkeletonData) {
+            Log.d(TAG, "updateRecords: Updating skeleton data - keeping skeleton mode enabled");
+            // Keep skeleton mode enabled
         }
+        
+        // -------------- Fix End (updateRecords) -----------
         
         // Use DiffUtil to calculate the differences and dispatch updates efficiently
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
@@ -1830,8 +1847,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // Get video duration from URI (Helper)
+    // -------------- Fix Start (getVideoDuration)-----------
     private long getVideoDuration(Uri videoUri) {
         if(context == null || videoUri == null) return 0;
+        
+        // Skip skeleton URIs to prevent errors
+        if ("skeleton".equals(videoUri.getScheme())) {
+            return 0;
+        }
+        // -------------- Fix End (getVideoDuration)-----------
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         long durationMs = 0;
         try {
@@ -1992,6 +2016,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     public boolean isSkeletonMode() {
         return isSkeletonMode;
+    }
+    
+    /**
+     * Sets skeleton data without disabling skeleton mode
+     * @param skeletonItems List of skeleton items to display
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setSkeletonData(List<VideoItem> skeletonItems) {
+        if (skeletonItems == null) return;
+        
+        Log.d(TAG, "setSkeletonData: Setting " + skeletonItems.size() + " skeleton items");
+        this.records = new ArrayList<>(skeletonItems);
+        notifyDataSetChanged();
     }
     
     /**
