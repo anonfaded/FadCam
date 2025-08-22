@@ -82,9 +82,11 @@ import com.fadcam.Utils;
 import com.fadcam.services.TorchService;
 import com.fadcam.RecordingControlIntents;
 import com.fadcam.utils.StorageInfoCache;
+import com.fadcam.utils.VideoStatsCache;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.appbar.MaterialToolbar;
+import android.text.format.Formatter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -1388,6 +1390,12 @@ public class HomeFragment extends BaseFragment {
                     if (Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
                         Log.i(TAG, "<<< Received ACTION_RECORDING_COMPLETE (Processing Finished) >>>");
                         if(getView() == null) { Log.w(TAG,"Completion: View null, skip stats UI"); return; }
+                        
+                        // Invalidate caches when new video is recorded
+                        VideoStatsCache.invalidateStats(sharedPreferencesManager);
+                        com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess();
+                        Log.d(TAG, "Invalidated video caches after recording completion");
+                        
                         try { updateStats(); Log.d(TAG,"Completion: Updated stats."); }
                         catch (Exception e) { Log.e(TAG, "Completion: Err update stats", e);}
                     }
@@ -3300,6 +3308,20 @@ public class HomeFragment extends BaseFragment {
 
     private void updateStats() {
         Log.d(TAG, "updateStats: Starting calculation...");
+        
+        // -------------- Fix Start (updateStats) - Instant stats display with caching -----------
+        
+        // Step 1: Try to display cached stats instantly
+        VideoStatsCache.VideoStats cachedStats = VideoStatsCache.getCachedStats(sharedPreferencesManager);
+        if (cachedStats != null && cachedStats.isValid()) {
+            Log.d(TAG, "Using cached stats for instant display: " + cachedStats.videoCount + " videos, " + cachedStats.totalSizeMB + "MB");
+            updateStatsUI(cachedStats.videoCount, cachedStats.totalSizeMB);
+            return; // Show cached data instantly, no need to recalculate unless invalidated
+        }
+        
+        Log.d(TAG, "No valid cached stats found - calculating fresh stats");
+        
+        // Step 2: Calculate fresh stats in background
         if (executorService == null || executorService.isShutdown()) {
             Log.w(TAG,"ExecutorService not available for updateStats");
             // Reinitialize if needed or handle gracefully
@@ -3351,50 +3373,71 @@ public class HomeFragment extends BaseFragment {
                 }
             }
 
-            // Format size
+            // Convert to MB for caching
+            long totalSizeMB = totalSizeBytes / (1024 * 1024);
+
+            // Format size for display
             String totalSizeFormatted = (getContext() != null)
                     ? Formatter.formatFileSize(getContext(), totalSizeBytes)
                     : String.format(Locale.US,"%.2f GB", totalSizeBytes / (1024.0*1024.0*1024.0)); // Fallback format
 
-            // Get current theme
-            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-            
-            // Prepare final text for UI - special formatting for Snow Veil theme
-            final String statsText;
-            final Spanned formattedText;
-            
-            if (isSnowVeilTheme) {
-                // Create a custom black text version for Snow Veil theme
-                statsText = "\n    " +
-                    "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
-                    "<font color='#333333' style='font-size:11sp;'>" + numVideos + "</font><br>" +
-                    "<font color='#000000' style='font-size:12sp;'><b>Used Space:</font>" +
-                    "<font color='#333333' style='font-size:11sp;'>" + totalSizeFormatted + "</font>" +
-                    "\n";
-            } else {
-                // Use the standard resource for other themes
-                statsText = String.format(Locale.getDefault(),
-                    getString(R.string.mainpage_video_info), // Using your existing string resource
-                    numVideos, totalSizeFormatted);
-            }
-            
-            formattedText = Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY);
-
             Log.d(TAG,"updateStats BG: Calculation complete. Count="+numVideos+", Size="+totalSizeFormatted);
 
+            // --- Cache the fresh stats for instant future access ---
+            VideoStatsCache.updateStats(sharedPreferencesManager, numVideos, totalSizeMB);
+            Log.d(TAG, "Updated stats cache with fresh data");
+
             // --- Update UI on Main Thread ---
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    if (tvStats != null) {
-                        tvStats.setText(formattedText); // Use the final formatted text
-                        Log.d(TAG, "updateStats UI: Updated tvStats text.");
-                    } else {
-                        Log.w(TAG, "updateStats UI: tvStats is null.");
-                    }
-                });
-            }
+            updateStatsUI(numVideos, totalSizeMB);
         });
+        
+        // -------------- Fix End (updateStats) -----------
+    }
+    
+    /**
+     * Updates the stats UI with video count and size information
+     * @param numVideos Total number of videos
+     * @param totalSizeMB Total size in MB
+     */
+    private void updateStatsUI(int numVideos, long totalSizeMB) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (tvStats == null) {
+                    Log.w(TAG, "updateStatsUI: tvStats is null.");
+                    return;
+                }
+                
+                long totalSizeBytes = totalSizeMB * 1024 * 1024;
+                String totalSizeFormatted = (getContext() != null)
+                        ? Formatter.formatFileSize(getContext(), totalSizeBytes)
+                        : String.format(Locale.US,"%.2f GB", totalSizeBytes / (1024.0*1024.0*1024.0));
+                
+                // Get current theme
+                String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+                
+                String statsText;
+                if (isSnowVeilTheme) {
+                    // Create a custom black text version for Snow Veil theme
+                    statsText = "\n    " +
+                        "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
+                        "<font color='#333333' style='font-size:11sp;'>" + numVideos + "</font><br>" +
+                        "<font color='#000000' style='font-size:12sp;'><b>Used Space:</font>" +
+                        "<font color='#333333' style='font-size:11sp;'>" + totalSizeFormatted + "</font>" +
+                        "\n";
+                } else {
+                    // Use the standard resource for other themes
+                    statsText = String.format(Locale.getDefault(),
+                        getString(R.string.mainpage_video_info), // Using your existing string resource
+                        numVideos, totalSizeFormatted);
+                }
+                
+                Spanned formattedText = Html.fromHtml(statsText, Html.FROM_HTML_MODE_LEGACY);
+                tvStats.setText(formattedText);
+                
+                Log.d(TAG, "updateStatsUI: Updated tvStats - " + numVideos + " videos, " + totalSizeFormatted);
+            });
+        }
     }
 
     // --- COPIED Helper Methods (from RecordsFragment or move to shared Utils class) ---

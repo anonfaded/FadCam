@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Shared session cache for video items to eliminate duplicate SAF directory scans
- * between HomeFragment and RecordsFragment. Provides thread-safe caching with
- * automatic expiration to ensure data freshness.
+ * Intelligent session cache for video items that provides instant access and
+ * only invalidates when videos actually change (record/delete/manual refresh).
+ * No time-based expiry for maximum performance and scalability.
  */
 public class VideoSessionCache {
     private static final String TAG = "VideoSessionCache";
@@ -20,15 +20,15 @@ public class VideoSessionCache {
     private static List<VideoItem> sSessionCachedVideos = null;
     private static long sSessionCacheTimestamp = 0;
     private static int sCachedVideoCount = 0; // For skeleton loading
-    private static final long SESSION_CACHE_VALIDITY_MS = 30 * 1000; // 30 seconds
+    private static boolean sForceRefreshOnNextAccess = false; // Event-driven invalidation
     
     /**
-     * Checks if the current session cache is still valid.
-     * @return true if cache exists and is within validity period
+     * Checks if the current session cache is valid and available.
+     * Cache remains valid indefinitely until explicitly invalidated.
+     * @return true if cache exists and should be used
      */
     public static synchronized boolean isSessionCacheValid() {
-        return sSessionCachedVideos != null && 
-               (System.currentTimeMillis() - sSessionCacheTimestamp) < SESSION_CACHE_VALIDITY_MS;
+        return sSessionCachedVideos != null && !sForceRefreshOnNextAccess;
     }
     
     /**
@@ -37,8 +37,10 @@ public class VideoSessionCache {
      */
     public static synchronized List<VideoItem> getSessionCachedVideos() {
         if (!isSessionCacheValid()) {
+            Log.d(TAG, "Session cache invalid or needs refresh");
             return new ArrayList<>();
         }
+        Log.d(TAG, "Using cached videos: " + sSessionCachedVideos.size() + " items");
         return new ArrayList<>(sSessionCachedVideos);
     }
     
@@ -49,6 +51,7 @@ public class VideoSessionCache {
     public static synchronized void updateSessionCache(List<VideoItem> videos) {
         sSessionCachedVideos = new ArrayList<>(videos);
         sSessionCacheTimestamp = System.currentTimeMillis();
+        sForceRefreshOnNextAccess = false; // Reset invalidation flag
         Log.d(TAG, "Session cache updated with " + videos.size() + " videos");
     }
     
@@ -58,7 +61,17 @@ public class VideoSessionCache {
     public static synchronized void clearSessionCache() {
         sSessionCachedVideos = null;
         sSessionCacheTimestamp = 0;
+        sForceRefreshOnNextAccess = false;
         Log.d(TAG, "Session cache cleared");
+    }
+    
+    /**
+     * Invalidates cache for next access (call when videos might have changed)
+     * Used when recording, deleting, or manual refresh is triggered.
+     */
+    public static synchronized void invalidateOnNextAccess() {
+        sForceRefreshOnNextAccess = true;
+        Log.d(TAG, "Session cache marked for refresh on next access");
     }
     
     /**

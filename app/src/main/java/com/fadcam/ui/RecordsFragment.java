@@ -432,6 +432,13 @@ public class RecordsFragment extends BaseFragment implements
 
     @Override
     public void onMoveToTrashFinished(boolean success, String message) {
+        if (success) {
+            // Invalidate caches when videos are deleted
+            com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
+            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess();
+            Log.d(TAG, "Invalidated video caches after successful video deletion");
+        }
+        
         if (getActivity() == null) return;
         getActivity().runOnUiThread(() -> {
             if (moveTrashProgressDialog != null && moveTrashProgressDialog.isShowing()) {
@@ -765,6 +772,10 @@ public class RecordsFragment extends BaseFragment implements
                 
                 // Clear session cache to force fresh data
                 com.fadcam.utils.VideoSessionCache.clearSessionCache();
+                
+                // Invalidate stats cache for manual refresh
+                com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
+                Log.d(TAG, "Invalidated video caches for manual refresh");
                 
                 // Clear adapter caches
                 if (recordsAdapter != null) {

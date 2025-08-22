@@ -572,7 +572,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     @Override
     public int getItemCount() {
-        return records == null ? 0 : records.size();
+        int count = records == null ? 0 : records.size();
+        if (count == 0) {
+            Log.d(TAG, "getItemCount returning 0 - records is " + (records == null ? "null" : "empty") + 
+                       ", skeleton mode: " + isSkeletonMode);
+        }
+        return count;
     }
 
     // Load duration cache from JSON file
@@ -1673,6 +1678,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return;
         }
         
+        Log.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) + 
+                   " to " + newRecords.size() + " records");
+        
+        // CRITICAL FIX: Handle skeleton mode transition properly
+        if (isSkeletonMode) {
+            Log.d(TAG, "updateRecords: Still in skeleton mode - disabling it first");
+            setSkeletonMode(false);
+        }
+        
         // Use DiffUtil to calculate the differences and dispatch updates efficiently
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
@@ -1712,7 +1726,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Dispatch updates to the adapter
         diffResult.dispatchUpdatesTo(this);
         
-        Log.d(TAG, "Updated records using DiffUtil. New size: " + records.size());
+        Log.d(TAG, "updateRecords completed. Final size: " + records.size() + 
+                   ", skeleton mode: " + isSkeletonMode);
     }
 
     // Format file size helper

@@ -71,25 +71,25 @@ public class ShimmerEffectHelper {
      * Create professional shimmer drawable with gradient sweep
      */
     private static Drawable createShimmerDrawable(Resources resources) {
-        // Base color - subtle gray overlay
+        // Base color - darker gray overlay for better visibility
         GradientDrawable baseDrawable = new GradientDrawable();
-        baseDrawable.setColor(0x12000000); // Very subtle dark overlay
+        baseDrawable.setColor(0x25000000); // Darker subtle overlay
         baseDrawable.setCornerRadius(8); // Match card corner radius
         
-        // Shimmer gradient - sweeping highlight
+        // Shimmer gradient - sweeping highlight with more contrast
         GradientDrawable shimmerGradient = new GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
             new int[]{
                 0x00FFFFFF, // Transparent
-                0x20FFFFFF, // Light highlight
-                0x40FFFFFF, // Bright highlight
-                0x20FFFFFF, // Light highlight  
+                0x35FFFFFF, // More pronounced light highlight
+                0x65FFFFFF, // Brighter highlight for better visibility
+                0x35FFFFFF, // More pronounced light highlight  
                 0x00FFFFFF  // Transparent
             }
         );
         shimmerGradient.setCornerRadius(8);
         
-        // Layer them for proper shimmer effect
+        // Layer them for proper shimmer effect with enhanced contrast
         return new LayerDrawable(new Drawable[]{baseDrawable, shimmerGradient});
     }
     
