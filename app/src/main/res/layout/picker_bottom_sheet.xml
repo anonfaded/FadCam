@@ -54,6 +54,45 @@
                 android:paddingBottom="4dp"
                 android:paddingStart="0dp"
                 android:paddingEnd="0dp">
+
+                <!-- Switch row styled like other settings rows -->
+                <LinearLayout
+                    android:id="@+id/picker_switch_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/settings_home_row_bg"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/picker_switch_label"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/picker_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- Divider below switch row to match settings dividers -->
+                <View
+                    android:id="@+id/picker_switch_divider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="#262626"
+                    android:visibility="gone" />
+
                 <LinearLayout
                     android:id="@+id/picker_list_container"
                     android:layout_width="match_parent"
