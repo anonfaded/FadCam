@@ -2021,18 +2021,27 @@ public class HomeFragment extends BaseFragment {
                     // Update exposure tile tinting based on current exposure and AE lock state
                     try {
                         if (tileExp != null) {
+                            // -------------- Fix Start (exposure tile tinting - Snow Veil theme)-----------
                             // Show orange tint if AE locked or exposure compensation is not at 0
                             if (aeLocked || currentEvIndex != 0) {
                                 int orange = getResources().getColor(R.color.orange_accent,
                                         requireContext().getTheme());
                                 tileExp.setTextColor(orange);
                             } else {
-                                // Reset to default theme color by getting the original color from theme
-                                android.util.TypedValue typedValue = new android.util.TypedValue();
-                                requireContext().getTheme().resolveAttribute(
-                                        com.google.android.material.R.attr.colorOnSurface, typedValue, true);
-                                tileExp.setTextColor(typedValue.data);
+                                // Reset to appropriate default color based on theme
+                                boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+
+                                if (isSnowVeilTheme) {
+                                    tileExp.setTextColor(Color.parseColor("#424242")); // Dark gray for Snow Veil
+                                } else {
+                                    // Use theme's colorOnSurface for other themes
+                                    android.util.TypedValue typedValue = new android.util.TypedValue();
+                                    requireContext().getTheme().resolveAttribute(
+                                            com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+                                    tileExp.setTextColor(typedValue.data);
+                                }
                             }
+                            // -------------- Fix Ended (exposure tile tinting - Snow Veil theme)-----------
                         }
                     } catch (Exception ignored) {
                     }
@@ -2059,19 +2068,31 @@ public class HomeFragment extends BaseFragment {
             // Update exposure tile visual: tint orange when locked, reset when unlocked
             try {
                 if (tileExp != null) {
+                    // -------------- Fix Start (AE lock exposure tile tinting - Snow Veil
+                    // theme)-----------
                     // TextView Material Icons font handling with textColor
                     if (aeLocked || currentEvIndex != 0) {
                         int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
                         tileExp.setTextColor(orange);
                         com.fadcam.Log.d(TAG, "Applied orange tint to exposure tile");
                     } else {
-                        // Reset to default theme color by getting the original color from theme
-                        android.util.TypedValue typedValue = new android.util.TypedValue();
-                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface,
-                                typedValue, true);
-                        tileExp.setTextColor(typedValue.data);
+                        // Reset to appropriate default color based on theme
+                        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+
+                        if (isSnowVeilTheme) {
+                            tileExp.setTextColor(Color.parseColor("#424242")); // Dark gray for Snow Veil
+                        } else {
+                            // Use theme's colorOnSurface for other themes
+                            android.util.TypedValue typedValue = new android.util.TypedValue();
+                            requireContext().getTheme().resolveAttribute(
+                                    com.google.android.material.R.attr.colorOnSurface,
+                                    typedValue, true);
+                            tileExp.setTextColor(typedValue.data);
+                        }
                         com.fadcam.Log.d(TAG, "Cleared tint from exposure tile");
                     }
+                    // -------------- Fix Ended (AE lock exposure tile tinting - Snow Veil
+                    // theme)-----------
                     // subtle scale to indicate active
                     tileExp.setScaleX(aeLocked ? 1.05f : 1f);
                     tileExp.setScaleY(aeLocked ? 1.05f : 1f);
@@ -2133,15 +2154,25 @@ public class HomeFragment extends BaseFragment {
                     // Save zoom ratio to preferences
                     sp.setSpecificZoomRatio(currentCamera, zoomRatio);
 
+                    // -------------- Fix Start (zoom tile tinting - Snow Veil theme)-----------
                     // Update zoom tile tinting
                     try {
                         if (tileZoom != null) {
+                            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+
                             if (Math.abs(zoomRatio - 1.0f) > 0.01f) { // Not at 1.0x default
                                 tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
                             } else {
-                                tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                                // Use appropriate default color based on theme
+                                if (isSnowVeilTheme) {
+                                    tileZoom.setTextColor(Color.parseColor("#424242")); // Dark gray for Snow Veil
+                                } else {
+                                    tileZoom.setTextColor(
+                                            ContextCompat.getColor(requireContext(), android.R.color.white));
+                                }
                             }
                         }
+                        // -------------- Fix Ended (zoom tile tinting - Snow Veil theme)-----------
                     } catch (Exception ignored) {
                     }
 
@@ -3794,7 +3825,7 @@ public class HomeFragment extends BaseFragment {
                     statsText = "\n    " +
                             "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
                             "<font color='#333333' style='font-size:11sp;'>" + numVideos + "</font><br>" +
-                            "<font color='#000000' style='font-size:12sp;'><b>Used Space:</font>" +
+                            "<font color='#000000' style='font-size:12sp;'><b>Used: </font>" +
                             "<font color='#333333' style='font-size:11sp;'>" + totalSizeFormatted + "</font>" +
                             "\n";
                 } else {
@@ -4055,6 +4086,25 @@ public class HomeFragment extends BaseFragment {
                             .setText(afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
                                     ? "center_focus_strong"
                                     : "center_focus_weak");
+
+                    // -------------- Fix Start (initial AF toggle tinting - Snow Veil
+                    // theme)-----------
+                    // Set appropriate color based on theme
+                    String currentTheme = sharedPreferencesManager.sharedPreferences
+                            .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                    boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+
+                    if (isSnowVeilTheme) {
+                        tileAfToggle.setTextColor(Color.parseColor("#424242")); // Dark gray for Snow Veil
+                    } else {
+                        // Use theme's colorOnSurface for other themes
+                        android.util.TypedValue typedValue = new android.util.TypedValue();
+                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface,
+                                typedValue, true);
+                        tileAfToggle.setTextColor(typedValue.data);
+                    }
+                    // -------------- Fix Ended (initial AF toggle tinting - Snow Veil
+                    // theme)-----------
                 }
             } catch (Exception ignored) {
             }
@@ -4074,6 +4124,8 @@ public class HomeFragment extends BaseFragment {
                     int savedEvIndex = sp.getSavedExposureCompensation();
                     boolean savedAeLock = sp.isAeLockedSaved();
 
+                    // -------------- Fix Start (initial exposure tile tinting - Snow Veil
+                    // theme)-----------
                     // Apply orange tint if AE locked or exposure compensation is not at 0
                     if (savedAeLock || savedEvIndex != 0) {
                         int orange = getResources().getColor(R.color.orange_accent, requireContext().getTheme());
@@ -4084,15 +4136,27 @@ public class HomeFragment extends BaseFragment {
                         com.fadcam.Log.d(TAG, "Applied initial orange tint to exposure tile (EV=" + savedEvIndex
                                 + ", AeLock=" + savedAeLock + ")");
                     } else {
-                        // Reset to default theme color
-                        android.util.TypedValue typedValue = new android.util.TypedValue();
-                        requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface,
-                                typedValue, true);
-                        tileExp.setTextColor(typedValue.data);
+                        // Reset to appropriate default color based on theme
+                        String currentTheme = sharedPreferencesManager.sharedPreferences
+                                .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+
+                        if (isSnowVeilTheme) {
+                            tileExp.setTextColor(Color.parseColor("#424242")); // Dark gray for Snow Veil
+                        } else {
+                            // Use theme's colorOnSurface for other themes
+                            android.util.TypedValue typedValue = new android.util.TypedValue();
+                            requireContext().getTheme().resolveAttribute(
+                                    com.google.android.material.R.attr.colorOnSurface,
+                                    typedValue, true);
+                            tileExp.setTextColor(typedValue.data);
+                        }
                         tileExp.setScaleX(1f);
                         tileExp.setScaleY(1f);
                         com.fadcam.Log.d(TAG, "Applied initial default tint to exposure tile");
                     }
+                    // -------------- Fix Ended (initial exposure tile tinting - Snow Veil
+                    // theme)-----------
                 }
             } catch (Exception ignored) {
             }
@@ -4111,15 +4175,28 @@ public class HomeFragment extends BaseFragment {
                     tileZoom.setText(getString(R.string.icon_zoom_in_ligature));
                     tileZoom.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 24);
 
+                    // -------------- Fix Start (initial zoom tile tinting - Snow Veil
+                    // theme)-----------
                     // Apply orange tint if zoom is not at default (1.0x)
                     SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
                     CameraType currentCamera = sp.getCameraSelection();
                     float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+                    String currentTheme = sharedPreferencesManager.sharedPreferences
+                            .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                    boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+
                     if (Math.abs(currentZoom - 1.0f) > 0.01f) { // Not at 1.0x default
                         tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
                     } else {
-                        tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                        // Use appropriate default color based on theme
+                        if (isSnowVeilTheme) {
+                            tileZoom.setTextColor(Color.parseColor("#424242")); // Dark gray for Snow Veil
+                        } else {
+                            tileZoom.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                        }
                     }
+                    // -------------- Fix Ended (initial zoom tile tinting - Snow Veil
+                    // theme)-----------
                 }
             } catch (Exception ignored) {
             }
@@ -5368,6 +5445,40 @@ public class HomeFragment extends BaseFragment {
         if (buttonCamSwitch != null) {
             buttonCamSwitch.setTextColor(Color.BLACK);
         }
+
+        // -------------- Fix Start (applyButtonTinting - recording tiles)-----------
+        // Recording tiles - apply dark colors for Snow Veil theme visibility
+        if (tileAfToggle != null) {
+            // Use dark gray instead of black for better visibility on light background
+            tileAfToggle.setTextColor(Color.parseColor("#424242"));
+        }
+
+        if (tileExp != null) {
+            // Check if exposure is active (orange tint should be preserved)
+            if (aeLocked || currentEvIndex != 0) {
+                // Keep orange tint for active state
+                tileExp.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
+            } else {
+                // Use dark gray for inactive state
+                tileExp.setTextColor(Color.parseColor("#424242"));
+            }
+        }
+
+        if (tileZoom != null) {
+            // Check if zoom is active (not at 1.0x)
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());
+            CameraType currentCamera = sp.getCameraSelection();
+            float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+
+            if (Math.abs(currentZoom - 1.0f) > 0.01f) {
+                // Keep orange tint for active zoom
+                tileZoom.setTextColor(ContextCompat.getColor(requireContext(), R.color.orange_accent));
+            } else {
+                // Use dark gray for default zoom
+                tileZoom.setTextColor(Color.parseColor("#424242"));
+            }
+        }
+        // -------------- Fix Ended (applyButtonTinting - recording tiles)-----------
     }
 
     /**
@@ -5422,7 +5533,7 @@ public class HomeFragment extends BaseFragment {
                     String blackStatsText = "\n    " +
                             "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
                             "<font color='#333333' style='font-size:11sp;'>" + videoCount + "</font><br>" +
-                            "<font color='#000000' style='font-size:12sp;'><b>Used Space:</font>" +
+                            "<font color='#000000' style='font-size:12sp;'><b>Used: </font>" +
                             "<font color='#333333' style='font-size:11sp;'>" + usedSpace + "</font>" +
                             "\n";
 
@@ -5432,9 +5543,9 @@ public class HomeFragment extends BaseFragment {
             }
         }
 
-        // Storage info card text
+        // Storage info card text - use white text since it has dark background
         if (cardStorage != null) {
-            forceForceMakeAllTextBlack(cardStorage);
+            makeStorageCardTextWhite(cardStorage);
         }
 
         // Direct access to known TextViews for clock
@@ -5450,28 +5561,118 @@ public class HomeFragment extends BaseFragment {
             tvDateArabic.setTextColor(Color.BLACK);
         }
 
-        // Update colors for storage widget TextViews
+        // Update colors for storage widget TextViews - use white for dark background
         if (tvCameraTitle != null)
-            tvCameraTitle.setTextColor(Color.BLACK);
+            tvCameraTitle.setTextColor(Color.WHITE);
         if (tvCameraSubtitle != null)
-            tvCameraSubtitle.setTextColor(Color.BLACK);
+            tvCameraSubtitle.setTextColor(Color.WHITE);
         if (tvEstimateTitle != null)
-            tvEstimateTitle.setTextColor(Color.BLACK);
+            tvEstimateTitle.setTextColor(Color.WHITE);
         if (tvEstimateSubtitle != null)
-            tvEstimateSubtitle.setTextColor(Color.BLACK);
+            tvEstimateSubtitle.setTextColor(Color.WHITE);
         if (tvSpaceTitle != null)
-            tvSpaceTitle.setTextColor(Color.BLACK);
+            tvSpaceTitle.setTextColor(Color.WHITE);
         if (tvSpaceSubtitle != null)
-            tvSpaceSubtitle.setTextColor(Color.BLACK);
+            tvSpaceSubtitle.setTextColor(Color.WHITE);
         if (tvElapsedTitle != null)
-            tvElapsedTitle.setTextColor(Color.BLACK);
+            tvElapsedTitle.setTextColor(Color.WHITE);
         if (tvElapsedSubtitle != null)
-            tvElapsedSubtitle.setTextColor(Color.BLACK);
+            tvElapsedSubtitle.setTextColor(Color.WHITE);
         if (tvRemainingTitle != null)
-            tvRemainingTitle.setTextColor(Color.BLACK);
+            tvRemainingTitle.setTextColor(Color.WHITE);
         if (tvRemainingSubtitle != null)
-            tvRemainingSubtitle.setTextColor(Color.BLACK);
+            tvRemainingSubtitle.setTextColor(Color.WHITE);
 
+        // -------------- Fix Start (ensureCardTextContrast - icons)-----------
+        // Keep semantic colors for icons but ensure they're visible on light background
+        if (ivCameraIcon != null) {
+            // Keep green color for camera icon but use a darker shade for better contrast
+            ivCameraIcon.setTextColor(Color.parseColor("#2E7D32")); // Darker green for better contrast
+        }
+
+        // Handle other icons by finding them in the storage card
+        if (cardStorage != null) {
+            findAndColorIconsByText(cardStorage);
+        }
+        // -------------- Fix Ended (ensureCardTextContrast - icons)-----------
+
+    }
+
+    /**
+     * Helper method to find and color icon TextViews by their text content
+     */
+    private void findAndColorIconsByText(ViewGroup viewGroup) {
+        try {
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                View child = viewGroup.getChildAt(i);
+                if (child instanceof TextView) {
+                    TextView textView = (TextView) child;
+                    String text = textView.getText().toString();
+
+                    // Apply semantic colors based on icon text
+                    switch (text) {
+                        case "timer":
+                            textView.setTextColor(Color.parseColor("#D32F2F")); // Red for timer
+                            break;
+                        case "access_time":
+                            textView.setTextColor(Color.parseColor("#F57C00")); // Orange for hourglass/estimated time
+                            break;
+                        case "play_arrow":
+                            textView.setTextColor(Color.parseColor("#4CAF50")); // Green for play/elapsed time
+                            break;
+                        case "folder":
+                            textView.setTextColor(Color.parseColor("#616161")); // Gray for folder/storage
+                            break;
+                        case "database":
+                            textView.setTextColor(Color.parseColor("#1976D2")); // Blue for database/storage
+                            break;
+                    }
+                } else if (child instanceof ViewGroup) {
+                    findAndColorIconsByText((ViewGroup) child);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error coloring icons: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Helper method to make storage card text white for dark background
+     */
+    private void makeStorageCardTextWhite(ViewGroup viewGroup) {
+        try {
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                View child = viewGroup.getChildAt(i);
+                if (child instanceof TextView) {
+                    TextView textView = (TextView) child;
+                    String text = textView.getText().toString();
+
+                    // Skip icon TextViews (they have their own colors)
+                    if (text.equals("timer") || text.equals("access_time") ||
+                            text.equals("play_arrow") || text.equals("folder") ||
+                            text.equals("database") || text.equals("camera_alt")) {
+                        continue; // Skip icons, they're handled separately
+                    }
+
+                    // Make regular text white for dark background
+                    textView.setTextColor(Color.WHITE);
+
+                    // Handle if the text has any spans (HTML formatting)
+                    CharSequence textContent = textView.getText();
+                    if (textContent instanceof Spanned) {
+                        // Create a new SpannableString that preserves formatting but forces white color
+                        SpannableString newText = new SpannableString(textContent);
+                        newText.setSpan(new ForegroundColorSpan(Color.WHITE),
+                                0, newText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textView.setText(newText);
+                    }
+                } else if (child instanceof ViewGroup) {
+                    makeStorageCardTextWhite((ViewGroup) child);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error making storage text white: " + e.getMessage());
+        }
     }
 
     /**
