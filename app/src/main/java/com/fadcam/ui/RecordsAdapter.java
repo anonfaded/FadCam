@@ -48,6 +48,7 @@ import androidx.core.text.HtmlCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
+import com.fadcam.utils.ShimmerEffectHelper;
 import com.fadcam.Constants;
 import com.fadcam.R;
 // Ensure VideoItem import is correct
@@ -135,6 +136,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final String tempCacheDirectoryPath;
     // Add field to track scrolling state
     private boolean isScrolling = false;
+    // Add skeleton mode for professional loading experience
+    private boolean isSkeletonMode = false;
     // --- Interfaces Updated ---
     public interface OnVideoClickListener {
         void onVideoClick(VideoItem videoItem); // Pass VideoItem
@@ -274,6 +277,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Optimize onBindViewHolder to reduce work on the UI thread
     @Override
     public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
+        // --- 0. Handle Skeleton Mode ---
+        if (isSkeletonMode) {
+            bindSkeletonItem(holder, position);
+            return;
+        }
+        
+        // -------------- Fix Start (clearSkeletonEffects) - Clear skeleton state when binding real data -----------
+        clearSkeletonEffects(holder);
+        // -------------- Fix End (clearSkeletonEffects) -----------
+        
         // --- 1. Basic Checks & Get Data ---
         if (records == null || position < 0 || position >= records.size() || records.get(position) == null || records.get(position).uri == null) {
             Log.e(TAG,"onBindViewHolder: Invalid item/data at position " + position);
@@ -366,6 +379,18 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 
                 // Calculate duration on background thread - this is one of the main causes of lag
                 executorService.execute(() -> {
+                    // -------------- Fix Start (duration calculation for new videos) -----------
+                    // Add a small delay for newly recorded videos to ensure file is fully written
+                    if (videoItem.isNew) {
+                        try {
+                            Thread.sleep(500); // 500ms delay for new videos
+                            Log.d(TAG, "Added delay for new video duration calculation: " + videoItem.displayName);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    // -------------- Fix End (duration calculation for new videos) -----------
+                    
                     long duration = getVideoDuration(videoUri);
                     String formattedDuration = formatVideoDuration(duration);
                     loadedThumbnailCache.put(position, formattedDuration);
@@ -542,6 +567,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (allowGeneralInteractions && longClickListener != null) { longClickListener.onVideoLongClick(videoItem, true); }
             return allowGeneralInteractions;
         });
+        
+        // -------------- Fix Start (thumbnail click listener) -----------
+        // Set the same click listener on the thumbnail for better UX
+        if (holder.imageViewThumbnail != null) {
+            holder.imageViewThumbnail.setOnClickListener(v -> {
+                if (allowGeneralInteractions && clickListener != null) { clickListener.onVideoClick(videoItem); }
+            });
+        }
+        // -------------- Fix End (thumbnail click listener) -----------
 
         // INSTEAD, set a click listener on the menuButtonContainer
         if (holder.menuButtonContainer != null) {
@@ -559,7 +593,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     @Override
     public int getItemCount() {
-        return records == null ? 0 : records.size();
+        int count = records == null ? 0 : records.size();
+        if (count == 0) {
+            Log.d(TAG, "getItemCount returning 0 - records is " + (records == null ? "null" : "empty") + 
+                       ", skeleton mode: " + isSkeletonMode);
+        }
+        return count;
     }
 
     // Load duration cache from JSON file
@@ -653,7 +692,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         try { return context.getString(R.string.accessibility_thumbnail_progress, percent); } catch (Exception ignored) { return percent + "% watched"; }
     }
 
-    // Update the setThumbnail method to consider scrolling state
+    // Update the setThumbnail method to consider scrolling state with caching
     private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
         if (holder.imageViewThumbnail == null || context == null) return;
         // Honor user preference: hide thumbnails if requested
@@ -666,6 +705,32 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
         } catch (Exception ignored) {}
 
+        // -------------- Fix Start (loadThumbnail with cache)-----------
+        // Skip Glide loading for skeleton URIs
+        if ("skeleton".equals(videoUri.getScheme())) {
+            holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+            return;
+        }
+        
+        String uriString = videoUri.toString();
+        
+        // Try to get cached thumbnail first
+        byte[] cachedThumbnail = com.fadcam.utils.VideoSessionCache.getThumbnailWithFallback(context, uriString);
+        if (cachedThumbnail != null) {
+            // Load from cache - instant display
+            try {
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(cachedThumbnail, 0, cachedThumbnail.length);
+                if (bitmap != null) {
+                    holder.imageViewThumbnail.setImageBitmap(bitmap);
+                    holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    Log.v(TAG, "Loaded thumbnail from cache for: " + uriString);
+                    return;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error loading cached thumbnail", e);
+            }
+        }
+
         // Lower resolution during scrolling for performance
         int thumbnailSize = isScrolling ? 100 : THUMBNAIL_SIZE;
         
@@ -675,19 +740,53 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             .skipMemoryCache(false)
             .centerCrop()
             .override(thumbnailSize, thumbnailSize)
-            .placeholder(R.drawable.ic_video_placeholder);
+            .placeholder(R.drawable.ic_video_placeholder)
+            .error(R.drawable.ic_video_placeholder);
         
         if (isScrolling) {
             // During scrolling, use low-quality thumbnails for speed
             options = options.dontAnimate();
         }
         
-        // Implement loading with scroll-aware options
-    Glide.with(context)
-        .load(videoUri)
-        .apply(options)
-        .thumbnail(0.1f) // Use a small thumbnail first for faster initial loading
-        .into(holder.imageViewThumbnail);
+        // Load with Glide and cache the result
+        Glide.with(context)
+            .asBitmap()
+            .load(videoUri)
+            .apply(options)
+            .thumbnail(0.1f)
+            .into(new com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull android.graphics.Bitmap resource, 
+                                          @androidx.annotation.Nullable com.bumptech.glide.request.transition.Transition<? super android.graphics.Bitmap> transition) {
+                    // Set the image
+                    holder.imageViewThumbnail.setImageBitmap(resource);
+                    holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    
+                    // Cache the thumbnail for future use
+                    executorService.execute(() -> {
+                        try {
+                            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                            resource.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, baos);
+                            byte[] thumbnailData = baos.toByteArray();
+                            
+                            // Cache in memory and disk
+                            com.fadcam.utils.VideoSessionCache.cacheThumbnail(uriString, thumbnailData);
+                            com.fadcam.utils.VideoSessionCache.saveThumbnailToDisk(context, uriString, thumbnailData);
+                            
+                            Log.v(TAG, "Cached new thumbnail for: " + uriString);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error caching thumbnail", e);
+                        }
+                    });
+                }
+                
+                @Override
+                public void onLoadCleared(@androidx.annotation.Nullable android.graphics.drawable.Drawable placeholder) {
+                    // Set placeholder if load is cleared
+                    holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+                }
+            });
+        // -------------- Fix End (loadThumbnail with cache)-----------
     }
 
     // Override onViewRecycled to cancel thumbnail loading for recycled views
@@ -1660,6 +1759,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return;
         }
         
+        Log.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) + 
+                   " to " + newRecords.size() + " records");
+        
+        // -------------- Fix Start (updateRecords) - Only disable skeleton mode for real data -----------
+        
+        // Check if we're updating with skeleton data or real data
+        boolean isSkeletonData = !newRecords.isEmpty() && newRecords.get(0).isSkeleton;
+        
+        if (isSkeletonMode && !isSkeletonData) {
+            Log.d(TAG, "updateRecords: Transitioning from skeleton to real data - disabling skeleton mode");
+            setSkeletonMode(false);
+        } else if (isSkeletonMode && isSkeletonData) {
+            Log.d(TAG, "updateRecords: Updating skeleton data - keeping skeleton mode enabled");
+            // Keep skeleton mode enabled
+        }
+        
+        // -------------- Fix End (updateRecords) -----------
+        
         // Use DiffUtil to calculate the differences and dispatch updates efficiently
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
@@ -1699,7 +1816,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Dispatch updates to the adapter
         diffResult.dispatchUpdatesTo(this);
         
-        Log.d(TAG, "Updated records using DiffUtil. New size: " + records.size());
+        Log.d(TAG, "updateRecords completed. Final size: " + records.size() + 
+                   ", skeleton mode: " + isSkeletonMode);
     }
 
     // Format file size helper
@@ -1802,8 +1920,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // Get video duration from URI (Helper)
+    // -------------- Fix Start (getVideoDuration)-----------
     private long getVideoDuration(Uri videoUri) {
         if(context == null || videoUri == null) return 0;
+        
+        // Skip skeleton URIs to prevent errors
+        if ("skeleton".equals(videoUri.getScheme())) {
+            return 0;
+        }
+        // -------------- Fix End (getVideoDuration)-----------
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         long durationMs = 0;
         try {
@@ -1944,6 +2069,157 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     public void setScrolling(boolean scrolling) {
         this.isScrolling = scrolling;
     }
+    
+    /**
+     * Sets skeleton mode for professional loading experience
+     * @param skeletonMode true to show skeleton placeholders, false for normal content
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setSkeletonMode(boolean skeletonMode) {
+        if (this.isSkeletonMode != skeletonMode) {
+            this.isSkeletonMode = skeletonMode;
+            Log.d(TAG, "Skeleton mode " + (skeletonMode ? "enabled" : "disabled"));
+            notifyDataSetChanged(); // Refresh all views
+        }
+    }
+    
+    /**
+     * Checks if adapter is currently in skeleton mode
+     * @return true if showing skeleton placeholders
+     */
+    public boolean isSkeletonMode() {
+        return isSkeletonMode;
+    }
+    
+    /**
+     * Sets skeleton data without disabling skeleton mode
+     * @param skeletonItems List of skeleton items to display
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setSkeletonData(List<VideoItem> skeletonItems) {
+        if (skeletonItems == null) return;
+        
+        Log.d(TAG, "setSkeletonData: Setting " + skeletonItems.size() + " skeleton items");
+        this.records = new ArrayList<>(skeletonItems);
+        notifyDataSetChanged();
+    }
+    
+    /**
+     * Binds skeleton placeholder content to view holder with shimmer effect
+     */
+    private void bindSkeletonItem(@NonNull RecordViewHolder holder, int position) {
+        // -------------- Fix Start (bindSkeletonItem) - Professional shimmer skeleton -----------
+        
+        // Step 1: Clear any existing content and animations
+        holder.itemView.clearAnimation();
+        holder.imageViewThumbnail.clearAnimation();
+        
+        // Step 2: Clear text content and set placeholder appearance
+        holder.textViewRecord.setText("████████████████");  // Placeholder text
+        holder.textViewFileSize.setText("██ MB");
+        holder.textViewFileTime.setText("██████");
+        
+        // Make text views appear as placeholder blocks
+        holder.textViewRecord.setAlpha(0.1f);
+        holder.textViewFileSize.setAlpha(0.1f);
+        holder.textViewFileTime.setAlpha(0.1f);
+        
+        // Step 3: Set placeholder for thumbnail
+        holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+        holder.imageViewThumbnail.setAlpha(0.3f); // Dimmed placeholder
+        holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Step 4: Hide interactive elements during skeleton state
+        if (holder.textViewStatusBadge != null) {
+            holder.textViewStatusBadge.setText("");
+            holder.textViewStatusBadge.setVisibility(View.GONE);
+        }
+        if (holder.textViewSerialNumber != null) {
+            holder.textViewSerialNumber.setVisibility(View.GONE);
+        }
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setVisibility(View.GONE);
+        }
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setText("███████");
+            holder.textViewTimeAgo.setAlpha(0.1f);
+        }
+        
+        // Step 5: Hide processing and selection elements
+        if (holder.processingScrim != null) {
+            holder.processingScrim.setVisibility(View.GONE);
+        }
+        if (holder.processingSpinner != null) {
+            holder.processingSpinner.setVisibility(View.GONE);
+        }
+        if (holder.iconCheckContainer != null) {
+            holder.iconCheckContainer.setVisibility(View.GONE);
+        }
+        
+        // Step 6: Apply professional shimmer effect to the entire card
+        ShimmerEffectHelper.applyShimmerEffect(holder.itemView);
+        
+        // Step 7: Disable all click events for skeleton items
+        holder.itemView.setOnClickListener(null);
+        holder.itemView.setOnLongClickListener(null);
+        holder.imageViewThumbnail.setOnClickListener(null);
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setOnClickListener(null);
+        }
+        
+        Log.v(TAG, "Professional shimmer skeleton bound at position " + position);
+        
+        // -------------- Fix End (bindSkeletonItem) -----------
+    }
+    
+    /**
+     * Clears skeleton effects and restores normal appearance for data binding
+     */
+    private void clearSkeletonEffects(@NonNull RecordViewHolder holder) {
+        // -------------- Fix Start (clearSkeletonEffects) - Remove skeleton effects when binding real data -----------
+        
+        // Step 1: Remove shimmer effect from the card
+        ShimmerEffectHelper.removeShimmerEffect(holder.itemView);
+        
+        // Step 2: Stop any running animations
+        holder.itemView.clearAnimation();
+        holder.imageViewThumbnail.clearAnimation();
+        
+        // Step 3: Restore normal text appearance
+        holder.textViewRecord.setAlpha(1.0f);
+        holder.textViewFileSize.setAlpha(1.0f);
+        holder.textViewFileTime.setAlpha(1.0f);
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setAlpha(1.0f);
+        }
+        
+        // Step 4: Clear shimmer backgrounds from all elements
+        holder.textViewRecord.setBackground(null);
+        holder.textViewFileSize.setBackground(null);
+        holder.textViewFileTime.setBackground(null);
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setBackground(null);
+        }
+        
+        // Step 5: Clear shimmer from thumbnail and restore normal appearance
+        holder.imageViewThumbnail.setBackground(null);
+        holder.imageViewThumbnail.setAlpha(1.0f);
+        
+        // Step 6: Restore visibility for hidden elements
+        if (holder.textViewSerialNumber != null) {
+            holder.textViewSerialNumber.setVisibility(View.VISIBLE);
+        }
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setVisibility(View.VISIBLE);
+        }
+        
+        // Step 7: Restore normal item appearance
+        holder.itemView.setAlpha(1.0f);
+        
+        Log.v(TAG, "Skeleton effects cleared for data binding");
+        
+        // -------------- Fix End (clearSkeletonEffects) -----------
+    }
 
     // --- Delete Helper (Must be accessible or copied here) ---
     // You need the `deleteVideoUri` method from RecordsFragment here or accessible
@@ -1970,6 +2246,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     public void clearCaches() {
         loadedThumbnailCache.clear();
+        // -------------- Fix Start (clear duration cache) -----------
+        // Also clear duration cache to prevent stale duration data for new videos
+        synchronized (durationCache) {
+            durationCache.clear();
+        }
+        synchronized (savedPositionCache) {
+            savedPositionCache.clear();
+        }
+        Log.d(TAG, "Cleared all adapter caches including duration and position caches");
+        // -------------- Fix End (clear duration cache) -----------
     }
 
     // For dialogs, use themed MaterialAlertDialogBuilder as in SettingsFragment

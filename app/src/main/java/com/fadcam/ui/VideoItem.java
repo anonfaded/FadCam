@@ -16,12 +16,27 @@ public class VideoItem {
     public boolean isTemporary = false;
     public boolean isNew = false;
     public boolean isProcessingUri = false;
+    public boolean isSkeleton = false; // Flag for skeleton loading
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
         this.uri = uri;
         this.displayName = displayName;
         this.size = size;
         this.lastModified = lastModified;
+    }
+    
+    /**
+     * Creates a skeleton placeholder item for loading state
+     */
+    public static VideoItem createSkeleton() {
+        VideoItem skeleton = new VideoItem(
+            Uri.parse("skeleton://placeholder"),
+            "Loading...",
+            0,
+            System.currentTimeMillis()
+        );
+        skeleton.isSkeleton = true;
+        return skeleton;
     }
 
     @Override
