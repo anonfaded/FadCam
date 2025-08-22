@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
                 android:layout_margin="4dp"
-                android:background="#80000000"
+                android:background="@drawable/serial_number_bg"
                 android:paddingHorizontal="4dp"
                 android:paddingVertical="1dp"
                 android:textColor="@android:color/white"
