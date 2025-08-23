@@ -217,6 +217,8 @@
         <item> </item>
     </string-array>
     <string name="dialog_welcome_title">Welcome to FadCam!</string>
+    <string name="note_from_developer_title">Note from Developer</string>
+    <string name="note_from_developer_subtitle">README, links &amp; updates</string>
     <string name="note_under_dev">Important: This app is currently under development. New features are being added regularly.</string>
     <string name="rencent_updates_title">Recent Updates:</string>
     <string name="upcoming_features_title">Upcoming Features:</string>

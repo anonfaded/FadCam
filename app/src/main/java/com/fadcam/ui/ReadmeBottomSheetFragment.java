@@ -35,7 +35,7 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
         // -------------- Fix Start for this method(onViewCreated)-----------
     // 1. Set title text (retain standard unified spacing; no compact modifications)
     TextView title = view.findViewById(R.id.picker_title);
-    if(title!=null){ title.setText(R.string.dialog_welcome_title); }
+    if(title!=null){ title.setText(R.string.note_from_developer_title); }
     // 2. Apply gradient (standard)
     View root = view.findViewById(R.id.picker_root);
     // Match unified picker background
@@ -127,7 +127,10 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
         textContainer.setLayoutParams(textLp);
         TextView primary = new TextView(requireContext());
         primary.setText(label);
-        primary.setTextColor(getResources().getColor(R.color.colorHeading));
+        // Use theme attribute for heading color
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(R.attr.colorHeading, typedValue, true);
+        primary.setTextColor(typedValue.data);
         primary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
         primary.setTypeface(primary.getTypeface(), android.graphics.Typeface.BOLD);
         TextView secondary = new TextView(requireContext());
