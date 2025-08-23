@@ -48,6 +48,14 @@ public abstract class Constants {
     public static final String PREF_EXPOSURE_COMPENSATION = "pref_exposure_compensation"; // int
     public static final String PREF_AE_LOCK = "pref_ae_lock"; // boolean
     public static final String PREF_AF_MODE = "pref_af_mode"; // int
+
+    // -------------- Fix Start (ModeSwitcher Constants) --------------
+    // Mode switcher constants
+    public static final String MODE_FADCAM = "FADCAM";
+    public static final String MODE_FADREC = "FADREC";
+    public static final String MODE_FADMIC = "FADMIC";
+    // -------------- Fix Ended (ModeSwitcher Constants) --------------
+
     // Fragment result keys used by PickerBottomSheetFragment listeners
     public static final String RK_EXPOSURE_COMPENSATION = "rk_exposure_compensation";
     public static final String RK_AE_LOCK = "rk_ae_lock";

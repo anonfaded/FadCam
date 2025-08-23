@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/segmented_control_background"
+    android:padding="1dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp">
+
+    <!-- FadCam Segment (Active) -->
+    <FrameLayout
+        android:id="@+id/segment_fadcam"
+        android:layout_width="0dp"
+        android:layout_height="28dp"
+        android:layout_weight="1"
+        android:background="@drawable/segment_active_background"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:id="@+id/text_fadcam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="FadCam"
+            android:textColor="@android:color/white"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <!-- FadRec Segment (Coming Soon) -->
+    <FrameLayout
+        android:id="@+id/segment_fadrec"
+        android:layout_width="0dp"
+        android:layout_height="28dp"
+        android:layout_weight="1"
+        android:background="@drawable/segment_inactive_background"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:id="@+id/text_fadrec"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="FadRec"
+            android:textColor="@color/amoled_text_secondary"
+            android:textSize="11sp" />
+
+        <!-- Soon Badge for FadRec -->
+        <TextView
+            android:id="@+id/badge_fadrec"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/badge_background_red"
+            android:text="Soon"
+            android:textColor="#FFF8F8F8"
+            android:textStyle="bold"
+            android:textSize="7sp"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp"
+            android:minWidth="10dp"
+            android:gravity="center"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="1dp" />
+    </FrameLayout>
+
+    <!-- FadMic Segment (Coming Soon) -->
+    <FrameLayout
+        android:id="@+id/segment_fadmic"
+        android:layout_width="0dp"
+        android:layout_height="28dp"
+        android:layout_weight="1"
+        android:background="@drawable/segment_inactive_background"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:id="@+id/text_fadmic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="FadMic"
+            android:textColor="@color/amoled_text_secondary"
+            android:textSize="11sp" />
+
+        <!-- Soon Badge for FadMic -->
+        <TextView
+            android:id="@+id/badge_fadmic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/badge_background_red"
+            android:text="Soon"
+            android:textColor="#FFF8F8F8"
+            android:textStyle="bold"
+            android:textSize="7sp"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp"
+            android:minWidth="10dp"
+            android:gravity="center"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="1dp" />
+    </FrameLayout>
+
+</LinearLayout>

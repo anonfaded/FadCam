@@ -70,6 +70,7 @@ import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.CameraType;
+import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.Constants;
 import com.fadcam.Log;
 import com.fadcam.R;
@@ -125,6 +126,10 @@ public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    
+    // -------------- Fix Start (HomeFragment) --------------
+    private HomeFragmentHelper fragmentHelper;
+    // -------------- Fix Ended (HomeFragment) --------------
 
     // ----- Fix Start for this method(fields)-----
     private static final String[] CLOCK_COLOR_NAMES = { "Purple", "Blue", "Green", "Teal", "Orange", "Red", "Dark Grey",
@@ -1969,6 +1974,13 @@ public class HomeFragment extends BaseFragment {
         }
 
         initializeViews(view);
+        
+        // -------------- Fix Start (initializeComponents) --------------
+        // Initialize UI components using helper
+        fragmentHelper = new HomeFragmentHelper(this);
+        fragmentHelper.initializeComponents(view);
+        // -------------- Fix Ended (initializeComponents) --------------
+        
         // Fragment result listeners for pickers
         android.util.Log.d("HomeFragment", "REGISTERING fragment result listener for exposure compensation");
         com.fadcam.Log.d(TAG, "Registering fragment result listener for exposure compensation with key: "
@@ -4552,6 +4564,14 @@ public class HomeFragment extends BaseFragment {
 
         stopUpdatingInfo();
         stopUpdatingClock();
+        
+        // -------------- Fix Start (cleanup) --------------
+        // Clean up helper
+        if (fragmentHelper != null) {
+            fragmentHelper.onDestroy();
+            fragmentHelper = null;
+        }
+        // -------------- Fix Ended (cleanup) --------------
     }
 
     public boolean isRecording() {

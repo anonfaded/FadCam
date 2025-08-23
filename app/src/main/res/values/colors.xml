@@ -55,4 +55,9 @@
     <color name="danger_red_translucent">#33D32F2F</color>
     <!-- Slightly stronger translucent color used for the ripple pressed state on destructive rows -->
     <color name="danger_red_ripple">#55D32F2F</color>
+    
+    <!-- Segmented Control Colors -->
+    <color name="segmented_control_background">#2A2A2A</color>
+    <color name="segmented_control_border">#404040</color>
+    <color name="segment_active_color">@color/redPastel</color>
 </resources>
