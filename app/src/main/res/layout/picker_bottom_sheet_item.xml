@@ -53,7 +53,7 @@
                     android:id="@+id/picker_item_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
+                    android:textColor="?attr/pickerTextPrimary"
                     android:textSize="15sp"
                     android:textStyle="normal"/>
                 <TextView
@@ -74,7 +74,7 @@
                 android:id="@+id/picker_item_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#999999"
+                android:textColor="?attr/pickerTextSecondary"
                 android:textSize="12sp"
                 android:layout_marginTop="2dp"
                 android:visibility="gone"/>

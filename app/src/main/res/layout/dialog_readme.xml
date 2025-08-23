@@ -18,35 +18,40 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:text="@string/note_under_dev"
-        android:textAppearance="?attr/textAppearanceBody1" />
+        android:textAppearance="?attr/textAppearanceBody1"
+        android:textColor="@android:color/white" />
 
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="6dp"
         android:text="@string/rencent_updates_title"
-        android:textAppearance="?attr/textAppearanceSubtitle1" />
+        android:textAppearance="?attr/textAppearanceSubtitle1"
+        android:textColor="@android:color/white" />
 
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
         android:text="@string/recent_features"
-        android:textAppearance="?attr/textAppearanceBody2" />
+        android:textAppearance="?attr/textAppearanceBody2"
+        android:textColor="@android:color/white" />
 
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="6dp"
         android:text="@string/upcoming_features_title"
-        android:textAppearance="?attr/textAppearanceSubtitle1" />
+        android:textAppearance="?attr/textAppearanceSubtitle1"
+        android:textColor="@android:color/white" />
 
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
         android:text="@string/upcoming_features"
-        android:textAppearance="?attr/textAppearanceBody2" />
+        android:textAppearance="?attr/textAppearanceBody2"
+        android:textColor="@android:color/white" />
 
 
     <com.google.android.material.textview.MaterialTextView
@@ -54,6 +59,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:text="@string/thankyou_msg"
-        android:textAppearance="?attr/textAppearanceBody1" />
+        android:textAppearance="?attr/textAppearanceBody1"
+        android:textColor="@android:color/white" />
 
 </LinearLayout>
