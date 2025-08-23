@@ -26,7 +26,8 @@
                 android:text="@string/home_options_title"
                 android:textColor="?attr/pickerTextPrimary"
                 android:textStyle="bold"
-                android:textSize="18sp"/>
+                android:textSize="18sp"
+                android:textAlignment="viewStart"/>
         </LinearLayout>
 
         <!-- Divider below header -->
@@ -47,7 +48,8 @@
             android:textColor="?attr/colorHeading"
             android:paddingTop="16dp"
             android:paddingBottom="8dp"
-            android:textStyle="bold"/>
+            android:textStyle="bold"
+            android:textAlignment="viewStart"/>
 
         <!-- Group card wrapper -->
         <LinearLayout
@@ -95,7 +97,8 @@
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:ellipsize="end"
-                        android:maxLines="1" />
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -104,7 +107,8 @@
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"
                         android:ellipsize="end"
-                        android:maxLines="1" />
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
 
                 </LinearLayout>
 
@@ -113,7 +117,7 @@
                     android:layout_width="14dp"
                     android:layout_height="14dp"
                     android:layout_marginStart="12dp"
-                    android:src="@drawable/exo_ic_chevron_right"
+                    android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray" />
 
             </LinearLayout>

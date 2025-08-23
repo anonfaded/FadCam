@@ -18,7 +18,8 @@
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
         android:gravity="center"
-        android:paddingBottom="12dp"/>
+        android:paddingBottom="12dp"
+        android:textAlignment="center"/>
 
     <View
         android:id="@+id/picker_title_divider"
@@ -84,7 +85,8 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:textColor="?attr/colorOnSurface"
-                            android:textSize="16sp" />
+                            android:textSize="16sp"
+                            android:textAlignment="viewStart" />
 
                         <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/picker_switch"
@@ -144,7 +146,8 @@
                                 android:text="-"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textSize="13sp"
-                                android:gravity="start" />
+                                android:gravity="start"
+                                android:textAlignment="viewStart" />
 
                             <TextView
                                 android:id="@+id/picker_slider_label_mid"
@@ -154,7 +157,8 @@
                                 android:text="0"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textSize="13sp"
-                                android:gravity="center" />
+                                android:gravity="center"
+                                android:textAlignment="center" />
 
                             <TextView
                                 android:id="@+id/picker_slider_label_max"
@@ -164,7 +168,8 @@
                                 android:text="+"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textSize="13sp"
-                                android:gravity="end" />
+                                android:gravity="end"
+                                android:textAlignment="viewEnd" />
 
                         </LinearLayout>
 
@@ -214,7 +219,8 @@
                                     android:gravity="center"
                                     android:textSize="15sp"
                                     android:textColor="?attr/colorOnSurface"
-                                    android:text="0" />
+                                    android:text="0"
+                                    android:textAlignment="center" />
 
                                 <TextView
                                     android:id="@+id/picker_slider_plus"
@@ -251,7 +257,8 @@
                                     android:clickable="true"
                                     android:focusable="true"
                                     android:tint="?attr/colorPrimary"
-                                    android:padding="4dp" />
+                                    android:padding="4dp"
+                                    android:layoutDirection="locale" />
 
                             </LinearLayout>
 
@@ -280,6 +287,7 @@
         android:paddingEnd="12dp"
         android:textColor="@android:color/darker_gray"
         android:textSize="13sp"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        android:textAlignment="viewStart"/>
 
 </LinearLayout>

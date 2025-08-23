@@ -34,7 +34,8 @@
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="12dp"
-            android:textColor="@android:color/white"/>
+            android:textColor="@android:color/white"
+            android:textAlignment="viewStart"/>
     </LinearLayout>
 
     <ScrollView
@@ -81,7 +82,8 @@
                     android:text="Debug Logging"
                     android:textStyle="bold"
                     android:textSize="15sp"
-                    android:textColor="?attr/colorHeading"/>
+                    android:textColor="?attr/colorHeading"
+                    android:textAlignment="viewStart"/>
                 <View
                     android:layout_width="0dp"
                     android:layout_height="0dp"
@@ -92,7 +94,8 @@
                     android:layout_height="wrap_content"
                     android:text="Toggle"
                     android:textColor="@android:color/darker_gray"
-                    android:textSize="13sp"/>
+                    android:textSize="13sp"
+                    android:textAlignment="viewEnd"/>
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_debug_logging"
                     android:layout_width="wrap_content"
@@ -124,13 +127,15 @@
                         android:text="@string/debug_log_tools_title"
                         android:textStyle="bold"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textColor="?attr/colorHeading"
+                        android:textAlignment="viewStart"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/debug_log_tools_subtitle"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="12sp"/>
+                        android:textSize="12sp"
+                        android:textAlignment="viewStart"/>
                 </LinearLayout>
                 <ImageView
                     android:layout_width="14dp"

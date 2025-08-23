@@ -47,5 +47,6 @@
         android:textSize="12sp"
         android:layout_marginTop="4dp"
         android:maxLines="1"
-        android:ellipsize="end"/>
+        android:ellipsize="end"
+        android:textAlignment="center"/>
 </LinearLayout>

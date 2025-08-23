@@ -38,7 +38,8 @@
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="#E43C3C"
-            android:gravity="center" />
+            android:gravity="center"
+            android:textAlignment="center" />
 
         <View
             android:layout_width="80dp"
@@ -59,7 +60,8 @@
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:textColor="#CCCCCC"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="8dp"
+                android:textAlignment="viewStart"/>
 
             <RadioGroup
                 android:id="@+id/sort_options_group"
@@ -72,28 +74,32 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/sort_latest_first"
-                    android:textColor="#FFFFFF"/>
+                    android:textColor="#FFFFFF"
+                    android:textAlignment="viewStart"/>
 
                 <RadioButton
                     android:id="@+id/sort_oldest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/sort_oldest_first"
-                    android:textColor="#FFFFFF"/>
+                    android:textColor="#FFFFFF"
+                    android:textAlignment="viewStart"/>
 
                 <RadioButton
                     android:id="@+id/sort_smallest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/sort_smallest_first"
-                    android:textColor="#FFFFFF"/>
+                    android:textColor="#FFFFFF"
+                    android:textAlignment="viewStart"/>
 
                 <RadioButton
                     android:id="@+id/sort_largest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/sort_largest_first"
-                    android:textColor="#FFFFFF"/>
+                    android:textColor="#FFFFFF"
+                    android:textAlignment="viewStart"/>
             </RadioGroup>
 
             <View
@@ -128,14 +134,16 @@
                         android:layout_height="wrap_content"
                         android:text="@string/delete_all_videos_title"
                         android:textSize="16sp"
-                        android:textColor="@color/danger_red"/>
+                        android:textColor="@color/danger_red"
+                        android:textAlignment="viewStart"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/delete_all_videos_description"
                         android:textSize="12sp"
-                        android:textColor="@color/danger_red_light"/>
+                        android:textColor="@color/danger_red_light"
+                        android:textAlignment="viewStart"/>
                 </LinearLayout>
             </LinearLayout>
 

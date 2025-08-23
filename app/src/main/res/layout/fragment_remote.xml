@@ -29,7 +29,8 @@
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:gravity="start|center_vertical"/>
+            android:gravity="start|center_vertical"
+            android:textAlignment="viewStart"/>
     </LinearLayout>
 
     <LinearLayout
@@ -58,7 +59,8 @@
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="24dp"
-            android:textColor="@color/amoled_text_primary" />
+            android:textColor="@color/amoled_text_primary"
+            android:textAlignment="center" />
 
         <TextView
             android:id="@+id/remote_subtitle"
@@ -67,7 +69,8 @@
             android:text="@string/remote_coming_soon"
             android:textSize="15sp"
             android:layout_marginTop="8dp"
-            android:textColor="@color/amoled_text_secondary" />
+            android:textColor="@color/amoled_text_secondary"
+            android:textAlignment="center" />
 
         <TextView
             android:id="@+id/remote_description"
