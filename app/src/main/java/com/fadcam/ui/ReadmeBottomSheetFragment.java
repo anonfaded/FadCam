@@ -167,7 +167,7 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
             View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog)
                     .findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if(bottomSheet!=null){
-                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg); // match other unified pickers (full black bottom)
+                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic); // match other unified pickers (theme-dynamic gradient)
             }
         });
         return dialog;

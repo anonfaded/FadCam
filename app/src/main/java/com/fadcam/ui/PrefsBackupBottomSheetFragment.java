@@ -255,7 +255,7 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
             View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog)
                     .findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if(bottomSheet!=null){
-                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg);
+                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
             }
         });
         return dialog;

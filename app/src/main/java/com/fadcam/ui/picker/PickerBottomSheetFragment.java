@@ -235,7 +235,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         if(useGradientBg){
             View root = view.findViewById(R.id.picker_root);
             if(root!=null){
-                root.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg);
+                root.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
             }
         }
         View divider = view.findViewById(R.id.picker_title_divider);

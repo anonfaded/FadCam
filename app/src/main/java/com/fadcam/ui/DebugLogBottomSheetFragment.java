@@ -456,7 +456,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     @Override public int getTheme(){ return R.style.CustomBottomSheetDialogTheme; }
-    @Override public android.app.Dialog onCreateDialog(Bundle savedInstanceState){ android.app.Dialog dialog = super.onCreateDialog(savedInstanceState); dialog.setOnShowListener(d->{ View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog).findViewById(com.google.android.material.R.id.design_bottom_sheet); if(bottomSheet!=null){ bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg); } }); return dialog; }
+    @Override public android.app.Dialog onCreateDialog(Bundle savedInstanceState){ android.app.Dialog dialog = super.onCreateDialog(savedInstanceState); dialog.setOnShowListener(d->{ View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog).findViewById(com.google.android.material.R.id.design_bottom_sheet); if(bottomSheet!=null){ bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic); } }); return dialog; }
 
     private View makeNavButton(boolean up){
         android.widget.ImageButton b = new android.widget.ImageButton(requireContext());

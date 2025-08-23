@@ -20,6 +20,10 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <!-- Picker gradient colors -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">@color/red_theme_primary_variant</item>
+        <item name="pickerGradientEnd">@color/red_theme_primary</item>
     </style>
 
     <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
@@ -75,6 +79,10 @@
         <item name="colorSwitchTrack">#6A6E73</item>
         <item name="colorDialog">@color/amoled_surface</item>
         <item name="colorStatusBar">@color/amoled_background</item>
+        <!-- Picker gradient colors - subtle gray gradient for AMOLED -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF1A1A1A</item>
+        <item name="pickerGradientEnd">#FF2A2A2A</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
     </style>
@@ -137,6 +145,10 @@
     <!-- Switch styling -->
     <item name="switchStyle">@style/Widget.FadCam.Switch</item>
     <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+    <!-- Picker gradient colors - subtle red gradient for red theme -->
+    <item name="pickerGradientStart">@color/black</item>
+    <item name="pickerGradientMid">#FF2B0000</item>
+    <item name="pickerGradientEnd">#FF4A0000</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -200,7 +212,11 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
-    </style>
+        <!-- Picker gradient colors - subtle gold gradient -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF2B1A00</item>
+        <item name="pickerGradientEnd">#FF4A3300</item>
+        </style>
 
     <style name="ThemeOverlay.FadCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/gold_theme_surface_dark</item>
@@ -257,6 +273,10 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <!-- Picker gradient colors - subtle forest gradient -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF001A17</item>
+        <item name="pickerGradientEnd">#FF003329</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -314,6 +334,10 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <!-- Picker gradient colors - subtle silver gradient -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF1A1A1A</item>
+        <item name="pickerGradientEnd">#FF333333</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.ShadowAlloy.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -371,6 +395,10 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <!-- Picker gradient colors - subtle pink gradient -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF2B0A1A</item>
+        <item name="pickerGradientEnd">#FF4A1533</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.PookiePink.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -439,6 +467,10 @@
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
         <item name="checkboxStyle">@style/Widget.FadCam.SnowVeil.Checkbox</item>
         <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
+        <!-- Picker gradient colors - subtle blue gradient like other themes -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF001A2B</item>
+        <item name="pickerGradientEnd">#FF003354</item>
     </style>
 
     <!-- Add CardView style for Snow Veil theme -->
@@ -572,6 +604,10 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <!-- Picker gradient colors - subtle purple gradient for midnight dusk -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF1A0D2B</item>name=>
+        <item name="pickerGradientEnd">#FF331A4A</item>
     </style>
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
 </resources>

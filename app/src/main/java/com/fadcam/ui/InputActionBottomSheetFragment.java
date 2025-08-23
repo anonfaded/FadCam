@@ -277,5 +277,5 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
 
     private int dp(int v){ return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
     @Override public int getTheme(){ return R.style.CustomBottomSheetDialogTheme; }
-    @Override public android.app.Dialog onCreateDialog(Bundle savedInstanceState){ android.app.Dialog dialog = super.onCreateDialog(savedInstanceState); dialog.setOnShowListener(d->{ View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog).findViewById(com.google.android.material.R.id.design_bottom_sheet); if(bottomSheet!=null){ bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg); } }); return dialog; }
+    @Override public android.app.Dialog onCreateDialog(Bundle savedInstanceState){ android.app.Dialog dialog = super.onCreateDialog(savedInstanceState); dialog.setOnShowListener(d->{ View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog).findViewById(com.google.android.material.R.id.design_bottom_sheet); if(bottomSheet!=null){ bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic); } }); return dialog; }
 }
