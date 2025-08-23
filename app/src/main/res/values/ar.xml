@@ -1001,4 +1001,19 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Scroll to top</string>
     <string name="scroll_to_bottom">Scroll to bottom</string>
+    <!-- Trash Restore Destination Strings -->
+    <string name="restore_destination_title">Choose Restore Location</string>
+    <string name="restore_destination_downloads">Downloads Folder</string>
+    <string name="restore_destination_downloads_desc">Public Downloads/FadCam/ folder</string>
+    <string name="restore_destination_internal">Internal Storage</string>
+    <string name="restore_destination_internal_desc">App\'s private storage</string>
+    <string name="restore_destination_original">Original Location</string>
+    <string name="restore_destination_original_desc">Restore to original SAF location</string>
+    <string name="restore_confirm_title">Confirm Restore</string>
+    <string name="restore_confirm_message">Restore %1$d item(s) to %2$s?</string>
+    <string name="restore_progress_title">Restoring Files</string>
+    <string name="restore_success_message">Successfully restored %1$d item(s) to %2$s</string>
+    <string name="restore_error_message">Failed to restore some items</string>
+    <string name="restore_cancelled">Restore cancelled</string>
+    <string name="restore_confirm_button">Restore</string>
 </resources>
