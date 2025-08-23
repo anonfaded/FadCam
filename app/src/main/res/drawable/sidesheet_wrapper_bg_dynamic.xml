@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Fully transparent base to neutralize default backgrounds -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+    <!-- Our dynamic gradient shape (has rounded left corners) -->
+    <item android:drawable="@drawable/sidesheet_gradient_bg_dynamic"/>
+</layer-list>

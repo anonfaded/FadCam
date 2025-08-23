@@ -10,7 +10,7 @@
     android:paddingBottom="16dp"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:background="@drawable/sidesheet_wrapper_bg">
+    android:background="@drawable/sidesheet_wrapper_bg_dynamic">
 
     <!-- Header with title only -->
     <LinearLayout
@@ -23,7 +23,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/records_options_title"
-            android:textColor="@color/danger_red"
+            android:textColor="?attr/pickerTextPrimary"
             android:textStyle="bold"
             android:textSize="18sp"/>
     </LinearLayout>
