@@ -1346,6 +1346,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         }
                     }
                 }
+                
+                // Also refresh HomeFragment stats
+                refreshHomeFragmentStats(mainActivity);
             }
         } catch (Exception e) {
             Log.e("TrashFragment", "Failed to refresh RecordsFragment directly", e);
@@ -1360,6 +1363,45 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             } catch (Exception e) {
                 Log.e("TrashFragment", "Failed to send fallback broadcast", e);
             }
+        }
+    }
+
+    /**
+     * Refreshes the HomeFragment stats widget after files are restored
+     */
+    private void refreshHomeFragmentStats(com.fadcam.MainActivity mainActivity) {
+        try {
+            // Try to find HomeFragment
+            String[] possibleTags = {"f0", "f1", "f2"}; // Home could be at different positions
+            boolean refreshSuccess = false;
+            
+            for (String tag : possibleTags) {
+                androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
+                if (fragment instanceof com.fadcam.ui.HomeFragment) {
+                    ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
+                    Log.i("TrashFragment", "Successfully refreshed HomeFragment stats with tag: " + tag);
+                    refreshSuccess = true;
+                    break;
+                }
+            }
+            
+            // Try iteration if tag method failed
+            if (!refreshSuccess) {
+                for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
+                    if (fragment instanceof com.fadcam.ui.HomeFragment) {
+                        ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
+                        Log.i("TrashFragment", "Successfully refreshed HomeFragment stats by iteration.");
+                        refreshSuccess = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!refreshSuccess) {
+                Log.w("TrashFragment", "Could not find HomeFragment to refresh stats after restore.");
+            }
+        } catch (Exception e) {
+            Log.e("TrashFragment", "Failed to refresh HomeFragment stats", e);
         }
     }
 }

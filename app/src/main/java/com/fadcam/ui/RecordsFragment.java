@@ -530,7 +530,12 @@ public class RecordsFragment extends BaseFragment implements
                         }
 
                         if (Constants.ACTION_STORAGE_LOCATION_CHANGED.equals(intent.getAction())) {
-                            Log.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED. Refreshing list.");
+                            Log.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED broadcast. Refreshing records list.");
+                            // Clear caches to ensure fresh data from new storage location
+                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                            if (recordsAdapter != null) {
+                                recordsAdapter.clearCaches();
+                            }
                             // If storage location changed, we should definitely reload the list.
                             loadRecordsList();
                         } else if (Constants.ACTION_FILES_RESTORED.equals(intent.getAction())) {

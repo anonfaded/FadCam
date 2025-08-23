@@ -555,7 +555,98 @@ public class SettingsFragment extends BaseFragment {
         // sendBroadcast(intent) // Using this implicitly might trigger lint warnings
         // depending on target SDK
         requireContext().sendBroadcast(intent); // Standard way if not using LocalBroadcastManager
-        Log.i(TAG_SETTINGS, "Sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
+        Log.i(TAG_SETTINGS, "Successfully sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
+        
+        // Also try direct refresh as fallback
+        refreshRecordsFragmentDirect();
+    }
+
+    /**
+     * Direct method to refresh RecordsFragment when storage location changes
+     */
+    private void refreshRecordsFragmentDirect() {
+        try {
+            // Add a small delay to ensure storage change is processed
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (getActivity() instanceof com.fadcam.MainActivity) {
+                    com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
+                    
+                    // Try to find RecordsFragment
+                    String[] possibleTags = {"f0", "f1", "f2"};
+                    boolean refreshSuccess = false;
+                    
+                    for (String tag : possibleTags) {
+                        androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
+                        if (fragment instanceof com.fadcam.ui.RecordsFragment) {
+                            ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
+                            Log.i(TAG_SETTINGS, "Successfully refreshed RecordsFragment after storage change with tag: " + tag);
+                            refreshSuccess = true;
+                            break;
+                        }
+                    }
+                    
+                    // Try iteration if tag method failed
+                    if (!refreshSuccess) {
+                        for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
+                            if (fragment instanceof com.fadcam.ui.RecordsFragment) {
+                                ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
+                                Log.i(TAG_SETTINGS, "Successfully refreshed RecordsFragment after storage change by iteration.");
+                                refreshSuccess = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!refreshSuccess) {
+                        Log.w(TAG_SETTINGS, "Could not find RecordsFragment to refresh after storage change.");
+                    }
+                    
+                    // Also refresh HomeFragment stats
+                    refreshHomeFragmentStats(mainActivity);
+                }
+            }, 200); // 200ms delay to ensure storage change is processed
+        } catch (Exception e) {
+            Log.e(TAG_SETTINGS, "Failed to refresh RecordsFragment directly after storage change", e);
+        }
+    }
+
+    /**
+     * Refreshes the HomeFragment stats widget after storage location changes
+     */
+    private void refreshHomeFragmentStats(com.fadcam.MainActivity mainActivity) {
+        try {
+            // Try to find HomeFragment
+            String[] possibleTags = {"f0", "f1", "f2"}; // Home could be at different positions
+            boolean refreshSuccess = false;
+            
+            for (String tag : possibleTags) {
+                androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
+                if (fragment instanceof com.fadcam.ui.HomeFragment) {
+                    ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
+                    Log.i(TAG_SETTINGS, "Successfully refreshed HomeFragment stats with tag: " + tag);
+                    refreshSuccess = true;
+                    break;
+                }
+            }
+            
+            // Try iteration if tag method failed
+            if (!refreshSuccess) {
+                for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
+                    if (fragment instanceof com.fadcam.ui.HomeFragment) {
+                        ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
+                        Log.i(TAG_SETTINGS, "Successfully refreshed HomeFragment stats by iteration.");
+                        refreshSuccess = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!refreshSuccess) {
+                Log.w(TAG_SETTINGS, "Could not find HomeFragment to refresh stats after storage change.");
+            }
+        } catch (Exception e) {
+            Log.e(TAG_SETTINGS, "Failed to refresh HomeFragment stats", e);
+        }
     }
 
     @Override

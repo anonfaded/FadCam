@@ -3671,6 +3671,21 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    // --- Public method to refresh stats (can be called from other fragments) ---
+
+    /**
+     * Public method to refresh the stats widget
+     * Can be called from other fragments when they need to update the home stats
+     */
+    public void refreshStats() {
+        if (isAdded()) {
+            // Clear stats cache to ensure fresh data
+            VideoStatsCache.invalidateStats(sharedPreferencesManager);
+            Log.i(TAG, "refreshStats: Clearing stats cache and updating stats.");
+            updateStats();
+        }
+    }
+
     // --- Updated updateStats Method ---
 
     private void updateStats() {
