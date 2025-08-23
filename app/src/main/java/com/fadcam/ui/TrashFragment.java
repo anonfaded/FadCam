@@ -264,56 +264,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         .show();
                 return;
             }
-
-            // Use the themed dialog builder helper method
-            TextView messageView = new TextView(requireContext());
-            messageView.setText(getString(R.string.trash_dialog_restore_message, selectedItems.size()));
-
-            // Set text color based on theme
-            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-            messageView.setTextColor(ContextCompat.getColor(requireContext(),
-                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-            messageView.setPadding(48, 32, 48, 0);
-            messageView.setTextSize(16);
-
-            AlertDialog dialog = themedDialogBuilder(requireContext())
-                    .setTitle(getString(R.string.trash_dialog_restore_title))
-                    .setView(messageView)
-                    .setNegativeButton(getString(R.string.universal_cancel), (dialogInterface, which) -> {
-                        onRestoreFinished(false, getString(R.string.trash_restore_cancelled_toast));
-                    })
-                    .setPositiveButton(getString(R.string.universal_restore), (dialogInterface, which) -> {
-                        onRestoreStarted(selectedItems.size());
-                        if (executorService == null || executorService.isShutdown()) {
-                            executorService = Executors.newSingleThreadExecutor(); // Re-initialize if shutdown
-                        }
-                        executorService.submit(() -> {
-                            boolean success = TrashManager.restoreItemsFromTrash(getContext(), selectedItems);
-                            String message = success
-                                    ? getString(R.string.trash_restore_success_toast, selectedItems.size())
-                                    : getString(R.string.trash_restore_fail_toast);
-                            // Post result back to main thread
-                            if (getActivity() != null) {
-                                getActivity().runOnUiThread(() -> {
-                                    onRestoreFinished(success, message);
-                                    if (success) {
-                                        loadTrashItems(); // Refresh list only on success
-                                    }
-                                });
-                            }
-                        });
-                    })
-                    .create();
-
-            dialog.show();
-
-            // Apply theme-specific button colors
-            setDialogButtonColors(dialog);
-
-            // Color the restore button specially
-            if (isFadedNightTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#4285F4"));
-            }
+            showRestoreDestinationPicker(selectedItems);
         });
 
         buttonDeleteSelectedPermanently.setOnClickListener(v -> {
@@ -1221,6 +1172,193 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             }
             if (dialog.getButton(AlertDialog.BUTTON_NEUTRAL) != null) {
                 dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.WHITE);
+            }
+        }
+    }
+
+    /**
+     * Shows a picker dialog to select restore destination
+     * 
+     * @param selectedItems The list of selected trash items to restore
+     */
+    private void showRestoreDestinationPicker(List<TrashItem> selectedItems) {
+        if (getContext() == null) return;
+
+        // Get available restore destinations
+        List<TrashManager.RestoreDestination> destinations = TrashManager.getAvailableRestoreDestinations(selectedItems);
+        
+        // Create option items for the picker
+        ArrayList<OptionItem> options = new ArrayList<>();
+        
+        for (TrashManager.RestoreDestination destination : destinations) {
+            String title;
+            String subtitle;
+            
+            switch (destination) {
+                case DOWNLOADS_FOLDER:
+                    title = getString(R.string.restore_destination_downloads);
+                    subtitle = getString(R.string.restore_destination_downloads_desc);
+                    break;
+                case INTERNAL_STORAGE:
+                    title = getString(R.string.restore_destination_internal);
+                    subtitle = getString(R.string.restore_destination_internal_desc);
+                    break;
+                case SAF_STORAGE:
+                    title = getString(R.string.restore_destination_original);
+                    subtitle = getString(R.string.restore_destination_original_desc);
+                    break;
+                default:
+                    continue;
+            }
+            
+            options.add(OptionItem.withLigature(destination.name(), title, "folder"));
+        }
+
+        // Show picker bottom sheet
+        PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
+                getString(R.string.restore_destination_title),
+                options,
+                null, // No pre-selected item
+                "restore_destination_result"
+        );
+
+        // Set up result listener
+        getParentFragmentManager().setFragmentResultListener("restore_destination_result", this, (requestKey, result) -> {
+            String selectedId = result.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selectedId != null) {
+                TrashManager.RestoreDestination destination = TrashManager.RestoreDestination.valueOf(selectedId);
+                performRestore(selectedItems, destination);
+            }
+        });
+
+        picker.show(getParentFragmentManager(), "restore_destination_picker");
+    }
+
+    /**
+     * Performs the actual restore operation with the selected destination
+     * 
+     * @param selectedItems The list of items to restore
+     * @param destination   The destination to restore to
+     */
+    private void performRestore(List<TrashItem> selectedItems, TrashManager.RestoreDestination destination) {
+        if (getContext() == null) return;
+
+        String destinationName;
+        switch (destination) {
+            case DOWNLOADS_FOLDER:
+                destinationName = getString(R.string.restore_destination_downloads);
+                break;
+            case INTERNAL_STORAGE:
+                destinationName = getString(R.string.restore_destination_internal);
+                break;
+            case SAF_STORAGE:
+                destinationName = getString(R.string.restore_destination_original);
+                break;
+            default:
+                destinationName = getString(R.string.restore_destination_downloads);
+                break;
+        }
+
+        // Show confirmation dialog
+        String message = getString(R.string.restore_confirm_message, selectedItems.size(), destinationName);
+        
+        AlertDialog dialog = themedDialogBuilder(requireContext())
+                .setTitle(getString(R.string.restore_confirm_title))
+                .setMessage(message)
+                .setNegativeButton(getString(android.R.string.cancel), (dialogInterface, which) -> {
+                    onRestoreFinished(false, getString(R.string.restore_cancelled));
+                })
+                .setPositiveButton(getString(R.string.restore_confirm_button), (dialogInterface, which) -> {
+                    onRestoreStarted(selectedItems.size());
+                    if (executorService == null || executorService.isShutdown()) {
+                        executorService = Executors.newSingleThreadExecutor();
+                    }
+                    executorService.submit(() -> {
+                        boolean success = TrashManager.restoreItemsFromTrash(getContext(), selectedItems, destination);
+                        String resultMessage = success
+                                ? getString(R.string.restore_success_message, selectedItems.size(), destinationName)
+                                : getString(R.string.restore_error_message);
+                        
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                onRestoreFinished(success, resultMessage);
+                                if (success) {
+                                    loadTrashItems(); // Refresh trash list
+                                    
+                                    // Add a small delay to ensure UI is ready, then refresh Records tab
+                                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                        refreshRecordsFragment();
+                                    }, 100); // 100ms delay
+                                }
+                            });
+                        }
+                    });
+                })
+                .create();
+
+        dialog.show();
+        setDialogButtonColors(dialog);
+
+        // Color the restore button specially for Faded Night theme
+        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
+        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        if (isFadedNightTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#4285F4"));
+        }
+    }
+
+    /**
+     * Refreshes the Records fragment after files are restored from trash
+     */
+    private void refreshRecordsFragment() {
+        boolean refreshSuccess = false;
+        
+        try {
+            // Method 1: Try to find RecordsFragment directly
+            if (getActivity() instanceof com.fadcam.MainActivity) {
+                com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
+                
+                // Try different possible tags for ViewPager2 fragments
+                String[] possibleTags = {"f0", "f1", "f2"}; // Records could be at different positions
+                
+                for (String tag : possibleTags) {
+                    androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
+                    Log.d("TrashFragment", "Checking tag " + tag + ": " + (fragment != null ? fragment.getClass().getSimpleName() : "null"));
+                    if (fragment instanceof com.fadcam.ui.RecordsFragment) {
+                        ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
+                        Log.i("TrashFragment", "Successfully refreshed RecordsFragment with tag: " + tag);
+                        refreshSuccess = true;
+                        break;
+                    }
+                }
+                
+                // Method 2: Try to find by iterating through all fragments
+                if (!refreshSuccess) {
+                    java.util.List<androidx.fragment.app.Fragment> allFragments = mainActivity.getSupportFragmentManager().getFragments();
+                    Log.d("TrashFragment", "Total fragments found: " + allFragments.size());
+                    for (androidx.fragment.app.Fragment fragment : allFragments) {
+                        Log.d("TrashFragment", "Fragment: " + (fragment != null ? fragment.getClass().getSimpleName() : "null"));
+                        if (fragment instanceof com.fadcam.ui.RecordsFragment) {
+                            ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
+                            Log.i("TrashFragment", "Successfully refreshed RecordsFragment by iteration.");
+                            refreshSuccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e("TrashFragment", "Failed to refresh RecordsFragment directly", e);
+        }
+        
+        // Method 3: Fallback to broadcast if direct method failed
+        if (!refreshSuccess) {
+            try {
+                Intent intent = new Intent(com.fadcam.Constants.ACTION_FILES_RESTORED);
+                requireContext().sendBroadcast(intent);
+                Log.i("TrashFragment", "Sent ACTION_FILES_RESTORED broadcast as fallback.");
+            } catch (Exception e) {
+                Log.e("TrashFragment", "Failed to send fallback broadcast", e);
             }
         }
     }

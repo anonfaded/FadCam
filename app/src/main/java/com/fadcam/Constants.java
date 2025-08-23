@@ -16,7 +16,7 @@ public abstract class Constants {
     public static final String PREF_VIDEO_FRAME_RATE_FRONT = "video_frame_rate_front";
     public static final String PREF_VIDEO_FRAME_RATE_BACK = "video_frame_rate_back";
     // *** End New FPS Prefs ***
-    
+
     // *** NEW: Zoom Ratio Prefs per Camera ***
     public static final String PREF_ZOOM_RATIO_FRONT = "zoom_ratio_front";
     public static final String PREF_ZOOM_RATIO_BACK = "zoom_ratio_back";
@@ -34,13 +34,17 @@ public abstract class Constants {
     public static final String PREF_APP_THEME = "app_theme";
     /**
      * Default theme used throughout the app.
-     * This constant should be used as the fallback value whenever getting the theme from SharedPreferences.
+     * This constant should be used as the fallback value whenever getting the theme
+     * from SharedPreferences.
      * Previously hardcoded as "Midnight Dusk", now changed to "Crimson Bloom".
-     * NOTE: Some files may still reference "Midnight Dusk" directly and should be updated to use this constant.
+     * NOTE: Some files may still reference "Midnight Dusk" directly and should be
+     * updated to use this constant.
      */
-    public static final String DEFAULT_APP_THEME = "Crimson Bloom"; // Default theme changed from Midnight Dusk to Crimson Bloom
+    public static final String DEFAULT_APP_THEME = "Crimson Bloom"; // Default theme changed from Midnight Dusk to
+                                                                    // Crimson Bloom
     public static final String PREF_IS_RECORDING_IN_PROGRESS = "is_recording_in_progress";
-    // Camera runtime control preferences (persisted when user changes controls while not recording)
+    // Camera runtime control preferences (persisted when user changes controls
+    // while not recording)
     public static final String PREF_EXPOSURE_COMPENSATION = "pref_exposure_compensation"; // int
     public static final String PREF_AE_LOCK = "pref_ae_lock"; // boolean
     public static final String PREF_AF_MODE = "pref_af_mode"; // int
@@ -76,7 +80,8 @@ public abstract class Constants {
     // Extras for the above intents
     public static final String EXTRA_EXPOSURE_COMPENSATION = "com.fadcam.EXTRA_EXPOSURE_COMPENSATION"; // int
     public static final String EXTRA_AE_LOCK = "com.fadcam.EXTRA_AE_LOCK"; // boolean
-    public static final String EXTRA_AF_MODE = "com.fadcam.EXTRA_AF_MODE"; // int (CaptureRequest.CONTROL_AF_MODE values)
+    public static final String EXTRA_AF_MODE = "com.fadcam.EXTRA_AF_MODE"; // int (CaptureRequest.CONTROL_AF_MODE
+                                                                           // values)
     public static final String EXTRA_FOCUS_X = "com.fadcam.EXTRA_FOCUS_X"; // float (normalized 0..1)
     public static final String EXTRA_FOCUS_Y = "com.fadcam.EXTRA_FOCUS_Y"; // float (normalized 0..1)
     public static final String EXTRA_ZOOM_RATIO = "com.fadcam.EXTRA_ZOOM_RATIO"; // float
@@ -105,10 +110,12 @@ public abstract class Constants {
     public static final boolean DEFAULT_RECORD_AUDIO = true;
     public static final int DEFAULT_AUDIO_BITRATE = 192000; // 192 kbps stereo AAC
     public static final int DEFAULT_AUDIO_SAMPLING_RATE = 48000; // 48 kHz
-    // -------------- Fix Start for this class(Constants_video_bitrate_defaults)-----------
+    // -------------- Fix Start for this
+    // class(Constants_video_bitrate_defaults)-----------
     public static final String PREF_VIDEO_BITRATE = "video_bitrate"; // stored in raw bps
     public static final int DEFAULT_VIDEO_BITRATE = 8_000_000; // 8 Mbps default
-    // -------------- Fix Ended for this class(Constants_video_bitrate_defaults)-----------
+    // -------------- Fix Ended for this
+    // class(Constants_video_bitrate_defaults)-----------
 
     public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH = "com.fadcam.TOGGLE_RECORDING_TORCH";
     // Broadcast action sent by RecordingService when video processing is done
@@ -124,14 +131,20 @@ public abstract class Constants {
     // Broadcast action sent by SettingsFragment when storage location pref changes
     public static final String ACTION_STORAGE_LOCATION_CHANGED = "com.fadcam.STORAGE_LOCATION_CHANGED";
 
+    // Broadcast action sent when files are restored from trash
+    public static final String ACTION_FILES_RESTORED = "com.fadcam.FILES_RESTORED";
+
     // Broadcast Actions for Video Processing State
     public static final String ACTION_PROCESSING_STARTED = "com.fadcam.PROCESSING_STARTED";
-    public static final String ACTION_PROCESSING_FINISHED = "com.fadcam.PROCESSING_FINISHED"; // Can replace COMPLETE if always sent AFTER processing
+    public static final String ACTION_PROCESSING_FINISHED = "com.fadcam.PROCESSING_FINISHED"; // Can replace COMPLETE if
+                                                                                              // always sent AFTER
+                                                                                              // processing
 
     // Extra key for the URI of the file being processed (usually the temp file)
     public static final String EXTRA_PROCESSING_URI_STRING = "com.fadcam.EXTRA_PROCESSING_URI_STRING";
 
-    // -------------- Fix Start: Add constant for recording failure broadcast -----------
+    // -------------- Fix Start: Add constant for recording failure broadcast
+    // -----------
     // Broadcast action sent by RecordingService when it fails to start
     public static final String ACTION_RECORDING_FAILED = "com.fadcam.RECORDING_FAILED";
     public static final String EXTRA_ERROR_MESSAGE = "com.fadcam.EXTRA_ERROR_MESSAGE";
@@ -139,11 +152,14 @@ public abstract class Constants {
     // -------------- Fix Ended for this constant -----------
 
     // ----- Fix Start for this class (Constants_video_splitting_broadcast) -----
-    // Broadcast action sent by RecordingService when a video segment is complete (due to splitting)
+    // Broadcast action sent by RecordingService when a video segment is complete
+    // (due to splitting)
     public static final String ACTION_RECORDING_SEGMENT_COMPLETE = "com.fadcam.RECORDING_SEGMENT_COMPLETE";
-    // Extra key for the URI of the completed segment file (as String) - can be content:// or file://
+    // Extra key for the URI of the completed segment file (as String) - can be
+    // content:// or file://
     public static final String INTENT_EXTRA_FILE_URI = "com.fadcam.EXTRA_FILE_URI";
-    // Extra key for the absolute path of the completed segment file (if internal storage) - use with caution
+    // Extra key for the absolute path of the completed segment file (if internal
+    // storage) - use with caution
     public static final String INTENT_EXTRA_FILE_PATH = "com.fadcam.EXTRA_FILE_PATH";
     // Extra key for the segment number that just completed
     public static final String INTENT_EXTRA_SEGMENT_NUMBER = "com.fadcam.EXTRA_SEGMENT_NUMBER";
@@ -162,7 +178,11 @@ public abstract class Constants {
     // Request codes
     public static final int REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF = 1001; // Added request code
 
-    public static final String EXTRA_ORIGINAL_TEMP_SAF_URI_STRING = "com.fadcam.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING"; // For SAF processing replacement tracking
+    public static final String EXTRA_ORIGINAL_TEMP_SAF_URI_STRING = "com.fadcam.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING"; // For
+                                                                                                                     // SAF
+                                                                                                                     // processing
+                                                                                                                     // replacement
+                                                                                                                     // tracking
 
     // ----- Fix Start for camera resource availability -----
     // Broadcast for camera resource availability status
@@ -173,11 +193,11 @@ public abstract class Constants {
 
     // Add the location reinitialize intent action
     public static final String INTENT_ACTION_REINITIALIZE_LOCATION = "com.fadcam.INTENT_ACTION_REINITIALIZE_LOCATION";
-    
+
     // Camera interruption broadcasts
     public static final String BROADCAST_ON_CAMERA_INTERRUPTED = "com.fadcam.ON_CAMERA_INTERRUPTED";
     public static final String BROADCAST_ON_CAMERA_RECONNECTED = "com.fadcam.ON_CAMERA_RECONNECTED";
-    
+
     // ----- App Icon Preference -----
     public static final String PREF_APP_ICON = "app_icon";
     public static final String APP_ICON_DEFAULT = "default"; // Original icon

@@ -39,12 +39,14 @@ public class TrashManager {
     private static final String METADATA_FILE_NAME = "trash_metadata.json";
 
     /**
-     * Gets the File object for the trash directory within the app's external files directory.
+     * Gets the File object for the trash directory within the app's external files
+     * directory.
      * Creates the directory if it doesn't exist.
      * Path: Android/data/com.fadcam/files/Trash/
      *
      * @param context The application context.
-     * @return The File object for the trash directory, or null if it cannot be created/accessed.
+     * @return The File object for the trash directory, or null if it cannot be
+     *         created/accessed.
      */
     public static File getTrashDirectory(Context context) {
         if (context == null) {
@@ -72,7 +74,8 @@ public class TrashManager {
      * Loads the list of TrashItem objects from the metadata JSON file.
      *
      * @param context The application context.
-     * @return A List of TrashItem objects. Returns an empty list if the file doesn't exist or an error occurs.
+     * @return A List of TrashItem objects. Returns an empty list if the file
+     *         doesn't exist or an error occurs.
      */
     public static List<TrashItem> loadTrashMetadata(Context context) {
         if (context == null) {
@@ -86,11 +89,12 @@ public class TrashManager {
         }
 
         Gson gson = new Gson();
-        Type listType = new TypeToken<ArrayList<TrashItem>>() {}.getType();
+        Type listType = new TypeToken<ArrayList<TrashItem>>() {
+        }.getType();
 
         try (FileInputStream fis = new FileInputStream(metadataFile);
-             InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-             BufferedReader reader = new BufferedReader(isr)) {
+                InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+                BufferedReader reader = new BufferedReader(isr)) {
             List<TrashItem> items = gson.fromJson(reader, listType);
             if (items == null) {
                 Log.w(TAG, "Parsed trash metadata is null. Returning empty list.");
@@ -101,8 +105,10 @@ public class TrashManager {
         } catch (IOException e) {
             Log.e(TAG, "IOException loading trash metadata from " + metadataFile.getAbsolutePath(), e);
         } catch (com.google.gson.JsonSyntaxException e) {
-            Log.e(TAG, "JsonSyntaxException parsing trash metadata. File might be corrupt: " + metadataFile.getAbsolutePath(), e);
-            // Optionally, attempt to delete the corrupt file here so it can be recreated cleanly next time.
+            Log.e(TAG, "JsonSyntaxException parsing trash metadata. File might be corrupt: "
+                    + metadataFile.getAbsolutePath(), e);
+            // Optionally, attempt to delete the corrupt file here so it can be recreated
+            // cleanly next time.
             // metadataFile.delete();
         }
         return new ArrayList<>(); // Return empty list on error
@@ -129,9 +135,10 @@ public class TrashManager {
         Gson gson = new Gson();
 
         try (FileOutputStream fos = new FileOutputStream(metadataFile); // Overwrites the file
-             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+                OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
             gson.toJson(items, osw);
-            Log.i(TAG, "Successfully saved " + items.size() + " items to trash metadata at " + metadataFile.getAbsolutePath());
+            Log.i(TAG, "Successfully saved " + items.size() + " items to trash metadata at "
+                    + metadataFile.getAbsolutePath());
             return true;
         } catch (IOException e) {
             Log.e(TAG, "IOException saving trash metadata to " + metadataFile.getAbsolutePath(), e);
@@ -145,7 +152,8 @@ public class TrashManager {
      * @param context             The application context.
      * @param videoUri            The URI of the video to be trashed.
      * @param originalDisplayName The original display name of the video.
-     * @param isSafSource         True if the videoUri is from SAF, false if it's a direct file path.
+     * @param isSafSource         True if the videoUri is from SAF, false if it's a
+     *                            direct file path.
      * @return True if the video was successfully moved to trash, false otherwise.
      */
     public static boolean moveToTrash(Context context, Uri videoUri, String originalDisplayName, boolean isSafSource) {
@@ -164,12 +172,13 @@ public class TrashManager {
         File targetTrashFile = new File(trashDir, targetTrashFileName);
 
         boolean success = false;
-        Log.i(TAG, "Attempting to move to trash: '" + originalDisplayName + "' -> '" + targetTrashFile.getAbsolutePath() + "'");
+        Log.i(TAG, "Attempting to move to trash: '" + originalDisplayName + "' -> '" + targetTrashFile.getAbsolutePath()
+                + "'");
 
         if (isSafSource) {
             // Handle SAF URI (content://)
             try (InputStream in = context.getContentResolver().openInputStream(videoUri);
-                 OutputStream out = new FileOutputStream(targetTrashFile)) {
+                    OutputStream out = new FileOutputStream(targetTrashFile)) {
                 if (in == null) {
                     Log.e(TAG, "moveToTrash: Failed to open InputStream for SAF URI: " + videoUri);
                     return false;
@@ -180,17 +189,20 @@ public class TrashManager {
                     out.write(buf, 0, len);
                 }
                 success = true;
-                Log.d(TAG, "moveToTrash: Successfully COPIED SAF URI " + videoUri + " to " + targetTrashFile.getAbsolutePath());
+                Log.d(TAG, "moveToTrash: Successfully COPIED SAF URI " + videoUri + " to "
+                        + targetTrashFile.getAbsolutePath());
                 // Now delete the original SAF document
                 if (DocumentsContract.deleteDocument(context.getContentResolver(), videoUri)) {
                     Log.d(TAG, "moveToTrash: Successfully DELETED original SAF document: " + videoUri);
                 } else {
-                    Log.w(TAG, "moveToTrash: Failed to delete original SAF document: " + videoUri + " (but copy to trash succeeded).");
+                    Log.w(TAG, "moveToTrash: Failed to delete original SAF document: " + videoUri
+                            + " (but copy to trash succeeded).");
                     // Proceed with trashing metadata, as copy was successful.
                 }
             } catch (Exception e) {
                 Log.e(TAG, "moveToTrash: Error copying/deleting SAF URI " + videoUri, e);
-                if (targetTrashFile.exists()) targetTrashFile.delete(); // Clean up partial copy
+                if (targetTrashFile.exists())
+                    targetTrashFile.delete(); // Clean up partial copy
                 success = false;
             }
         } else {
@@ -199,29 +211,36 @@ public class TrashManager {
             if (sourceFile.exists()) {
                 if (sourceFile.renameTo(targetTrashFile)) {
                     success = true;
-                    Log.d(TAG, "moveToTrash: Successfully MOVED internal file " + sourceFile.getAbsolutePath() + " to " + targetTrashFile.getAbsolutePath());
+                    Log.d(TAG, "moveToTrash: Successfully MOVED internal file " + sourceFile.getAbsolutePath() + " to "
+                            + targetTrashFile.getAbsolutePath());
                 } else {
                     Log.e(TAG, "moveToTrash: Failed to move internal file " + sourceFile.getAbsolutePath());
-                    // As a fallback, try copy-delete for internal files if move fails (e.g., across different filesystems on some rooted devices)
+                    // As a fallback, try copy-delete for internal files if move fails (e.g., across
+                    // different filesystems on some rooted devices)
                     try (InputStream in = new FileInputStream(sourceFile);
-                         OutputStream out = new FileOutputStream(targetTrashFile)) {
+                            OutputStream out = new FileOutputStream(targetTrashFile)) {
                         byte[] buf = new byte[8192];
                         int len;
                         while ((len = in.read(buf)) > 0) {
                             out.write(buf, 0, len);
                         }
-                        Log.d(TAG, "moveToTrash: Fallback - Successfully COPIED internal file " + sourceFile.getAbsolutePath());
+                        Log.d(TAG, "moveToTrash: Fallback - Successfully COPIED internal file "
+                                + sourceFile.getAbsolutePath());
                         if (sourceFile.delete()) {
                             Log.d(TAG, "moveToTrash: Fallback - Successfully DELETED original internal file.");
                             success = true;
                         } else {
-                            Log.w(TAG, "moveToTrash: Fallback - Failed to delete original internal file after copy. Manual cleanup of trash item might be needed if metadata is added.");
-                            if(targetTrashFile.exists()) targetTrashFile.delete(); // remove the copy from trash
+                            Log.w(TAG,
+                                    "moveToTrash: Fallback - Failed to delete original internal file after copy. Manual cleanup of trash item might be needed if metadata is added.");
+                            if (targetTrashFile.exists())
+                                targetTrashFile.delete(); // remove the copy from trash
                             success = false;
                         }
                     } catch (IOException ioe) {
-                        Log.e(TAG, "moveToTrash: Fallback - IOException during copy for internal file " + sourceFile.getAbsolutePath(), ioe);
-                        if (targetTrashFile.exists()) targetTrashFile.delete(); // Clean up partial copy
+                        Log.e(TAG, "moveToTrash: Fallback - IOException during copy for internal file "
+                                + sourceFile.getAbsolutePath(), ioe);
+                        if (targetTrashFile.exists())
+                            targetTrashFile.delete(); // Clean up partial copy
                         success = false;
                     }
                 }
@@ -233,7 +252,8 @@ public class TrashManager {
 
         if (success) {
             List<TrashItem> trashItems = loadTrashMetadata(context);
-            trashItems.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName, System.currentTimeMillis(), isSafSource));
+            trashItems.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName,
+                    System.currentTimeMillis(), isSafSource));
             if (saveTrashMetadata(context, trashItems)) {
                 Log.i(TAG, "moveToTrash: Successfully moved and updated metadata for: " + originalDisplayName);
                 // ----- Fix Start for this method(moveToTrash immediate handling)-----
@@ -243,7 +263,8 @@ public class TrashManager {
                     Log.i(TAG, "moveToTrash: Immediate auto-delete active. Deleting trashed item now.");
                     List<TrashItem> single = new ArrayList<>();
                     // Last added item is this file (by trash file name)
-                    single.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName, System.currentTimeMillis(), isSafSource));
+                    single.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName,
+                            System.currentTimeMillis(), isSafSource));
                     // Reload current list to ensure consistency in internal delete
                     List<TrashItem> all = loadTrashMetadata(context);
                     permanentlyDeleteItemsInternal(context, single, all);
@@ -251,12 +272,15 @@ public class TrashManager {
                 // ----- Fix Ended for this method(moveToTrash immediate handling)-----
                 return true;
             } else {
-                Log.e(TAG, "moveToTrash: File moved/copied, but FAILED to save trash metadata for: " + originalDisplayName);
-                // Critical error: file is in trash, but not tracked. Attempt to revert by deleting from trash.
+                Log.e(TAG, "moveToTrash: File moved/copied, but FAILED to save trash metadata for: "
+                        + originalDisplayName);
+                // Critical error: file is in trash, but not tracked. Attempt to revert by
+                // deleting from trash.
                 if (targetTrashFile.exists() && targetTrashFile.delete()) {
                     Log.w(TAG, "moveToTrash: Reverted by deleting untracked file from trash: " + targetTrashFileName);
                 } else {
-                    Log.e(TAG, "moveToTrash: CRITICAL - Failed to revert untracked file in trash: " + targetTrashFileName + ". Manual cleanup needed.");
+                    Log.e(TAG, "moveToTrash: CRITICAL - Failed to revert untracked file in trash: "
+                            + targetTrashFileName + ". Manual cleanup needed.");
                 }
                 return false;
             }
@@ -267,7 +291,8 @@ public class TrashManager {
     }
 
     /**
-     * Generates a unique filename for the trash directory, appending a counter if needed.
+     * Generates a unique filename for the trash directory, appending a counter if
+     * needed.
      * e.g., video.mp4, video (1).mp4, video (2).mp4
      */
     private static String getUniqueTrashFileName(File trashDir, String originalDisplayName) {
@@ -291,12 +316,14 @@ public class TrashManager {
             String newName = nameWithoutExtension + " (" + count + ")" + extension;
             potentialFile = new File(trashDir, newName);
             if (!potentialFile.exists()) {
-                Log.d(TAG, "getUniqueTrashFileName: Generated unique name '" + newName + "' for original '" + originalDisplayName + "'");
+                Log.d(TAG, "getUniqueTrashFileName: Generated unique name '" + newName + "' for original '"
+                        + originalDisplayName + "'");
                 return newName;
             }
             count++;
             if (count > 1000) { // Safety break to prevent infinite loop with extreme cases
-                Log.e(TAG, "getUniqueTrashFileName: Exceeded 1000 attempts to find unique name for " + originalDisplayName + ". Using UUID based name.");
+                Log.e(TAG, "getUniqueTrashFileName: Exceeded 1000 attempts to find unique name for "
+                        + originalDisplayName + ". Using UUID based name.");
                 return java.util.UUID.randomUUID().toString() + extension;
             }
         }
@@ -307,7 +334,8 @@ public class TrashManager {
      *
      * @param context       The application context.
      * @param itemsToDelete The list of TrashItem objects to permanently delete.
-     * @return true if all specified items were successfully deleted (or didn't exist), false otherwise.
+     * @return true if all specified items were successfully deleted (or didn't
+     *         exist), false otherwise.
      */
     public static boolean permanentlyDeleteItems(Context context, List<TrashItem> itemsToDelete) {
         if (context == null || itemsToDelete == null || itemsToDelete.isEmpty()) {
@@ -341,7 +369,8 @@ public class TrashManager {
                     allSucceeded = false; // Mark failure if any file deletion fails
                 }
             } else {
-                Log.w(TAG, "permanentlyDeleteItems: File not found in trash, skipping deletion: " + item.getTrashFileName());
+                Log.w(TAG, "permanentlyDeleteItems: File not found in trash, skipping deletion: "
+                        + item.getTrashFileName());
             }
 
             // Remove from metadata regardless of file deletion success,
@@ -349,9 +378,11 @@ public class TrashManager {
             // If file deletion failed, it's an orphaned file, but metadata should be clean.
             boolean removedFromMeta = updatedMetadata.remove(item);
             if (!removedFromMeta) {
-                Log.w(TAG, "permanentlyDeleteItems: Item " + item.getOriginalDisplayName() + " not found in current metadata list during deletion process.");
+                Log.w(TAG, "permanentlyDeleteItems: Item " + item.getOriginalDisplayName()
+                        + " not found in current metadata list during deletion process.");
             } else {
-                 Log.d(TAG, "permanentlyDeleteItems: Item " + item.getOriginalDisplayName() + " removed from metadata list.");
+                Log.d(TAG, "permanentlyDeleteItems: Item " + item.getOriginalDisplayName()
+                        + " removed from metadata list.");
             }
         }
 
@@ -364,7 +395,8 @@ public class TrashManager {
     }
 
     /**
-     * Empties the entire trash: deletes all files in the trash directory and clears the metadata.
+     * Empties the entire trash: deletes all files in the trash directory and clears
+     * the metadata.
      *
      * @param context The application context.
      * @return true if the trash was successfully emptied, false otherwise.
@@ -405,13 +437,24 @@ public class TrashManager {
         }
 
         if (!allFilesDeleted) {
-            Log.w(TAG, "emptyAllTrash: Not all files in the trash directory could be deleted, but metadata was cleared.");
+            Log.w(TAG,
+                    "emptyAllTrash: Not all files in the trash directory could be deleted, but metadata was cleared.");
             // Return true because metadata is clear, but log a warning.
             // The user expectation of an "empty" trash (UI-wise) is met.
         } else {
             Log.i(TAG, "emptyAllTrash: Successfully deleted all files and cleared metadata.");
         }
-        return true; // Return true if metadata cleared, even if some files failed to delete (they are now orphaned)
+        return true; // Return true if metadata cleared, even if some files failed to delete (they
+                     // are now orphaned)
+    }
+
+    /**
+     * Restore destination options
+     */
+    public enum RestoreDestination {
+        DOWNLOADS_FOLDER, // Public Downloads/FadCam/ folder
+        INTERNAL_STORAGE, // App's private external files directory
+        SAF_STORAGE // Original SAF location (if applicable)
     }
 
     /**
@@ -420,9 +463,26 @@ public class TrashManager {
      *
      * @param context        The application context.
      * @param itemsToRestore The list of TrashItem objects to restore.
-     * @return true if all specified items were successfully restored and metadata updated, false otherwise.
+     * @return true if all specified items were successfully restored and metadata
+     *         updated, false otherwise.
      */
     public static boolean restoreItemsFromTrash(Context context, List<TrashItem> itemsToRestore) {
+        return restoreItemsFromTrash(context, itemsToRestore, RestoreDestination.DOWNLOADS_FOLDER);
+    }
+
+    /**
+     * Restores a list of trash items from the trash directory back to the specified
+     * destination
+     * and removes them from metadata.
+     *
+     * @param context        The application context.
+     * @param itemsToRestore The list of TrashItem objects to restore.
+     * @param destination    The destination where files should be restored.
+     * @return true if all specified items were successfully restored and metadata
+     *         updated, false otherwise.
+     */
+    public static boolean restoreItemsFromTrash(Context context, List<TrashItem> itemsToRestore,
+            RestoreDestination destination) {
         if (context == null || itemsToRestore == null || itemsToRestore.isEmpty()) {
             Log.w(TAG, "restoreItemsFromTrash: Context is null, or no items specified for restoration.");
             return true; // Nothing to do.
@@ -434,17 +494,21 @@ public class TrashManager {
             return false;
         }
 
-        // Get target public directory: Downloads/FadCam/
-        // This requires SAF access if we are writing to it directly without user picking each time.
-        // For simplicity, we'll construct the File path. Actual writing will need SAF if target is outside app-specific storage.
-        File publicDownloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        File targetRestoreDir = new File(publicDownloadsDir, Constants.RECORDING_DIRECTORY); // Use existing constant
+        // Determine target directory based on destination choice
+        File targetRestoreDir = getRestoreTargetDirectory(context, destination);
+        if (targetRestoreDir == null) {
+            Log.e(TAG, "restoreItemsFromTrash: Failed to get target restore directory for destination: " + destination);
+            return false;
+        }
 
         if (!targetRestoreDir.exists()) {
             if (!targetRestoreDir.mkdirs()) {
-                Log.e(TAG, "restoreItemsFromTrash: Failed to create target restore directory: " + targetRestoreDir.getAbsolutePath());
-                // Depending on strategy, could fallback to app-specific dir or fail
-                // For now, we will attempt to restore and let file operations fail if dir is not writable.
+                Log.e(TAG, "restoreItemsFromTrash: Failed to create target restore directory: "
+                        + targetRestoreDir.getAbsolutePath());
+                // For internal storage, this is critical. For public storage, we'll try anyway.
+                if (destination == RestoreDestination.INTERNAL_STORAGE) {
+                    return false;
+                }
             }
         }
 
@@ -460,7 +524,8 @@ public class TrashManager {
 
             File fileInTrash = new File(trashDir, item.getTrashFileName());
             if (!fileInTrash.exists()) {
-                Log.w(TAG, "restoreItemsFromTrash: File " + item.getTrashFileName() + " not found in trash. Removing from metadata if present.");
+                Log.w(TAG, "restoreItemsFromTrash: File " + item.getTrashFileName()
+                        + " not found in trash. Removing from metadata if present.");
                 updatedMetadata.remove(item);
                 continue; // Cannot restore a non-existent file
             }
@@ -473,47 +538,60 @@ public class TrashManager {
             try {
                 // Attempt to move (rename) the file
                 if (fileInTrash.renameTo(restoredFile)) {
-                    Log.i(TAG, "restoreItemsFromTrash: Successfully MOVED '" + fileInTrash.getName() + "' to '" + restoredFile.getAbsolutePath() + "'");
+                    Log.i(TAG, "restoreItemsFromTrash: Successfully MOVED '" + fileInTrash.getName() + "' to '"
+                            + restoredFile.getAbsolutePath() + "'");
                     restoredSuccessfully = true;
                 } else {
                     // Fallback to copy-delete if move fails (e.g. different filesystems)
-                    Log.w(TAG, "restoreItemsFromTrash: Failed to move file directly. Attempting copy-delete for " + fileInTrash.getName());
+                    Log.w(TAG, "restoreItemsFromTrash: Failed to move file directly. Attempting copy-delete for "
+                            + fileInTrash.getName());
                     try (InputStream in = new FileInputStream(fileInTrash);
-                         OutputStream out = new FileOutputStream(restoredFile)) {
+                            OutputStream out = new FileOutputStream(restoredFile)) {
                         byte[] buf = new byte[8192];
                         int len;
                         while ((len = in.read(buf)) > 0) {
                             out.write(buf, 0, len);
                         }
-                        Log.i(TAG, "restoreItemsFromTrash: Successfully COPIED '" + fileInTrash.getName() + "' to '" + restoredFile.getAbsolutePath() + "'");
+                        Log.i(TAG, "restoreItemsFromTrash: Successfully COPIED '" + fileInTrash.getName() + "' to '"
+                                + restoredFile.getAbsolutePath() + "'");
                         if (fileInTrash.delete()) {
                             Log.d(TAG, "restoreItemsFromTrash: Successfully deleted original from trash after copy.");
                             restoredSuccessfully = true;
                         } else {
-                            Log.e(TAG, "restoreItemsFromTrash: Copied file but FAILED to delete original from trash: " + fileInTrash.getName());
-                            // File is restored, but also still in trash. Metadata will remove it from trash list.
-                            // This is acceptable, a manual cleanup of the trash dir might be needed later for this file.
+                            Log.e(TAG, "restoreItemsFromTrash: Copied file but FAILED to delete original from trash: "
+                                    + fileInTrash.getName());
+                            // File is restored, but also still in trash. Metadata will remove it from trash
+                            // list.
+                            // This is acceptable, a manual cleanup of the trash dir might be needed later
+                            // for this file.
                             restoredSuccessfully = true; // Consider it restored for metadata purposes
                         }
                     } catch (IOException copyEx) {
-                        Log.e(TAG, "restoreItemsFromTrash: IOException during copy-delete for " + fileInTrash.getName(), copyEx);
-                        if (restoredFile.exists()) restoredFile.delete(); // Clean up partial copy
+                        Log.e(TAG, "restoreItemsFromTrash: IOException during copy-delete for " + fileInTrash.getName(),
+                                copyEx);
+                        if (restoredFile.exists())
+                            restoredFile.delete(); // Clean up partial copy
                         allSucceeded = false;
                     }
                 }
             } catch (SecurityException se) {
-                Log.e(TAG, "restoreItemsFromTrash: SecurityException during file operation for " + fileInTrash.getName() + ". Check permissions for target dir: " + targetRestoreDir.getAbsolutePath(), se);
+                Log.e(TAG, "restoreItemsFromTrash: SecurityException during file operation for " + fileInTrash.getName()
+                        + ". Check permissions for target dir: " + targetRestoreDir.getAbsolutePath(), se);
                 allSucceeded = false;
             }
 
             if (restoredSuccessfully) {
-                // Add to MediaStore so it appears in Gallery apps
-                Utils.scanFileWithMediaStore(context, restoredFile.getAbsolutePath());
+                // Add to MediaStore so it appears in Gallery apps (only for public directories)
+                if (destination == RestoreDestination.DOWNLOADS_FOLDER) {
+                    Utils.scanFileWithMediaStore(context, restoredFile.getAbsolutePath());
+                }
                 boolean removedFromMeta = updatedMetadata.remove(item);
                 if (!removedFromMeta) {
-                    Log.w(TAG, "restoreItemsFromTrash: Item " + item.getOriginalDisplayName() + " not found in metadata during restoration.");
+                    Log.w(TAG, "restoreItemsFromTrash: Item " + item.getOriginalDisplayName()
+                            + " not found in metadata during restoration.");
                 } else {
-                    Log.d(TAG, "restoreItemsFromTrash: Item " + item.getOriginalDisplayName() + " removed from trash metadata after restoration.");
+                    Log.d(TAG, "restoreItemsFromTrash: Item " + item.getOriginalDisplayName()
+                            + " removed from trash metadata after restoration.");
                 }
             } else {
                 allSucceeded = false; // Mark as failed if this item couldn't be restored
@@ -529,11 +607,85 @@ public class TrashManager {
     }
 
     /**
-     * Helper to get a unique filename in a target directory, similar to getUniqueTrashFileName.
+     * Gets the available restore destinations for the given trash items.
+     *
+     * @param items The list of trash items to check.
+     * @return A list of available restore destinations.
+     */
+    public static List<RestoreDestination> getAvailableRestoreDestinations(List<TrashItem> items) {
+        List<RestoreDestination> destinations = new ArrayList<>();
+
+        // Downloads folder is always available
+        destinations.add(RestoreDestination.DOWNLOADS_FOLDER);
+
+        // Internal storage is always available
+        destinations.add(RestoreDestination.INTERNAL_STORAGE);
+
+        // SAF storage is available if any item was originally from SAF
+        boolean hasSafItems = false;
+        if (items != null) {
+            for (TrashItem item : items) {
+                if (item != null && item.isFromSaf()) {
+                    hasSafItems = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasSafItems) {
+            destinations.add(RestoreDestination.SAF_STORAGE);
+        }
+
+        return destinations;
+    }
+
+    /**
+     * Gets the target directory for restore based on the destination choice.
+     *
+     * @param context     The application context.
+     * @param destination The restore destination.
+     * @return The target directory File, or null if it cannot be determined.
+     */
+    private static File getRestoreTargetDirectory(Context context, RestoreDestination destination) {
+        switch (destination) {
+            case DOWNLOADS_FOLDER:
+                // Public Downloads/FadCam/ folder
+                File publicDownloadsDir = Environment
+                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                return new File(publicDownloadsDir, Constants.RECORDING_DIRECTORY);
+
+            case INTERNAL_STORAGE:
+                // App's private external files directory
+                File externalFilesDir = context.getExternalFilesDir(null);
+                if (externalFilesDir == null) {
+                    Log.e(TAG, "getRestoreTargetDirectory: External files directory is null");
+                    return null;
+                }
+                return new File(externalFilesDir, Constants.RECORDING_DIRECTORY);
+
+            case SAF_STORAGE:
+                // For SAF storage, we would need to use DocumentsContract
+                // This is more complex and would require user interaction for folder selection
+                // For now, fallback to Downloads folder
+                Log.w(TAG,
+                        "getRestoreTargetDirectory: SAF storage restore not yet implemented, falling back to Downloads");
+                File safFallbackDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                return new File(safFallbackDir, Constants.RECORDING_DIRECTORY);
+
+            default:
+                Log.e(TAG, "getRestoreTargetDirectory: Unknown destination: " + destination);
+                return null;
+        }
+    }
+
+    /**
+     * Helper to get a unique filename in a target directory, similar to
+     * getUniqueTrashFileName.
      */
     private static String getUniqueFileNameInDirectory(File directory, String originalName) {
         if (!directory.exists() && !directory.mkdirs()) {
-            Log.w(TAG, "getUniqueFileNameInDirectory: Target directory doesn't exist and couldn't be created: " + directory.getAbsolutePath());
+            Log.w(TAG, "getUniqueFileNameInDirectory: Target directory doesn't exist and couldn't be created: "
+                    + directory.getAbsolutePath());
             // Fallback to original name, hoping for the best or that caller handles it
             return originalName;
         }
@@ -562,12 +714,15 @@ public class TrashManager {
     }
 
     /**
-     * Automatically deletes items from trash that are older than the specified number of minutes.
+     * Automatically deletes items from trash that are older than the specified
+     * number of minutes.
      * If autoDeleteMinutes is TRASH_AUTO_DELETE_NEVER, no items are deleted.
      *
-     * @param context Context
-     * @param autoDeleteMinutes The maximum age in minutes for items to keep. Items older than this will be deleted.
-     *                     Use SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER to disable auto-deletion.
+     * @param context           Context
+     * @param autoDeleteMinutes The maximum age in minutes for items to keep. Items
+     *                          older than this will be deleted.
+     *                          Use SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER
+     *                          to disable auto-deletion.
      * @return The number of items deleted.
      */
     public static synchronized int autoDeleteExpiredItems(Context context, int autoDeleteMinutes) {
@@ -580,7 +735,8 @@ public class TrashManager {
             // Immediate deletion: delete all items currently in trash
             Log.i(TAG, "autoDeleteExpiredItems: Immediate mode selected. Deleting all items.");
             List<TrashItem> allTrashItems = loadTrashMetadata(context);
-            if (allTrashItems.isEmpty()) return 0;
+            if (allTrashItems.isEmpty())
+                return 0;
             boolean success = permanentlyDeleteItemsInternal(context, new ArrayList<>(allTrashItems), allTrashItems);
             return success ? allTrashItems.size() : 0;
         }
@@ -616,14 +772,19 @@ public class TrashManager {
     }
 
     /**
-     * Internal helper to delete item files and remove them from the provided list of all trash items.
+     * Internal helper to delete item files and remove them from the provided list
+     * of all trash items.
      * Saves the modified list to metadata if changes were made.
-     * @param context Context.
+     * 
+     * @param context       Context.
      * @param itemsToDelete List of TrashItem objects to delete.
-     * @param allTrashItems The complete list of current trash items. This list WILL BE MODIFIED.
-     * @return true if all specified items were successfully deleted (or didn't exist on disk) and metadata was updated, false otherwise.
+     * @param allTrashItems The complete list of current trash items. This list WILL
+     *                      BE MODIFIED.
+     * @return true if all specified items were successfully deleted (or didn't
+     *         exist on disk) and metadata was updated, false otherwise.
      */
-    private static synchronized boolean permanentlyDeleteItemsInternal(Context context, List<TrashItem> itemsToDelete, List<TrashItem> allTrashItems) {
+    private static synchronized boolean permanentlyDeleteItemsInternal(Context context, List<TrashItem> itemsToDelete,
+            List<TrashItem> allTrashItems) {
         if (context == null || itemsToDelete == null || itemsToDelete.isEmpty() || allTrashItems == null) {
             Log.w(TAG, "permanentlyDeleteItemsInternal: Invalid arguments.");
             return false;
@@ -648,10 +809,12 @@ public class TrashManager {
                 } else {
                     Log.e(TAG, "Failed to permanently delete file: " + item.getTrashFileName());
                     // If file deletion fails, we might choose not to remove from metadata
-                    // to allow another attempt or manual intervention. For now, continue to remove from metadata.
+                    // to allow another attempt or manual intervention. For now, continue to remove
+                    // from metadata.
                 }
             } else {
-                Log.w(TAG, "File to delete not found on disk: " + item.getTrashFileName() + ". It will be removed from metadata.");
+                Log.w(TAG, "File to delete not found on disk: " + item.getTrashFileName()
+                        + ". It will be removed from metadata.");
                 fileExistedAndDeleted = true; // Consider it handled from disk perspective as it's not there
             }
 
@@ -660,30 +823,38 @@ public class TrashManager {
                 metadataRemoved = true;
                 Log.d(TAG, "Removed item from metadata list: " + item.getOriginalDisplayName());
             } else {
-                Log.w(TAG, "Item " + item.getOriginalDisplayName() + " (file: " + item.getTrashFileName() + ") not found in the provided allTrashItems list for metadata removal.");
+                Log.w(TAG, "Item " + item.getOriginalDisplayName() + " (file: " + item.getTrashFileName()
+                        + ") not found in the provided allTrashItems list for metadata removal.");
             }
-            
+
             if (fileExistedAndDeleted && metadataRemoved) {
                 successfullyDeletedCount++;
             }
         }
 
-        // Save the modified allTrashItems list if any items were actually removed from it
+        // Save the modified allTrashItems list if any items were actually removed from
+        // it
         if (successfullyDeletedCount > 0 || itemsToDelete.stream().anyMatch(allTrashItems::contains)) {
-             // The second condition handles cases where items were meant to be deleted 
-             // but perhaps file deletion failed, yet we still want to update metadata if they were removed from the list.
-             // More accurately, only save if the list passed (allTrashItems) has actually changed.
-             // A simple way is to compare sizes or check if any item in itemsToDelete is still in allTrashItems.
-             // However, since allTrashItems is modified directly, if successfullyDeletedCount > 0, changes were made.
+            // The second condition handles cases where items were meant to be deleted
+            // but perhaps file deletion failed, yet we still want to update metadata if
+            // they were removed from the list.
+            // More accurately, only save if the list passed (allTrashItems) has actually
+            // changed.
+            // A simple way is to compare sizes or check if any item in itemsToDelete is
+            // still in allTrashItems.
+            // However, since allTrashItems is modified directly, if
+            // successfullyDeletedCount > 0, changes were made.
             if (!saveTrashMetadata(context, allTrashItems)) {
                 Log.e(TAG, "permanentlyDeleteItemsInternal: Failed to save updated metadata after deleting items.");
                 return false; // Metadata save failure is critical
             }
         }
-        // Return true if the number of items successfully handled (file deleted/not found AND metadata removed) matches the number we intended to delete.
+        // Return true if the number of items successfully handled (file deleted/not
+        // found AND metadata removed) matches the number we intended to delete.
         return successfullyDeletedCount == itemsToDelete.size();
     }
 
-    // More methods will be added here for restore, deletePermanently, autoDeleteOldItems etc.
+    // More methods will be added here for restore, deletePermanently,
+    // autoDeleteOldItems etc.
 
-} 
+}
