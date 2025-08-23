@@ -458,7 +458,7 @@
                         android:text="@string/recording_controls_title"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:textColor="?attr/colorHeading"
+                        android:textColor="?attr/sectionHeaderColor"
                         android:gravity="center"
                         android:paddingStart="4dp"
                         android:paddingEnd="4dp"

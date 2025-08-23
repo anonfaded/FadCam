@@ -57,7 +57,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
             android:text="@string/button_settings_readme"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="?attr/sectionHeaderColor"
             android:textStyle="bold" />
 
         <!-- README Group Card -->
@@ -115,7 +115,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
             android:text="@string/general"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="?attr/sectionHeaderColor"
             android:textStyle="bold" />
 
         <!-- General Group Card -->
@@ -477,7 +477,7 @@
             android:layout_marginTop="32dp"
             android:layout_marginBottom="8dp"
             android:text="@string/settings_section_app"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="?attr/sectionHeaderColor"
             android:textStyle="bold" />
 
         <!-- About Group Card -->

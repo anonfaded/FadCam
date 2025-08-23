@@ -15,4 +15,6 @@
     <!-- Picker text color attributes -->
     <attr name="pickerTextPrimary" format="color" />
     <attr name="pickerTextSecondary" format="color" />
+    <!-- Section header color attribute -->
+    <attr name="sectionHeaderColor" format="color" />
 </resources> 

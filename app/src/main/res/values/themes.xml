@@ -27,6 +27,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
 
     <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
@@ -89,6 +91,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
     </style>
@@ -158,6 +162,8 @@
     <!-- Picker text colors -->
     <item name="pickerTextPrimary">@android:color/white</item>
     <item name="pickerTextSecondary">#999999</item>
+    <!-- Section header color -->
+    <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -228,6 +234,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
         </style>
 
     <style name="ThemeOverlay.FadCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -292,6 +300,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -356,6 +366,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.ShadowAlloy.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -420,6 +432,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.PookiePink.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -495,6 +509,8 @@
         <!-- Picker text colors for Snow Veil theme -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color for better contrast in Snow Veil theme -->
+        <item name="sectionHeaderColor">#424242</item>
     </style>
 
     <!-- Add CardView style for Snow Veil theme -->
@@ -635,6 +651,8 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
 </resources>

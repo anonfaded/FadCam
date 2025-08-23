@@ -21,5 +21,7 @@
         <!-- Picker text colors -->
         <item name="pickerTextPrimary">@android:color/white</item>
         <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color -->
+        <item name="sectionHeaderColor">@android:color/darker_gray</item>
     </style>
 </resources>
