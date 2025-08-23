@@ -67,8 +67,10 @@ public class MainActivity extends AppCompatActivity {
 
     // ----- Fix Start: Add method to disable back toast temporarily -----
     /**
-     * Public method to be called from fragments that need to disable the double-back toast temporarily
-     * This will prevent the "Press back again to exit" toast from showing on the next back press
+     * Public method to be called from fragments that need to disable the
+     * double-back toast temporarily
+     * This will prevent the "Press back again to exit" toast from showing on the
+     * next back press
      */
     public void skipNextBackExitHandling() {
         skipNextBackHandling = true;
@@ -77,30 +79,39 @@ public class MainActivity extends AppCompatActivity {
     }
     // ----- Fix End: Add method to disable back toast temporarily -----
 
-    // Removed Trash-specific visibility checks; overlay back handling is unified below.
+    // Removed Trash-specific visibility checks; overlay back handling is unified
+    // below.
 
     // -------------- Fix Start for this method(hideOverlayIfNoFragments)-----------
-    /** Utility so child fragments can request overlay dismissal after popping back stack. */
-    public void hideOverlayIfNoFragments(){
+    /**
+     * Utility so child fragments can request overlay dismissal after popping back
+     * stack.
+     */
+    public void hideOverlayIfNoFragments() {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
-        if(overlayContainer!=null){
-            if(getSupportFragmentManager().getBackStackEntryCount()==0){
-                Log.d("OverlayDebug","hideOverlayIfNoFragments: back stack empty -> hide overlay");
+        if (overlayContainer != null) {
+            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+                Log.d("OverlayDebug", "hideOverlayIfNoFragments: back stack empty -> hide overlay");
                 overlayContainer.setVisibility(View.GONE);
-            }
-            else {
-                Log.d("OverlayDebug","hideOverlayIfNoFragments: back stack count="+getSupportFragmentManager().getBackStackEntryCount());
+            } else {
+                Log.d("OverlayDebug", "hideOverlayIfNoFragments: back stack count="
+                        + getSupportFragmentManager().getBackStackEntryCount());
             }
         }
     }
     // -------------- Fix Ended for this method(hideOverlayIfNoFragments)-----------
 
     // -------------- Fix Start for this method(showOverlayFragment)-----------
-    /** Present a fragment in the overlay container, avoiding duplicate dark blank state. */
-    public void showOverlayFragment(Fragment fragment, String tag){
+    /**
+     * Present a fragment in the overlay container, avoiding duplicate dark blank
+     * state.
+     */
+    public void showOverlayFragment(Fragment fragment, String tag) {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
-        if(overlayContainer==null) return;
-    Log.d("OverlayDebug","showOverlayFragment: tag="+tag+" currentBackStack="+getSupportFragmentManager().getBackStackEntryCount());
+        if (overlayContainer == null)
+            return;
+        Log.d("OverlayDebug", "showOverlayFragment: tag=" + tag + " currentBackStack="
+                + getSupportFragmentManager().getBackStackEntryCount());
         overlayContainer.setVisibility(View.VISIBLE);
         overlayContainer.setAlpha(0f);
         getSupportFragmentManager()
@@ -117,10 +128,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
         SplashScreen.installSplashScreen(this);
-        // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by dynamic choice
+        // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by
+        // dynamic choice
         applyTheme();
 
-        // -------------- Fix Start for this block(apply cloak as early as possible)-----------
+        // -------------- Fix Start for this block(apply cloak as early as
+        // possible)-----------
         try {
             if (this.sharedPreferencesManager == null) {
                 this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
@@ -128,34 +141,44 @@ public class MainActivity extends AppCompatActivity {
             boolean cloakEarly = this.sharedPreferencesManager.isCloakRecentsEnabled();
             if (cloakEarly) {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(false);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             }
-        } catch (Throwable t) { android.util.Log.w("Cloak", "early cloak apply fail", t); }
-        // -------------- Fix Ended for this block(apply cloak as early as possible)-----------
+        } catch (Throwable t) {
+            android.util.Log.w("Cloak", "early cloak apply fail", t);
+        }
+        // -------------- Fix Ended for this block(apply cloak as early as
+        // possible)-----------
 
         // ----- Fix Start: Ensure onboarding shows on first install -----
         // Initialize SharedPreferencesManager instance first
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        
+
         // Check if this is a first launch by looking for a special flag
-        boolean firstInstallChecked = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
-        
+        boolean firstInstallChecked = sharedPreferencesManager.sharedPreferences
+                .getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
+
         if (!firstInstallChecked) {
             // This is definitely a first install or app data was cleared
             // Force onboarding to show by setting the flag to false
             android.util.Log.d("MainActivity", "First install detected! Forcing onboarding to show.");
             sharedPreferencesManager.sharedPreferences.edit()
-                .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
-                .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
-                .commit(); // Use commit() for immediate effect
+                    .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
+                    .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
+                    .commit(); // Use commit() for immediate effect
         }
-        
+
         // Check for onboarding BEFORE applying theme or language
         boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
         android.util.Log.d("MainActivity", "Should show onboarding: " + showOnboarding);
-        
+
         if (showOnboarding) {
             // Launch onboarding activity if needed
             Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
@@ -164,14 +187,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         // ----- Fix End: Ensure onboarding shows on first install -----
-        
-        // Now that we know we're not showing onboarding, continue with normal initialization
+
+        // Now that we know we're not showing onboarding, continue with normal
+        // initialization
 
         // Load and apply the saved language preference before anything else
         SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
         String savedLanguageCode = prefs.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
 
-        applyLanguage(savedLanguageCode);  // Apply the language preference
+        applyLanguage(savedLanguageCode); // Apply the language preference
 
         // Check if current locale is Pashto
         if (getResources().getConfiguration().locale.getLanguage().equals("ps")) {
@@ -184,7 +208,8 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        // -------------- Fix Start for this block(apply persistent cloak at startup)-----------
+        // -------------- Fix Start for this block(apply persistent cloak at
+        // startup)-----------
         try {
             if (this.sharedPreferencesManager == null) {
                 this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
@@ -192,28 +217,43 @@ public class MainActivity extends AppCompatActivity {
             boolean cloak = this.sharedPreferencesManager.isCloakRecentsEnabled();
             if (cloak) {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(false);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             } else {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(true); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(true);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             }
         } catch (Throwable t) {
             android.util.Log.w("Cloak", "init cloak state fail", t);
         }
-        // -------------- Fix Ended for this block(apply persistent cloak at startup)-----------
+        // -------------- Fix Ended for this block(apply persistent cloak at
+        // startup)-----------
 
         viewPager = findViewById(R.id.view_pager);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         // -------------- Fix Start for this block(init cloak overlay)-----------
-        // A simple overlay that we can show/hide to mask the UI before recents snapshot.
+        // A simple overlay that we can show/hide to mask the UI before recents
+        // snapshot.
         try {
             android.widget.FrameLayout overlay = new android.widget.FrameLayout(this);
-            overlay.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            overlay.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
             overlay.setBackgroundColor(0xFF000000); // default solid black
             overlay.setClickable(true); // swallow touches while visible
             overlay.setFocusable(true);
@@ -222,17 +262,20 @@ public class MainActivity extends AppCompatActivity {
             android.widget.LinearLayout content = new android.widget.LinearLayout(this);
             content.setOrientation(android.widget.LinearLayout.VERTICAL);
             content.setGravity(android.view.Gravity.CENTER);
-            android.widget.FrameLayout.LayoutParams clp = new android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            android.widget.FrameLayout.LayoutParams clp = new android.widget.FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             content.setLayoutParams(clp);
 
             cloakIconView = new android.widget.ImageView(this);
             int iconSize = (int) (72 * getResources().getDisplayMetrics().density);
-            android.widget.LinearLayout.LayoutParams ilp = new android.widget.LinearLayout.LayoutParams(iconSize, iconSize);
+            android.widget.LinearLayout.LayoutParams ilp = new android.widget.LinearLayout.LayoutParams(iconSize,
+                    iconSize);
             cloakIconView.setLayoutParams(ilp);
             cloakIconView.setImageResource(SharedPreferencesManager.getInstance(this).getCurrentAppIconResId());
 
             cloakTitleView = new android.widget.TextView(this);
-            android.widget.LinearLayout.LayoutParams tlp = new android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            android.widget.LinearLayout.LayoutParams tlp = new android.widget.LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             tlp.topMargin = (int) (12 * getResources().getDisplayMetrics().density);
             cloakTitleView.setLayoutParams(tlp);
             cloakTitleView.setTextColor(0xFFFFFFFF);
@@ -264,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
         // Keep all pages in memory to prevent content disappearing
         viewPager.setOffscreenPageLimit(adapter.getItemCount());
 
-    bottomNavigationView.setOnItemSelectedListener(item -> {
+        bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.navigation_home) {
                 viewPager.setCurrentItem(0, true);
@@ -284,8 +327,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 switch (position) {
-                    case 0: bottomNavigationView.setSelectedItemId(R.id.navigation_home); break;
-                    case 1: 
+                    case 0:
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_home);
+                        break;
+                    case 1:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_records);
                         // Trigger lazy loading when user navigates to Records tab
                         try {
@@ -297,17 +342,25 @@ public class MainActivity extends AppCompatActivity {
                             Log.e("MainActivity", "Error triggering Records lazy load", e);
                         }
                         break;
-                    case 2: bottomNavigationView.setSelectedItemId(R.id.navigation_remote); break;
-                    case 3: bottomNavigationView.setSelectedItemId(R.id.navigation_faditor_mini); break;
-                    case 4: bottomNavigationView.setSelectedItemId(R.id.navigation_settings); break;
+                    case 2:
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
+                        break;
+                    case 3:
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_faditor_mini);
+                        break;
+                    case 4:
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
+                        break;
                 }
             }
         });
 
-        // Add custom badge to the Remote tab in BottomNavigationView
+        // Add custom badge to the Remote tab and Faditor Mini tab in
+        // BottomNavigationView
         bottomNavigationView.post(() -> {
             ViewGroup menuView = (ViewGroup) bottomNavigationView.getChildAt(0);
-            if (menuView != null && menuView.getChildCount() > 2) {
+            if (menuView != null && menuView.getChildCount() > 3) {
+                // Add badge to Remote tab (index 2)
                 View remoteTab = menuView.getChildAt(2); // 0:home, 1:records, 2:remote
                 if (remoteTab instanceof ViewGroup) {
                     // Prevent duplicate badge
@@ -315,6 +368,18 @@ public class MainActivity extends AppCompatActivity {
                     if (existingBadge == null) {
                         View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) remoteTab, false);
                         ((ViewGroup) remoteTab).addView(badge);
+                    }
+                }
+
+                // Add badge to Faditor Mini tab (index 3)
+                View faditorMiniTab = menuView.getChildAt(3); // 0:home, 1:records, 2:remote, 3:faditor_mini
+                if (faditorMiniTab instanceof ViewGroup) {
+                    // Prevent duplicate badge
+                    View existingBadge = ((ViewGroup) faditorMiniTab).findViewById(R.id.badge_text);
+                    if (existingBadge == null) {
+                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) faditorMiniTab,
+                                false);
+                        ((ViewGroup) faditorMiniTab).addView(badge);
                     }
                 }
             }
@@ -337,54 +402,68 @@ public class MainActivity extends AppCompatActivity {
         int colorStatusBar = resolveThemeColor(this, R.attr.colorStatusBar);
         // Top bar (if using Toolbar)
         androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.topAppBar);
-        if (toolbar != null) toolbar.setBackgroundColor(colorTopBar);
+        if (toolbar != null)
+            toolbar.setBackgroundColor(colorTopBar);
         // Bottom navigation
-        com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        if (bottomNav != null) bottomNav.setBackgroundColor(colorBottomNav);
+        com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = findViewById(
+                R.id.bottom_navigation);
+        if (bottomNav != null)
+            bottomNav.setBackgroundColor(colorBottomNav);
         // Status bar
         getWindow().setStatusBarColor(colorStatusBar);
         getWindow().setNavigationBarColor(colorBottomNav);
 
-        // -------------- Fix Start for this logic(reopen appearance/theme sheet after theme change)-----------
+        // -------------- Fix Start for this logic(reopen appearance/theme sheet after
+        // theme change)-----------
         try {
             SharedPreferences reopenPrefs = sharedPreferencesManager.sharedPreferences;
             boolean reopenAppearance = reopenPrefs.getBoolean("reopen_appearance_after_theme", false);
-            if(reopenAppearance){
+            if (reopenAppearance) {
                 // Clear flag to avoid loops
                 reopenPrefs.edit().putBoolean("reopen_appearance_after_theme", false).apply();
                 // Ensure Settings tab selected (index 4)
-                if(viewPager!=null){ viewPager.setCurrentItem(4, false); }
+                if (viewPager != null) {
+                    viewPager.setCurrentItem(4, false);
+                }
                 // Post to allow SettingsHomeFragment attach
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     try {
                         com.fadcam.ui.AppearanceSettingsFragment frag = new com.fadcam.ui.AppearanceSettingsFragment();
                         OverlayNavUtil.show(this, frag, "AppearanceSettingsFragment");
                         boolean reopenSheet = reopenPrefs.getBoolean("reopen_theme_sheet_after_theme", false);
-                        if(reopenSheet){
+                        if (reopenSheet) {
                             reopenPrefs.edit().putBoolean("reopen_theme_sheet_after_theme", false).apply();
-                            frag.getLifecycle().addObserver(new androidx.lifecycle.DefaultLifecycleObserver(){
-                                @Override public void onResume(androidx.lifecycle.LifecycleOwner owner){
+                            frag.getLifecycle().addObserver(new androidx.lifecycle.DefaultLifecycleObserver() {
+                                @Override
+                                public void onResume(androidx.lifecycle.LifecycleOwner owner) {
                                     View v = frag.getView();
-                                    if(v!=null){
+                                    if (v != null) {
                                         View row = v.findViewById(R.id.row_theme);
-                                        if(row!=null){ row.postDelayed(row::performClick, 100); }
+                                        if (row != null) {
+                                            row.postDelayed(row::performClick, 100);
+                                        }
                                     }
                                 }
                             });
                         }
-                    } catch (Exception e){
-                        android.util.Log.e("ThemeReopen","Failed to reopen appearance fragment", e);
+                    } catch (Exception e) {
+                        android.util.Log.e("ThemeReopen", "Failed to reopen appearance fragment", e);
                     }
                 }, 100);
             }
-        } catch (Exception e){ android.util.Log.e("ThemeReopen","Outer fail", e); }
-        // -------------- Fix Ended for this logic(reopen appearance/theme sheet after theme change)-----------
-        
-        // -------------- Fix Start for this logic(handle widget intent to open shortcuts)-----------
+        } catch (Exception e) {
+            android.util.Log.e("ThemeReopen", "Outer fail", e);
+        }
+        // -------------- Fix Ended for this logic(reopen appearance/theme sheet after
+        // theme change)-----------
+
+        // -------------- Fix Start for this logic(handle widget intent to open
+        // shortcuts)-----------
         handleWidgetIntent();
-        // -------------- Fix Ended for this logic(handle widget intent to open shortcuts)-----------
+        // -------------- Fix Ended for this logic(handle widget intent to open
+        // shortcuts)-----------
     }
-    
+
     private void handleWidgetIntent() {
         Intent intent = getIntent();
         if (intent != null && intent.getBooleanExtra("open_shortcuts_widgets", false)) {
@@ -412,40 +491,39 @@ public class MainActivity extends AppCompatActivity {
         torchIntent.setAction(Intent.ACTION_VIEW);
 
         ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
-            .setShortLabel(getString(R.string.torch_shortcut_short_label))
-            .setLongLabel(getString(R.string.torch_shortcut_long_label))
-            .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
-            .setIntent(torchIntent)
-            .build();
+                .setShortLabel(getString(R.string.torch_shortcut_short_label))
+                .setLongLabel(getString(R.string.torch_shortcut_long_label))
+                .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
+                .setIntent(torchIntent)
+                .build();
 
         // Recording Start Shortcut
         Intent startRecordIntent = new Intent(this, RecordingStartActivity.class);
         startRecordIntent.setAction(Intent.ACTION_VIEW);
 
         ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
-            .setShortLabel(getString(R.string.start_recording))
-            .setLongLabel(getString(R.string.start_recording))
-            .setIcon(Icon.createWithResource(this, R.drawable.start_shortcut))
-            .setIntent(startRecordIntent)
-            .build();
+                .setShortLabel(getString(R.string.start_recording))
+                .setLongLabel(getString(R.string.start_recording))
+                .setIcon(Icon.createWithResource(this, R.drawable.start_shortcut))
+                .setIntent(startRecordIntent)
+                .build();
 
         // Recording Stop Shortcut
         Intent stopRecordIntent = new Intent(this, RecordingStopActivity.class);
         stopRecordIntent.setAction(Intent.ACTION_VIEW);
 
         ShortcutInfo stopRecordShortcut = new ShortcutInfo.Builder(this, "record_stop")
-            .setShortLabel(getString(R.string.stop_recording))
-            .setLongLabel(getString(R.string.stop_recording))
-            .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
-            .setIntent(stopRecordIntent)
-            .build();
+                .setShortLabel(getString(R.string.stop_recording))
+                .setLongLabel(getString(R.string.stop_recording))
+                .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
+                .setIntent(stopRecordIntent)
+                .build();
 
         // Set all shortcuts
         shortcutManager.setDynamicShortcuts(Arrays.asList(
-            torchShortcut,
-            startRecordShortcut,
-            stopRecordShortcut
-        ));
+                torchShortcut,
+                startRecordShortcut,
+                stopRecordShortcut));
     }
 
     public void applyLanguage(String languageCode) {
@@ -485,10 +563,13 @@ public class MainActivity extends AppCompatActivity {
     /** Shows or hides the cloak overlay based on preference. */
     private void applyCloakIfNeeded(boolean show) {
         try {
-            if (cloakOverlay == null) return;
+            if (cloakOverlay == null)
+                return;
             // Refresh decoy visuals from current icon & label
-            if (cloakIconView != null) cloakIconView.setImageResource(SharedPreferencesManager.getInstance(this).getCurrentAppIconResId());
-            if (cloakTitleView != null) cloakTitleView.setText(SharedPreferencesManager.getInstance(this).getAppIconDisplayName());
+            if (cloakIconView != null)
+                cloakIconView.setImageResource(SharedPreferencesManager.getInstance(this).getCurrentAppIconResId());
+            if (cloakTitleView != null)
+                cloakTitleView.setText(SharedPreferencesManager.getInstance(this).getAppIconDisplayName());
             if (show) {
                 cloakOverlay.setAlpha(1f);
                 cloakOverlay.setVisibility(View.VISIBLE);
@@ -504,21 +585,34 @@ public class MainActivity extends AppCompatActivity {
 
     // -------------- Fix Start for this method(applyCloakPreferenceNow)-----------
     /**
-     * Immediately applies or removes recents cloaking flags at runtime based on user toggle.
+     * Immediately applies or removes recents cloaking flags at runtime based on
+     * user toggle.
      * This lets the change take effect without restarting the app.
      */
     public void applyCloakPreferenceNow(boolean enable) {
         try {
             if (enable) {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(false);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             } else {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(true); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(true);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             }
             // Ensure decoy overlay is hidden during active use
             applyCloakIfNeeded(false);
@@ -527,13 +621,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     // -------------- Fix Ended for this method(applyCloakPreferenceNow)-----------
-    
+
     // ----- Fix Start: Proper back button handling with double-press to exit -----
     @Override
     public void onBackPressed() {
         // Unified: handle any visible overlay fragment (trash or settings)
-        if(handleOverlayBack()){
-            Log.d("OverlayDebug","onBackPressed: dismissed overlay fragment");
+        if (handleOverlayBack()) {
+            Log.d("OverlayDebug", "onBackPressed: dismissed overlay fragment");
             return;
         }
 
@@ -547,7 +641,7 @@ public class MainActivity extends AppCompatActivity {
                 super.onBackPressed();
                 return;
             }
-            
+
             // We're on the home tab, implement double back press to exit
             if (doubleBackToExitPressedOnce) {
                 // Remove the callback to prevent it from executing after app close
@@ -564,73 +658,90 @@ public class MainActivity extends AppCompatActivity {
             backPressHandler.postDelayed(backPressRunnable, BACK_PRESS_DELAY);
         }
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
-        // -------------- Fix Start for this method(onResume - enforce preference state)-----------
+        // -------------- Fix Start for this method(onResume - enforce preference
+        // state)-----------
         applyCloakIfNeeded(false); // hide decoy overlay while active
         try {
             boolean cloak = SharedPreferencesManager.getInstance(this).isCloakRecentsEnabled();
             if (cloak) {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(false);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             } else {
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(true); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(true);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
+                try {
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
             }
-        } catch (Throwable t) { android.util.Log.w("Cloak", "onResume preference apply fail", t); }
-        // -------------- Fix Ended for this method(onResume - enforce preference state)-----------
-        
+        } catch (Throwable t) {
+            android.util.Log.w("Cloak", "onResume preference apply fail", t);
+        }
+        // -------------- Fix Ended for this method(onResume - enforce preference
+        // state)-----------
+
         // Update UI for current theme
-        String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        
+        String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences
+                .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+
         // Special handling for Snow Veil theme - set light status bar with dark icons
         if ("Snow Veil".equals(currentTheme) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-            
+
             // Also set light navigation bar if API level is high enough
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-                );
+                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // For other themes, use dark status bar with light icons (default)
             getWindow().getDecorView().setSystemUiVisibility(0);
         }
-        
+
         // Restore language settings
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String savedLanguageCode = sharedPreferencesManager.sharedPreferences.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
+        String savedLanguageCode = sharedPreferencesManager.sharedPreferences.getString(Constants.LANGUAGE_KEY,
+                Locale.getDefault().getLanguage());
         applyLanguage(savedLanguageCode);
-        
+
         // Create shortcuts if needed (Android 7.1+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
             createDynamicShortcuts();
         }
-        
+
         // Handle any pending intents
         Intent intent = getIntent();
         if (intent != null && Constants.ACTION_SHOW_RECORDS.equals(intent.getAction())) {
             viewPager.setCurrentItem(1, false); // Navigate to Records tab
         }
-        
+
         // Set up the back press behavior with the newer API
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
                 @Override
                 public void handleOnBackPressed() {
                     // Unified: generic overlay back handling (trash & settings)
-                    if(handleOverlayBack()){
-                        Log.d("OverlayDebug","DispatcherBack: dismissed overlay fragment");
+                    if (handleOverlayBack()) {
+                        Log.d("OverlayDebug", "DispatcherBack: dismissed overlay fragment");
                         return; // handled
                     }
-                    
+
                     // If we're not on the home tab, go to home tab first before exiting
                     if (viewPager.getCurrentItem() != 0) {
                         viewPager.setCurrentItem(0, true); // Enable animation
@@ -642,7 +753,7 @@ public class MainActivity extends AppCompatActivity {
                             getOnBackPressedDispatcher().onBackPressed();
                             return;
                         }
-                        
+
                         // We're on the home tab, implement double back press to exit
                         if (doubleBackToExitPressedOnce) {
                             // Remove the callback to prevent it from executing after app close
@@ -674,17 +785,27 @@ public class MainActivity extends AppCompatActivity {
             }
             boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
             if (enabled) {
-                // -------------- Fix Start for this block(onPause - enforce secure/recents)-----------
+                // -------------- Fix Start for this block(onPause - enforce
+                // secure/recents)-----------
                 applyCloakIfNeeded(true);
                 // For Android 14+, explicitly disable recents screenshots
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(false);
+                    } catch (Throwable ignored) {
+                    }
                 }
                 // On older devices, set FLAG_SECURE to force a black snapshot in recents
-                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
-                // -------------- Fix Ended for this block(onPause - enforce secure/recents)-----------
+                try {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
+                // -------------- Fix Ended for this block(onPause - enforce
+                // secure/recents)-----------
             }
-        } catch (Exception e) { android.util.Log.w("Cloak", "onPause cloak fail", e); }
+        } catch (Exception e) {
+            android.util.Log.w("Cloak", "onPause cloak fail", e);
+        }
         super.onPause();
     }
     // -------------- Fix Ended for this method(onPause)-----------
@@ -700,35 +821,48 @@ public class MainActivity extends AppCompatActivity {
             }
             boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
             if (enabled) {
-                // -------------- Fix Start for this block(onUserLeaveHint - enforce secure/recents)-----------
+                // -------------- Fix Start for this block(onUserLeaveHint - enforce
+                // secure/recents)-----------
                 applyCloakIfNeeded(true);
                 if (Build.VERSION.SDK_INT >= 34) {
-                    try { this.setRecentsScreenshotEnabled(false); } catch (Throwable ignored) {}
+                    try {
+                        this.setRecentsScreenshotEnabled(false);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                try { getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); } catch (Throwable ignored) {}
-                // -------------- Fix Ended for this block(onUserLeaveHint - enforce secure/recents)-----------
+                try {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                } catch (Throwable ignored) {
+                }
+                // -------------- Fix Ended for this block(onUserLeaveHint - enforce
+                // secure/recents)-----------
             }
-        } catch (Exception e) { android.util.Log.w("Cloak", "onUserLeaveHint cloak fail", e); }
+        } catch (Exception e) {
+            android.util.Log.w("Cloak", "onUserLeaveHint cloak fail", e);
+        }
     }
     // -------------- Fix Ended for this method(onUserLeaveHint)-----------
 
     // -------------- Fix Start for this method(handleOverlayBack)-----------
     /** Handles back press for any visible overlay fragment (settings or trash). */
-    private boolean handleOverlayBack(){
+    private boolean handleOverlayBack() {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
-        if(overlayContainer==null || overlayContainer.getVisibility()!=View.VISIBLE) return false;
+        if (overlayContainer == null || overlayContainer.getVisibility() != View.VISIBLE)
+            return false;
         Fragment top = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
-        if(top==null) return false;
+        if (top == null)
+            return false;
         // Animate fade out then pop
-        // -------------- Fix Start for this method(handleOverlayBack_raceGuard)-----------
+        // -------------- Fix Start for this
+        // method(handleOverlayBack_raceGuard)-----------
         final Fragment beforeTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
         overlayContainer.animate().alpha(0f).setDuration(160).withEndAction(() -> {
             Fragment currentTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
             boolean sameInstance = currentTop == beforeTop;
-            if(sameInstance){
+            if (sameInstance) {
                 overlayContainer.setVisibility(View.GONE);
                 overlayContainer.setAlpha(1f);
-                if(getSupportFragmentManager().getBackStackEntryCount()>0){
+                if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
                     getSupportFragmentManager().popBackStack();
                 }
             } else {
@@ -736,7 +870,8 @@ public class MainActivity extends AppCompatActivity {
                 overlayContainer.setAlpha(1f);
             }
         }).start();
-        // -------------- Fix Ended for this method(handleOverlayBack_raceGuard)-----------
+        // -------------- Fix Ended for this
+        // method(handleOverlayBack_raceGuard)-----------
         return true;
     }
     // -------------- Fix Ended for this method(handleOverlayBack)-----------
@@ -760,7 +895,8 @@ public class MainActivity extends AppCompatActivity {
     private void initTheme() {
         // Apply the saved theme if one exists
         sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        String savedTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
         applyTheme(savedTheme);
     }
 
@@ -769,21 +905,21 @@ public class MainActivity extends AppCompatActivity {
         if (themeName == null) {
             themeName = Constants.DEFAULT_APP_THEME;
         }
-        
+
         // Apply the appropriate theme based on name
         if ("Faded Night".equals(themeName) ||
-            "AMOLED".equals(themeName) ||
-            "Amoled".equals(themeName) || 
-            "amoled".equals(themeName)) {
+                "AMOLED".equals(themeName) ||
+                "Amoled".equals(themeName) ||
+                "amoled".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Amoled);
-            
+
             // Standardize theme name to "Faded Night"
             if (!"Faded Night".equals(themeName)) {
                 sharedPreferencesManager.sharedPreferences.edit()
-                    .putString(Constants.PREF_APP_THEME, "Faded Night")
-                    .apply();
+                        .putString(Constants.PREF_APP_THEME, "Faded Night")
+                        .apply();
             }
-            
+
             getWindow().setNavigationBarColor(getResources().getColor(R.color.amoled_background, getTheme()));
         } else if ("Crimson Bloom".equals(themeName)) {
             // Red theme
@@ -796,32 +932,39 @@ public class MainActivity extends AppCompatActivity {
         } else if ("Silent Forest".equals(themeName)) {
             // Silent Forest theme
             setTheme(R.style.Theme_FadCam_SilentForest);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.silentforest_theme_background_dark, getTheme()));
+            getWindow().setNavigationBarColor(
+                    getResources().getColor(R.color.silentforest_theme_background_dark, getTheme()));
         } else if ("Shadow Alloy".equals(themeName)) {
             // Shadow Alloy theme
             setTheme(R.style.Theme_FadCam_ShadowAlloy);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.shadowalloy_theme_background_dark, getTheme()));
+            getWindow().setNavigationBarColor(
+                    getResources().getColor(R.color.shadowalloy_theme_background_dark, getTheme()));
         } else if ("Pookie Pink".equals(themeName)) {
             // Pookie Pink theme
             setTheme(R.style.Theme_FadCam_PookiePink);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.pookiepink_theme_background_dark, getTheme()));
+            getWindow().setNavigationBarColor(
+                    getResources().getColor(R.color.pookiepink_theme_background_dark, getTheme()));
         } else if ("Snow Veil".equals(themeName)) {
             // Snow Veil theme
             setTheme(R.style.Theme_FadCam_SnowVeil);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.snowveil_theme_background_light, getTheme()));
-            
+            getWindow().setNavigationBarColor(
+                    getResources().getColor(R.color.snowveil_theme_background_light, getTheme()));
+
             // Set status bar icons to dark for light theme
-            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         } else if ("Midnight Dusk".equals(themeName)) {
             // Always use the custom always-dark theme for Midnight Dusk
             setTheme(R.style.Theme_FadCam_MidnightDusk);
             getWindow().setNavigationBarColor(getResources().getColor(R.color.gray, getTheme()));
         } else {
             // If we get an unknown theme name, use the system default
-            // This should be the Crimson Bloom theme as defined in Constants.DEFAULT_APP_THEME
+            // This should be the Crimson Bloom theme as defined in
+            // Constants.DEFAULT_APP_THEME
             if ("Crimson Bloom".equals(Constants.DEFAULT_APP_THEME)) {
                 setTheme(R.style.Theme_FadCam_Red);
-                getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
+                getWindow()
+                        .setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
             } else {
                 // Fallback to base theme
                 setTheme(R.style.Base_Theme_FadCam);
@@ -837,16 +980,17 @@ public class MainActivity extends AppCompatActivity {
     private void applyTheme() {
         // Get shared preferences and current theme
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String themeName = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        
+        String themeName = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME);
+
         // Ensure we have a valid theme name, default to Crimson Bloom if null or empty
         if (themeName == null || themeName.isEmpty()) {
             themeName = Constants.DEFAULT_APP_THEME;
             sharedPreferencesManager.sharedPreferences.edit()
-                .putString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME)
-                .apply();
+                    .putString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME)
+                    .apply();
         }
-        
+
         // Apply appropriate theme based on name
         if ("Crimson Bloom".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Red);
@@ -869,10 +1013,10 @@ public class MainActivity extends AppCompatActivity {
             setTheme(R.style.Theme_FadCam_Red);
             // Save the corrected theme value
             sharedPreferencesManager.sharedPreferences.edit()
-                .putString(Constants.PREF_APP_THEME, "Crimson Bloom")
-                .apply();
+                    .putString(Constants.PREF_APP_THEME, "Crimson Bloom")
+                    .apply();
         }
-        
+
         // Update default clock color based on theme
         sharedPreferencesManager.updateDefaultClockColorForTheme();
     }
@@ -880,9 +1024,10 @@ public class MainActivity extends AppCompatActivity {
     // -------------- Fix Start for this method(applyThemeFromSettings)-----------
     /**
      * Public wrapper so settings fragments can request a theme change.
-     * Persists preference already written by caller and recreates activity to apply resources.
+     * Persists preference already written by caller and recreates activity to apply
+     * resources.
      */
-    public void applyThemeFromSettings(String themeName){
+    public void applyThemeFromSettings(String themeName) {
         applyTheme(themeName);
         recreate();
     }
