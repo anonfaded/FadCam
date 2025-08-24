@@ -1880,15 +1880,15 @@ public class HomeFragment extends BaseFragment {
 
         // Simple approach: just log the change and let Android handle it naturally
         // The issue might be that we're over-engineering the solution
-        Log.d(TAG, "Orientation change detected, current resources configuration: " + 
-              getResources().getConfiguration().orientation);
-        
+        Log.d(TAG, "Orientation change detected, current resources configuration: " +
+                getResources().getConfiguration().orientation);
+
         // For now, let's not force any view recreation and see if the natural Android
         // configuration change handling works better
         if (isAdded() && getView() != null) {
             // Just save and restore state without view manipulation
             saveCurrentState();
-            
+
             // Post a runnable to restore state after the configuration settles
             getView().post(() -> {
                 if (isAdded()) {
@@ -2378,7 +2378,38 @@ public class HomeFragment extends BaseFragment {
 
             // Apply additional contrast improvements for the Snow Veil theme
             applySnowVeilThemeToUI(view);
-        } else if (isAmoledTheme || "Faded Night".equals(themeName)) {
+        } else if ("Faded Night".equals(themeName)) {
+            // Faded Night theme - use a proper gray instead of pure black
+            int fadedNightSurface = ContextCompat.getColor(requireContext(), R.color.amoled_card); // Use card color
+                                                                                                   // instead of pure
+                                                                                                   // black
+            int fadedNightHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
+            int fadedNightTextSecondary = ContextCompat.getColor(requireContext(), R.color.amoled_text_secondary_dark);
+            if (cardPreview != null) {
+                cardPreview.setCardBackgroundColor(fadedNightSurface);
+                // Also set the background of the FrameLayout inside the CardView to ensure it
+                // overrides the layout attribute
+                View frameLayout = cardPreview.getChildAt(0);
+                if (frameLayout != null) {
+                    frameLayout.setBackgroundColor(fadedNightSurface);
+                }
+                // Use a post-layout runnable to ensure the color is applied after all layout
+                // operations
+                cardPreview.post(() -> {
+                    cardPreview.setCardBackgroundColor(fadedNightSurface);
+                    if (frameLayout != null) {
+                        frameLayout.setBackgroundColor(fadedNightSurface);
+                    }
+                });
+            }
+            if (cardStats != null)
+                cardStats.setCardBackgroundColor(fadedNightSurface);
+            if (cardStorage != null)
+                cardStorage.setCardBackgroundColor(fadedNightSurface);
+            setTextColorsRecursive(cardPreview, fadedNightHeading, fadedNightTextSecondary);
+            setTextColorsRecursive(cardStats, fadedNightHeading, fadedNightTextSecondary);
+        } else if (isAmoledTheme) {
+            // Pure AMOLED theme - keep pure black for battery saving
             int amoledSurface = ContextCompat.getColor(requireContext(), R.color.amoled_surface_dark);
             int amoledHeading = ContextCompat.getColor(requireContext(), R.color.amoled_heading);
             int amoledTextSecondary = ContextCompat.getColor(requireContext(), R.color.amoled_text_secondary_dark);
@@ -3461,7 +3492,7 @@ public class HomeFragment extends BaseFragment {
         final String finalCameraLabel = cameraLabel;
         final String qualityText = getResolutionDisplayName(selectedRes);
         final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
-        
+
         // Get orientation setting
         String orientationText = "";
         try {
@@ -3474,7 +3505,7 @@ public class HomeFragment extends BaseFragment {
         } catch (Exception ignored) {
             orientationText = "Portrait"; // Default fallback
         }
-        
+
         final String cameraSubtitle = qualityText + " • " + fpsText + " • " + orientationText;
 
         Locale numberFormatLocale = (Locale.getDefault() != null
