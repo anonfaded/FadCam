@@ -2362,11 +2362,14 @@ public class HomeFragment extends BaseFragment {
             int snowSurface = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_preview_area); // Darker
                                                                                                              // gray for
                                                                                                              // preview
-            int snowCardBackground = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_card_background); // White for other cards
+            int snowCardBackground = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_card_background); // White
+                                                                                                                       // for
+                                                                                                                       // other
+                                                                                                                       // cards
             // ----- Fix End: Use darker gray for preview area in Snow Veil theme -----
             int snowHeading = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary);
             int snowTextSecondary = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_secondary);
-            
+
             // Preview area gets darker gray for better contrast
             if (cardPreview != null) {
                 cardPreview.setCardBackgroundColor(snowSurface);
@@ -2375,7 +2378,8 @@ public class HomeFragment extends BaseFragment {
                 if (frameLayout != null) {
                     frameLayout.setBackgroundColor(snowSurface);
                 }
-                // Use a post-layout runnable to ensure the color is applied after all layout operations
+                // Use a post-layout runnable to ensure the color is applied after all layout
+                // operations
                 cardPreview.post(() -> {
                     cardPreview.setCardBackgroundColor(snowSurface);
                     if (frameLayout != null) {
@@ -2383,13 +2387,13 @@ public class HomeFragment extends BaseFragment {
                     }
                 });
             }
-            
+
             // Other cards get white background
             if (cardStats != null)
                 cardStats.setCardBackgroundColor(snowCardBackground);
             if (cardStorage != null)
                 cardStorage.setCardBackgroundColor(snowCardBackground);
-                
+
             // Set text colors - preview area gets white text, other cards get black text
             setTextColorsRecursive(cardPreview, Color.WHITE, Color.parseColor("#E0E0E0")); // White text on dark gray
             setTextColorsRecursive(cardStats, snowHeading, snowTextSecondary); // Black text on white
@@ -2508,8 +2512,9 @@ public class HomeFragment extends BaseFragment {
                 // Keep the Faded Night theme color that was already set
                 // Don't override it with dark_card_background
             } else if ("Midnight Dusk".equals(themeName)) {
-                // Keep the Midnight Dusk theme color that was already set
-                // Don't override it with dark_card_background
+                // Use consistent dark background like other themes
+                cardStorage
+                        .setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark_card_background));
             } else if ("Snow Veil".equals(themeName)) {
                 // Keep the Snow Veil theme color that was already set
                 // Don't override it with dark_card_background
@@ -5595,11 +5600,11 @@ public class HomeFragment extends BaseFragment {
 
         // Ensure text in cards has proper contrast
         ensureCardTextContrast(rootView);
-        
+
         // Apply Snow Veil specific fixes
         applySnowVeilSpecificFixes(rootView);
     }
-    
+
     /**
      * Apply Snow Veil theme specific fixes for text contrast and colors
      */
@@ -5607,17 +5612,18 @@ public class HomeFragment extends BaseFragment {
         // Find storage card and ensure all text is black
         CardView cardStorage = rootView.findViewById(R.id.cardStorage);
         if (cardStorage != null) {
-            // Force all text in storage card to black for better contrast on white background
+            // Force all text in storage card to black for better contrast on white
+            // background
             setTextColorsRecursive(cardStorage, Color.BLACK, Color.parseColor("#424242"));
         }
-        
+
         // Find any other text views that might need contrast fixes
         // This ensures all text is properly visible on the light theme
         View[] textContainers = {
-            rootView.findViewById(R.id.cardStats),
-            rootView.findViewById(R.id.cardClock)
+                rootView.findViewById(R.id.cardStats),
+                rootView.findViewById(R.id.cardClock)
         };
-        
+
         for (View container : textContainers) {
             if (container != null) {
                 setTextColorsRecursive(container, Color.BLACK, Color.parseColor("#424242"));
