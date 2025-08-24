@@ -48,7 +48,7 @@
     <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
         <!-- Completely black background everywhere - using explicit black colors -->
         <item name="android:colorBackground">@color/amoled_black_pure</item>
-        <item name="colorSurface">@color/amoled_black_pure</item>
+        <item name="colorSurface">@color/amoled_card</item>
         <item name="backgroundColor">@color/amoled_black_pure</item>
         <item name="android:windowBackground">@color/amoled_black_pure</item>
         
