@@ -667,6 +667,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     // Apply initial dependency states
         applyInitialDateFormatDependency();
         applyInitialArabicDateFormatDependency();
+        
+        // Apply Snow Veil theme text color fixes for dark backgrounds
+        applySnowVeilThemeTextFixes(view);
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
@@ -945,5 +948,81 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         
         // Apply dependency to Arabic date format option
         updateArabicDateFormatDependency(arabicDateEnabled);
+    }
+    
+    /**
+     * Apply Snow Veil theme text color fixes for dark backgrounds in bottom pickers
+     */
+    private void applySnowVeilThemeTextFixes(View view) {
+        try {
+            // Check if we're using Snow Veil theme
+            if (getContext() == null) return;
+            
+            String currentTheme = com.fadcam.SharedPreferencesManager.getInstance(getContext())
+                    .sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
+            
+            if (!"Snow Veil".equals(currentTheme)) return;
+            
+            // Fix text colors for Snow Veil theme on dark backgrounds
+            // The picker has dark areas where we need white text instead of black
+            
+            // Fix slider labels and values (exposure compensation numbers)
+            TextView sliderValue = view.findViewById(R.id.picker_slider_value);
+            TextView minusButton = view.findViewById(R.id.picker_slider_minus);
+            TextView plusButton = view.findViewById(R.id.picker_slider_plus);
+            
+            if (sliderValue != null) {
+                sliderValue.setTextColor(android.graphics.Color.WHITE);
+            }
+            if (minusButton != null) {
+                minusButton.setTextColor(android.graphics.Color.WHITE);
+            }
+            if (plusButton != null) {
+                plusButton.setTextColor(android.graphics.Color.WHITE);
+            }
+            
+            // Fix switch label (Lock AE text)
+            TextView switchLabel = view.findViewById(R.id.picker_switch_label);
+            if (switchLabel != null) {
+                switchLabel.setTextColor(android.graphics.Color.WHITE);
+            }
+            
+            // Fix helper text at bottom
+            TextView helperText = view.findViewById(R.id.picker_helper);
+            if (helperText != null) {
+                helperText.setTextColor(android.graphics.Color.parseColor("#E0E0E0")); // Light gray for better readability
+            }
+            
+            // Fix any other text views in the picker that might be black on dark background
+            fixTextViewsRecursively(view);
+            
+        } catch (Exception e) {
+            // Silently handle any errors to avoid crashes
+            android.util.Log.w("PickerBottomSheet", "Error applying Snow Veil theme fixes", e);
+        }
+    }
+    
+    /**
+     * Recursively fix text colors in Snow Veil theme for dark backgrounds
+     */
+    private void fixTextViewsRecursively(View view) {
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                fixTextViewsRecursively(group.getChildAt(i));
+            }
+        } else if (view instanceof TextView) {
+            TextView textView = (TextView) view;
+            // Check if this TextView has black text (which would be unreadable on dark background)
+            int currentColor = textView.getCurrentTextColor();
+            if (currentColor == android.graphics.Color.BLACK || 
+                currentColor == android.graphics.Color.parseColor("#000000") ||
+                (android.graphics.Color.red(currentColor) < 50 && 
+                 android.graphics.Color.green(currentColor) < 50 && 
+                 android.graphics.Color.blue(currentColor) < 50)) {
+                // This is dark text, make it white for Snow Veil theme
+                textView.setTextColor(android.graphics.Color.WHITE);
+            }
+        }
     }
 }

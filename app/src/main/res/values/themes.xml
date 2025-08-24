@@ -462,7 +462,7 @@
     <style name="Theme.FadCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/snowveil_theme_primary_variant</item>
         <item name="colorBottomNav">@color/snowveil_theme_primary_variant</item>
-        <item name="colorHeading">@color/snowveil_theme_primary</item>
+        <item name="colorHeading">@color/snowveil_theme_heading_on_blue</item>
         <item name="colorButton">@color/snowveil_theme_primary</item>
         <item name="colorToggle">@color/snowveil_theme_accent</item>
         <item name="colorSwitchTrack">@color/snowveil_theme_primary_variant</item>

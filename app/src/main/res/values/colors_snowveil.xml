@@ -23,4 +23,9 @@
     
     <!-- New darker preview area color for better contrast in Snow Veil theme -->
     <color name="snowveil_theme_preview_area">#9E9E9E</color> <!-- Darker gray for better contrast -->
+    
+    <!-- Colors for dark background scenarios (bottom pickers, dialogs with dark areas) -->
+    <color name="snowveil_theme_text_on_dark">#FFFFFF</color> <!-- White text for dark backgrounds -->
+    <color name="snowveil_theme_text_secondary_on_dark">#E0E0E0</color> <!-- Light gray for secondary text on dark -->
+    <color name="snowveil_theme_heading_on_blue">#FFFFFF</color> <!-- White heading text for blue backgrounds -->
 </resources> 
