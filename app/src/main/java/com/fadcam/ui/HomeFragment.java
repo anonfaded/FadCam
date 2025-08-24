@@ -577,6 +577,7 @@ public class HomeFragment extends BaseFragment {
                     case "bitrate_mode_custom": // custom bitrate mode toggled
                     case "bitrate_custom_value": // custom bitrate value changed (kbps)
                     case Constants.PREF_VIDEO_BITRATE:
+                    case SharedPreferencesManager.PREF_VIDEO_ORIENTATION: // video orientation changed
                         refreshPrefsAndUpdateStorage();
                         break;
                     default:
@@ -3460,7 +3461,21 @@ public class HomeFragment extends BaseFragment {
         final String finalCameraLabel = cameraLabel;
         final String qualityText = getResolutionDisplayName(selectedRes);
         final String fpsText = String.format(Locale.getDefault(), "%dfps", selectedFps);
-        final String cameraSubtitle = qualityText + " • " + fpsText;
+        
+        // Get orientation setting
+        String orientationText = "";
+        try {
+            String orientation = sharedPreferencesManager.getVideoOrientation();
+            if (SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(orientation)) {
+                orientationText = "Landscape";
+            } else {
+                orientationText = "Portrait";
+            }
+        } catch (Exception ignored) {
+            orientationText = "Portrait"; // Default fallback
+        }
+        
+        final String cameraSubtitle = qualityText + " • " + fpsText + " • " + orientationText;
 
         Locale numberFormatLocale = (Locale.getDefault() != null
                 && "fr".equalsIgnoreCase(Locale.getDefault().getLanguage()))
