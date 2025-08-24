@@ -46,15 +46,19 @@
     <!-- Splash theme end (Fix End Theme.FadCam.Splash) -->
 
     <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
-        <!-- Completely black background everywhere -->
-        <item name="android:colorBackground">@color/amoled_background</item>
-        <item name="colorSurface">@color/amoled_surface</item>
-        <item name="backgroundColor">@color/amoled_background</item>
-        <item name="android:windowBackground">@color/amoled_background</item>
+        <!-- Completely black background everywhere - using explicit black colors -->
+        <item name="android:colorBackground">@color/amoled_black_pure</item>
+        <item name="colorSurface">@color/amoled_black_pure</item>
+        <item name="backgroundColor">@color/amoled_black_pure</item>
+        <item name="android:windowBackground">@color/amoled_black_pure</item>
+        
+        <!-- Force black backgrounds on all possible attributes -->
+        <item name="android:windowBackgroundFallback">@color/amoled_black_pure</item>
+        <item name="android:colorBackgroundFloating">@color/amoled_black_pure</item>
         
         <!-- Navigation and status bar -->
-        <item name="android:navigationBarColor">@color/amoled_background</item>
-        <item name="android:statusBarColor">@color/amoled_background</item>
+        <item name="android:navigationBarColor">@color/amoled_black_pure</item>
+        <item name="android:statusBarColor">@color/amoled_black_pure</item>
         
         <!-- Text and icon colors -->
         <item name="android:textColor">@color/amoled_text_primary</item>
@@ -76,14 +80,14 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="colorTopBar">@color/amoled_background</item>
-        <item name="colorBottomNav">@color/amoled_background</item>
+        <item name="colorTopBar">@color/amoled_black_pure</item>
+        <item name="colorBottomNav">@color/amoled_black_pure</item>
         <item name="colorHeading">@color/amoled_heading</item>
         <item name="colorButton">#232323</item>
         <item name="colorToggle">#44484D</item>
         <item name="colorSwitchTrack">#6A6E73</item>
         <item name="colorDialog">@color/amoled_surface</item>
-        <item name="colorStatusBar">@color/amoled_background</item>
+        <item name="colorStatusBar">@color/amoled_black_pure</item>
         <!-- Picker gradient colors - subtle gray gradient for AMOLED -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF1A1A1A</item>

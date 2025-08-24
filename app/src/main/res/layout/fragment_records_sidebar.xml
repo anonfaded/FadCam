@@ -5,12 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@drawable/sidesheet_wrapper_bg_dynamic"
     android:clipToOutline="true"
     android:paddingTop="16dp"
     android:paddingBottom="16dp"
     android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:background="@drawable/sidesheet_wrapper_bg_dynamic">
+    android:paddingEnd="16dp">
 
     <!-- Header with title only -->
     <LinearLayout

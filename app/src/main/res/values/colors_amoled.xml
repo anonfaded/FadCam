@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="amoled_background">#000000</color>
-    <color name="amoled_surface">#181A1B</color>
+    <!-- Pure black background for true AMOLED - explicit values to ensure consistency -->
+    <color name="amoled_background">#FF000000</color>
+    <color name="amoled_surface">#FF000000</color>
+    <color name="amoled_surface_dark">#FF000000</color>
+    
+    <!-- Additional black variants for different UI elements -->
+    <color name="amoled_black_pure">#FF000000</color>
+    <color name="amoled_black_absolute">#FF000000</color>
+    
     <color name="amoled_card">#181A1B</color>
     <color name="amoled_text_primary">#E0E0E0</color>
     <color name="amoled_text_secondary">#A0A0A0</color>
@@ -18,7 +25,6 @@
     <color name="amoled_secondary">#44484D</color>
     <color name="amoled_secondary_variant">#232323</color>
     <color name="amoled_background_dark">#000000</color>
-    <color name="amoled_surface_dark">#181A1B</color>
     <color name="amoled_on_secondary">#E0E0E0</color>
     <color name="amoled_on_background">#E0E0E0</color>
     <color name="amoled_error">#B00020</color>

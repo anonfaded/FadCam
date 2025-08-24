@@ -5,11 +5,11 @@
     android:layout_width="320dp"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@drawable/home_sidesheet_gradient_bg_dynamic"
     android:paddingTop="16dp"
     android:paddingBottom="16dp"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:background="@drawable/home_sidesheet_gradient_bg_dynamic"
     android:clipToOutline="true"
     android:outlineProvider="background">
 
