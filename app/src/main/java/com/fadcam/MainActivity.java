@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 import com.fadcam.ui.OverlayNavUtil;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -1032,4 +1033,51 @@ public class MainActivity extends AppCompatActivity {
         recreate();
     }
     // -------------- Fix Ended for this method(applyThemeFromSettings)-----------
+
+    // -------------- Fix Start: Manual orientation change handling -----------
+    @Override
+    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        Log.d("MainActivity", "Configuration changed - orientation: " +
+                (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape"
+                        : "portrait"));
+
+        // Notify all fragments about the orientation change
+        notifyFragmentsOfOrientationChange(newConfig.orientation);
+    }
+
+    /**
+     * Notify all fragments in the ViewPager about orientation changes
+     * so they can refresh their layouts appropriately
+     */
+    private void notifyFragmentsOfOrientationChange(int orientation) {
+        try {
+            ViewPagerAdapter adapter = (ViewPagerAdapter) viewPager.getAdapter();
+            if (adapter != null) {
+                // Force the ViewPager to recreate the current fragment
+                int currentItem = viewPager.getCurrentItem();
+
+                // Temporarily disable smooth scrolling and recreate the adapter
+                viewPager.setUserInputEnabled(false);
+
+                // Create a new adapter instance to force fragment recreation
+                ViewPagerAdapter newAdapter = new ViewPagerAdapter(this);
+                viewPager.setAdapter(newAdapter);
+
+                // Restore the current item
+                viewPager.setCurrentItem(currentItem, false);
+
+                // Re-enable user input
+                viewPager.setUserInputEnabled(true);
+
+                Log.d("MainActivity", "ViewPager adapter recreated for orientation: " +
+                        (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape"
+                                : "portrait"));
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error recreating ViewPager adapter for orientation change", e);
+        }
+    }
+    // -------------- Fix End: Manual orientation change handling -----------
 }

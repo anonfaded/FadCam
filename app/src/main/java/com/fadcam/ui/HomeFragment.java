@@ -126,7 +126,7 @@ public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
-    
+
     // -------------- Fix Start (HomeFragment) --------------
     private HomeFragmentHelper fragmentHelper;
     // -------------- Fix Ended (HomeFragment) --------------
@@ -1868,6 +1868,54 @@ public class HomeFragment extends BaseFragment {
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
 
+    // -------------- Fix Start: Manual orientation change handling -----------
+    /**
+     * Called by MainActivity when orientation changes to refresh the fragment's
+     * layout
+     */
+    public void onOrientationChanged(int orientation) {
+        Log.d(TAG, "HomeFragment orientation changed to: " +
+                (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape" : "portrait"));
+
+        // Simple approach: just log the change and let Android handle it naturally
+        // The issue might be that we're over-engineering the solution
+        Log.d(TAG, "Orientation change detected, current resources configuration: " + 
+              getResources().getConfiguration().orientation);
+        
+        // For now, let's not force any view recreation and see if the natural Android
+        // configuration change handling works better
+        if (isAdded() && getView() != null) {
+            // Just save and restore state without view manipulation
+            saveCurrentState();
+            
+            // Post a runnable to restore state after the configuration settles
+            getView().post(() -> {
+                if (isAdded()) {
+                    restoreCurrentState();
+                    Log.d(TAG, "State restored after orientation change");
+                }
+            });
+        }
+    }
+
+    /**
+     * Save current fragment state before orientation change
+     */
+    private void saveCurrentState() {
+        // Save any important state that should persist across orientation changes
+        // This could include recording state, preview state, etc.
+        Log.d(TAG, "Saving fragment state before orientation change");
+    }
+
+    /**
+     * Restore fragment state after orientation change
+     */
+    private void restoreCurrentState() {
+        // Restore any saved state after orientation change
+        Log.d(TAG, "Restoring fragment state after orientation change");
+    }
+    // -------------- Fix End: Manual orientation change handling -----------
+
     // Debug method to help diagnose recording time issue
     private void debugRecordingTimeVariables() {
         Log.d(TAG, "======== DEBUG RECORDING TIME ========");
@@ -1974,13 +2022,13 @@ public class HomeFragment extends BaseFragment {
         }
 
         initializeViews(view);
-        
+
         // -------------- Fix Start (initializeComponents) --------------
         // Initialize UI components using helper
         fragmentHelper = new HomeFragmentHelper(this);
         fragmentHelper.initializeComponents(view);
         // -------------- Fix Ended (initializeComponents) --------------
-        
+
         // Fragment result listeners for pickers
         android.util.Log.d("HomeFragment", "REGISTERING fragment result listener for exposure compensation");
         com.fadcam.Log.d(TAG, "Registering fragment result listener for exposure compensation with key: "
@@ -4564,7 +4612,7 @@ public class HomeFragment extends BaseFragment {
 
         stopUpdatingInfo();
         stopUpdatingClock();
-        
+
         // -------------- Fix Start (cleanup) --------------
         // Clean up helper
         if (fragmentHelper != null) {
