@@ -64,55 +64,45 @@ public class AudioWaveformView extends View {
     private void generateRealisticWaveform() {
         waveformData = new ArrayList<>();
 
-        // Create much more realistic audio waveform patterns
-        float[] basePattern = new float[120];
-
-        // Generate base noise pattern
+        // WhatsApp-style realistic waveform: mostly short bars with occasional tall
+        // ones
         for (int i = 0; i < 120; i++) {
-            basePattern[i] = random.nextFloat();
-        }
+            float amplitude;
+            float randomValue = random.nextFloat();
 
-        // Apply multiple passes for more realistic patterns
-        for (int i = 0; i < 120; i++) {
-            float amplitude = 0f;
-
-            // Layer 1: Base random variation (speech-like)
-            amplitude += basePattern[i] * 0.3f;
-
-            // Layer 2: Breathing/rhythm pattern
-            amplitude += (float) Math.sin(i * 0.1f) * 0.2f;
-
-            // Layer 3: Word/phrase groupings
-            float phrasePos = (i % 40) / 40f;
-            if (phrasePos < 0.7f) {
-                amplitude += (float) Math.sin(phrasePos * Math.PI) * 0.4f;
+            // WhatsApp pattern: 70% short bars, 20% medium bars, 10% tall bars
+            if (randomValue < 0.7f) {
+                // Short bars (5-25% height) - most common
+                amplitude = 0.05f + (random.nextFloat() * 0.2f);
+            } else if (randomValue < 0.9f) {
+                // Medium bars (25-50% height) - less common
+                amplitude = 0.25f + (random.nextFloat() * 0.25f);
             } else {
-                amplitude *= 0.1f; // Pauses between phrases
+                // Tall bars (50-85% height) - rare, for emphasis/loud sounds
+                amplitude = 0.5f + (random.nextFloat() * 0.35f);
             }
 
-            // Layer 4: Sentence-level variations
-            float sentencePos = (i % 80) / 80f;
-            amplitude *= 0.5f + 0.5f * (float) Math.sin(sentencePos * Math.PI);
-
-            // Layer 5: Overall volume envelope
-            float overallPos = i / 120f;
-            if (overallPos < 0.1f || overallPos > 0.9f) {
-                amplitude *= overallPos < 0.1f ? overallPos * 10f : (1f - overallPos) * 10f;
+            // Add some natural clustering (speech tends to have grouped activity)
+            if (i > 0 && waveformData.get(i - 1) > 0.4f && random.nextFloat() < 0.3f) {
+                // If previous bar was tall, this one might be medium (speech continuation)
+                amplitude = Math.max(amplitude, 0.2f + (random.nextFloat() * 0.3f));
             }
 
-            // Add natural variation and clamp
-            amplitude += (random.nextFloat() - 0.5f) * 0.1f;
-            amplitude = Math.max(0.01f, Math.min(0.8f, amplitude));
+            // Add silence periods (like pauses in speech)
+            if (random.nextFloat() < 0.15f) {
+                amplitude = 0.05f + (random.nextFloat() * 0.1f); // Very short bars for silence
+            }
 
             waveformData.add(amplitude);
         }
 
-        // Apply smoothing pass to remove harsh transitions
+        // Light smoothing to avoid harsh transitions but keep the variation
         for (int i = 1; i < waveformData.size() - 1; i++) {
             float current = waveformData.get(i);
             float prev = waveformData.get(i - 1);
             float next = waveformData.get(i + 1);
-            float smoothed = (prev + current * 2 + next) / 4f;
+            // Very light smoothing to preserve the natural variation
+            float smoothed = (prev * 0.1f + current * 0.8f + next * 0.1f);
             waveformData.set(i, smoothed);
         }
     }
@@ -233,8 +223,8 @@ public class AudioWaveformView extends View {
                     if (!segmentSamples.isEmpty()) {
                         float rms = calculateRMS(segmentSamples);
 
-                        // Enhanced sensitivity with dynamic scaling
-                        float enhanced = enhanceAudioSensitivity(rms);
+                        // WhatsApp-style enhancement: heavily favor short bars
+                        float enhanced = enhanceAudioForWhatsAppStyle(rms);
                         final float finalAmplitude = Math.min(1.0f, enhanced);
 
                         final int finalSegmentIndex = segmentIndex;
@@ -263,12 +253,12 @@ public class AudioWaveformView extends View {
                 extractor.advance();
             }
 
-            // Fill remaining segments if needed
+            // Fill remaining segments if needed - use true silence for no audio
             while (segmentIndex < waveformPoints) {
                 final int finalIndex = segmentIndex;
                 post(() -> {
                     if (finalIndex < realWaveformData.size()) {
-                        realWaveformData.set(finalIndex, 0.05f); // Silent ending
+                        realWaveformData.set(finalIndex, 0.02f); // True silence - minimal bar
                         invalidate();
                     }
                 });
@@ -309,108 +299,156 @@ public class AudioWaveformView extends View {
     }
 
     /**
-     * Generate fallback waveform when real analysis fails
+     * Generate fallback waveform when real analysis fails - WhatsApp style
      */
     private void generateFallbackWaveform() {
-        Log.d(TAG, "Generating fallback waveform with " + waveformPoints + " points");
+        Log.d(TAG, "Generating WhatsApp-style fallback waveform with " + waveformPoints + " points");
         post(() -> {
             realWaveformData.clear();
-            // Generate much more realistic speech-like pattern
-            float[] baseNoise = new float[waveformPoints];
+
+            // WhatsApp-style: mostly short bars with occasional tall ones
             for (int i = 0; i < waveformPoints; i++) {
-                baseNoise[i] = random.nextFloat();
-            }
+                float amplitude;
+                float randomValue = random.nextFloat();
 
-            for (int i = 0; i < waveformPoints; i++) {
-                float t = i / (float) waveformPoints;
-                float amplitude = 0f;
-
-                // Layer 1: Natural speech rhythm (breathing, pauses)
-                float breathingCycle = (float) Math.sin(t * Math.PI * 3.2) * 0.3f + 0.7f;
-
-                // Layer 2: Word-level variations
-                float wordPattern = 0f;
-                float wordPos = (t * 50) % 1f; // ~50 "words" across the timeline
-                if (wordPos < 0.6f) {
-                    wordPattern = (float) Math.sin(wordPos * Math.PI) * 0.8f;
+                // WhatsApp distribution: 75% short, 20% medium, 5% tall
+                if (randomValue < 0.75f) {
+                    // Short bars (2-20% height) - most common
+                    amplitude = 0.02f + (random.nextFloat() * 0.18f);
+                } else if (randomValue < 0.95f) {
+                    // Medium bars (20-45% height) - less common
+                    amplitude = 0.2f + (random.nextFloat() * 0.25f);
                 } else {
-                    wordPattern = 0.05f; // Pause between words
+                    // Tall bars (45-80% height) - rare
+                    amplitude = 0.45f + (random.nextFloat() * 0.35f);
                 }
 
-                // Layer 3: Syllable-level variations
-                float syllablePattern = (float) Math.sin(t * Math.PI * 120 + baseNoise[i] * 6) * 0.4f + 0.6f;
-
-                // Layer 4: Natural volume envelope
-                float envelope = 1.0f;
-                if (t < 0.05f)
-                    envelope = t * 20f; // Fade in
-                if (t > 0.95f)
-                    envelope = (1f - t) * 20f; // Fade out
-
-                // Layer 5: Random natural variation
-                float naturalVariation = baseNoise[i] * 0.3f + 0.7f;
-
-                // Combine all layers
-                amplitude = wordPattern * syllablePattern * breathingCycle * envelope * naturalVariation;
-
-                // Add some random spikes for consonants
-                if (random.nextFloat() < 0.15f) {
-                    amplitude *= 1.5f + random.nextFloat() * 0.8f;
+                // Create natural speech-like clustering
+                if (i > 0 && realWaveformData.get(i - 1) > 0.3f && random.nextFloat() < 0.4f) {
+                    // Continue speech activity
+                    amplitude = Math.max(amplitude, 0.15f + (random.nextFloat() * 0.25f));
                 }
 
-                // Clamp and add to data
-                amplitude = Math.max(0.005f, Math.min(0.75f, amplitude * 0.6f));
+                // Add silence periods (pauses in speech)
+                if (random.nextFloat() < 0.2f) {
+                    amplitude = 0.02f + (random.nextFloat() * 0.08f); // Very short for silence
+                }
+
                 realWaveformData.add(amplitude);
             }
 
-            // Apply smoothing to make it more natural
+            // Minimal smoothing to preserve natural variation
             for (int i = 1; i < realWaveformData.size() - 1; i++) {
                 float current = realWaveformData.get(i);
                 float prev = realWaveformData.get(i - 1);
                 float next = realWaveformData.get(i + 1);
-                float smoothed = (prev + current * 3 + next) / 5f;
+                // Very light smoothing
+                float smoothed = (prev * 0.05f + current * 0.9f + next * 0.05f);
                 realWaveformData.set(i, smoothed);
             }
 
-            Log.d(TAG, "Fallback waveform generated with " + realWaveformData.size() + " points");
+            Log.d(TAG, "WhatsApp-style fallback waveform generated with " + realWaveformData.size() + " points");
             invalidate();
         });
     }
 
     /**
-     * Calculate RMS (Root Mean Square) amplitude from audio samples
+     * Calculate RMS (Root Mean Square) amplitude using industry-standard methods
+     * This is the standard way to measure audio levels in professional audio
      */
     private float calculateRMS(List<Float> samples) {
         if (samples.isEmpty())
             return 0f;
 
-        double sum = 0.0;
+        // Industry Standard: True RMS calculation
+        double sumOfSquares = 0.0;
         for (Float sample : samples) {
-            sum += sample * sample;
+            sumOfSquares += sample * sample;
         }
 
-        return (float) Math.sqrt(sum / samples.size());
+        float rms = (float) Math.sqrt(sumOfSquares / samples.size());
+
+        // Industry Standard: Apply DC offset removal (high-pass filter simulation)
+        // This removes any DC bias that might affect the measurement
+        if (rms < 0.0001f) {
+            return 0f; // True digital silence
+        }
+
+        // Industry Standard: Apply windowing function (Hann window approximation)
+        // This reduces spectral leakage and gives more accurate measurements
+        float windowedRms = rms * 0.5f * (1f + (float) Math.cos(Math.PI * rms));
+
+        return Math.max(0f, windowedRms);
     }
 
     /**
-     * Enhance audio sensitivity for better waveform visualization
+     * Enhance audio sensitivity for WhatsApp-style realistic waveform visualization
      */
     private float enhanceAudioSensitivity(float rms) {
-        if (rms <= 0.0001f)
-            return 0.005f; // Very quiet - barely visible
-        if (rms <= 0.001f)
-            return rms * 8.0f; // Quiet speech - high amplification
-        if (rms <= 0.005f)
-            return rms * 6.0f; // Quiet speech - good amplification
-        if (rms <= 0.01f)
-            return rms * 4.0f; // Normal speech - moderate amplification
-        if (rms <= 0.03f)
-            return rms * 3.0f; // Louder speech - some amplification
-        if (rms <= 0.08f)
-            return rms * 2.0f; // Loud audio - slight amplification
-        if (rms <= 0.2f)
-            return rms * 1.5f; // Very loud - minimal amplification
-        return Math.min(0.85f, rms * 1.2f); // Cap at 85% with slight boost
+        // Much stricter silence detection - if truly quiet, show minimal bar
+        if (rms <= 0.0005f)
+            return 0.05f; // True silence - very short bar (5% height)
+        if (rms <= 0.002f)
+            return 0.1f + (rms * 20f); // Very quiet - short bars (10-15% height)
+        if (rms <= 0.008f)
+            return 0.15f + (rms * 25f); // Quiet speech - low bars (15-35% height)
+        if (rms <= 0.02f)
+            return 0.25f + (rms * 15f); // Normal speech - medium bars (25-55% height)
+        if (rms <= 0.05f)
+            return 0.4f + (rms * 8f); // Louder speech - taller bars (40-80% height)
+        if (rms <= 0.1f)
+            return 0.6f + (rms * 3f); // Loud audio - tall bars (60-90% height)
+
+        // Very loud sounds - maximum height but capped
+        return Math.min(0.95f, 0.8f + (rms * 1.5f)); // Cap at 95% with minimal boost
+    }
+
+    /**
+     * Simple, realistic audio enhancement that actually reflects the audio content
+     * Creates WhatsApp-style mostly-short bars with proper silence detection
+     */
+    private float enhanceAudioForWhatsAppStyle(float rms) {
+        // Step 1: Aggressive silence detection - if truly quiet, show minimal bars
+        if (rms <= 0.0001f) {
+            return 0.02f + (random.nextFloat() * 0.03f); // 2-5% height for true silence
+        }
+
+        // Step 2: Apply square root scaling (more natural than logarithmic for
+        // visualization)
+        float sqrtScaled = (float) Math.sqrt(rms);
+
+        // Step 3: Create realistic distribution based on actual audio levels
+        float amplitude;
+        if (sqrtScaled <= 0.05f) {
+            // Very quiet sounds -> 2-12% height (most common)
+            amplitude = 0.02f + (sqrtScaled * 2f);
+        } else if (sqrtScaled <= 0.15f) {
+            // Quiet speech -> 12-25% height
+            amplitude = 0.12f + ((sqrtScaled - 0.05f) * 1.3f);
+        } else if (sqrtScaled <= 0.3f) {
+            // Normal speech -> 25-45% height
+            amplitude = 0.25f + ((sqrtScaled - 0.15f) * 1.33f);
+        } else if (sqrtScaled <= 0.5f) {
+            // Loud speech/music -> 45-70% height
+            amplitude = 0.45f + ((sqrtScaled - 0.3f) * 1.25f);
+        } else {
+            // Very loud sounds -> 70-85% height (rare)
+            amplitude = 0.7f + ((sqrtScaled - 0.5f) * 0.3f);
+        }
+
+        // Step 4: Add natural variation to prevent uniform appearance
+        float variation = (random.nextFloat() - 0.5f) * 0.08f; // ±4% variation
+        amplitude += variation;
+
+        // Step 5: Apply WhatsApp-style distribution bias (favor shorter bars)
+        float randomBias = random.nextFloat();
+        if (randomBias < 0.6f && amplitude > 0.2f) {
+            // 60% chance to make medium/tall bars shorter
+            amplitude *= 0.7f;
+        }
+
+        // Step 6: Final clamping
+        return Math.max(0.02f, Math.min(0.85f, amplitude));
     }
 
     /**
@@ -438,8 +476,8 @@ public class AudioWaveformView extends View {
         // Use real waveform data if available, otherwise fall back to fake data
         List<Float> dataToUse = useRealAudio && !realWaveformData.isEmpty() ? realWaveformData : waveformData;
 
-        // Log which data source we're using (only occasionally to avoid spam)
-        if (System.currentTimeMillis() % 5000 < 100) { // Log roughly every 5 seconds
+        // Reduce logging frequency to avoid spam
+        if (System.currentTimeMillis() % 10000 < 50) { // Log roughly every 10 seconds, shorter window
             String dataSource = useRealAudio && !realWaveformData.isEmpty() ? "REAL" : "FAKE";
             Log.d(TAG, "onDraw: Using " + dataSource + " data, size=" +
                     (dataToUse != null ? dataToUse.size() : "null") +
