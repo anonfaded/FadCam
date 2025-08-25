@@ -20,4 +20,6 @@
     <color name="gold_theme_dialog">@color/gold_theme_surface_dark</color>
     <color name="gold_theme_heading">@color/gold_theme_primary</color>
     <color name="gold_theme_card_background">#211C04</color>
+    <!-- Much darker inactive slider color for better contrast -->
+    <color name="gold_theme_slider_inactive">#3D2F00</color> <!-- Very dark gold, almost black -->
 </resources> 

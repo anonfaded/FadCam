@@ -19,4 +19,6 @@
     <color name="red_theme_text_secondary_dark">#FFB3B3B3</color>
     <color name="red_theme_dialog">@color/red_theme_surface_dark</color>
     <color name="red_theme_heading">@color/red_theme_primary</color>
+    <!-- Much darker inactive slider color for better contrast -->
+    <color name="red_theme_slider_inactive">#4A1010</color> <!-- Very dark red, almost black -->
 </resources> 

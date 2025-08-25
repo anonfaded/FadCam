@@ -17,4 +17,10 @@
     <attr name="pickerTextSecondary" format="color" />
     <!-- Section header color attribute -->
     <attr name="sectionHeaderColor" format="color" />
+    <!-- Picker component color attributes for theme-specific styling -->
+    <attr name="pickerButtonBackground" format="color" />
+    <attr name="pickerButtonText" format="color" />
+    <attr name="pickerIconTint" format="color" />
+    <attr name="pickerSliderActive" format="color" />
+    <attr name="pickerSliderInactive" format="color" />
 </resources> 

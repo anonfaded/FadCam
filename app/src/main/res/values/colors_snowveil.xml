@@ -28,4 +28,6 @@
     <color name="snowveil_theme_text_on_dark">#FFFFFF</color> <!-- White text for dark backgrounds -->
     <color name="snowveil_theme_text_secondary_on_dark">#E0E0E0</color> <!-- Light gray for secondary text on dark -->
     <color name="snowveil_theme_heading_on_blue">#FFFFFF</color> <!-- White heading text for blue backgrounds -->
+    <!-- Much darker inactive slider color for better contrast -->
+    <color name="snowveil_theme_slider_inactive">#2E2E2E</color> <!-- Very dark gray, almost black -->
 </resources> 

@@ -3,15 +3,15 @@
     <item android:state_enabled="true">
         <shape android:shape="oval">
             <size android:width="36dp" android:height="36dp" />
-            <solid android:color="?attr/colorPrimary" />
+            <solid android:color="?attr/pickerButtonBackground" />
             <corners android:radius="18dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
             <size android:width="36dp" android:height="36dp" />
-            <!-- Keep primary color for disabled state; we rely on View alpha to convey disabled appearance -->
-            <solid android:color="?attr/colorPrimary" />
+            <!-- Keep picker button background color for disabled state; we rely on View alpha to convey disabled appearance -->
+            <solid android:color="?attr/pickerButtonBackground" />
             <corners android:radius="18dp" />
         </shape>
     </item>

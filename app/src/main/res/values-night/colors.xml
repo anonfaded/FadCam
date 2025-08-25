@@ -30,6 +30,13 @@
     <color name="colorToggle">@color/greenPastel</color>
     <color name="colorDialog">#181A1B</color>
     <color name="colorStatusBar">@color/gray</color>
+    
+    <!-- Picker component colors for Midnight Dusk theme -->
+    <color name="picker_button_background">#cfbafd</color> <!-- Purple primary for Midnight Dusk -->
+    <color name="picker_button_text">#1A1A1A</color> <!-- Dark text on purple buttons -->
+    <color name="picker_icon_tint">#cfbafd</color> <!-- Purple primary for icons -->
+    <color name="picker_slider_active">#cfbafd</color> <!-- Purple primary for active slider -->
+    <color name="picker_slider_inactive">#3A2A4A</color> <!-- Dark purple-tinted for inactive track -->
     <color name="dark_red_card">#3B1818</color>
     <color name="dark_purple_bar">#231942</color>
     <color name="gray_button_filled">#2A2A2A</color>

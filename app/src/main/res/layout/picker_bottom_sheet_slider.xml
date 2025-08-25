@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/picker_root"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -125,7 +126,10 @@
                             android:layout_marginStart="6dp"
                             android:layout_marginEnd="6dp"
                             android:paddingTop="12dp"
-                            android:paddingBottom="12dp" />
+                            android:paddingBottom="12dp"
+                            app:thumbColor="?attr/pickerSliderActive"
+                            app:trackColorActive="?attr/pickerSliderActive"
+                            app:trackColorInactive="?attr/pickerSliderInactive" />
 
                         <!-- Labels row: min / mid / max (e.g., -4.0 / 0.0 / +4.0) placed under the slider -->
                         <LinearLayout
@@ -203,7 +207,7 @@
                                     android:fontFamily="@font/materialicons"
                                     android:text="remove"
                                     android:textSize="16sp"
-                                    android:textColor="?attr/colorOnPrimary"
+                                    android:textColor="?attr/pickerButtonText"
                                     android:background="@drawable/picker_circle_btn_tinted"
                                     android:contentDescription="Decrease"
                                     android:clickable="true"
@@ -230,7 +234,7 @@
                                     android:fontFamily="@font/materialicons"
                                     android:text="add"
                                     android:textSize="16sp"
-                                    android:textColor="?attr/colorOnPrimary"
+                                    android:textColor="?attr/pickerButtonText"
                                     android:background="@drawable/picker_circle_btn_tinted"
                                     android:contentDescription="Increase"
                                     android:clickable="true"
@@ -256,7 +260,7 @@
                                     android:background="?attr/selectableItemBackgroundBorderless"
                                     android:clickable="true"
                                     android:focusable="true"
-                                    android:tint="?attr/colorPrimary"
+                                    android:tint="?attr/pickerIconTint"
                                     android:padding="4dp"
                                     android:layoutDirection="locale" />
 

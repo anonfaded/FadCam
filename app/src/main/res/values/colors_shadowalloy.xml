@@ -20,4 +20,6 @@
     <color name="shadowalloy_theme_dialog">@color/shadowalloy_theme_surface_dark</color>
     <color name="shadowalloy_theme_heading">@color/shadowalloy_theme_primary</color>
     <color name="shadowalloy_theme_card_background">#232529</color>
+    <!-- Much darker inactive slider color for better contrast -->
+    <color name="shadowalloy_theme_slider_inactive">#2A2B2D</color> <!-- Very dark gray, almost black -->
 </resources> 

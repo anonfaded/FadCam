@@ -29,6 +29,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use base theme primary -->
         <item name="sectionHeaderColor">@color/colorPrimary</item>
+        <!-- Default picker component colors for base theme with proper contrast -->
+        <item name="pickerButtonBackground">@color/colorPrimary</item>
+        <item name="pickerButtonText">@android:color/white</item>
+        <item name="pickerIconTint">@color/colorPrimary</item>
+        <item name="pickerSliderActive">@color/colorPrimary</item>
+        <item name="pickerSliderInactive">@color/base_theme_slider_inactive</item>
     </style>
 
     <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
@@ -97,6 +103,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use subtle gray for AMOLED -->
         <item name="sectionHeaderColor">#888888</item>
+        <!-- AMOLED theme picker colors with proper contrast for Faded Night -->
+        <item name="pickerButtonBackground">@color/amoled_picker_button_background</item>
+        <item name="pickerButtonText">@color/amoled_picker_button_text</item>
+        <item name="pickerIconTint">@color/amoled_picker_icon_tint</item>
+        <item name="pickerSliderActive">@color/amoled_picker_slider_active</item>
+        <item name="pickerSliderInactive">@color/amoled_picker_slider_inactive</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
     </style>
@@ -168,6 +180,12 @@
     <item name="pickerTextSecondary">#999999</item>
     <!-- Section header color - use red theme primary -->
     <item name="sectionHeaderColor">@color/red_theme_primary</item>
+    <!-- Red theme picker colors with proper contrast -->
+    <item name="pickerButtonBackground">@color/red_theme_primary</item>
+    <item name="pickerButtonText">@android:color/white</item>
+    <item name="pickerIconTint">@color/red_theme_primary</item>
+    <item name="pickerSliderActive">@color/red_theme_primary</item>
+    <item name="pickerSliderInactive">@color/red_theme_slider_inactive</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -240,6 +258,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use gold theme primary -->
         <item name="sectionHeaderColor">@color/gold_theme_primary</item>
+        <!-- Gold theme picker colors with proper contrast -->
+        <item name="pickerButtonBackground">@color/gold_theme_primary</item>
+        <item name="pickerButtonText">@color/gold_theme_on_primary</item>
+        <item name="pickerIconTint">@color/gold_theme_primary</item>
+        <item name="pickerSliderActive">@color/gold_theme_primary</item>
+        <item name="pickerSliderInactive">@color/gold_theme_slider_inactive</item>
         </style>
 
     <style name="ThemeOverlay.FadCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -306,6 +330,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use forest theme primary -->
         <item name="sectionHeaderColor">@color/silentforest_theme_primary</item>
+        <!-- Silent Forest theme picker colors with proper contrast -->
+        <item name="pickerButtonBackground">@color/silentforest_theme_primary</item>
+        <item name="pickerButtonText">@color/silentforest_theme_on_primary</item>
+        <item name="pickerIconTint">@color/silentforest_theme_primary</item>
+        <item name="pickerSliderActive">@color/silentforest_theme_primary</item>
+        <item name="pickerSliderInactive">@color/silentforest_theme_slider_inactive</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -372,6 +402,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use shadow alloy theme primary -->
         <item name="sectionHeaderColor">@color/shadowalloy_theme_primary</item>
+        <!-- Shadow Alloy theme picker colors with proper contrast -->
+        <item name="pickerButtonBackground">@color/shadowalloy_theme_primary</item>
+        <item name="pickerButtonText">@color/shadowalloy_theme_on_primary</item>
+        <item name="pickerIconTint">@color/shadowalloy_theme_primary</item>
+        <item name="pickerSliderActive">@color/shadowalloy_theme_primary</item>
+        <item name="pickerSliderInactive">@color/shadowalloy_theme_slider_inactive</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.ShadowAlloy.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -438,6 +474,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use pookie pink theme primary -->
         <item name="sectionHeaderColor">@color/pookiepink_theme_primary</item>
+        <!-- Pookie Pink theme picker colors with proper contrast -->
+        <item name="pickerButtonBackground">@color/pookiepink_theme_primary</item>
+        <item name="pickerButtonText">@color/pookiepink_theme_on_primary</item>
+        <item name="pickerIconTint">@color/pookiepink_theme_primary</item>
+        <item name="pickerSliderActive">@color/pookiepink_theme_primary</item>
+        <item name="pickerSliderInactive">@color/pookiepink_theme_slider_inactive</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.PookiePink.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -515,6 +557,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use snow veil theme primary -->
         <item name="sectionHeaderColor">@color/snowveil_theme_primary</item>
+        <!-- Snow Veil theme picker colors with proper contrast -->
+        <item name="pickerButtonBackground">@color/snowveil_theme_primary</item>
+        <item name="pickerButtonText">@color/snowveil_theme_on_primary</item>
+        <item name="pickerIconTint">@color/snowveil_theme_primary</item>
+        <item name="pickerSliderActive">@color/snowveil_theme_primary</item>
+        <item name="pickerSliderInactive">@color/snowveil_theme_slider_inactive</item>
     </style>
 
     <!-- Add CardView style for Snow Veil theme -->

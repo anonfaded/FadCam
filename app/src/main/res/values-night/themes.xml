@@ -23,5 +23,12 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use subtle gray for night theme -->
         <item name="sectionHeaderColor">#888888</item>
+        
+        <!-- Picker component overrides for better contrast in Faded Night theme ONLY -->
+        <item name="pickerButtonBackground">@color/picker_button_background</item>
+        <item name="pickerButtonText">@color/picker_button_text</item>
+        <item name="pickerIconTint">@color/picker_icon_tint</item>
+        <item name="pickerSliderActive">@color/picker_slider_active</item>
+        <item name="pickerSliderInactive">@color/picker_slider_inactive</item>
     </style>
 </resources>

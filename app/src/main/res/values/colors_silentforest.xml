@@ -20,4 +20,6 @@
     <color name="silentforest_theme_dialog">@color/silentforest_theme_surface_dark</color>
     <color name="silentforest_theme_heading">@color/silentforest_theme_primary</color>
     <color name="silentforest_theme_card_background">#0D1F1B</color>
+    <!-- Much darker inactive slider color for better contrast -->
+    <color name="silentforest_theme_slider_inactive">#0D2B26</color> <!-- Very dark teal, almost black -->
 </resources> 
