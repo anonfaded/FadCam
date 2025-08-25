@@ -24,7 +24,7 @@
         <clip>
             <shape android:shape="rectangle">
                 <corners android:radius="3dp"/>
-                <solid android:color="?attr/colorButton"/> <!-- Theme accent color -->
+                <solid android:color="@color/redPastel"/> <!-- Fixed red color -->
             </shape>
         </clip>
     </item>
