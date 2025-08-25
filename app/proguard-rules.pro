@@ -151,6 +151,21 @@
     public void print(...);
 }
 
+# Keep application activities, services, etc.
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider
+
+# Specifically keep FadCam's MainActivity and its inner classes (for aliases)
+-keep public class com.fadcam.MainActivity { *; }
+-keep public class com.fadcam.MainActivity$* { *; }
+
+# Also keep other essential activities and your Application class
+-keep public class com.fadcam.SplashActivity { *; }
+-keep public class com.fadcam.ui.OnboardingActivity { *; }
+-keep public class com.fadcam.FadCamApplication { *; }
+
 # Aggressive optimization settings
 -repackageclasses ''
 -flattenpackagehierarchy ''

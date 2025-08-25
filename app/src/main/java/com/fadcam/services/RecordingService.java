@@ -2261,53 +2261,66 @@ public class RecordingService extends Service {
     }
 
     private void setupRecordingInProgressNotification() {
-        // ----- Fix Start for this method(setupRecordingInProgressNotification) -----
         if (ActivityCompat.checkSelfPermission(this,
                 android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification setup.");
-            // If Android Tiramisu or higher, START_FOREGROUND without notification IS
-            // allowed if user denies permission
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 try {
-                    startForeground(NOTIFICATION_ID, createBaseNotificationBuilder().build(),
+                    // On Tiramisu+, we can start foreground without permission. Create a minimal
+                    // notification.
+                    NotificationCompat.Builder minimalBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                            .setContentTitle(getString(R.string.app_name))
+                            .setSmallIcon(R.drawable.ic_notification_icon);
+
+                    startForeground(NOTIFICATION_ID, minimalBuilder.build(),
                             ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
                                     | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
                     Log.d(TAG, "Started foreground without notification permission (Tiramisu+).");
-                    return;
                 } catch (Exception e) {
                     Log.e(TAG, "Error starting foreground on Tiramisu+ without permission", e);
-                    stopSelf(); // Critical error if foreground fails
-                    return;
+                    stopSelf();
                 }
             } else {
-                // On older versions, foreground service needs a notification, permission IS
-                // required
                 Toast.makeText(this, "Notification permission needed", Toast.LENGTH_LONG).show();
-                stopSelf(); // Cannot run foreground service properly
-                return;
+                stopSelf();
             }
+            return;
         }
 
-        // Get custom notification text if set
-        String notificationText = sharedPreferencesManager.getNotificationText(false);
-        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        // STEP 1: Show a simple, fast notification immediately to satisfy the OS
+        // requirement.
+        NotificationCompat.Builder immediateBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification_icon)
+                .setContentTitle(getString(R.string.notification_video_recording))
+                .setContentText("Initializing...");
 
-        NotificationCompat.Builder builder = createBaseNotificationBuilder()
-                .setContentText(notificationText != null ? notificationText
-                        : getString(R.string.notification_video_recording_progress_description));
+        startForeground(NOTIFICATION_ID, immediateBuilder.build());
+        Log.d(TAG, "Foreground service started immediately with a placeholder notification.");
 
-        // Add stop action only if not hidden
-        if (!hideStopButton) {
-            builder.clearActions() // Remove previous actions
-                    .addAction(new NotificationCompat.Action(
-                            R.drawable.ic_stop,
-                            getString(R.string.button_stop),
-                            createStopRecordingIntent()));
-        }
+        // STEP 2: Now, prepare the full notification with the custom icon in the
+        // background.
+        new Handler(Looper.getMainLooper()).post(() -> {
+            NotificationCompat.Builder fullNotificationBuilder = createBaseNotificationBuilder(); // This method
+                                                                                                  // contains the slow
+                                                                                                  // bitmap operations
+            String notificationText = sharedPreferencesManager.getNotificationText(false);
+            boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
 
-        startForeground(NOTIFICATION_ID, builder.build());
-        Log.d(TAG, "Foreground notification updated for IN_PROGRESS.");
-        // ----- Fix Ended for this method(setupRecordingInProgressNotification) -----
+            fullNotificationBuilder.setContentText(notificationText != null ? notificationText
+                    : getString(R.string.notification_video_recording_progress_description));
+
+            if (!hideStopButton) {
+                fullNotificationBuilder.clearActions()
+                        .addAction(new NotificationCompat.Action(
+                                R.drawable.ic_stop,
+                                getString(R.string.button_stop),
+                                createStopRecordingIntent()));
+            }
+
+            // STEP 3: Update the notification with the full content.
+            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, fullNotificationBuilder.build());
+            Log.d(TAG, "Foreground notification updated with full content (including custom icon).");
+        });
     }
 
     private void setupRecordingResumeNotification() { // Notification shown when PAUSED

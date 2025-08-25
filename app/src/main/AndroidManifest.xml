@@ -440,7 +440,7 @@
 
         <activity
             android:name=".ui.OnboardingActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
 
         <!-- Services and receivers remain unchanged -->
         <service
