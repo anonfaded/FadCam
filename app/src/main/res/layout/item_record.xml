@@ -103,7 +103,7 @@
                 android:layout_width="0dp"
                 android:layout_height="4dp"
                 android:layout_gravity="bottom|start"
-                android:background="?attr/colorButton"
+                android:background="@color/redPastel"
                 android:visibility="gone"
                 android:importantForAccessibility="yes" />
             <!-- *** END: Processing Overlay *** -->
