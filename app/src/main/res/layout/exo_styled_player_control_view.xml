@@ -33,21 +33,21 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Progress bar with waveform overlay -->
+            <!-- Progress bar with waveform background -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="26dp"
                 android:layout_marginBottom="4dp">
                 
-                <View android:id="@id/exo_progress_placeholder"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-                
                 <com.fadcam.ui.custom.AudioWaveformView
                     android:id="@+id/audio_waveform"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:alpha="0.6" />
+                    android:alpha="0.7" />
+                
+                <View android:id="@id/exo_progress_placeholder"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
                     
             </FrameLayout>
 
