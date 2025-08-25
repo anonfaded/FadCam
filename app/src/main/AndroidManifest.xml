@@ -24,6 +24,9 @@
     <!-- Audio permissions -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+    
+    <!-- Optional hardware features -->
+    <uses-feature android:name="android.hardware.sensor.high_sampling_rate" android:required="false" />
 
     <!-- For Android 12 and below -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
@@ -41,10 +44,10 @@
     
     <!-- Camera feature declarations -->
     <uses-feature android:name="android.hardware.camera"/>
-    <uses-feature android:name="android.hardware.camera.front" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
     <uses-feature android:name="android.hardware.camera.any" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
-    <uses-feature android:name="android.hardware.camera.capability.manual_post_processing" />
+    <uses-feature android:name="android.hardware.camera.capability.manual_post_processing" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
     

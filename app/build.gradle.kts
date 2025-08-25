@@ -23,9 +23,14 @@ android {
         applicationId = "com.fadcam"
         minSdk = 28
         targetSdk = 34
-        versionCode = 19
-        versionName = "2.0.0-beta4"
+        versionCode = 21
+        versionName = "2.0.0-beta5"
         vectorDrawables.useSupportLibrary = true
+        
+        // Fix 16KB native library alignment for Android 15
+        ndk {
+            debugSymbolLevel = "SYMBOL_TABLE"
+        }
     }
 
     signingConfigs {
@@ -76,6 +81,8 @@ android {
     packaging {
         jniLibs {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
+            // Enable 16KB page size alignment for Android 15 compatibility
+            useLegacyPackaging = false
         }
         resources {
             excludes += listOf(
