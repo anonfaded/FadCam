@@ -30,7 +30,7 @@ public class AudioWaveformView extends View {
     private boolean useRealAudio = true;
     private final List<Float> realWaveformData = new ArrayList<>();
     private boolean isAnalyzingAudio = false;
-    private final int waveformPoints = 200; // Number of points in waveform
+    private final int waveformPoints = 120; // More points for denser WhatsApp-style bars
     private final ExecutorService audioAnalysisExecutor = Executors.newSingleThreadExecutor();
     private Uri currentVideoUri;
     private java.util.Random random = new java.util.Random(); // For fallback generation
@@ -46,15 +46,16 @@ public class AudioWaveformView extends View {
     }
 
     private void init() {
+        // WhatsApp-style discrete bars
         wavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        wavePaint.setColor(0x50FFFFFF); // Better semi-transparent white
-        wavePaint.setStrokeWidth(1.5f);
-        wavePaint.setStyle(Paint.Style.STROKE);
+        wavePaint.setColor(0x60FFFFFF); // Semi-transparent white for unplayed bars
+        wavePaint.setStyle(Paint.Style.FILL); // Fill for solid bars
+        wavePaint.setStrokeCap(Paint.Cap.ROUND); // Rounded bar ends
 
         playedWavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        playedWavePaint.setColor(0xFF4A90E2); // Nice blue for played portion - distinct from red progress bar
-        playedWavePaint.setStrokeWidth(1.5f);
-        playedWavePaint.setStyle(Paint.Style.STROKE);
+        playedWavePaint.setColor(0xFF4A90E2); // Blue for played bars
+        playedWavePaint.setStyle(Paint.Style.FILL); // Fill for solid bars
+        playedWavePaint.setStrokeCap(Paint.Cap.ROUND); // Rounded bar ends
 
         // Generate more realistic waveform data
         generateRealisticWaveform();
@@ -64,15 +65,15 @@ public class AudioWaveformView extends View {
         waveformData = new ArrayList<>();
 
         // Create much more realistic audio waveform patterns
-        float[] basePattern = new float[200];
+        float[] basePattern = new float[120];
 
         // Generate base noise pattern
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 120; i++) {
             basePattern[i] = random.nextFloat();
         }
 
         // Apply multiple passes for more realistic patterns
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 120; i++) {
             float amplitude = 0f;
 
             // Layer 1: Base random variation (speech-like)
@@ -94,7 +95,7 @@ public class AudioWaveformView extends View {
             amplitude *= 0.5f + 0.5f * (float) Math.sin(sentencePos * Math.PI);
 
             // Layer 5: Overall volume envelope
-            float overallPos = i / 200f;
+            float overallPos = i / 120f;
             if (overallPos < 0.1f || overallPos > 0.9f) {
                 amplitude *= overallPos < 0.1f ? overallPos * 10f : (1f - overallPos) * 10f;
             }
@@ -454,36 +455,52 @@ public class AudioWaveformView extends View {
         int height = getHeight();
         int centerY = height / 2;
 
-        float barWidth = width / (float) dataToUse.size();
-        float playedWidth = width * progress;
+        // WhatsApp-style discrete bars with SeekBar thumb padding compensation
+        int totalBars = Math.min(dataToUse.size(), 150); // More bars to fill full width
 
-        Path wavePath = new Path();
-        Path playedPath = new Path();
+        // Add minimal padding to match SeekBar's internal thumb padding (reduced for
+        // perfect alignment)
+        float thumbPadding = 6f * getContext().getResources().getDisplayMetrics().density; // Convert to pixels (reduced
+                                                                                           // from 16dp to 6dp)
+        float startX = thumbPadding; // Start after thumb padding
+        float endX = width - thumbPadding; // End before thumb padding
+        float totalWidth = endX - startX; // Available width after padding
+        float barWidth = 2f; // Thinner bars (2dp like WhatsApp)
+        float barSpacing = (totalWidth - (totalBars * barWidth)) / Math.max(1, totalBars - 1); // Calculate spacing to
+                                                                                               // fill width
 
-        for (int i = 0; i < dataToUse.size(); i++) {
-            float x = i * barWidth;
-            float amplitude = dataToUse.get(i) * (height * 0.35f); // Slightly better amplitude scaling
+        // Minimum and maximum bar heights - increased for better visibility
+        float minBarHeight = height * 0.25f; // 25% of view height (increased)
+        float maxBarHeight = height * 0.9f; // 90% of view height (increased)
 
-            if (i == 0) {
-                wavePath.moveTo(x, centerY - amplitude);
-                if (x < playedWidth) {
-                    playedPath.moveTo(x, centerY - amplitude);
-                }
-            } else {
-                wavePath.lineTo(x, centerY - amplitude);
-                wavePath.lineTo(x, centerY + amplitude);
+        // Calculate played position based on padded width (matching SeekBar)
+        float playedPosition = startX + (totalWidth * progress);
 
-                if (x < playedWidth) {
-                    playedPath.lineTo(x, centerY - amplitude);
-                    playedPath.lineTo(x, centerY + amplitude);
-                }
-            }
+        // Draw discrete bars
+        for (int i = 0; i < totalBars; i++) {
+            // Sample from waveform data (distribute evenly across available data)
+            int dataIndex = (int) ((float) i / totalBars * dataToUse.size());
+            dataIndex = Math.min(dataIndex, dataToUse.size() - 1);
+
+            float amplitude = dataToUse.get(dataIndex);
+
+            // Calculate bar position and height
+            float barX = startX + i * (barWidth + barSpacing);
+            float barHeight = minBarHeight + (amplitude * (maxBarHeight - minBarHeight));
+
+            // Ensure minimum visibility
+            barHeight = Math.max(minBarHeight * 0.3f, barHeight);
+
+            // Bar coordinates (centered vertically)
+            float barTop = centerY - (barHeight / 2f);
+            float barBottom = centerY + (barHeight / 2f);
+
+            // Choose paint based on progress - properly synced with waveform position
+            Paint paintToUse = (barX + barWidth / 2) <= playedPosition ? playedWavePaint : wavePaint;
+
+            // Draw rounded rectangle bar
+            canvas.drawRoundRect(barX, barTop, barX + barWidth, barBottom,
+                    barWidth / 2f, barWidth / 2f, paintToUse);
         }
-
-        // Draw unplayed waveform first (background)
-        canvas.drawPath(wavePath, wavePaint);
-
-        // Draw played portion on top
-        canvas.drawPath(playedPath, playedWavePaint);
     }
 }
