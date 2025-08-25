@@ -125,12 +125,15 @@ public class AudioWaveformView extends View {
      * Analyze real audio from video file using MediaExtractor
      */
     public void analyzeAudioFromVideo(Uri videoUri) {
-        if (videoUri == null || videoUri.equals(currentVideoUri))
+        if (videoUri == null || videoUri.equals(currentVideoUri)) {
+            Log.d(TAG, "Skipping audio analysis - URI is null or same as current");
             return;
+        }
 
         this.currentVideoUri = videoUri;
 
         if (isAnalyzingAudio) {
+            Log.d(TAG, "Stopping previous audio analysis");
             stopAudioAnalysis();
         }
 
@@ -138,11 +141,14 @@ public class AudioWaveformView extends View {
         realWaveformData.clear();
 
         Log.d(TAG, "Starting real audio analysis for: " + videoUri);
+        Log.d(TAG, "Target waveform points: " + waveformPoints);
 
         // Initialize with small default values while analyzing
         for (int i = 0; i < waveformPoints; i++) {
             realWaveformData.add(0.1f);
         }
+
+        Log.d(TAG, "Initialized " + realWaveformData.size() + " default waveform points");
 
         // Start audio analysis in background
         audioAnalysisExecutor.submit(() -> extractRealAudioData(videoUri));
@@ -232,6 +238,14 @@ public class AudioWaveformView extends View {
 
                         final int finalSegmentIndex = segmentIndex;
 
+                        // Log every 20th segment to avoid spam
+                        if (segmentIndex % 20 == 0) {
+                            Log.d(TAG, "Segment " + segmentIndex + ": samples=" + segmentSamples.size() +
+                                    ", rms=" + String.format("%.4f", rms) +
+                                    ", enhanced=" + String.format("%.4f", enhanced) +
+                                    ", final=" + String.format("%.4f", finalAmplitude));
+                        }
+
                         post(() -> {
                             if (finalSegmentIndex < realWaveformData.size()) {
                                 realWaveformData.set(finalSegmentIndex, finalAmplitude);
@@ -262,8 +276,24 @@ public class AudioWaveformView extends View {
 
             Log.d(TAG, "Real audio analysis completed with " + segmentIndex + " segments");
 
+            // Log some sample values to verify data
+            if (!realWaveformData.isEmpty()) {
+                float min = Float.MAX_VALUE, max = Float.MIN_VALUE, avg = 0f;
+                for (float val : realWaveformData) {
+                    min = Math.min(min, val);
+                    max = Math.max(max, val);
+                    avg += val;
+                }
+                avg /= realWaveformData.size();
+                Log.d(TAG, "Waveform data stats - Min: " + String.format("%.4f", min) +
+                        ", Max: " + String.format("%.4f", max) +
+                        ", Avg: " + String.format("%.4f", avg) +
+                        ", Size: " + realWaveformData.size());
+            }
+
         } catch (Exception e) {
             Log.e(TAG, "Error extracting real audio data", e);
+            Log.d(TAG, "Falling back to generated waveform");
             generateFallbackWaveform();
         } finally {
             if (extractor != null) {
@@ -281,6 +311,7 @@ public class AudioWaveformView extends View {
      * Generate fallback waveform when real analysis fails
      */
     private void generateFallbackWaveform() {
+        Log.d(TAG, "Generating fallback waveform with " + waveformPoints + " points");
         post(() -> {
             realWaveformData.clear();
             // Generate much more realistic speech-like pattern
@@ -340,6 +371,7 @@ public class AudioWaveformView extends View {
                 realWaveformData.set(i, smoothed);
             }
 
+            Log.d(TAG, "Fallback waveform generated with " + realWaveformData.size() + " points");
             invalidate();
         });
     }
@@ -405,8 +437,18 @@ public class AudioWaveformView extends View {
         // Use real waveform data if available, otherwise fall back to fake data
         List<Float> dataToUse = useRealAudio && !realWaveformData.isEmpty() ? realWaveformData : waveformData;
 
-        if (dataToUse == null || dataToUse.isEmpty())
+        // Log which data source we're using (only occasionally to avoid spam)
+        if (System.currentTimeMillis() % 5000 < 100) { // Log roughly every 5 seconds
+            String dataSource = useRealAudio && !realWaveformData.isEmpty() ? "REAL" : "FAKE";
+            Log.d(TAG, "onDraw: Using " + dataSource + " data, size=" +
+                    (dataToUse != null ? dataToUse.size() : "null") +
+                    ", progress=" + String.format("%.2f", progress));
+        }
+
+        if (dataToUse == null || dataToUse.isEmpty()) {
+            Log.w(TAG, "onDraw: No waveform data available");
             return;
+        }
 
         int width = getWidth();
         int height = getHeight();
