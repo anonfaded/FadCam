@@ -23,7 +23,7 @@ public class AudioWaveformView extends View {
     private static final String TAG = "AudioWaveformView";
     private Paint wavePaint;
     private Paint playedWavePaint;
-    private List<Float> waveformData;
+    // Removed fake waveform data - only real audio data is used
     private float progress = 0f;
 
     // Real audio analysis fields
@@ -57,55 +57,10 @@ public class AudioWaveformView extends View {
         playedWavePaint.setStyle(Paint.Style.FILL); // Fill for solid bars
         playedWavePaint.setStrokeCap(Paint.Cap.ROUND); // Rounded bar ends
 
-        // Generate more realistic waveform data
-        generateRealisticWaveform();
+        // No fake waveform generation - only real audio data will be used
     }
 
-    private void generateRealisticWaveform() {
-        waveformData = new ArrayList<>();
-
-        // WhatsApp-style realistic waveform: mostly short bars with occasional tall
-        // ones
-        for (int i = 0; i < 120; i++) {
-            float amplitude;
-            float randomValue = random.nextFloat();
-
-            // WhatsApp pattern: 70% short bars, 20% medium bars, 10% tall bars
-            if (randomValue < 0.7f) {
-                // Short bars (5-25% height) - most common
-                amplitude = 0.05f + (random.nextFloat() * 0.2f);
-            } else if (randomValue < 0.9f) {
-                // Medium bars (25-50% height) - less common
-                amplitude = 0.25f + (random.nextFloat() * 0.25f);
-            } else {
-                // Tall bars (50-85% height) - rare, for emphasis/loud sounds
-                amplitude = 0.5f + (random.nextFloat() * 0.35f);
-            }
-
-            // Add some natural clustering (speech tends to have grouped activity)
-            if (i > 0 && waveformData.get(i - 1) > 0.4f && random.nextFloat() < 0.3f) {
-                // If previous bar was tall, this one might be medium (speech continuation)
-                amplitude = Math.max(amplitude, 0.2f + (random.nextFloat() * 0.3f));
-            }
-
-            // Add silence periods (like pauses in speech)
-            if (random.nextFloat() < 0.15f) {
-                amplitude = 0.05f + (random.nextFloat() * 0.1f); // Very short bars for silence
-            }
-
-            waveformData.add(amplitude);
-        }
-
-        // Light smoothing to avoid harsh transitions but keep the variation
-        for (int i = 1; i < waveformData.size() - 1; i++) {
-            float current = waveformData.get(i);
-            float prev = waveformData.get(i - 1);
-            float next = waveformData.get(i + 1);
-            // Very light smoothing to preserve the natural variation
-            float smoothed = (prev * 0.1f + current * 0.8f + next * 0.1f);
-            waveformData.set(i, smoothed);
-        }
-    }
+    // Removed fake waveform generation - only real audio analysis is used
 
     public void setProgress(float progress) {
         this.progress = Math.max(0f, Math.min(1f, progress));
@@ -166,8 +121,15 @@ public class AudioWaveformView extends View {
             }
 
             if (audioTrackIndex == -1) {
-                Log.w(TAG, "No audio track found in video");
-                generateFallbackWaveform();
+                Log.w(TAG, "No audio track found in video - showing silence");
+                // Fill with true silence data instead of fake waveform
+                post(() -> {
+                    realWaveformData.clear();
+                    for (int i = 0; i < waveformPoints; i++) {
+                        realWaveformData.add(0.02f); // True silence - minimal bars
+                    }
+                    invalidate();
+                });
                 return;
             }
 
@@ -178,8 +140,15 @@ public class AudioWaveformView extends View {
                     : 0;
 
             if (durationUs <= 0) {
-                Log.w(TAG, "Invalid audio duration, using fallback");
-                generateFallbackWaveform();
+                Log.w(TAG, "Invalid audio duration - showing silence");
+                // Fill with true silence data instead of fake waveform
+                post(() -> {
+                    realWaveformData.clear();
+                    for (int i = 0; i < waveformPoints; i++) {
+                        realWaveformData.add(0.02f); // True silence - minimal bars
+                    }
+                    invalidate();
+                });
                 return;
             }
 
@@ -284,8 +253,15 @@ public class AudioWaveformView extends View {
 
         } catch (Exception e) {
             Log.e(TAG, "Error extracting real audio data", e);
-            Log.d(TAG, "Falling back to generated waveform");
-            generateFallbackWaveform();
+            Log.d(TAG, "Showing silence due to audio extraction error");
+            // Fill with true silence data instead of fake waveform
+            post(() -> {
+                realWaveformData.clear();
+                for (int i = 0; i < waveformPoints; i++) {
+                    realWaveformData.add(0.02f); // True silence - minimal bars
+                }
+                invalidate();
+            });
         } finally {
             if (extractor != null) {
                 try {
@@ -473,20 +449,20 @@ public class AudioWaveformView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Use real waveform data if available, otherwise fall back to fake data
-        List<Float> dataToUse = useRealAudio && !realWaveformData.isEmpty() ? realWaveformData : waveformData;
+        // ALWAYS use real waveform data - no fake fallbacks
+        List<Float> dataToUse = realWaveformData.isEmpty() ? null : realWaveformData;
 
-        // Reduce logging frequency to avoid spam
-        if (System.currentTimeMillis() % 10000 < 50) { // Log roughly every 10 seconds, shorter window
-            String dataSource = useRealAudio && !realWaveformData.isEmpty() ? "REAL" : "FAKE";
-            Log.d(TAG, "onDraw: Using " + dataSource + " data, size=" +
-                    (dataToUse != null ? dataToUse.size() : "null") +
-                    ", progress=" + String.format("%.2f", progress));
+        // Only show waveform if we have REAL audio data
+        if (dataToUse == null || dataToUse.isEmpty()) {
+            // Show minimal flat line while waiting for real audio analysis
+            Log.d(TAG, "onDraw: Waiting for real audio analysis...");
+            return;
         }
 
-        if (dataToUse == null || dataToUse.isEmpty()) {
-            Log.w(TAG, "onDraw: No waveform data available");
-            return;
+        // Log real audio data usage
+        if (System.currentTimeMillis() % 10000 < 50) {
+            Log.d(TAG, "onDraw: Using REAL audio data, size=" + dataToUse.size() +
+                    ", progress=" + String.format("%.2f", progress));
         }
 
         int width = getWidth();
