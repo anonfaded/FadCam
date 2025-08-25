@@ -108,7 +108,7 @@ public class AppearanceSettingsFragment extends Fragment {
     items.add(new com.fadcam.ui.picker.OptionItem("Silent Forest", getString(R.string.theme_silentforest), null, ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary)));
     items.add(new com.fadcam.ui.picker.OptionItem("Shadow Alloy", getString(R.string.theme_shadowalloy), null, ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary)));
     items.add(new com.fadcam.ui.picker.OptionItem("Pookie Pink", getString(R.string.theme_pookiepink), null, ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary)));
-    items.add(new com.fadcam.ui.picker.OptionItem("Snow Veil", getString(R.string.theme_snowveil), null, ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary)));
+    items.add(new com.fadcam.ui.picker.OptionItem("Snow Veil", getString(R.string.theme_snowveil), null, Color.WHITE));
     String currentTheme = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
     com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
         getString(R.string.settings_option_theme), items, currentTheme, resultKey, getString(R.string.helper_theme_option), true);

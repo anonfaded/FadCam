@@ -2497,6 +2497,9 @@ public class HomeFragment extends BaseFragment {
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force
         // override for AMOLED and Red, use *_surface_dark) -----
 
+        // Apply theme-specific colors to mode switcher
+        applyModeSwitcherTheming(themeName);
+
         // ----- Fix Start: Storage card theme-specific colors (don't override theme
         // colors) -----
         if (cardStorage != null) {
@@ -5807,6 +5810,87 @@ public class HomeFragment extends BaseFragment {
                     zoomShape,
                     null);
             tileZoom.setBackground(zoomRipple);
+        }
+    }
+
+    /**
+     * Apply theme-specific colors to the mode switcher (FadCam, FadRec, FadMic)
+     */
+    private void applyModeSwitcherTheming(String themeName) {
+        try {
+            // Find the active segment (FadCam)
+            View segmentFadCam = getView().findViewById(R.id.segment_fadcam);
+            if (segmentFadCam == null)
+                return;
+
+            // Determine the theme color and text color for the active segment
+            int activeColor;
+            int textColor;
+            switch (themeName) {
+                case "Crimson Bloom":
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.red_theme_primary);
+                    textColor = Color.WHITE; // Red background with white text
+                    break;
+                case "Premium Gold":
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.gold_theme_primary);
+                    textColor = Color.BLACK; // Bright gold background with black text
+                    break;
+                case "Silent Forest":
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.silentforest_theme_primary);
+                    textColor = Color.WHITE; // Green background with white text
+                    break;
+                case "Shadow Alloy":
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.shadowalloy_theme_primary);
+                    textColor = Color.BLACK; // Bright silver background with black text
+                    break;
+                case "Pookie Pink":
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary);
+                    textColor = Color.BLACK; // Bright pink background with black text
+                    break;
+                case "Snow Veil":
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_primary);
+                    textColor = Color.WHITE; // Gray background with white text
+                    break;
+                case "Midnight Dusk":
+                    // Use the same purple color as the clock card
+                    activeColor = Color.parseColor("#673AB7"); // Same purple as clock card
+                    textColor = Color.WHITE; // Purple background with white text
+                    break;
+                case "Faded Night":
+                    // Use the original red color for Faded Night
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.redPastel);
+                    textColor = Color.WHITE; // Red background with white text
+                    break;
+                case "AMOLED":
+                    // For AMOLED theme, use a lighter accent color
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.amoled_accent);
+                    textColor = Color.WHITE; // Dark background with white text
+                    break;
+                default:
+                    // Default to the original red color for unknown themes
+                    activeColor = ContextCompat.getColor(requireContext(), R.color.redPastel);
+                    textColor = Color.WHITE;
+                    break;
+            }
+
+            // Create a new background drawable with the theme color
+            GradientDrawable activeBackground = new GradientDrawable();
+            activeBackground.setShape(GradientDrawable.RECTANGLE);
+            activeBackground.setColor(activeColor);
+            activeBackground.setCornerRadius(14 * getResources().getDisplayMetrics().density); // 14dp radius
+
+            // Apply the themed background to the active segment
+            segmentFadCam.setBackground(activeBackground);
+
+            // Find and update the text color for the active segment
+            TextView textFadCam = segmentFadCam.findViewById(R.id.text_fadcam);
+            if (textFadCam != null) {
+                textFadCam.setTextColor(textColor);
+            }
+
+        } catch (Exception e) {
+            // Silently handle any errors to avoid crashes
+            android.util.Log.w("HomeFragment", "Error applying mode switcher theming", e);
         }
     }
 
