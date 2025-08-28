@@ -25,7 +25,7 @@
         android:id="@+id/picker_title_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#262626"
+        android:background="#404040"
         android:layout_marginStart="14dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"/>
@@ -92,7 +92,7 @@
                     android:layout_height="1dp"
                     android:layout_marginStart="14dp"
                     android:layout_marginEnd="12dp"
-                    android:background="#262626"
+                    android:background="#404040"
                     android:visibility="gone" />
 
                 <LinearLayout
