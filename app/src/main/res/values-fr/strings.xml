@@ -324,11 +324,11 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="note_debug_extra">Lorsqu\'activé, un fichier journal de débogage sera créé dans le dossier Téléchargements/FadCam. Cela peut aider à diagnostiquer les problèmes de l\'application.</string>
     
     <!-- Onboarding Strings -->
-    <string name="setting_onboarding_title">Afficher l\'Introduction au Prochain Démarrage</string>
+    <string name="setting_onboarding_title">Afficher l\'Introduction</string>
     <string name="note_onboarding">Activez pour voir la présentation de l\'application et le guide des permissions la prochaine fois que vous ouvrirez FadCam.</string>
     
     <!-- Auto Update Settings -->
-    <string name="setting_auto_update_check_title">Vérification automatique des mises à jour au démarrage</string>
+    <string name="setting_auto_update_check_title">Mise à jour auto</string>
     <string name="note_auto_update_check">Si activé, FadCam vérifiera les mises à jour à chaque ouverture de l\'application. Désactivez pour désactiver les vérifications automatiques des mises à jour au lancement.\n(Par défaut: Activé)</string>
     
     <!-- Storage Location Settings -->
