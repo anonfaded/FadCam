@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -150,6 +151,12 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
             } else {
                 helper.setVisibility(View.GONE);
             }
+        }
+
+        // Handle close button
+        ImageView closeButton = view.findViewById(R.id.picker_close_btn);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> dismiss());
         }
 
         LinearLayout list = view.findViewById(R.id.picker_list_container);

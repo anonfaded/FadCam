@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -83,6 +84,12 @@ public class RecordsSidebarFragment extends DialogFragment {
         if(getArguments()!=null){
             selectedSortId = getArguments().getString(ARG_SELECTED_SORT_ID, "latest");
             isGridViewInitial = getArguments().getBoolean("is_grid_view", true);
+        }
+
+        // Handle close button
+        ImageView closeButton = view.findViewById(R.id.records_sidebar_close_btn);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> dismiss());
         }
 
         // Sort row container opens unified picker

@@ -19,16 +19,32 @@
     android:paddingStart="16dp"
     android:paddingEnd="16dp">
 
-        <!-- Header with title only -->
+        <!-- Header with close button and title -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="start|center_vertical">
+            android:gravity="center_vertical"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp">
+
+            <ImageView
+                android:id="@+id/home_sidebar_close_btn"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="?attr/pickerTextSecondary"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="@string/home_options_title"
                 android:textColor="?attr/pickerTextPrimary"
                 android:textStyle="bold"

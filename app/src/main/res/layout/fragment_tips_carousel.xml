@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_gradient_bg_dynamic"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="16dp">
+
+        <ImageView
+            android:id="@+id/btn_close_tips"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="?attr/pickerTextSecondary"
+            android:contentDescription="@string/close" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/tips_title"
+            android:textColor="?attr/colorHeading"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        app:dividerColor="#404040" />
+
+    <!-- ViewPager2 for tips carousel -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/tips_viewpager"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp" />
+
+    <!-- Page indicator dots -->
+    <LinearLayout
+        android:id="@+id/dots_indicator"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Navigation buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:layout_marginTop="8dp">
+
+        <!-- Previous button -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginEnd="32dp">
+
+            <ImageView
+                android:id="@+id/btn_previous_tip"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/picker_circle_btn_tinted"
+                android:src="@drawable/ic_arrow_left"
+                android:tint="?attr/pickerTextPrimary"
+                android:scaleType="center"
+                android:contentDescription="@string/previous" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/previous"
+                android:textColor="?attr/pickerTextSecondary"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <!-- Next button -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="32dp">
+
+            <ImageView
+                android:id="@+id/btn_next_tip"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/picker_circle_btn_tinted"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="?attr/pickerTextPrimary"
+                android:scaleType="center"
+                android:contentDescription="@string/next" />
+
+            <TextView
+                android:id="@+id/btn_next_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/next"
+                android:textColor="?attr/pickerTextSecondary"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

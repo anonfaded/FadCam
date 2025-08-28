@@ -101,7 +101,12 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
                 linksCard.setLayoutParams(lp);
             }
         }
-        // 6. Disable dragging outside content causing accidental dismiss? Keep default for now.
+        // 6. Handle close button
+        ImageView closeButton = view.findViewById(R.id.picker_close_btn);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> dismiss());
+        }
+        // 7. Disable dragging outside content causing accidental dismiss? Keep default for now.
         // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 

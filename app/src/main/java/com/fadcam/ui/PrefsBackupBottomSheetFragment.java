@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -98,6 +99,12 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
         TextView title = view.findViewById(R.id.picker_title);
         if(title!=null){ title.setText(R.string.prefs_backup_title); }
+        
+        // Handle close button
+        ImageView closeBtn = view.findViewById(R.id.picker_close_btn);
+        if(closeBtn != null) {
+            closeBtn.setOnClickListener(v -> dismiss());
+        }
         View helper = view.findViewById(R.id.picker_helper);
         if(helper!=null){ helper.setVisibility(View.GONE); }
         ViewGroup listContainer = view.findViewById(R.id.picker_list_container);

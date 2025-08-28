@@ -531,5 +531,11 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="fix_video_saf_write_fail">Impossible d\'écrire le fichier réparé dans le dossier SAF. Enregistré dans le stockage de l\'application.</string>
     <string name="fix_video_saf_success">Vidéo réparée ! Enregistrée sous : %1$s.</string>
     <string name="fix_video_saf_export">Exportez ou partagez le fichier réparé depuis le stockage de l\'application si besoin.</string>
+    
+    <!-- Tips Navigation Strings -->
+    <string name="close">Fermer</string>
+    <string name="previous">Précédent</string>
+    <string name="next">Suivant</string>
+    <string name="done">Terminé</string>
 
 </resources>

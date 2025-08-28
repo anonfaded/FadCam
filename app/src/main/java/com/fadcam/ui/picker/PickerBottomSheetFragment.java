@@ -232,6 +232,12 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
         TextView titleView = view.findViewById(R.id.picker_title);
         if(titleView!=null) titleView.setText(title);
+        
+        // Handle close button
+        ImageView closeBtn = view.findViewById(R.id.picker_close_btn);
+        if(closeBtn != null) {
+            closeBtn.setOnClickListener(v -> dismiss());
+        }
         if(useGradientBg){
             View root = view.findViewById(R.id.picker_root);
             if(root!=null){

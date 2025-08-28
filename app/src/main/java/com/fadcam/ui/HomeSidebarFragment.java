@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -66,6 +67,12 @@ public class HomeSidebarFragment extends DialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Handle close button
+        ImageView closeButton = view.findViewById(R.id.home_sidebar_close_btn);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> dismiss());
+        }
+
         // Tips row
         View tipsRow = view.findViewById(R.id.row_tips);
         if (tipsRow != null) {
@@ -109,25 +116,8 @@ public class HomeSidebarFragment extends DialogFragment {
     }
 
     private void openTipsPicker() {
-        // Use the existing PickerBottomSheetFragment for tips
-        ArrayList<OptionItem> tipOptions = new ArrayList<>();
-        
-        // Get tips from string array
-        String[] tips = getResources().getStringArray(R.array.tips_widget);
-    for (int i = 0; i < tips.length; i++) {
-        // Use the two-arg constructor to avoid ambiguity between (String) and (Integer) overloads
-        tipOptions.add(new OptionItem("tip_" + i, tips[i]));
-    }
-
-    // Use existing PickerBottomSheetFragment factory that accepts (title, items, selectedId, resultKey, helper)
-    PickerBottomSheetFragment tipsPicker = PickerBottomSheetFragment.newInstance(
-        getString(R.string.tips_title),
-        tipOptions,
-        null, // no initial selection
-        resultKey,
-        getString(R.string.tips_subtitle)
-    );
-
-        tipsPicker.show(getParentFragmentManager(), "tips_picker");
+        // Use the new TipsCarouselFragment for better tips display
+        TipsCarouselFragment tipsCarousel = TipsCarouselFragment.newInstance();
+        tipsCarousel.show(getParentFragmentManager(), "tips_carousel");
     }
 }

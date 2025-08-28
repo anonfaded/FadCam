@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -76,6 +77,12 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         // -------------- Fix Start for this method(onViewCreated)-----------
         TextView title = view.findViewById(R.id.picker_title);
         if (title != null) { title.setText(R.string.debug_log_tools_title); }
+        
+        // Handle close button
+        ImageView closeBtn = view.findViewById(R.id.picker_close_btn);
+        if(closeBtn != null) {
+            closeBtn.setOnClickListener(v -> dismiss());
+        }
         TextView helper = view.findViewById(R.id.picker_helper);
         if (helper != null) { helper.setText(R.string.debug_log_tools_helper); helper.setVisibility(View.VISIBLE); }
         LinearLayout list = view.findViewById(R.id.picker_list_container);
