@@ -3514,18 +3514,46 @@ public class RecordingService extends Service {
                     stopSelf();
                     return;
                 }
+                // Get location data for metadata embedding
+                Float latitude = null;
+                Float longitude = null;
+                if (geotagHelper != null && geotagHelper.hasLocation()) {
+                    android.location.Location location = geotagHelper.getCurrentLocation();
+                    if (location != null) {
+                        latitude = (float) location.getLatitude();
+                        longitude = (float) location.getLongitude();
+                        Log.d(TAG, "Using location for SAF recording: " + latitude + ", " + longitude);
+                    }
+                } else {
+                    Log.d(TAG, "No location available for SAF recording metadata");
+                }
+                
                 Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
                         initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
-                        selectedCodec);
+                        selectedCodec, latitude, longitude);
                 // ----- Fix End: Open PFD and keep it open for the duration of recording -----
             } else {
+                // Get location data for metadata embedding
+                Float latitude = null;
+                Float longitude = null;
+                if (geotagHelper != null && geotagHelper.hasLocation()) {
+                    android.location.Location location = geotagHelper.getCurrentLocation();
+                    if (location != null) {
+                        latitude = (float) location.getLatitude();
+                        longitude = (float) location.getLongitude();
+                        Log.d(TAG, "Using location for internal recording: " + latitude + ", " + longitude);
+                    }
+                } else {
+                    Log.d(TAG, "No location available for internal recording metadata");
+                }
+                
                 File outputFile = getFinalOutputFile();
                 Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
-                        segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec);
+                        segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec, latitude, longitude);
             }
 
             Log.d(TAG, "Preparing GLRecordingPipeline surfaces");
