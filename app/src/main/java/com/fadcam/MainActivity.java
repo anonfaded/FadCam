@@ -39,6 +39,9 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import androidx.core.splashscreen.SplashScreen; // SplashScreen API
 import android.view.WindowManager;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.ViewCompat;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -208,6 +211,9 @@ public class MainActivity extends AppCompatActivity {
         // ----- Fix End: Remove duplicate onboarding check -----
 
         setContentView(R.layout.activity_main);
+
+        // Enable edge-to-edge display for Android 15 compatibility
+        enableEdgeToEdge();
 
         // -------------- Fix Start for this block(apply persistent cloak at
         // startup)-----------
@@ -1080,4 +1086,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     // -------------- Fix End: Manual orientation change handling -----------
+
+    /**
+     * Enable edge-to-edge display following Android 15 guidelines
+     */
+    private void enableEdgeToEdge() {
+        // Enable edge-to-edge display
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        // Make system bars transparent
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+
+        // Handle window insets properly
+        View rootView = findViewById(android.R.id.content);
+        ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
+            androidx.core.graphics.Insets systemBars = insets
+                    .getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+
+            // Apply insets to main content areas
+            View viewPager = findViewById(R.id.view_pager);
+            View bottomNav = findViewById(R.id.bottom_navigation);
+            View overlayContainer = findViewById(R.id.overlay_fragment_container);
+
+            if (viewPager != null) {
+                // Apply top and side insets to main content, but not bottom (handled by bottom
+                // nav)
+                viewPager.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+            }
+
+            if (bottomNav != null) {
+                // Apply bottom inset to bottom navigation
+                bottomNav.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
+            }
+
+            if (overlayContainer != null) {
+                // Apply all insets to overlay container
+                overlayContainer.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            }
+
+            return insets;
+        });
+    }
 }
