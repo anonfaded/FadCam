@@ -487,6 +487,8 @@
     <string name="shortcuts_customize_action_reset">Reset to default</string>
     <string name="shortcuts_customize_sheet_desc">Set a custom name and icon for this shortcut.</string>
     <string name="shortcuts_rename_helper">Tip: Leave empty to use the default name.</string>
+    <string name="shortcuts_rename_action_title">Rename</string>
+    <string name="shortcuts_rename_action_subtitle">Click to rename</string>
     <string name="shortcut_purpose_start">This shortcut starts recording with the back camera.</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
