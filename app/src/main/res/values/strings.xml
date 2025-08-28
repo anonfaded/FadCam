@@ -672,9 +672,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="trash_fragment_title_text">Recently Deleted</string>
     
     <!-- Fix Start: Cloak Recents strings -->
-    <string name="setting_cloak_recents_title">Cloak in Recents</string>
+    <string name="setting_cloak_recents_title">Block Screenshots &amp; Hide in Recents</string>
     <string name="setting_cloak_recents_switch">Hide preview</string>
-    <string name="setting_cloak_recents_helper">When enabled, the app preview shown in the Android app overview is hidden. This helps protect your privacy.\n(Default: Enabled)</string>
+    <string name="setting_cloak_recents_helper">Hides app preview in recent apps and blocks screenshots within the app. This prevents sensitive content from being captured or visible in the app switcher.\n(Default: Disabled)</string>
     <string name="setting_enabled_msg">Enabled</string>
     <string name="setting_disabled_msg">Disabled</string>
     <!-- Fix End: Cloak Recents strings -->

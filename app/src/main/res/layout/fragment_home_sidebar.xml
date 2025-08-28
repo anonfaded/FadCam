@@ -118,8 +118,6 @@
                         android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:ellipsize="end"
-                        android:maxLines="1"
                         android:textAlignment="viewStart" />
 
                     <TextView
@@ -128,8 +126,6 @@
                         android:text="@string/tips_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"
-                        android:ellipsize="end"
-                        android:maxLines="1"
                         android:textAlignment="viewStart" />
 
                 </LinearLayout>

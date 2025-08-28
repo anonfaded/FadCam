@@ -635,8 +635,8 @@ public class SharedPreferencesManager {
     // -------------- Fix Start for this section(Cloak Recents preference)-----------
     /** Preference key controlling whether the app should cloak its snapshot in the Android Recents screen. */
     public static final String PREF_CLOAK_RECENTS_ENABLED = "cloak_recents_enabled";
-    /** Default behavior is ON to protect user privacy out of the box. */
-    public static final boolean DEFAULT_CLOAK_RECENTS_ENABLED = true;
+    /** Default behavior is OFF to avoid confusion for new users. */
+    public static final boolean DEFAULT_CLOAK_RECENTS_ENABLED = false;
 
     /** Returns whether cloaking recents snapshot is enabled. Default: true. */
     public boolean isCloakRecentsEnabled() {
