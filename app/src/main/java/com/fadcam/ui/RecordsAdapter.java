@@ -135,8 +135,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final List<Uri> selectedVideosUris = new ArrayList<>(); // Track selection by URI
     private boolean isSelectionModeActive = false; // Track current mode within adapter
     private List<Uri> currentSelectedUris = new ArrayList<>(); // Keep track of selected items for binding
-    // *** NEW: Store the path to the specific cache directory ***
-    private final String tempCacheDirectoryPath;
+
     // Add field to track scrolling state
     private boolean isScrolling = false;
     // Add skeleton mode for professional loading experience
@@ -171,15 +170,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                                                                                                              // provides
                                                                                                              // this
 
-        // Initialize the cache directory path for checking temp files
-        File cacheBaseDir = context.getExternalCacheDir();
-        if (cacheBaseDir != null) {
-            this.tempCacheDirectoryPath = new File(cacheBaseDir, "recording_temp").getAbsolutePath();
-            Log.d(TAG, "Adapter Initialized. Temp cache path: " + this.tempCacheDirectoryPath);
-        } else {
-            Log.e(TAG, "Adapter Initialized. External cache dir is null! Cannot reliably identify temp files.");
-            this.tempCacheDirectoryPath = null;
-        }
+
         // Duration cache file inside app cache dir
         File appCache = context.getCacheDir();
         this.durationCacheFile = new File(appCache, "duration_cache.json");
@@ -234,30 +225,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
-    // *** NEW: Helper method to check if a VideoItem is in the cache directory ***
-    private boolean isTemporaryFile(VideoItem item) {
-        if (item == null || item.uri == null || tempCacheDirectoryPath == null) {
-            return false; // Cannot determine if data is invalid or cache path unknown
-        }
-        // Temp files should *always* have a file:// scheme as they are created directly
-        // by MediaRecorder in cache
-        if ("file".equals(item.uri.getScheme())) {
-            String path = item.uri.getPath();
-            if (path != null) {
-                File file = new File(path);
-                File parentDir = file.getParentFile();
-                // Check if the file's parent directory matches the designated cache directory
-                boolean isInCache = parentDir != null && tempCacheDirectoryPath.equals(parentDir.getAbsolutePath());
-                // Optional: Add logging for debugging
-                // Log.v(TAG, "isTemporaryFile check for " + item.displayName + ": Path=" + path
-                // + ", Parent="+(parentDir != null ? parentDir.getAbsolutePath() : "null")+ ",
-                // IsInCache=" + isInCache);
-                return isInCache;
-            }
-        }
-        // Not a file URI, so not a temp file from cache
-        return false;
-    }
+
 
     // ----- Fix Start: Add isSnowVeilTheme flag and method to set it -----
     private boolean isSnowVeilTheme = false;
@@ -327,9 +295,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // --- 2. Determine Item States ---
         final boolean isCurrentlySelected = this.currentSelectedUris.contains(videoUri);
         final boolean isProcessing = this.currentlyProcessingUris.contains(videoUri);
-        final boolean isTemp = isTemporaryFile(videoItem);
+
         final boolean isOpened = sharedPreferencesManager.getOpenedVideoUris().contains(uriString);
-        final boolean showNewBadge = !isTemp && !isOpened && !isProcessing;
+        final boolean showNewBadge = !isOpened && !isProcessing;
         final boolean allowGeneralInteractions = !isProcessing;
         final boolean allowMenuClick = allowGeneralInteractions && !this.isSelectionModeActive;
 
@@ -495,10 +463,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // --- 4. Visibility Logic for Overlays/Badges ---
 
-        // Warning Dot for TEMP files (only visible if not processing)
-        if (holder.menuWarningDot != null) {
-            holder.menuWarningDot.setVisibility(isTemp && allowGeneralInteractions ? View.VISIBLE : View.GONE);
-        }
+
 
         // Processing Overlay (Scrim and Spinner)
         if (holder.processingScrim != null)
@@ -510,22 +475,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.textViewStatusBadge != null && context != null) {
             if (isProcessing) {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide all badges during processing
-            } else if (isTemp) {
-                // Show TEMP badge
-                holder.textViewStatusBadge.setText("TEMP");
-                holder.textViewStatusBadge
-                        .setBackground(ContextCompat.getDrawable(context, R.drawable.temp_badge_background));
-                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.black));
-                holder.textViewStatusBadge.setVisibility(View.VISIBLE);
             } else if (showNewBadge) {
-                // Show NEW badge (only if not Temp and not Opened)
+                // Show NEW badge
                 holder.textViewStatusBadge.setText("NEW");
                 holder.textViewStatusBadge
                         .setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
             } else {
-                // Hide badge if neither Temp nor New
+                // Hide badge
                 holder.textViewStatusBadge.setVisibility(View.GONE);
             }
         }
@@ -1557,139 +1515,114 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         });
     }
 
-    // --- Updated showVideoInfoDialog ---
-
+    // -------------- Fix Start (showVideoInfoDialog)-----------
     /**
-     * Displays a dialog with detailed information about the selected video item.
-     * Shows a specific warning if the item is identified as a temporary file
-     * residing in the cache directory.
+     * Shows video information using the unified picker bottom sheet component
+     * following the app's design patterns and component reuse guidelines.
      *
      * @param videoItem The VideoItem representing the selected video.
      */
     private void showVideoInfoDialog(VideoItem videoItem) {
-        // 1. Pre-checks
+        // Pre-checks
         if (context == null) {
-            Log.e(TAG, "Cannot show info dialog, context is null.");
+            Log.e(TAG, "Cannot show info bottom sheet, context is null.");
             return;
         }
         if (videoItem == null || videoItem.uri == null) {
-            Log.e(TAG, "Cannot show info dialog, videoItem or its URI is null.");
+            Log.e(TAG, "Cannot show info bottom sheet, videoItem or its URI is null.");
             Toast.makeText(context, "Cannot get video information.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 2. Inflate layout and find views
-        MaterialAlertDialogBuilder builder = themedDialogBuilder(context);
-        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_video_info, null);
-        if (dialogView == null) {
-            Log.e(TAG, "Failed to inflate dialog_video_info layout.");
+        // Ensure we have a FragmentActivity to show the bottom sheet
+        if (!(context instanceof FragmentActivity)) {
+            Log.e(TAG, "Context is not a FragmentActivity, cannot show bottom sheet.");
             return;
         }
 
-        TextView tvFileName = dialogView.findViewById(R.id.tv_file_name);
-        TextView tvFileSize = dialogView.findViewById(R.id.tv_file_size);
-        TextView tvFilePath = dialogView.findViewById(R.id.tv_file_path);
-        TextView tvLastModified = dialogView.findViewById(R.id.tv_last_modified);
-        TextView tvDuration = dialogView.findViewById(R.id.tv_duration);
-        TextView tvResolution = dialogView.findViewById(R.id.tv_resolution);
-        ImageView ivCopyToClipboard = dialogView.findViewById(R.id.iv_copy_to_clipboard);
-        TextView tvTempWarning = dialogView.findViewById(R.id.tv_temp_file_warning); // Find warning TextView
+        try {
+            // Prepare video information data
+            String fileName = videoItem.displayName != null ? videoItem.displayName : "Unknown Name";
+            String formattedFileSize = formatFileSize(videoItem.size);
+            String formattedLastModified = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(new Date(videoItem.lastModified));
+            String filePathDisplay = getFilePathDisplay(videoItem.uri);
+            long durationMs = getVideoDuration(videoItem.uri);
+            String formattedDuration = formatVideoDuration(durationMs);
+            String resolution = getVideoResolution(videoItem.uri);
 
-        // Check if all essential views were found
-        if (tvFileName == null || tvFileSize == null || tvFilePath == null || tvLastModified == null ||
-                tvDuration == null || tvResolution == null || ivCopyToClipboard == null || tvTempWarning == null) {
-            Log.e(TAG, "One or more views were not found in dialog_video_info.xml. Check IDs.");
+            // Create info items for the picker
+            ArrayList<OptionItem> infoItems = new ArrayList<>();
+            infoItems.add(new OptionItem("file_name", "File Name", fileName));
+            infoItems.add(new OptionItem("file_size", "File Size", formattedFileSize));
+            infoItems.add(new OptionItem("file_path", "File Path", filePathDisplay));
+            infoItems.add(new OptionItem("last_modified", "Last Modified", formattedLastModified));
+            infoItems.add(new OptionItem("duration", "Duration", formattedDuration));
+            infoItems.add(new OptionItem("resolution", "Resolution", resolution));
+            
+            // Add copy to clipboard action
+            infoItems.add(OptionItem.withLigature("copy_clipboard", "Copy to Clipboard", "content_copy"));
+
+            // Create and show the picker bottom sheet
+            FragmentActivity activity = (FragmentActivity) context;
+            String resultKey = "video_info_" + System.identityHashCode(videoItem.uri);
+            
+            PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstanceGradient(
+                context.getString(R.string.video_menu_info),
+                infoItems,
+                null, // no selection needed
+                resultKey,
+                null, // no helper text
+                true // use gradient
+            );
+
+            // Set up result listener for copy action
+            activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
+                String selectedId = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if ("copy_clipboard".equals(selectedId)) {
+                    copyVideoInfoToClipboard(videoItem, fileName, formattedFileSize, filePathDisplay, 
+                                           formattedLastModified, formattedDuration, resolution);
+                }
+            });
+
+            picker.show(activity.getSupportFragmentManager(), "video_info_picker");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing video info bottom sheet", e);
             Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
-            return;
         }
+    }
 
-        // 3. Prepare Data
-        Uri videoUri = videoItem.uri;
-        String fileName = videoItem.displayName != null ? videoItem.displayName : "Unknown Name"; // Handle null display
-                                                                                                  // name
-
-        String formattedFileSize = formatFileSize(videoItem.size);
-        String formattedLastModified = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                .format(new Date(videoItem.lastModified));
-
-        // Determine display path (URI string or actual file path)
-        String filePathDisplay = videoUri.toString(); // Default to URI
+    /**
+     * Helper method to get file path display string
+     */
+    private String getFilePathDisplay(Uri videoUri) {
         if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
-            filePathDisplay = videoUri.getPath();
+            return videoUri.getPath();
         }
+        return videoUri.toString();
+    }
 
-        // Fetch metadata (using helpers that handle URI)
-        long durationMs = getVideoDuration(videoUri);
-        String resolution = getVideoResolution(videoUri);
-        String formattedDuration = formatVideoDuration(durationMs);
-
-        // 4. Populate UI Text Views
-        tvFileName.setText(fileName);
-        tvFileSize.setText(formattedFileSize);
-        tvFilePath.setText(filePathDisplay);
-        tvLastModified.setText(formattedLastModified);
-        tvDuration.setText(formattedDuration);
-        tvResolution.setText(resolution);
-
-        // 5. Determine if it's a temp file and show/hide warning
-        boolean isTempFile = isTemporaryFile(videoItem); // Use the path-checking helper
-        // Show/Hide and SET the processed HTML text
-        if (tvTempWarning != null) {
-            if (isTempFile) {
-                // *** FIX: Get the string, process HTML, and set it ***
-                String warningHtmlString = context.getString(R.string.warning_temp_file_detail);
-                tvTempWarning.setText(HtmlCompat.fromHtml(warningHtmlString, HtmlCompat.FROM_HTML_MODE_LEGACY));
-                tvTempWarning.setVisibility(View.VISIBLE);
-            } else {
-                tvTempWarning.setVisibility(View.GONE);
-            }
-            Log.d(TAG, "Info Dialog: Temp warning visibility/text set. IsTemp: " + isTempFile);
-        } else {
-            Log.w(TAG, "tv_temp_file_warning view not found in dialog layout.");
-        }
-        // ... (Prepare clipboard string - NOTE: HTML tags won't be in clipboard text)
-        // ...
-        String clipboardText;
-        if (isTempFile) {
-            // For clipboard, use a plain text version maybe? Or include raw HTML markers?
-            // Simple version without HTML:
-            clipboardText = "IMPORTANT NOTE: This is an unprocessed temporary file... (See dialog for details)";
-        } else {
-            clipboardText = ""; // Or just don't add extra note for normal files
-        }
+    /**
+     * Copies video information to clipboard
+     */
+    private void copyVideoInfoToClipboard(VideoItem videoItem, String fileName, String fileSize, 
+                                        String filePath, String lastModified, String duration, String resolution) {
         String videoInfo = String.format(Locale.US,
-                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s\n%s",
-                fileName, formattedFileSize, filePathDisplay, formattedLastModified, formattedDuration, resolution,
-                clipboardText.trim());
+                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s",
+                fileName, fileSize, filePath, lastModified, duration, resolution);
 
-        // The actual warning text is set via R.string.warning_temp_file_detail in the
-        // XML layout
-
-        // 7. Set up Copy-to-Clipboard Action
-        ivCopyToClipboard.setOnClickListener(v -> {
-            ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("Video Info", videoInfo); // Use the constructed string
-            if (clipboard != null) {
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(context, "Video info copied to clipboard", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.e(TAG, "ClipboardManager service is null.");
-                Toast.makeText(context, "Could not access clipboard", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // 8. Build and Show Dialog
-        builder.setTitle("Video Information")
-                .setView(dialogView)
-                .setPositiveButton("Close", (dialog, which) -> dialog.dismiss());
-
-        // Create and show the dialog
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        dialog.show();
-
-        // Apply Snow Veil button colors after dialog is shown
-        setSnowVeilButtonColors(dialog);
-    } // End of showVideoInfoDialog
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            ClipData clip = ClipData.newPlainText("Video Info", videoInfo);
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(context, "Video info copied to clipboard", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.e(TAG, "ClipboardManager service is null");
+            Toast.makeText(context, "Could not access clipboard", Toast.LENGTH_SHORT).show();
+        }
+    }
+    // -------------- Fix Ended (showVideoInfoDialog)-----------
 
     /**
      * Opens the selected video directly in the YouTube app for uploading
@@ -1987,8 +1920,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 // Compare fields that affect the display
                 return oldItem.displayName.equals(newItem.displayName) &&
                         oldItem.size == newItem.size &&
-                        oldItem.lastModified == newItem.lastModified &&
-                        oldItem.isTemporary == newItem.isTemporary;
+                        oldItem.lastModified == newItem.lastModified;
             }
         });
 
