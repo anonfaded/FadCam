@@ -153,6 +153,8 @@
         android:layout_margin="16dp"
         android:visibility="gone"
         app:srcCompat="@drawable/ic_delete"
+        app:backgroundTint="@color/danger_red"
+        app:tint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
