@@ -1517,8 +1517,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // -------------- Fix Start (showVideoInfoDialog)-----------
     /**
-     * Shows video information using the unified picker bottom sheet component
-     * following the app's design patterns and component reuse guidelines.
+     * Shows comprehensive video information in a custom 2-column bottom sheet
+     * with enhanced metadata including FPS, codec, bitrate, and geotag data.
      *
      * @param videoItem The VideoItem representing the selected video.
      */
@@ -1530,7 +1530,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         if (videoItem == null || videoItem.uri == null) {
             Log.e(TAG, "Cannot show info bottom sheet, videoItem or its URI is null.");
-            Toast.makeText(context, "Cannot get video information.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.toast_video_not_found), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1541,85 +1541,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
         try {
-            // Prepare video information data
-            String fileName = videoItem.displayName != null ? videoItem.displayName : "Unknown Name";
-            String formattedFileSize = formatFileSize(videoItem.size);
-            String formattedLastModified = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                    .format(new Date(videoItem.lastModified));
-            String filePathDisplay = getFilePathDisplay(videoItem.uri);
-            long durationMs = getVideoDuration(videoItem.uri);
-            String formattedDuration = formatVideoDuration(durationMs);
-            String resolution = getVideoResolution(videoItem.uri);
-
-            // Create info items for the picker
-            ArrayList<OptionItem> infoItems = new ArrayList<>();
-            infoItems.add(new OptionItem("file_name", "File Name", fileName));
-            infoItems.add(new OptionItem("file_size", "File Size", formattedFileSize));
-            infoItems.add(new OptionItem("file_path", "File Path", filePathDisplay));
-            infoItems.add(new OptionItem("last_modified", "Last Modified", formattedLastModified));
-            infoItems.add(new OptionItem("duration", "Duration", formattedDuration));
-            infoItems.add(new OptionItem("resolution", "Resolution", resolution));
-            
-            // Add copy to clipboard action
-            infoItems.add(OptionItem.withLigature("copy_clipboard", "Copy to Clipboard", "content_copy"));
-
-            // Create and show the picker bottom sheet
             FragmentActivity activity = (FragmentActivity) context;
-            String resultKey = "video_info_" + System.identityHashCode(videoItem.uri);
-            
-            PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstanceGradient(
-                context.getString(R.string.video_menu_info),
-                infoItems,
-                null, // no selection needed
-                resultKey,
-                null, // no helper text
-                true // use gradient
-            );
-
-            // Set up result listener for copy action
-            activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
-                String selectedId = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-                if ("copy_clipboard".equals(selectedId)) {
-                    copyVideoInfoToClipboard(videoItem, fileName, formattedFileSize, filePathDisplay, 
-                                           formattedLastModified, formattedDuration, resolution);
-                }
-            });
-
-            picker.show(activity.getSupportFragmentManager(), "video_info_picker");
-            
+            VideoInfoBottomSheet bottomSheet = VideoInfoBottomSheet.newInstance(videoItem);
+            bottomSheet.show(activity.getSupportFragmentManager(), "video_info_bottom_sheet");
         } catch (Exception e) {
             Log.e(TAG, "Error showing video info bottom sheet", e);
             Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    /**
-     * Helper method to get file path display string
-     */
-    private String getFilePathDisplay(Uri videoUri) {
-        if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
-            return videoUri.getPath();
-        }
-        return videoUri.toString();
-    }
-
-    /**
-     * Copies video information to clipboard
-     */
-    private void copyVideoInfoToClipboard(VideoItem videoItem, String fileName, String fileSize, 
-                                        String filePath, String lastModified, String duration, String resolution) {
-        String videoInfo = String.format(Locale.US,
-                "File Name: %s\nFile Size: %s\nFile Path: %s\nLast Modified: %s\nDuration: %s\nResolution: %s",
-                fileName, fileSize, filePath, lastModified, duration, resolution);
-
-        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-        if (clipboard != null) {
-            ClipData clip = ClipData.newPlainText("Video Info", videoInfo);
-            clipboard.setPrimaryClip(clip);
-            Toast.makeText(context, "Video info copied to clipboard", Toast.LENGTH_SHORT).show();
-        } else {
-            Log.e(TAG, "ClipboardManager service is null");
-            Toast.makeText(context, "Could not access clipboard", Toast.LENGTH_SHORT).show();
         }
     }
     // -------------- Fix Ended (showVideoInfoDialog)-----------

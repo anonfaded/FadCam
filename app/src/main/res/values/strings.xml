@@ -108,6 +108,22 @@
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>
+    
+    <!-- Video Info Strings -->
+    <string name="video_info_file_name">File Name</string>
+    <string name="video_info_file_size">File Size</string>
+    <string name="video_info_file_path">File Path</string>
+    <string name="video_info_last_modified">Last Modified</string>
+    <string name="video_info_duration">Duration</string>
+    <string name="video_info_resolution">Resolution</string>
+    <string name="video_info_fps">Frame Rate</string>
+    <string name="video_info_codec">Codec</string>
+    <string name="video_info_bitrate">Bitrate</string>
+    <string name="video_info_geotag">Location</string>
+    <string name="video_info_copy_clipboard">Copy to Clipboard</string>
+    <string name="video_info_copy_subtitle">Copy video information</string>
+    <string name="video_info_unknown">Unknown</string>
+    <string name="video_info_no_location">No location data</string>
     <string name="video_menu_mark_viewed">Mark as Viewed</string>
     <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
     <string name="video_menu_upload_youtube">Upload to YouTube</string>

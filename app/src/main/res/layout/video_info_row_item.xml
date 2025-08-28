@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    android:gravity="center_vertical"
+    android:minHeight="44dp">
+
+    <!-- Icon -->
+    <TextView
+        android:id="@+id/info_icon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginEnd="12dp"
+        android:gravity="center"
+        android:textColor="?attr/pickerTextPrimary"
+        android:textSize="18sp"
+        android:fontFamily="@font/materialicons"
+        tools:text="description" />
+
+    <!-- Label Column -->
+    <TextView
+        android:id="@+id/info_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:textAlignment="viewStart"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="File Name" />
+
+    <!-- Value Column -->
+    <TextView
+        android:id="@+id/info_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.6"
+        android:textSize="13sp"
+        android:textColor="?attr/pickerTextSecondary"
+        android:textAlignment="viewStart"
+        android:layout_marginStart="16dp"
+        android:maxLines="3"
+        android:ellipsize="end"
+        android:lineSpacingExtra="2dp"
+        tools:text="FadCam_20250828_213415.mp4" />
+
+</LinearLayout>
