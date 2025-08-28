@@ -47,8 +47,8 @@
         android:textColor="?attr/pickerTextSecondary"
         android:textAlignment="viewStart"
         android:layout_marginStart="16dp"
-        android:maxLines="3"
-        android:ellipsize="end"
+        android:maxLines="4"
+        android:ellipsize="none"
         android:lineSpacingExtra="2dp"
         tools:text="FadCam_20250828_213415.mp4" />
 
