@@ -35,9 +35,9 @@
     <color name="amoled_slider_inactive">#1A1A1A</color> <!-- Very dark gray, almost black -->
     
     <!-- Picker component colors for Faded Night theme (bright colors for contrast) -->
-    <color name="amoled_picker_button_background">#E0E0E0</color> <!-- Light gray background for good contrast -->
-    <color name="amoled_picker_button_text">#1A1A1A</color> <!-- Dark text on light buttons -->
-    <color name="amoled_picker_icon_tint">#E0E0E0</color> <!-- Light gray for icons -->
+    <color name="amoled_picker_button_background">#F5F5F5</color> <!-- Brighter light gray background for better contrast -->
+    <color name="amoled_picker_button_text">#000000</color> <!-- Pure black text on light buttons for maximum contrast -->
+    <color name="amoled_picker_icon_tint">#F5F5F5</color> <!-- Brighter light gray for icons -->
     <color name="amoled_picker_slider_active">#FFFFFF</color> <!-- White for active slider -->
     <color name="amoled_picker_slider_inactive">#757575</color> <!-- Medium gray for inactive track -->
 </resources> 

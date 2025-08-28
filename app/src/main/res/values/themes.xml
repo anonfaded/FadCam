@@ -552,24 +552,24 @@
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF001A2B</item>
         <item name="pickerGradientEnd">#FF003354</item>
-        <!-- Picker text colors for Snow Veil theme -->
+        <!-- Picker text colors for Snow Veil theme - white text for dark cards -->
         <item name="pickerTextPrimary">@android:color/white</item>
-        <item name="pickerTextSecondary">#999999</item>
+        <item name="pickerTextSecondary">#CCCCCC</item>
         <!-- Section header color - use snow veil theme primary -->
         <item name="sectionHeaderColor">@color/snowveil_theme_primary</item>
-        <!-- Snow Veil theme picker colors with proper contrast -->
+        <!-- Snow Veil theme picker colors with proper contrast for dark cards -->
         <item name="pickerButtonBackground">@color/snowveil_theme_primary</item>
-        <item name="pickerButtonText">@color/snowveil_theme_on_primary</item>
-        <item name="pickerIconTint">@color/snowveil_theme_primary</item>
+        <item name="pickerButtonText">@android:color/white</item>
+        <item name="pickerIconTint">@android:color/white</item>
         <item name="pickerSliderActive">@color/snowveil_theme_primary</item>
         <item name="pickerSliderInactive">@color/snowveil_theme_slider_inactive</item>
     </style>
 
-    <!-- Add CardView style for Snow Veil theme -->
+    <!-- Add CardView style for Snow Veil theme with dark background for better contrast -->
     <style name="Theme.FadCam.SnowVeilCardView" parent="Widget.MaterialComponents.CardView">
-        <item name="cardBackgroundColor">@android:color/white</item>
+        <item name="cardBackgroundColor">#2E2E2E</item>
         <item name="cardElevation">2dp</item>
-        <item name="cardCornerRadius">8dp</item>
+        <item name="cardCornerRadius">12dp</item>
     </style>
 
     <!-- Add additional styles for Snow Veil theme components -->

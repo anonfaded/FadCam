@@ -5,8 +5,7 @@
     android:layout_height="match_parent"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:cardBackgroundColor="?attr/colorSurface">
+    app:cardElevation="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,7 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="1/11"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/pickerIconTint"
             android:textSize="14sp"
             android:textStyle="bold"
             android:layout_marginBottom="12dp" />
@@ -32,7 +31,7 @@
             android:layout_height="48dp"
             android:fontFamily="@font/materialicons"
             android:text="lightbulb"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/pickerIconTint"
             android:textSize="32sp"
             android:gravity="center"
             android:layout_marginBottom="16dp" />

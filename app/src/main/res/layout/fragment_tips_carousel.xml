@@ -25,7 +25,7 @@
             android:layout_marginEnd="12dp"
             android:src="@drawable/ic_close"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="?attr/pickerTextSecondary"
+            android:tint="?attr/pickerIconTint"
             android:contentDescription="@string/close" />
 
         <TextView
@@ -90,7 +90,7 @@
                 android:layout_height="36dp"
                 android:background="@drawable/picker_circle_btn_tinted"
                 android:src="@drawable/ic_arrow_left"
-                android:tint="?attr/pickerTextPrimary"
+                android:tint="?attr/pickerButtonText"
                 android:scaleType="center"
                 android:contentDescription="@string/previous" />
 
@@ -118,7 +118,7 @@
                 android:layout_height="36dp"
                 android:background="@drawable/picker_circle_btn_tinted"
                 android:src="@drawable/ic_arrow_right"
-                android:tint="?attr/pickerTextPrimary"
+                android:tint="?attr/pickerButtonText"
                 android:scaleType="center"
                 android:contentDescription="@string/next" />
 
