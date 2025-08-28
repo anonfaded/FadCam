@@ -239,7 +239,14 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
             String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             Log.d(TAG, "Raw resolution metadata - Width: " + width + ", Height: " + height);
             if (width != null && height != null) {
-                metadata.resolution = width + " x " + height;
+                try {
+                    int w = Integer.parseInt(width);
+                    int h = Integer.parseInt(height);
+                    String resolutionName = getResolutionName(w, h);
+                    metadata.resolution = width + " x " + height + " (" + resolutionName + ")";
+                } catch (NumberFormatException e) {
+                    metadata.resolution = width + " x " + height;
+                }
             } else {
                 Log.w(TAG, "Resolution metadata is null - width: " + width + ", height: " + height);
             }
@@ -630,6 +637,36 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
             return String.format(Locale.US, "%dm %ds", minutes, seconds);
         } else {
             return String.format(Locale.US, "%ds", seconds);
+        }
+    }
+
+    /**
+     * Gets the common name for a video resolution
+     * @param width Video width in pixels
+     * @param height Video height in pixels
+     * @return Common resolution name (e.g., "HD", "FHD", "4K")
+     */
+    private String getResolutionName(int width, int height) {
+        // Use the shorter dimension for classification (industry standard)
+        int shortSide = Math.min(width, height);
+        
+        // Standard video resolution classifications based on vertical resolution
+        if (shortSide >= 2160) {
+            return "4K UHD";
+        } else if (shortSide >= 1440) {
+            return "QHD";
+        } else if (shortSide >= 1080) {
+            return "FHD";
+        } else if (shortSide >= 720) {
+            return "HD";
+        } else if (shortSide >= 480) {
+            return "SD";
+        } else if (shortSide >= 360) {
+            return "nHD";
+        } else if (shortSide >= 240) {
+            return "QVGA";
+        } else {
+            return "Low Res";
         }
     }
 
