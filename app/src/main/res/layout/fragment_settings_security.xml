@@ -64,7 +64,7 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp">
 
-            <!-- Tab Lock (compact) -->
+            <!-- Tab Lock -->
             <LinearLayout
                 android:id="@+id/row_tab_lock"
                 style="@style/SettingsGroupRow">
@@ -75,16 +75,13 @@
                     android:src="@drawable/ic_lock"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/setting_applock_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_tab_lock_status"
                     android:layout_width="wrap_content"
@@ -102,7 +99,7 @@
 
             <View style="@style/SettingsDivider" />
 
-            <!-- Cloak in Recents (compact) -->
+            <!-- Cloak in Recents -->
             <LinearLayout
                 android:id="@+id/row_cloak_recents"
                 style="@style/SettingsGroupRow">
@@ -113,16 +110,13 @@
                     android:src="@drawable/ic_info"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/setting_cloak_recents_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_cloak_recents_status"
                     android:layout_width="wrap_content"

@@ -76,21 +76,17 @@
                     android:src="@drawable/ic_vid_cam"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_camera_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_camera_type"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -114,21 +110,17 @@
                     android:src="@drawable/ic_debug"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_lens_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_lens"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -151,21 +143,17 @@
                     android:src="@drawable/ic_avc"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_resolution_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_resolution"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -188,21 +176,17 @@
                     android:src="@drawable/ic_debug"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_frame_rate_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_framerate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -225,21 +209,17 @@
                     android:src="@drawable/ic_avc"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_codec_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_codec"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -262,21 +242,17 @@
                     android:src="@drawable/ic_settings"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_bitrate_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_bitrate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -301,21 +277,17 @@
                     android:src="@drawable/ic_zoom"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_zoom_ratio_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_zoom_ratio"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -338,21 +310,17 @@
                     android:src="@drawable/ic_debug"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_video_splitting_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_video_split_enabled"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="@string/setting_disabled_msg"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -375,21 +343,17 @@
                     android:src="@drawable/ic_settings"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_orientation_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_orientation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="13sp"/>
@@ -412,16 +376,13 @@
                     android:src="@drawable/ic_navigation"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/video_setting_location_embed_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
                 <TextView
                     android:id="@+id/value_location_embed"
                     android:layout_width="wrap_content"

@@ -35,14 +35,17 @@
     <!-- Settings home row style -->
     <style name="SettingsGroupRow" parent="">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_height">wrap_content</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:paddingStart">14dp</item>
         <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
         <item name="android:layout_marginTop">4dp</item>
         <item name="android:layout_marginBottom">4dp</item>
         <item name="android:background">@drawable/settings_home_row_bg</item>
+        <item name="android:minHeight">48dp</item>
     </style>
     <style name="SettingsDivider" parent="">
         <item name="android:layout_width">match_parent</item>

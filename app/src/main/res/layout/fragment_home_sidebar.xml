@@ -85,13 +85,7 @@
             <!-- Tips row -->
             <LinearLayout
                 android:id="@+id/row_tips"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="12dp"
-                android:background="@drawable/settings_home_row_bg">
+                style="@style/SettingsGroupRow">
 
                 <!-- Tips icon using Material Icons ligature -->
                 <TextView

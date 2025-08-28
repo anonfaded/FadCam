@@ -78,16 +78,13 @@
                     android:src="@drawable/ic_theme"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Theme"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_theme"
                     android:layout_width="wrap_content"
@@ -117,16 +114,13 @@
                     android:src="@drawable/ic_language"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Language"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_language"
                     android:layout_width="wrap_content"
@@ -156,16 +150,13 @@
                     android:src="@drawable/ic_theme"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="App Icon"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_app_icon"
                     android:layout_width="wrap_content"

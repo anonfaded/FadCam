@@ -155,16 +155,13 @@
                         android:src="@drawable/ic_info"
                         android:tint="@android:color/darker_gray"/>
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text="@string/notification_style_row_title"
                         android:textStyle="bold"
                         android:textSize="15sp"
                         android:textColor="?attr/colorHeading"/>
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"/>
                     <TextView
                         android:id="@+id/value_notification_preset"
                         android:layout_width="wrap_content"
@@ -193,16 +190,13 @@
                         android:src="@drawable/ic_notifications"
                         android:tint="@android:color/darker_gray"/>
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text="@string/notification_stop_button_row_title"
                         android:textStyle="bold"
                         android:textSize="15sp"
                         android:textColor="?attr/colorHeading"/>
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"/>
                     <TextView
                         android:id="@+id/value_hide_stop_button"
                         android:layout_width="wrap_content"

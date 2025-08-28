@@ -81,12 +81,7 @@
 
         <LinearLayout
             android:id="@+id/row_sort"
-            style="@style/SettingsGroupRow"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingEnd="12dp"
-            android:gravity="center_vertical">
+            style="@style/SettingsGroupRow">
             <ImageView
                 android:id="@+id/row_sort_icon"
                 android:layout_width="24dp"
@@ -136,12 +131,7 @@
         <!-- View Mode Row (moved from FAB) -->
         <LinearLayout
             android:id="@+id/row_view_mode"
-            style="@style/SettingsGroupRow"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingEnd="12dp"
-            android:gravity="center_vertical">
+            style="@style/SettingsGroupRow">
             <ImageView
                 android:id="@+id/row_view_mode_icon"
                 android:layout_width="24dp"
@@ -212,12 +202,7 @@
 
         <LinearLayout
             android:id="@+id/row_hide_thumbnails"
-            style="@style/SettingsGroupRow"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingEnd="12dp"
-            android:gravity="center_vertical">
+            style="@style/SettingsGroupRow">
             <ImageView
                 android:id="@+id/row_hide_thumbnails_icon"
                 android:layout_width="24dp"
@@ -286,11 +271,8 @@
         <LinearLayout
             android:id="@+id/row_delete_all"
             style="@style/SettingsGroupRow"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
             android:paddingStart="12dp"
             android:paddingEnd="16dp"
-            android:gravity="center_vertical"
             android:background="@drawable/settings_home_row_bg_danger"
             android:clickable="true"
             android:foreground="@drawable/ripple_danger_rounded">

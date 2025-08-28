@@ -75,16 +75,13 @@
                     android:src="@drawable/ic_audio"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_record_audio_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_record_audio"
                     android:layout_width="wrap_content"
@@ -112,16 +109,13 @@
                     android:src="@drawable/ic_mic"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_input_source_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_audio_input_source"
                     android:layout_width="wrap_content"
@@ -149,16 +143,13 @@
                     android:src="@drawable/ic_audio"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/row_noise_suppression_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_noise_suppression"
                     android:layout_width="wrap_content"
@@ -186,16 +177,13 @@
                     android:src="@drawable/ic_settings"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/settings_advanced_title"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_audio_advanced"
                     android:layout_width="wrap_content"

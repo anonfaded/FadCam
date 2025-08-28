@@ -78,16 +78,13 @@
                     android:src="@drawable/ic_info"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Onboarding"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_onboarding_state"
                     android:layout_width="wrap_content"
@@ -115,16 +112,13 @@
                     android:src="@drawable/ic_info"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Auto Update Check"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
                 <TextView
                     android:id="@+id/value_auto_update_state"
                     android:layout_width="wrap_content"
