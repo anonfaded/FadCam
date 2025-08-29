@@ -311,6 +311,8 @@ public class FaditorEditorFragment extends BaseFragment implements
         
         // Initialize timeline
         if (timeline != null) {
+            timeline.setAutoSaveManager(autoSaveManager);
+            timeline.setVideoUri(currentProject.getOriginalVideoUri());
             timeline.setVideoDuration(currentProject.getDuration());
             if (currentProject.getCurrentTrim() != null) {
                 timeline.setTrimRange(
@@ -638,6 +640,62 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Update editor state with timeline state
         if (editorState != null && timeline != null) {
             editorState.setTimelineState(timeline.getState());
+        }
+        
+        markModified();
+    }
+    
+    @Override
+    public void onScrubbing(boolean isScrubbing, long positionMs) {
+        Log.d(TAG, "Scrubbing: " + isScrubbing + " at position: " + positionMs);
+        
+        if (isScrubbing) {
+            // Pause video during scrubbing for smooth preview
+            if (videoPlayer != null) {
+                videoPlayer.pause();
+            }
+        }
+        
+        // Update video position during scrubbing
+        if (videoPlayer != null) {
+            videoPlayer.seekTo(positionMs);
+        }
+        
+        if (editorState != null) {
+            editorState.setLastPlayPosition(positionMs);
+        }
+        
+        markModified();
+    }
+    
+    @Override
+    public void onZoomChanged(float zoomLevel) {
+        Log.d(TAG, "Timeline zoom changed: " + zoomLevel);
+        
+        // Update editor state with new zoom level
+        if (editorState != null && timeline != null) {
+            editorState.setTimelineState(timeline.getState());
+        }
+        
+        markModified();
+    }
+    
+    @Override
+    public void onFrameSnapped(long framePositionMs) {
+        Log.d(TAG, "Frame snapped to position: " + framePositionMs);
+        
+        // Provide haptic feedback for frame snapping
+        if (getView() != null) {
+            getView().performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+        }
+        
+        // Update video position to snapped frame
+        if (videoPlayer != null) {
+            videoPlayer.seekTo(framePositionMs);
+        }
+        
+        if (editorState != null) {
+            editorState.setLastPlayPosition(framePositionMs);
         }
         
         markModified();
