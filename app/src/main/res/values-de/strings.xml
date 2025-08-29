@@ -693,4 +693,12 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="fix_video_saf_write_fail">Reparierte Datei kann nicht in den SAF-Ordner geschrieben werden. Im App-Speicher gespeichert.</string>
     <string name="fix_video_saf_success">Video repariert! Gespeichert als: %1$s.</string>
     <string name="fix_video_saf_export">Exportiere oder teile die reparierte Datei bei Bedarf aus dem App-Speicher.</string>
+
+    <!-- Faditor Mini Video Editor Strings -->
+    <!-- TODO: Translate Faditor strings from values/strings.xml -->
+    <!-- Die folgenden Strings benötigen deutsche Übersetzung: -->
+    <!-- - Alle Strings die mit "faditor_" beginnen -->
+    <!-- - Projektbrowser, Editor, Timeline, Export und Fehlermeldungen -->
+    <!-- - Auto-Speichern und Projektverwaltung Strings -->
+
 </resources>

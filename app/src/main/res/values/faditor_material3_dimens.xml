@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Corner Radius -->
+    <dimen name="material_corner_radius_extra_small">4dp</dimen>
+    <dimen name="material_corner_radius_small">8dp</dimen>
+    <dimen name="material_corner_radius_medium">12dp</dimen>
+    <dimen name="material_corner_radius_large">16dp</dimen>
+    <dimen name="material_corner_radius_extra_large">28dp</dimen>
+    
+    <!-- Material 3 Spacing -->
+    <dimen name="material_spacing_extra_small">4dp</dimen>
+    <dimen name="material_spacing_small">8dp</dimen>
+    <dimen name="material_spacing_medium">16dp</dimen>
+    <dimen name="material_spacing_large">24dp</dimen>
+    <dimen name="material_spacing_extra_large">32dp</dimen>
+    
+    <!-- Material 3 Component Sizes -->
+    <dimen name="material_button_height">40dp</dimen>
+    <dimen name="material_button_height_large">48dp</dimen>
+    <dimen name="material_fab_size">56dp</dimen>
+    <dimen name="material_fab_size_large">96dp</dimen>
+    <dimen name="material_chip_height">32dp</dimen>
+    <dimen name="material_card_elevation">1dp</dimen>
+    
+    <!-- Faditor-specific Dimensions -->
+    <dimen name="faditor_toolbar_height">64dp</dimen>
+    <dimen name="faditor_timeline_height">120dp</dimen>
+    <dimen name="faditor_project_card_width">160dp</dimen>
+    <dimen name="faditor_project_card_height">200dp</dimen>
+    <dimen name="faditor_project_thumbnail_height">120dp</dimen>
+    
+    <!-- Touch Target Sizes (Accessibility) -->
+    <dimen name="material_touch_target_size">48dp</dimen>
+    <dimen name="material_touch_target_size_large">56dp</dimen>
+    
+    <!-- Progress Indicator Sizes -->
+    <dimen name="material_progress_circular_size">48dp</dimen>
+    <dimen name="material_progress_circular_size_small">24dp</dimen>
+    <dimen name="material_progress_track_thickness">4dp</dimen>
+    
+    <!-- Timeline Component Dimensions -->
+    <dimen name="faditor_timeline_track_height">4dp</dimen>
+    <dimen name="faditor_timeline_handle_size">20dp</dimen>
+    <dimen name="faditor_timeline_playhead_width">2dp</dimen>
+    <dimen name="faditor_timeline_waveform_height">40dp</dimen>
+    
+</resources>

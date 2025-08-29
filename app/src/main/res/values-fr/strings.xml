@@ -538,4 +538,11 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="next">Suivant</string>
     <string name="done">Terminé</string>
 
+    <!-- Faditor Mini Video Editor Strings -->
+    <!-- TODO: Translate Faditor strings from values/strings.xml -->
+    <!-- The following strings need French translation: -->
+    <!-- - All strings starting with "faditor_" -->
+    <!-- - Project browser, editor, timeline, export, and error messages -->
+    <!-- - Auto-save and project management strings -->
+
 </resources>

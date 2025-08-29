@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Faditor Strings -->
+    
+    <!-- Project Browser Strings (New) -->
+    <string name="faditor_projects_empty">No projects found</string>
+    <string name="faditor_projects_loading">Loading projects…</string>
+    <string name="faditor_project_browser_title">Video Projects</string>
+    <string name="faditor_filter_projects">Filter projects</string>
+    <string name="faditor_view_options">View options</string>
+    <string name="faditor_view_mode_grid">Grid view</string>
+    <string name="faditor_view_mode_list">List view</string>
+    <string name="faditor_create_project">Create Project</string>
+    <string name="faditor_search_projects">Search projects…</string>
+    <string name="faditor_sort_projects">Sort projects</string>
+    <string name="faditor_no_projects_title">No Projects Yet</string>
+    <string name="faditor_no_projects_subtitle">Create your first video editing project</string>
+    
+    <!-- Project Management Strings (New) -->
+    <string name="faditor_create_new_project">Create New Project</string>
+    <string name="faditor_import_project_file">Import Project File</string>
+    <string name="faditor_export_project_file">Export Project File</string>
+    
+    <!-- Editor Strings (New) -->
+    <string name="faditor_editor_full_screen">Full Screen Editor</string>
+    <string name="faditor_project_browser">Project Browser</string>
+    
+    <!-- Toolbar Tool Strings -->
+    <string name="faditor_tool_select_desc">Select tool</string>
+    <string name="faditor_tool_trim_desc">Trim tool</string>
+    <string name="faditor_tool_split_desc">Split tool</string>
+    <string name="faditor_tool_effects_desc">Effects tool</string>
+    <string name="faditor_tool_audio_desc">Audio tool</string>
+    
+    <!-- Timeline Strings -->
+    <string name="faditor_timeline_zoom_in">Zoom in timeline</string>
+    <string name="faditor_timeline_zoom_out">Zoom out timeline</string>
+    <string name="faditor_timeline_frame_accurate">Frame accurate mode</string>
+    <string name="faditor_timeline_snap_to_frame">Snap to frame</string>
+    
+    <!-- Video Player Strings -->
+    <string name="faditor_play_video">Play video</string>
+    <string name="faditor_pause_video">Pause video</string>
+    <string name="faditor_seek_video">Seek video</string>
+    <string name="faditor_video_position">Video position: %s</string>
+    <string name="faditor_video_duration_format">%1$s / %2$s</string>
+    
+    <!-- Progress and Status Strings (New) -->
+    <string name="faditor_operation_in_progress">Operation in progress…</string>
+    <string name="faditor_operation_success">Operation completed successfully</string>
+    <string name="faditor_please_wait">Please wait…</string>
+    
+    <!-- Accessibility Strings -->
+    <string name="faditor_content_desc_project_thumbnail">Project thumbnail for %s</string>
+    <string name="faditor_content_desc_timeline_handle">Timeline trim handle</string>
+    <string name="faditor_content_desc_playhead">Timeline playhead</string>
+    <string name="faditor_content_desc_waveform">Audio waveform</string>
+    <string name="faditor_content_desc_progress">Progress indicator</string>
+    
+    <!-- Navigation Strings (New) -->
+    <string name="faditor_return_to_browser">Return to browser</string>
+    <string name="faditor_navigate_back">Navigate back</string>
+    <string name="faditor_back_to_projects">Back to projects</string>
+    
+    <!-- Format Support Strings (New) -->
+    <string name="faditor_all_supported_formats">All supported formats</string>
+    <string name="faditor_video_formats">Video formats</string>
+    
+    <!-- Quality Settings (New) -->
+    <string name="faditor_export_quality">Export Quality</string>
+    <string name="faditor_quality_settings">Quality Settings</string>
+    
+    <!-- Auto-save Strings -->
+    <string name="faditor_auto_save_enabled">Auto-save enabled</string>
+    <string name="faditor_auto_save_disabled">Auto-save disabled</string>
+    <string name="faditor_last_saved">Last saved: %s</string>
+    
+    <!-- Material 3 Component Labels -->
+    <string name="faditor_material_button">Material button</string>
+    <string name="faditor_material_fab">Floating action button</string>
+    <string name="faditor_material_card">Material card</string>
+    <string name="faditor_material_chip">Material chip</string>
+    <string name="faditor_material_slider">Material slider</string>
+    <string name="faditor_material_switch">Material switch</string>
+    
+</resources>

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Faditor Styles -->
+    
+    <!-- Base Faditor Material 3 Theme -->
+    <style name="Theme.FadCam.Faditor" parent="Base.Theme.FadCam">
+        <!-- Material 3 Dynamic Color Support -->
+        <item name="colorPrimary">@color/faditor_primary</item>
+        <item name="colorOnPrimary">@color/faditor_on_primary</item>
+        <item name="colorPrimaryContainer">@color/faditor_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/faditor_on_primary_container</item>
+        
+        <item name="colorSecondary">@color/faditor_secondary</item>
+        <item name="colorOnSecondary">@color/faditor_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/faditor_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/faditor_on_secondary_container</item>
+        
+        <item name="colorTertiary">@color/faditor_tertiary</item>
+        <item name="colorOnTertiary">@color/faditor_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/faditor_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/faditor_on_tertiary_container</item>
+        
+        <item name="colorSurface">@color/faditor_surface</item>
+        <item name="colorOnSurface">@color/faditor_on_surface</item>
+        <item name="colorSurfaceVariant">@color/faditor_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/faditor_on_surface_variant</item>
+        
+        <item name="colorOutline">@color/faditor_outline</item>
+        <item name="colorOutlineVariant">@color/faditor_outline_variant</item>
+        
+        <!-- Material 3 Motion -->
+        <item name="motionDurationShort1">@integer/material_motion_duration_short_1</item>
+        <item name="motionDurationShort2">@integer/material_motion_duration_short_2</item>
+        <item name="motionDurationMedium1">@integer/material_motion_duration_medium_1</item>
+        <item name="motionDurationMedium2">@integer/material_motion_duration_medium_2</item>
+        <item name="motionDurationLong1">@integer/material_motion_duration_long_1</item>
+        <item name="motionDurationLong2">@integer/material_motion_duration_long_2</item>
+        
+        <!-- Material 3 Elevation -->
+        <item name="elevationLevel0">0dp</item>
+        <item name="elevationLevel1">1dp</item>
+        <item name="elevationLevel2">3dp</item>
+        <item name="elevationLevel3">6dp</item>
+        <item name="elevationLevel4">8dp</item>
+        <item name="elevationLevel5">12dp</item>
+    </style>
+    
+    <!-- Material 3 Button Styles -->
+    <style name="Widget.FadCam.Faditor.Button" parent="Widget.Material3.Button">
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:paddingHorizontal">24dp</item>
+        <item name="android:paddingVertical">10dp</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.Button.Filled" parent="Widget.Material3.Button">
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="iconTint">?attr/colorOnPrimary</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="iconTint">?attr/colorPrimary</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="iconTint">?attr/colorPrimary</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.Button.Icon" parent="Widget.Material3.Button.IconButton">
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="iconSize">24dp</item>
+        <item name="iconTint">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.Button.Icon.Filled" parent="Widget.Material3.Button.IconButton.Filled">
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="iconTint">?attr/colorOnPrimary</item>
+    </style>
+    
+    <!-- Material 3 FAB Styles -->
+    <style name="Widget.FadCam.Faditor.FloatingActionButton" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="backgroundTint">?attr/colorPrimaryContainer</item>
+        <item name="tint">?attr/colorOnPrimaryContainer</item>
+        <item name="elevation">?attr/elevationLevel3</item>
+        <item name="hoveredFocusedTranslationZ">?attr/elevationLevel4</item>
+        <item name="pressedTranslationZ">?attr/elevationLevel3</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.FloatingActionButton.Large" parent="Widget.Material3.FloatingActionButton.Large.Primary">
+        <item name="backgroundTint">?attr/colorPrimaryContainer</item>
+        <item name="tint">?attr/colorOnPrimaryContainer</item>
+    </style>
+    
+    <!-- Material 3 Card Styles -->
+    <style name="Widget.FadCam.Faditor.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">?attr/elevationLevel1</item>
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="contentPadding">16dp</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.CardView.Filled" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceVariant</item>
+        <item name="contentPadding">16dp</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.CardView.Outlined" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardCornerRadius">12dp</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="contentPadding">16dp</item>
+    </style>
+    
+    <!-- Material 3 Slider Styles -->
+    <style name="Widget.FadCam.Faditor.Slider" parent="Widget.Material3.Slider">
+        <item name="trackColorActive">?attr/colorPrimary</item>
+        <item name="trackColorInactive">?attr/colorSurfaceVariant</item>
+        <item name="thumbColor">?attr/colorPrimary</item>
+        <item name="haloColor">?attr/colorPrimary</item>
+        <item name="tickColorActive">?attr/colorOnPrimary</item>
+        <item name="tickColorInactive">?attr/colorOnSurfaceVariant</item>
+        <item name="labelStyle">@style/Widget.FadCam.Faditor.Tooltip</item>
+    </style>
+    
+    <!-- Material 3 Progress Indicator Styles -->
+    <style name="Widget.FadCam.Faditor.LinearProgressIndicator" parent="Widget.Material3.LinearProgressIndicator">
+        <item name="trackColor">?attr/colorSurfaceVariant</item>
+        <item name="indicatorColor">?attr/colorPrimary</item>
+        <item name="trackCornerRadius">2dp</item>
+        <item name="trackThickness">4dp</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.CircularProgressIndicator" parent="Widget.Material3.CircularProgressIndicator">
+        <item name="trackColor">?attr/colorSurfaceVariant</item>
+        <item name="indicatorColor">?attr/colorPrimary</item>
+        <item name="trackThickness">4dp</item>
+        <item name="indicatorSize">48dp</item>
+    </style>
+    
+    <!-- Material 3 Text Input Styles -->
+    <style name="Widget.FadCam.Faditor.TextInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">?attr/colorSurfaceVariant</item>
+        <item name="boxCornerRadiusTopStart">4dp</item>
+        <item name="boxCornerRadiusTopEnd">4dp</item>
+        <item name="boxCornerRadiusBottomStart">0dp</item>
+        <item name="boxCornerRadiusBottomEnd">0dp</item>
+        <item name="hintTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:textColorHint">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.TextInputLayout.Outlined" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">?attr/colorOutline</item>
+        <item name="boxCornerRadiusTopStart">4dp</item>
+        <item name="boxCornerRadiusTopEnd">4dp</item>
+        <item name="boxCornerRadiusBottomStart">4dp</item>
+        <item name="boxCornerRadiusBottomEnd">4dp</item>
+        <item name="hintTextColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <!-- Material 3 Toolbar Styles -->
+    <style name="Widget.FadCam.Faditor.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+        <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="navigationIconTint">?attr/colorOnSurface</item>
+        <item name="android:elevation">?attr/elevationLevel2</item>
+    </style>
+    
+    <!-- Material 3 Bottom Sheet Styles -->
+    <style name="Widget.FadCam.Faditor.BottomSheet" parent="Widget.Material3.BottomSheet">
+        <item name="backgroundTint">?attr/colorSurface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.FadCam.Faditor.BottomSheet</item>
+    </style>
+    
+    <!-- Material 3 Dialog Styles -->
+    <style name="ThemeOverlay.FadCam.Faditor.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">?attr/colorSurface</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="android:windowBackground">@drawable/faditor_dialog_background</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.FadCam.Faditor.Button.Text</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.FadCam.Faditor.Button.Text</item>
+    </style>
+    
+    <!-- Material 3 Chip Styles -->
+    <style name="Widget.FadCam.Faditor.Chip" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">?attr/colorSurfaceVariant</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="chipCornerRadius">16dp</item>
+        <item name="chipMinHeight">32dp</item>
+    </style>
+    
+    <style name="Widget.FadCam.Faditor.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="checkedIconVisible">true</item>
+        <item name="chipBackgroundColor">@color/faditor_chip_filter_background</item>
+        <item name="android:textColor">@color/faditor_chip_filter_text</item>
+    </style>
+    
+    <!-- Material 3 Switch Styles -->
+    <style name="Widget.FadCam.Faditor.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/faditor_switch_thumb</item>
+        <item name="trackTint">@color/faditor_switch_track</item>
+        <item name="trackDecorationTint">@color/faditor_switch_track_decoration</item>
+    </style>
+    
+    <!-- Material 3 Tooltip Styles -->
+    <style name="Widget.FadCam.Faditor.Tooltip" parent="Widget.Material3.Tooltip">
+        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
+        <item name="backgroundTint">?attr/colorOnSurface</item>
+        <item name="android:textColor">?attr/colorSurface</item>
+    </style>
+    
+    <!-- Shape Appearances -->
+    <style name="ShapeAppearance.FadCam.Faditor.BottomSheet" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSizeTopLeft">16dp</item>
+        <item name="cornerSizeTopRight">16dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.FadCam.Faditor.Card" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">12dp</item>
+    </style>
+    
+    <!-- Motion and Animation Styles -->
+    <style name="Animation.FadCam.Faditor.Fade" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@anim/faditor_fade_in</item>
+        <item name="android:windowExitAnimation">@anim/faditor_fade_out</item>
+    </style>
+    
+    <style name="Animation.FadCam.Faditor.Slide" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@anim/faditor_slide_in_right</item>
+        <item name="android:windowExitAnimation">@anim/faditor_slide_out_left</item>
+    </style>
+    
+    <!-- Accessibility Styles -->
+    <style name="Widget.FadCam.Faditor.Accessible" parent="">
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+    
+</resources>

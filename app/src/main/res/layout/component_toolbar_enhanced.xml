@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="?attr/colorSurface"
+    android:elevation="@dimen/toolbar_elevation">
+
+    <!-- Main toolbar with tool buttons -->
+    <LinearLayout
+        android:id="@+id/tool_button_container"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/toolbar_height"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/toolbar_padding_horizontal"
+        android:paddingVertical="@dimen/toolbar_padding_vertical"
+        android:background="?attr/colorSurface">
+        
+        <!-- Tool buttons will be added dynamically -->
+        
+    </LinearLayout>
+
+    <!-- Contextual options panel -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/contextual_options_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/contextual_options_margin"
+        android:layout_marginBottom="@dimen/contextual_options_margin"
+        android:visibility="gone"
+        app:cardCornerRadius="@dimen/contextual_options_corner_radius"
+        app:cardElevation="@dimen/contextual_options_elevation"
+        app:cardBackgroundColor="?attr/colorSurfaceVariant"
+        app:strokeWidth="0dp">
+
+        <FrameLayout
+            android:id="@+id/contextual_options_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/contextual_options_padding">
+            
+            <!-- Contextual options content will be added dynamically -->
+            
+        </FrameLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>
