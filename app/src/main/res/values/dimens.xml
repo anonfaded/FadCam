@@ -7,4 +7,17 @@
     <dimen name="onboarding_arrow_size">200dp</dimen>
     <dimen name="onboarding_button_text_size">16sp</dimen>
     <dimen name="onboarding_small_text_size">14sp</dimen>
+    
+    <!-- Toolbar dimensions -->
+    <dimen name="toolbar_height">56dp</dimen>
+    <dimen name="toolbar_elevation">4dp</dimen>
+    <dimen name="toolbar_padding_horizontal">16dp</dimen>
+    <dimen name="toolbar_padding_vertical">8dp</dimen>
+    <dimen name="toolbar_icon_size">24dp</dimen>
+    
+    <!-- Contextual options dimensions -->
+    <dimen name="contextual_options_margin">8dp</dimen>
+    <dimen name="contextual_options_padding">16dp</dimen>
+    <dimen name="contextual_options_corner_radius">12dp</dimen>
+    <dimen name="contextual_options_elevation">2dp</dimen>
 </resources> 

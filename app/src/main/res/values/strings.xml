@@ -1171,6 +1171,21 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_tool_effects">Effects Tool</string>
     <string name="faditor_tool_audio">Audio Tool</string>
     
+    <!-- Tool descriptions -->
+    <string name="faditor_select_tool_description">Select and move elements on the timeline</string>
+    <string name="faditor_trim_tool_description">Trim video segments with precision controls</string>
+    <string name="faditor_split_tool_description">Split video at the current playhead position</string>
+    <string name="faditor_effects_tool_description">Apply visual effects and filters</string>
+    <string name="faditor_audio_tool_description">Edit audio tracks and volume levels</string>
+    
+    <!-- Contextual options -->
+    <string name="faditor_select_all">Select All</string>
+    <string name="faditor_precision_mode">Precision</string>
+    <string name="faditor_snap_to_frame">Snap to Frame</string>
+    <string name="faditor_split_at_position">Split Here</string>
+    <string name="faditor_brightness">Brightness</string>
+    <string name="faditor_contrast">Contrast</string>
+    
     <!-- Playback Controls -->
     <string name="faditor_play_pause">Play/Pause</string>
     <string name="faditor_seek_backward">Seek Backward</string>
