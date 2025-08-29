@@ -568,6 +568,33 @@
     <string name="faditor_mini_title">Faditor Mini</string>
     <string name="faditor_mini_coming_soon">Coming soon — lightweight editor</string>
     <string name="faditor_mini_toast">Faditor Mini — coming soon</string>
+    
+    <!-- Faditor Mini Editor Strings -->
+    <string name="faditor_select_video">Select Video</string>
+    <string name="faditor_trim_video">Trim Video</string>
+    <string name="faditor_export_video">Export Video</string>
+    <string name="faditor_processing">Processing video…</string>
+    <string name="faditor_export_success">Video exported successfully</string>
+    <string name="faditor_error_unsupported_format">Unsupported video format</string>
+    <string name="faditor_error_processing_failed">Video processing failed</string>
+    <string name="faditor_error_file_not_found">Video file not found</string>
+    <string name="faditor_error_insufficient_space">Insufficient storage space</string>
+    <string name="faditor_play">Play</string>
+    <string name="faditor_pause">Pause</string>
+    <string name="faditor_cancel">Cancel</string>
+    <string name="faditor_confirm">Confirm</string>
+    <string name="faditor_trim_start">Trim Start</string>
+    <string name="faditor_trim_end">Trim End</string>
+    <string name="faditor_duration">Duration</string>
+    <string name="faditor_file_size">File Size</string>
+    <string name="faditor_resolution">Resolution</string>
+    <string name="faditor_error_invalid_file">Invalid video file</string>
+    <string name="faditor_error_file_access">Cannot access video file</string>
+    <string name="faditor_video_info">Video Info</string>
+    <string name="faditor_export_options">Export Options</string>
+    <string name="faditor_quality">Quality</string>
+    <string name="faditor_format">Format</string>
+    <string name="faditor_supported_formats">Supported formats: %s</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>

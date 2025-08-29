@@ -35,12 +35,15 @@
             android:textAlignment="viewStart"/>
     </LinearLayout>
 
+    <!-- Placeholder container (shown when no video is loaded) -->
     <LinearLayout
+        android:id="@+id/placeholder_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:orientation="vertical"
         android:gravity="center"
         android:padding="16dp"
+        android:visibility="visible"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -72,6 +75,126 @@
             android:layout_marginTop="8dp"
             android:textColor="@android:color/darker_gray"
             android:textAlignment="center"/>
+
+        <Button
+            android:id="@+id/select_video_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/faditor_select_video"
+            android:textAllCaps="false"
+            style="@style/Widget.Material3.Button"/>
+
+    </LinearLayout>
+
+    <!-- Editor container (shown when video is loaded) -->
+    <LinearLayout
+        android:id="@+id/editor_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Video information display -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Video Information"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:id="@+id/video_info_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace"
+                    android:text="No video selected"/>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Video player placeholder -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@android:color/black">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Video Player"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="(Will be implemented in next task)"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"/>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Control buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/select_new_video_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="@string/faditor_select_video"
+                android:textAllCaps="false"
+                style="@style/Widget.Material3.Button.OutlinedButton"/>
+
+            <Button
+                android:id="@+id/trim_video_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/faditor_trim_video"
+                android:textAllCaps="false"
+                android:enabled="false"
+                style="@style/Widget.Material3.Button"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 
