@@ -1138,4 +1138,24 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_crash_recovery_message">Your previous editing session was interrupted. Would you like to recover your work?</string>
     <string name="faditor_crash_recovery_recover">Recover</string>
     <string name="faditor_crash_recovery_discard">Start Fresh</string>
+    
+    <!-- Project browser strings -->
+    <string name="faditor_projects_count">%d projects</string>
+    <string name="faditor_projects_count_single">1 project</string>
+    <string name="faditor_no_projects">No projects yet</string>
+    <string name="faditor_create_project">Create Project</string>
+    <string name="faditor_search_projects">Search projects…</string>
+    <string name="faditor_sort_by_date">Sort by Date</string>
+    <string name="faditor_sort_by_name">Sort by Name</string>
+    <string name="faditor_sort_by_size">Sort by Size</string>
+    <string name="faditor_project_rename">Rename</string>
+    <string name="faditor_project_delete">Delete</string>
+    <string name="faditor_project_export">Export</string>
+    <string name="faditor_project_import">Import Project</string>
+    <string name="faditor_project_delete_confirm">Delete this project?</string>
+    <string name="faditor_project_delete_message">This action cannot be undone.</string>
+    <string name="faditor_project_rename_title">Rename Project</string>
+    <string name="faditor_project_name_hint">Project name</string>
+    <string name="faditor_new_project_title">New Project</string>
+    <string name="faditor_select_video_for_project">Select video for new project</string>
 </resources>
