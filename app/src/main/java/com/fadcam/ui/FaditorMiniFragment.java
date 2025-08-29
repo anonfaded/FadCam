@@ -282,12 +282,8 @@ public class FaditorMiniFragment extends BaseFragment implements
     public void onProjectSelected(ProjectMetadata project) {
         Log.d(TAG, "Project selected: " + project.getProjectName());
         
-        // Navigate to the full-screen editor with this project
-        // This will be implemented when FaditorEditorFragment is created
-        Toast.makeText(requireContext(), "Opening project: " + project.getProjectName(), Toast.LENGTH_SHORT).show();
-        
-        // TODO: Navigate to FaditorEditorFragment
-        // NavigationUtils.openEditor(this, project.getProjectId());
+        // Navigate to the full-screen editor with this project (Requirement 10.1, 10.2)
+        NavigationUtils.openEditor(this, project.getProjectId());
     }
     
     @Override
@@ -370,9 +366,8 @@ public class FaditorMiniFragment extends BaseFragment implements
                     Log.d(TAG, "New project saved: " + projectId);
                     Toast.makeText(requireContext(), "Project created: " + projectName, Toast.LENGTH_SHORT).show();
                     
-                    // Navigate to editor with the new project
-                    // TODO: Navigate to FaditorEditorFragment
-                    // NavigationUtils.openEditor(FaditorMiniFragment.this, projectId);
+                    // Navigate to editor with the new project (Requirement 10.1, 10.2)
+                    NavigationUtils.openEditor(FaditorMiniFragment.this, projectId);
                 }
                 
                 @Override

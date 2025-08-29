@@ -5,6 +5,9 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.fadcam.Log;
+import com.fadcam.MainActivity;
+import com.fadcam.R;
+import com.fadcam.ui.faditor.FaditorEditorFragment;
 
 /**
  * Utility class for handling navigation between Faditor fragments
@@ -16,34 +19,27 @@ public class NavigationUtils {
     
     /**
      * Opens the full-screen editor fragment with the specified project
-     * This will be implemented when FaditorEditorFragment is created
+     * Uses the overlay fragment container for full-screen editing experience
      */
     public static void openEditor(Fragment currentFragment, String projectId) {
         Log.d(TAG, "Opening editor for project: " + projectId);
         
-        // TODO: Implement navigation to FaditorEditorFragment
-        // This will be implemented in a future task when the editor fragment is created
-        
-        /*
-        FragmentManager fragmentManager = currentFragment.getParentFragmentManager();
-        FaditorEditorFragment editorFragment = FaditorEditorFragment.newInstance(projectId);
-        
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.setCustomAnimations(
-            R.anim.slide_in_right,
-            R.anim.slide_out_left,
-            R.anim.slide_in_left,
-            R.anim.slide_out_right
-        );
-        transaction.replace(R.id.fragment_container, editorFragment);
-        transaction.addToBackStack("editor");
-        transaction.commit();
-        */
+        if (currentFragment.getActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) currentFragment.getActivity();
+            
+            // Create editor fragment
+            FaditorEditorFragment editorFragment = FaditorEditorFragment.newInstance(projectId);
+            
+            // Use the overlay fragment container for full-screen editing
+            mainActivity.showOverlayFragment(editorFragment, "faditor_editor");
+        } else {
+            Log.e(TAG, "Cannot open editor: Activity is not MainActivity");
+        }
     }
     
     /**
      * Returns to the project browser from the editor
-     * This will be implemented when FaditorEditorFragment is created
+     * Pops the editor fragment from the overlay container
      */
     public static void returnToBrowser(Fragment currentFragment) {
         Log.d(TAG, "Returning to project browser");

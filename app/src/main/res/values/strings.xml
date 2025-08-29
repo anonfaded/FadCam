@@ -1158,4 +1158,32 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_project_name_hint">Project name</string>
     <string name="faditor_new_project_title">New Project</string>
     <string name="faditor_select_video_for_project">Select video for new project</string>
+    
+    <!-- Additional Faditor Editor Strings -->
+    <string name="faditor_editor_title">Video Editor</string>
+    <string name="faditor_save">Save</string>
+    <string name="faditor_export">Export</string>
+    
+    <!-- Tool Names -->
+    <string name="faditor_tool_select">Select Tool</string>
+    <string name="faditor_tool_trim">Trim Tool</string>
+    <string name="faditor_tool_split">Split Tool</string>
+    <string name="faditor_tool_effects">Effects Tool</string>
+    <string name="faditor_tool_audio">Audio Tool</string>
+    
+    <!-- Playback Controls -->
+    <string name="faditor_play_pause">Play/Pause</string>
+    <string name="faditor_seek_backward">Seek Backward</string>
+    <string name="faditor_seek_forward">Seek Forward</string>
+    
+    <!-- Unsaved Changes Dialog -->
+    <string name="faditor_unsaved_changes_title">Unsaved Changes</string>
+    <string name="faditor_unsaved_changes_message">You have unsaved changes. What would you like to do?</string>
+    <string name="faditor_save_and_exit">Save &amp; Exit</string>
+    <string name="faditor_discard_and_exit">Discard &amp; Exit</string>
+    
+    <!-- Additional Recovery Strings -->
+    <string name="faditor_recover">Recover</string>
+    <string name="faditor_start_fresh">Start Fresh</string>
+
 </resources>

@@ -3,87 +3,103 @@ package com.fadcam.ui.faditor.components;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.R;
+import com.google.android.material.button.MaterialButton;
+
 /**
- * Controls component for video editing operations.
- * Provides play/pause/export buttons and other editing controls.
+ * Professional playback controls component for video player overlay.
+ * This is a placeholder implementation - full implementation will be in future tasks.
  */
 public class ControlsComponent extends LinearLayout {
     
-    private ImageButton playPauseButton;
-    private ImageButton exportButton;
-    private ImageButton trimButton;
-    
-    private ControlsListener listener;
-    private boolean isPlaying = false;
-    
     public interface ControlsListener {
-        void onPlayPauseClicked(boolean shouldPlay);
-        void onExportClicked();
-        void onTrimClicked();
+        void onPlayPauseClicked();
+        void onSeekBackward();
+        void onSeekForward();
     }
     
-    public ControlsComponent(@NonNull Context context) {
+    private ControlsListener listener;
+    private MaterialButton playPauseButton;
+    private MaterialButton seekBackButton;
+    private MaterialButton seekForwardButton;
+    private boolean isPlaying = false;
+    
+    public ControlsComponent(Context context) {
         super(context);
         init();
     }
     
-    public ControlsComponent(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public ControlsComponent(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
     
-    public ControlsComponent(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public ControlsComponent(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
     
     private void init() {
         setOrientation(HORIZONTAL);
-        // Initialize buttons and layout
-        // Implementation will be added in subsequent tasks
+        
+        // Inflate the controls layout
+        LayoutInflater.from(getContext()).inflate(R.layout.component_controls, this, true);
+        
+        // Find buttons
+        seekBackButton = findViewById(R.id.seek_back_button);
+        playPauseButton = findViewById(R.id.play_pause_button);
+        seekForwardButton = findViewById(R.id.seek_forward_button);
+        
+        // Set up click listeners
+        setupClickListeners();
+        
+        // Update initial state
+        updatePlayPauseButton();
     }
     
-    /**
-     * Update the play/pause button state
-     */
+    private void setupClickListeners() {
+        if (seekBackButton != null) {
+            seekBackButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onSeekBackward();
+                }
+            });
+        }
+        
+        if (playPauseButton != null) {
+            playPauseButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onPlayPauseClicked();
+                }
+            });
+        }
+        
+        if (seekForwardButton != null) {
+            seekForwardButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onSeekForward();
+                }
+            });
+        }
+    }
+    
+    public void setControlsListener(ControlsListener listener) {
+        this.listener = listener;
+    }
+    
     public void setPlayingState(boolean playing) {
         this.isPlaying = playing;
         updatePlayPauseButton();
     }
     
-    /**
-     * Enable or disable the export button
-     */
-    public void setExportEnabled(boolean enabled) {
-        if (exportButton != null) {
-            exportButton.setEnabled(enabled);
-        }
-    }
-    
-    /**
-     * Enable or disable the trim button
-     */
-    public void setTrimEnabled(boolean enabled) {
-        if (trimButton != null) {
-            trimButton.setEnabled(enabled);
-        }
-    }
-    
-    /**
-     * Set listener for control events
-     */
-    public void setControlsListener(ControlsListener listener) {
-        this.listener = listener;
-    }
-    
     private void updatePlayPauseButton() {
-        // Update button icon based on playing state
-        // Implementation will be added in subsequent tasks
+        if (playPauseButton != null) {
+            int iconRes = isPlaying ? R.drawable.ic_pause_24 : R.drawable.ic_play_arrow_24;
+            playPauseButton.setIconResource(iconRes);
+        }
     }
 }
