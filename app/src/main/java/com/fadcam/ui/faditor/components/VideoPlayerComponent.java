@@ -83,4 +83,9 @@ public class VideoPlayerComponent extends FrameLayout {
         // TODO: Implement duration tracking in future task
         return 30000; // Placeholder
     }
+    
+    public boolean isPlaying() {
+        // TODO: Implement playback state tracking in future task
+        return false; // Placeholder
+    }
 }

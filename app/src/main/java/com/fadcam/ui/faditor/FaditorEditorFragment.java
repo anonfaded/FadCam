@@ -32,6 +32,9 @@ import com.fadcam.ui.faditor.utils.PerformanceOptimizer;
 import com.fadcam.ui.faditor.utils.MemoryOptimizer;
 import com.fadcam.ui.faditor.utils.Material3Utils;
 import com.google.android.material.appbar.MaterialToolbar;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.SeekBar;
 import com.google.android.material.button.MaterialButton;
 
 /**
@@ -264,10 +267,70 @@ public class FaditorEditorFragment extends BaseFragment implements
         saveButton = view.findViewById(R.id.save_button);
         exportButton = view.findViewById(R.id.export_button);
         
-        // Set up toolbar
-        if (editorToolbar != null) {
-            editorToolbar.setNavigationOnClickListener(v -> onBackPressed());
-            editorToolbar.setTitle(R.string.faditor_editor_title);
+        // Find new UI components
+        ImageButton backButton = view.findViewById(R.id.back_button);
+        TextView projectNameText = view.findViewById(R.id.project_name_text);
+        TextView qualityIndicator = view.findViewById(R.id.quality_indicator);
+        ImageButton playPauseButton = view.findViewById(R.id.play_pause_button);
+        TextView currentTimeText = view.findViewById(R.id.current_time_text);
+        SeekBar seekBar = view.findViewById(R.id.seek_bar);
+        TextView totalTimeText = view.findViewById(R.id.total_time_text);
+        ImageButton fullscreenButton = view.findViewById(R.id.fullscreen_button);
+        TextView timelineTimeDisplay = view.findViewById(R.id.timeline_time_display);
+        ImageButton zoomOutButton = view.findViewById(R.id.zoom_out_button);
+        ImageButton zoomInButton = view.findViewById(R.id.zoom_in_button);
+        
+        // Tool buttons
+        View splitTool = view.findViewById(R.id.split_tool);
+        View speedTool = view.findViewById(R.id.speed_tool);
+        View effectsTool = view.findViewById(R.id.effects_tool);
+        View deleteTool = view.findViewById(R.id.delete_tool);
+        View addMediaButton = view.findViewById(R.id.add_media_button);
+        
+        // Set up click listeners
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> onBackPressed());
+        }
+        
+        if (exportButton != null) {
+            exportButton.setOnClickListener(v -> exportProject());
+        }
+        
+        if (playPauseButton != null) {
+            playPauseButton.setOnClickListener(v -> togglePlayPause());
+        }
+        
+        if (fullscreenButton != null) {
+            fullscreenButton.setOnClickListener(v -> toggleFullscreen());
+        }
+        
+        if (zoomOutButton != null) {
+            zoomOutButton.setOnClickListener(v -> zoomOutTimeline());
+        }
+        
+        if (zoomInButton != null) {
+            zoomInButton.setOnClickListener(v -> zoomInTimeline());
+        }
+        
+        // Tool button listeners
+        if (splitTool != null) {
+            splitTool.setOnClickListener(v -> onSplitToolSelected());
+        }
+        
+        if (speedTool != null) {
+            speedTool.setOnClickListener(v -> onSpeedToolSelected());
+        }
+        
+        if (effectsTool != null) {
+            effectsTool.setOnClickListener(v -> onEffectsToolSelected());
+        }
+        
+        if (deleteTool != null) {
+            deleteTool.setOnClickListener(v -> onDeleteToolSelected());
+        }
+        
+        if (addMediaButton != null) {
+            addMediaButton.setOnClickListener(v -> onAddMediaSelected());
         }
         
         // Set up component listeners
@@ -281,12 +344,24 @@ public class FaditorEditorFragment extends BaseFragment implements
             timeline.setTimelineListener(this);
         }
         
-        // Set up button listeners
-        if (saveButton != null) {
-            saveButton.setOnClickListener(v -> saveProject());
-        }
-        if (exportButton != null) {
-            exportButton.setOnClickListener(v -> exportProject());
+        // Set up seek bar listener
+        if (seekBar != null) {
+            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (fromUser && videoPlayer != null) {
+                        long position = (long) progress * 1000; // Convert to milliseconds
+                        videoPlayer.seekTo(position);
+                        updateTimeDisplay(position);
+                    }
+                }
+                
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {}
+                
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {}
+            });
         }
         
         // Initially hide progress overlay
@@ -371,9 +446,21 @@ public class FaditorEditorFragment extends BaseFragment implements
             return;
         }
         
-        // Update toolbar title with project name
-        if (editorToolbar != null && currentProject.getProjectName() != null) {
-            editorToolbar.setTitle(currentProject.getProjectName());
+        // Update project name and quality indicator
+        View view = getView();
+        if (view != null && currentProject.getProjectName() != null) {
+            TextView projectNameText = view.findViewById(R.id.project_name_text);
+            TextView qualityIndicator = view.findViewById(R.id.quality_indicator);
+            
+            if (projectNameText != null) {
+                projectNameText.setText(currentProject.getProjectName());
+            }
+            
+            if (qualityIndicator != null && currentProject.getMetadata() != null) {
+                int height = currentProject.getMetadata().getHeight();
+                String quality = height >= 1080 ? "1080P" : height >= 720 ? "720P" : "480P";
+                qualityIndicator.setText(quality);
+            }
         }
         
         // Initialize video player
@@ -397,6 +484,17 @@ public class FaditorEditorFragment extends BaseFragment implements
             if (editorState.getTimelineState() != null) {
                 timeline.restoreState(editorState.getTimelineState());
             }
+        }
+        
+        // Initialize seek bar
+        if (view != null) {
+            SeekBar seekBar = view.findViewById(R.id.seek_bar);
+            if (seekBar != null && currentProject.getDuration() > 0) {
+                seekBar.setMax((int) (currentProject.getDuration() / 1000)); // Convert to seconds
+            }
+            
+            // Initialize time displays
+            updateTimeDisplay(0);
         }
         
         // Initialize toolbar
@@ -762,6 +860,109 @@ public class FaditorEditorFragment extends BaseFragment implements
             });
         }
         Log.w(TAG, "Performance warning: " + warning + " - Recommendation: " + recommendation);
+    }
+    
+    // New UI interaction methods
+    
+    private void togglePlayPause() {
+        if (videoPlayer != null) {
+            if (videoPlayer.isPlaying()) {
+                videoPlayer.pause();
+                updatePlayPauseButton(false);
+            } else {
+                videoPlayer.play();
+                updatePlayPauseButton(true);
+            }
+        }
+    }
+    
+    private void updatePlayPauseButton(boolean isPlaying) {
+        View view = getView();
+        if (view != null) {
+            ImageButton playPauseButton = view.findViewById(R.id.play_pause_button);
+            if (playPauseButton != null) {
+                playPauseButton.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play_arrow);
+            }
+        }
+    }
+    
+    private void toggleFullscreen() {
+        // TODO: Implement fullscreen toggle
+        Toast.makeText(requireContext(), "Fullscreen mode coming soon", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void zoomOutTimeline() {
+        if (timeline != null) {
+            timeline.zoomOut();
+        }
+    }
+    
+    private void zoomInTimeline() {
+        if (timeline != null) {
+            timeline.zoomIn();
+        }
+    }
+    
+    private void onSplitToolSelected() {
+        // TODO: Implement split tool
+        Toast.makeText(requireContext(), "Split tool selected", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void onSpeedToolSelected() {
+        // TODO: Implement speed tool
+        Toast.makeText(requireContext(), "Speed tool selected", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void onEffectsToolSelected() {
+        // TODO: Implement effects tool
+        Toast.makeText(requireContext(), "Effects tool selected", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void onDeleteToolSelected() {
+        // TODO: Implement delete tool
+        Toast.makeText(requireContext(), "Delete tool selected", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void onAddMediaSelected() {
+        // TODO: Implement add media
+        Toast.makeText(requireContext(), "Add media selected", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void updateTimeDisplay(long currentPosition) {
+        View view = getView();
+        if (view != null && currentProject != null) {
+            TextView currentTimeText = view.findViewById(R.id.current_time_text);
+            TextView totalTimeText = view.findViewById(R.id.total_time_text);
+            TextView timelineTimeDisplay = view.findViewById(R.id.timeline_time_display);
+            SeekBar seekBar = view.findViewById(R.id.seek_bar);
+            
+            String currentTime = formatTime(currentPosition);
+            String totalTime = formatTime(currentProject.getDuration());
+            
+            if (currentTimeText != null) {
+                currentTimeText.setText(currentTime);
+            }
+            
+            if (totalTimeText != null) {
+                totalTimeText.setText(totalTime);
+            }
+            
+            if (timelineTimeDisplay != null) {
+                timelineTimeDisplay.setText(currentTime + " / " + totalTime);
+            }
+            
+            if (seekBar != null && currentProject.getDuration() > 0) {
+                int progress = (int) (currentPosition * seekBar.getMax() / currentProject.getDuration());
+                seekBar.setProgress(progress);
+            }
+        }
+    }
+    
+    private String formatTime(long timeMs) {
+        long seconds = timeMs / 1000;
+        long minutes = seconds / 60;
+        seconds = seconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
     }
     
     /**

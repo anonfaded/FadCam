@@ -5,187 +5,440 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:theme="@style/Theme.FadCam.Faditor"
+    android:background="#FF1A1A1A"
     tools:context=".ui.faditor.FaditorEditorFragment">
 
-    <!-- Material 3 Editor Header Toolbar -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/editor_toolbar"
+    <!-- Top Header Bar -->
+    <LinearLayout
+        android:id="@+id/top_header"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurface"
-        android:elevation="?attr/elevationLevel2"
+        android:layout_height="56dp"
+        android:background="#FF2A2A2A"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:navigationIcon="@drawable/ic_arrow_back"
-        app:navigationIconTint="?attr/colorOnSurface"
-        app:title="@string/faditor_editor_title"
-        app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
-        app:titleTextColor="?attr/colorOnSurface"
-        style="@style/Widget.FadCam.Faditor.Toolbar">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Material 3 Save and Export buttons in toolbar -->
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="#FFFFFF"
+            android:contentDescription="Back" />
+
+        <!-- Project Name -->
+        <TextView
+            android:id="@+id/project_name_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:text="Video Project"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Quality Indicator -->
+        <TextView
+            android:id="@+id/quality_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="720P"
+            android:textColor="#00BCD4"
+            android:textSize="14sp"
+            android:background="#FF333333"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Export Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/export_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Export"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:backgroundTint="#00BCD4"
+            app:cornerRadius="18dp"
+            android:minWidth="80dp" />
+
+    </LinearLayout>
+
+    <!-- Video Preview Area -->
+    <FrameLayout
+        android:id="@+id/video_preview_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#FF000000"
+        app:layout_constraintTop_toBottomOf="@id/top_header"
+        app:layout_constraintBottom_toTopOf="@id/playback_controls"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Video Player Component -->
+        <com.fadcam.ui.faditor.components.VideoPlayerComponent
+            android:id="@+id/video_player_component"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Video Overlay Controls -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="end"
+            android:layout_gravity="center"
             android:orientation="horizontal"
-            android:layout_marginEnd="8dp">
+            android:background="#80000000"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:id="@+id/video_overlay_controls">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/save_button"
-                style="@style/Widget.FadCam.Faditor.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/faditor_save"
-                android:textColor="?attr/colorPrimary"
-                android:layout_marginEnd="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/export_button"
-                style="@style/Widget.FadCam.Faditor.Button.Filled"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/faditor_export"
-                app:icon="@drawable/ic_export"
-                app:iconTint="?attr/colorOnPrimary" />
+            <ImageButton
+                android:id="@+id/play_pause_overlay"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_play_arrow"
+                android:tint="#FFFFFF"
+                android:contentDescription="Play/Pause" />
 
         </LinearLayout>
 
-    </com.google.android.material.appbar.MaterialToolbar>
+    </FrameLayout>
 
-    <!-- Material 3 Professional Editing Toolbar -->
-    <com.fadcam.ui.faditor.components.ToolbarComponent
-        android:id="@+id/toolbar_component"
+    <!-- Playback Controls Bar -->
+    <LinearLayout
+        android:id="@+id/playback_controls"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:background="?attr/colorSurfaceVariant"
-        android:elevation="?attr/elevationLevel1"
+        android:layout_height="60dp"
+        android:background="#FF2A2A2A"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        app:layout_constraintTop_toBottomOf="@id/editor_toolbar"
+        app:layout_constraintBottom_toTopOf="@id/timeline_section"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Video Preview Area -->
-    <com.fadcam.ui.faditor.components.VideoPlayerComponent
-        android:id="@+id/video_player_component"
+        <!-- Play/Pause Button -->
+        <ImageButton
+            android:id="@+id/play_pause_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_play_arrow"
+            android:tint="#FFFFFF"
+            android:contentDescription="Play/Pause" />
+
+        <!-- Current Time -->
+        <TextView
+            android:id="@+id/current_time_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:layout_marginStart="16dp" />
+
+        <!-- Seek Bar -->
+        <SeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="16dp"
+            android:progressTint="#00BCD4"
+            android:thumbTint="#00BCD4" />
+
+        <!-- Total Time -->
+        <TextView
+            android:id="@+id/total_time_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Fullscreen Button -->
+        <ImageButton
+            android:id="@+id/fullscreen_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_fullscreen"
+            android:tint="#FFFFFF"
+            android:contentDescription="Fullscreen" />
+
+    </LinearLayout>
+
+    <!-- Timeline Section -->
+    <LinearLayout
+        android:id="@+id/timeline_section"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:background="@android:color/black"
-        app:layout_constraintTop_toBottomOf="@id/toolbar_component"
-        app:layout_constraintBottom_toTopOf="@id/timeline_container"
+        android:layout_height="200dp"
+        android:background="#FF1E1E1E"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/bottom_tools"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_weight="1" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Professional Playback Controls (overlay on video) -->
-    <com.fadcam.ui.faditor.components.ControlsComponent
-        android:id="@+id/controls_component"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toBottomOf="@id/video_player_component"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <!-- Timeline Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:background="#FF2A2A2A">
 
-    <!-- Material 3 Timeline Container -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/timeline_card"
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Timeline"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Timeline Time Display -->
+            <TextView
+                android:id="@+id/timeline_time_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00 / 00:02"
+                android:textColor="#00BCD4"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:layout_marginEnd="16dp" />
+
+            <!-- Zoom Controls -->
+            <ImageButton
+                android:id="@+id/zoom_out_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_zoom_out"
+                android:tint="#FFFFFF"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Zoom Out" />
+
+            <ImageButton
+                android:id="@+id/zoom_in_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_zoom_in"
+                android:tint="#FFFFFF"
+                android:contentDescription="Zoom In" />
+
+        </LinearLayout>
+
+        <!-- Timeline Component -->
+        <com.fadcam.ui.faditor.components.TimelineComponent
+            android:id="@+id/timeline_component"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="8dp" />
+
+    </LinearLayout>
+
+    <!-- Bottom Tools Bar -->
+    <LinearLayout
+        android:id="@+id/bottom_tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="?attr/elevationLevel2"
-        app:cardBackgroundColor="?attr/colorSurface"
-        style="@style/Widget.FadCam.Faditor.CardView"
+        android:layout_height="80dp"
+        android:background="#FF2A2A2A"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Tool Buttons -->
         <LinearLayout
-            android:id="@+id/timeline_container"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp">
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center">
 
-            <!-- Material 3 Timeline Header with Zoom Controls -->
+            <!-- Split Tool -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingBottom="12dp">
+                android:id="@+id/split_tool"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginHorizontal="4dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_content_cut"
+                    android:tint="#FFFFFF" />
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/faditor_timeline"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <!-- Frame Counter -->
-                <TextView
-                    android:id="@+id/frame_counter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="00:00 / 00:00"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:layout_marginEnd="16dp"
-                    android:fontFamily="monospace"
-                    android:background="@drawable/faditor_card_background"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp" />
-
-                <!-- Material 3 Zoom Controls -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/zoom_out_button"
-                    style="@style/Widget.FadCam.Faditor.Button.Icon"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    app:icon="@drawable/ic_zoom_out"
-                    app:iconSize="20dp"
-                    app:iconTint="?attr/colorOnSurfaceVariant"
-                    android:layout_marginEnd="4dp"
-                    android:contentDescription="@string/faditor_timeline_zoom_out" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/zoom_in_button"
-                    style="@style/Widget.FadCam.Faditor.Button.Icon"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    app:icon="@drawable/ic_zoom_in"
-                    app:iconSize="20dp"
-                    app:iconTint="?attr/colorOnSurfaceVariant"
-                    android:contentDescription="@string/faditor_timeline_zoom_in" />
+                    android:text="Split"
+                    android:textColor="#FFFFFF"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
 
             </LinearLayout>
 
-            <!-- Professional Timeline Component -->
-            <com.fadcam.ui.faditor.components.TimelineComponent
-                android:id="@+id/timeline_component"
-                android:layout_width="match_parent"
-                android:layout_height="120dp"
-                android:layout_marginHorizontal="16dp" />
+            <!-- Speed Tool -->
+            <LinearLayout
+                android:id="@+id/speed_tool"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginHorizontal="4dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_speed"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Speed"
+                    android:textColor="#FFFFFF"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+
+            </LinearLayout>
+
+            <!-- Effects Tool -->
+            <LinearLayout
+                android:id="@+id/effects_tool"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginHorizontal="4dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_auto_fix_high"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Effects"
+                    android:textColor="#FFFFFF"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+
+            </LinearLayout>
+
+            <!-- Delete Tool -->
+            <LinearLayout
+                android:id="@+id/delete_tool"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginHorizontal="4dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_delete"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete"
+                    android:textColor="#FFFFFF"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+        <!-- Add Media Button -->
+        <LinearLayout
+            android:id="@+id/add_media_button"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_marginStart="16dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_add"
+                android:background="#00BCD4"
+                android:tint="#FFFFFF"
+                android:padding="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Hidden Components for Compatibility -->
+    <com.fadcam.ui.faditor.components.ToolbarComponent
+        android:id="@+id/toolbar_component"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <com.fadcam.ui.faditor.components.ControlsComponent
+        android:id="@+id/controls_component"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/editor_toolbar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/save_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
     <!-- Material 3 Progress Overlay -->
     <com.fadcam.ui.faditor.components.ProgressComponent
         android:id="@+id/progress_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/progress_overlay_background"
-        android:elevation="?attr/elevationLevel5"
+        android:background="#80000000"
+        android:elevation="10dp"
         android:visibility="gone"
         android:clickable="true"
         android:focusable="true"
