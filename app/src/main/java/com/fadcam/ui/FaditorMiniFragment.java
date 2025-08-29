@@ -38,6 +38,7 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
     private Button playPauseButton;
     private TextView positionText;
     private SeekBar videoSeekBar;
+    private com.fadcam.ui.faditor.components.TimelineComponent timelineComponent;
     
     // Video editing components
     private VideoFilePicker filePicker;
@@ -64,6 +65,7 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
         playPauseButton = view.findViewById(R.id.play_pause_button);
         positionText = view.findViewById(R.id.position_text);
         videoSeekBar = view.findViewById(R.id.video_seek_bar);
+        timelineComponent = view.findViewById(R.id.timeline_component);
         
         // Find editor buttons
         Button selectNewVideoButton = view.findViewById(R.id.select_new_video_button);
@@ -125,8 +127,11 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
             videoPlayerComponent.setVideoPlayerListener(new VideoPlayerComponent.VideoPlayerListener() {
                 @Override
                 public void onPositionChanged(long positionMs) {
-                    // Update position display
+                    // Update position display and timeline
                     updatePositionDisplay(positionMs, videoPlayerComponent.getDuration());
+                    if (timelineComponent != null) {
+                        timelineComponent.setCurrentPosition(positionMs);
+                    }
                     Log.d(TAG, "Video position: " + positionMs + "ms");
                 }
                 
@@ -137,6 +142,11 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
                         // Update project with actual duration
                         currentProject.getMetadata().setDuration(durationMs);
                         updateVideoInfo(currentProject.getOriginalVideoUri(), currentProject.getMetadata());
+                    }
+                    
+                    // Update timeline with video duration
+                    if (timelineComponent != null) {
+                        timelineComponent.setVideoDuration(durationMs);
                     }
                 }
                 
@@ -164,6 +174,60 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
                         currentProject.getMetadata().setHeight(height);
                         updateVideoInfo(currentProject.getOriginalVideoUri(), currentProject.getMetadata());
                     }
+                }
+            });
+        }
+        
+        // Set up timeline component listener
+        if (timelineComponent != null) {
+            timelineComponent.setTimelineListener(new com.fadcam.ui.faditor.components.TimelineComponent.TimelineListener() {
+                @Override
+                public void onTrimRangeChanged(long startMs, long endMs) {
+                    Log.d(TAG, "Trim range changed: " + startMs + "ms - " + endMs + "ms");
+                    
+                    // Update current project with new trim range
+                    if (currentProject != null) {
+                        // This will be used when implementing trim functionality in subsequent tasks
+                        Log.d(TAG, "Trim range updated in project: " + 
+                              com.fadcam.ui.faditor.utils.TimelineUtils.formatDuration(startMs) + " - " + 
+                              com.fadcam.ui.faditor.utils.TimelineUtils.formatDuration(endMs));
+                    }
+                    
+                    // Enable trim button when valid range is selected
+                    Button trimButton = view.findViewById(R.id.trim_video_button);
+                    if (trimButton != null) {
+                        long duration = endMs - startMs;
+                        boolean validRange = duration >= 1000 && duration < (videoPlayerComponent != null ? videoPlayerComponent.getDuration() : 0);
+                        trimButton.setEnabled(validRange);
+                    }
+                }
+                
+                @Override
+                public void onPositionSeek(long positionMs) {
+                    Log.d(TAG, "Timeline position seek: " + positionMs + "ms");
+                    
+                    // Seek video player to new position
+                    if (videoPlayerComponent != null && videoPlayerComponent.isVideoLoaded()) {
+                        videoPlayerComponent.seekTo(positionMs);
+                    }
+                }
+                
+                @Override
+                public void onTrimHandleDragStart() {
+                    Log.d(TAG, "Trim handle drag started");
+                    
+                    // Pause video during trim handle dragging for better UX
+                    if (videoPlayerComponent != null && videoPlayerComponent.isPlaying()) {
+                        videoPlayerComponent.pause();
+                    }
+                }
+                
+                @Override
+                public void onTrimHandleDragEnd() {
+                    Log.d(TAG, "Trim handle drag ended");
+                    
+                    // Optionally resume playback or provide visual feedback
+                    // For now, just log the event
                 }
             });
         }
@@ -233,6 +297,13 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
         // Load video into player component
         if (videoPlayerComponent != null) {
             videoPlayerComponent.loadVideo(videoUri);
+        }
+        
+        // Initialize timeline with video duration
+        if (timelineComponent != null) {
+            timelineComponent.setVideoDuration(metadata.getDuration());
+            // Set initial trim range to full video
+            timelineComponent.setTrimRange(0, metadata.getDuration());
         }
         
         // Update UI with video information
@@ -331,6 +402,12 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
         if (videoPlayerComponent != null) {
             videoPlayerComponent.release();
             videoPlayerComponent = null;
+        }
+        
+        // Reset timeline component
+        if (timelineComponent != null) {
+            timelineComponent.reset();
+            timelineComponent = null;
         }
         
         // Clear current project

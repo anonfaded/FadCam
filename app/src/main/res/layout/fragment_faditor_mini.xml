@@ -150,33 +150,59 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Video seek bar -->
-        <LinearLayout
+        <!-- Interactive Timeline Component -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
 
-            <SeekBar
-                android:id="@+id/video_seek_bar"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:max="1000"
-                android:progress="0"/>
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/position_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="4dp"
-                android:text="00:00 / 00:00"
-                android:fontFamily="monospace"
-                android:textSize="14sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_timeline"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"/>
 
-        </LinearLayout>
+                <com.fadcam.ui.faditor.components.TimelineComponent
+                    android:id="@+id/timeline_component"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"/>
+
+                <TextView
+                    android:id="@+id/position_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="00:00 / 00:00"
+                    android:fontFamily="monospace"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Legacy seek bar (hidden, kept for compatibility) -->
+        <SeekBar
+            android:id="@+id/video_seek_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:max="1000"
+            android:progress="0"
+            android:visibility="gone"/>
 
         <!-- Video playback controls -->
         <LinearLayout

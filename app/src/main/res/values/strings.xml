@@ -595,6 +595,7 @@
     <string name="faditor_quality">Quality</string>
     <string name="faditor_format">Format</string>
     <string name="faditor_supported_formats">Supported formats: %s</string>
+    <string name="faditor_timeline">Timeline</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>
