@@ -107,3 +107,59 @@ The Faditor Mini is a lightweight video editor integrated into the FadCam app th
 4. WHEN re-encoding is necessary THEN the system SHALL use hardware encoders (MediaCodec) with OpenGL acceleration
 5. WHEN exporting videos THEN the system SHALL maintain original quality settings unless user specifies otherwise
 6. WHEN using OpenGL processing THEN the system SHALL maintain consistent performance across all supported Android devices
+
+### Requirement 9
+
+**User Story:** As a user, I want to save and manage my video editing projects, so that I can work on videos over multiple sessions and organize my editing work.
+
+#### Acceptance Criteria
+
+1. WHEN I start editing a video THEN the system SHALL automatically create a project with metadata and timeline data
+2. WHEN I make edits to a video THEN the system SHALL save the project state as JSON with media references
+3. WHEN I close the editor THEN the system SHALL persist the project so I can resume later
+4. WHEN I open the editor THEN the system SHALL display a list of recent projects with thumbnails and metadata
+5. WHEN I select a saved project THEN the system SHALL restore the complete editing state including timeline and trim ranges
+6. WHEN I want to organize projects THEN the system SHALL allow me to rename, delete, or export project files
+7. WHEN I export a project THEN the system SHALL create a shareable .fadproj file with all project data
+
+### Requirement 10
+
+**User Story:** As a user, I want a two-screen approach with a project browser and dedicated full-screen editor, so that I have maximum screen space for editing and easy project management.
+
+#### Acceptance Criteria
+
+1. WHEN I open the Faditor Mini tab THEN the system SHALL display a project browser screen with recent projects and creation options
+2. WHEN I select a project or create a new one THEN the system SHALL open a dedicated full-screen editor fragment
+3. WHEN I'm in the editor THEN the system SHALL hide the bottom navigation and provide maximum screen space for editing
+4. WHEN I want to leave the editor THEN the system SHALL provide a clear back/leave button that returns to the project browser
+5. WHEN I navigate between screens THEN the system SHALL use smooth transitions and maintain proper navigation stack
+6. WHEN I accidentally leave the editor THEN the system SHALL auto-save my work and allow seamless resumption
+7. WHEN I'm in the editor THEN the system SHALL provide a professional interface optimized for the full screen space
+
+### Requirement 11
+
+**User Story:** As a user, I want a professional video editor interface with proper tools and icons, so that I have an intuitive and efficient editing experience.
+
+#### Acceptance Criteria
+
+1. WHEN I open the editor THEN the system SHALL display a professional timeline-based interface similar to CapCut or other video editors
+2. WHEN I interact with tools THEN the system SHALL use Material Design 3 icons and components instead of generic buttons
+3. WHEN I use the timeline THEN the system SHALL provide professional scrubbing, zoom controls, and frame-accurate positioning
+4. WHEN I access editing tools THEN the system SHALL organize them in a toolbar with clear icons (trim, split, effects, etc.)
+5. WHEN I work with the interface THEN the system SHALL provide smooth animations and responsive feedback
+6. WHEN I use sliders and controls THEN the system SHALL implement Material 3 design patterns for consistency
+7. WHEN I view the project THEN the system SHALL display a proper video preview area with professional playback controls
+
+### Requirement 12
+
+**User Story:** As a user, I want continuous auto-saving of my work, so that I never lose my editing progress even if I accidentally leave or the app crashes.
+
+#### Acceptance Criteria
+
+1. WHEN I make any edit in the editor THEN the system SHALL automatically save the project state within 5 seconds
+2. WHEN I navigate away from the editor THEN the system SHALL immediately save all changes before leaving
+3. WHEN the app is backgrounded or interrupted THEN the system SHALL save the current state and resume seamlessly
+4. WHEN the app crashes or is force-closed THEN the system SHALL recover the last saved state when reopened
+5. WHEN I return to a project THEN the system SHALL restore the exact editing state including timeline position and tool selection
+6. WHEN auto-save occurs THEN the system SHALL provide subtle visual feedback without interrupting the workflow
+7. WHEN there are unsaved changes THEN the system SHALL warn before allowing destructive actions
