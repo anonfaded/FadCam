@@ -592,9 +592,6 @@
     <string name="faditor_error_file_access">Cannot access video file</string>
     <string name="faditor_video_info">Video Info</string>
     <string name="faditor_export_options">Export Options</string>
-    <string name="faditor_quality">Quality</string>
-    <string name="faditor_format">Format</string>
-    <string name="faditor_supported_formats">Supported formats: %s</string>
     <string name="faditor_timeline">Timeline</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
@@ -1134,33 +1131,17 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_auto_saving">Auto-saving…</string>
     <string name="faditor_auto_saved">Saved</string>
     <string name="faditor_auto_save_error">Save failed</string>
-    <string name="faditor_crash_recovery_title">Recover Project</string>
-    <string name="faditor_crash_recovery_message">Your previous editing session was interrupted. Would you like to recover your work?</string>
-    <string name="faditor_crash_recovery_recover">Recover</string>
+    <!-- Crash recovery strings moved to avoid duplicates -->
     <string name="faditor_crash_recovery_discard">Start Fresh</string>
     
-    <!-- Project browser strings -->
-    <string name="faditor_projects_count">%d projects</string>
-    <string name="faditor_projects_count_single">1 project</string>
-    <string name="faditor_no_projects">No projects yet</string>
-    <string name="faditor_create_project">Create Project</string>
-    <string name="faditor_search_projects">Search projects…</string>
+    <!-- Project browser strings (moved to avoid duplicates) -->
     <string name="faditor_sort_by_date">Sort by Date</string>
     <string name="faditor_sort_by_name">Sort by Name</string>
     <string name="faditor_sort_by_size">Sort by Size</string>
-    <string name="faditor_project_rename">Rename</string>
-    <string name="faditor_project_delete">Delete</string>
-    <string name="faditor_project_export">Export</string>
     <string name="faditor_project_import">Import Project</string>
-    <string name="faditor_project_delete_confirm">Delete this project?</string>
-    <string name="faditor_project_delete_message">This action cannot be undone.</string>
-    <string name="faditor_project_rename_title">Rename Project</string>
-    <string name="faditor_project_name_hint">Project name</string>
-    <string name="faditor_new_project_title">New Project</string>
-    <string name="faditor_select_video_for_project">Select video for new project</string>
+    <!-- Duplicate strings removed to avoid conflicts -->
     
     <!-- Additional Faditor Editor Strings -->
-    <string name="faditor_editor_title">Video Editor</string>
     <string name="faditor_save">Save</string>
     <string name="faditor_export">Export</string>
     
@@ -1197,8 +1178,64 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_save_and_exit">Save &amp; Exit</string>
     <string name="faditor_discard_and_exit">Discard &amp; Exit</string>
     
-    <!-- Additional Recovery Strings -->
+    <!-- Export Options Dialog Strings -->
+    <string name="faditor_quality_presets">Quality Presets</string>
+    <string name="faditor_quality_low">Low</string>
+    <string name="faditor_quality_medium">Medium</string>
+    <string name="faditor_quality_high">High</string>
+    <string name="faditor_quality_ultra">Ultra</string>
+    <string name="faditor_quality">Quality</string>
+    <string name="faditor_quality_low_description">Smaller file size, lower quality</string>
+    <string name="faditor_quality_medium_description">Balanced quality and file size</string>
+    <string name="faditor_quality_high_description">High quality, larger file size</string>
+    <string name="faditor_quality_ultra_description">Maximum quality, largest file size</string>
+    <string name="faditor_format">Format</string>
+    <string name="faditor_filename">File Name</string>
+    <string name="faditor_filename_empty_error">File name cannot be empty</string>
+    <string name="faditor_filename_invalid_chars_error">File name contains invalid characters</string>
+    <string name="faditor_advanced_options">Advanced Options</string>
+    <string name="faditor_maintain_original_quality">Maintain Original Quality</string>
+    <string name="faditor_custom_bitrate">Custom Bitrate</string>
+    <string name="faditor_bitrate">Bitrate</string>
+    <string name="faditor_export_preview">Export Preview</string>
+    <string name="faditor_estimated_size">Estimated size: %1$s</string>
+    <string name="faditor_estimated_size_placeholder">Calculating…</string>
+    
+    <!-- Export Progress Strings -->
+    <string name="faditor_export_starting">Starting export…</string>
+    <string name="faditor_export_progress">Exporting: %1$d%%</string>
+    <string name="faditor_export_finishing">Finishing export…</string>
+    <string name="faditor_export_cancelled">Export cancelled</string>
+    <string name="faditor_export_failed">Export failed: %1$s</string>
+    <string name="faditor_export_completed">Export completed successfully</string>
+    
+    <!-- Export Actions -->
+    <string name="faditor_share_video">Share Video</string>
+    <string name="faditor_view_video">View Video</string>
+    <string name="faditor_export_another">Export Another</string>
+    
+    <!-- Project Browser Strings -->
+    <string name="faditor_projects_count">%1$d projects</string>
+    <string name="faditor_projects_count_single">1 project</string>
+    <string name="faditor_new_project_title">New Project</string>
+    <string name="faditor_select_video_for_project">Select a video to start editing</string>
+    <string name="faditor_project_delete_confirm">Delete Project</string>
+    <string name="faditor_project_delete_message">Are you sure you want to delete this project? This action cannot be undone.</string>
+    <string name="faditor_project_delete">Delete</string>
+    <string name="faditor_project_rename_title">Rename Project</string>
+    <string name="faditor_project_name_hint">Project name</string>
+    <string name="faditor_supported_formats">Supported formats: %1$s</string>
+    
+    <!-- Export Success/Error Dialog Strings -->
+    <string name="faditor_export_success_message">Video exported successfully as %1$s</string>
+    <string name="faditor_export_error_message">Export failed: %1$s</string>
+    <string name="faditor_retry">Retry</string>
+    <string name="faditor_close">Close</string>
+    <string name="faditor_editor_title">Video Editor</string>
+    <string name="faditor_crash_recovery_title">Crash Recovery</string>
+    <string name="faditor_crash_recovery_message">A previous editing session was interrupted. Would you like to recover your work?</string>
     <string name="faditor_recover">Recover</string>
     <string name="faditor_start_fresh">Start Fresh</string>
+    <string name="faditor_crash_recovery_recover">Recover</string>
 
 </resources>

@@ -112,8 +112,8 @@
   - Ensure quality preservation during re-encoding operations
   - _Requirements: 7.4, 8.4, 8.5_
 
+- [x] 14. Build export functionality
 
-- [ ] 14. Build export functionality
 
   - Create VideoExporter class for managing export operations
   - Implement export options dialog with Material 3 design

@@ -29,7 +29,7 @@ public class OpenGLVideoProcessor implements VideoProcessor {
     private static final String TAG = "OpenGLVideoProcessor";
 
     private final Context context;
-    private ProcessingCallback currentCallback;
+    private VideoProcessor.ProcessingCallback currentCallback;
     private boolean isProcessing = false;
     private boolean isCancelled = false;
 
@@ -52,7 +52,7 @@ public class OpenGLVideoProcessor implements VideoProcessor {
     }
 
     @Override
-    public void processVideo(File inputFile, EditOperation operation, File outputFile, ProcessingCallback callback) {
+    public void processVideo(File inputFile, EditOperation operation, File outputFile, VideoProcessor.ProcessingCallback callback) {
         if (isProcessing) {
             if (callback != null) {
                 callback.onError("Another processing operation is already in progress");
@@ -123,7 +123,7 @@ public class OpenGLVideoProcessor implements VideoProcessor {
      * Trim video using lossless stream copying when possible
      */
     public void trimVideoLossless(File inputFile, long startMs, long endMs,
-            File outputFile, ProcessingCallback callback) {
+            File outputFile, VideoProcessor.ProcessingCallback callback) {
         MediaExtractor extractor = null;
         MediaMuxer muxer = null;
 
@@ -222,7 +222,7 @@ public class OpenGLVideoProcessor implements VideoProcessor {
      * Trim video with re-encoding using hardware acceleration
      */
     public void trimVideoWithReencoding(File inputFile, long startMs, long endMs,
-            File outputFile, ProcessingCallback callback) {
+            File outputFile, VideoProcessor.ProcessingCallback callback) {
         try {
             // Initialize OpenGL components
             videoRenderer = new VideoRenderer(context);
@@ -451,5 +451,194 @@ public class OpenGLVideoProcessor implements VideoProcessor {
             currentCallback.onError(errorMessage);
         }
         currentCallback = null;
+    }
+    
+    /**
+     * Process video for export with custom surface output
+     */
+    public void processVideoForExport(com.fadcam.ui.faditor.models.VideoProject project, 
+                                     android.view.Surface outputSurface, 
+                                     ProcessingCallback callback) {
+        if (isProcessing) {
+            if (callback != null) {
+                callback.onError("Another processing operation is already in progress");
+            }
+            return;
+        }
+
+        this.currentCallback = callback;
+        this.isProcessing = true;
+        this.isCancelled = false;
+
+        processingHandler.post(() -> {
+            try {
+                // Get the working file from the project
+                File inputFile = project.getWorkingFile();
+                if (inputFile == null || !inputFile.exists()) {
+                    notifyError("Input video file not found");
+                    return;
+                }
+
+                VideoMetadata metadata = project.getMetadata();
+                
+                // Initialize OpenGL components for export
+                videoRenderer = new VideoRenderer(context);
+                videoTexture = new VideoTexture();
+
+                // Initialize renderer with the provided output surface
+                videoRenderer.initialize(outputSurface);
+
+                // Process video frames for export
+                processVideoFramesForExport(inputFile, project, metadata, callback);
+
+                if (!isCancelled) {
+                    // Export completed successfully
+                    if (callback != null) {
+                        callback.onSuccess(inputFile); // Return the processed file
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error processing video for export", e);
+                notifyError("Export processing failed: " + e.getMessage());
+            } finally {
+                releaseOpenGLResources();
+                isProcessing = false;
+            }
+        });
+    }
+
+    private void processVideoFramesForExport(File inputFile, 
+                                           com.fadcam.ui.faditor.models.VideoProject project,
+                                           VideoMetadata metadata, 
+                                           ProcessingCallback callback) throws IOException {
+        MediaExtractor extractor = new MediaExtractor();
+        MediaCodec decoder = null;
+
+        try {
+            extractor.setDataSource(inputFile.getAbsolutePath());
+
+            // Find video track
+            int videoTrackIndex = -1;
+            for (int i = 0; i < extractor.getTrackCount(); i++) {
+                MediaFormat format = extractor.getTrackFormat(i);
+                String mime = format.getString(MediaFormat.KEY_MIME);
+                if (mime.startsWith("video/")) {
+                    videoTrackIndex = i;
+                    break;
+                }
+            }
+
+            if (videoTrackIndex == -1) {
+                throw new IOException("No video track found");
+            }
+
+            MediaFormat format = extractor.getTrackFormat(videoTrackIndex);
+            extractor.selectTrack(videoTrackIndex);
+
+            // Apply project operations (trim, etc.)
+            long startTimeUs = 0;
+            long endTimeUs = metadata.getDuration() * 1000;
+            
+            // Check if project has trim operations
+            if (project.getCurrentTrim() != null) {
+                startTimeUs = project.getCurrentTrim().getStartTime() * 1000;
+                endTimeUs = project.getCurrentTrim().getEndTime() * 1000;
+            }
+
+            extractor.seekTo(startTimeUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+
+            // Create decoder
+            String mime = format.getString(MediaFormat.KEY_MIME);
+            decoder = MediaCodec.createDecoderByType(mime);
+            decoder.configure(format, videoTexture.getSurface(), null, 0);
+            decoder.start();
+
+            // Process frames
+            boolean inputDone = false;
+            boolean outputDone = false;
+            long totalDuration = endTimeUs - startTimeUs;
+            int frameCount = 0;
+
+            while (!outputDone && !isCancelled) {
+                // Feed input to decoder
+                if (!inputDone) {
+                    int inputBufferIndex = decoder.dequeueInputBuffer(0);
+                    if (inputBufferIndex >= 0) {
+                        ByteBuffer inputBuffer = decoder.getInputBuffer(inputBufferIndex);
+                        int sampleSize = extractor.readSampleData(inputBuffer, 0);
+
+                        if (sampleSize < 0 || extractor.getSampleTime() > endTimeUs) {
+                            decoder.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            inputDone = true;
+                        } else {
+                            long presentationTime = extractor.getSampleTime();
+                            decoder.queueInputBuffer(inputBufferIndex, 0, sampleSize, presentationTime, 0);
+                            extractor.advance();
+                        }
+                    }
+                }
+
+                // Get output from decoder
+                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                int outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, 0);
+
+                if (outputBufferIndex >= 0) {
+                    if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        outputDone = true;
+                    } else {
+                        // Render frame with OpenGL
+                        videoTexture.updateTexImage();
+                        
+                        // Adjust presentation time for trimmed video
+                        long adjustedPresentationTime = bufferInfo.presentationTimeUs - startTimeUs;
+                        
+                        videoRenderer.renderFrame(adjustedPresentationTime);
+
+                        // Notify callback about frame processing
+                        if (callback != null) {
+                            callback.onFrameProcessed(adjustedPresentationTime);
+                        }
+
+                        frameCount++;
+
+                        // Update progress
+                        if (totalDuration > 0) {
+                            long currentTime = bufferInfo.presentationTimeUs - startTimeUs;
+                            int progress = (int) (currentTime * 100 / totalDuration);
+                            notifyProgress(Math.min(Math.max(progress, 0), 100));
+                        }
+                    }
+
+                    decoder.releaseOutputBuffer(outputBufferIndex, true);
+                }
+            }
+
+            Log.d(TAG, "Processed " + frameCount + " frames for export");
+
+        } finally {
+            if (decoder != null) {
+                try {
+                    decoder.stop();
+                    decoder.release();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error releasing decoder", e);
+                }
+            }
+            extractor.release();
+        }
+    }
+    
+    /**
+     * Extended ProcessingCallback interface for export operations
+     */
+    public interface ProcessingCallback extends VideoProcessor.ProcessingCallback {
+        /**
+         * Called when a frame has been processed and is ready for encoding
+         * @param presentationTimeUs The presentation time of the processed frame
+         */
+        default void onFrameProcessed(long presentationTimeUs) {
+            // Default implementation - can be overridden
+        }
     }
 }

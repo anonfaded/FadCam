@@ -138,6 +138,12 @@ public class FaditorEditorFragment extends BaseFragment implements
     public void onDestroyView() {
         super.onDestroyView();
         
+        // Cancel any ongoing export operations
+        if (currentExporter != null && currentExporter.isExporting()) {
+            currentExporter.cancelExport();
+            currentExporter = null;
+        }
+        
         // Clean up auto-save and show bottom navigation
         if (autoSaveManager != null) {
             autoSaveManager.stopAutoSave();
@@ -421,10 +427,176 @@ public class FaditorEditorFragment extends BaseFragment implements
     }
     
     private void exportProject() {
-        // TODO: Implement export functionality in future task
-        Toast.makeText(requireContext(), 
-            "Export functionality will be implemented in a future task", 
-            Toast.LENGTH_SHORT).show();
+        if (currentProject == null || currentProject.getMetadata() == null) {
+            Toast.makeText(requireContext(), 
+                "No project loaded for export", 
+                Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Show export options dialog (Requirement 4.1)
+        com.fadcam.ui.faditor.components.ExportOptionsDialog dialog = 
+            com.fadcam.ui.faditor.components.ExportOptionsDialog.newInstance(
+                currentProject.getMetadata(), 
+                currentProject.getProjectName()
+            );
+        
+        dialog.setExportOptionsListener(new com.fadcam.ui.faditor.components.ExportOptionsDialog.ExportOptionsListener() {
+            @Override
+            public void onExportConfirmed(com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings settings) {
+                startVideoExport(settings);
+            }
+            
+            @Override
+            public void onExportCancelled() {
+                Log.d(TAG, "Export cancelled by user");
+            }
+        });
+        
+        dialog.show(getParentFragmentManager(), "export_options");
+    }
+    
+    private void startVideoExport(com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings settings) {
+        if (currentProject == null) {
+            return;
+        }
+        
+        // Show progress overlay (Requirement 4.3)
+        showProgress("Preparing export...", true);
+        
+        // Initialize video exporter
+        currentExporter = new com.fadcam.ui.faditor.processors.VideoExporter(requireContext());
+        
+        // Start export with progress tracking (Requirement 4.2, 4.3)
+        currentExporter.exportVideo(currentProject, settings, new com.fadcam.ui.faditor.processors.VideoExporter.ExportCallback() {
+            @Override
+            public void onStarted() {
+                requireActivity().runOnUiThread(() -> {
+                    showProgress("Starting export...", true);
+                    Log.d(TAG, "Export started");
+                });
+            }
+            
+            @Override
+            public void onProgress(int percentage) {
+                requireActivity().runOnUiThread(() -> {
+                    showProgress("Exporting: " + percentage + "%", true);
+                    Log.d(TAG, "Export progress: " + percentage + "%");
+                });
+            }
+            
+            @Override
+            public void onSuccess(java.io.File exportedFile) {
+                requireActivity().runOnUiThread(() -> {
+                    currentExporter = null; // Clear reference
+                    hideProgress();
+                    showExportSuccessDialog(exportedFile);
+                    Log.d(TAG, "Export completed: " + exportedFile.getAbsolutePath());
+                });
+            }
+            
+            @Override
+            public void onError(String errorMessage) {
+                requireActivity().runOnUiThread(() -> {
+                    currentExporter = null; // Clear reference
+                    hideProgress();
+                    showExportErrorDialog(errorMessage);
+                    Log.e(TAG, "Export failed: " + errorMessage);
+                });
+            }
+            
+            @Override
+            public void onCancelled() {
+                requireActivity().runOnUiThread(() -> {
+                    currentExporter = null; // Clear reference
+                    hideProgress();
+                    Toast.makeText(requireContext(), 
+                        R.string.faditor_export_cancelled, 
+                        Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Export cancelled");
+                });
+            }
+        });
+    }
+    
+    private void showExportSuccessDialog(java.io.File exportedFile) {
+        // Show success message with options to share or view (Requirement 4.4, 4.5)
+        new AlertDialog.Builder(requireContext())
+            .setTitle(R.string.faditor_export_completed)
+            .setMessage(getString(R.string.faditor_export_success_message, exportedFile.getName()))
+            .setPositiveButton(R.string.faditor_share_video, (dialog, which) -> {
+                shareExportedVideo(exportedFile);
+            })
+            .setNeutralButton(R.string.faditor_view_video, (dialog, which) -> {
+                viewExportedVideo(exportedFile);
+            })
+            .setNegativeButton(R.string.faditor_close, (dialog, which) -> {
+                dialog.dismiss();
+            })
+            .show();
+    }
+    
+    private void showExportErrorDialog(String errorMessage) {
+        // Show error message with retry option (Requirement 4.6)
+        new AlertDialog.Builder(requireContext())
+            .setTitle(R.string.faditor_export_failed)
+            .setMessage(getString(R.string.faditor_export_error_message, errorMessage))
+            .setPositiveButton(R.string.faditor_retry, (dialog, which) -> {
+                exportProject(); // Retry export
+            })
+            .setNegativeButton(R.string.faditor_close, (dialog, which) -> {
+                dialog.dismiss();
+            })
+            .show();
+    }
+    
+    private void shareExportedVideo(java.io.File videoFile) {
+        try {
+            android.content.Intent shareIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            shareIntent.setType("video/*");
+            
+            // Use FileProvider for secure file sharing
+            android.net.Uri videoUri = androidx.core.content.FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                videoFile
+            );
+            
+            shareIntent.putExtra(android.content.Intent.EXTRA_STREAM, videoUri);
+            shareIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.faditor_share_video)));
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error sharing video", e);
+            Toast.makeText(requireContext(), 
+                "Failed to share video: " + e.getMessage(), 
+                Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    private void viewExportedVideo(java.io.File videoFile) {
+        try {
+            android.content.Intent viewIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            
+            // Use FileProvider for secure file access
+            android.net.Uri videoUri = androidx.core.content.FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                videoFile
+            );
+            
+            viewIntent.setDataAndType(videoUri, "video/*");
+            viewIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            startActivity(viewIntent);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error viewing video", e);
+            Toast.makeText(requireContext(), 
+                "Failed to open video: " + e.getMessage(), 
+                Toast.LENGTH_LONG).show();
+        }
     }
     
     public void saveAndExit() {
@@ -460,16 +632,37 @@ public class FaditorEditorFragment extends BaseFragment implements
     
     // Progress methods
     
+    private com.fadcam.ui.faditor.processors.VideoExporter currentExporter;
+    
     private void showProgress(String message, boolean cancellable) {
         if (progressOverlay != null) {
             progressOverlay.showProgress(message, cancellable);
+            
+            // Set up cancel listener for export operations
+            if (cancellable) {
+                progressOverlay.setProgressListener(new ProgressComponent.ProgressListener() {
+                    @Override
+                    public void onCancelRequested() {
+                        cancelCurrentOperation();
+                    }
+                });
+            }
         }
     }
     
     private void hideProgress() {
         if (progressOverlay != null) {
             progressOverlay.hideProgress();
+            progressOverlay.setProgressListener(null);
         }
+    }
+    
+    private void cancelCurrentOperation() {
+        if (currentExporter != null && currentExporter.isExporting()) {
+            currentExporter.cancelExport();
+            currentExporter = null;
+        }
+        hideProgress();
     }
     
     // AutoSaveManager.AutoSaveListener implementation

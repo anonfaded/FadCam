@@ -72,4 +72,7 @@
     <!-- Auto-save indicator colors -->
     <color name="colorSuccess">@color/green</color>
     <color name="colorTextSecondary">@color/gray500</color>
+    
+    <!-- Progress overlay background -->
+    <color name="progress_overlay_background">#80000000</color> <!-- Semi-transparent black -->
 </resources>
