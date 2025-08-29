@@ -27,6 +27,9 @@ import com.fadcam.ui.faditor.models.EditorState;
 import com.fadcam.ui.faditor.persistence.AutoSaveManager;
 import com.fadcam.ui.faditor.persistence.ProjectManager;
 import com.fadcam.ui.faditor.utils.NavigationUtils;
+import com.fadcam.ui.faditor.utils.PerformanceMonitor;
+import com.fadcam.ui.faditor.utils.PerformanceOptimizer;
+import com.fadcam.ui.faditor.utils.MemoryOptimizer;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 
@@ -59,6 +62,11 @@ public class FaditorEditorFragment extends BaseFragment implements
     private ProjectManager projectManager;
     private VideoProject currentProject;
     private EditorState editorState;
+    
+    // Performance monitoring components
+    private PerformanceMonitor performanceMonitor;
+    private PerformanceOptimizer performanceOptimizer;
+    private MemoryOptimizer memoryOptimizer;
     
     // State management
     private String projectId;
@@ -95,6 +103,7 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Initialize core components
         setupProjectManager();
         setupAutoSaveManager();
+        setupPerformanceMonitoring();
     }
     
     @Nullable
@@ -151,6 +160,12 @@ public class FaditorEditorFragment extends BaseFragment implements
             autoSaveManager.stopAutoSave();
         }
         
+        // Clean up performance monitoring
+        if (performanceOptimizer != null) {
+            performanceOptimizer.stopOptimization();
+            performanceOptimizer.cleanup();
+        }
+        
         showBottomNavigation();
         
         // Clean up component listeners
@@ -188,6 +203,53 @@ public class FaditorEditorFragment extends BaseFragment implements
         
         // Integrate with NavigationUtils for seamless navigation (Requirement 12.2, 12.7)
         NavigationUtils.integrateAutoSave(this, autoSaveManager);
+    }
+    
+    private void setupPerformanceMonitoring() {
+        // Initialize performance monitoring components
+        performanceMonitor = PerformanceMonitor.getInstance();
+        memoryOptimizer = MemoryOptimizer.getInstance(requireContext());
+        performanceOptimizer = PerformanceOptimizer.getInstance(requireContext());
+        
+        // Set up performance optimization listener
+        performanceOptimizer.setPerformanceOptimizationListener(new PerformanceOptimizer.PerformanceOptimizationListener() {
+            @Override
+            public void onPerformanceOptimizationStarted(String reason) {
+                Log.d(TAG, "Performance optimization started: " + reason);
+                // Show subtle feedback to user using existing progress methods
+                if (progressOverlay != null) {
+                    progressOverlay.showProgress("Optimizing performance...", false);
+                }
+            }
+            
+            @Override
+            public void onPerformanceOptimizationCompleted(String summary) {
+                Log.d(TAG, "Performance optimization completed: " + summary);
+                // Hide optimization feedback
+                if (progressOverlay != null) {
+                    progressOverlay.hideProgress();
+                }
+            }
+            
+            @Override
+            public void onPerformanceWarning(String warning, String recommendation) {
+                Log.w(TAG, "Performance warning: " + warning + " - " + recommendation);
+                // Show performance warning to user (non-intrusive)
+                showPerformanceWarning(warning, recommendation);
+            }
+            
+            @Override
+            public void onAutoSavePerformanceIssue(long autoSaveTimeMs) {
+                Log.w(TAG, "Auto-save performance issue: " + autoSaveTimeMs + "ms");
+                // Notify user about slow auto-save
+                showAutoSavePerformanceWarning(autoSaveTimeMs);
+            }
+        });
+        
+        // Start performance optimization
+        performanceOptimizer.startOptimization();
+        
+        Log.d(TAG, "Performance monitoring initialized");
     }
     
     private void initializeViews(View view) {
@@ -344,6 +406,9 @@ public class FaditorEditorFragment extends BaseFragment implements
         
         // Start auto-save
         autoSaveManager.startAutoSave(currentProject, editorState);
+        
+        // Start periodic performance monitoring
+        startPerformanceMonitoring();
         
         hideProgress();
         isInitialized = true;
@@ -684,6 +749,62 @@ public class FaditorEditorFragment extends BaseFragment implements
         }
     }
     
+    private void showPerformanceWarning(String warning, String recommendation) {
+        // Show non-intrusive performance warning
+        if (getActivity() != null) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                Toast.makeText(getActivity(), warning, Toast.LENGTH_SHORT).show();
+            });
+        }
+        Log.w(TAG, "Performance warning: " + warning + " - Recommendation: " + recommendation);
+    }
+    
+    private void showAutoSavePerformanceWarning(long autoSaveTimeMs) {
+        // Show subtle warning about slow auto-save
+        if (getActivity() != null) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                String message = "Auto-save is taking longer than usual (" + autoSaveTimeMs + "ms)";
+                Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+    
+    private void startPerformanceMonitoring() {
+        // Start periodic performance checks
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        
+        // Check performance every 10 seconds
+        Runnable performanceCheckRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isInitialized && performanceOptimizer != null) {
+                    // Check memory status
+                    if (memoryOptimizer != null) {
+                        memoryOptimizer.checkMemoryStatus();
+                    }
+                    
+                    // Check auto-save performance
+                    if (autoSaveManager != null) {
+                        performanceOptimizer.checkAutoSavePerformance(autoSaveManager);
+                    }
+                    
+                    // Log performance summary periodically (every minute)
+                    if (performanceMonitor != null && System.currentTimeMillis() % 60000 < 10000) {
+                        performanceMonitor.logPerformanceSummary();
+                    }
+                    
+                    // Schedule next check
+                    mainHandler.postDelayed(this, 10000); // 10 seconds
+                }
+            }
+        };
+        
+        // Start the periodic checks
+        mainHandler.postDelayed(performanceCheckRunnable, 10000);
+        
+        Log.d(TAG, "Performance monitoring started");
+    }
+    
     private void hideProgress() {
         if (progressOverlay != null) {
             progressOverlay.hideProgress();
@@ -930,9 +1051,18 @@ public class FaditorEditorFragment extends BaseFragment implements
     
     @Override
     public void onTimelinePositionChanged(long positionMs) {
+        // Record seek performance for monitoring
+        long seekStartTime = System.currentTimeMillis();
+        
         // Seek video player to new position
         if (videoPlayer != null) {
             videoPlayer.seekTo(positionMs);
+        }
+        
+        // Record seek time for performance monitoring
+        long seekTime = System.currentTimeMillis() - seekStartTime;
+        if (performanceMonitor != null) {
+            performanceMonitor.recordSeekTime(seekTime);
         }
         
         if (editorState != null) {
@@ -965,7 +1095,14 @@ public class FaditorEditorFragment extends BaseFragment implements
         
         // Update video position during scrubbing
         if (videoPlayer != null) {
+            long seekStartTime = System.currentTimeMillis();
             videoPlayer.seekTo(positionMs);
+            
+            // Record scrubbing seek performance
+            long seekTime = System.currentTimeMillis() - seekStartTime;
+            if (performanceMonitor != null) {
+                performanceMonitor.recordSeekTime(seekTime);
+            }
         }
         
         if (editorState != null) {

@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.fadcam.opengl.grafika.GlUtil;
+import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 
 /**
  * Manages OpenGL ES external textures for efficient video frame processing.
@@ -25,6 +26,11 @@ public class VideoTexture {
     private final Object frameSyncObject = new Object();
     private boolean frameAvailable = false;
     
+    // Performance monitoring
+    private final PerformanceMonitor performanceMonitor;
+    private int textureWidth = 0;
+    private int textureHeight = 0;
+    
     /**
      * Initialize the video texture and create the input surface
      */
@@ -35,6 +41,7 @@ public class VideoTexture {
         }
         
         // Generate external texture
+        performanceMonitor.startOperation("texture_creation");
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
         textureId = textures[0];
@@ -48,6 +55,11 @@ public class VideoTexture {
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
         GlUtil.checkGlError("texture parameter setup");
+        
+        // Track texture creation for performance monitoring
+        // Note: External textures don't have explicit dimensions until content is bound
+        performanceMonitor.trackTextureCreation(textureId, 1920, 1080, GLES20.GL_RGBA); // Default HD size
+        performanceMonitor.endOperation("texture_creation");
         
         // Create SurfaceTexture
         surfaceTexture = new SurfaceTexture(textureId);
@@ -83,6 +95,7 @@ public class VideoTexture {
      */
     public VideoTexture() {
         // Constructor - initialization happens lazily
+        this.performanceMonitor = PerformanceMonitor.getInstance();
     }
     
     /**
@@ -109,10 +122,13 @@ public class VideoTexture {
             frameAvailable = false;
         }
         
+        performanceMonitor.startOperation("texture_update");
         try {
             surfaceTexture.updateTexImage();
             surfaceTexture.getTransformMatrix(textureMatrix);
+            performanceMonitor.endOperation("texture_update");
         } catch (RuntimeException e) {
+            performanceMonitor.endOperation("texture_update");
             Log.e(TAG, "Error updating texture image", e);
         }
     }
@@ -174,6 +190,15 @@ public class VideoTexture {
     public void setDefaultBufferSize(int width, int height) {
         if (surfaceTexture != null) {
             surfaceTexture.setDefaultBufferSize(width, height);
+            this.textureWidth = width;
+            this.textureHeight = height;
+            
+            // Update performance monitoring with actual texture dimensions
+            if (textureId != 0) {
+                performanceMonitor.trackTextureDeletion(textureId); // Remove old tracking
+                performanceMonitor.trackTextureCreation(textureId, width, height, GLES20.GL_RGBA);
+            }
+            
             Log.d(TAG, "Set default buffer size: " + width + "x" + height);
         }
     }
@@ -212,6 +237,9 @@ public class VideoTexture {
         }
         
         if (textureId != 0) {
+            // Track texture deletion for performance monitoring
+            performanceMonitor.trackTextureDeletion(textureId);
+            
             int[] textures = new int[] { textureId };
             GLES20.glDeleteTextures(1, textures, 0);
             textureId = 0;

@@ -15,6 +15,7 @@ import com.fadcam.ui.faditor.models.VideoMetadata;
 import com.fadcam.ui.faditor.processors.opengl.VideoRenderer;
 import com.fadcam.ui.faditor.processors.opengl.VideoTexture;
 import com.fadcam.ui.faditor.processors.opengl.MediaCodecIntegration;
+import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,10 +40,17 @@ public class OpenGLVideoProcessor implements VideoProcessor {
     private VideoRenderer videoRenderer;
     private VideoTexture videoTexture;
     private MediaCodecIntegration mediaCodecIntegration;
+    
+    // Performance monitoring
+    private final PerformanceMonitor performanceMonitor;
 
     public OpenGLVideoProcessor(Context context) {
         this.context = context;
+        this.performanceMonitor = PerformanceMonitor.getInstance();
         initializeProcessingThread();
+        
+        // Enable performance monitoring for video processing
+        performanceMonitor.enableMonitoring();
     }
 
     private void initializeProcessingThread() {
@@ -81,19 +89,26 @@ public class OpenGLVideoProcessor implements VideoProcessor {
     }
 
     private void processTrimOperation(File inputFile, EditOperation operation, File outputFile) {
+        performanceMonitor.startOperation("trim_operation");
         try {
             VideoMetadata metadata = extractVideoMetadata(inputFile);
 
             if (canProcessLossless(metadata, operation)) {
                 Log.d(TAG, "Using lossless stream copying for trim operation");
+                performanceMonitor.startOperation("lossless_trim");
                 trimVideoLossless(inputFile, operation.getStartTime(), operation.getEndTime(), outputFile,
                         currentCallback);
+                performanceMonitor.endOperation("lossless_trim");
             } else {
                 Log.d(TAG, "Using hardware re-encoding for trim operation");
+                performanceMonitor.startOperation("reencoding_trim");
                 trimVideoWithReencoding(inputFile, operation.getStartTime(), operation.getEndTime(), outputFile,
                         currentCallback);
+                performanceMonitor.endOperation("reencoding_trim");
             }
+            performanceMonitor.endOperation("trim_operation");
         } catch (Exception e) {
+            performanceMonitor.endOperation("trim_operation");
             Log.e(TAG, "Error in trim operation", e);
             notifyError("Trim operation failed: " + e.getMessage());
         }

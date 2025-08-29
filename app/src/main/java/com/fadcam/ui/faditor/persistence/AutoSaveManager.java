@@ -2,6 +2,7 @@ package com.fadcam.ui.faditor.persistence;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
@@ -9,6 +10,7 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.fadcam.ui.faditor.models.VideoProject;
 import com.fadcam.ui.faditor.models.EditorState;
+import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,8 +33,13 @@ public class AutoSaveManager implements LifecycleEventObserver {
     private final Context context;
     private final ProjectManager projectManager;
     private final Handler mainHandler;
+    private final Handler backgroundHandler;
+    private final HandlerThread backgroundThread;
     private final AtomicBoolean isAutoSaveEnabled;
     private final AtomicBoolean isSaving;
+    
+    // Performance monitoring
+    private final PerformanceMonitor performanceMonitor;
     
     private VideoProject currentProject;
     private EditorState currentEditorState;
@@ -45,10 +52,19 @@ public class AutoSaveManager implements LifecycleEventObserver {
         this.context = context;
         this.projectManager = projectManager;
         this.mainHandler = new Handler(Looper.getMainLooper());
+        
+        // Create background thread for auto-save operations to avoid UI blocking
+        this.backgroundThread = new HandlerThread("AutoSaveThread");
+        this.backgroundThread.start();
+        this.backgroundHandler = new Handler(backgroundThread.getLooper());
+        
         this.isAutoSaveEnabled = new AtomicBoolean(false);
         this.isSaving = new AtomicBoolean(false);
         this.hasUnsavedChanges = false;
         this.lastAutoSaveTime = 0;
+        
+        // Initialize performance monitoring
+        this.performanceMonitor = PerformanceMonitor.getInstance();
         
         initializeAutoSaveRunnable();
     }
@@ -225,45 +241,56 @@ public class AutoSaveManager implements LifecycleEventObserver {
         
         isSaving.set(true);
         
-        // Notify listener that auto-save is starting
-        if (listener != null) {
-            listener.onAutoSaveStarted();
-        }
+        // Start performance monitoring for auto-save operation
+        performanceMonitor.startOperation("auto_save");
         
-        // Save project first
-        projectManager.saveProject(currentProject, new ProjectManager.ProjectCallback() {
-            @Override
-            public void onProjectSaved(String projectId) {
-                // Project saved successfully, now save editor state
-                projectManager.saveEditorState(projectId, currentEditorState, 
-                    new ProjectManager.EditorStateCallback() {
-                        @Override
-                        public void onEditorStateSaved(String projectId) {
-                            // Both saves completed successfully
-                            onAutoSaveCompleted(isImmediate);
-                        }
-                        
-                        @Override
-                        public void onEditorStateLoaded(EditorState editorState) {
-                            // Not used in save operation
-                        }
-                        
-                        @Override
-                        public void onError(String errorMessage) {
-                            onAutoSaveError(errorMessage);
-                        }
-                    });
+        // Notify listener that auto-save is starting (on main thread)
+        mainHandler.post(() -> {
+            if (listener != null) {
+                listener.onAutoSaveStarted();
             }
-            
-            @Override
-            public void onProjectLoaded(VideoProject project) {
-                // Not used in save operation
-            }
-            
-            @Override
-            public void onError(String errorMessage) {
-                onAutoSaveError(errorMessage);
-            }
+        });
+        
+        // Perform save operations on background thread to avoid UI blocking
+        backgroundHandler.post(() -> {
+            // Save project first
+            projectManager.saveProject(currentProject, new ProjectManager.ProjectCallback() {
+                @Override
+                public void onProjectSaved(String projectId) {
+                    // Project saved successfully, now save editor state
+                    projectManager.saveEditorState(projectId, currentEditorState, 
+                        new ProjectManager.EditorStateCallback() {
+                            @Override
+                            public void onEditorStateSaved(String projectId) {
+                                // Both saves completed successfully
+                                performanceMonitor.endOperation("auto_save");
+                                onAutoSaveCompleted(isImmediate);
+                            }
+                            
+                            @Override
+                            public void onEditorStateLoaded(EditorState editorState) {
+                                // Not used in save operation
+                            }
+                            
+                            @Override
+                            public void onError(String errorMessage) {
+                                performanceMonitor.endOperation("auto_save");
+                                onAutoSaveError(errorMessage);
+                            }
+                        });
+                }
+                
+                @Override
+                public void onProjectLoaded(VideoProject project) {
+                    // Not used in save operation
+                }
+                
+                @Override
+                public void onError(String errorMessage) {
+                    performanceMonitor.endOperation("auto_save");
+                    onAutoSaveError(errorMessage);
+                }
+            });
         });
     }
     
@@ -280,10 +307,12 @@ public class AutoSaveManager implements LifecycleEventObserver {
             currentEditorState.clearUnsavedChanges();
         }
         
-        // Notify listener
-        if (listener != null) {
-            listener.onAutoSaveCompleted();
-        }
+        // Notify listener on main thread
+        mainHandler.post(() -> {
+            if (listener != null) {
+                listener.onAutoSaveCompleted();
+            }
+        });
         
         // Schedule next auto-save if not immediate and still enabled
         if (!isImmediate && isAutoSaveEnabled.get()) {
@@ -294,10 +323,12 @@ public class AutoSaveManager implements LifecycleEventObserver {
     private void onAutoSaveError(String errorMessage) {
         isSaving.set(false);
         
-        // Notify listener
-        if (listener != null) {
-            listener.onAutoSaveError(errorMessage);
-        }
+        // Notify listener on main thread
+        mainHandler.post(() -> {
+            if (listener != null) {
+                listener.onAutoSaveError(errorMessage);
+            }
+        });
         
         // Retry auto-save after a delay if still enabled
         if (isAutoSaveEnabled.get()) {
@@ -379,8 +410,38 @@ public class AutoSaveManager implements LifecycleEventObserver {
      */
     public void cleanup() {
         stopAutoSave();
+        
+        // Clean up background thread
+        if (backgroundThread != null) {
+            backgroundThread.quitSafely();
+            try {
+                backgroundThread.join(1000); // Wait up to 1 second for thread to finish
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
         currentProject = null;
         currentEditorState = null;
         listener = null;
+    }
+    
+    /**
+     * Get auto-save performance metrics
+     */
+    public PerformanceMonitor.PerformanceMetric getAutoSavePerformanceMetric() {
+        return performanceMonitor.getMetric("auto_save");
+    }
+    
+    /**
+     * Check if auto-save performance is acceptable (not blocking UI)
+     */
+    public boolean isAutoSavePerformanceAcceptable() {
+        PerformanceMonitor.PerformanceMetric metric = getAutoSavePerformanceMetric();
+        if (metric != null) {
+            // Auto-save should complete within 1 second to avoid perceived UI blocking
+            return metric.getAverageTimeMs() < 1000.0;
+        }
+        return true; // No data available, assume acceptable
     }
 }

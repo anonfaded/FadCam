@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.fadcam.opengl.grafika.GlUtil;
+import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -90,8 +91,12 @@ public class VideoRenderer {
     
     private boolean initialized = false;
     
+    // Performance monitoring
+    private final PerformanceMonitor performanceMonitor;
+    
     public VideoRenderer(Context context) {
         this.context = context;
+        this.performanceMonitor = PerformanceMonitor.getInstance();
         initializeBuffers();
     }
     
@@ -219,9 +224,12 @@ public class VideoRenderer {
             return;
         }
         
+        performanceMonitor.startOperation("frame_render");
+        
         // Make sure EGL context is current
         if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
             Log.e(TAG, "Failed to make EGL context current");
+            performanceMonitor.endOperation("frame_render");
             return;
         }
         
@@ -264,6 +272,10 @@ public class VideoRenderer {
         if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
             Log.e(TAG, "Failed to swap EGL buffers");
         }
+        
+        // Record frame performance and end timing
+        performanceMonitor.recordFrameTime();
+        performanceMonitor.endOperation("frame_render");
     }
     
     /**
