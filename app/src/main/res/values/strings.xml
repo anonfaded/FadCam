@@ -1129,4 +1129,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="done">Done</string>
+    
+    <!-- Auto-save strings for Faditor Mini -->
+    <string name="faditor_auto_saving">Auto-saving…</string>
+    <string name="faditor_auto_saved">Saved</string>
+    <string name="faditor_auto_save_error">Save failed</string>
+    <string name="faditor_crash_recovery_title">Recover Project</string>
+    <string name="faditor_crash_recovery_message">Your previous editing session was interrupted. Would you like to recover your work?</string>
+    <string name="faditor_crash_recovery_recover">Recover</string>
+    <string name="faditor_crash_recovery_discard">Start Fresh</string>
 </resources>
