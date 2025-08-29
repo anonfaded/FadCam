@@ -167,16 +167,10 @@ public class FaditorEditorFragment extends BaseFragment implements
     
     @Override
     protected boolean onBackPressed() {
-        // Handle back press with auto-save (Requirement 10.4, 10.5)
+        // Use enhanced NavigationUtils for back press handling (Requirement 10.4, 10.5)
         Log.d(TAG, "Back pressed in editor");
         
-        if (hasUnsavedChanges()) {
-            showUnsavedChangesDialog();
-            return true; // Handled
-        } else {
-            saveAndExit();
-            return true; // Handled
-        }
+        return NavigationUtils.handleBackPress(this);
     }
     
     // Initialization methods
@@ -191,6 +185,9 @@ public class FaditorEditorFragment extends BaseFragment implements
         
         // Add lifecycle observer for auto-save (Requirement 12.3)
         getLifecycle().addObserver(autoSaveManager);
+        
+        // Integrate with NavigationUtils for seamless navigation (Requirement 12.2, 12.7)
+        NavigationUtils.integrateAutoSave(this, autoSaveManager);
     }
     
     private void initializeViews(View view) {
@@ -378,7 +375,7 @@ public class FaditorEditorFragment extends BaseFragment implements
     
     // Auto-save methods
     
-    private boolean hasUnsavedChanges() {
+    public boolean hasUnsavedChanges() {
         return hasUnsavedChanges || 
                (currentProject != null && currentProject.hasUnsavedChanges()) ||
                (editorState != null && editorState.needsSaving()) ||
@@ -627,7 +624,7 @@ public class FaditorEditorFragment extends BaseFragment implements
         NavigationUtils.returnToBrowser(this);
     }
     
-    private void showUnsavedChangesDialog() {
+    public void showUnsavedChangesDialog() {
         new AlertDialog.Builder(requireContext())
             .setTitle(R.string.faditor_unsaved_changes_title)
             .setMessage(R.string.faditor_unsaved_changes_message)
@@ -1009,5 +1006,15 @@ public class FaditorEditorFragment extends BaseFragment implements
         }
         
         markModified();
+    }
+    
+    // Public getter methods for NavigationUtils integration
+    
+    /**
+     * Gets the AutoSaveManager instance for navigation integration
+     * Requirements: 12.2, 12.7
+     */
+    public AutoSaveManager getAutoSaveManager() {
+        return autoSaveManager;
     }
 }
