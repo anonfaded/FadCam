@@ -4,7 +4,9 @@ import android.net.Uri;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the current video editing session state.
@@ -12,22 +14,45 @@ import java.util.List;
  */
 public class VideoProject {
     
+    private String projectId;
+    private String projectName;
+    private long createdAt;
+    private long lastModified;
     private Uri originalVideoUri;
+    private String originalVideoPath; // For JSON serialization
     private File workingFile;
     private long duration;
     private VideoMetadata metadata;
     private List<EditOperation> operations;
     private TrimRange currentTrim;
     private ProcessingCapabilities capabilities;
+    private Map<String, Object> customData; // For future extensions
     private boolean hasUnsavedChanges;
     
     public static class TrimRange {
-        public final long startMs;
-        public final long endMs;
+        private final long startTime;
+        private final long endTime;
         
-        public TrimRange(long startMs, long endMs) {
-            this.startMs = startMs;
-            this.endMs = endMs;
+        public TrimRange(long startTime, long endTime) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+        
+        public long getStartTime() {
+            return startTime;
+        }
+        
+        public long getEndTime() {
+            return endTime;
+        }
+        
+        // Legacy getters for backward compatibility
+        public long getStartMs() {
+            return startTime;
+        }
+        
+        public long getEndMs() {
+            return endTime;
         }
     }
     
@@ -53,7 +78,10 @@ public class VideoProject {
     
     public VideoProject() {
         this.operations = new ArrayList<>();
+        this.customData = new HashMap<>();
         this.hasUnsavedChanges = false;
+        this.createdAt = System.currentTimeMillis();
+        this.lastModified = this.createdAt;
     }
     
     public VideoProject(Uri originalVideoUri) {
@@ -62,12 +90,55 @@ public class VideoProject {
     }
     
     // Getters and setters
+    public String getProjectId() {
+        return projectId;
+    }
+    
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+    
+    public String getProjectName() {
+        return projectName;
+    }
+    
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+        updateLastModified();
+    }
+    
+    public long getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    public long getLastModified() {
+        return lastModified;
+    }
+    
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+    
     public Uri getOriginalVideoUri() {
         return originalVideoUri;
     }
     
     public void setOriginalVideoUri(Uri originalVideoUri) {
         this.originalVideoUri = originalVideoUri;
+        updateLastModified();
+    }
+    
+    public String getOriginalVideoPath() {
+        return originalVideoPath;
+    }
+    
+    public void setOriginalVideoPath(String originalVideoPath) {
+        this.originalVideoPath = originalVideoPath;
+        updateLastModified();
     }
     
     public File getWorkingFile() {
@@ -98,6 +169,11 @@ public class VideoProject {
         return new ArrayList<>(operations);
     }
     
+    public void setOperations(List<EditOperation> operations) {
+        this.operations = operations != null ? new ArrayList<>(operations) : new ArrayList<>();
+        updateLastModified();
+    }
+    
     public TrimRange getCurrentTrim() {
         return currentTrim;
     }
@@ -115,6 +191,15 @@ public class VideoProject {
         this.capabilities = capabilities;
     }
     
+    public Map<String, Object> getCustomData() {
+        return customData;
+    }
+    
+    public void setCustomData(Map<String, Object> customData) {
+        this.customData = customData != null ? new HashMap<>(customData) : new HashMap<>();
+        updateLastModified();
+    }
+    
     public boolean hasUnsavedChanges() {
         return hasUnsavedChanges;
     }
@@ -122,6 +207,12 @@ public class VideoProject {
     public void addOperation(EditOperation operation) {
         operations.add(operation);
         hasUnsavedChanges = true;
+        updateLastModified();
+    }
+    
+    public void updateLastModified() {
+        this.lastModified = System.currentTimeMillis();
+        this.hasUnsavedChanges = true;
     }
     
     public boolean canProcessLossless() {
@@ -158,9 +249,9 @@ public class VideoProject {
         if (currentTrim == null) {
             return true; // No trim is valid
         }
-        return currentTrim.startMs >= 0 && 
-               currentTrim.endMs <= duration && 
-               currentTrim.startMs < currentTrim.endMs;
+        return currentTrim.getStartMs() >= 0 && 
+               currentTrim.getEndMs() <= duration && 
+               currentTrim.getStartMs() < currentTrim.getEndMs();
     }
     
     /**
@@ -170,7 +261,7 @@ public class VideoProject {
         if (currentTrim == null) {
             return duration;
         }
-        return currentTrim.endMs - currentTrim.startMs;
+        return currentTrim.getEndMs() - currentTrim.getStartMs();
     }
     
     /**

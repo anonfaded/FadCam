@@ -19,17 +19,25 @@ public class EditOperation {
     private boolean requiresReencoding;
     private Map<String, Object> parameters;
     
+    public EditOperation() {
+        this.parameters = new HashMap<>();
+        this.requiresReencoding = false;
+    }
+    
     public EditOperation(Type type, long startTime, long endTime) {
+        this();
         this.type = type;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.parameters = new HashMap<>();
-        this.requiresReencoding = false;
     }
     
     // Getters and setters
     public Type getType() {
         return type;
+    }
+    
+    public void setType(Type type) {
+        this.type = type;
     }
     
     public long getStartTime() {
@@ -52,12 +60,20 @@ public class EditOperation {
         return requiresReencoding;
     }
     
+    public boolean isRequiresReencoding() {
+        return requiresReencoding;
+    }
+    
     public void setRequiresReencoding(boolean requiresReencoding) {
         this.requiresReencoding = requiresReencoding;
     }
     
     public Map<String, Object> getParameters() {
         return new HashMap<>(parameters);
+    }
+    
+    public void setParameters(Map<String, Object> parameters) {
+        this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<>();
     }
     
     public void setParameter(String key, Object value) {

@@ -18,6 +18,7 @@ constraintlayout = "2.2.1"
 navigationUiKtx = "2.9.0"
 okhttp = "4.12.0"
 osmdroidAndroid = "6.1.10"
+room = "2.6.1"
 smartExceptionJava = "0.2.1"
 swiperefreshlayout = "1.1.0"
 viewpager2 = "1.1.0"
@@ -50,6 +51,8 @@ navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 osmdroid-wms = { module = "org.osmdroid:osmdroid-wms", version.ref = "osmdroidAndroid" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 smart-exception-java = { module = "com.arthenica:smart-exception-java", version.ref = "smartExceptionJava" }
 swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
