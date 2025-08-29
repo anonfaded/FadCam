@@ -498,4 +498,11 @@
     <string name="fix_video_saf_success">视频已修复！已保存为：%1$s。</string>
     <string name="fix_video_saf_export">如有需要，可从应用存储导出或分享修复后的视频。</string>
 
+    <!-- Faditor Mini Video Editor Strings -->
+    <!-- TODO: Translate Faditor strings from values/strings.xml -->
+    <!-- 以下字符串需要中文翻译: -->
+    <!-- - 所有以"faditor_"开头的字符串 -->
+    <!-- - 项目浏览器、编辑器、时间轴、导出和错误消息 -->
+    <!-- - 自动保存和项目管理字符串 -->
+
 </resources>

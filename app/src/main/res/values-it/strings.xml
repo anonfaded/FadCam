@@ -450,4 +450,11 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="fix_video_saf_success">Video riparato! Salvato come: %1$s.</string>
     <string name="fix_video_saf_export">Esporta o condividi il file riparato dalla memoria dell\'app se necessario.</string>
 
+    <!-- Faditor Mini Video Editor Strings -->
+    <!-- TODO: Translate Faditor strings from values/strings.xml -->
+    <!-- Le seguenti stringhe necessitano di traduzione italiana: -->
+    <!-- - Tutte le stringhe che iniziano con "faditor_" -->
+    <!-- - Browser progetti, editor, timeline, esportazione e messaggi di errore -->
+    <!-- - Stringhe di salvataggio automatico e gestione progetti -->
+
 </resources>

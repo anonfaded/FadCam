@@ -413,7 +413,361 @@
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
     <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
     <string name="video_player_settings_title">Video Player Settings</string>
-    <string name="video_player_settings_helper">Playback Speed changes the normal speed of video playback. Quick Speed is a temporary boost applied only while you press and hold on the video. You can change these settings here or directly from the Video Player screen.</string>
+    <string name="video_player_settings_helper">Playback Speed changes the normal speed of video playback. Quick Speed is a temporary boost applied only while you press and hold on the video. You can change these settings he
+    
+    <!-- Faditor Mini Video Editor Strings -->
+    <!-- 
+    This section contains all user-facing strings for the Faditor Mini video editor.
+    
+    String naming convention:
+    - All Faditor strings start with "faditor_" prefix
+    - Use descriptive names that indicate the UI component and action
+    - Group related strings together (e.g., all export-related strings)
+    
+    String formatting:
+    - Use %1$s, %2$d etc. for dynamic content with proper positioning
+    - Include proper pluralization where needed
+    - Maintain consistent terminology with existing app features
+    
+    Translation support:
+    - All strings are translatable by default
+    - Mark non-translatable strings with translatable="false"
+    - Add translation TODO comments in language-specific files
+    
+    Requirements coverage:
+    - Requirement 5.1: Consistent design system integration
+    - Requirement 5.2: Proper internationalization support
+    - Requirement 9.6: Project management strings
+    - Requirement 12.6: Auto-save related strings
+    -->
+    
+    <!-- Project Browser (FaditorMiniFragment) -->
+    <string name="faditor_project_browser_title">Recent Projects</string>
+    <string name="faditor_create_new_project">Create New Project</string>
+    <string name="faditor_import_project">Import Project</string>
+    <string name="faditor_no_projects_title">No Projects Yet</string>
+    <string name="faditor_no_projects_subtitle">Create your first video editing project</string>
+    <string name="faditor_project_search_hint">Search projects…</string>
+    <string name="faditor_project_created">Created %1$s</string>
+    <string name="faditor_project_modified">Modified %1$s</string>
+    <string name="faditor_project_duration">Duration: %1$s</string>
+    <string name="faditor_project_size">Size: %1$s</string>
+    <string name="faditor_project_menu_rename">Rename Project</string>
+    <string name="faditor_project_menu_delete">Delete Project</string>
+    <string name="faditor_project_menu_export">Export Project</string>
+    <string name="faditor_project_menu_duplicate">Duplicate Project</string>
+    
+    <!-- Project Creation -->
+    <string name="faditor_new_project_title">New Project</string>
+    <string name="faditor_select_video_source">Select Video Source</string>
+    <string name="faditor_select_from_gallery">From Gallery</string>
+    <string name="faditor_select_from_recordings">From Recordings</string>
+    <string name="faditor_project_name_hint">Project name</string>
+    <string name="faditor_project_name_default">Video Project %1$d</string>
+    <string name="faditor_create_project_button">Create Project</string>
+    <string name="faditor_cancel_button">Cancel</string>
+    
+    <!-- Full-Screen Editor (FaditorEditorFragment) -->
+    <string name="faditor_editor_title">Video Editor</string>
+    <string name="faditor_editor_back">Back to Projects</string>
+    <string name="faditor_editor_save">Save</string>
+    <string name="faditor_editor_export">Export</string>
+    <string name="faditor_editor_undo">Undo</string>
+    <string name="faditor_editor_redo">Redo</string>
+    <string name="faditor_unsaved_changes_title">Unsaved Changes</string>
+    <string name="faditor_unsaved_changes_message">You have unsaved changes. Do you want to save before leaving?</string>
+    <string name="faditor_save_and_exit">Save &amp; Exit</string>
+    <string name="faditor_discard_changes">Discard Changes</string>
+    
+    <!-- Video Player Controls -->
+    <string name="faditor_player_play">Play</string>
+    <string name="faditor_player_pause">Pause</string>
+    <string name="faditor_player_seek_forward">Seek Forward</string>
+    <string name="faditor_player_seek_backward">Seek Backward</string>
+    <string name="faditor_player_fullscreen">Fullscreen</string>
+    <string name="faditor_player_exit_fullscreen">Exit Fullscreen</string>
+    <string name="faditor_player_mute">Mute</string>
+    <string name="faditor_player_unmute">Unmute</string>
+    <string name="faditor_player_volume">Volume</string>
+    <string name="faditor_player_speed">Playback Speed</string>
+    <string name="faditor_current_time">%1$s / %2$s</string>
+    
+    <!-- Timeline and Editing Tools -->
+    <string name="faditor_timeline_zoom_in">Zoom In</string>
+    <string name="faditor_timeline_zoom_out">Zoom Out</string>
+    <string name="faditor_timeline_zoom_fit">Fit to Timeline</string>
+    <string name="faditor_timeline_frame_accurate">Frame Accurate</string>
+    <string name="faditor_timeline_snap_enabled">Snap to Frame</string>
+    <string name="faditor_timeline_snap_disabled">Free Movement</string>
+    <string name="faditor_trim_start_handle">Trim Start</string>
+    <string name="faditor_trim_end_handle">Trim End</string>
+    <string name="faditor_playhead">Playhead</string>
+    <string name="faditor_timeline_position">Position: %1$s</string>
+    <string name="faditor_trim_range">Trim: %1$s - %2$s</string>
+    <string name="faditor_timeline_duration">Duration: %1$s</string>
+    
+    <!-- Editing Toolbar -->
+    <string name="faditor_tool_select">Select</string>
+    <string name="faditor_tool_trim">Trim</string>
+    <string name="faditor_tool_split">Split</string>
+    <string name="faditor_tool_effects">Effects</string>
+    <string name="faditor_tool_audio">Audio</string>
+    <string name="faditor_tool_text">Text</string>
+    <string name="faditor_tool_transition">Transition</string>
+    <string name="faditor_tool_filter">Filter</string>
+    
+    <!-- Trim Tool -->
+    <string name="faditor_trim_mode_title">Trim Video</string>
+    <string name="faditor_trim_instructions">Drag the handles to select the part you want to keep</string>
+    <string name="faditor_trim_apply">Apply Trim</string>
+    <string name="faditor_trim_reset">Reset Trim</string>
+    <string name="faditor_trim_preview">Preview Trim</string>
+    <string name="faditor_trim_lossless">Lossless Trim</string>
+    <string name="faditor_trim_reencoding">Re-encoding Required</string>
+    
+    <!-- Export Functionality -->
+    <string name="faditor_export_title">Export Video</string>
+    <string name="faditor_export_quality_title">Export Quality</string>
+    <string name="faditor_export_format_title">Export Format</string>
+    <string name="faditor_export_resolution_title">Resolution</string>
+    <string name="faditor_export_bitrate_title">Bitrate</string>
+    <string name="faditor_export_framerate_title">Frame Rate</string>
+    <string name="faditor_export_filename_hint">Export filename</string>
+    <string name="faditor_export_start">Start Export</string>
+    <string name="faditor_export_cancel">Cancel Export</string>
+    <string name="faditor_export_settings">Export Settings</string>
+    
+    <!-- Export Quality Options -->
+    <string name="faditor_quality_original">Original Quality</string>
+    <string name="faditor_quality_high">High Quality</string>
+    <string name="faditor_quality_medium">Medium Quality</string>
+    <string name="faditor_quality_low">Low Quality</string>
+    <string name="faditor_quality_custom">Custom</string>
+    
+    <!-- Export Format Options -->
+    <string name="faditor_format_mp4">MP4 (Recommended)</string>
+    <string name="faditor_format_mov">MOV</string>
+    <string name="faditor_format_avi">AVI</string>
+    <string name="faditor_format_mkv">MKV</string>
+    
+    <!-- Progress and Processing -->
+    <string name="faditor_processing_title">Processing Video</string>
+    <string name="faditor_processing_subtitle">Please wait while we process your video</string>
+    <string name="faditor_processing_progress">%1$d%% complete</string>
+    <string name="faditor_processing_time_remaining">Time remaining: %1$s</string>
+    <string name="faditor_processing_cancel">Cancel Processing</string>
+    <string name="faditor_processing_cancel_confirm">Are you sure you want to cancel? Progress will be lost.</string>
+    <string name="faditor_processing_trim">Trimming video…</string>
+    <string name="faditor_processing_export">Exporting video…</string>
+    <string name="faditor_processing_save">Saving project…</string>
+    <string name="faditor_processing_load">Loading project…</string>
+    
+    <!-- Auto-Save System -->
+    <string name="faditor_autosave_saving">Auto-saving…</string>
+    <string name="faditor_autosave_saved">Auto-saved</string>
+    <string name="faditor_autosave_failed">Auto-save failed</string>
+    <string name="faditor_autosave_retry">Retry auto-save</string>
+    <string name="faditor_autosave_disabled">Auto-save disabled</string>
+    <string name="faditor_autosave_enabled">Auto-save enabled</string>
+    <string name="faditor_autosave_interval">Auto-save every %1$d seconds</string>
+    <string name="faditor_recovery_title">Recover Project</string>
+    <string name="faditor_recovery_message">We found an unsaved project. Would you like to recover it?</string>
+    <string name="faditor_recovery_recover">Recover</string>
+    <string name="faditor_recovery_discard">Discard</string>
+    
+    <!-- Project Management -->
+    <string name="faditor_project_saved">Project saved</string>
+    <string name="faditor_project_loaded">Project loaded</string>
+    <string name="faditor_project_created_success">Project created successfully</string>
+    <string name="faditor_project_deleted">Project deleted</string>
+    <string name="faditor_project_renamed">Project renamed</string>
+    <string name="faditor_project_exported">Project exported</string>
+    <string name="faditor_project_imported">Project imported</string>
+    <string name="faditor_project_duplicated">Project duplicated</string>
+    
+    <!-- Project Dialogs -->
+    <string name="faditor_delete_project_title">Delete Project</string>
+    <string name="faditor_delete_project_message">Are you sure you want to delete \"%1$s\"? This action cannot be undone.</string>
+    <string name="faditor_delete_project_confirm">Delete</string>
+    <string name="faditor_rename_project_title">Rename Project</string>
+    <string name="faditor_rename_project_hint">Enter new name</string>
+    <string name="faditor_rename_project_confirm">Rename</string>
+    
+    <!-- Success Messages -->
+    <string name="faditor_export_success_title">Export Complete</string>
+    <string name="faditor_export_success_message">Your video has been exported successfully</string>
+    <string name="faditor_export_success_view">View Video</string>
+    <string name="faditor_export_success_share">Share Video</string>
+    <string name="faditor_export_success_new_project">New Project</string>
+    <string name="faditor_trim_success">Video trimmed successfully</string>
+    <string name="faditor_operation_success">Operation completed successfully</string>
+    
+    <!-- Error Messages -->
+    <string name="faditor_error_title">Error</string>
+    <string name="faditor_error_video_load_failed">Failed to load video</string>
+    <string name="faditor_error_unsupported_format">Unsupported video format</string>
+    <string name="faditor_error_supported_formats">Supported formats: MP4, MOV, AVI, MKV</string>
+    <string name="faditor_error_file_not_found">Video file not found</string>
+    <string name="faditor_error_permission_denied">Permission denied to access video</string>
+    <string name="faditor_error_corrupted_file">Video file appears to be corrupted</string>
+    <string name="faditor_error_processing_failed">Video processing failed</string>
+    <string name="faditor_error_export_failed">Export failed</string>
+    <string name="faditor_error_save_failed">Failed to save project</string>
+    <string name="faditor_error_load_failed">Failed to load project</string>
+    <string name="faditor_error_insufficient_space">Insufficient storage space</string>
+    <string name="faditor_error_invalid_trim_range">Invalid trim range selected</string>
+    <string name="faditor_error_trim_failed">Trim operation failed</string>
+    <string name="faditor_error_project_not_found">Project not found</string>
+    <string name="faditor_error_media_reference_broken">Media file reference is broken</string>
+    <string name="faditor_error_opengl_not_supported">OpenGL ES not supported on this device</string>
+    <string name="faditor_error_hardware_encoder_failed">Hardware encoder initialization failed</string>
+    <string name="faditor_error_unknown">An unknown error occurred</string>
+    <string name="faditor_error_retry">Retry</string>
+    <string name="faditor_error_report">Report Issue</string>
+    
+    <!-- Video Information -->
+    <string name="faditor_video_info_title">Video Information</string>
+    <string name="faditor_video_info_filename">Filename: %1$s</string>
+    <string name="faditor_video_info_duration">Duration: %1$s</string>
+    <string name="faditor_video_info_resolution">Resolution: %1$dx%2$d</string>
+    <string name="faditor_video_info_framerate">Frame Rate: %1$.1f fps</string>
+    <string name="faditor_video_info_bitrate">Bitrate: %1$s</string>
+    <string name="faditor_video_info_codec">Codec: %1$s</string>
+    <string name="faditor_video_info_filesize">File Size: %1$s</string>
+    <string name="faditor_video_info_format">Format: %1$s</string>
+    
+    <!-- Time Formatting -->
+    <string name="faditor_time_format_ms">%1$02d:%2$02d.%3$03d</string>
+    <string name="faditor_time_format_seconds">%1$02d:%2$02d</string>
+    <string name="faditor_time_format_minutes">%1$d:%2$02d</string>
+    <string name="faditor_time_format_hours">%1$d:%2$02d:%3$02d</string>
+    
+    <!-- File Size Formatting -->
+    <string name="faditor_size_bytes">%1$d B</string>
+    <string name="faditor_size_kb">%1$.1f KB</string>
+    <string name="faditor_size_mb">%1$.1f MB</string>
+    <string name="faditor_size_gb">%1$.1f GB</string>
+    
+    <!-- Accessibility Descriptions -->
+    <string name="faditor_accessibility_play_button">Play video</string>
+    <string name="faditor_accessibility_pause_button">Pause video</string>
+    <string name="faditor_accessibility_timeline">Video timeline</string>
+    <string name="faditor_accessibility_trim_start">Trim start handle</string>
+    <string name="faditor_accessibility_trim_end">Trim end handle</string>
+    <string name="faditor_accessibility_playhead">Playhead position</string>
+    <string name="faditor_accessibility_zoom_in">Zoom in timeline</string>
+    <string name="faditor_accessibility_zoom_out">Zoom out timeline</string>
+    <string name="faditor_accessibility_tool_select">Select tool</string>
+    <string name="faditor_accessibility_tool_trim">Trim tool</string>
+    <string name="faditor_accessibility_project_thumbnail">Project thumbnail</string>
+    <string name="faditor_accessibility_video_preview">Video preview</string>
+    
+    <!-- Menu and Navigation -->
+    <string name="faditor_menu_project_settings">Project Settings</string>
+    <string name="faditor_menu_help">Help</string>
+    <string name="faditor_menu_about">About Faditor</string>
+    <string name="faditor_navigation_projects">Projects</string>
+    <string name="faditor_navigation_editor">Editor</string>
+    
+    <!-- Settings and Preferences -->
+    <string name="faditor_settings_title">Faditor Settings</string>
+    <string name="faditor_settings_autosave">Auto-save</string>
+    <string name="faditor_settings_autosave_summary">Automatically save projects every few seconds</string>
+    <string name="faditor_settings_default_quality">Default Export Quality</string>
+    <string name="faditor_settings_default_format">Default Export Format</string>
+    <string name="faditor_settings_hardware_acceleration">Hardware Acceleration</string>
+    <string name="faditor_settings_hardware_acceleration_summary">Use GPU for faster processing</string>
+    <string name="faditor_settings_frame_snapping">Frame Snapping</string>
+    <string name="faditor_settings_frame_snapping_summary">Snap timeline to frame boundaries</string>
+    
+    <!-- Material 3 Integration Strings -->
+    <string name="faditor_material_you_title">Material You</string>
+    <string name="faditor_material_you_summary">Use dynamic colors from your wallpaper</string>
+    <string name="faditor_theme_light">Light Theme</string>
+    <string name="faditor_theme_dark">Dark Theme</string>
+    <string name="faditor_theme_system">Follow System</string>
+    
+    <!-- Consistent Terminology with FadCam -->
+    <string name="faditor_video_quality_hd">HD</string>
+    <string name="faditor_video_quality_fhd">FHD</string>
+    <string name="faditor_video_quality_4k">4K</string>
+    <string name="faditor_video_quality_8k">8K</string>
+    <string name="faditor_framerate_24">24 fps</string>
+    <string name="faditor_framerate_30">30 fps</string>
+    <string name="faditor_framerate_60">60 fps</string>
+    <string name="faditor_framerate_90">90 fps</string>
+    
+    <!-- Integration with existing FadCam features -->
+    <string name="faditor_open_in_fadcam">Open in FadCam</string>
+    <string name="faditor_save_to_gallery">Save to Gallery</string>
+    <string name="faditor_share_video">Share Video</string>
+    <string name="faditor_video_info">Video Info</string>
+    <string name="faditor_copy_to_clipboard">Copy to Clipboard</string>
+    
+    <!-- Tooltips and Hints -->
+    <string name="faditor_hint_drag_to_trim">Drag the handles to trim your video</string>
+    <string name="faditor_hint_tap_to_seek">Tap on timeline to seek to position</string>
+    <string name="faditor_hint_pinch_to_zoom">Pinch to zoom timeline</string>
+    <string name="faditor_hint_long_press_preview">Long press for preview</string>
+    <string name="faditor_hint_double_tap_fit">Double tap to fit timeline</string>
+    <string name="faditor_hint_first_project">Create your first project to get started</string>
+    <string name="faditor_hint_empty_timeline">Add a video to start editing</string>
+    
+    <!-- Status and State Messages -->
+    <string name="faditor_status_ready">Ready</string>
+    <string name="faditor_status_loading">Loading…</string>
+    <string name="faditor_status_processing">Processing…</string>
+    <string name="faditor_status_saving">Saving…</string>
+    <string name="faditor_status_exporting">Exporting…</string>
+    <string name="faditor_status_complete">Complete</string>
+    <string name="faditor_status_error">Error</string>
+    <string name="faditor_status_cancelled">Cancelled</string>
+    
+    <!-- Performance and Quality Messages -->
+    <string name="faditor_performance_warning_title">Performance Warning</string>
+    <string name="faditor_performance_warning_message">This video is very large. Processing may take longer than usual.</string>
+    <string name="faditor_quality_lossless_available">Lossless editing available</string>
+    <string name="faditor_quality_reencoding_required">Re-encoding required for this operation</string>
+    <string name="faditor_hardware_acceleration_enabled">Hardware acceleration enabled</string>
+    <string name="faditor_hardware_acceleration_disabled">Hardware acceleration not available</string>
+    
+    <!-- Coming Soon / Placeholder -->
+    <string name="faditor_coming_soon">Coming Soon</string>
+    <string name="faditor_feature_not_available">This feature is not available yet</string>
+    <string name="faditor_advanced_features_coming">Advanced editing features coming soon</string>
+    
+    <!-- String Arrays for Faditor -->
+    <string-array name="faditor_supported_video_formats">
+        <item>MP4</item>
+        <item>MOV</item>
+        <item>AVI</item>
+        <item>MKV</item>
+    </string-array>
+    
+    <string-array name="faditor_export_quality_options">
+        <item>@string/faditor_quality_original</item>
+        <item>@string/faditor_quality_high</item>
+        <item>@string/faditor_quality_medium</item>
+        <item>@string/faditor_quality_low</item>
+        <item>@string/faditor_quality_custom</item>
+    </string-array>
+    
+    <string-array name="faditor_export_format_options">
+        <item>@string/faditor_format_mp4</item>
+        <item>@string/faditor_format_mov</item>
+        <item>@string/faditor_format_avi</item>
+        <item>@string/faditor_format_mkv</item>
+    </string-array>
+    
+    <string-array name="faditor_playback_speeds">
+        <item>0.25x</item>
+        <item>0.5x</item>
+        <item>0.75x</item>
+        <item>1.0x</item>
+        <item>1.25x</item>
+        <item>1.5x</item>
+        <item>2.0x</item>
+    </string-array>re or directly from the Video Player screen.</string>
     <string name="video_player_settings_subtitle">Playback &amp; Quick Speed</string>
     <string name="playback_speed_label">Playback Speed</string>
     <string name="playback_speed_title">Playback Speed</string>
