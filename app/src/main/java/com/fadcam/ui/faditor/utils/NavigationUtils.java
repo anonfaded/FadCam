@@ -45,6 +45,7 @@ public class NavigationUtils {
      * Requirements: 10.1, 10.2, 12.2
      */
     public static void openEditor(Fragment currentFragment, String projectId) {
+        Log.d(TAG, "=== NAVIGATION UTILS OPEN EDITOR STARTED ===");
         if (isNavigating) {
             Log.d(TAG, "Navigation already in progress, ignoring request");
             return;
@@ -58,21 +59,28 @@ public class NavigationUtils {
         }
         
         MainActivity mainActivity = (MainActivity) currentFragment.getActivity();
+        Log.d(TAG, "MainActivity found: " + mainActivity.getClass().getSimpleName());
         isNavigating = true;
         
         // Trigger auto-save on current fragment if it's FaditorMiniFragment
         if (currentFragment instanceof FaditorMiniFragment) {
+            Log.d(TAG, "Current fragment is FaditorMiniFragment, handling auto-save");
             FaditorMiniFragment browserFragment = (FaditorMiniFragment) currentFragment;
             // Auto-save is handled by the browser fragment's lifecycle
         }
         
         // Create editor fragment
+        Log.d(TAG, "Creating FaditorEditorFragment with projectId: " + projectId);
         FaditorEditorFragment editorFragment = FaditorEditorFragment.newInstance(projectId);
+        Log.d(TAG, "FaditorEditorFragment created successfully");
         
         // Apply Material 3 enter transition
+        Log.d(TAG, "Applying Material 3 enter transition...");
         applyMaterial3EnterTransition(mainActivity, editorFragment, () -> {
+            Log.d(TAG, "Material 3 transition completed, navigation finished");
             isNavigating = false;
         });
+        Log.d(TAG, "=== NAVIGATION UTILS OPEN EDITOR COMPLETED ===");
     }
     
     /**

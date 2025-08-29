@@ -302,10 +302,15 @@ public class FaditorMiniFragment extends BaseFragment implements
     
     @Override
     public void onProjectSelected(ProjectMetadata project) {
+        Log.d(TAG, "=== PROJECT SELECTION STARTED ===");
         Log.d(TAG, "Project selected: " + project.getProjectName());
+        Log.d(TAG, "Project ID: " + project.getProjectId());
+        Log.d(TAG, "Project created: " + project.getCreatedAt());
         
         // Navigate to the full-screen editor with this project (Requirement 10.1, 10.2)
+        Log.d(TAG, "Calling NavigationUtils.openEditor...");
         NavigationUtils.openEditor(this, project.getProjectId());
+        Log.d(TAG, "NavigationUtils.openEditor completed");
     }
     
     @Override

@@ -625,6 +625,18 @@
     <string name="faditor_error_retry">Retry</string>
     <string name="faditor_error_report">Report Issue</string>
     
+    <!-- URI Re-selection -->
+    <string name="faditor_uri_reselection_title">Re-select Video Files</string>
+    <string name="faditor_uri_reselection_message">Some video files in this project have expired permissions and need to be re-selected.</string>
+    <string name="faditor_uri_reselection_description">The following files need to be re-selected due to expired access permissions:</string>
+    <string name="faditor_uri_reselection_select_file">Select File</string>
+    <string name="faditor_uri_reselection_skip">Skip</string>
+    <string name="faditor_uri_reselection_continue">Continue</string>
+    <string name="faditor_uri_reselection_file_selected">File selected successfully</string>
+    <string name="faditor_uri_reselection_file_skipped">File skipped</string>
+    <string name="faditor_uri_reselection_all_done">All files have been processed</string>
+    <string name="faditor_uri_reselection_cancelled">Re-selection cancelled</string>
+    
     <!-- Video Information -->
     <string name="faditor_video_info_title">Video Information</string>
     <string name="faditor_video_info_filename">Filename: %1$s</string>

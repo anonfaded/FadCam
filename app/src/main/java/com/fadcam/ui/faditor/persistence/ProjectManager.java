@@ -1,8 +1,10 @@
 package com.fadcam.ui.faditor.persistence;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 import com.fadcam.ui.faditor.models.VideoProject;
@@ -14,6 +16,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +31,8 @@ public class ProjectManager {
     private static final String PROJECT_FILE_NAME = "project.json";
     private static final String EDITOR_STATE_FILE_NAME = "editor_state.json";
     private static final String THUMBNAIL_FILE_NAME = "thumbnail.jpg";
+    
+    private static final String TAG = "ProjectManager";
     
     private final Context context;
     private final ProjectDatabase database;
@@ -47,6 +53,11 @@ public class ProjectManager {
         void onError(String errorMessage);
     }
     
+    public interface ProjectValidationCallback {
+        void onProjectLoadedWithValidation(VideoProject project, MediaReferenceManager.ValidationResult validation);
+        void onError(String errorMessage);
+    }
+    
     public ProjectManager(Context context) {
         this.context = context;
         this.database = ProjectDatabase.getInstance(context);
@@ -54,26 +65,40 @@ public class ProjectManager {
         this.executorService = Executors.newFixedThreadPool(2);
         this.mainHandler = new Handler(Looper.getMainLooper());
         
-        // Create projects directory
-        this.projectsDirectory = new File(context.getFilesDir(), PROJECTS_DIR);
+        // Use external storage for projects (Android/data/com.fadcam/faditor_projects)
+        this.projectsDirectory = new File(context.getExternalFilesDir(null), PROJECTS_DIR);
         if (!projectsDirectory.exists()) {
             projectsDirectory.mkdirs();
         }
+        
+        Log.d(TAG, "Projects directory: " + projectsDirectory.getAbsolutePath());
     }
-    
+
     /**
      * Creates a new project with a unique ID
      */
     public String createNewProject(String projectName) {
         String projectId = UUID.randomUUID().toString();
-        
+
         // Create project directory
         File projectDir = new File(projectsDirectory, projectId);
         if (!projectDir.exists()) {
             projectDir.mkdirs();
         }
-        
+
+        Log.d(TAG, "Created new project: " + projectId + " with name: " + projectName);
         return projectId;
+    }
+
+    /**
+     * Saves a project to both JSON file and database
+     */
+
+    /**
+     * Gets the current projects directory path (for debugging)
+     */
+    public String getProjectsDirectoryPath() {
+        return projectsDirectory.getAbsolutePath();
     }
     
     /**
@@ -136,24 +161,43 @@ public class ProjectManager {
      * Loads a project from JSON file
      */
     public void loadProject(String projectId, ProjectCallback callback) {
+        Log.d(TAG, "=== PROJECT MANAGER LOAD PROJECT STARTED ===");
+        Log.d(TAG, "Loading project with ID: " + projectId);
         executorService.execute(() -> {
             try {
                 File projectDir = new File(projectsDirectory, projectId);
                 File projectFile = new File(projectDir, PROJECT_FILE_NAME);
                 
+                Log.d(TAG, "Project directory: " + projectDir.getAbsolutePath());
+                Log.d(TAG, "Project file: " + projectFile.getAbsolutePath());
+                Log.d(TAG, "Project file exists: " + projectFile.exists());
+                
                 if (!projectFile.exists()) {
+                    Log.e(TAG, "Project file not found: " + projectFile.getAbsolutePath());
                     mainHandler.post(() -> callback.onError("Project file not found"));
                     return;
                 }
                 
+                Log.d(TAG, "Reading project JSON file...");
                 String projectJson = readStringFromFile(projectFile);
+                Log.d(TAG, "Project JSON length: " + projectJson.length());
+                Log.d(TAG, "Project JSON content: " + projectJson);
+                
+                Log.d(TAG, "Deserializing project...");
                 VideoProject project = ProjectSerializer.deserializeProject(projectJson);
+                Log.d(TAG, "Project deserialized successfully: " + (project != null ? project.getProjectName() : "null"));
                 
                 // Validate and recover media references
+                Log.d(TAG, "Validating media references...");
                 MediaReferenceManager.ValidationResult validation = 
                     mediaReferenceManager.validateMediaReferences(project);
+                Log.d(TAG, "Validation completed. Has recovered paths: " + validation.hasRecoveredPaths());
+                Log.d(TAG, "Valid files: " + validation.getValidFiles().size());
+                Log.d(TAG, "Missing files: " + validation.getMissingFiles().size());
+                Log.d(TAG, "Recovered paths: " + validation.getRecoveredPaths().size());
                 
                 if (validation.hasRecoveredPaths()) {
+                    Log.d(TAG, "Updating media paths with recovered paths...");
                     mediaReferenceManager.updateMediaPaths(project, validation.getRecoveredPaths());
                     // Save the updated project
                     saveProject(project, new ProjectCallback() {
@@ -176,6 +220,102 @@ public class ProjectManager {
             } catch (Exception e) {
                 // Post error callback to main thread
                 mainHandler.post(() -> callback.onError("Failed to load project: " + e.getMessage()));
+            }
+        });
+    }
+    
+    /**
+     * Loads a project and returns validation result for UI handling
+     */
+    public void loadProjectWithValidation(String projectId, ProjectValidationCallback callback) {
+        Log.d(TAG, "=== PROJECT MANAGER LOAD PROJECT WITH VALIDATION STARTED ===");
+        Log.d(TAG, "Loading project with ID: " + projectId);
+        executorService.execute(() -> {
+            try {
+                File projectDir = new File(projectsDirectory, projectId);
+                File projectFile = new File(projectDir, PROJECT_FILE_NAME);
+
+                Log.d(TAG, "Project directory: " + projectDir.getAbsolutePath());
+                Log.d(TAG, "Project file: " + projectFile.getAbsolutePath());
+                Log.d(TAG, "Project file exists: " + projectFile.exists());
+
+                if (!projectFile.exists()) {
+                    Log.e(TAG, "Project file not found: " + projectFile.getAbsolutePath());
+                    mainHandler.post(() -> callback.onError("Project file not found"));
+                    return;
+                }
+
+                Log.d(TAG, "Reading project JSON file...");
+                String projectJson = readStringFromFile(projectFile);
+                Log.d(TAG, "Project JSON length: " + projectJson.length());
+
+                Log.d(TAG, "Deserializing project...");
+                VideoProject project = ProjectSerializer.deserializeProject(projectJson);
+                Log.d(TAG, "Project deserialized successfully: " + (project != null ? project.getProjectName() : "null"));
+
+                // Validate media references
+                Log.d(TAG, "Validating media references...");
+                MediaReferenceManager.ValidationResult validation =
+                    mediaReferenceManager.validateMediaReferences(project);
+                Log.d(TAG, "Validation completed. Has recovered paths: " + validation.hasRecoveredPaths());
+                Log.d(TAG, "Valid files: " + validation.getValidFiles().size());
+                Log.d(TAG, "Missing files: " + validation.getMissingFiles().size());
+                Log.d(TAG, "URIs requiring re-selection: " + validation.getUrisRequiringReselectionCount());
+
+                // Apply recovered paths if any
+                if (validation.hasRecoveredPaths()) {
+                    Log.d(TAG, "Updating media paths with recovered paths...");
+                    mediaReferenceManager.updateMediaPaths(project, validation.getRecoveredPaths());
+                    // Save the updated project
+                    saveProject(project, new ProjectCallback() {
+                        @Override
+                        public void onProjectSaved(String projectId) {
+                            // Silent save after recovery
+                        }
+
+                        @Override
+                        public void onProjectLoaded(VideoProject project) {}
+
+                        @Override
+                        public void onError(String errorMessage) {}
+                    });
+                }
+
+                // Post callback to main thread with validation result
+                mainHandler.post(() -> callback.onProjectLoadedWithValidation(project, validation));
+
+            } catch (Exception e) {
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to load project: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * Updates a project with re-selected URIs
+     */
+    public void updateProjectWithReselectedUris(VideoProject project, Map<Uri, Uri> uriMapping, ProjectCallback callback) {
+        executorService.execute(() -> {
+            try {
+                // Update the project's URI
+                for (Map.Entry<Uri, Uri> entry : uriMapping.entrySet()) {
+                    Uri oldUri = entry.getKey();
+                    Uri newUri = entry.getValue();
+
+                    // Update original video URI if it matches
+                    if (project.getOriginalVideoUri() != null && project.getOriginalVideoUri().equals(oldUri)) {
+                        project.setOriginalVideoUri(newUri);
+                        // Also update the path to the new URI string
+                        project.setOriginalVideoPath(newUri.toString());
+                        Log.d(TAG, "Updated project original video URI: " + oldUri + " -> " + newUri);
+                    }
+                }
+
+                // Save the updated project
+                saveProject(project, callback);
+
+            } catch (Exception e) {
+                mainHandler.post(() -> callback.onError("Failed to update project with re-selected URIs: " + e.getMessage()));
             }
         });
     }
@@ -277,7 +417,8 @@ public class ProjectManager {
                 }
                 
                 // Copy project file to export location
-                copyFile(projectFile, exportPath);
+                String projectJson = readStringFromFile(projectFile);
+                writeStringToFile(exportPath, projectJson);
                 
                 // Post callback to main thread
                 mainHandler.post(() -> callback.onProjectSaved(projectId));
@@ -376,18 +517,6 @@ public class ProjectManager {
             fis.read(bytes);
         }
         return new String(bytes, StandardCharsets.UTF_8);
-    }
-    
-    private void copyFile(File source, File destination) throws IOException {
-        try (FileInputStream fis = new FileInputStream(source);
-             FileOutputStream fos = new FileOutputStream(destination)) {
-            
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                fos.write(buffer, 0, bytesRead);
-            }
-        }
     }
     
     private void deleteDirectory(File directory) {

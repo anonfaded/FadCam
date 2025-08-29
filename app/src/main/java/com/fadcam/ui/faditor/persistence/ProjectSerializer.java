@@ -10,6 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.net.Uri;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -132,6 +134,11 @@ public class ProjectSerializer {
                 
                 if (originalVideo.has("path") && !originalVideo.isNull("path")) {
                     project.setOriginalVideoPath(originalVideo.getString("path"));
+                }
+                
+                if (originalVideo.has("uri") && !originalVideo.isNull("uri")) {
+                    String uriString = originalVideo.getString("uri");
+                    project.setOriginalVideoUri(Uri.parse(uriString));
                 }
                 
                 if (originalVideo.has("metadata")) {
