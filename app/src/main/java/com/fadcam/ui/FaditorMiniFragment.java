@@ -26,6 +26,7 @@ import com.fadcam.ui.faditor.persistence.ProjectMetadata;
 import com.fadcam.ui.faditor.utils.NavigationUtils;
 import com.fadcam.ui.faditor.utils.VideoFilePicker;
 import com.fadcam.ui.faditor.utils.VideoFileUtils;
+import com.fadcam.ui.faditor.utils.Material3Utils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -93,6 +94,10 @@ public class FaditorMiniFragment extends BaseFragment implements
         projectsCountText = view.findViewById(R.id.projects_count_text);
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
         projectsContainer = view.findViewById(R.id.projects_container);
+        
+        // Apply Material 3 theming and accessibility
+        applyMaterial3Theming();
+        setupAccessibility();
         
         // Set up project browser
         if (projectBrowser != null) {
@@ -168,11 +173,28 @@ public class FaditorMiniFragment extends BaseFragment implements
             projectBrowser.setViewMode(currentViewMode);
         }
         
-        // Update button icon
+        // Update button icon with Material 3 animation
         if (viewModeButton != null) {
             int iconRes = currentViewMode == ProjectBrowserComponent.ViewMode.GRID ? 
                 R.drawable.ic_view_list : R.drawable.ic_view_grid;
-            viewModeButton.setIconResource(iconRes);
+            String contentDesc = currentViewMode == ProjectBrowserComponent.ViewMode.GRID ?
+                getString(R.string.faditor_view_mode_list) : getString(R.string.faditor_view_mode_grid);
+            
+            // Animate icon change with Material 3 motion
+            viewModeButton.animate()
+                .scaleX(0.8f)
+                .scaleY(0.8f)
+                .setDuration(75)
+                .withEndAction(() -> {
+                    viewModeButton.setIconResource(iconRes);
+                    viewModeButton.setContentDescription(contentDesc);
+                    viewModeButton.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(150)
+                        .start();
+                })
+                .start();
         }
     }
     
@@ -503,6 +525,108 @@ public class FaditorMiniFragment extends BaseFragment implements
         
         // Refresh projects when returning to the fragment
         loadProjects();
+    }
+    
+    /**
+     * Apply Material 3 theming to components
+     */
+    private void applyMaterial3Theming() {
+        // Apply Material 3 motion to FAB
+        if (fabNewProject != null) {
+            fabNewProject.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        v.animate()
+                            .scaleX(0.95f)
+                            .scaleY(0.95f)
+                            .setDuration(75)
+                            .start();
+                        break;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        v.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(150)
+                            .start();
+                        break;
+                }
+                return false; // Allow click to proceed
+            });
+        }
+        
+        // Apply Material 3 state layer effects to buttons
+        applyStateLayerEffects();
+    }
+    
+    /**
+     * Apply Material 3 state layer effects to interactive elements
+     */
+    private void applyStateLayerEffects() {
+        // Add ripple effects and state layers to buttons
+        if (viewModeButton != null) {
+            // Apply Material 3 state layer effects
+            Material3Utils.applyMaterial3ButtonStyle(viewModeButton, Material3Utils.ButtonStyle.ICON);
+        }
+        
+        if (newProjectButton != null) {
+            Material3Utils.applyMaterial3ButtonStyle(newProjectButton, Material3Utils.ButtonStyle.ICON);
+        }
+        
+        if (sortButton != null) {
+            Material3Utils.applyMaterial3ButtonStyle(sortButton, Material3Utils.ButtonStyle.TEXT);
+        }
+    }
+    
+    /**
+     * Setup accessibility features for Material 3 compliance
+     */
+    private void setupAccessibility() {
+        // Enhanced content descriptions
+        if (viewModeButton != null) {
+            viewModeButton.setContentDescription(getString(R.string.faditor_view_mode_grid));
+        }
+        
+        if (newProjectButton != null) {
+            newProjectButton.setContentDescription(getString(R.string.faditor_create_project));
+        }
+        
+        if (fabNewProject != null) {
+            fabNewProject.setContentDescription(getString(R.string.faditor_create_project));
+        }
+        
+        if (sortButton != null) {
+            sortButton.setContentDescription(getString(R.string.faditor_sort_projects));
+        }
+        
+        if (searchEditText != null) {
+            searchEditText.setContentDescription(getString(R.string.faditor_search_projects));
+        }
+        
+        // Set up accessibility actions
+        setupAccessibilityActions();
+    }
+    
+    /**
+     * Setup custom accessibility actions
+     */
+    private void setupAccessibilityActions() {
+        if (projectBrowser != null) {
+            projectBrowser.setImportantForAccessibility(android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        }
+        
+        // Add accessibility delegate for better navigation
+        if (emptyStateContainer != null) {
+            emptyStateContainer.setAccessibilityDelegate(new android.view.View.AccessibilityDelegate() {
+                @Override
+                public void onInitializeAccessibilityNodeInfo(android.view.View host, 
+                        android.view.accessibility.AccessibilityNodeInfo info) {
+                    super.onInitializeAccessibilityNodeInfo(host, info);
+                    info.setContentDescription(getString(R.string.faditor_no_projects_title) + ". " + 
+                                             getString(R.string.faditor_no_projects_subtitle));
+                }
+            });
+        }
     }
     
     @Override

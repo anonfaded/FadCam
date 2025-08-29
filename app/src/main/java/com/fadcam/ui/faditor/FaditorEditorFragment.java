@@ -30,6 +30,7 @@ import com.fadcam.ui.faditor.utils.NavigationUtils;
 import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 import com.fadcam.ui.faditor.utils.PerformanceOptimizer;
 import com.fadcam.ui.faditor.utils.MemoryOptimizer;
+import com.fadcam.ui.faditor.utils.Material3Utils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 
@@ -292,6 +293,10 @@ public class FaditorEditorFragment extends BaseFragment implements
         if (progressOverlay != null) {
             progressOverlay.setVisibility(View.GONE);
         }
+        
+        // Apply Material 3 theming and accessibility
+        applyMaterial3Theming();
+        setupAccessibility();
     }
     
     private void loadProject() {
@@ -757,6 +762,161 @@ public class FaditorEditorFragment extends BaseFragment implements
             });
         }
         Log.w(TAG, "Performance warning: " + warning + " - Recommendation: " + recommendation);
+    }
+    
+    /**
+     * Apply Material 3 theming to editor components
+     */
+    private void applyMaterial3Theming() {
+        // Apply Material 3 button styles
+        if (saveButton != null) {
+            Material3Utils.applyMaterial3ButtonStyle(saveButton, Material3Utils.ButtonStyle.TEXT);
+        }
+        
+        if (exportButton != null) {
+            Material3Utils.applyMaterial3ButtonStyle(exportButton, Material3Utils.ButtonStyle.FILLED);
+        }
+        
+        // Apply Material 3 motion to toolbar
+        if (editorToolbar != null) {
+            applyToolbarMotion();
+        }
+        
+        // Apply Material 3 theming to progress overlay
+        if (progressOverlay != null) {
+            applyProgressOverlayTheming();
+        }
+    }
+    
+    /**
+     * Apply Material 3 motion patterns to toolbar
+     */
+    private void applyToolbarMotion() {
+        if (editorToolbar != null) {
+            editorToolbar.setNavigationOnClickListener(v -> {
+                // Add subtle animation to back button
+                v.animate()
+                    .scaleX(0.9f)
+                    .scaleY(0.9f)
+                    .setDuration(Material3Utils.MOTION_DURATION_SHORT_1)
+                    .withEndAction(() -> {
+                        v.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(Material3Utils.MOTION_DURATION_SHORT_2)
+                            .start();
+                        onBackPressed();
+                    })
+                    .start();
+            });
+        }
+    }
+    
+    /**
+     * Apply Material 3 theming to progress overlay
+     */
+    private void applyProgressOverlayTheming() {
+        if (progressOverlay != null) {
+            // Apply Material 3 elevation and background
+            progressOverlay.setElevation(Material3Utils.ELEVATION_LEVEL_5);
+            
+            // Add fade in/out animations
+            progressOverlay.setAlpha(0f);
+        }
+    }
+    
+    /**
+     * Setup accessibility features for Material 3 compliance
+     */
+    private void setupAccessibility() {
+        // Enhanced content descriptions for editor components
+        if (editorToolbar != null) {
+            editorToolbar.setNavigationContentDescription(getString(R.string.faditor_back_to_projects));
+        }
+        
+        if (saveButton != null) {
+            saveButton.setContentDescription(getString(R.string.faditor_save));
+        }
+        
+        if (exportButton != null) {
+            exportButton.setContentDescription(getString(R.string.faditor_export));
+        }
+        
+        // Set up accessibility for timeline components
+        setupTimelineAccessibility();
+        
+        // Set up accessibility for video player
+        setupVideoPlayerAccessibility();
+    }
+    
+    /**
+     * Setup accessibility for timeline components
+     */
+    private void setupTimelineAccessibility() {
+        if (timeline != null) {
+            timeline.setContentDescription(getString(R.string.faditor_timeline));
+            timeline.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        }
+        
+        // Add accessibility delegate for timeline interactions
+        if (timeline != null) {
+            timeline.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+                @Override
+                public void onInitializeAccessibilityNodeInfo(View host, 
+                        android.view.accessibility.AccessibilityNodeInfo info) {
+                    super.onInitializeAccessibilityNodeInfo(host, info);
+                    info.setContentDescription(getString(R.string.faditor_timeline) + ". " +
+                                             "Use to trim and edit video timeline.");
+                    
+                    // Add custom actions for timeline manipulation
+                    info.addAction(new android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction(
+                        android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+                        "Seek forward"));
+                    info.addAction(new android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction(
+                        android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+                        "Seek backward"));
+                }
+            });
+        }
+    }
+    
+    /**
+     * Setup accessibility for video player
+     */
+    private void setupVideoPlayerAccessibility() {
+        if (videoPlayer != null) {
+            videoPlayer.setContentDescription(getString(R.string.faditor_video_position));
+            videoPlayer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        }
+        
+        if (controls != null) {
+            controls.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        }
+    }
+    
+    /**
+     * Show progress overlay with Material 3 animation
+     */
+    private void showProgressWithAnimation(String message, boolean cancellable) {
+        if (progressOverlay != null) {
+            progressOverlay.setVisibility(View.VISIBLE);
+            Material3Utils.animateFadeIn(progressOverlay);
+            
+            // Update progress component with message
+            progressOverlay.showProgress(message, cancellable);
+            setupProgressListener();
+        }
+    }
+    
+    /**
+     * Hide progress overlay with Material 3 animation
+     */
+    private void hideProgressWithAnimation() {
+        if (progressOverlay != null && progressOverlay.getVisibility() == View.VISIBLE) {
+            Material3Utils.animateFadeOut(progressOverlay, () -> {
+                progressOverlay.setVisibility(View.GONE);
+            });
+        }
     }
     
     private void showAutoSavePerformanceWarning(long autoSaveTimeMs) {

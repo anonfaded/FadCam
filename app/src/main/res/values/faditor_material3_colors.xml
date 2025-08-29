@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Faditor Color Palette -->
+    
+    <!-- Primary Colors -->
+    <color name="faditor_primary">#6750A4</color>
+    <color name="faditor_on_primary">#FFFFFF</color>
+    <color name="faditor_primary_container">#EADDFF</color>
+    <color name="faditor_on_primary_container">#21005D</color>
+    
+    <!-- Secondary Colors -->
+    <color name="faditor_secondary">#625B71</color>
+    <color name="faditor_on_secondary">#FFFFFF</color>
+    <color name="faditor_secondary_container">#E8DEF8</color>
+    <color name="faditor_on_secondary_container">#1D192B</color>
+    
+    <!-- Tertiary Colors -->
+    <color name="faditor_tertiary">#7D5260</color>
+    <color name="faditor_on_tertiary">#FFFFFF</color>
+    <color name="faditor_tertiary_container">#FFD8E4</color>
+    <color name="faditor_on_tertiary_container">#31111D</color>
+    
+    <!-- Surface Colors -->
+    <color name="faditor_surface">#FEF7FF</color>
+    <color name="faditor_on_surface">#1C1B1F</color>
+    <color name="faditor_surface_variant">#E7E0EC</color>
+    <color name="faditor_on_surface_variant">#49454F</color>
+    
+    <!-- Outline Colors -->
+    <color name="faditor_outline">#79747E</color>
+    <color name="faditor_outline_variant">#CAC4D0</color>
+    
+    <!-- Error Colors -->
+    <color name="faditor_error">#BA1A1A</color>
+    <color name="faditor_on_error">#FFFFFF</color>
+    <color name="faditor_error_container">#FFDAD6</color>
+    <color name="faditor_on_error_container">#410002</color>
+    
+    <!-- Success Colors -->
+    <color name="faditor_success">#4CAF50</color>
+    <color name="faditor_on_success">#FFFFFF</color>
+    <color name="faditor_success_container">#C8E6C9</color>
+    <color name="faditor_on_success_container">#1B5E20</color>
+    
+    <!-- Warning Colors -->
+    <color name="faditor_warning">#FF9800</color>
+    <color name="faditor_on_warning">#FFFFFF</color>
+    <color name="faditor_warning_container">#FFE0B2</color>
+    <color name="faditor_on_warning_container">#E65100</color>
+    
+    <!-- Component-specific Colors -->
+    
+    <!-- Timeline Colors -->
+    <color name="faditor_timeline_track">#E0E0E0</color>
+    <color name="faditor_timeline_track_active">@color/faditor_primary</color>
+    <color name="faditor_timeline_handle">@color/faditor_primary</color>
+    <color name="faditor_timeline_handle_pressed">@color/faditor_primary_container</color>
+    <color name="faditor_timeline_waveform">#9E9E9E</color>
+    <color name="faditor_timeline_playhead">@color/faditor_error</color>
+    
+    <!-- Video Player Colors -->
+    <color name="faditor_player_background">#000000</color>
+    <color name="faditor_player_controls_background">#80000000</color>
+    <color name="faditor_player_controls_text">#FFFFFF</color>
+    
+    <!-- Progress Colors -->
+    <color name="faditor_progress_background">@color/faditor_surface_variant</color>
+    <color name="faditor_progress_indicator">@color/faditor_primary</color>
+    
+    <!-- Toolbar Colors -->
+    <color name="faditor_toolbar_selected">@color/faditor_primary_container</color>
+    <color name="faditor_toolbar_selected_icon">@color/faditor_on_primary_container</color>
+    <color name="faditor_toolbar_unselected">@color/faditor_surface</color>
+    <color name="faditor_toolbar_unselected_icon">@color/faditor_on_surface_variant</color>
+    
+    <!-- Project Browser Colors -->
+    <color name="faditor_project_card_background">@color/faditor_surface</color>
+    <color name="faditor_project_card_selected">@color/faditor_primary_container</color>
+    <color name="faditor_project_thumbnail_placeholder">@color/faditor_surface_variant</color>
+    
+    <!-- Export Dialog Colors -->
+    <color name="faditor_export_quality_high">#4CAF50</color>
+    <color name="faditor_export_quality_medium">#FF9800</color>
+    <color name="faditor_export_quality_low">#F44336</color>
+    
+</resources>

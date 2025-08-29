@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="?attr/colorSurfaceVariant"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="8dp">
+
+    <!-- Select Tool -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tool_select"
+        style="@style/Widget.FadCam.Faditor.Button.Icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        app:icon="@drawable/ic_cursor"
+        app:iconSize="24dp"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        android:contentDescription="@string/faditor_tool_select_desc"
+        android:checkable="true" />
+
+    <!-- Trim Tool -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tool_trim"
+        style="@style/Widget.FadCam.Faditor.Button.Icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        app:icon="@drawable/ic_trim"
+        app:iconSize="24dp"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        android:contentDescription="@string/faditor_tool_trim_desc"
+        android:checkable="true" />
+
+    <!-- Split Tool -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tool_split"
+        style="@style/Widget.FadCam.Faditor.Button.Icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        app:icon="@drawable/ic_split"
+        app:iconSize="24dp"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        android:contentDescription="@string/faditor_tool_split_desc"
+        android:checkable="true" />
+
+    <!-- Effects Tool -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tool_effects"
+        style="@style/Widget.FadCam.Faditor.Button.Icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        app:icon="@drawable/ic_effects"
+        app:iconSize="24dp"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        android:contentDescription="@string/faditor_tool_effects_desc"
+        android:checkable="true" />
+
+    <!-- Audio Tool -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tool_audio"
+        style="@style/Widget.FadCam.Faditor.Button.Icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:icon="@drawable/ic_audio"
+        app:iconSize="24dp"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        android:contentDescription="@string/faditor_tool_audio_desc"
+        android:checkable="true" />
+
+    <!-- Spacer -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1" />
+
+    <!-- Tool Options Indicator -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/tool_options_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Options"
+        android:visibility="gone"
+        style="@style/Widget.FadCam.Faditor.Chip" />
+
+</LinearLayout>
