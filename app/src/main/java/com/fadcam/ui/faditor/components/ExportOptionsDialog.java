@@ -8,7 +8,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
+// AutoCompleteTextView import removed - using TextInputEditText instead
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -46,7 +46,7 @@ public class ExportOptionsDialog extends DialogFragment {
     private Slider qualitySlider;
     private TextView qualityValueText;
     private TextView qualityDescriptionText;
-    private AutoCompleteTextView formatDropdown;
+    // Format selection handled via TextInputEditText with click listener
     private TextInputEditText fileNameEditText;
     private TextInputLayout fileNameLayout;
     private SwitchMaterial maintainQualitySwitch;
@@ -123,8 +123,9 @@ public class ExportOptionsDialog extends DialogFragment {
         qualityValueText = view.findViewById(R.id.quality_value_text);
         qualityDescriptionText = view.findViewById(R.id.quality_description_text);
         
-        // Format controls
-        formatDropdown = view.findViewById(R.id.format_dropdown);
+        // Format controls - using TextInputEditText instead of AutoCompleteTextView
+        TextInputEditText formatEditText = view.findViewById(R.id.format_dropdown);
+        // We'll handle format selection differently since it's a TextInputEditText
         
         // File name controls
         fileNameEditText = view.findViewById(R.id.file_name_edit_text);
@@ -149,11 +150,12 @@ public class ExportOptionsDialog extends DialogFragment {
         exportButton = view.findViewById(R.id.export_button);
         cancelButton = view.findViewById(R.id.cancel_button);
         
-        // Setup format dropdown
-        String[] formats = VideoExporter.getAvailableFormats();
-        ArrayAdapter<String> formatAdapter = new ArrayAdapter<>(requireContext(), 
-            android.R.layout.simple_dropdown_item_1line, formats);
-        formatDropdown.setAdapter(formatAdapter);
+        // Setup format selection (using click listener for TextInputEditText)
+        if (formatEditText != null) {
+            formatEditText.setOnClickListener(v -> showFormatSelectionDialog());
+            formatEditText.setFocusable(false);
+            formatEditText.setText("MP4"); // Default format
+        }
         
         // Set default file name
         if (fileNameEditText != null) {
@@ -172,14 +174,7 @@ public class ExportOptionsDialog extends DialogFragment {
             });
         }
         
-        // Format dropdown
-        if (formatDropdown != null) {
-            formatDropdown.setOnItemClickListener((parent, view, position, id) -> {
-                String selectedFormat = (String) parent.getItemAtPosition(position);
-                updateFormatSettings(selectedFormat);
-                updatePreview();
-            });
-        }
+        // Format selection is handled by click listener set in initializeViews
         
         // File name
         if (fileNameEditText != null) {
@@ -253,9 +248,10 @@ public class ExportOptionsDialog extends DialogFragment {
             updateQualityDisplay(currentSettings.quality);
         }
         
-        // Update format dropdown
-        if (formatDropdown != null) {
-            formatDropdown.setText(currentSettings.format.toUpperCase(), false);
+        // Update format display
+        TextInputEditText formatEditText = getView() != null ? getView().findViewById(R.id.format_dropdown) : null;
+        if (formatEditText != null) {
+            formatEditText.setText(currentSettings.format.toUpperCase());
         }
         
         // Update switches
@@ -460,5 +456,25 @@ public class ExportOptionsDialog extends DialogFragment {
             listener.onExportCancelled();
         }
         dismiss();
+    }
+    
+    private void showFormatSelectionDialog() {
+        String[] formats = {"MP4", "MOV", "AVI"}; // Available formats
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Select Format")
+               .setItems(formats, (dialog, which) -> {
+                   String selectedFormat = formats[which];
+                   updateFormatSettings(selectedFormat.toLowerCase());
+                   
+                   // Update the display
+                   TextInputEditText formatEditText = getView() != null ? getView().findViewById(R.id.format_dropdown) : null;
+                   if (formatEditText != null) {
+                       formatEditText.setText(selectedFormat);
+                   }
+                   
+                   updatePreview();
+               })
+               .show();
     }
 }
