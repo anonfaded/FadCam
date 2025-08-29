@@ -10,12 +10,15 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 
+import com.fadcam.ui.faditor.exceptions.ErrorHandler;
+import com.fadcam.ui.faditor.exceptions.FaditorException;
 import com.fadcam.ui.faditor.models.EditOperation;
 import com.fadcam.ui.faditor.models.VideoMetadata;
 import com.fadcam.ui.faditor.processors.opengl.VideoRenderer;
 import com.fadcam.ui.faditor.processors.opengl.VideoTexture;
 import com.fadcam.ui.faditor.processors.opengl.MediaCodecIntegration;
 import com.fadcam.ui.faditor.utils.PerformanceMonitor;
+import com.fadcam.ui.faditor.validation.ValidationUtils;
 
 import java.io.File;
 import java.io.IOException;

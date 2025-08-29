@@ -8,8 +8,11 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.fadcam.ui.faditor.exceptions.ErrorHandler;
+import com.fadcam.ui.faditor.exceptions.FaditorException;
 import com.fadcam.ui.faditor.models.VideoProject;
 import com.fadcam.ui.faditor.models.EditorState;
+import com.fadcam.ui.faditor.recovery.RecoveryManager;
 import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +35,7 @@ public class AutoSaveManager implements LifecycleEventObserver {
     
     private final Context context;
     private final ProjectManager projectManager;
+    private final RecoveryManager recoveryManager;
     private final Handler mainHandler;
     private final Handler backgroundHandler;
     private final HandlerThread backgroundThread;
@@ -47,10 +51,12 @@ public class AutoSaveManager implements LifecycleEventObserver {
     private Runnable autoSaveRunnable;
     private boolean hasUnsavedChanges;
     private long lastAutoSaveTime;
+    private int consecutiveFailures;
     
     public AutoSaveManager(Context context, ProjectManager projectManager) {
         this.context = context;
         this.projectManager = projectManager;
+        this.recoveryManager = new RecoveryManager(context);
         this.mainHandler = new Handler(Looper.getMainLooper());
         
         // Create background thread for auto-save operations to avoid UI blocking
@@ -62,6 +68,7 @@ public class AutoSaveManager implements LifecycleEventObserver {
         this.isSaving = new AtomicBoolean(false);
         this.hasUnsavedChanges = false;
         this.lastAutoSaveTime = 0;
+        this.consecutiveFailures = 0;
         
         // Initialize performance monitoring
         this.performanceMonitor = PerformanceMonitor.getInstance();

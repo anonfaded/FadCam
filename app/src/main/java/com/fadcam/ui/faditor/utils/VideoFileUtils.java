@@ -10,6 +10,8 @@ import android.provider.OpenableColumns;
 import android.webkit.MimeTypeMap;
 
 import com.fadcam.Log;
+import com.fadcam.ui.faditor.exceptions.ErrorHandler;
+import com.fadcam.ui.faditor.exceptions.FaditorException;
 import com.fadcam.ui.faditor.models.VideoMetadata;
 
 import java.io.File;
@@ -417,6 +419,69 @@ public class VideoFileUtils {
         } catch (Exception e) {
             Log.e(TAG, "Error validating video file: " + e.getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Validate video file with detailed error reporting
+     */
+    public static void validateVideoFileWithErrors(Context context, Uri videoUri) throws FaditorException {
+        if (videoUri == null) {
+            throw new FaditorException(
+                FaditorException.ErrorCode.VIDEO_FILE_NOT_FOUND,
+                "No video file selected. Please select a video file to edit."
+            );
+        }
+        
+        try {
+            // Check if we can access the file
+            InputStream inputStream = context.getContentResolver().openInputStream(videoUri);
+            if (inputStream == null) {
+                throw new FaditorException(
+                    FaditorException.ErrorCode.VIDEO_FILE_ACCESS_DENIED,
+                    "Cannot access the selected video file. Please check file permissions.",
+                    FaditorException.RecoveryAction.GRANT_PERMISSIONS
+                );
+            }
+            inputStream.close();
+            
+            // Check MIME type and format
+            String mimeType = context.getContentResolver().getType(videoUri);
+            String fileName = getFileName(context, videoUri);
+            
+            if (!isSupportedMimeType(mimeType) && (fileName == null || !isSupportedFormat(fileName))) {
+                throw ErrorHandler.createUnsupportedFormatError(context, fileName);
+            }
+            
+            // Try to extract metadata to ensure it's a valid video
+            VideoMetadata metadata = extractMetadata(context, videoUri);
+            if (metadata.getDuration() <= 0 || metadata.getWidth() <= 0 || metadata.getHeight() <= 0) {
+                throw new FaditorException(
+                    FaditorException.ErrorCode.CORRUPTED_VIDEO_FILE,
+                    "The selected video file appears to be corrupted or invalid.",
+                    FaditorException.RecoveryAction.SELECT_DIFFERENT_FILE
+                );
+            }
+            
+        } catch (FaditorException e) {
+            throw e; // Re-throw FaditorException as-is
+        } catch (SecurityException e) {
+            throw new FaditorException(
+                FaditorException.ErrorCode.VIDEO_FILE_ACCESS_DENIED,
+                "Permission denied. Please grant storage access permissions.",
+                "SecurityException: " + e.getMessage(),
+                FaditorException.RecoveryAction.GRANT_PERMISSIONS,
+                e
+            );
+        } catch (Exception e) {
+            Log.e(TAG, "Error validating video file: " + e.getMessage(), e);
+            throw new FaditorException(
+                FaditorException.ErrorCode.UNKNOWN_ERROR,
+                "An unexpected error occurred while validating the video file: " + e.getMessage(),
+                "Exception: " + e.getClass().getSimpleName(),
+                FaditorException.RecoveryAction.RETRY,
+                e
+            );
         }
     }
     

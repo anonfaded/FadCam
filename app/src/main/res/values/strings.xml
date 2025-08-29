@@ -575,8 +575,8 @@
     <string name="faditor_export_video">Export Video</string>
     <string name="faditor_processing">Processing video…</string>
     <string name="faditor_export_success">Video exported successfully</string>
-    <string name="faditor_error_unsupported_format">Unsupported video format</string>
-    <string name="faditor_error_processing_failed">Video processing failed</string>
+    <string name="faditor_error_unsupported_format">This video format is not supported. Supported formats: %1$s</string>
+    <string name="faditor_error_processing_failed">%1$s operation failed. Please try again.</string>
     <string name="faditor_error_file_not_found">Video file not found</string>
     <string name="faditor_error_insufficient_space">Insufficient storage space</string>
     <string name="faditor_play">Play</string>
@@ -1150,6 +1150,34 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_tool_trim">Trim Tool</string>
     <string name="faditor_tool_split">Split Tool</string>
     <string name="faditor_tool_effects">Effects Tool</string>
+    
+    <!-- Error Handling Strings -->
+    <!-- Error Titles -->
+    <string name="faditor_error_video_file_title">Video File Error</string>
+    <string name="faditor_error_processing_title">Processing Error</string>
+    <string name="faditor_error_validation_title">Validation Error</string>
+    <string name="faditor_error_storage_title">Storage Error</string>
+    <string name="faditor_error_project_title">Project Error</string>
+    <string name="faditor_error_autosave_title">Auto-Save Error</string>
+    <string name="faditor_error_permission_title">Permission Error</string>
+    <string name="faditor_error_device_title">Device Error</string>
+    <string name="faditor_error_general_title">Error</string>
+    
+    <!-- Error Messages -->
+    <string name="faditor_error_invalid_trim_range">Invalid trim range. Please adjust the start and end positions.</string>
+    <string name="faditor_error_invalid_export_settings">Invalid export settings: %1$s</string>
+    <string name="faditor_error_autosave_failed">Auto-save failed. Your changes may not be saved.</string>
+    
+    <!-- Recovery Action Strings -->
+    <string name="faditor_recovery_select_different_file">Select Different File</string>
+    <string name="faditor_recovery_adjust_settings">Adjust Settings</string>
+    <string name="faditor_recovery_free_storage">Free Storage Space</string>
+    <string name="faditor_recovery_grant_permissions">Grant Permissions</string>
+    <string name="faditor_recovery_restart_app">Restart App</string>
+    <string name="faditor_recovery_contact_support">Contact Support</string>
+    
+    <!-- Retry String -->
+    <string name="retry">Retry</string>
     <string name="faditor_tool_audio">Audio Tool</string>
     
     <!-- Tool descriptions -->
