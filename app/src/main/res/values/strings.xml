@@ -1209,6 +1209,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="faditor_export_failed">Export failed: %1$s</string>
     <string name="faditor_export_completed">Export completed successfully</string>
     
+    <!-- Additional Progress Strings -->
+    <string name="faditor_loading_project">Loading project…</string>
+    <string name="faditor_saving_project">Saving project…</string>
+    <string name="faditor_processing_video">Processing video…</string>
+    <string name="faditor_preparing_export">Preparing export…</string>
+    <string name="faditor_operation_cancelled">Operation cancelled</string>
+    <string name="faditor_operation_failed">Operation failed: %1$s</string>
+    
     <!-- Export Actions -->
     <string name="faditor_share_video">Share Video</string>
     <string name="faditor_view_video">View Video</string>

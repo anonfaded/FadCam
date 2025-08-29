@@ -1,6 +1,8 @@
 package com.fadcam.ui.faditor;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -238,8 +240,8 @@ public class FaditorEditorFragment extends BaseFragment implements
             return;
         }
         
-        // Show loading state
-        showProgress("Loading project...", false);
+        // Show loading state with proper message
+        showProgress(getString(R.string.faditor_loading_project), false);
         
         projectManager.loadProject(projectId, new ProjectManager.ProjectCallback() {
             @Override
@@ -397,7 +399,7 @@ public class FaditorEditorFragment extends BaseFragment implements
             return;
         }
         
-        showProgress("Saving project...", false);
+        showProgress(getString(R.string.faditor_saving_project), false);
         
         projectManager.saveProject(currentProject, new ProjectManager.ProjectCallback() {
             @Override
@@ -461,8 +463,11 @@ public class FaditorEditorFragment extends BaseFragment implements
             return;
         }
         
+        // Store settings for retry functionality
+        lastExportSettings = settings;
+        
         // Show progress overlay (Requirement 4.3)
-        showProgress("Preparing export...", true);
+        showProgress(getString(R.string.faditor_preparing_export), true);
         
         // Initialize video exporter
         currentExporter = new com.fadcam.ui.faditor.processors.VideoExporter(requireContext());
@@ -472,7 +477,7 @@ public class FaditorEditorFragment extends BaseFragment implements
             @Override
             public void onStarted() {
                 requireActivity().runOnUiThread(() -> {
-                    showProgress("Starting export...", true);
+                    showProgress(getString(R.string.faditor_export_starting), true);
                     Log.d(TAG, "Export started");
                 });
             }
@@ -480,7 +485,9 @@ public class FaditorEditorFragment extends BaseFragment implements
             @Override
             public void onProgress(int percentage) {
                 requireActivity().runOnUiThread(() -> {
-                    showProgress("Exporting: " + percentage + "%", true);
+                    // Use enhanced progress tracking with percentage display
+                    String message = getString(R.string.faditor_export_progress, percentage);
+                    updateProgress(percentage, message);
                     Log.d(TAG, "Export progress: " + percentage + "%");
                 });
             }
@@ -489,8 +496,16 @@ public class FaditorEditorFragment extends BaseFragment implements
             public void onSuccess(java.io.File exportedFile) {
                 requireActivity().runOnUiThread(() -> {
                     currentExporter = null; // Clear reference
-                    hideProgress();
-                    showExportSuccessDialog(exportedFile);
+                    
+                    // Show success message with filename
+                    String successMessage = getString(R.string.faditor_export_success_message, exportedFile.getName());
+                    showSuccessMessage(successMessage);
+                    
+                    // Show export success dialog after a brief delay
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        showExportSuccessDialog(exportedFile);
+                    }, 2500); // Allow success message to be seen
+                    
                     Log.d(TAG, "Export completed: " + exportedFile.getAbsolutePath());
                 });
             }
@@ -499,8 +514,11 @@ public class FaditorEditorFragment extends BaseFragment implements
             public void onError(String errorMessage) {
                 requireActivity().runOnUiThread(() -> {
                     currentExporter = null; // Clear reference
-                    hideProgress();
-                    showExportErrorDialog(errorMessage);
+                    
+                    // Show error message with retry option
+                    String formattedError = getString(R.string.faditor_export_error_message, errorMessage);
+                    showErrorMessage(formattedError, true);
+                    
                     Log.e(TAG, "Export failed: " + errorMessage);
                 });
             }
@@ -630,30 +648,69 @@ public class FaditorEditorFragment extends BaseFragment implements
             .show();
     }
     
-    // Progress methods
+    // Progress methods and export state
     
     private com.fadcam.ui.faditor.processors.VideoExporter currentExporter;
+    private com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings lastExportSettings;
     
     private void showProgress(String message, boolean cancellable) {
         if (progressOverlay != null) {
             progressOverlay.showProgress(message, cancellable);
-            
-            // Set up cancel listener for export operations
-            if (cancellable) {
-                progressOverlay.setProgressListener(new ProgressComponent.ProgressListener() {
-                    @Override
-                    public void onCancelRequested() {
-                        cancelCurrentOperation();
-                    }
-                });
-            }
+            setupProgressListener();
+        }
+    }
+    
+    private void showProgressWithPercentage(String message, int percentage, boolean cancellable) {
+        if (progressOverlay != null) {
+            progressOverlay.showProgress(ProgressComponent.ProgressType.DETERMINATE, message, percentage, cancellable);
+            setupProgressListener();
+        }
+    }
+    
+    private void updateProgress(int percentage, String message) {
+        if (progressOverlay != null) {
+            progressOverlay.updateProgress(percentage, message);
+        }
+    }
+    
+    private void showSuccessMessage(String message) {
+        if (progressOverlay != null) {
+            progressOverlay.showSuccess(message);
+            setupProgressListener();
+        }
+    }
+    
+    private void showErrorMessage(String errorMessage, boolean showRetry) {
+        if (progressOverlay != null) {
+            progressOverlay.showError(errorMessage, showRetry);
+            setupProgressListener();
         }
     }
     
     private void hideProgress() {
         if (progressOverlay != null) {
             progressOverlay.hideProgress();
-            progressOverlay.setProgressListener(null);
+        }
+    }
+    
+    private void setupProgressListener() {
+        if (progressOverlay != null) {
+            progressOverlay.setProgressListener(new ProgressComponent.ProgressListener() {
+                @Override
+                public void onCancelRequested() {
+                    cancelCurrentOperation();
+                }
+                
+                @Override
+                public void onRetryRequested() {
+                    retryCurrentOperation();
+                }
+                
+                @Override
+                public void onDismissRequested() {
+                    hideProgress();
+                }
+            });
         }
     }
     
@@ -663,6 +720,66 @@ public class FaditorEditorFragment extends BaseFragment implements
             currentExporter = null;
         }
         hideProgress();
+    }
+    
+    private void retryCurrentOperation() {
+        if (lastExportSettings != null && currentProject != null) {
+            // Retry the last export operation
+            hideProgress();
+            startVideoExport(lastExportSettings);
+        } else {
+            // No operation to retry, just hide progress
+            hideProgress();
+            Toast.makeText(requireContext(), "No operation to retry", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Example method showing how to use progress tracking for video processing operations
+     * This demonstrates the enhanced progress feedback system for trim operations
+     */
+    private void performTrimOperation(long startMs, long endMs) {
+        if (currentProject == null) {
+            return;
+        }
+        
+        // Show indeterminate progress initially
+        showProgress(getString(R.string.faditor_processing_video), true);
+        
+        // Simulate processing with progress updates
+        Handler handler = new Handler(Looper.getMainLooper());
+        
+        // Simulate progress updates
+        for (int i = 0; i <= 100; i += 10) {
+            final int progress = i;
+            handler.postDelayed(() -> {
+                if (progressOverlay != null && progressOverlay.isProgressVisible()) {
+                    String message = getString(R.string.faditor_processing_video) + " Trimming...";
+                    updateProgress(progress, message);
+                    
+                    // Simulate completion
+                    if (progress == 100) {
+                        handler.postDelayed(() -> {
+                            showSuccessMessage("Trim operation completed successfully");
+                        }, 500);
+                    }
+                }
+            }, i * 100); // Update every 100ms
+        }
+    }
+    
+    /**
+     * Example method showing error handling with retry option
+     */
+    private void simulateProcessingError() {
+        showErrorMessage("Processing failed due to insufficient memory", true);
+    }
+    
+    /**
+     * Example method showing success feedback
+     */
+    private void simulateProcessingSuccess() {
+        showSuccessMessage("Video processing completed successfully");
     }
     
     // AutoSaveManager.AutoSaveListener implementation
