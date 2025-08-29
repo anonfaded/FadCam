@@ -18,14 +18,14 @@
 
 - [x] 3. Create core data models
 
-
   - Implement VideoProject class for editing session management
   - Create EditOperation class for representing trim operations
   - Add methods for lossless compatibility detection
   - Implement project state management and validation
   - _Requirements: 1.5, 3.1, 3.2, 8.3_
 
-- [ ] 4. Build video player component with OpenGL integration
+- [x] 4. Build video player component with OpenGL integration
+
 
   - Create VideoPlayerComponent using ExoPlayer with OpenGL rendering
   - Implement smooth video playback with hardware acceleration
@@ -33,7 +33,9 @@
   - Integrate with existing OpenGL infrastructure from com.fadcam.opengl
   - _Requirements: 2.1, 2.2, 2.3, 2.6, 7.5_
 
-- [ ] 5. Implement interactive timeline component
+- [-] 5. Implement interactive timeline component
+
+
 
   - Create TimelineComponent with custom drawing for video timeline
   - Add draggable trim handles for start/end position selection

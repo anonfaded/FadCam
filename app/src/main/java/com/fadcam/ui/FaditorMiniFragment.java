@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,6 +15,7 @@ import androidx.annotation.Nullable;
 
 import com.fadcam.Log;
 import com.fadcam.R;
+import com.fadcam.ui.faditor.components.VideoPlayerComponent;
 import com.fadcam.ui.faditor.models.VideoMetadata;
 import com.fadcam.ui.faditor.models.VideoProject;
 import com.fadcam.ui.faditor.utils.VideoFilePicker;
@@ -32,6 +34,10 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
     private TextView videoInfoText;
     private View editorContainer;
     private View placeholderContainer;
+    private VideoPlayerComponent videoPlayerComponent;
+    private Button playPauseButton;
+    private TextView positionText;
+    private SeekBar videoSeekBar;
     
     // Video editing components
     private VideoFilePicker filePicker;
@@ -54,6 +60,10 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
         videoInfoText = view.findViewById(R.id.video_info_text);
         editorContainer = view.findViewById(R.id.editor_container);
         placeholderContainer = view.findViewById(R.id.placeholder_container);
+        videoPlayerComponent = view.findViewById(R.id.video_player_component);
+        playPauseButton = view.findViewById(R.id.play_pause_button);
+        positionText = view.findViewById(R.id.position_text);
+        videoSeekBar = view.findViewById(R.id.video_seek_bar);
         
         // Find editor buttons
         Button selectNewVideoButton = view.findViewById(R.id.select_new_video_button);
@@ -72,6 +82,89 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
             trimVideoButton.setOnClickListener(v -> {
                 // Trim functionality will be implemented in subsequent tasks
                 Toast.makeText(requireContext(), "Trim functionality coming in next task", Toast.LENGTH_SHORT).show();
+            });
+        }
+        
+        if (playPauseButton != null) {
+            playPauseButton.setOnClickListener(v -> {
+                if (videoPlayerComponent != null && videoPlayerComponent.isVideoLoaded()) {
+                    videoPlayerComponent.togglePlayPause();
+                } else {
+                    Toast.makeText(requireContext(), "No video loaded", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        
+        // Set up seek bar listener
+        if (videoSeekBar != null) {
+            videoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                private boolean userSeeking = false;
+                
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (fromUser && videoPlayerComponent != null && videoPlayerComponent.isVideoLoaded()) {
+                        float seekProgress = progress / 1000.0f; // Convert to 0.0-1.0 range
+                        videoPlayerComponent.seekToProgress(seekProgress);
+                    }
+                }
+                
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    userSeeking = true;
+                }
+                
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    userSeeking = false;
+                }
+            });
+        }
+        
+        // Set up video player listener
+        if (videoPlayerComponent != null) {
+            videoPlayerComponent.setVideoPlayerListener(new VideoPlayerComponent.VideoPlayerListener() {
+                @Override
+                public void onPositionChanged(long positionMs) {
+                    // Update position display
+                    updatePositionDisplay(positionMs, videoPlayerComponent.getDuration());
+                    Log.d(TAG, "Video position: " + positionMs + "ms");
+                }
+                
+                @Override
+                public void onDurationChanged(long durationMs) {
+                    Log.d(TAG, "Video duration: " + durationMs + "ms");
+                    if (currentProject != null) {
+                        // Update project with actual duration
+                        currentProject.getMetadata().setDuration(durationMs);
+                        updateVideoInfo(currentProject.getOriginalVideoUri(), currentProject.getMetadata());
+                    }
+                }
+                
+                @Override
+                public void onPlaybackStateChanged(boolean isPlaying) {
+                    // Update play/pause button text
+                    if (playPauseButton != null) {
+                        playPauseButton.setText(isPlaying ? R.string.faditor_pause : R.string.faditor_play);
+                    }
+                    Log.d(TAG, "Playback state changed: " + (isPlaying ? "playing" : "paused"));
+                }
+                
+                @Override
+                public void onError(String errorMessage) {
+                    Log.e(TAG, "Video player error: " + errorMessage);
+                    Toast.makeText(requireContext(), "Video player error: " + errorMessage, Toast.LENGTH_LONG).show();
+                }
+                
+                @Override
+                public void onVideoSizeChanged(int width, int height) {
+                    Log.d(TAG, "Video size changed: " + width + "x" + height);
+                    if (currentProject != null) {
+                        // Update project with actual video dimensions
+                        currentProject.getMetadata().setWidth(width);
+                        currentProject.getMetadata().setHeight(height);
+                        updateVideoInfo(currentProject.getOriginalVideoUri(), currentProject.getMetadata());
+                    }
+                }
             });
         }
         
@@ -137,6 +230,11 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
         currentProject.setOriginalVideoUri(videoUri);
         currentProject.setMetadata(metadata);
         
+        // Load video into player component
+        if (videoPlayerComponent != null) {
+            videoPlayerComponent.loadVideo(videoUri);
+        }
+        
         // Update UI with video information
         updateVideoInfo(videoUri, metadata);
         
@@ -187,6 +285,23 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
         videoInfoText.setText(info.toString().trim());
     }
     
+    private void updatePositionDisplay(long positionMs, long durationMs) {
+        if (positionText == null) return;
+        
+        String positionStr = VideoFileUtils.formatDuration(positionMs);
+        String durationStr = VideoFileUtils.formatDuration(durationMs);
+        String displayText = positionStr + " / " + durationStr;
+        
+        positionText.setText(displayText);
+        
+        // Update seek bar progress
+        if (videoSeekBar != null && durationMs > 0) {
+            float progress = (float) positionMs / durationMs;
+            int seekBarProgress = (int) (progress * 1000); // Convert to 0-1000 range
+            videoSeekBar.setProgress(seekBarProgress);
+        }
+    }
+    
     @Override
     public void onResume() {
         super.onResume();
@@ -196,5 +311,29 @@ public class FaditorMiniFragment extends BaseFragment implements VideoFilePicker
             placeholderContainer.getVisibility() == View.VISIBLE) {
             Toast.makeText(requireContext(), R.string.faditor_mini_toast, Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        
+        // Pause video playback when fragment is paused
+        if (videoPlayerComponent != null) {
+            videoPlayerComponent.pause();
+        }
+    }
+    
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        
+        // Release video player resources
+        if (videoPlayerComponent != null) {
+            videoPlayerComponent.release();
+            videoPlayerComponent = null;
+        }
+        
+        // Clear current project
+        currentProject = null;
     }
 }

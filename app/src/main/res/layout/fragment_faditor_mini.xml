@@ -134,7 +134,7 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Video player placeholder -->
+        <!-- Video player with OpenGL rendering -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="200dp"
@@ -142,31 +142,59 @@
             app:cardCornerRadius="8dp"
             app:cardElevation="2dp">
 
-            <LinearLayout
+            <com.fadcam.ui.faditor.components.VideoPlayerComponent
+                android:id="@+id/video_player_component"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:background="@android:color/black">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Video Player"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="(Will be implemented in next task)"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="12sp"
-                    android:layout_marginTop="4dp"/>
-
-            </LinearLayout>
+                android:background="@android:color/black"/>
 
         </androidx.cardview.widget.CardView>
+
+        <!-- Video seek bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <SeekBar
+                android:id="@+id/video_seek_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:max="1000"
+                android:progress="0"/>
+
+            <TextView
+                android:id="@+id/position_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="4dp"
+                android:text="00:00 / 00:00"
+                android:fontFamily="monospace"
+                android:textSize="14sp"/>
+
+        </LinearLayout>
+
+        <!-- Video playback controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/play_pause_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/faditor_play"
+                android:textAllCaps="false"
+                style="@style/Widget.Material3.Button.OutlinedButton"/>
+
+        </LinearLayout>
 
         <!-- Control buttons -->
         <LinearLayout
