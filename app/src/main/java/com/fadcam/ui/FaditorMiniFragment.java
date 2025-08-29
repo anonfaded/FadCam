@@ -337,7 +337,11 @@ public class FaditorMiniFragment extends BaseFragment implements
         Log.d(TAG, "Import project requested");
         
         // TODO: Implement project import functionality
-        Toast.makeText(requireContext(), "Import functionality coming soon", Toast.LENGTH_SHORT).show();
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                Toast.makeText(requireContext(), "Import functionality coming soon", Toast.LENGTH_SHORT).show();
+            });
+        }
     }
     
     @Override
@@ -345,7 +349,11 @@ public class FaditorMiniFragment extends BaseFragment implements
         Log.d(TAG, "Export project requested: " + projectId);
         
         // TODO: Implement project export functionality
-        Toast.makeText(requireContext(), "Export functionality coming soon", Toast.LENGTH_SHORT).show();
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                Toast.makeText(requireContext(), "Export functionality coming soon", Toast.LENGTH_SHORT).show();
+            });
+        }
     }
     
     // VideoFilePicker.VideoSelectionCallback implementation
@@ -358,7 +366,12 @@ public class FaditorMiniFragment extends BaseFragment implements
         if (!VideoFileUtils.isValidVideoFile(requireContext(), videoUri)) {
             String supportedFormats = VideoFileUtils.getSupportedFormatsString();
             String errorMessage = getString(R.string.faditor_supported_formats, supportedFormats);
-            Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+            // Ensure Toast is shown on the main thread
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                });
+            }
             return;
         }
         
@@ -366,14 +379,32 @@ public class FaditorMiniFragment extends BaseFragment implements
         VideoMetadata metadata = VideoFileUtils.extractMetadata(requireContext(), videoUri);
         
         if (metadata.getDuration() <= 0) {
-            Toast.makeText(requireContext(), R.string.faditor_error_processing_failed, Toast.LENGTH_SHORT).show();
+            // Ensure Toast is shown on the main thread
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), R.string.faditor_error_processing_failed, Toast.LENGTH_SHORT).show();
+                });
+            }
             return;
         }
         
-        // Create new project
+        // Create new project with unique ID
+        String projectId = projectManager.createNewProject("temp");
         VideoProject newProject = new VideoProject();
+        newProject.setProjectId(projectId);
         newProject.setOriginalVideoUri(videoUri);
+        
+        // Try to get the real file path, but fall back to URI string if not available
+        String realPath = VideoFileUtils.getRealPathFromUri(requireContext(), videoUri);
+        if (realPath != null) {
+            newProject.setOriginalVideoPath(realPath);
+        } else {
+            // For content URIs without real paths, store the URI string
+            newProject.setOriginalVideoPath(videoUri.toString());
+        }
+        
         newProject.setMetadata(metadata);
+        newProject.setDuration(metadata.getDuration());
         
         // Generate project name from video file
         String fileName = VideoFileUtils.getFileName(requireContext(), videoUri);
@@ -386,7 +417,12 @@ public class FaditorMiniFragment extends BaseFragment implements
                 @Override
                 public void onProjectSaved(String projectId) {
                     Log.d(TAG, "New project saved: " + projectId);
-                    Toast.makeText(requireContext(), "Project created: " + projectName, Toast.LENGTH_SHORT).show();
+                    // Ensure Toast is shown on the main thread
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "Project created: " + projectName, Toast.LENGTH_SHORT).show();
+                        });
+                    }
                     
                     // Navigate to editor with the new project (Requirement 10.1, 10.2)
                     NavigationUtils.openEditor(FaditorMiniFragment.this, projectId);
@@ -400,7 +436,12 @@ public class FaditorMiniFragment extends BaseFragment implements
                 @Override
                 public void onError(String errorMessage) {
                     Log.e(TAG, "Failed to save new project: " + errorMessage);
-                    Toast.makeText(requireContext(), "Failed to create project: " + errorMessage, Toast.LENGTH_LONG).show();
+                    // Ensure Toast is shown on the main thread
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "Failed to create project: " + errorMessage, Toast.LENGTH_LONG).show();
+                        });
+                    }
                 }
             });
         }
@@ -415,7 +456,11 @@ public class FaditorMiniFragment extends BaseFragment implements
     @Override
     public void onError(String errorMessage) {
         Log.e(TAG, "Video selection error: " + errorMessage);
-        Toast.makeText(requireContext(), R.string.faditor_error_processing_failed, Toast.LENGTH_SHORT).show();
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                Toast.makeText(requireContext(), R.string.faditor_error_processing_failed, Toast.LENGTH_SHORT).show();
+            });
+        }
     }
     
     private void showNewProjectDialog() {
@@ -508,7 +553,11 @@ public class FaditorMiniFragment extends BaseFragment implements
                 @Override
                 public void onError(String errorMessage) {
                     Log.e(TAG, "Failed to delete project: " + errorMessage);
-                    Toast.makeText(requireContext(), "Failed to delete project: " + errorMessage, Toast.LENGTH_LONG).show();
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "Failed to delete project: " + errorMessage, Toast.LENGTH_LONG).show();
+                        });
+                    }
                 }
             });
         }
@@ -516,7 +565,11 @@ public class FaditorMiniFragment extends BaseFragment implements
     
     private void renameProject(String projectId, String newName) {
         // TODO: Implement project renaming in ProjectManager
-        Toast.makeText(requireContext(), "Rename functionality coming soon", Toast.LENGTH_SHORT).show();
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                Toast.makeText(requireContext(), "Rename functionality coming soon", Toast.LENGTH_SHORT).show();
+            });
+        }
     }
     
     @Override

@@ -28,22 +28,49 @@ public class MediaReferenceManager {
     public ValidationResult validateMediaReferences(VideoProject project) {
         ValidationResult result = new ValidationResult();
         
-        // Check original video path
+        // Check original video path/URI
         String originalPath = project.getOriginalVideoPath();
+        Uri originalUri = project.getOriginalVideoUri();
+        
         if (originalPath != null) {
-            File file = new File(originalPath);
-            if (!file.exists() || !file.canRead()) {
-                result.addMissingFile(originalPath);
-                
-                // Try to find the file by URI if available
-                if (project.getOriginalVideoUri() != null) {
-                    String recoveredPath = tryRecoverPathFromUri(project.getOriginalVideoUri());
-                    if (recoveredPath != null) {
-                        result.addRecoveredPath(originalPath, recoveredPath);
+            // Check if it's a content URI (starts with content://)
+            if (originalPath.startsWith("content://")) {
+                // For content URIs, validate using the URI directly
+                if (originalUri != null) {
+                    if (isContentUriAccessible(originalUri)) {
+                        result.addValidFile(originalPath);
+                    } else {
+                        result.addMissingFile(originalPath);
+                    }
+                } else {
+                    // Try to parse the path as URI
+                    try {
+                        Uri parsedUri = Uri.parse(originalPath);
+                        if (isContentUriAccessible(parsedUri)) {
+                            result.addValidFile(originalPath);
+                        } else {
+                            result.addMissingFile(originalPath);
+                        }
+                    } catch (Exception e) {
+                        result.addMissingFile(originalPath);
                     }
                 }
             } else {
-                result.addValidFile(originalPath);
+                // For file paths, use the existing file validation
+                File file = new File(originalPath);
+                if (!file.exists() || !file.canRead()) {
+                    result.addMissingFile(originalPath);
+                    
+                    // Try to find the file by URI if available
+                    if (originalUri != null) {
+                        String recoveredPath = tryRecoverPathFromUri(originalUri);
+                        if (recoveredPath != null) {
+                            result.addRecoveredPath(originalPath, recoveredPath);
+                        }
+                    }
+                } else {
+                    result.addValidFile(originalPath);
+                }
             }
         }
         
@@ -58,6 +85,22 @@ public class MediaReferenceManager {
         }
         
         return result;
+    }
+    
+    /**
+     * Checks if a content URI is still accessible
+     */
+    private boolean isContentUriAccessible(Uri uri) {
+        if (uri == null) return false;
+        
+        try {
+            // Try to open an input stream to check if the URI is accessible
+            context.getContentResolver().openInputStream(uri).close();
+            return true;
+        } catch (Exception e) {
+            // URI is not accessible
+            return false;
+        }
     }
     
     /**

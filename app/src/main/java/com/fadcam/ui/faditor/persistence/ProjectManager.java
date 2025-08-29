@@ -1,6 +1,8 @@
 package com.fadcam.ui.faditor.persistence;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.lifecycle.LiveData;
 
 import com.fadcam.ui.faditor.models.VideoProject;
@@ -31,6 +33,7 @@ public class ProjectManager {
     private final MediaReferenceManager mediaReferenceManager;
     private final ExecutorService executorService;
     private final File projectsDirectory;
+    private final Handler mainHandler;
     
     public interface ProjectCallback {
         void onProjectSaved(String projectId);
@@ -49,6 +52,7 @@ public class ProjectManager {
         this.database = ProjectDatabase.getInstance(context);
         this.mediaReferenceManager = new MediaReferenceManager(context);
         this.executorService = Executors.newFixedThreadPool(2);
+        this.mainHandler = new Handler(Looper.getMainLooper());
         
         // Create projects directory
         this.projectsDirectory = new File(context.getFilesDir(), PROJECTS_DIR);
@@ -82,9 +86,19 @@ public class ProjectManager {
                 MediaReferenceManager.ValidationResult validation = 
                     mediaReferenceManager.validateMediaReferences(project);
                 
+                // For new projects, be more lenient - only fail if we have missing files and no recovery options
                 if (!validation.isValid() && !validation.hasRecoveredPaths()) {
-                    callback.onError("Some media files are missing and cannot be recovered");
-                    return;
+                    // Check if this is a new project (no operations yet) with content URI
+                    boolean isNewProject = project.getOperations().isEmpty() && 
+                                         project.getOriginalVideoPath() != null && 
+                                         project.getOriginalVideoPath().startsWith("content://");
+                    
+                    if (!isNewProject) {
+                        callback.onError("Some media files are missing and cannot be recovered");
+                        return;
+                    }
+                    // For new projects with content URIs, continue with saving even if validation fails
+                    // The URI accessibility was already checked during project creation
                 }
                 
                 // Apply recovered paths if any
@@ -108,10 +122,12 @@ public class ProjectManager {
                 ProjectMetadata metadata = createMetadataFromProject(project);
                 database.projectDao().insertProject(metadata);
                 
-                callback.onProjectSaved(project.getProjectId());
+                // Post callback to main thread
+                mainHandler.post(() -> callback.onProjectSaved(project.getProjectId()));
                 
             } catch (Exception e) {
-                callback.onError("Failed to save project: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to save project: " + e.getMessage()));
             }
         });
     }
@@ -126,7 +142,7 @@ public class ProjectManager {
                 File projectFile = new File(projectDir, PROJECT_FILE_NAME);
                 
                 if (!projectFile.exists()) {
-                    callback.onError("Project file not found");
+                    mainHandler.post(() -> callback.onError("Project file not found"));
                     return;
                 }
                 
@@ -154,10 +170,12 @@ public class ProjectManager {
                     });
                 }
                 
-                callback.onProjectLoaded(project);
+                // Post callback to main thread
+                mainHandler.post(() -> callback.onProjectLoaded(project));
                 
             } catch (Exception e) {
-                callback.onError("Failed to load project: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to load project: " + e.getMessage()));
             }
         });
     }
@@ -181,10 +199,12 @@ public class ProjectManager {
                 // Mark editor state as saved
                 editorState.clearUnsavedChanges();
                 
-                callback.onEditorStateSaved(projectId);
+                // Post callback to main thread
+                mainHandler.post(() -> callback.onEditorStateSaved(projectId));
                 
             } catch (Exception e) {
-                callback.onError("Failed to save editor state: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to save editor state: " + e.getMessage()));
             }
         });
     }
@@ -200,17 +220,19 @@ public class ProjectManager {
                 
                 if (!stateFile.exists()) {
                     // Return default editor state if no saved state exists
-                    callback.onEditorStateLoaded(new EditorState());
+                    mainHandler.post(() -> callback.onEditorStateLoaded(new EditorState()));
                     return;
                 }
                 
                 String stateJson = readStringFromFile(stateFile);
                 EditorState editorState = ProjectSerializer.deserializeEditorState(stateJson);
                 
-                callback.onEditorStateLoaded(editorState);
+                // Post callback to main thread
+                mainHandler.post(() -> callback.onEditorStateLoaded(editorState));
                 
             } catch (Exception e) {
-                callback.onError("Failed to load editor state: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to load editor state: " + e.getMessage()));
             }
         });
     }
@@ -230,10 +252,12 @@ public class ProjectManager {
                     deleteDirectory(projectDir);
                 }
                 
-                callback.onProjectSaved(projectId); // Reusing callback for consistency
+                // Post callback to main thread
+                mainHandler.post(() -> callback.onProjectSaved(projectId)); // Reusing callback for consistency
                 
             } catch (Exception e) {
-                callback.onError("Failed to delete project: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to delete project: " + e.getMessage()));
             }
         });
     }
@@ -248,17 +272,19 @@ public class ProjectManager {
                 File projectFile = new File(projectDir, PROJECT_FILE_NAME);
                 
                 if (!projectFile.exists()) {
-                    callback.onError("Project file not found");
+                    mainHandler.post(() -> callback.onError("Project file not found"));
                     return;
                 }
                 
                 // Copy project file to export location
                 copyFile(projectFile, exportPath);
                 
-                callback.onProjectSaved(projectId);
+                // Post callback to main thread
+                mainHandler.post(() -> callback.onProjectSaved(projectId));
                 
             } catch (Exception e) {
-                callback.onError("Failed to export project: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to export project: " + e.getMessage()));
             }
         });
     }
@@ -281,7 +307,8 @@ public class ProjectManager {
                 saveProject(project, callback);
                 
             } catch (Exception e) {
-                callback.onError("Failed to import project: " + e.getMessage());
+                // Post error callback to main thread
+                mainHandler.post(() -> callback.onError("Failed to import project: " + e.getMessage()));
             }
         });
     }

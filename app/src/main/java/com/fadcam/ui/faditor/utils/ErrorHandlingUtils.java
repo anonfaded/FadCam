@@ -74,7 +74,16 @@ public class ErrorHandlingUtils {
      * Show error toast for minor errors
      */
     private static void showErrorToast(Context context, FaditorException exception) {
-        Toast.makeText(context, exception.getUserFriendlyMessage(), Toast.LENGTH_LONG).show();
+        // Ensure Toast is shown on the main thread
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            // Already on main thread
+            Toast.makeText(context, exception.getUserFriendlyMessage(), Toast.LENGTH_LONG).show();
+        } else {
+            // Post to main thread
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                Toast.makeText(context, exception.getUserFriendlyMessage(), Toast.LENGTH_LONG).show();
+            });
+        }
     }
     
     /**

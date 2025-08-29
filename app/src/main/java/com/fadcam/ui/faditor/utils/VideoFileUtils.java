@@ -295,6 +295,50 @@ public class VideoFileUtils {
     }
     
     /**
+     * Get real file path from URI if possible
+     * Returns null for content URIs that don't have a real file path
+     */
+    public static String getRealPathFromUri(Context context, Uri uri) {
+        if (uri == null) return null;
+        
+        // If it's a file URI, return the path directly
+        if ("file".equals(uri.getScheme())) {
+            return uri.getPath();
+        }
+        
+        // For content URIs, try to get the real path from MediaStore
+        if ("content".equals(uri.getScheme())) {
+            try {
+                String[] projection = {MediaStore.Video.Media.DATA};
+                Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null);
+                
+                if (cursor != null) {
+                    try {
+                        if (cursor.moveToFirst()) {
+                            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+                            String path = cursor.getString(columnIndex);
+                            
+                            // Verify the path exists and is accessible
+                            if (path != null) {
+                                File file = new File(path);
+                                if (file.exists() && file.canRead()) {
+                                    return path;
+                                }
+                            }
+                        }
+                    } finally {
+                        cursor.close();
+                    }
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Could not get real path from content URI: " + e.getMessage());
+            }
+        }
+        
+        return null; // No real file path available
+    }
+    
+    /**
      * Get file size from URI
      */
     public static long getFileSize(Context context, Uri uri) {
