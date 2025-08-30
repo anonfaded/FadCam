@@ -217,7 +217,11 @@
   - Create VideoControllerListener interface for component communication
   - _Requirements: 13.2, 13.4, 14.1, 14.5_
 
-- [ ] 25. Replace ExoPlayer with OpenGL video system
+- [x] 25. Replace ExoPlayer with OpenGL video system
+
+
+
+
 
 
   - Update VideoPlayerComponent to use OpenGLVideoController instead of ExoPlayer

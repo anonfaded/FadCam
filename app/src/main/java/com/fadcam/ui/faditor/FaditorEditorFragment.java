@@ -1518,10 +1518,10 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Update time displays and seek bar
         updateTimeDisplay(positionMs);
 
-        // Update timeline position (when method exists)
-        // if (timeline != null) {
-        // timeline.setCurrentPosition(positionMs);
-        // }
+        // Update timeline position with OpenGL frame rendering
+        if (timeline != null) {
+            timeline.setCurrentPosition(positionMs);
+        }
 
         // Update editor state
         if (editorState != null) {
@@ -1538,10 +1538,10 @@ public class FaditorEditorFragment extends BaseFragment implements
             currentProject.setDuration(durationMs);
         }
 
-        // Update timeline with video duration (when method exists)
-        // if (timeline != null) {
-        // timeline.setVideoDuration(durationMs);
-        // }
+        // Update timeline with video duration for OpenGL rendering
+        if (timeline != null) {
+            timeline.setVideoDuration(durationMs);
+        }
 
         // Update seek bar max value
         View view = getView();
