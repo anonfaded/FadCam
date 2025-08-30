@@ -191,11 +191,6 @@
 
 - [x] 22. Implement OpenGL video decoding infrastructure
 
-
-
-
-
-
   - Create VideoDecoder class for MediaCodec hardware decoding with OpenGL surface output
   - Implement frame-accurate seeking and extraction capabilities
   - Add support for common video formats (H.264, H.265, VP9) with hardware acceleration
@@ -205,10 +200,6 @@
 
 - [x] 23. Build OpenGL rendering components
 
-
-
-
-
   - Create VideoRenderer class implementing GLSurfaceView.Renderer for frame display
   - Implement TextureManager for efficient GPU texture memory management and pooling
   - Create ShaderManager for video rendering shader compilation and caching
@@ -217,7 +208,7 @@
   - Read `app/src/main/java/com/fadcam/ui/faditor/processors/opengl/README.md` for more details
   - _Requirements: 13.3, 13.5, 14.1, 14.4_
 
-- [ ] 24. Implement OpenGL video controller
+- [x] 24. Implement OpenGL video controller
 
   - Create OpenGLVideoController as main coordinator for video playback
   - Integrate VideoDecoder and VideoRenderer for seamless frame rendering
@@ -227,6 +218,7 @@
   - _Requirements: 13.2, 13.4, 14.1, 14.5_
 
 - [ ] 25. Replace ExoPlayer with OpenGL video system
+
 
   - Update VideoPlayerComponent to use OpenGLVideoController instead of ExoPlayer
   - Remove ExoPlayer dependencies from Faditor Mini components only

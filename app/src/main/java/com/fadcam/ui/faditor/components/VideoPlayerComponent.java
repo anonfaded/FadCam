@@ -49,6 +49,9 @@ public class VideoPlayerComponent extends FrameLayout {
     private boolean useOpenGL = false;
     private OpenGLVideoPlayerComponent openGLPlayer;
     
+    // New OpenGL video controller integration
+    private com.fadcam.ui.faditor.processors.opengl.OpenGLVideoController openGLVideoController;
+    
     public VideoPlayerComponent(@NonNull Context context) {
         super(context);
         init();
@@ -124,6 +127,111 @@ public class VideoPlayerComponent extends FrameLayout {
         if (isInitialized) {
             release();
             init();
+        }
+    }
+    
+    /**
+     * Enable the new OpenGL video controller for professional editing
+     * This provides frame-accurate seeking and <50ms response times
+     */
+    public void enableOpenGLVideoController(boolean enable) {
+        if (enable && openGLVideoController == null) {
+            Log.d(TAG, "Enabling OpenGL video controller for professional editing");
+            initializeOpenGLVideoController();
+        } else if (!enable && openGLVideoController != null) {
+            Log.d(TAG, "Disabling OpenGL video controller");
+            releaseOpenGLVideoController();
+        }
+    }
+    
+    private void initializeOpenGLVideoController() {
+        try {
+            openGLVideoController = new com.fadcam.ui.faditor.processors.opengl.OpenGLVideoController(getContext());
+            
+            // Set up listener for the new controller
+            openGLVideoController.setVideoControllerListener(new com.fadcam.ui.faditor.processors.opengl.VideoControllerListener() {
+                @Override
+                public void onVideoLoaded(com.fadcam.ui.faditor.models.VideoMetadata metadata) {
+                    Log.d(TAG, "OpenGL controller - video loaded: " + metadata.getWidth() + "x" + metadata.getHeight());
+                    isInitialized = true;
+                    if (listener != null) {
+                        listener.onVideoLoaded(metadata.getDuration() / 1000); // Convert to milliseconds
+                    }
+                }
+                
+                @Override
+                public void onFrameRendered(long frameNumber, long timestampUs) {
+                    // Frame rendered - can be used for performance monitoring
+                }
+                
+                @Override
+                public void onPlaybackStateChanged(boolean isPlaying) {
+                    Log.d(TAG, "OpenGL controller - playback state changed: " + isPlaying);
+                    if (listener != null) {
+                        listener.onPlaybackStateChanged(isPlaying);
+                    }
+                    
+                    if (isPlaying) {
+                        startPositionUpdates();
+                    } else {
+                        stopPositionUpdates();
+                    }
+                }
+                
+                @Override
+                public void onSeekCompleted(long positionMs) {
+                    Log.d(TAG, "OpenGL controller - seek completed: " + positionMs + "ms");
+                    if (listener != null) {
+                        listener.onPositionChanged(positionMs);
+                    }
+                }
+                
+                @Override
+                public void onPositionChanged(long positionMs) {
+                    if (listener != null) {
+                        listener.onPositionChanged(positionMs);
+                    }
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "OpenGL controller error: " + error);
+                    if (listener != null) {
+                        listener.onVideoError("OpenGL video error: " + error);
+                    }
+                }
+                
+                @Override
+                public void onInitializationComplete() {
+                    Log.d(TAG, "OpenGL controller initialization complete");
+                }
+            });
+            
+            // Create GLSurfaceView for the controller
+            android.opengl.GLSurfaceView glSurfaceView = new android.opengl.GLSurfaceView(getContext());
+            glSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ));
+            
+            // Initialize the controller with the surface view
+            openGLVideoController.initialize(glSurfaceView);
+            
+            // Add the surface view to this component
+            addView(glSurfaceView);
+            
+            Log.d(TAG, "OpenGL video controller initialized successfully");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize OpenGL video controller", e);
+            openGLVideoController = null;
+        }
+    }
+    
+    private void releaseOpenGLVideoController() {
+        if (openGLVideoController != null) {
+            openGLVideoController.release();
+            openGLVideoController = null;
         }
     }
 
@@ -440,7 +548,10 @@ public class VideoPlayerComponent extends FrameLayout {
                 throw new IllegalArgumentException("Video URI cannot be null");
             }
 
-            if (useOpenGL && openGLPlayer != null) {
+            if (openGLVideoController != null) {
+                Log.d(TAG, "Loading video with OpenGL video controller");
+                openGLVideoController.loadVideo(videoUri);
+            } else if (useOpenGL && openGLPlayer != null) {
                 Log.d(TAG, "Loading video with OpenGL player");
                 openGLPlayer.loadVideo(videoUri);
             } else if (exoPlayer != null) {
@@ -517,7 +628,9 @@ public class VideoPlayerComponent extends FrameLayout {
     public void seekTo(long positionMs) {
         Log.d(TAG, "Seek to: " + positionMs + "ms");
 
-        if (useOpenGL && openGLPlayer != null) {
+        if (openGLVideoController != null) {
+            openGLVideoController.seekToTime(positionMs);
+        } else if (useOpenGL && openGLPlayer != null) {
             openGLPlayer.seekTo(positionMs);
         } else if (exoPlayer != null) {
             exoPlayer.seekTo(positionMs);
@@ -529,10 +642,28 @@ public class VideoPlayerComponent extends FrameLayout {
         }
     }
     
+    /**
+     * Seek to specific frame for frame-accurate editing
+     */
+    public void seekToFrame(long frameNumber) {
+        Log.d(TAG, "Seek to frame: " + frameNumber);
+        
+        if (openGLVideoController != null) {
+            openGLVideoController.seekToFrame(frameNumber);
+        } else {
+            // Fallback to time-based seeking
+            // Assume 30fps for conversion (would be better to get actual frame rate)
+            long positionMs = (long) ((frameNumber / 30.0f) * 1000);
+            seekTo(positionMs);
+        }
+    }
+    
     public void play() {
         Log.d(TAG, "Play requested");
 
-        if (useOpenGL && openGLPlayer != null) {
+        if (openGLVideoController != null) {
+            openGLVideoController.play();
+        } else if (useOpenGL && openGLPlayer != null) {
             openGLPlayer.play();
         } else if (exoPlayer != null) {
             Log.d(TAG, "Starting playback - current state: " + exoPlayer.getPlaybackState());
@@ -545,7 +676,9 @@ public class VideoPlayerComponent extends FrameLayout {
     public void pause() {
         Log.d(TAG, "Pause requested");
 
-        if (useOpenGL && openGLPlayer != null) {
+        if (openGLVideoController != null) {
+            openGLVideoController.pause();
+        } else if (useOpenGL && openGLPlayer != null) {
             openGLPlayer.pause();
         } else if (exoPlayer != null) {
             Log.d(TAG, "Pausing playback - current state: " + exoPlayer.getPlaybackState());
@@ -556,7 +689,9 @@ public class VideoPlayerComponent extends FrameLayout {
     }
     
     public long getCurrentPosition() {
-        if (useOpenGL && openGLPlayer != null) {
+        if (openGLVideoController != null) {
+            return openGLVideoController.getCurrentPosition();
+        } else if (useOpenGL && openGLPlayer != null) {
             return openGLPlayer.getCurrentPosition();
         } else if (exoPlayer != null) {
             return exoPlayer.getCurrentPosition();
@@ -564,8 +699,23 @@ public class VideoPlayerComponent extends FrameLayout {
         return 0;
     }
     
+    /**
+     * Get current frame number for frame-accurate editing
+     */
+    public long getCurrentFrame() {
+        if (openGLVideoController != null) {
+            return openGLVideoController.getCurrentFrame();
+        } else {
+            // Fallback calculation
+            long positionMs = getCurrentPosition();
+            return (long) ((positionMs / 1000.0f) * 30.0f); // Assume 30fps
+        }
+    }
+    
     public long getDuration() {
-        if (useOpenGL && openGLPlayer != null) {
+        if (openGLVideoController != null) {
+            return openGLVideoController.getDuration();
+        } else if (useOpenGL && openGLPlayer != null) {
             return openGLPlayer.getDuration();
         } else if (exoPlayer != null) {
             long duration = exoPlayer.getDuration();
@@ -575,7 +725,9 @@ public class VideoPlayerComponent extends FrameLayout {
     }
     
     public boolean isPlaying() {
-        if (useOpenGL && openGLPlayer != null) {
+        if (openGLVideoController != null) {
+            return openGLVideoController.isPlaying();
+        } else if (useOpenGL && openGLPlayer != null) {
             return openGLPlayer.isPlaying();
         } else if (exoPlayer != null) {
             return exoPlayer.isPlaying();
@@ -590,6 +742,9 @@ public class VideoPlayerComponent extends FrameLayout {
         Log.d(TAG, "Releasing VideoPlayerComponent");
         
         stopPositionUpdates();
+        
+        // Release new OpenGL video controller
+        releaseOpenGLVideoController();
         
         if (useOpenGL && openGLPlayer != null) {
             openGLPlayer.release();
