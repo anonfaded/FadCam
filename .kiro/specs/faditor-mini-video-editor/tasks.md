@@ -169,7 +169,6 @@
 
 - [x] 20. Add string resources and internationalization
 
-
   - Create all user-facing strings as resources
   - Add proper string formatting for dynamic content
   - Ensure consistent terminology with existing app features
@@ -178,10 +177,6 @@
   - _Requirements: 5.1, 5.2, 9.6, 12.6_
 
 - [x] 21. Final integration and comprehensive testing
-
-
-
-
 
   - Integrate project browser (FaditorMiniFragment) and editor (FaditorEditorFragment)
   - Test complete workflow from project creation to export
@@ -193,8 +188,13 @@
   - Ensure proper navigation and back button handling
   - Test using: `.\gradlew.bat compileDebugJavaWithJavac installDebug`
   - _Requirements: All requirements integration testing_
-  
-- [ ] 22. Implement OpenGL video decoding infrastructure
+
+- [x] 22. Implement OpenGL video decoding infrastructure
+
+
+
+
+
 
   - Create VideoDecoder class for MediaCodec hardware decoding with OpenGL surface output
   - Implement frame-accurate seeking and extraction capabilities
@@ -210,6 +210,7 @@
   - Create ShaderManager for video rendering shader compilation and caching
   - Add support for different video color formats and transformations
   - Implement proper texture binding and state management
+  - Read `app/src/main/java/com/fadcam/ui/faditor/processors/opengl/README.md` for more details
   - _Requirements: 13.3, 13.5, 14.1, 14.4_
 
 - [ ] 24. Implement OpenGL video controller
