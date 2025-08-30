@@ -34,7 +34,9 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
     // Rendering components
     private ShaderManager shaderManager;
     private TextureManager textureManager;
+    private FrameCache frameCache;
     private int currentVideoTexture = 0;
+    private long currentFrameNumber = -1;
     
     // Viewport dimensions
     private int viewportWidth = 0;
@@ -114,6 +116,7 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         // Initialize OpenGL components
         shaderManager = new ShaderManager();
         textureManager = new TextureManager();
+        frameCache = new FrameCache(textureManager);
         
         // Set clear color to black
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -170,13 +173,36 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
     }
     
     /**
+     * Set the current frame for optimized rendering
+     */
+    public void setCurrentFrame(long frameNumber, long timestampUs) {
+        currentFrameNumber = frameNumber;
+        
+        // Try to get cached frame first for smooth timeline scrubbing
+        FrameCache.CachedFrame cachedFrame = frameCache.getCachedFrame(frameNumber);
+        if (cachedFrame != null) {
+            currentVideoTexture = cachedFrame.textureId;
+            hasVideoTexture = true;
+            Log.v(TAG, "Using cached frame: " + frameNumber);
+        }
+        
+        // Prefetch nearby frames for smooth scrubbing
+        frameCache.prefetchFrames(frameNumber, 5); // 5 frames in each direction
+    }
+    
+    /**
      * Update video dimensions for proper aspect ratio rendering
      */
     public void setVideoSize(int width, int height) {
         videoWidth = width;
         videoHeight = height;
+        
+        // Configure frame cache for video dimensions
+        frameCache.setVideoProperties(width, height);
+        
         updateProjectionMatrix();
-        Log.d(TAG, "Video size set: " + width + "x" + height);
+        Log.d(TAG, "Video size set: " + width + "x" + height + 
+                  (width >= 3840 || height >= 2160 ? " (4K)" : ""));
     }
     
     /**
@@ -313,10 +339,45 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
     }
     
     /**
+     * Cache current frame for timeline scrubbing
+     */
+    public void cacheCurrentFrame(long frameNumber, long timestampUs) {
+        if (currentVideoTexture != 0 && frameNumber >= 0) {
+            frameCache.cacheFrame(frameNumber, timestampUs, currentVideoTexture);
+        }
+    }
+    
+    /**
+     * Clear frame cache (e.g., when loading new video)
+     */
+    public void clearFrameCache() {
+        frameCache.clearCache();
+    }
+    
+    /**
+     * Get frame cache statistics
+     */
+    public FrameCache.CacheStats getFrameCacheStats() {
+        return frameCache.getCacheStats();
+    }
+    
+    /**
+     * Get texture manager statistics
+     */
+    public TextureManager.TextureManagerStats getTextureStats() {
+        return textureManager.getStats();
+    }
+    
+    /**
      * Release all resources
      */
     public void release() {
         Log.d(TAG, "Releasing VideoRenderer resources");
+        
+        if (frameCache != null) {
+            frameCache.release();
+            frameCache = null;
+        }
         
         if (shaderManager != null) {
             shaderManager.release();
@@ -331,5 +392,6 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         currentVideoTexture = 0;
         hasVideoTexture = false;
         initialized = false;
+        currentFrameNumber = -1;
     }
 }
