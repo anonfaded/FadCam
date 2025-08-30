@@ -1,12 +1,10 @@
 package com.fadcam.ui.faditor.processors.opengl;
 
 import android.content.Context;
-import android.opengl.EGL14;
-import android.opengl.EGLConfig;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
+import android.content.Context;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 import android.view.Surface;
@@ -18,52 +16,31 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
- * OpenGL ES video frame renderer for hardware-accelerated video processing.
- * Handles EGL context management and frame rendering operations.
+ * OpenGL ES video frame renderer implementing GLSurfaceView.Renderer for frame display.
+ * Handles video texture rendering with support for different color formats and transformations.
+ * Requirements: 13.3, 13.5, 14.1, 14.4
  */
-public class VideoRenderer {
+public class VideoRenderer implements GLSurfaceView.Renderer {
     
     private static final String TAG = "VideoRenderer";
-    
-    // Vertex shader for video frame rendering
-    private static final String VERTEX_SHADER =
-            "uniform mat4 uMVPMatrix;\n" +
-            "uniform mat4 uTexMatrix;\n" +
-            "attribute vec4 aPosition;\n" +
-            "attribute vec4 aTextureCoord;\n" +
-            "varying vec2 vTextureCoord;\n" +
-            "void main() {\n" +
-            "    gl_Position = uMVPMatrix * aPosition;\n" +
-            "    vTextureCoord = (uTexMatrix * aTextureCoord).xy;\n" +
-            "}\n";
-    
-    // Fragment shader for video frame rendering
-    private static final String FRAGMENT_SHADER =
-            "#extension GL_OES_EGL_image_external : require\n" +
-            "precision mediump float;\n" +
-            "varying vec2 vTextureCoord;\n" +
-            "uniform samplerExternalOES sTexture;\n" +
-            "void main() {\n" +
-            "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
-            "}\n";
     
     private final Context context;
     private Surface outputSurface;
     
-    // EGL components
-    private EGLDisplay eglDisplay = EGL14.EGL_NO_DISPLAY;
-    private EGLContext eglContext = EGL14.EGL_NO_CONTEXT;
-    private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
-    private EGLConfig eglConfig;
+    // Rendering components
+    private ShaderManager shaderManager;
+    private TextureManager textureManager;
+    private int currentVideoTexture = 0;
     
-    // OpenGL program and attributes
-    private int shaderProgram;
-    private int aPositionHandle;
-    private int aTextureCoordHandle;
-    private int uMVPMatrixHandle;
-    private int uTexMatrixHandle;
-    private int uTextureHandle;
+    // Viewport dimensions
+    private int viewportWidth = 0;
+    private int viewportHeight = 0;
+    private int videoWidth = 0;
+    private int videoHeight = 0;
     
     // Vertex data
     private FloatBuffer vertexBuffer;
@@ -72,6 +49,8 @@ public class VideoRenderer {
     // Transformation matrices
     private final float[] mvpMatrix = new float[16];
     private final float[] texMatrix = new float[16];
+    private final float[] projectionMatrix = new float[16];
+    private final float[] viewMatrix = new float[16];
     
     // Vertex coordinates for a full-screen quad
     private static final float[] VERTICES = {
@@ -90,6 +69,7 @@ public class VideoRenderer {
     };
     
     private boolean initialized = false;
+    private boolean hasVideoTexture = false;
     
     // Performance monitoring
     private final PerformanceMonitor performanceMonitor;
@@ -98,6 +78,7 @@ public class VideoRenderer {
         this.context = context;
         this.performanceMonitor = PerformanceMonitor.getInstance();
         initializeBuffers();
+        initializeMatrices();
     }
     
     private void initializeBuffers() {
@@ -115,131 +96,137 @@ public class VideoRenderer {
         textureCoordBuffer.put(TEXTURE_COORDS);
         textureCoordBuffer.position(0);
         
-        // Initialize matrices
+    }
+    
+    private void initializeMatrices() {
         Matrix.setIdentityM(mvpMatrix, 0);
         Matrix.setIdentityM(texMatrix, 0);
+        Matrix.setIdentityM(projectionMatrix, 0);
+        Matrix.setIdentityM(viewMatrix, 0);
     }
     
-    /**
-     * Initialize the renderer with the output surface
-     */
-    public void initialize(Surface outputSurface) throws RuntimeException {
-        this.outputSurface = outputSurface;
+    // GLSurfaceView.Renderer implementation
+    
+    @Override
+    public void onSurfaceCreated(GL10 gl, javax.microedition.khronos.egl.EGLConfig config) {
+        Log.d(TAG, "onSurfaceCreated");
         
-        setupEGL();
-        setupShaders();
+        // Initialize OpenGL components
+        shaderManager = new ShaderManager();
+        textureManager = new TextureManager();
+        
+        // Set clear color to black
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        
+        // Enable blending for transparency support
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
         
         initialized = true;
-        Log.d(TAG, "VideoRenderer initialized successfully");
+        Log.d(TAG, "VideoRenderer surface created successfully");
     }
     
-    private void setupEGL() throws RuntimeException {
-        // Get EGL display
-        eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-            throw new RuntimeException("Unable to get EGL14 display");
-        }
+    @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+        Log.d(TAG, "onSurfaceChanged: " + width + "x" + height);
         
-        // Initialize EGL
-        int[] version = new int[2];
-        if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
-            throw new RuntimeException("Unable to initialize EGL14");
-        }
+        viewportWidth = width;
+        viewportHeight = height;
         
-        // Configure EGL
-        int[] attribList = {
-            EGL14.EGL_RED_SIZE, 8,
-            EGL14.EGL_GREEN_SIZE, 8,
-            EGL14.EGL_BLUE_SIZE, 8,
-            EGL14.EGL_ALPHA_SIZE, 8,
-            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-            android.opengl.EGLExt.EGL_RECORDABLE_ANDROID, 1,
-            EGL14.EGL_NONE
-        };
+        // Set viewport
+        GLES20.glViewport(0, 0, width, height);
         
-        EGLConfig[] configs = new EGLConfig[1];
-        int[] numConfigs = new int[1];
-        if (!EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0)) {
-            throw new RuntimeException("Unable to find a suitable EGLConfig");
-        }
-        eglConfig = configs[0];
-        
-        // Create EGL context
-        int[] contextAttribs = {
-            EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-            EGL14.EGL_NONE
-        };
-        eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
-        if (eglContext == EGL14.EGL_NO_CONTEXT) {
-            throw new RuntimeException("Failed to create EGL context");
-        }
-        
-        // Create window surface
-        int[] surfaceAttribs = {
-            EGL14.EGL_NONE
-        };
-        eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, surfaceAttribs, 0);
-        if (eglSurface == EGL14.EGL_NO_SURFACE) {
-            throw new RuntimeException("Failed to create window surface");
-        }
-        
-        // Make context current
-        if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-            throw new RuntimeException("Failed to make EGL context current");
-        }
+        // Update projection matrix for aspect ratio
+        updateProjectionMatrix();
     }
     
-    private void setupShaders() throws RuntimeException {
-        // Create shader program
-        shaderProgram = GlUtil.createProgram(VERTEX_SHADER, FRAGMENT_SHADER);
-        if (shaderProgram == 0) {
-            throw new RuntimeException("Failed to create shader program");
-        }
-        
-        // Get attribute and uniform locations
-        aPositionHandle = GLES20.glGetAttribLocation(shaderProgram, "aPosition");
-        GlUtil.checkLocation(aPositionHandle, "aPosition");
-        
-        aTextureCoordHandle = GLES20.glGetAttribLocation(shaderProgram, "aTextureCoord");
-        GlUtil.checkLocation(aTextureCoordHandle, "aTextureCoord");
-        
-        uMVPMatrixHandle = GLES20.glGetUniformLocation(shaderProgram, "uMVPMatrix");
-        GlUtil.checkLocation(uMVPMatrixHandle, "uMVPMatrix");
-        
-        uTexMatrixHandle = GLES20.glGetUniformLocation(shaderProgram, "uTexMatrix");
-        GlUtil.checkLocation(uTexMatrixHandle, "uTexMatrix");
-        
-        uTextureHandle = GLES20.glGetUniformLocation(shaderProgram, "sTexture");
-        GlUtil.checkLocation(uTextureHandle, "sTexture");
-        
-        Log.d(TAG, "Shader program setup complete");
-    }
-    
-    /**
-     * Render a video frame with the given presentation time
-     */
-    public void renderFrame(long presentationTimeUs) {
+    @Override
+    public void onDrawFrame(GL10 gl) {
         if (!initialized) {
-            Log.w(TAG, "Renderer not initialized, skipping frame");
             return;
         }
         
         performanceMonitor.startOperation("frame_render");
         
-        // Make sure EGL context is current
-        if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-            Log.e(TAG, "Failed to make EGL context current");
-            performanceMonitor.endOperation("frame_render");
+        // Clear the screen
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        
+        // Render video frame if available
+        if (hasVideoTexture && currentVideoTexture != 0) {
+            renderVideoFrame();
+        }
+        
+        performanceMonitor.recordFrameTime();
+        performanceMonitor.endOperation("frame_render");
+    }
+    
+    /**
+     * Set the video texture to render
+     */
+    public void setVideoTexture(int textureId) {
+        currentVideoTexture = textureId;
+        hasVideoTexture = (textureId != 0);
+        Log.d(TAG, "Video texture set: " + textureId);
+    }
+    
+    /**
+     * Update video dimensions for proper aspect ratio rendering
+     */
+    public void setVideoSize(int width, int height) {
+        videoWidth = width;
+        videoHeight = height;
+        updateProjectionMatrix();
+        Log.d(TAG, "Video size set: " + width + "x" + height);
+    }
+    
+    /**
+     * Update projection matrix based on video and viewport dimensions
+     */
+    private void updateProjectionMatrix() {
+        if (viewportWidth == 0 || viewportHeight == 0 || videoWidth == 0 || videoHeight == 0) {
+            Matrix.setIdentityM(projectionMatrix, 0);
+            Matrix.setIdentityM(mvpMatrix, 0);
             return;
         }
         
-        // Clear the screen
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        // Calculate aspect ratios
+        float videoAspect = (float) videoWidth / videoHeight;
+        float viewportAspect = (float) viewportWidth / viewportHeight;
         
-        // Use shader program
+        // Set up orthographic projection with proper aspect ratio
+        if (videoAspect > viewportAspect) {
+            // Video is wider - fit width, letterbox height
+            float scale = viewportAspect / videoAspect;
+            Matrix.orthoM(projectionMatrix, 0, -1f, 1f, -scale, scale, -1f, 1f);
+        } else {
+            // Video is taller - fit height, pillarbox width
+            float scale = videoAspect / viewportAspect;
+            Matrix.orthoM(projectionMatrix, 0, -scale, scale, -1f, 1f, -1f, 1f);
+        }
+        
+        // Combine view and projection matrices
+        Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+    }
+    
+    /**
+     * Render the current video frame
+     */
+    private void renderVideoFrame() {
+        if (!hasVideoTexture || currentVideoTexture == 0) {
+            return;
+        }
+        
+        // Use video shader program
+        int shaderProgram = shaderManager.getVideoShaderProgram();
         GLES20.glUseProgram(shaderProgram);
         GlUtil.checkGlError("glUseProgram");
+        
+        // Get attribute and uniform locations
+        int aPositionHandle = shaderManager.getAttributeLocation(shaderProgram, "aPosition");
+        int aTextureCoordHandle = shaderManager.getAttributeLocation(shaderProgram, "aTextureCoord");
+        int uMVPMatrixHandle = shaderManager.getUniformLocation(shaderProgram, "uMVPMatrix");
+        int uTexMatrixHandle = shaderManager.getUniformLocation(shaderProgram, "uTexMatrix");
+        int uTextureHandle = shaderManager.getUniformLocation(shaderProgram, "sTexture");
         
         // Enable vertex attributes
         GLES20.glEnableVertexAttribArray(aPositionHandle);
@@ -253,8 +240,8 @@ public class VideoRenderer {
         GLES20.glUniformMatrix4fv(uMVPMatrixHandle, 1, false, mvpMatrix, 0);
         GLES20.glUniformMatrix4fv(uTexMatrixHandle, 1, false, texMatrix, 0);
         
-        // Set texture unit
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        // Bind video texture
+        textureManager.bindTexture(currentVideoTexture);
         GLES20.glUniform1i(uTextureHandle, 0);
         
         // Draw the quad
@@ -264,18 +251,14 @@ public class VideoRenderer {
         // Disable vertex attributes
         GLES20.glDisableVertexAttribArray(aPositionHandle);
         GLES20.glDisableVertexAttribArray(aTextureCoordHandle);
-        
-        // Set presentation time for the frame
-        android.opengl.EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeUs * 1000);
-        
-        // Swap buffers
-        if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
-            Log.e(TAG, "Failed to swap EGL buffers");
-        }
-        
-        // Record frame performance and end timing
-        performanceMonitor.recordFrameTime();
-        performanceMonitor.endOperation("frame_render");
+    }
+    
+    /**
+     * Update frame for rendering (called by GLSurfaceView automatically)
+     */
+    public void updateFrame() {
+        // This method can be called to trigger a redraw
+        // The actual rendering happens in onDrawFrame()
     }
     
     /**
@@ -288,12 +271,45 @@ public class VideoRenderer {
     }
     
     /**
-     * Update the model-view-projection matrix
+     * Apply transformation matrix for video rotation/scaling
      */
-    public void updateMVPMatrix(float[] mvpMatrix) {
-        if (mvpMatrix != null && mvpMatrix.length >= 16) {
-            System.arraycopy(mvpMatrix, 0, this.mvpMatrix, 0, 16);
+    public void applyTransformation(float[] transformMatrix) {
+        if (transformMatrix != null && transformMatrix.length >= 16) {
+            // Apply transformation to view matrix
+            Matrix.multiplyMM(viewMatrix, 0, transformMatrix, 0, GlUtil.IDENTITY_MATRIX, 0);
+            // Update MVP matrix
+            Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
         }
+    }
+    
+    /**
+     * Set display size for proper rendering
+     */
+    public void setDisplaySize(int width, int height) {
+        // This is handled by onSurfaceChanged callback
+        Log.d(TAG, "Display size set: " + width + "x" + height);
+    }
+    
+    // Backward compatibility methods for existing OpenGLVideoProcessor
+    
+    /**
+     * Initialize the renderer with output surface (backward compatibility)
+     * @deprecated Use GLSurfaceView.Renderer interface instead
+     */
+    @Deprecated
+    public void initialize(Surface outputSurface) throws RuntimeException {
+        this.outputSurface = outputSurface;
+        Log.d(TAG, "VideoRenderer initialized with surface (deprecated method)");
+    }
+    
+    /**
+     * Render frame with presentation time (backward compatibility)
+     * @deprecated Use GLSurfaceView.Renderer interface instead
+     */
+    @Deprecated
+    public void renderFrame(long presentationTimeUs) {
+        Log.d(TAG, "renderFrame called (deprecated method) - use GLSurfaceView instead");
+        // This method is deprecated - rendering should happen through GLSurfaceView.Renderer
     }
     
     /**
@@ -302,28 +318,18 @@ public class VideoRenderer {
     public void release() {
         Log.d(TAG, "Releasing VideoRenderer resources");
         
-        if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
-            EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-            
-            if (eglSurface != EGL14.EGL_NO_SURFACE) {
-                EGL14.eglDestroySurface(eglDisplay, eglSurface);
-                eglSurface = EGL14.EGL_NO_SURFACE;
-            }
-            
-            if (eglContext != EGL14.EGL_NO_CONTEXT) {
-                EGL14.eglDestroyContext(eglDisplay, eglContext);
-                eglContext = EGL14.EGL_NO_CONTEXT;
-            }
-            
-            EGL14.eglTerminate(eglDisplay);
-            eglDisplay = EGL14.EGL_NO_DISPLAY;
+        if (shaderManager != null) {
+            shaderManager.release();
+            shaderManager = null;
         }
         
-        if (shaderProgram != 0) {
-            GLES20.glDeleteProgram(shaderProgram);
-            shaderProgram = 0;
+        if (textureManager != null) {
+            textureManager.release();
+            textureManager = null;
         }
         
+        currentVideoTexture = 0;
+        hasVideoTexture = false;
         initialized = false;
     }
 }
