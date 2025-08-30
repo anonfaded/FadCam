@@ -37,11 +37,14 @@ com.fadcam.ui.faditor/
 │   ├── OpenGLVideoProcessor.java (primary OpenGL-based video processing)
 │   └── VideoExporter.java (manages export operations with MediaCodec)
 ├── opengl/
-│   ├── VideoRenderer.java (OpenGL ES video rendering)
-│   ├── VideoTexture.java (video frame texture management)
-│   ├── ShaderProgram.java (OpenGL shader programs)
-│   ├── GLVideoProcessor.java (GPU-accelerated video operations)
-│   └── MediaCodecIntegration.java (hardware encoder integration)
+│   ├── OpenGLVideoController.java (main video playback coordinator)
+│   ├── VideoDecoder.java (MediaCodec hardware decoder wrapper)
+│   ├── VideoRenderer.java (OpenGL ES frame rendering)
+│   ├── TextureManager.java (texture pool and memory management)
+│   ├── ShaderManager.java (shader compilation and management)
+│   ├── SurfaceManager.java (OpenGL surface handling)
+│   ├── FrameProcessor.java (frame manipulation and effects)
+│   └── PlaybackController.java (playback timing and synchronization)
 └── utils/
     ├── VideoFileUtils.java (file operations and validation)
     ├── TimelineUtils.java (timeline calculations and formatting)
@@ -54,19 +57,22 @@ com.fadcam.ui.faditor/
 1. **Project Browser**: User opens Faditor Mini tab → FaditorMiniFragment shows ProjectBrowserComponent with recent projects
 2. **Project Selection**: User selects existing project or creates new → NavigationUtils opens FaditorEditorFragment in full-screen
 3. **Editor Initialization**: FaditorEditorFragment loads → ProjectManager restores complete EditorState → All components initialized
-4. **Video Loading**: VideoProject loaded → VideoPlayerComponent displays with ExoPlayer + OpenGL rendering → TimelineState restored
-5. **Editing**: User interacts with professional timeline → EditOperation created → AutoSaveManager saves changes within 5 seconds
-6. **Processing**: User confirms operation → OpenGLVideoProcessor executes with GPU acceleration → Progress shown via ProgressComponent
-7. **Export**: Processing complete → VideoExporter saves result with MediaCodec → Project updated → Success feedback displayed
-8. **Navigation**: User taps back/leave → AutoSaveManager saves immediately → NavigationUtils returns to FaditorMiniFragment
-9. **Persistence**: All changes continuously auto-saved → Room database indexes projects → JSON files store complete project state
+4. **Video Loading**: VideoProject loaded → OpenGLVideoController initializes → VideoDecoder prepares MediaCodec → VideoRenderer sets up OpenGL surface
+5. **Frame Rendering**: VideoDecoder outputs to OpenGL surface → TextureManager handles GPU textures → VideoRenderer displays frames
+6. **Timeline Interaction**: User scrubs timeline → PlaybackController seeks to frame → VideoDecoder renders specific frame → Smooth GPU rendering
+7. **Editing**: User interacts with professional timeline → EditOperation created → AutoSaveManager saves changes within 5 seconds
+8. **Processing**: User confirms operation → OpenGLVideoProcessor executes with GPU acceleration → Progress shown via ProgressComponent
+9. **Export**: Processing complete → VideoExporter saves result with MediaCodec → Project updated → Success feedback displayed
+10. **Navigation**: User taps back/leave → AutoSaveManager saves immediately → NavigationUtils returns to FaditorMiniFragment
+11. **Persistence**: All changes continuously auto-saved → Room database indexes projects → JSON files store complete project state
 
 ### Performance Architecture
-- **Pure OpenGL Pipeline**: All video processing uses OpenGL ES for maximum performance
-- **Smart Processing**: Choose between lossless stream copying and GPU-accelerated re-encoding
-- **Memory Management**: Efficient texture management and frame buffer optimization
-- **Background Processing**: Non-blocking GPU operations with progress feedback
-- **MediaCodec Integration**: Hardware encoding for final output when re-encoding is needed
+- **Pure OpenGL Pipeline**: All video preview and playback uses OpenGL ES without ExoPlayer dependency
+- **Hardware Decoding**: MediaCodec with direct OpenGL surface output for zero-copy frame rendering
+- **Modular Components**: Clean separation of concerns with focused, maintainable components under 300 lines each
+- **GPU Memory Management**: Efficient texture pooling and memory optimization for 4K video support
+- **Frame-Accurate Seeking**: <50ms seek times with on-demand frame decoding and GPU rendering
+- **Smart Processing**: Choose between lossless stream copying and GPU-accelerated re-encoding for exports
 
 ## Components and Interfaces
 
@@ -166,25 +172,30 @@ public class AutoSaveManager {
 ```
 
 ### VideoPlayerComponent
-**Purpose**: Handles video preview and playback using ExoPlayer
+**Purpose**: Handles video preview and playback using pure OpenGL rendering
 **Key Responsibilities**:
-- Video playback control (play/pause/seek)
-- Displays current video frame
-- Syncs with timeline position
-- Handles video metadata display
+- OpenGL-based video frame rendering and playback control
+- Frame-accurate seeking with GPU acceleration
+- Coordinates with MediaCodec for hardware decoding
+- Manages OpenGL surface and texture rendering
 
 **Interface**:
 ```java
 public class VideoPlayerComponent {
-    private ExoPlayer player;
-    private StyledPlayerView playerView;
+    private OpenGLVideoController videoController;
+    private GLSurfaceView glSurfaceView;
+    private VideoDecoder decoder;
+    private VideoRenderer renderer;
     
     public void loadVideo(Uri videoUri);
-    public void seekTo(long positionMs);
+    public void seekToFrame(long frameNumber);
+    public void seekToTime(long positionMs);
     public void play();
     public void pause();
     public long getCurrentPosition();
     public long getDuration();
+    public int getTotalFrames();
+    public void setFrameUpdateListener(FrameUpdateListener listener);
 }
 ```
 
@@ -319,20 +330,140 @@ public class OpenGLVideoProcessor {
 }
 ```
 
-### MediaCodecIntegration
-**Purpose**: Handles hardware encoding integration with OpenGL
+### OpenGL Video Components
+
+#### OpenGLVideoController
+**Purpose**: Main coordinator for OpenGL-based video playback and rendering
 **Key Responsibilities**:
-- Surface-to-surface encoding for GPU-processed frames
-- Optimal encoder selection based on device capabilities
-- Quality and performance optimization
+- Orchestrates all OpenGL video components
+- Manages playback state and timing
+- Coordinates frame-accurate seeking and rendering
 
 **Interface**:
 ```java
-public class MediaCodecIntegration {
-    public void setupEncoder(VideoMetadata inputMetadata, File outputFile);
-    public Surface getInputSurface();
-    public void encodeFrame(long presentationTimeUs);
-    public void finishEncoding();
+public class OpenGLVideoController {
+    public interface VideoControllerListener {
+        void onVideoLoaded(VideoMetadata metadata);
+        void onFrameRendered(long frameNumber, long timestampUs);
+        void onPlaybackStateChanged(boolean isPlaying);
+        void onSeekCompleted(long positionMs);
+        void onError(String error);
+    }
+    
+    public void initialize(GLSurfaceView surfaceView);
+    public void loadVideo(Uri videoUri);
+    public void play();
+    public void pause();
+    public void seekToFrame(long frameNumber);
+    public void seekToTime(long positionMs);
+    public void release();
+    public void setVideoControllerListener(VideoControllerListener listener);
+}
+```
+
+#### VideoDecoder
+**Purpose**: MediaCodec wrapper for hardware video decoding with OpenGL output
+**Key Responsibilities**:
+- Hardware-accelerated video decoding using MediaCodec
+- Direct output to OpenGL surface for zero-copy rendering
+- Frame-accurate seeking and extraction
+
+**Interface**:
+```java
+public class VideoDecoder {
+    public interface DecoderCallback {
+        void onFrameAvailable(long presentationTimeUs);
+        void onDecodingComplete();
+        void onError(String error);
+    }
+    
+    public void initialize(Uri videoUri, Surface outputSurface);
+    public void seekToFrame(long frameNumber);
+    public void extractFrame(long timestampUs);
+    public VideoMetadata getVideoMetadata();
+    public void release();
+    public void setDecoderCallback(DecoderCallback callback);
+}
+```
+
+#### VideoRenderer
+**Purpose**: OpenGL ES rendering engine for video frames
+**Key Responsibilities**:
+- Renders video frames to OpenGL surface
+- Handles texture transformations and scaling
+- Manages rendering pipeline and frame presentation
+
+**Interface**:
+```java
+public class VideoRenderer implements GLSurfaceView.Renderer {
+    public void setVideoTexture(int textureId);
+    public void updateFrame();
+    public void setDisplaySize(int width, int height);
+    public void setVideoSize(int width, int height);
+    public void applyTransformation(float[] transformMatrix);
+    public void release();
+}
+```
+
+#### TextureManager
+**Purpose**: Efficient GPU texture memory management
+**Key Responsibilities**:
+- Texture pool management for frame buffers
+- GPU memory optimization and cleanup
+- Texture binding and state management
+
+**Interface**:
+```java
+public class TextureManager {
+    public int createVideoTexture();
+    public void bindTexture(int textureId);
+    public void updateTexture(int textureId, byte[] frameData);
+    public void releaseTexture(int textureId);
+    public void releaseAll();
+    public int getAvailableTextureMemory();
+}
+```
+
+#### ShaderManager
+**Purpose**: OpenGL shader compilation and management
+**Key Responsibilities**:
+- Compiles and caches video rendering shaders
+- Manages shader programs and uniforms
+- Provides optimized shaders for different video formats
+
+**Interface**:
+```java
+public class ShaderManager {
+    public int createVideoShaderProgram();
+    public void useProgram(int programId);
+    public void setUniform(int programId, String name, float[] values);
+    public void setUniform(int programId, String name, int value);
+    public void releaseProgram(int programId);
+    public void releaseAll();
+}
+```
+
+#### PlaybackController
+**Purpose**: Manages playback timing and synchronization
+**Key Responsibilities**:
+- Synchronizes video frames with timeline position
+- Handles playback speed and frame rate control
+- Manages smooth seeking and scrubbing
+
+**Interface**:
+```java
+public class PlaybackController {
+    public interface PlaybackListener {
+        void onPositionChanged(long positionMs);
+        void onPlaybackSpeedChanged(float speed);
+    }
+    
+    public void startPlayback();
+    public void pausePlayback();
+    public void setPlaybackSpeed(float speed);
+    public void seekTo(long positionMs);
+    public long getCurrentPosition();
+    public void setPlaybackListener(PlaybackListener listener);
 }
 ```
 

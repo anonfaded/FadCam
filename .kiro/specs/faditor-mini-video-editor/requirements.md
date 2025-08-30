@@ -163,3 +163,31 @@ The Faditor Mini is a lightweight video editor integrated into the FadCam app th
 5. WHEN I return to a project THEN the system SHALL restore the exact editing state including timeline position and tool selection
 6. WHEN auto-save occurs THEN the system SHALL provide subtle visual feedback without interrupting the workflow
 7. WHEN there are unsaved changes THEN the system SHALL warn before allowing destructive actions
+
+### Requirement 13
+
+**User Story:** As a user, I want high-performance OpenGL-based video preview during editing, so that I can have smooth frame-by-frame rendering and professional editing experience similar to CapCut or VN.
+
+#### Acceptance Criteria
+
+1. WHEN I load a video in the editor THEN the system SHALL use pure OpenGL ES rendering for all video preview without ExoPlayer dependency
+2. WHEN I scrub through the timeline THEN the system SHALL render frames using GPU acceleration with <50ms seek times
+3. WHEN I perform frame-accurate editing THEN the system SHALL provide pixel-perfect frame rendering at native video resolution
+4. WHEN I zoom into the timeline THEN the system SHALL maintain smooth 60fps preview rendering during scrubbing
+5. WHEN I edit high-resolution videos (4K) THEN the system SHALL utilize GPU texture memory efficiently without stuttering
+6. WHEN I switch between timeline positions THEN the system SHALL decode and render frames on-demand using MediaCodec with OpenGL surface output
+7. WHEN playing back video THEN the system SHALL use OpenGL rendering pipeline for smooth playback without ExoPlayer fallbacks
+
+### Requirement 14
+
+**User Story:** As a user, I want a modular OpenGL video system with clean component architecture, so that the codebase remains maintainable and performant without cluttered monolithic files.
+
+#### Acceptance Criteria
+
+1. WHEN implementing OpenGL video components THEN the system SHALL use separate focused classes for each responsibility (decoder, renderer, texture manager, etc.)
+2. WHEN managing video decoding THEN the system SHALL have dedicated MediaCodec wrapper components for hardware decoding
+3. WHEN handling OpenGL rendering THEN the system SHALL have separate shader management, surface handling, and frame processing components
+4. WHEN managing textures THEN the system SHALL have dedicated texture pool and memory management components
+5. WHEN coordinating playback THEN the system SHALL have a clean video controller that orchestrates all components
+6. WHEN adding new features THEN the system SHALL allow easy extension through well-defined component interfaces
+7. WHEN maintaining code THEN the system SHALL keep individual component files focused and under 300 lines each

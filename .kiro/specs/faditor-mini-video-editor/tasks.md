@@ -193,3 +193,58 @@
   - Ensure proper navigation and back button handling
   - Test using: `.\gradlew.bat compileDebugJavaWithJavac installDebug`
   - _Requirements: All requirements integration testing_
+  
+- [ ] 22. Implement OpenGL video decoding infrastructure
+
+  - Create VideoDecoder class for MediaCodec hardware decoding with OpenGL surface output
+  - Implement frame-accurate seeking and extraction capabilities
+  - Add support for common video formats (H.264, H.265, VP9) with hardware acceleration
+  - Create DecoderCallback interface for frame availability notifications
+  - Add video metadata extraction and validation
+  - _Requirements: 13.1, 13.6, 14.2_
+
+- [ ] 23. Build OpenGL rendering components
+
+  - Create VideoRenderer class implementing GLSurfaceView.Renderer for frame display
+  - Implement TextureManager for efficient GPU texture memory management and pooling
+  - Create ShaderManager for video rendering shader compilation and caching
+  - Add support for different video color formats and transformations
+  - Implement proper texture binding and state management
+  - _Requirements: 13.3, 13.5, 14.1, 14.4_
+
+- [ ] 24. Implement OpenGL video controller
+
+  - Create OpenGLVideoController as main coordinator for video playback
+  - Integrate VideoDecoder and VideoRenderer for seamless frame rendering
+  - Implement PlaybackController for timing synchronization and smooth playback
+  - Add frame-accurate seeking with <50ms response times
+  - Create VideoControllerListener interface for component communication
+  - _Requirements: 13.2, 13.4, 14.1, 14.5_
+
+- [ ] 25. Replace ExoPlayer with OpenGL video system
+
+  - Update VideoPlayerComponent to use OpenGLVideoController instead of ExoPlayer
+  - Remove ExoPlayer dependencies from Faditor Mini components only
+  - Integrate GLSurfaceView for OpenGL rendering in video preview area
+  - Update timeline synchronization to work with OpenGL frame rendering
+  - Maintain compatibility with existing video processing pipeline
+  - _Requirements: 13.1, 13.7, 14.3_
+
+- [ ] 26. Optimize OpenGL performance for professional editing
+
+  - Implement texture pooling and memory management for 4K video support
+  - Add frame caching for smooth timeline scrubbing at 60fps
+  - Optimize GPU memory usage and prevent texture memory leaks
+  - Implement efficient frame-by-frame rendering during timeline interaction
+  - Add performance monitoring and GPU resource tracking
+  - _Requirements: 13.4, 13.5, 14.4, 14.7_
+
+- [ ] 27. Test and validate OpenGL video system
+
+  - Test frame-accurate seeking and rendering with various video formats
+  - Verify smooth 60fps timeline scrubbing with high-resolution videos
+  - Test GPU memory management with extended editing sessions
+  - Validate <50ms seek times across different Android devices
+  - Test component modularity and maintainability of OpenGL classes
+  - Ensure no conflicts with existing app OpenGL usage
+  - _Requirements: 13.2, 13.3, 13.4, 13.5, 14.6, 14.7_
