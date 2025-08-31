@@ -530,6 +530,70 @@ public class VideoFileUtils {
     }
     
     /**
+     * Get MIME type from URI
+     */
+    public static String getMimeType(Context context, Uri uri) {
+        if (uri == null) return null;
+        
+        try {
+            // First try to get MIME type from ContentResolver
+            String mimeType = context.getContentResolver().getType(uri);
+            if (mimeType != null) {
+                return mimeType;
+            }
+            
+            // Fallback to file extension
+            String fileName = getFileName(context, uri);
+            if (fileName != null) {
+                String extension = getFileExtension(fileName);
+                return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.toLowerCase());
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting MIME type: " + e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    /**
+     * VideoInfo class for detailed video information
+     */
+    public static class VideoInfo {
+        public final VideoMetadata metadata;
+        public final String fileName;
+        public final long fileSize;
+        public final String mimeType;
+        
+        public VideoInfo(VideoMetadata metadata, String fileName, long fileSize, String mimeType) {
+            this.metadata = metadata;
+            this.fileName = fileName;
+            this.fileSize = fileSize;
+            this.mimeType = mimeType;
+        }
+    }
+    
+    /**
+     * Get comprehensive video information from URI
+     */
+    public static VideoInfo getVideoInfo(Context context, Uri uri) {
+        if (uri == null) return null;
+        
+        try {
+            VideoMetadata metadata = extractMetadata(context, uri);
+            String fileName = getFileName(context, uri);
+            long fileSize = getFileSize(context, uri);
+            String mimeType = getMimeType(context, uri);
+            
+            return new VideoInfo(metadata, fileName, fileSize, mimeType);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting video info: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
      * Clean up temporary files in the faditor cache directory
      */
     public static void cleanupTempFiles(Context context) {

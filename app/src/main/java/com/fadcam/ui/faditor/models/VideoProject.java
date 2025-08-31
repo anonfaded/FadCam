@@ -1,16 +1,13 @@
 package com.fadcam.ui.faditor.models;
 
-import android.net.Uri;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Represents the current video editing session state.
- * Manages video metadata, operations, and processing capabilities.
+ * Represents a professional video editing project.
+ * Uses modern media asset management with project-based file organization.
  */
 public class VideoProject {
     
@@ -18,15 +15,14 @@ public class VideoProject {
     private String projectName;
     private long createdAt;
     private long lastModified;
-    private Uri originalVideoUri;
-    private String originalVideoPath; // For JSON serialization
-    private File workingFile;
+    private String primaryMediaAssetId; // Main video asset ID
+    private List<String> mediaAssetIds; // All media assets in project
     private long duration;
     private VideoMetadata metadata;
     private List<EditOperation> operations;
     private TrimRange currentTrim;
     private ProcessingCapabilities capabilities;
-    private Map<String, Object> customData; // For future extensions
+    private Map<String, Object> customData;
     private boolean hasUnsavedChanges;
     
     public static class TrimRange {
@@ -78,15 +74,17 @@ public class VideoProject {
     
     public VideoProject() {
         this.operations = new ArrayList<>();
+        this.mediaAssetIds = new ArrayList<>();
         this.customData = new HashMap<>();
         this.hasUnsavedChanges = false;
         this.createdAt = System.currentTimeMillis();
         this.lastModified = this.createdAt;
     }
     
-    public VideoProject(Uri originalVideoUri) {
+    public VideoProject(String primaryMediaAssetId) {
         this();
-        this.originalVideoUri = originalVideoUri;
+        this.primaryMediaAssetId = primaryMediaAssetId;
+        this.mediaAssetIds.add(primaryMediaAssetId);
     }
     
     // Getters and setters
@@ -123,30 +121,60 @@ public class VideoProject {
         this.lastModified = lastModified;
     }
     
-    public Uri getOriginalVideoUri() {
-        return originalVideoUri;
+    /**
+     * Get the primary media asset ID (main video)
+     */
+    public String getPrimaryMediaAssetId() {
+        return primaryMediaAssetId;
     }
     
-    public void setOriginalVideoUri(Uri originalVideoUri) {
-        this.originalVideoUri = originalVideoUri;
+    /**
+     * Set the primary media asset ID (main video)
+     */
+    public void setPrimaryMediaAssetId(String primaryMediaAssetId) {
+        this.primaryMediaAssetId = primaryMediaAssetId;
+        if (primaryMediaAssetId != null && !mediaAssetIds.contains(primaryMediaAssetId)) {
+            mediaAssetIds.add(0, primaryMediaAssetId); // Add at beginning
+        }
         updateLastModified();
     }
     
-    public String getOriginalVideoPath() {
-        return originalVideoPath;
+    /**
+     * Get all media asset IDs in the project
+     */
+    public List<String> getMediaAssetIds() {
+        return new ArrayList<>(mediaAssetIds);
     }
     
-    public void setOriginalVideoPath(String originalVideoPath) {
-        this.originalVideoPath = originalVideoPath;
+    /**
+     * Set all media asset IDs in the project
+     */
+    public void setMediaAssetIds(List<String> mediaAssetIds) {
+        this.mediaAssetIds = mediaAssetIds != null ? new ArrayList<>(mediaAssetIds) : new ArrayList<>();
         updateLastModified();
     }
     
-    public File getWorkingFile() {
-        return workingFile;
+    /**
+     * Add a media asset to the project
+     */
+    public void addMediaAsset(String mediaAssetId) {
+        if (mediaAssetId != null && !mediaAssetIds.contains(mediaAssetId)) {
+            mediaAssetIds.add(mediaAssetId);
+            updateLastModified();
+        }
     }
     
-    public void setWorkingFile(File workingFile) {
-        this.workingFile = workingFile;
+    /**
+     * Remove a media asset from the project
+     */
+    public void removeMediaAsset(String mediaAssetId) {
+        if (mediaAssetIds.remove(mediaAssetId)) {
+            // If removing primary asset, set new primary if available
+            if (mediaAssetId.equals(primaryMediaAssetId)) {
+                primaryMediaAssetId = mediaAssetIds.isEmpty() ? null : mediaAssetIds.get(0);
+            }
+            updateLastModified();
+        }
     }
     
     public long getDuration() {
@@ -237,7 +265,7 @@ public class VideoProject {
      * Validate the current project state
      */
     public boolean isValid() {
-        return originalVideoUri != null && 
+        return primaryMediaAssetId != null && 
                metadata != null && 
                duration > 0;
     }
@@ -278,5 +306,72 @@ public class VideoProject {
      */
     public boolean hasOperations() {
         return !operations.isEmpty() || currentTrim != null;
+    }
+    
+    // ========== BACKWARD COMPATIBILITY METHODS ==========
+    // These methods provide compatibility with legacy code that expects URI/path-based access
+    
+    /**
+     * @deprecated Use getPrimaryMediaAssetId() instead
+     */
+    @Deprecated
+    public String getMediaAssetId() {
+        return primaryMediaAssetId;
+    }
+    
+    /**
+     * @deprecated Use setPrimaryMediaAssetId() instead
+     */
+    @Deprecated
+    public void setMediaAssetId(String mediaAssetId) {
+        setPrimaryMediaAssetId(mediaAssetId);
+    }
+    
+    /**
+     * @deprecated Legacy method - returns null as projects now use media assets
+     */
+    @Deprecated
+    public android.net.Uri getOriginalVideoUri() {
+        return null;
+    }
+    
+    /**
+     * @deprecated Legacy method - no-op as projects now use media assets
+     */
+    @Deprecated
+    public void setOriginalVideoUri(android.net.Uri uri) {
+        // No-op for backward compatibility
+    }
+    
+    /**
+     * @deprecated Legacy method - returns null as projects now use media assets
+     */
+    @Deprecated
+    public String getOriginalVideoPath() {
+        return null;
+    }
+    
+    /**
+     * @deprecated Legacy method - no-op as projects now use media assets
+     */
+    @Deprecated
+    public void setOriginalVideoPath(String path) {
+        // No-op for backward compatibility
+    }
+    
+    /**
+     * @deprecated Legacy method - returns null as projects now use media assets
+     */
+    @Deprecated
+    public java.io.File getWorkingFile() {
+        return null;
+    }
+    
+    /**
+     * @deprecated Legacy method - no-op as projects now use media assets
+     */
+    @Deprecated
+    public void setWorkingFile(java.io.File file) {
+        // No-op for backward compatibility
     }
 }

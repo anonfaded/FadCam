@@ -6,6 +6,7 @@ import android.util.LruCache;
 
 import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 

@@ -241,6 +241,36 @@ public class VideoPlayerComponent extends FrameLayout {
             }
         }
     }
+    
+    /**
+     * Load video from project media asset (uses proxy if available for smooth editing)
+     */
+    public void loadProjectMedia(String projectId, String mediaId, 
+                               com.fadcam.ui.faditor.persistence.ProjectManager projectManager) {
+        Log.d(TAG, "Loading project media: " + mediaId + " from project: " + projectId);
+        
+        try {
+            // Get the playback URI (proxy if available, otherwise original)
+            Uri playbackUri = projectManager.getPlaybackUri(projectId, mediaId);
+            
+            if (playbackUri == null) {
+                Log.e(TAG, "No playback URI found for media asset: " + mediaId);
+                if (listener != null) {
+                    listener.onVideoError("Media asset not found: " + mediaId);
+                }
+                return;
+            }
+            
+            Log.d(TAG, "Using playback URI: " + playbackUri);
+            loadVideo(playbackUri);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading project media", e);
+            if (listener != null) {
+                listener.onVideoError("Failed to load project media: " + e.getMessage());
+            }
+        }
+    }
 
 
     

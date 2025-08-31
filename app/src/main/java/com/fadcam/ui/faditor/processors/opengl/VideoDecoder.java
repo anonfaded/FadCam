@@ -1,5 +1,6 @@
 package com.fadcam.ui.faditor.processors.opengl;
 
+import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
@@ -36,6 +37,7 @@ public class VideoDecoder {
     private Surface outputSurface;
     private DecoderCallback callback;
     private VideoMetadata videoMetadata;
+    private Context context;
     
     private HandlerThread decoderThread;
     private Handler decoderHandler;
@@ -51,16 +53,18 @@ public class VideoDecoder {
     /**
      * Initializes the video decoder with the specified video URI and output surface.
      * 
+     * @param context The application context for content URI access
      * @param videoUri The URI of the video file to decode
      * @param outputSurface The OpenGL surface where decoded frames will be rendered
      * @throws IOException if the video file cannot be accessed or is corrupted
      * @throws IllegalArgumentException if the video format is not supported
      */
-    public void initialize(Uri videoUri, Surface outputSurface) throws IOException {
+    public void initialize(Context context, Uri videoUri, Surface outputSurface) throws IOException {
         if (isInitialized.get()) {
             throw new IllegalStateException("VideoDecoder is already initialized");
         }
         
+        this.context = context;
         this.outputSurface = outputSurface;
         
         // Create background thread for decoding operations
@@ -74,7 +78,13 @@ public class VideoDecoder {
             
             // Initialize MediaExtractor
             extractor = new MediaExtractor();
-            extractor.setDataSource(videoUri.toString());
+            
+            // Handle content URIs properly
+            if ("content".equals(videoUri.getScheme())) {
+                extractor.setDataSource(context, videoUri, null);
+            } else {
+                extractor.setDataSource(videoUri.toString());
+            }
             
             // Find video track
             videoTrackIndex = findVideoTrack();
@@ -237,7 +247,12 @@ public class VideoDecoder {
     private void extractVideoMetadata(Uri videoUri) throws IOException {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
-            retriever.setDataSource(videoUri.toString());
+            // Handle content URIs properly
+            if ("content".equals(videoUri.getScheme())) {
+                retriever.setDataSource(context, videoUri);
+            } else {
+                retriever.setDataSource(videoUri.toString());
+            }
             
             String widthStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String heightStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);

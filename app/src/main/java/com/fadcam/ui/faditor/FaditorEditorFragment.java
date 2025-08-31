@@ -591,24 +591,33 @@ public class FaditorEditorFragment extends BaseFragment implements
             }
         }
 
-        // Initialize video player
+        // Initialize video player with professional media management
         Log.d(TAG, "About to check video loading conditions...");
         Log.d(TAG, "Video player instance: " + videoPlayer);
-        Log.d(TAG, "Current project video URI: " + (currentProject != null ? currentProject.getOriginalVideoUri() : "project is null"));
-
-        if (videoPlayer != null && currentProject.getOriginalVideoUri() != null) {
-            Log.d(TAG, "Loading video URI: " + currentProject.getOriginalVideoUri());
-            Log.d(TAG, "Video URI scheme: " + currentProject.getOriginalVideoUri().getScheme());
-            Log.d(TAG, "Video URI path: " + currentProject.getOriginalVideoUri().getPath());
-            Log.d(TAG, "Video URI string: " + currentProject.getOriginalVideoUri().toString());
-            videoPlayer.loadVideo(currentProject.getOriginalVideoUri());
-        } else {
-            Log.w(TAG, "Cannot load video - videoPlayer: " + (videoPlayer != null) +
-                  ", videoUri: " + (currentProject.getOriginalVideoUri() != null));
-            if (currentProject != null) {
-                Log.w(TAG, "Project details - name: " + currentProject.getProjectName() +
-                      ", path: " + currentProject.getOriginalVideoPath());
+        
+        if (videoPlayer != null && currentProject != null) {
+            // Use professional media management if available
+            if (currentProject.getPrimaryMediaAssetId() != null && !currentProject.getPrimaryMediaAssetId().isEmpty()) {
+                Log.d(TAG, "Loading video using professional media management - Asset ID: " + currentProject.getPrimaryMediaAssetId());
+                videoPlayer.loadProjectMedia(currentProject.getProjectId(), currentProject.getPrimaryMediaAssetId(), projectManager);
+            } 
+            // Fall back to legacy URI system
+            else if (currentProject.getOriginalVideoUri() != null) {
+                Log.d(TAG, "Loading video using legacy URI system: " + currentProject.getOriginalVideoUri());
+                videoPlayer.loadVideo(currentProject.getOriginalVideoUri());
             }
+            // Try to get URI from professional media management helper
+            else {
+                Uri videoUri = com.fadcam.ui.faditor.media.MediaMigrationHelper.getProjectVideoUri(currentProject, projectManager);
+                if (videoUri != null) {
+                    Log.d(TAG, "Loading video using migration helper URI: " + videoUri);
+                    videoPlayer.loadVideo(videoUri);
+                } else {
+                    Log.w(TAG, "No video URI available for project: " + currentProject.getProjectId());
+                }
+            }
+        } else {
+            Log.w(TAG, "Cannot load video - videoPlayer: " + (videoPlayer != null) + ", project: " + (currentProject != null));
         }
 
         // Initialize timeline

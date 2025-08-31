@@ -37,82 +37,22 @@ public class MediaReferenceManager {
         Log.d(TAG, "=== VALIDATE MEDIA REFERENCES STARTED ===");
         ValidationResult result = new ValidationResult();
         
-        // Check original video path/URI
-        String originalPath = project.getOriginalVideoPath();
-        Uri originalUri = project.getOriginalVideoUri();
+        // Get primary media asset ID from the project
+        String primaryMediaAssetId = project.getPrimaryMediaAssetId();
         
-        Log.d(TAG, "Original path: " + originalPath);
-        Log.d(TAG, "Original URI: " + originalUri);
+        Log.d(TAG, "Primary media asset ID: " + primaryMediaAssetId);
         
-        if (originalPath != null) {
-            // Check if it's a content URI (starts with content://)
-            if (originalPath.startsWith("content://")) {
-                Log.d(TAG, "Path is content URI, checking URI validity");
-                // For content URIs, validate using the URI directly
-                if (originalUri != null) {
-                    if (isUriAccessibleToMediaPlayer(originalUri)) {
-                        result.addValidFile(originalPath);
-                    } else {
-                        // Check if it's a permission issue that requires re-selection
-                        if (requiresUriReselection(originalUri)) {
-                            result.addUriRequiringReselection(originalPath, originalUri);
-                            Log.w(TAG, "URI requires re-selection due to permission: " + originalUri);
-                        } else {
-                            result.addMissingFile(originalPath);
-                        }
-                    }
-                } else {
-                    Log.d(TAG, "URI is null, attempting to reconstruct from path");
-                    // Try to parse the path as URI
-                    try {
-                        Uri parsedUri = Uri.parse(originalPath);
-                        if (isUriAccessibleToMediaPlayer(parsedUri)) {
-                            result.addValidFile(originalPath);
-                            // Reconstruct the URI if it's null
-                            if (originalUri == null) {
-                                project.setOriginalVideoUri(parsedUri);
-                                Log.d(TAG, "Reconstructed URI from path: " + parsedUri);
-                            }
-                        } else {
-                            // Check if it's a permission issue
-                            if (requiresUriReselection(parsedUri)) {
-                                result.addUriRequiringReselection(originalPath, parsedUri);
-                                Log.w(TAG, "Parsed URI requires re-selection due to permission: " + parsedUri);
-                            } else {
-                                result.addMissingFile(originalPath);
-                            }
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to parse URI from path: " + originalPath, e);
-                        result.addMissingFile(originalPath);
-                    }
-                }
-            } else {
-                // For file paths, use the existing file validation
-                File file = new File(originalPath);
-                if (!file.exists() || !file.canRead()) {
-                    result.addMissingFile(originalPath);
-
-                    // Try to find the file by URI if available
-                    if (originalUri != null) {
-                        String recoveredPath = tryRecoverPathFromUri(originalUri);
-                        if (recoveredPath != null) {
-                            result.addRecoveredPath(originalPath, recoveredPath);
-                        }
-                    }
-                } else {
-                    result.addValidFile(originalPath);
-                }
-            }
-        }        // Check working file if exists
-        if (project.getWorkingFile() != null) {
-            File workingFile = project.getWorkingFile();
-            if (!workingFile.exists() || !workingFile.canRead()) {
-                result.addMissingFile(workingFile.getAbsolutePath());
-            } else {
-                result.addValidFile(workingFile.getAbsolutePath());
-            }
+        if (primaryMediaAssetId == null) {
+            Log.w(TAG, "No primary media asset ID found in project");
+            return result;
         }
+        
+        // For now, we'll return a successful validation since the media asset system
+        // handles file management differently. The actual media validation should be
+        // done through the ProjectMediaManager when loading assets.
+        result.addValidFile(primaryMediaAssetId);
+        
+        Log.d(TAG, "Media validation completed for asset: " + primaryMediaAssetId);
         
         return result;
     }

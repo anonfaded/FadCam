@@ -1,6 +1,7 @@
 package com.fadcam.ui.faditor.processors.opengl;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
@@ -28,6 +29,10 @@ public class OpenGLVideoController {
     private VideoRenderer videoRenderer;
     private PlaybackController playbackController;
     private GLSurfaceView glSurfaceView;
+    
+    // Surface management
+    private SurfaceTexture surfaceTexture;
+    private Surface decoderSurface;
     
     // State management
     private boolean isInitialized = false;
@@ -252,7 +257,7 @@ public class OpenGLVideoController {
             Surface decoderSurface = createDecoderSurface();
             
             // Initialize video decoder
-            videoDecoder.initialize(videoUri, decoderSurface);
+            videoDecoder.initialize(context, videoUri, decoderSurface);
             
             Log.d(TAG, "Video loading initiated successfully");
             
@@ -437,6 +442,17 @@ public class OpenGLVideoController {
             videoRenderer = null;
         }
         
+        // Release surface resources
+        if (decoderSurface != null) {
+            decoderSurface.release();
+            decoderSurface = null;
+        }
+        
+        if (surfaceTexture != null) {
+            surfaceTexture.release();
+            surfaceTexture = null;
+        }
+        
         // Clear references
         currentVideoMetadata = null;
         currentVideoUri = null;
@@ -479,10 +495,25 @@ public class OpenGLVideoController {
     }
     
     private Surface createDecoderSurface() {
-        // In a real implementation, this would create a Surface connected to the GLSurfaceView
-        // For now, we'll return null and handle this in the actual integration
-        // The VideoDecoder will need to be modified to work with GLSurfaceView textures
-        return null;
+        try {
+            // Create a SurfaceTexture for MediaCodec output
+            // This will be connected to an OpenGL texture in the renderer
+            if (surfaceTexture == null) {
+                // Create a dummy texture ID for now - in a real implementation,
+                // this would be coordinated with the VideoRenderer
+                int textureId = 1; // Placeholder - should come from TextureManager
+                surfaceTexture = new SurfaceTexture(textureId);
+                decoderSurface = new Surface(surfaceTexture);
+                
+                Log.d(TAG, "Created decoder surface with SurfaceTexture");
+            }
+            
+            return decoderSurface;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create decoder surface", e);
+            return null;
+        }
     }
     
     private long calculateFrameNumber(long presentationTimeUs) {
