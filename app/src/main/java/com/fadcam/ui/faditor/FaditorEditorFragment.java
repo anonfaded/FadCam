@@ -78,6 +78,9 @@ public class FaditorEditorFragment extends BaseFragment implements
 
     // Performance monitoring components
     private PerformanceMonitor performanceMonitor;
+
+    // Flag to prevent feedback loop between video player and timeline
+    private boolean isUpdatingFromVideoPlayer = false;
     private PerformanceOptimizer performanceOptimizer;
     private MemoryOptimizer memoryOptimizer;
 
@@ -411,7 +414,7 @@ public class FaditorEditorFragment extends BaseFragment implements
     private void loadProject() {
         Log.d(TAG, "=== LOAD PROJECT STARTED ===");
         Log.d(TAG, "Project ID: " + projectId);
-        
+
         if (projectManager == null || projectId == null) {
             Log.e(TAG, "Cannot load project - projectManager: " + projectManager + ", projectId: " + projectId);
             return;
@@ -423,16 +426,17 @@ public class FaditorEditorFragment extends BaseFragment implements
         Log.d(TAG, "Calling projectManager.loadProjectWithValidation...");
         projectManager.loadProjectWithValidation(projectId, new ProjectManager.ProjectValidationCallback() {
             @Override
-            public void onProjectLoadedWithValidation(VideoProject project, MediaReferenceManager.ValidationResult validation) {
+            public void onProjectLoadedWithValidation(VideoProject project,
+                    MediaReferenceManager.ValidationResult validation) {
                 Log.d(TAG, "=== PROJECT LOADED WITH VALIDATION CALLBACK ===");
                 currentProject = project;
                 Log.d(TAG, "Project loaded successfully: " + project.getProjectName());
-                Log.d(TAG, "Project original video URI: " + project.getOriginalVideoUri());
-                Log.d(TAG, "Project original video path: " + project.getOriginalVideoPath());
+                Log.d(TAG, "Project primary media asset ID: " + project.getPrimaryMediaAssetId());
 
                 // Check if URIs require re-selection
                 if (validation.hasUrisRequiringReselection()) {
-                    Log.w(TAG, "Project has URIs requiring re-selection: " + validation.getUrisRequiringReselectionCount());
+                    Log.w(TAG, "Project has URIs requiring re-selection: "
+                            + validation.getUrisRequiringReselectionCount());
                     showUriReselectionDialog(validation);
                 } else {
                     // No re-selection needed, proceed normally
@@ -477,42 +481,43 @@ public class FaditorEditorFragment extends BaseFragment implements
                 uriMapping.put(oldUri, newUri);
 
                 projectManager.updateProjectWithReselectedUris(currentProject, uriMapping,
-                    new ProjectManager.ProjectCallback() {
-                        @Override
-                        public void onProjectSaved(String projectId) {
-                            Log.d(TAG, "Project updated with re-selected URI");
-                            Toast.makeText(requireContext(),
-                                "File selected successfully",
-                                Toast.LENGTH_SHORT).show();
-                        }
+                        new ProjectManager.ProjectCallback() {
+                            @Override
+                            public void onProjectSaved(String projectId) {
+                                Log.d(TAG, "Project updated with re-selected URI");
+                                Toast.makeText(requireContext(),
+                                        "File selected successfully",
+                                        Toast.LENGTH_SHORT).show();
+                            }
 
-                        @Override
-                        public void onProjectLoaded(VideoProject project) {}
+                            @Override
+                            public void onProjectLoaded(VideoProject project) {
+                            }
 
-                        @Override
-                        public void onError(String errorMessage) {
-                            Log.e(TAG, "Failed to update project with re-selected URI: " + errorMessage);
-                            Toast.makeText(requireContext(),
-                                "Failed to update project: " + errorMessage,
-                                Toast.LENGTH_LONG).show();
-                        }
-                    });
+                            @Override
+                            public void onError(String errorMessage) {
+                                Log.e(TAG, "Failed to update project with re-selected URI: " + errorMessage);
+                                Toast.makeText(requireContext(),
+                                        "Failed to update project: " + errorMessage,
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        });
             }
 
             @Override
             public void onUriSkipped(Uri uri) {
                 Log.d(TAG, "URI re-selection skipped: " + uri);
                 Toast.makeText(requireContext(),
-                    "File skipped",
-                    Toast.LENGTH_SHORT).show();
+                        "File skipped",
+                        Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onReselectionCompleted() {
                 Log.d(TAG, "URI re-selection completed, proceeding with editor initialization");
                 Toast.makeText(requireContext(),
-                    "All files have been processed",
-                    Toast.LENGTH_SHORT).show();
+                        "All files have been processed",
+                        Toast.LENGTH_SHORT).show();
 
                 // Now proceed with loading editor state
                 loadEditorState();
@@ -522,8 +527,8 @@ public class FaditorEditorFragment extends BaseFragment implements
             public void onReselectionCancelled() {
                 Log.d(TAG, "URI re-selection cancelled");
                 Toast.makeText(requireContext(),
-                    "Re-selection cancelled",
-                    Toast.LENGTH_SHORT).show();
+                        "Re-selection cancelled",
+                        Toast.LENGTH_SHORT).show();
 
                 // Return to browser if user cancels
                 NavigationUtils.returnToBrowser(FaditorEditorFragment.this);
@@ -594,36 +599,29 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Initialize video player with professional media management
         Log.d(TAG, "About to check video loading conditions...");
         Log.d(TAG, "Video player instance: " + videoPlayer);
-        
+
         if (videoPlayer != null && currentProject != null) {
             // Use professional media management if available
             if (currentProject.getPrimaryMediaAssetId() != null && !currentProject.getPrimaryMediaAssetId().isEmpty()) {
-                Log.d(TAG, "Loading video using professional media management - Asset ID: " + currentProject.getPrimaryMediaAssetId());
-                videoPlayer.loadProjectMedia(currentProject.getProjectId(), currentProject.getPrimaryMediaAssetId(), projectManager);
-            } 
-            // Fall back to legacy URI system
-            else if (currentProject.getOriginalVideoUri() != null) {
-                Log.d(TAG, "Loading video using legacy URI system: " + currentProject.getOriginalVideoUri());
-                videoPlayer.loadVideo(currentProject.getOriginalVideoUri());
+                Log.d(TAG, "Loading video using professional media management - Asset ID: "
+                        + currentProject.getPrimaryMediaAssetId());
+                videoPlayer.loadProjectMedia(currentProject.getProjectId(), currentProject.getPrimaryMediaAssetId(),
+                        projectManager);
             }
-            // Try to get URI from professional media management helper
+            // Project must use professional media management system
             else {
-                Uri videoUri = com.fadcam.ui.faditor.media.MediaMigrationHelper.getProjectVideoUri(currentProject, projectManager);
-                if (videoUri != null) {
-                    Log.d(TAG, "Loading video using migration helper URI: " + videoUri);
-                    videoPlayer.loadVideo(videoUri);
-                } else {
-                    Log.w(TAG, "No video URI available for project: " + currentProject.getProjectId());
-                }
+                Log.w(TAG, "Project does not have primary media asset ID - cannot load video: "
+                        + currentProject.getProjectId());
             }
         } else {
-            Log.w(TAG, "Cannot load video - videoPlayer: " + (videoPlayer != null) + ", project: " + (currentProject != null));
+            Log.w(TAG, "Cannot load video - videoPlayer: " + (videoPlayer != null) + ", project: "
+                    + (currentProject != null));
         }
 
         // Initialize timeline
         if (timeline != null) {
             timeline.setAutoSaveManager(autoSaveManager);
-            timeline.setVideoUri(currentProject.getOriginalVideoUri());
+            // Timeline will get video URI through the professional media management system
             timeline.setVideoDuration(currentProject.getDuration());
             if (currentProject.getCurrentTrim() != null) {
                 timeline.setTrimRange(
@@ -1527,9 +1525,11 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Update time displays and seek bar
         updateTimeDisplay(positionMs);
 
-        // Update timeline position with OpenGL frame rendering
+        // Update timeline position with OpenGL frame rendering (prevent feedback loop)
         if (timeline != null) {
+            isUpdatingFromVideoPlayer = true;
             timeline.setCurrentPosition(positionMs);
+            isUpdatingFromVideoPlayer = false;
         }
 
         // Update editor state
@@ -1596,6 +1596,12 @@ public class FaditorEditorFragment extends BaseFragment implements
 
     @Override
     public void onTimelinePositionChanged(long positionMs) {
+        // Prevent feedback loop - ignore timeline changes that come from video player
+        // updates
+        if (isUpdatingFromVideoPlayer) {
+            return;
+        }
+
         // Record seek performance for monitoring
         long seekStartTime = System.currentTimeMillis();
 

@@ -6,12 +6,19 @@ import android.os.Handler;
 import android.os.Looper;
 import com.fadcam.Log;
 import com.fadcam.ui.faditor.utils.VideoFileUtils;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +29,8 @@ import java.util.concurrent.Executors;
 
 /**
  * Professional media management system for video editing projects.
- * Handles media import, organization, and proxy generation like professional video editors.
+ * Handles media import, organization, and proxy generation like professional
+ * video editors.
  * 
  * Features:
  * - Project-based media organization
@@ -33,36 +41,43 @@ import java.util.concurrent.Executors;
  */
 public class ProjectMediaManager {
     private static final String TAG = "ProjectMediaManager";
-    
+
     // Directory structure like professional editors
     private static final String MEDIA_DIR = "media";
     private static final String ORIGINAL_DIR = "original";
     private static final String PROXY_DIR = "proxy";
     private static final String CACHE_DIR = "cache";
     private static final String THUMBNAILS_DIR = "thumbnails";
-    
+    private static final String ASSETS_METADATA_FILE = "assets_metadata.json";
+
     public enum MediaImportStrategy {
-        COPY_TO_PROJECT,    // Copy media files to project (like Final Cut Pro)
-        LINK_ORIGINAL,      // Keep original location, create links (like Premiere Pro)
-        HYBRID             // Copy small files, link large files
+        COPY_TO_PROJECT, // Copy media files to project (like Final Cut Pro)
+        LINK_ORIGINAL, // Keep original location, create links (like Premiere Pro)
+        HYBRID // Copy small files, link large files
     }
-    
+
     public enum ProxyQuality {
-        QUARTER_RES,    // 25% resolution for smooth editing
-        HALF_RES,       // 50% resolution
-        FULL_RES        // Original resolution (no proxy)
+        QUARTER_RES, // 25% resolution for smooth editing
+        HALF_RES, // 50% resolution
+        FULL_RES // Original resolution (no proxy)
     }
-    
+
     public interface MediaImportListener {
         void onImportStarted(String mediaId, String filename);
+
         void onImportProgress(String mediaId, int progress);
+
         void onImportCompleted(String mediaId, ProjectMediaAsset asset);
+
         void onImportFailed(String mediaId, String error);
+
         void onProxyGenerationStarted(String mediaId);
+
         void onProxyGenerationCompleted(String mediaId, File proxyFile);
+
         void onProxyGenerationFailed(String mediaId, String error);
     }
-    
+
     private final Context context;
     private final String projectId;
     private final File projectDirectory;
@@ -71,47 +86,51 @@ public class ProjectMediaManager {
     private final File proxyDirectory;
     private final File cacheDirectory;
     private final File thumbnailsDirectory;
-    
+
     private final ExecutorService importExecutor;
     private final ExecutorService proxyExecutor;
     private final Handler mainHandler;
-    
+
     private final Map<String, ProjectMediaAsset> mediaAssets;
     private MediaImportStrategy importStrategy;
     private ProxyQuality defaultProxyQuality;
     private long maxFileSizeForCopy; // Files larger than this will be linked instead of copied
-    
+
     public ProjectMediaManager(Context context, String projectId, File projectDirectory) {
         this.context = context;
         this.projectId = projectId;
         this.projectDirectory = projectDirectory;
-        
+
         // Create professional directory structure
         this.mediaDirectory = new File(projectDirectory, MEDIA_DIR);
         this.originalDirectory = new File(mediaDirectory, ORIGINAL_DIR);
         this.proxyDirectory = new File(mediaDirectory, PROXY_DIR);
         this.cacheDirectory = new File(mediaDirectory, CACHE_DIR);
         this.thumbnailsDirectory = new File(mediaDirectory, THUMBNAILS_DIR);
-        
+
         // Create directories
         createDirectoryStructure();
-        
+
         // Initialize executors
         this.importExecutor = Executors.newFixedThreadPool(2);
         this.proxyExecutor = Executors.newFixedThreadPool(1);
         this.mainHandler = new Handler(Looper.getMainLooper());
-        
+
         // Initialize collections
         this.mediaAssets = new HashMap<>();
-        
+
         // Default settings
         this.importStrategy = MediaImportStrategy.HYBRID;
         this.defaultProxyQuality = ProxyQuality.HALF_RES;
         this.maxFileSizeForCopy = 500 * 1024 * 1024; // 500MB threshold
-        
-        Log.d(TAG, "ProjectMediaManager initialized for project: " + projectId);
+
+        // Load existing media assets from disk
+        loadExistingAssets();
+
+        Log.d(TAG, "ProjectMediaManager initialized for project: " + projectId + " with " + mediaAssets.size()
+                + " existing assets");
     }
-    
+
     private void createDirectoryStructure() {
         try {
             mediaDirectory.mkdirs();
@@ -119,56 +138,194 @@ public class ProjectMediaManager {
             proxyDirectory.mkdirs();
             cacheDirectory.mkdirs();
             thumbnailsDirectory.mkdirs();
-            
+
             Log.d(TAG, "Created project media directory structure at: " + mediaDirectory.getAbsolutePath());
         } catch (Exception e) {
             Log.e(TAG, "Failed to create directory structure", e);
         }
     }
+
+    /**
+     * Load existing media assets from metadata file
+     */
+    private void loadExistingAssets() {
+        try {
+            File metadataFile = new File(mediaDirectory, ASSETS_METADATA_FILE);
+            if (!metadataFile.exists()) {
+                Log.d(TAG, "No assets metadata file found, no existing assets to load");
+                return;
+            }
+            
+            // Read metadata file
+            StringBuilder jsonBuilder = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new FileReader(metadataFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    jsonBuilder.append(line);
+                }
+            }
+            
+            JSONObject metadata = new JSONObject(jsonBuilder.toString());
+            JSONArray assetsArray = metadata.getJSONArray("assets");
+            
+            Log.d(TAG, "Loading " + assetsArray.length() + " existing media assets from metadata");
+            
+            for (int i = 0; i < assetsArray.length(); i++) {
+                JSONObject assetJson = assetsArray.getJSONObject(i);
+                
+                try {
+                    ProjectMediaAsset asset = new ProjectMediaAsset();
+                    asset.mediaId = assetJson.getString("mediaId");
+                    asset.originalFilename = assetJson.getString("originalFilename");
+                    asset.projectFilePath = assetJson.optString("projectFilePath", null);
+                    asset.absoluteFilePath = assetJson.optString("absoluteFilePath", null);
+                    asset.isLinked = assetJson.optBoolean("isLinked", false);
+                    asset.importTimestamp = assetJson.optLong("importTimestamp", System.currentTimeMillis());
+                    asset.hasProxy = assetJson.optBoolean("hasProxy", false);
+                    asset.proxyFilePath = assetJson.optString("proxyFilePath", null);
+                    asset.thumbnailPath = assetJson.optString("thumbnailPath", null);
+                    
+                    // Load source URI if available
+                    if (assetJson.has("sourceUri")) {
+                        asset.sourceUri = Uri.parse(assetJson.getString("sourceUri"));
+                    }
+                    
+                    // Load analysis if available
+                    if (assetJson.has("analysis")) {
+                        JSONObject analysisJson = assetJson.getJSONObject("analysis");
+                        asset.analysis = new MediaAnalysis();
+                        asset.analysis.isVideo = analysisJson.optBoolean("isVideo", true);
+                        asset.analysis.width = analysisJson.optInt("width", 0);
+                        asset.analysis.height = analysisJson.optInt("height", 0);
+                        asset.analysis.duration = analysisJson.optLong("duration", 0);
+                        asset.analysis.fileSize = analysisJson.optLong("fileSize", 0);
+                        asset.analysis.mimeType = analysisJson.optString("mimeType", "");
+                        asset.analysis.bitrate = (int) analysisJson.optLong("bitrate", 0);
+                        asset.analysis.frameRate = (float) analysisJson.optDouble("frameRate", 0.0);
+                    }
+                    
+                    // Add to assets map
+                    mediaAssets.put(asset.mediaId, asset);
+                    
+                    Log.d(TAG, "Loaded existing asset: " + asset.mediaId + " (" + asset.originalFilename + ")");
+                    
+                } catch (Exception e) {
+                    Log.e(TAG, "Error loading asset from metadata: " + assetJson.optString("mediaId", "unknown"), e);
+                }
+            }
+            
+            Log.d(TAG, "Successfully loaded " + mediaAssets.size() + " existing media assets from metadata");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading existing assets from metadata", e);
+        }
+    }
     
+    /**
+     * Save media assets metadata to file
+     */
+    private void saveAssetsMetadata() {
+        try {
+            JSONObject metadata = new JSONObject();
+            JSONArray assetsArray = new JSONArray();
+            
+            synchronized (mediaAssets) {
+                for (ProjectMediaAsset asset : mediaAssets.values()) {
+                    JSONObject assetJson = new JSONObject();
+                    assetJson.put("mediaId", asset.mediaId);
+                    assetJson.put("originalFilename", asset.originalFilename);
+                    assetJson.put("projectFilePath", asset.projectFilePath);
+                    assetJson.put("absoluteFilePath", asset.absoluteFilePath);
+                    assetJson.put("isLinked", asset.isLinked);
+                    assetJson.put("importTimestamp", asset.importTimestamp);
+                    assetJson.put("hasProxy", asset.hasProxy);
+                    assetJson.put("proxyFilePath", asset.proxyFilePath);
+                    assetJson.put("thumbnailPath", asset.thumbnailPath);
+                    
+                    if (asset.sourceUri != null) {
+                        assetJson.put("sourceUri", asset.sourceUri.toString());
+                    }
+                    
+                    if (asset.analysis != null) {
+                        JSONObject analysisJson = new JSONObject();
+                        analysisJson.put("isVideo", asset.analysis.isVideo);
+                        analysisJson.put("width", asset.analysis.width);
+                        analysisJson.put("height", asset.analysis.height);
+                        analysisJson.put("duration", asset.analysis.duration);
+                        analysisJson.put("fileSize", asset.analysis.fileSize);
+                        analysisJson.put("mimeType", asset.analysis.mimeType);
+                        analysisJson.put("bitrate", asset.analysis.bitrate);
+                        analysisJson.put("frameRate", asset.analysis.frameRate);
+                        assetJson.put("analysis", analysisJson);
+                    }
+                    
+                    assetsArray.put(assetJson);
+                }
+            }
+            
+            metadata.put("assets", assetsArray);
+            metadata.put("version", "1.0");
+            metadata.put("lastUpdated", System.currentTimeMillis());
+            
+            // Write to file
+            File metadataFile = new File(mediaDirectory, ASSETS_METADATA_FILE);
+            try (FileWriter writer = new FileWriter(metadataFile)) {
+                writer.write(metadata.toString(2)); // Pretty print with 2-space indentation
+            }
+            
+            Log.d(TAG, "Saved assets metadata for " + mediaAssets.size() + " assets");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving assets metadata", e);
+        }
+    }
+
     /**
      * Import media file into the project using professional media management
      */
     public void importMedia(Uri sourceUri, String filename, MediaImportListener listener) {
         String mediaId = UUID.randomUUID().toString();
-        
+
         Log.d(TAG, "Starting media import: " + filename + " with ID: " + mediaId);
-        
+
         if (listener != null) {
             listener.onImportStarted(mediaId, filename);
         }
-        
+
         importExecutor.execute(() -> {
             try {
                 // Analyze source media
                 MediaAnalysis analysis = analyzeMedia(sourceUri, filename);
-                
+
                 // Determine import strategy based on file size and type
                 MediaImportStrategy strategy = determineImportStrategy(analysis);
-                
+
                 // Import the media file
                 ProjectMediaAsset asset = importMediaFile(mediaId, sourceUri, filename, analysis, strategy, listener);
-                
+
                 // Store asset
                 synchronized (mediaAssets) {
                     mediaAssets.put(mediaId, asset);
                 }
                 
+                // Save assets metadata to file
+                saveAssetsMetadata();
+
                 // Generate proxy if needed
                 if (shouldGenerateProxy(analysis)) {
                     generateProxy(asset, listener);
                 }
-                
+
                 // Generate thumbnail
                 generateThumbnail(asset);
-                
+
                 // Notify completion
                 if (listener != null) {
                     mainHandler.post(() -> listener.onImportCompleted(mediaId, asset));
                 }
-                
+
                 Log.d(TAG, "Media import completed: " + mediaId);
-                
+
             } catch (Exception e) {
                 Log.e(TAG, "Media import failed: " + mediaId, e);
                 if (listener != null) {
@@ -177,7 +334,7 @@ public class ProjectMediaManager {
             }
         });
     }
-    
+
     private MediaAnalysis analyzeMedia(Uri sourceUri, String filename) throws IOException {
         MediaAnalysis analysis = new MediaAnalysis();
         analysis.sourceUri = sourceUri;
@@ -185,7 +342,7 @@ public class ProjectMediaManager {
         analysis.fileSize = VideoFileUtils.getFileSize(context, sourceUri);
         analysis.mimeType = VideoFileUtils.getMimeType(context, sourceUri);
         analysis.isVideo = analysis.mimeType != null && analysis.mimeType.startsWith("video/");
-        
+
         if (analysis.isVideo) {
             // Get video metadata
             VideoFileUtils.VideoInfo videoInfo = VideoFileUtils.getVideoInfo(context, sourceUri);
@@ -199,11 +356,11 @@ public class ProjectMediaManager {
                 analysis.isLargeFile = analysis.fileSize > maxFileSizeForCopy;
             }
         }
-        
+
         Log.d(TAG, "Media analysis completed: " + analysis.toString());
         return analysis;
     }
-    
+
     private MediaImportStrategy determineImportStrategy(MediaAnalysis analysis) {
         switch (importStrategy) {
             case COPY_TO_PROJECT:
@@ -216,11 +373,11 @@ public class ProjectMediaManager {
                 return analysis.isLargeFile ? MediaImportStrategy.LINK_ORIGINAL : MediaImportStrategy.COPY_TO_PROJECT;
         }
     }
-    
-    private ProjectMediaAsset importMediaFile(String mediaId, Uri sourceUri, String filename, 
-                                            MediaAnalysis analysis, MediaImportStrategy strategy, 
-                                            MediaImportListener listener) throws IOException {
-        
+
+    private ProjectMediaAsset importMediaFile(String mediaId, Uri sourceUri, String filename,
+            MediaAnalysis analysis, MediaImportStrategy strategy,
+            MediaImportListener listener) throws IOException {
+
         ProjectMediaAsset asset = new ProjectMediaAsset();
         asset.mediaId = mediaId;
         asset.originalFilename = filename;
@@ -228,48 +385,49 @@ public class ProjectMediaManager {
         asset.importStrategy = strategy;
         asset.analysis = analysis;
         asset.importTimestamp = System.currentTimeMillis();
-        
+
         if (strategy == MediaImportStrategy.COPY_TO_PROJECT) {
             // Copy file to project directory
             File targetFile = new File(originalDirectory, mediaId + "_" + filename);
             copyMediaFile(sourceUri, targetFile, listener, mediaId);
-            
+
             asset.projectFilePath = getRelativePath(targetFile);
             asset.absoluteFilePath = targetFile.getAbsolutePath();
             asset.isLinked = false;
-            
+
             Log.d(TAG, "Media copied to project: " + targetFile.getAbsolutePath());
-            
+
         } else {
             // Link to original file
             asset.projectFilePath = null; // No project copy
             asset.absoluteFilePath = null; // Will resolve from URI
             asset.isLinked = true;
-            
+
             Log.d(TAG, "Media linked to original: " + sourceUri.toString());
         }
-        
+
         return asset;
     }
-    
-    private void copyMediaFile(Uri sourceUri, File targetFile, MediaImportListener listener, String mediaId) throws IOException {
+
+    private void copyMediaFile(Uri sourceUri, File targetFile, MediaImportListener listener, String mediaId)
+            throws IOException {
         try (InputStream input = context.getContentResolver().openInputStream(sourceUri);
-             OutputStream output = new FileOutputStream(targetFile)) {
-            
+                OutputStream output = new FileOutputStream(targetFile)) {
+
             if (input == null) {
                 throw new IOException("Cannot open source file");
             }
-            
+
             byte[] buffer = new byte[64 * 1024]; // 64KB buffer
             long totalBytes = VideoFileUtils.getFileSize(context, sourceUri);
             long copiedBytes = 0;
             int bytesRead;
             int lastProgress = 0;
-            
+
             while ((bytesRead = input.read(buffer)) != -1) {
                 output.write(buffer, 0, bytesRead);
                 copiedBytes += bytesRead;
-                
+
                 // Report progress
                 if (totalBytes > 0 && listener != null) {
                     int progress = (int) ((copiedBytes * 100) / totalBytes);
@@ -279,41 +437,41 @@ public class ProjectMediaManager {
                     }
                 }
             }
-            
+
             Log.d(TAG, "File copied successfully: " + copiedBytes + " bytes");
         }
     }
-    
+
     private boolean shouldGenerateProxy(MediaAnalysis analysis) {
         if (!analysis.isVideo) {
             return false;
         }
-        
+
         // Generate proxy for high-resolution or large files
         return analysis.isHighResolution || analysis.isLargeFile || defaultProxyQuality != ProxyQuality.FULL_RES;
     }
-    
+
     private void generateProxy(ProjectMediaAsset asset, MediaImportListener listener) {
         if (listener != null) {
             mainHandler.post(() -> listener.onProxyGenerationStarted(asset.mediaId));
         }
-        
+
         proxyExecutor.execute(() -> {
             try {
                 File proxyFile = new File(proxyDirectory, asset.mediaId + "_proxy.mp4");
-                
+
                 // Generate proxy using MediaCodec or FFmpeg
                 generateProxyFile(asset, proxyFile);
-                
+
                 asset.proxyFilePath = getRelativePath(proxyFile);
                 asset.hasProxy = true;
-                
+
                 if (listener != null) {
                     mainHandler.post(() -> listener.onProxyGenerationCompleted(asset.mediaId, proxyFile));
                 }
-                
+
                 Log.d(TAG, "Proxy generated: " + proxyFile.getAbsolutePath());
-                
+
             } catch (Exception e) {
                 Log.e(TAG, "Proxy generation failed for: " + asset.mediaId, e);
                 if (listener != null) {
@@ -322,13 +480,13 @@ public class ProjectMediaManager {
             }
         });
     }
-    
+
     private void generateProxyFile(ProjectMediaAsset asset, File proxyFile) throws IOException {
         // This would use MediaCodec or FFmpeg to generate a lower resolution proxy
         // For now, we'll create a placeholder implementation
-        
+
         Uri sourceUri = getMediaUri(asset);
-        
+
         // Determine proxy resolution based on quality setting
         int targetWidth, targetHeight;
         switch (defaultProxyQuality) {
@@ -345,19 +503,19 @@ public class ProjectMediaManager {
                 targetHeight = asset.analysis.height;
                 break;
         }
-        
+
         // TODO: Implement actual proxy generation using MediaCodec
         // For now, we'll just copy the original file as a placeholder
         Log.d(TAG, "Generating proxy: " + targetWidth + "x" + targetHeight + " for " + asset.mediaId);
-        
+
         // Placeholder: copy original file
         if (asset.isLinked) {
             copyMediaFile(sourceUri, proxyFile, null, asset.mediaId);
         } else {
             File originalFile = new File(projectDirectory, asset.projectFilePath);
             try (FileInputStream input = new FileInputStream(originalFile);
-                 FileOutputStream output = new FileOutputStream(proxyFile)) {
-                
+                    FileOutputStream output = new FileOutputStream(proxyFile)) {
+
                 byte[] buffer = new byte[64 * 1024];
                 int bytesRead;
                 while ((bytesRead = input.read(buffer)) != -1) {
@@ -366,17 +524,17 @@ public class ProjectMediaManager {
             }
         }
     }
-    
+
     private void generateThumbnail(ProjectMediaAsset asset) {
         // Generate thumbnail for video preview
         // This would extract a frame from the video
         Log.d(TAG, "Generating thumbnail for: " + asset.mediaId);
-        
+
         // TODO: Implement thumbnail generation
         File thumbnailFile = new File(thumbnailsDirectory, asset.mediaId + "_thumb.jpg");
         asset.thumbnailPath = getRelativePath(thumbnailFile);
     }
-    
+
     /**
      * Get the URI for a media asset, handling both copied and linked files
      */
@@ -388,7 +546,7 @@ public class ProjectMediaManager {
             return Uri.fromFile(mediaFile);
         }
     }
-    
+
     /**
      * Get the URI for proxy file if available, otherwise return original
      */
@@ -400,7 +558,7 @@ public class ProjectMediaManager {
             return getMediaUri(asset);
         }
     }
-    
+
     /**
      * Get media asset by ID
      */
@@ -409,7 +567,7 @@ public class ProjectMediaManager {
             return mediaAssets.get(mediaId);
         }
     }
-    
+
     /**
      * Get all media assets in the project
      */
@@ -418,7 +576,7 @@ public class ProjectMediaManager {
             return new ArrayList<>(mediaAssets.values());
         }
     }
-    
+
     /**
      * Remove media asset from project
      */
@@ -427,7 +585,7 @@ public class ProjectMediaManager {
         synchronized (mediaAssets) {
             asset = mediaAssets.remove(mediaId);
         }
-        
+
         if (asset != null) {
             // Clean up files
             if (!asset.isLinked && asset.projectFilePath != null) {
@@ -436,25 +594,25 @@ public class ProjectMediaManager {
                     mediaFile.delete();
                 }
             }
-            
+
             if (asset.hasProxy && asset.proxyFilePath != null) {
                 File proxyFile = new File(projectDirectory, asset.proxyFilePath);
                 if (proxyFile.exists()) {
                     proxyFile.delete();
                 }
             }
-            
+
             if (asset.thumbnailPath != null) {
                 File thumbnailFile = new File(projectDirectory, asset.thumbnailPath);
                 if (thumbnailFile.exists()) {
                     thumbnailFile.delete();
                 }
             }
-            
+
             Log.d(TAG, "Media asset removed: " + mediaId);
         }
     }
-    
+
     /**
      * Clean up cache and temporary files
      */
@@ -466,31 +624,31 @@ public class ProjectMediaManager {
                 file.delete();
             }
         }
-        
+
         Log.d(TAG, "Cache cleaned up");
     }
-    
+
     /**
      * Get project storage usage
      */
     public ProjectStorageInfo getStorageInfo() {
         ProjectStorageInfo info = new ProjectStorageInfo();
-        
+
         info.originalFilesSize = calculateDirectorySize(originalDirectory);
         info.proxyFilesSize = calculateDirectorySize(proxyDirectory);
         info.cacheSize = calculateDirectorySize(cacheDirectory);
         info.thumbnailsSize = calculateDirectorySize(thumbnailsDirectory);
         info.totalSize = info.originalFilesSize + info.proxyFilesSize + info.cacheSize + info.thumbnailsSize;
-        
+
         synchronized (mediaAssets) {
             info.mediaCount = mediaAssets.size();
             info.linkedCount = (int) mediaAssets.values().stream().filter(a -> a.isLinked).count();
             info.copiedCount = info.mediaCount - info.linkedCount;
         }
-        
+
         return info;
     }
-    
+
     private long calculateDirectorySize(File directory) {
         long size = 0;
         File[] files = directory.listFiles();
@@ -505,11 +663,11 @@ public class ProjectMediaManager {
         }
         return size;
     }
-    
+
     private String getRelativePath(File file) {
         return projectDirectory.toURI().relativize(file.toURI()).getPath();
     }
-    
+
     /**
      * Set import strategy for new media
      */
@@ -517,7 +675,7 @@ public class ProjectMediaManager {
         this.importStrategy = strategy;
         Log.d(TAG, "Import strategy set to: " + strategy);
     }
-    
+
     /**
      * Set default proxy quality
      */
@@ -525,7 +683,7 @@ public class ProjectMediaManager {
         this.defaultProxyQuality = quality;
         Log.d(TAG, "Default proxy quality set to: " + quality);
     }
-    
+
     /**
      * Set maximum file size for copying (larger files will be linked)
      */
@@ -533,7 +691,7 @@ public class ProjectMediaManager {
         this.maxFileSizeForCopy = maxSize;
         Log.d(TAG, "Max file size for copy set to: " + (maxSize / 1024 / 1024) + "MB");
     }
-    
+
     /**
      * Shutdown the media manager
      */
@@ -542,9 +700,9 @@ public class ProjectMediaManager {
         proxyExecutor.shutdown();
         Log.d(TAG, "ProjectMediaManager shutdown");
     }
-    
+
     // Data classes
-    
+
     public static class MediaAnalysis {
         public Uri sourceUri;
         public String filename;
@@ -558,14 +716,14 @@ public class ProjectMediaManager {
         public float frameRate;
         public boolean isHighResolution;
         public boolean isLargeFile;
-        
+
         @Override
         public String toString() {
-            return String.format("MediaAnalysis{filename='%s', size=%dMB, %dx%d, duration=%ds, isLarge=%s}", 
-                               filename, fileSize / 1024 / 1024, width, height, duration / 1000, isLargeFile);
+            return String.format("MediaAnalysis{filename='%s', size=%dMB, %dx%d, duration=%ds, isLarge=%s}",
+                    filename, fileSize / 1024 / 1024, width, height, duration / 1000, isLargeFile);
         }
     }
-    
+
     public static class ProjectStorageInfo {
         public long originalFilesSize;
         public long proxyFilesSize;
@@ -575,11 +733,14 @@ public class ProjectMediaManager {
         public int mediaCount;
         public int copiedCount;
         public int linkedCount;
-        
+
         public String getFormattedSize(long bytes) {
-            if (bytes < 1024) return bytes + " B";
-            if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
-            if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024) + " MB";
+            if (bytes < 1024)
+                return bytes + " B";
+            if (bytes < 1024 * 1024)
+                return (bytes / 1024) + " KB";
+            if (bytes < 1024 * 1024 * 1024)
+                return (bytes / 1024 / 1024) + " MB";
             return (bytes / 1024 / 1024 / 1024) + " GB";
         }
     }

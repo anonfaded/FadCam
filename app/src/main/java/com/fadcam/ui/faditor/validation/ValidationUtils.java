@@ -201,8 +201,8 @@ public class ValidationUtils {
             );
         }
         
-        // Validate media references
-        if (project.getOriginalVideoUri() == null && project.getOriginalVideoPath() == null) {
+        // Validate media references using professional media asset system
+        if (project.getPrimaryMediaAssetId() == null || project.getPrimaryMediaAssetId().isEmpty()) {
             throw new FaditorException(
                 FaditorException.ErrorCode.MEDIA_REFERENCE_BROKEN,
                 "Original video reference is missing",

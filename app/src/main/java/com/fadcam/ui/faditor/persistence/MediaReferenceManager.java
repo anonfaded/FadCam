@@ -192,37 +192,12 @@ public class MediaReferenceManager {
     }
     
     /**
-     * Updates media paths in a project based on a path mapping
+     * @deprecated Media path updates are now handled by the professional media asset system
      */
+    @Deprecated
     public void updateMediaPaths(VideoProject project, Map<String, String> pathMapping) {
-        // Update original video path
-        String originalPath = project.getOriginalVideoPath();
-        if (originalPath != null && pathMapping.containsKey(originalPath)) {
-            String newPath = pathMapping.get(originalPath);
-            project.setOriginalVideoPath(newPath);
-            
-            // If the new path is a content URI and original URI is null, reconstruct it
-            if (newPath.startsWith("content://") && project.getOriginalVideoUri() == null) {
-                try {
-                    Uri reconstructedUri = Uri.parse(newPath);
-                    project.setOriginalVideoUri(reconstructedUri);
-                    Log.d(TAG, "Reconstructed URI from updated path: " + reconstructedUri);
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to reconstruct URI from path: " + newPath);
-                }
-            }
-        }
-        
-        // Update working file path
-        if (project.getWorkingFile() != null) {
-            String workingPath = project.getWorkingFile().getAbsolutePath();
-            if (pathMapping.containsKey(workingPath)) {
-                project.setWorkingFile(new File(pathMapping.get(workingPath)));
-            }
-        }
-        
-        // Mark project as modified
-        project.updateLastModified();
+        // No-op - media assets are managed by ProjectMediaManager
+        Log.d(TAG, "updateMediaPaths called but deprecated - using professional media asset system");
     }
     
     /**

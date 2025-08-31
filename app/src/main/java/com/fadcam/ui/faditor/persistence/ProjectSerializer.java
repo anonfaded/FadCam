@@ -50,27 +50,9 @@ public class ProjectSerializer {
         }
         json.put("mediaAssetIds", mediaAssetIds);
 
-        // Legacy media information for backward compatibility
-        JSONObject media = new JSONObject();
-        JSONObject originalVideo = new JSONObject();
-        originalVideo.put("uri",
-                project.getOriginalVideoUri() != null ? project.getOriginalVideoUri().toString() : null);
-        originalVideo.put("path", project.getOriginalVideoPath());
+        // Note: Legacy media information removed - now using professional media asset system
 
-        if (project.getMetadata() != null) {
-            JSONObject metadata = new JSONObject();
-            metadata.put("codec", project.getMetadata().getCodec());
-            metadata.put("width", project.getMetadata().getWidth());
-            metadata.put("height", project.getMetadata().getHeight());
-            metadata.put("duration", project.getMetadata().getDuration());
-            metadata.put("bitrate", project.getMetadata().getBitrate());
-            metadata.put("frameRate", project.getMetadata().getFrameRate());
-            metadata.put("colorFormat", project.getMetadata().getColorFormat());
-            originalVideo.put("metadata", metadata);
-        }
-
-        media.put("originalVideo", originalVideo);
-        json.put("media", media);
+        // Metadata is now managed by the professional media asset system
 
         // Timeline data
         JSONObject timeline = new JSONObject();
@@ -130,7 +112,15 @@ public class ProjectSerializer {
     public static VideoProject deserializeProject(String jsonString) throws JSONException {
         JSONObject json = new JSONObject(jsonString);
 
-        VideoProject project = new VideoProject();
+        // Check if we have a primary media asset ID to use the proper constructor
+        String primaryMediaAssetId = null;
+        if (json.has("primaryMediaAssetId") && !json.isNull("primaryMediaAssetId")) {
+            primaryMediaAssetId = json.getString("primaryMediaAssetId");
+        }
+
+        // Create project with proper constructor
+        VideoProject project = primaryMediaAssetId != null ? 
+            new VideoProject(primaryMediaAssetId) : new VideoProject();
 
         // Project metadata
         project.setProjectId(json.getString("projectId"));
@@ -139,11 +129,7 @@ public class ProjectSerializer {
         project.setLastModified(json.getLong("lastModified"));
         project.setDuration(json.getLong("duration"));
 
-        // Media asset information
-        if (json.has("primaryMediaAssetId") && !json.isNull("primaryMediaAssetId")) {
-            project.setPrimaryMediaAssetId(json.getString("primaryMediaAssetId"));
-        }
-
+        // Additional media asset IDs (if any)
         if (json.has("mediaAssetIds")) {
             JSONArray mediaAssetIds = json.getJSONArray("mediaAssetIds");
             List<String> assetIds = new ArrayList<>();
@@ -153,35 +139,7 @@ public class ProjectSerializer {
             project.setMediaAssetIds(assetIds);
         }
 
-        // Legacy media information
-        if (json.has("media")) {
-            JSONObject media = json.getJSONObject("media");
-            if (media.has("originalVideo")) {
-                JSONObject originalVideo = media.getJSONObject("originalVideo");
-
-                if (originalVideo.has("path") && !originalVideo.isNull("path")) {
-                    project.setOriginalVideoPath(originalVideo.getString("path"));
-                }
-
-                if (originalVideo.has("uri") && !originalVideo.isNull("uri")) {
-                    String uriString = originalVideo.getString("uri");
-                    project.setOriginalVideoUri(Uri.parse(uriString));
-                }
-
-                if (originalVideo.has("metadata")) {
-                    JSONObject metadataJson = originalVideo.getJSONObject("metadata");
-                    VideoMetadata metadata = new VideoMetadata();
-                    metadata.setCodec(metadataJson.optString("codec"));
-                    metadata.setWidth(metadataJson.optInt("width"));
-                    metadata.setHeight(metadataJson.optInt("height"));
-                    metadata.setDuration(metadataJson.optLong("duration"));
-                    metadata.setBitrate(metadataJson.optInt("bitrate"));
-                    metadata.setFrameRate((float) metadataJson.optDouble("frameRate"));
-                    metadata.setColorFormat(metadataJson.optString("colorFormat"));
-                    project.setMetadata(metadata);
-                }
-            }
-        }
+        // Note: Legacy media deserialization removed - now using professional media asset system
 
         // Timeline data
         if (json.has("timeline")) {

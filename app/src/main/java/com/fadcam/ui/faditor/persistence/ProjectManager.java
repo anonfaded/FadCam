@@ -643,8 +643,15 @@ public class ProjectManager {
         metadata.setCreatedAt(project.getCreatedAt());
         metadata.setLastModified(project.getLastModified());
         metadata.setDuration(project.getDuration());
-        metadata.setFileSize(mediaReferenceManager.getFileSize(project.getOriginalVideoPath()));
-        metadata.setOriginalVideoName(mediaReferenceManager.getDisplayName(project.getOriginalVideoPath()));
+        // Get file info from professional media asset system
+        if (project.getPrimaryMediaAssetId() != null) {
+            ProjectMediaManager mediaManager = getMediaManager(project.getProjectId());
+            ProjectMediaAsset asset = mediaManager.getMediaAsset(project.getPrimaryMediaAssetId());
+            if (asset != null && asset.analysis != null) {
+                metadata.setFileSize(asset.analysis.fileSize);
+                metadata.setOriginalVideoName(asset.originalFilename);
+            }
+        }
         metadata.setThumbnailPath(getThumbnailFile(project.getProjectId()).getAbsolutePath());
         metadata.setHasUnsavedChanges(project.hasUnsavedChanges());
         return metadata;
