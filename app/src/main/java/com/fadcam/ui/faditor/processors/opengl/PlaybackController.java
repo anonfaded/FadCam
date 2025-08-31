@@ -65,14 +65,23 @@ public class PlaybackController {
         positionUpdateRunnable = new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "Position update runnable executing - isPlaying=" + isPlaying + ", isSeeking=" + isSeeking);
+                
                 if (isPlaying && !isSeeking) {
                     updatePlaybackPosition();
+                    
+                    Log.d(TAG, "Calling listener.onPositionChanged(" + currentPositionMs + "ms)");
                     if (listener != null) {
                         listener.onPositionChanged(currentPositionMs);
+                    } else {
+                        Log.w(TAG, "No listener for position change");
                     }
                     
                     // Schedule next update
+                    Log.d(TAG, "Scheduling next position update in " + POSITION_UPDATE_INTERVAL_MS + "ms");
                     mainHandler.postDelayed(this, POSITION_UPDATE_INTERVAL_MS);
+                } else {
+                    Log.d(TAG, "Position update stopped - isPlaying=" + isPlaying + ", isSeeking=" + isSeeking);
                 }
             }
         };
@@ -93,6 +102,8 @@ public class PlaybackController {
      * Start playback from current position
      */
     public void startPlayback() {
+        Log.d(TAG, "PlaybackController.startPlayback() called - current state: isPlaying=" + isPlaying + ", position=" + currentPositionMs + "ms");
+        
         if (isPlaying) {
             Log.w(TAG, "Playback already started");
             return;
@@ -103,13 +114,17 @@ public class PlaybackController {
         playbackStartPosition = currentPositionMs;
         
         // Start position updates
+        Log.d(TAG, "Starting position update runnable...");
         mainHandler.post(positionUpdateRunnable);
         
         if (listener != null) {
+            Log.d(TAG, "Notifying listener of playback state change");
             listener.onPlaybackStateChanged(true);
+        } else {
+            Log.w(TAG, "No listener set for playback state change");
         }
         
-        Log.d(TAG, "Playback started from position: " + currentPositionMs + "ms");
+        Log.d(TAG, "Playback started from position: " + currentPositionMs + "ms with position updates enabled");
     }
     
     /**
@@ -247,6 +262,25 @@ public class PlaybackController {
     }
     
     /**
+     * Update position after external seek (e.g., from VideoDecoder)
+     * This prevents duplicate seek completion callbacks
+     */
+    public void updatePositionAfterSeek(long positionMs) {
+        // Clamp position to valid range
+        positionMs = Math.max(0, Math.min(positionMs, videoDurationMs));
+        
+        // Update internal state without triggering callbacks
+        synchronized (this) {
+            currentPositionMs = positionMs;
+            playbackStartTime = SystemClock.elapsedRealtime();
+            playbackStartPosition = positionMs;
+            isSeeking = false;
+        }
+        
+        Log.d(TAG, "Position updated after external seek: " + positionMs + "ms");
+    }
+    
+    /**
      * Release resources and stop all operations
      */
     public void release() {
@@ -267,13 +301,21 @@ public class PlaybackController {
         
         long elapsedTime = SystemClock.elapsedRealtime() - playbackStartTime;
         long adjustedElapsed = (long) (elapsedTime * playbackSpeed);
-        currentPositionMs = playbackStartPosition + adjustedElapsed;
+        long newPosition = playbackStartPosition + adjustedElapsed;
+        
+        // Debug logging for timing issues
+        if (newPosition > currentPositionMs + 1000) { // Jump more than 1 second
+            Log.w(TAG, "Large position jump detected: " + currentPositionMs + "ms -> " + newPosition + "ms (elapsed: " + elapsedTime + "ms)");
+        }
+        
+        currentPositionMs = newPosition;
         
         // Clamp to valid range
         currentPositionMs = Math.max(0, Math.min(currentPositionMs, videoDurationMs));
         
         // Check for end of video
         if (currentPositionMs >= videoDurationMs) {
+            Log.d(TAG, "Reached end of video at " + currentPositionMs + "ms (duration: " + videoDurationMs + "ms)");
             pausePlayback();
             currentPositionMs = videoDurationMs;
         }

@@ -1,7 +1,7 @@
 package com.fadcam.ui.faditor.processors.opengl;
 
 import android.content.Context;
-import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -20,69 +20,71 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
- * OpenGL ES video frame renderer implementing GLSurfaceView.Renderer for frame display.
- * Handles video texture rendering with support for different color formats and transformations.
+ * OpenGL ES video frame renderer implementing GLSurfaceView.Renderer for frame
+ * display.
+ * Handles video texture rendering with support for different color formats and
+ * transformations.
  * Requirements: 13.3, 13.5, 14.1, 14.4
  */
 public class VideoRenderer implements GLSurfaceView.Renderer {
-    
+
     private static final String TAG = "VideoRenderer";
-    
+
     private final Context context;
     private Surface outputSurface;
-    
+
     // Rendering components
     private ShaderManager shaderManager;
     private TextureManager textureManager;
     private FrameCache frameCache;
     private int currentVideoTexture = 0;
     private long currentFrameNumber = -1;
-    
+
     // Viewport dimensions
     private int viewportWidth = 0;
     private int viewportHeight = 0;
     private int videoWidth = 0;
     private int videoHeight = 0;
-    
+
     // Vertex data
     private FloatBuffer vertexBuffer;
     private FloatBuffer textureCoordBuffer;
-    
+
     // Transformation matrices
     private final float[] mvpMatrix = new float[16];
     private final float[] texMatrix = new float[16];
     private final float[] projectionMatrix = new float[16];
     private final float[] viewMatrix = new float[16];
-    
+
     // Vertex coordinates for a full-screen quad
     private static final float[] VERTICES = {
-        -1.0f, -1.0f,  // Bottom left
-         1.0f, -1.0f,  // Bottom right
-        -1.0f,  1.0f,  // Top left
-         1.0f,  1.0f   // Top right
+            -1.0f, -1.0f, // Bottom left
+            1.0f, -1.0f, // Bottom right
+            -1.0f, 1.0f, // Top left
+            1.0f, 1.0f // Top right
     };
-    
-    // Texture coordinates
+
+    // Texture coordinates (flipped vertically to fix upside-down video)
     private static final float[] TEXTURE_COORDS = {
-        0.0f, 0.0f,  // Bottom left
-        1.0f, 0.0f,  // Bottom right
-        0.0f, 1.0f,  // Top left
-        1.0f, 1.0f   // Top right
+            0.0f, 1.0f, // Bottom left (flipped to top left in texture)
+            1.0f, 1.0f, // Bottom right (flipped to top right in texture)
+            0.0f, 0.0f, // Top left (flipped to bottom left in texture)
+            1.0f, 0.0f // Top right (flipped to bottom right in texture)
     };
-    
+
     private boolean initialized = false;
     private boolean hasVideoTexture = false;
-    
+
     // Performance monitoring
     private final PerformanceMonitor performanceMonitor;
-    
+
     public VideoRenderer(Context context) {
         this.context = context;
         this.performanceMonitor = PerformanceMonitor.getInstance();
         initializeBuffers();
         initializeMatrices();
     }
-    
+
     private void initializeBuffers() {
         // Initialize vertex buffer
         ByteBuffer bb = ByteBuffer.allocateDirect(VERTICES.length * 4);
@@ -90,79 +92,113 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         vertexBuffer = bb.asFloatBuffer();
         vertexBuffer.put(VERTICES);
         vertexBuffer.position(0);
-        
+
         // Initialize texture coordinate buffer
         bb = ByteBuffer.allocateDirect(TEXTURE_COORDS.length * 4);
         bb.order(ByteOrder.nativeOrder());
         textureCoordBuffer = bb.asFloatBuffer();
         textureCoordBuffer.put(TEXTURE_COORDS);
         textureCoordBuffer.position(0);
-        
+
     }
-    
+
     private void initializeMatrices() {
         Matrix.setIdentityM(mvpMatrix, 0);
         Matrix.setIdentityM(texMatrix, 0);
         Matrix.setIdentityM(projectionMatrix, 0);
         Matrix.setIdentityM(viewMatrix, 0);
     }
-    
+
     // GLSurfaceView.Renderer implementation
-    
+
     @Override
     public void onSurfaceCreated(GL10 gl, javax.microedition.khronos.egl.EGLConfig config) {
         Log.d(TAG, "onSurfaceCreated");
-        
+
         // Initialize OpenGL components
         shaderManager = new ShaderManager();
         textureManager = new TextureManager();
         frameCache = new FrameCache(textureManager);
-        
+
         // Set clear color to black
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        
+
         // Enable blending for transparency support
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-        
+
         initialized = true;
         Log.d(TAG, "VideoRenderer surface created successfully");
+
+        // Notify that OpenGL context is ready
+        if (openGLReadyCallback != null) {
+            openGLReadyCallback.onOpenGLReady();
+        }
     }
-    
+
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         Log.d(TAG, "onSurfaceChanged: " + width + "x" + height);
-        
+
         viewportWidth = width;
         viewportHeight = height;
-        
+
         // Set viewport
         GLES20.glViewport(0, 0, width, height);
-        
+
         // Update projection matrix for aspect ratio
         updateProjectionMatrix();
     }
-    
+
     @Override
     public void onDrawFrame(GL10 gl) {
         if (!initialized) {
             return;
         }
-        
+
         performanceMonitor.startOperation("frame_render");
-        
+
         // Clear the screen
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        
+
+        // Update video texture if available (must be done on OpenGL thread)
+        if (videoSurfaceTexture != null) {
+            try {
+                videoSurfaceTexture.updateTexImage();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Error updating video texture", e);
+            }
+        }
+
         // Render video frame if available
         if (hasVideoTexture && currentVideoTexture != 0) {
             renderVideoFrame();
         }
-        
+
         performanceMonitor.recordFrameTime();
         performanceMonitor.endOperation("frame_render");
     }
-    
+
+    /**
+     * Create a new video texture for external OES rendering
+     */
+    public int createVideoTexture() {
+        if (textureManager != null) {
+            return textureManager.createVideoTexture();
+        }
+        return 0;
+    }
+
+    // SurfaceTexture for video input
+    private SurfaceTexture videoSurfaceTexture;
+
+    // Callback for when OpenGL context is ready
+    public interface OnOpenGLReadyCallback {
+        void onOpenGLReady();
+    }
+
+    private OnOpenGLReadyCallback openGLReadyCallback;
+
     /**
      * Set the video texture to render
      */
@@ -171,13 +207,28 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         hasVideoTexture = (textureId != 0);
         Log.d(TAG, "Video texture set: " + textureId);
     }
-    
+
+    /**
+     * Set the SurfaceTexture for video input (must be called from OpenGL thread)
+     */
+    public void setVideoSurfaceTexture(SurfaceTexture surfaceTexture) {
+        this.videoSurfaceTexture = surfaceTexture;
+        Log.d(TAG, "Video SurfaceTexture set");
+    }
+
+    /**
+     * Set callback for when OpenGL context is ready
+     */
+    public void setOnOpenGLReadyCallback(OnOpenGLReadyCallback callback) {
+        this.openGLReadyCallback = callback;
+    }
+
     /**
      * Set the current frame for optimized rendering
      */
     public void setCurrentFrame(long frameNumber, long timestampUs) {
         currentFrameNumber = frameNumber;
-        
+
         // Try to get cached frame first for smooth timeline scrubbing
         FrameCache.CachedFrame cachedFrame = frameCache.getCachedFrame(frameNumber);
         if (cachedFrame != null) {
@@ -185,26 +236,26 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
             hasVideoTexture = true;
             Log.v(TAG, "Using cached frame: " + frameNumber);
         }
-        
+
         // Prefetch nearby frames for smooth scrubbing
         frameCache.prefetchFrames(frameNumber, 5); // 5 frames in each direction
     }
-    
+
     /**
      * Update video dimensions for proper aspect ratio rendering
      */
     public void setVideoSize(int width, int height) {
         videoWidth = width;
         videoHeight = height;
-        
+
         // Configure frame cache for video dimensions
         frameCache.setVideoProperties(width, height);
-        
+
         updateProjectionMatrix();
-        Log.d(TAG, "Video size set: " + width + "x" + height + 
-                  (width >= 3840 || height >= 2160 ? " (4K)" : ""));
+        Log.d(TAG, "Video size set: " + width + "x" + height +
+                (width >= 3840 || height >= 2160 ? " (4K)" : ""));
     }
-    
+
     /**
      * Update projection matrix based on video and viewport dimensions
      */
@@ -214,26 +265,45 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
             Matrix.setIdentityM(mvpMatrix, 0);
             return;
         }
-        
+
         // Calculate aspect ratios
         float videoAspect = (float) videoWidth / videoHeight;
         float viewportAspect = (float) viewportWidth / viewportHeight;
+
+        Log.d(TAG, "Updating projection - Video: " + videoWidth + "x" + videoHeight + 
+              " (aspect: " + videoAspect + "), Viewport: " + viewportWidth + "x" + viewportHeight + 
+              " (aspect: " + viewportAspect + ")");
+
+        // Professional video editor behavior: Fit video to viewport maintaining aspect ratio
+        Matrix.setIdentityM(projectionMatrix, 0);
+        Matrix.setIdentityM(viewMatrix, 0);
         
-        // Set up orthographic projection with proper aspect ratio
+        // Calculate scale factors to fit video in viewport while maintaining aspect ratio
+        float scaleX = 1.0f;
+        float scaleY = 1.0f;
+        
         if (videoAspect > viewportAspect) {
-            // Video is wider - fit width, letterbox height
-            float scale = viewportAspect / videoAspect;
-            Matrix.orthoM(projectionMatrix, 0, -1f, 1f, -scale, scale, -1f, 1f);
+            // Video is wider than viewport - fit width, letterbox height
+            scaleY = viewportAspect / videoAspect;
+            Log.d(TAG, "Video wider than viewport - letterboxing (scaleY: " + scaleY + ")");
+        } else if (videoAspect < viewportAspect) {
+            // Video is taller than viewport - fit height, pillarbox width  
+            scaleX = videoAspect / viewportAspect;
+            Log.d(TAG, "Video taller than viewport - pillarboxing (scaleX: " + scaleX + ")");
         } else {
-            // Video is taller - fit height, pillarbox width
-            float scale = videoAspect / viewportAspect;
-            Matrix.orthoM(projectionMatrix, 0, -scale, scale, -1f, 1f, -1f, 1f);
+            Log.d(TAG, "Video matches viewport aspect ratio - no scaling needed");
         }
         
+        // Apply orthographic projection with calculated scales
+        Matrix.orthoM(projectionMatrix, 0, -scaleX, scaleX, -scaleY, scaleY, -1f, 1f);
+
         // Combine view and projection matrices
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+        
+        Log.d(TAG, "Projection matrix updated for " + 
+              (videoAspect < 1.0f ? "portrait" : "landscape") + " video");
     }
-    
+
     /**
      * Render the current video frame
      */
@@ -241,44 +311,44 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         if (!hasVideoTexture || currentVideoTexture == 0) {
             return;
         }
-        
+
         // Use video shader program
         int shaderProgram = shaderManager.getVideoShaderProgram();
         GLES20.glUseProgram(shaderProgram);
         GlUtil.checkGlError("glUseProgram");
-        
+
         // Get attribute and uniform locations
         int aPositionHandle = shaderManager.getAttributeLocation(shaderProgram, "aPosition");
         int aTextureCoordHandle = shaderManager.getAttributeLocation(shaderProgram, "aTextureCoord");
         int uMVPMatrixHandle = shaderManager.getUniformLocation(shaderProgram, "uMVPMatrix");
         int uTexMatrixHandle = shaderManager.getUniformLocation(shaderProgram, "uTexMatrix");
         int uTextureHandle = shaderManager.getUniformLocation(shaderProgram, "sTexture");
-        
+
         // Enable vertex attributes
         GLES20.glEnableVertexAttribArray(aPositionHandle);
         GLES20.glEnableVertexAttribArray(aTextureCoordHandle);
-        
+
         // Set vertex data
         GLES20.glVertexAttribPointer(aPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
         GLES20.glVertexAttribPointer(aTextureCoordHandle, 2, GLES20.GL_FLOAT, false, 0, textureCoordBuffer);
-        
+
         // Set matrices
         GLES20.glUniformMatrix4fv(uMVPMatrixHandle, 1, false, mvpMatrix, 0);
         GLES20.glUniformMatrix4fv(uTexMatrixHandle, 1, false, texMatrix, 0);
-        
+
         // Bind video texture
         textureManager.bindTexture(currentVideoTexture);
         GLES20.glUniform1i(uTextureHandle, 0);
-        
+
         // Draw the quad
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GlUtil.checkGlError("glDrawArrays");
-        
+
         // Disable vertex attributes
         GLES20.glDisableVertexAttribArray(aPositionHandle);
         GLES20.glDisableVertexAttribArray(aTextureCoordHandle);
     }
-    
+
     /**
      * Update frame for rendering (called by GLSurfaceView automatically)
      */
@@ -286,7 +356,7 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         // This method can be called to trigger a redraw
         // The actual rendering happens in onDrawFrame()
     }
-    
+
     /**
      * Update the texture transformation matrix
      */
@@ -295,7 +365,7 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
             System.arraycopy(textureMatrix, 0, texMatrix, 0, 16);
         }
     }
-    
+
     /**
      * Apply transformation matrix for video rotation/scaling
      */
@@ -307,7 +377,7 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
         }
     }
-    
+
     /**
      * Set display size for proper rendering
      */
@@ -315,11 +385,12 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         // This is handled by onSurfaceChanged callback
         Log.d(TAG, "Display size set: " + width + "x" + height);
     }
-    
+
     // Backward compatibility methods for existing OpenGLVideoProcessor
-    
+
     /**
      * Initialize the renderer with output surface (backward compatibility)
+     * 
      * @deprecated Use GLSurfaceView.Renderer interface instead
      */
     @Deprecated
@@ -327,17 +398,19 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
         this.outputSurface = outputSurface;
         Log.d(TAG, "VideoRenderer initialized with surface (deprecated method)");
     }
-    
+
     /**
      * Render frame with presentation time (backward compatibility)
+     * 
      * @deprecated Use GLSurfaceView.Renderer interface instead
      */
     @Deprecated
     public void renderFrame(long presentationTimeUs) {
         Log.d(TAG, "renderFrame called (deprecated method) - use GLSurfaceView instead");
-        // This method is deprecated - rendering should happen through GLSurfaceView.Renderer
+        // This method is deprecated - rendering should happen through
+        // GLSurfaceView.Renderer
     }
-    
+
     /**
      * Cache current frame for timeline scrubbing
      */
@@ -346,49 +419,49 @@ public class VideoRenderer implements GLSurfaceView.Renderer {
             frameCache.cacheFrame(frameNumber, timestampUs, currentVideoTexture);
         }
     }
-    
+
     /**
      * Clear frame cache (e.g., when loading new video)
      */
     public void clearFrameCache() {
         frameCache.clearCache();
     }
-    
+
     /**
      * Get frame cache statistics
      */
     public FrameCache.CacheStats getFrameCacheStats() {
         return frameCache.getCacheStats();
     }
-    
+
     /**
      * Get texture manager statistics
      */
     public TextureManager.TextureManagerStats getTextureStats() {
         return textureManager.getStats();
     }
-    
+
     /**
      * Release all resources
      */
     public void release() {
         Log.d(TAG, "Releasing VideoRenderer resources");
-        
+
         if (frameCache != null) {
             frameCache.release();
             frameCache = null;
         }
-        
+
         if (shaderManager != null) {
             shaderManager.release();
             shaderManager = null;
         }
-        
+
         if (textureManager != null) {
             textureManager.release();
             textureManager = null;
         }
-        
+
         currentVideoTexture = 0;
         hasVideoTexture = false;
         initialized = false;

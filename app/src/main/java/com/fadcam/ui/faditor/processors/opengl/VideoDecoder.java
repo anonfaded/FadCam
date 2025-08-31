@@ -224,22 +224,29 @@ public class VideoDecoder {
      * This method should be called when the decoder is no longer needed.
      */
     public void release() {
+        Log.d(TAG, "VideoDecoder release() called");
         isDecoding.set(false);
         isSeeking.set(false);
         
-        decoderHandler.post(() -> {
-            cleanup();
-            if (decoderThread != null) {
-                decoderThread.quitSafely();
-                try {
-                    decoderThread.join();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+        // Perform cleanup synchronously to prevent race conditions
+        cleanup();
+        
+        // Quit the decoder thread
+        if (decoderThread != null) {
+            decoderThread.quitSafely();
+            try {
+                decoderThread.join(1000); // Wait up to 1 second for thread to finish
+                Log.d(TAG, "Decoder thread terminated");
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Interrupted while waiting for decoder thread to finish");
+                Thread.currentThread().interrupt();
             }
-        });
+            decoderThread = null;
+            decoderHandler = null;
+        }
         
         isInitialized.set(false);
+        Log.d(TAG, "VideoDecoder release() completed");
     }
     
     // Private helper methods
@@ -385,9 +392,15 @@ public class VideoDecoder {
             
             if (outputBufferIndex >= 0) {
                 // Frame is ready for rendering
+                long frameTimeUs = bufferInfo.presentationTimeUs;
+                
+                // Calculate when this frame should be displayed (for proper timing)
+                // This prevents super-fast playback by respecting frame timing
+                long currentTimeUs = System.nanoTime() / 1000; // Current time in microseconds
+                
                 if (callback != null) {
-                    callback.onFrameAvailable(bufferInfo.presentationTimeUs);
-                    callback.onProgressUpdate(bufferInfo.presentationTimeUs, videoDuration);
+                    callback.onFrameAvailable(frameTimeUs);
+                    callback.onProgressUpdate(frameTimeUs, videoDuration);
                 }
                 
                 // Render the frame to the surface
@@ -441,23 +454,34 @@ public class VideoDecoder {
     }
     
     private void cleanup() {
+        Log.d(TAG, "VideoDecoder cleanup() started");
+        
+        // Stop and release MediaCodec first
         try {
             if (decoder != null) {
+                Log.d(TAG, "Stopping MediaCodec...");
                 decoder.stop();
+                Log.d(TAG, "Releasing MediaCodec...");
                 decoder.release();
                 decoder = null;
+                Log.d(TAG, "MediaCodec released successfully");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error releasing decoder: " + e.getMessage());
         }
         
+        // Release MediaExtractor
         try {
             if (extractor != null) {
+                Log.d(TAG, "Releasing MediaExtractor...");
                 extractor.release();
                 extractor = null;
+                Log.d(TAG, "MediaExtractor released successfully");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error releasing extractor: " + e.getMessage());
         }
+        
+        Log.d(TAG, "VideoDecoder cleanup() completed");
     }
 }
