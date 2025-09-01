@@ -80,6 +80,15 @@ public class FaditorEditorFragment
 
     // Flag to prevent feedback loop between video player and timeline
     private boolean isUpdatingFromVideoPlayer = false;
+
+    // -------------- Fix Start (position update throttling) --------------
+    // Position update throttling to prevent stale updates
+    private long lastPositionUpdateTime = 0;
+    private long lastValidPosition = 0;
+    private static final long POSITION_UPDATE_THROTTLE_MS = 100; // Ignore updates older than 100ms
+    private static final long MAX_POSITION_JUMP_MS = 500; // Ignore jumps larger than 500ms
+    // -------------- Fix Ended (position update throttling) --------------
+
     private PerformanceOptimizer performanceOptimizer;
     private MemoryOptimizer memoryOptimizer;
 
@@ -424,7 +433,7 @@ public class FaditorEditorFragment
 
         // Set up seek bar listener
         if (seekBar != null) {
-            seekBar.setOnSeekBarChangeListener(
+            SeekBar.OnSeekBarChangeListener seekBarListener =
                 new SeekBar.OnSeekBarChangeListener() {
                     @Override
                     public void onProgressChanged(
@@ -444,8 +453,10 @@ public class FaditorEditorFragment
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {}
-                }
-            );
+                };
+            seekBar.setOnSeekBarChangeListener(seekBarListener);
+            // Store listener in tag for temporary removal during updates
+            seekBar.setTag(seekBarListener);
         }
 
         // Initially hide progress overlay
@@ -1422,11 +1433,26 @@ public class FaditorEditorFragment
                 timelineTimeDisplay.setText(currentTime + " / " + totalTime);
             }
 
+            // -------------- Fix Start (prevent seekbar feedback loop) --------------
             if (seekBar != null && currentProject.getDuration() > 0) {
+                // Temporarily disable listener to prevent feedback loop
+                SeekBar.OnSeekBarChangeListener listener = null;
+                Object tag = seekBar.getTag();
+                if (tag instanceof SeekBar.OnSeekBarChangeListener) {
+                    listener = (SeekBar.OnSeekBarChangeListener) tag;
+                    seekBar.setOnSeekBarChangeListener(null);
+                }
+
                 int progress = (int) ((currentPosition * seekBar.getMax()) /
                     currentProject.getDuration());
                 seekBar.setProgress(progress);
+
+                // Restore listener
+                if (listener != null) {
+                    seekBar.setOnSeekBarChangeListener(listener);
+                }
             }
+            // -------------- Fix Ended (prevent seekbar feedback loop) --------------
         }
     }
 
@@ -1923,10 +1949,31 @@ public class FaditorEditorFragment
 
     @Override
     public void onPositionChanged(long positionMs) {
-        // Reduced logging to prevent spam during playback
-        if (positionMs % 1000 == 0) {
-            Log.d(TAG, "Video player position: " + positionMs + "ms");
+        // -------------- Fix Start (throttle stale position updates) --------------
+        long currentTime = System.currentTimeMillis();
+
+        // Ignore stale position updates (older than throttle threshold)
+        if (
+            currentTime - lastPositionUpdateTime >
+                POSITION_UPDATE_THROTTLE_MS &&
+            lastPositionUpdateTime > 0
+        ) {
+            // This position update is too old, likely stale - ignore it
+            return;
         }
+
+        // Ignore position updates that jump too far (likely from cache/previous state)
+        if (
+            lastValidPosition > 0 &&
+            Math.abs(positionMs - lastValidPosition) > MAX_POSITION_JUMP_MS
+        ) {
+            // This position jump is too large and probably stale - ignore it
+            return;
+        }
+
+        lastPositionUpdateTime = currentTime;
+        lastValidPosition = positionMs;
+        // -------------- Fix Ended (throttle stale position updates) --------------
 
         // Update time displays and seek bar
         updateTimeDisplay(positionMs);
@@ -1949,6 +1996,41 @@ public class FaditorEditorFragment
     }
 
     @Override
+    public void onTimelinePositionChanged(long positionMs) {
+        // Prevent feedback loop - ignore timeline changes that come from video player
+        // updates
+        if (isUpdatingFromVideoPlayer) {
+            // Silent return - no logging to reduce spam
+            return;
+        }
+
+        // Record seek performance for monitoring
+        long seekStartTime = System.currentTimeMillis();
+
+        // Seek video player to new position
+        if (videoPlayer != null) {
+            videoPlayer.seekTo(positionMs);
+        }
+
+        // -------------- Fix Start (sync video controls) --------------
+        // Update video controls (seekbar, time displays) to sync with timeline
+        updateTimeDisplay(positionMs);
+        // -------------- Fix Ended (sync video controls) --------------
+
+        // Record seek time for performance monitoring
+        long seekTime = System.currentTimeMillis() - seekStartTime;
+        if (performanceMonitor != null) {
+            performanceMonitor.recordSeekTime(seekTime);
+        }
+
+        if (editorState != null) {
+            editorState.setLastPlayPosition(positionMs);
+        }
+
+        markModified();
+    }
+
+    @Override
     public void onVideoLoaded(long durationMs) {
         Log.d(TAG, "Video loaded with duration: " + durationMs + "ms");
 
@@ -1957,14 +2039,10 @@ public class FaditorEditorFragment
             currentProject.setDuration(durationMs);
         }
 
-        // -------------- Fix Start (onVideoLoaded) --------------
-        // Ensure proper initialization synchronization between video player and timeline
+        // -------------- Fix Start (proper project state restoration) --------------
         // Update timeline with video duration for OpenGL rendering
         if (timeline != null) {
             timeline.setVideoDuration(durationMs);
-
-            // Reset timeline to position 0 for proper initialization
-            timeline.setCurrentPosition(0);
 
             // Set trim range if available, otherwise default to full video
             if (currentProject.getCurrentTrim() != null) {
@@ -1977,24 +2055,29 @@ public class FaditorEditorFragment
             }
         }
 
-        // Ensure video player is at position 0 and paused
+        // Restore saved project position or start at 0 for new projects
+        long restoredPosition = 0;
+        if (currentProject != null && editorState != null) {
+            restoredPosition = editorState.getLastPlayPosition();
+        }
+
+        // Set timeline position (use user seek method to allow position jumps during restoration)
+        if (timeline != null) {
+            timeline.setCurrentPositionUserSeek(restoredPosition);
+        }
+
+        // Ensure video player matches timeline position and is paused
         if (videoPlayer != null) {
-            videoPlayer.seekTo(0);
+            videoPlayer.seekTo(restoredPosition);
             videoPlayer.pause();
         }
 
-        // Update all UI elements to show 0:00
-        updateTimeDisplay(0);
-        updateSeekBar(0);
+        // Update all UI elements to show restored position
+        updateTimeDisplay(restoredPosition);
 
         // Update play/pause button state
         updatePlayPauseButton(false);
-        // -------------- Fix Ended (onVideoLoaded) --------------
-
-        // Update timeline with video duration for OpenGL rendering
-        if (timeline != null) {
-            timeline.setVideoDuration(durationMs);
-        }
+        // -------------- Fix Ended (proper project state restoration) --------------
 
         // Update seek bar max value
         View view = getView();
@@ -2036,36 +2119,6 @@ public class FaditorEditorFragment
                 endMs
             );
             currentProject.setCurrentTrim(trimRange);
-        }
-
-        markModified();
-    }
-
-    @Override
-    public void onTimelinePositionChanged(long positionMs) {
-        // Prevent feedback loop - ignore timeline changes that come from video player
-        // updates
-        if (isUpdatingFromVideoPlayer) {
-            // Silent return - no logging to reduce spam
-            return;
-        }
-
-        // Record seek performance for monitoring
-        long seekStartTime = System.currentTimeMillis();
-
-        // Seek video player to new position
-        if (videoPlayer != null) {
-            videoPlayer.seekTo(positionMs);
-        }
-
-        // Record seek time for performance monitoring
-        long seekTime = System.currentTimeMillis() - seekStartTime;
-        if (performanceMonitor != null) {
-            performanceMonitor.recordSeekTime(seekTime);
-        }
-
-        if (editorState != null) {
-            editorState.setLastPlayPosition(positionMs);
         }
 
         markModified();

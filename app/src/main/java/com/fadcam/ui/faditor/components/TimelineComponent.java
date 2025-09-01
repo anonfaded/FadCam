@@ -398,6 +398,18 @@ public class TimelineComponent extends View {
             newPosition = snapToFrame(newPosition);
         }
 
+        // -------------- Fix Start (position validation to prevent jumps) --------------
+        // Prevent unexpected position jumps unless explicitly allowed
+        if (!isSilentUpdate && !isActivelyScrubbing.get()) {
+            long positionDiff = Math.abs(newPosition - this.currentPosition);
+            // Prevent jumps > 200ms unless it's a user-initiated seek or project loading
+            if (positionDiff > 200 && this.currentPosition > 0) {
+                // This might be a delayed/stale position update - ignore it
+                return;
+            }
+        }
+        // -------------- Fix Ended (position validation to prevent jumps) --------------
+
         // Only update if position actually changed (prevent feedback loops)
         if (this.currentPosition != newPosition) {
             this.currentPosition = newPosition;
@@ -431,6 +443,20 @@ public class TimelineComponent extends View {
             setCurrentPosition(position);
         } finally {
             isSilentUpdate = false;
+        }
+    }
+
+    /**
+     * Set position for user-initiated seeks (allows large position changes)
+     */
+    public void setCurrentPositionUserSeek(long position) {
+        // Temporarily disable validation for user-initiated seeks
+        boolean wasActiveScrubbing = isActivelyScrubbing.get();
+        isActivelyScrubbing.set(true);
+        try {
+            setCurrentPosition(position);
+        } finally {
+            isActivelyScrubbing.set(wasActiveScrubbing);
         }
     }
 
@@ -974,8 +1000,9 @@ public class TimelineComponent extends View {
      * Professional single-tap seeking with immediate visual feedback
      */
     private void handleProfessionalSeek(long seekTime) {
-        // Immediate visual update
-        setCurrentPositionInternal(seekTime);
+        // -------------- Fix Start (use user seek method) --------------
+        // Immediate visual update using user seek to allow position jumps
+        setCurrentPositionUserSeek(seekTime);
 
         // Async seek operation for smooth performance
         seekExecutor.submit(() -> {
@@ -991,6 +1018,7 @@ public class TimelineComponent extends View {
                 Thread.currentThread().interrupt();
             }
         });
+        // -------------- Fix Ended (use user seek method) --------------
     }
 
     private boolean handleDoubleTap(float x, float y) {
@@ -1123,13 +1151,7 @@ public class TimelineComponent extends View {
 
         if (this.currentPosition != position) {
             this.currentPosition = position;
-            // Enhanced invalidation with motion blur effect during fast scrubbing
-            if (Math.abs(scrubVelocity) > 100) {
-                // Add visual motion blur effect for fast scrubbing (like professional editors)
-                invalidate();
-            } else {
-                invalidate(); // Regular redraw for normal scrubbing
-            }
+            invalidate(); // Simple invalidation for internal updates
         }
     }
 
