@@ -1923,13 +1923,22 @@ public class FaditorEditorFragment
 
     @Override
     public void onPositionChanged(long positionMs) {
+        // Reduced logging to prevent spam during playback
+        if (positionMs % 1000 == 0) {
+            Log.d(TAG, "Video player position: " + positionMs + "ms");
+        }
+
         // Update time displays and seek bar
         updateTimeDisplay(positionMs);
 
         // Update timeline position with OpenGL frame rendering (prevent feedback loop)
         if (timeline != null) {
+            // Reduced logging to prevent spam
+            if (positionMs % 2000 == 0) {
+                Log.d(TAG, "Timeline silent update: " + positionMs + "ms");
+            }
             isUpdatingFromVideoPlayer = true;
-            timeline.setCurrentPosition(positionMs);
+            timeline.setCurrentPositionSilent(positionMs);
             isUpdatingFromVideoPlayer = false;
         }
 
@@ -2034,17 +2043,26 @@ public class FaditorEditorFragment
 
     @Override
     public void onTimelinePositionChanged(long positionMs) {
+        Log.d(TAG, "Timeline position changed: " + positionMs + "ms");
+
         // Prevent feedback loop - ignore timeline changes that come from video player
         // updates
         if (isUpdatingFromVideoPlayer) {
+            // Silent return - no logging to reduce spam
             return;
         }
+
+        Log.d(
+            TAG,
+            "Processing timeline-initiated seek to: " + positionMs + "ms"
+        );
 
         // Record seek performance for monitoring
         long seekStartTime = System.currentTimeMillis();
 
         // Seek video player to new position
         if (videoPlayer != null) {
+            Log.d(TAG, "Executing video player seek to: " + positionMs + "ms");
             videoPlayer.seekTo(positionMs);
         }
 
@@ -2073,32 +2091,71 @@ public class FaditorEditorFragment
 
     @Override
     public void onScrubbing(boolean isScrubbing, long positionMs) {
-        Log.d(TAG, "Scrubbing: " + isScrubbing + " at position: " + positionMs);
+        Log.d(
+            TAG,
+            "Scrubbing " +
+            (isScrubbing ? "started" : "ended") +
+            " at " +
+            positionMs +
+            "ms"
+        );
 
         if (isScrubbing) {
-            // Pause video during scrubbing for smooth preview
+            // -------------- Fix Start (professional cached frame scrubbing) --------------
+            // PROFESSIONAL EDITOR APPROACH: Show cached frames during scrubbing
+            // Like DaVinci Resolve, Premiere Pro - no video seeking, only cached frame display
             if (videoPlayer != null) {
                 videoPlayer.pause();
+                videoPlayer.setScrubbing(true); // Enable frame cache and disable position updates
+
+                // Show cached frame for smooth scrubbing preview (like professional editors)
+                videoPlayer.showCachedFrameForScrubbing(positionMs);
             }
-        }
 
-        // Update video position during scrubbing
-        if (videoPlayer != null) {
-            long seekStartTime = System.currentTimeMillis();
-            videoPlayer.seekTo(positionMs);
-
-            // Record scrubbing seek performance
-            long seekTime = System.currentTimeMillis() - seekStartTime;
-            if (performanceMonitor != null) {
-                performanceMonitor.recordSeekTime(seekTime);
+            // Update editor state but don't trigger expensive video operations
+            if (editorState != null) {
+                editorState.setLastPlayPosition(positionMs);
             }
-        }
 
-        if (editorState != null) {
-            editorState.setLastPlayPosition(positionMs);
-        }
+            Log.d(
+                TAG,
+                "Professional scrubbing - showing cached frame for: " +
+                positionMs +
+                "ms"
+            );
+            // -------------- Fix Ended (professional cached frame scrubbing) --------------
+        } else {
+            // -------------- Fix Start (professional scrubbing end - single final seek) --------------
+            // SCRUBBING ENDED: Now perform single high-quality seek to exact frame
+            // This is the ONLY time video seeking happens during scrubbing workflow
+            if (videoPlayer != null) {
+                Log.d(
+                    TAG,
+                    "Professional scrubbing ended - final seek to: " +
+                    positionMs +
+                    "ms"
+                );
 
-        markModified();
+                videoPlayer.setScrubbing(false); // Re-enable position updates
+
+                long seekStartTime = System.currentTimeMillis();
+                videoPlayer.seekTo(positionMs); // Single final seek for exact frame
+
+                // Record final seek performance
+                long seekTime = System.currentTimeMillis() - seekStartTime;
+                if (performanceMonitor != null) {
+                    performanceMonitor.recordSeekTime(seekTime);
+                }
+            }
+
+            if (editorState != null) {
+                editorState.setLastPlayPosition(positionMs);
+            }
+
+            markModified();
+            Log.d(TAG, "Professional scrubbing workflow completed");
+            // -------------- Fix Ended (professional scrubbing end - single final seek) --------------
+        }
     }
 
     @Override
