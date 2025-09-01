@@ -7,42 +7,39 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
-
 import com.fadcam.Log;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.ui.BaseFragment;
-import com.fadcam.ui.faditor.components.VideoPlayerComponent;
-import com.fadcam.ui.faditor.components.TimelineComponent;
-import com.fadcam.ui.faditor.components.ToolbarComponent;
 import com.fadcam.ui.faditor.components.ControlsComponent;
 import com.fadcam.ui.faditor.components.ProgressComponent;
-import com.fadcam.ui.faditor.models.VideoProject;
+import com.fadcam.ui.faditor.components.TimelineComponent;
+import com.fadcam.ui.faditor.components.ToolbarComponent;
+import com.fadcam.ui.faditor.components.VideoPlayerComponent;
 import com.fadcam.ui.faditor.models.EditorState;
+import com.fadcam.ui.faditor.models.VideoProject;
 import com.fadcam.ui.faditor.persistence.AutoSaveManager;
-import com.fadcam.ui.faditor.persistence.ProjectManager;
 import com.fadcam.ui.faditor.persistence.MediaReferenceManager;
+import com.fadcam.ui.faditor.persistence.ProjectManager;
+import com.fadcam.ui.faditor.utils.Material3Utils;
+import com.fadcam.ui.faditor.utils.MemoryOptimizer;
 import com.fadcam.ui.faditor.utils.NavigationUtils;
 import com.fadcam.ui.faditor.utils.PerformanceMonitor;
 import com.fadcam.ui.faditor.utils.PerformanceOptimizer;
-import com.fadcam.ui.faditor.utils.MemoryOptimizer;
-import com.fadcam.ui.faditor.utils.Material3Utils;
 import com.google.android.material.appbar.MaterialToolbar;
-import android.widget.ImageButton;
-import android.widget.TextView;
-import android.widget.SeekBar;
 import com.google.android.material.button.MaterialButton;
-
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Dedicated full-screen editor fragment for professional video editing.
@@ -51,7 +48,9 @@ import java.util.HashMap;
  * Implements requirements 10.1-10.5 and 12.7 for professional editing
  * experience.
  */
-public class FaditorEditorFragment extends BaseFragment implements
+public class FaditorEditorFragment
+    extends BaseFragment
+    implements
         AutoSaveManager.AutoSaveListener,
         ToolbarComponent.ToolbarListener,
         VideoPlayerComponent.VideoPlayerListener,
@@ -133,10 +132,17 @@ public class FaditorEditorFragment extends BaseFragment implements
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public View onCreateView(
+        @NonNull LayoutInflater inflater,
+        @Nullable ViewGroup container,
+        @Nullable Bundle savedInstanceState
+    ) {
         Log.d(TAG, "=== FADITOR EDITOR FRAGMENT ON CREATE VIEW ===");
-        View view = inflater.inflate(R.layout.fragment_faditor_editor, container, false);
+        View view = inflater.inflate(
+            R.layout.fragment_faditor_editor,
+            container,
+            false
+        );
 
         Log.d(TAG, "Initializing views...");
         initializeViews(view);
@@ -148,7 +154,10 @@ public class FaditorEditorFragment extends BaseFragment implements
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(
+        @NonNull View view,
+        @Nullable Bundle savedInstanceState
+    ) {
         super.onViewCreated(view, savedInstanceState);
 
         // Hide bottom navigation for full-screen editing (Requirement 10.3)
@@ -240,43 +249,64 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Initialize performance monitoring components
         performanceMonitor = PerformanceMonitor.getInstance();
         memoryOptimizer = MemoryOptimizer.getInstance(requireContext());
-        performanceOptimizer = PerformanceOptimizer.getInstance(requireContext());
+        performanceOptimizer = PerformanceOptimizer.getInstance(
+            requireContext()
+        );
 
         // Set up performance optimization listener
-        performanceOptimizer
-                .setPerformanceOptimizationListener(new PerformanceOptimizer.PerformanceOptimizationListener() {
-                    @Override
-                    public void onPerformanceOptimizationStarted(String reason) {
-                        Log.d(TAG, "Performance optimization started: " + reason);
-                        // Show subtle feedback to user using existing progress methods
-                        if (progressOverlay != null) {
-                            progressOverlay.showProgress("Optimizing performance...", false);
-                        }
+        performanceOptimizer.setPerformanceOptimizationListener(
+            new PerformanceOptimizer.PerformanceOptimizationListener() {
+                @Override
+                public void onPerformanceOptimizationStarted(String reason) {
+                    Log.d(TAG, "Performance optimization started: " + reason);
+                    // Show subtle feedback to user using existing progress methods
+                    if (progressOverlay != null) {
+                        progressOverlay.showProgress(
+                            "Optimizing performance...",
+                            false
+                        );
                     }
+                }
 
-                    @Override
-                    public void onPerformanceOptimizationCompleted(String summary) {
-                        Log.d(TAG, "Performance optimization completed: " + summary);
-                        // Hide optimization feedback
-                        if (progressOverlay != null) {
-                            progressOverlay.hideProgress();
-                        }
+                @Override
+                public void onPerformanceOptimizationCompleted(String summary) {
+                    Log.d(
+                        TAG,
+                        "Performance optimization completed: " + summary
+                    );
+                    // Hide optimization feedback
+                    if (progressOverlay != null) {
+                        progressOverlay.hideProgress();
                     }
+                }
 
-                    @Override
-                    public void onPerformanceWarning(String warning, String recommendation) {
-                        Log.w(TAG, "Performance warning: " + warning + " - " + recommendation);
-                        // Show performance warning to user (non-intrusive)
-                        showPerformanceWarning(warning, recommendation);
-                    }
+                @Override
+                public void onPerformanceWarning(
+                    String warning,
+                    String recommendation
+                ) {
+                    Log.w(
+                        TAG,
+                        "Performance warning: " +
+                        warning +
+                        " - " +
+                        recommendation
+                    );
+                    // Show performance warning to user (non-intrusive)
+                    showPerformanceWarning(warning, recommendation);
+                }
 
-                    @Override
-                    public void onAutoSavePerformanceIssue(long autoSaveTimeMs) {
-                        Log.w(TAG, "Auto-save performance issue: " + autoSaveTimeMs + "ms");
-                        // Notify user about slow auto-save
-                        showAutoSavePerformanceWarning(autoSaveTimeMs);
-                    }
-                });
+                @Override
+                public void onAutoSavePerformanceIssue(long autoSaveTimeMs) {
+                    Log.w(
+                        TAG,
+                        "Auto-save performance issue: " + autoSaveTimeMs + "ms"
+                    );
+                    // Notify user about slow auto-save
+                    showAutoSavePerformanceWarning(autoSaveTimeMs);
+                }
+            }
+        );
 
         // Start performance optimization
         performanceOptimizer.startOptimization();
@@ -298,8 +328,17 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Debug logging for component initialization
         Log.d(TAG, "VideoPlayer component found: " + (videoPlayer != null));
         if (videoPlayer != null) {
-            Log.d(TAG, "VideoPlayer dimensions: " + videoPlayer.getWidth() + "x" + videoPlayer.getHeight());
-            Log.d(TAG, "VideoPlayer visibility: " + videoPlayer.getVisibility());
+            Log.d(
+                TAG,
+                "VideoPlayer dimensions: " +
+                videoPlayer.getWidth() +
+                "x" +
+                videoPlayer.getHeight()
+            );
+            Log.d(
+                TAG,
+                "VideoPlayer visibility: " + videoPlayer.getVisibility()
+            );
         }
 
         // Find new UI components
@@ -310,8 +349,12 @@ public class FaditorEditorFragment extends BaseFragment implements
         TextView currentTimeText = view.findViewById(R.id.current_time_text);
         SeekBar seekBar = view.findViewById(R.id.seek_bar);
         TextView totalTimeText = view.findViewById(R.id.total_time_text);
-        ImageButton fullscreenButton = view.findViewById(R.id.fullscreen_button);
-        TextView timelineTimeDisplay = view.findViewById(R.id.timeline_time_display);
+        ImageButton fullscreenButton = view.findViewById(
+            R.id.fullscreen_button
+        );
+        TextView timelineTimeDisplay = view.findViewById(
+            R.id.timeline_time_display
+        );
         ImageButton zoomOutButton = view.findViewById(R.id.zoom_out_button);
         ImageButton zoomInButton = view.findViewById(R.id.zoom_in_button);
 
@@ -381,24 +424,28 @@ public class FaditorEditorFragment extends BaseFragment implements
 
         // Set up seek bar listener
         if (seekBar != null) {
-            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    if (fromUser && videoPlayer != null) {
-                        long position = (long) progress * 1000; // Convert to milliseconds
-                        videoPlayer.seekTo(position);
-                        updateTimeDisplay(position);
+            seekBar.setOnSeekBarChangeListener(
+                new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(
+                        SeekBar seekBar,
+                        int progress,
+                        boolean fromUser
+                    ) {
+                        if (fromUser && videoPlayer != null) {
+                            long position = (long) progress * 1000; // Convert to milliseconds
+                            videoPlayer.seekTo(position);
+                            updateTimeDisplay(position);
+                        }
                     }
-                }
 
-                @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
-                }
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {}
 
-                @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {}
                 }
-            });
+            );
         }
 
         // Initially hide progress overlay
@@ -416,7 +463,13 @@ public class FaditorEditorFragment extends BaseFragment implements
         Log.d(TAG, "Project ID: " + projectId);
 
         if (projectManager == null || projectId == null) {
-            Log.e(TAG, "Cannot load project - projectManager: " + projectManager + ", projectId: " + projectId);
+            Log.e(
+                TAG,
+                "Cannot load project - projectManager: " +
+                projectManager +
+                ", projectId: " +
+                projectId
+            );
             return;
         }
 
@@ -424,116 +477,170 @@ public class FaditorEditorFragment extends BaseFragment implements
         showProgress(getString(R.string.faditor_loading_project), false);
 
         Log.d(TAG, "Calling projectManager.loadProjectWithValidation...");
-        projectManager.loadProjectWithValidation(projectId, new ProjectManager.ProjectValidationCallback() {
-            @Override
-            public void onProjectLoadedWithValidation(VideoProject project,
-                    MediaReferenceManager.ValidationResult validation) {
-                Log.d(TAG, "=== PROJECT LOADED WITH VALIDATION CALLBACK ===");
-                currentProject = project;
-                Log.d(TAG, "Project loaded successfully: " + project.getProjectName());
-                Log.d(TAG, "Project primary media asset ID: " + project.getPrimaryMediaAssetId());
+        projectManager.loadProjectWithValidation(
+            projectId,
+            new ProjectManager.ProjectValidationCallback() {
+                @Override
+                public void onProjectLoadedWithValidation(
+                    VideoProject project,
+                    MediaReferenceManager.ValidationResult validation
+                ) {
+                    Log.d(
+                        TAG,
+                        "=== PROJECT LOADED WITH VALIDATION CALLBACK ==="
+                    );
+                    currentProject = project;
+                    Log.d(
+                        TAG,
+                        "Project loaded successfully: " +
+                        project.getProjectName()
+                    );
+                    Log.d(
+                        TAG,
+                        "Project primary media asset ID: " +
+                        project.getPrimaryMediaAssetId()
+                    );
 
-                // Check if URIs require re-selection
-                if (validation.hasUrisRequiringReselection()) {
-                    Log.w(TAG, "Project has URIs requiring re-selection: "
-                            + validation.getUrisRequiringReselectionCount());
-                    showUriReselectionDialog(validation);
-                } else {
-                    // No re-selection needed, proceed normally
-                    Log.d(TAG, "Calling loadEditorState...");
-                    loadEditorState();
+                    // Check if URIs require re-selection
+                    if (validation.hasUrisRequiringReselection()) {
+                        Log.w(
+                            TAG,
+                            "Project has URIs requiring re-selection: " +
+                            validation.getUrisRequiringReselectionCount()
+                        );
+                        showUriReselectionDialog(validation);
+                    } else {
+                        // No re-selection needed, proceed normally
+                        Log.d(TAG, "Calling loadEditorState...");
+                        loadEditorState();
+                    }
+                    Log.d(
+                        TAG,
+                        "=== PROJECT LOADED WITH VALIDATION CALLBACK COMPLETED ==="
+                    );
                 }
-                Log.d(TAG, "=== PROJECT LOADED WITH VALIDATION CALLBACK COMPLETED ===");
-            }
 
-            @Override
-            public void onError(String errorMessage) {
-                Log.e(TAG, "Failed to load project: " + errorMessage);
-                hideProgress();
+                @Override
+                public void onError(String errorMessage) {
+                    Log.e(TAG, "Failed to load project: " + errorMessage);
+                    hideProgress();
 
-                Toast.makeText(requireContext(),
+                    Toast.makeText(
+                        requireContext(),
                         "Failed to load project: " + errorMessage,
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_LONG
+                    ).show();
 
-                // Return to browser on error
-                NavigationUtils.returnToBrowser(FaditorEditorFragment.this);
+                    // Return to browser on error
+                    NavigationUtils.returnToBrowser(FaditorEditorFragment.this);
+                }
             }
-        });
+        );
     }
 
-    private void showUriReselectionDialog(MediaReferenceManager.ValidationResult validation) {
+    private void showUriReselectionDialog(
+        MediaReferenceManager.ValidationResult validation
+    ) {
         if (!validation.hasUrisRequiringReselection()) {
             return;
         }
 
         hideProgress(); // Hide loading progress before showing dialog
 
-        List<Uri> urisToReselect = new ArrayList<>(validation.getUrisRequiringReselection().values());
+        List<Uri> urisToReselect = new ArrayList<>(
+            validation.getUrisRequiringReselection().values()
+        );
 
-        UriReselectionDialog dialog = UriReselectionDialog.newInstance(urisToReselect);
-        dialog.setCallback(new UriReselectionDialog.UriReselectionCallback() {
-            @Override
-            public void onUriReselected(Uri oldUri, Uri newUri) {
-                Log.d(TAG, "URI re-selected: " + oldUri + " -> " + newUri);
+        UriReselectionDialog dialog = UriReselectionDialog.newInstance(
+            urisToReselect
+        );
+        dialog.setCallback(
+            new UriReselectionDialog.UriReselectionCallback() {
+                @Override
+                public void onUriReselected(Uri oldUri, Uri newUri) {
+                    Log.d(TAG, "URI re-selected: " + oldUri + " -> " + newUri);
 
-                // Update project with new URI
-                Map<Uri, Uri> uriMapping = new HashMap<>();
-                uriMapping.put(oldUri, newUri);
+                    // Update project with new URI
+                    Map<Uri, Uri> uriMapping = new HashMap<>();
+                    uriMapping.put(oldUri, newUri);
 
-                projectManager.updateProjectWithReselectedUris(currentProject, uriMapping,
+                    projectManager.updateProjectWithReselectedUris(
+                        currentProject,
+                        uriMapping,
                         new ProjectManager.ProjectCallback() {
                             @Override
                             public void onProjectSaved(String projectId) {
-                                Log.d(TAG, "Project updated with re-selected URI");
-                                Toast.makeText(requireContext(),
-                                        "File selected successfully",
-                                        Toast.LENGTH_SHORT).show();
+                                Log.d(
+                                    TAG,
+                                    "Project updated with re-selected URI"
+                                );
+                                Toast.makeText(
+                                    requireContext(),
+                                    "File selected successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show();
                             }
 
                             @Override
-                            public void onProjectLoaded(VideoProject project) {
-                            }
+                            public void onProjectLoaded(VideoProject project) {}
 
                             @Override
                             public void onError(String errorMessage) {
-                                Log.e(TAG, "Failed to update project with re-selected URI: " + errorMessage);
-                                Toast.makeText(requireContext(),
-                                        "Failed to update project: " + errorMessage,
-                                        Toast.LENGTH_LONG).show();
+                                Log.e(
+                                    TAG,
+                                    "Failed to update project with re-selected URI: " +
+                                    errorMessage
+                                );
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Failed to update project: " + errorMessage,
+                                    Toast.LENGTH_LONG
+                                ).show();
                             }
-                        });
-            }
+                        }
+                    );
+                }
 
-            @Override
-            public void onUriSkipped(Uri uri) {
-                Log.d(TAG, "URI re-selection skipped: " + uri);
-                Toast.makeText(requireContext(),
+                @Override
+                public void onUriSkipped(Uri uri) {
+                    Log.d(TAG, "URI re-selection skipped: " + uri);
+                    Toast.makeText(
+                        requireContext(),
                         "File skipped",
-                        Toast.LENGTH_SHORT).show();
-            }
+                        Toast.LENGTH_SHORT
+                    ).show();
+                }
 
-            @Override
-            public void onReselectionCompleted() {
-                Log.d(TAG, "URI re-selection completed, proceeding with editor initialization");
-                Toast.makeText(requireContext(),
+                @Override
+                public void onReselectionCompleted() {
+                    Log.d(
+                        TAG,
+                        "URI re-selection completed, proceeding with editor initialization"
+                    );
+                    Toast.makeText(
+                        requireContext(),
                         "All files have been processed",
-                        Toast.LENGTH_SHORT).show();
+                        Toast.LENGTH_SHORT
+                    ).show();
 
-                // Now proceed with loading editor state
-                loadEditorState();
-            }
+                    // Now proceed with loading editor state
+                    loadEditorState();
+                }
 
-            @Override
-            public void onReselectionCancelled() {
-                Log.d(TAG, "URI re-selection cancelled");
-                Toast.makeText(requireContext(),
+                @Override
+                public void onReselectionCancelled() {
+                    Log.d(TAG, "URI re-selection cancelled");
+                    Toast.makeText(
+                        requireContext(),
                         "Re-selection cancelled",
-                        Toast.LENGTH_SHORT).show();
+                        Toast.LENGTH_SHORT
+                    ).show();
 
-                // Return to browser if user cancels
-                NavigationUtils.returnToBrowser(FaditorEditorFragment.this);
+                    // Return to browser if user cancels
+                    NavigationUtils.returnToBrowser(FaditorEditorFragment.this);
+                }
             }
-        });
+        );
 
         dialog.show(getParentFragmentManager());
     }
@@ -543,36 +650,53 @@ public class FaditorEditorFragment extends BaseFragment implements
             return;
         }
 
-        projectManager.loadEditorState(projectId, new ProjectManager.EditorStateCallback() {
-            @Override
-            public void onEditorStateLoaded(EditorState state) {
-                editorState = state != null ? state : new EditorState();
+        projectManager.loadEditorState(
+            projectId,
+            new ProjectManager.EditorStateCallback() {
+                @Override
+                public void onEditorStateLoaded(EditorState state) {
+                    editorState = state != null ? state : new EditorState();
 
-                // Initialize editor with loaded state
-                initializeEditor();
+                    // Initialize editor with loaded state
+                    initializeEditor();
+                }
+
+                @Override
+                public void onEditorStateSaved(String projectId) {
+                    // Not used in load operation
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    Log.w(
+                        TAG,
+                        "Failed to load editor state, using default: " +
+                        errorMessage
+                    );
+
+                    // Use default editor state
+                    editorState = new EditorState();
+                    initializeEditor();
+                }
             }
-
-            @Override
-            public void onEditorStateSaved(String projectId) {
-                // Not used in load operation
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                Log.w(TAG, "Failed to load editor state, using default: " + errorMessage);
-
-                // Use default editor state
-                editorState = new EditorState();
-                initializeEditor();
-            }
-        });
+        );
     }
 
     private void initializeEditor() {
         Log.d(TAG, "Initializing editor...");
-        Log.d(TAG, "Current project: " + (currentProject != null ? currentProject.getProjectName() : "null"));
-        Log.d(TAG, "Editor state: " + (editorState != null ? "loaded" : "null"));
-        Log.d(TAG, "Video player: " + (videoPlayer != null ? "initialized" : "null"));
+        Log.d(
+            TAG,
+            "Current project: " +
+            (currentProject != null ? currentProject.getProjectName() : "null")
+        );
+        Log.d(
+            TAG,
+            "Editor state: " + (editorState != null ? "loaded" : "null")
+        );
+        Log.d(
+            TAG,
+            "Video player: " + (videoPlayer != null ? "initialized" : "null")
+        );
 
         if (currentProject == null || editorState == null) {
             Log.w(TAG, "Cannot initialize editor - project or state is null");
@@ -582,16 +706,24 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Update project name and quality indicator
         View view = getView();
         if (view != null && currentProject.getProjectName() != null) {
-            TextView projectNameText = view.findViewById(R.id.project_name_text);
-            TextView qualityIndicator = view.findViewById(R.id.quality_indicator);
+            TextView projectNameText = view.findViewById(
+                R.id.project_name_text
+            );
+            TextView qualityIndicator = view.findViewById(
+                R.id.quality_indicator
+            );
 
             if (projectNameText != null) {
                 projectNameText.setText(currentProject.getProjectName());
             }
 
-            if (qualityIndicator != null && currentProject.getMetadata() != null) {
+            if (
+                qualityIndicator != null && currentProject.getMetadata() != null
+            ) {
                 int height = currentProject.getMetadata().getHeight();
-                String quality = height >= 1080 ? "1080P" : height >= 720 ? "720P" : "480P";
+                String quality = height >= 1080
+                    ? "1080P"
+                    : height >= 720 ? "720P" : "480P";
                 qualityIndicator.setText(quality);
             }
         }
@@ -602,20 +734,37 @@ public class FaditorEditorFragment extends BaseFragment implements
 
         if (videoPlayer != null && currentProject != null) {
             // Use professional media management if available
-            if (currentProject.getPrimaryMediaAssetId() != null && !currentProject.getPrimaryMediaAssetId().isEmpty()) {
-                Log.d(TAG, "Loading video using professional media management - Asset ID: "
-                        + currentProject.getPrimaryMediaAssetId());
-                videoPlayer.loadProjectMedia(currentProject.getProjectId(), currentProject.getPrimaryMediaAssetId(),
-                        projectManager);
+            if (
+                currentProject.getPrimaryMediaAssetId() != null &&
+                !currentProject.getPrimaryMediaAssetId().isEmpty()
+            ) {
+                Log.d(
+                    TAG,
+                    "Loading video using professional media management - Asset ID: " +
+                    currentProject.getPrimaryMediaAssetId()
+                );
+                videoPlayer.loadProjectMedia(
+                    currentProject.getProjectId(),
+                    currentProject.getPrimaryMediaAssetId(),
+                    projectManager
+                );
             }
             // Project must use professional media management system
             else {
-                Log.w(TAG, "Project does not have primary media asset ID - cannot load video: "
-                        + currentProject.getProjectId());
+                Log.w(
+                    TAG,
+                    "Project does not have primary media asset ID - cannot load video: " +
+                    currentProject.getProjectId()
+                );
             }
         } else {
-            Log.w(TAG, "Cannot load video - videoPlayer: " + (videoPlayer != null) + ", project: "
-                    + (currentProject != null));
+            Log.w(
+                TAG,
+                "Cannot load video - videoPlayer: " +
+                (videoPlayer != null) +
+                ", project: " +
+                (currentProject != null)
+            );
         }
 
         // Initialize timeline
@@ -625,8 +774,9 @@ public class FaditorEditorFragment extends BaseFragment implements
             timeline.setVideoDuration(currentProject.getDuration());
             if (currentProject.getCurrentTrim() != null) {
                 timeline.setTrimRange(
-                        currentProject.getCurrentTrim().getStartMs(),
-                        currentProject.getCurrentTrim().getEndMs());
+                    currentProject.getCurrentTrim().getStartMs(),
+                    currentProject.getCurrentTrim().getEndMs()
+                );
             }
 
             // Restore timeline state
@@ -649,10 +799,16 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Initialize toolbar
         if (toolbar != null && editorState.getSelectedTool() != null) {
             try {
-                ToolbarComponent.Tool tool = ToolbarComponent.Tool.valueOf(editorState.getSelectedTool());
+                ToolbarComponent.Tool tool = ToolbarComponent.Tool.valueOf(
+                    editorState.getSelectedTool()
+                );
                 toolbar.setSelectedTool(tool);
             } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Invalid tool in editor state: " + editorState.getSelectedTool());
+                Log.w(
+                    TAG,
+                    "Invalid tool in editor state: " +
+                    editorState.getSelectedTool()
+                );
             }
         }
 
@@ -665,7 +821,11 @@ public class FaditorEditorFragment extends BaseFragment implements
         hideProgress();
         isInitialized = true;
 
-        Log.d(TAG, "Editor initialized successfully for project: " + currentProject.getProjectName());
+        Log.d(
+            TAG,
+            "Editor initialized successfully for project: " +
+            currentProject.getProjectName()
+        );
     }
 
     // Navigation methods
@@ -693,10 +853,12 @@ public class FaditorEditorFragment extends BaseFragment implements
     // Auto-save methods
 
     public boolean hasUnsavedChanges() {
-        return hasUnsavedChanges ||
-                (currentProject != null && currentProject.hasUnsavedChanges()) ||
-                (editorState != null && editorState.needsSaving()) ||
-                (autoSaveManager != null && autoSaveManager.hasUnsavedChanges());
+        return (
+            hasUnsavedChanges ||
+            (currentProject != null && currentProject.hasUnsavedChanges()) ||
+            (editorState != null && editorState.needsSaving()) ||
+            (autoSaveManager != null && autoSaveManager.hasUnsavedChanges())
+        );
     }
 
     private void markModified() {
@@ -715,65 +877,79 @@ public class FaditorEditorFragment extends BaseFragment implements
 
         showProgress(getString(R.string.faditor_saving_project), false);
 
-        projectManager.saveProject(currentProject, new ProjectManager.ProjectCallback() {
-            @Override
-            public void onProjectSaved(String projectId) {
-                hideProgress();
-                hasUnsavedChanges = false;
+        projectManager.saveProject(
+            currentProject,
+            new ProjectManager.ProjectCallback() {
+                @Override
+                public void onProjectSaved(String projectId) {
+                    hideProgress();
+                    hasUnsavedChanges = false;
 
-                Toast.makeText(requireContext(),
+                    Toast.makeText(
+                        requireContext(),
                         "Project saved successfully",
-                        Toast.LENGTH_SHORT).show();
-            }
+                        Toast.LENGTH_SHORT
+                    ).show();
+                }
 
-            @Override
-            public void onProjectLoaded(VideoProject project) {
-                // Not used in save operation
-            }
+                @Override
+                public void onProjectLoaded(VideoProject project) {
+                    // Not used in save operation
+                }
 
-            @Override
-            public void onError(String errorMessage) {
-                hideProgress();
+                @Override
+                public void onError(String errorMessage) {
+                    hideProgress();
 
-                Toast.makeText(requireContext(),
+                    Toast.makeText(
+                        requireContext(),
                         "Failed to save project: " + errorMessage,
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_LONG
+                    ).show();
+                }
             }
-        });
+        );
     }
 
     private void exportProject() {
         if (currentProject == null || currentProject.getMetadata() == null) {
-            Toast.makeText(requireContext(),
-                    "No project loaded for export",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                requireContext(),
+                "No project loaded for export",
+                Toast.LENGTH_SHORT
+            ).show();
             return;
         }
 
         // Show export options dialog (Requirement 4.1)
-        com.fadcam.ui.faditor.components.ExportOptionsDialog dialog = com.fadcam.ui.faditor.components.ExportOptionsDialog
-                .newInstance(
-                        currentProject.getMetadata(),
-                        currentProject.getProjectName());
+        com.fadcam.ui.faditor.components.ExportOptionsDialog dialog =
+            com.fadcam.ui.faditor.components.ExportOptionsDialog.newInstance(
+                currentProject.getMetadata(),
+                currentProject.getProjectName()
+            );
 
         dialog.setExportOptionsListener(
-                new com.fadcam.ui.faditor.components.ExportOptionsDialog.ExportOptionsListener() {
-                    @Override
-                    public void onExportConfirmed(
-                            com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings settings) {
-                        startVideoExport(settings);
-                    }
+            new com.fadcam.ui.faditor.components.ExportOptionsDialog.ExportOptionsListener() {
+                @Override
+                public void onExportConfirmed(
+                    com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings settings
+                ) {
+                    startVideoExport(settings);
+                }
 
-                    @Override
-                    public void onExportCancelled() {
-                        Log.d(TAG, "Export cancelled by user");
-                    }
-                });
+                @Override
+                public void onExportCancelled() {
+                    Log.d(TAG, "Export cancelled by user");
+                }
+            }
+        );
 
         dialog.show(getParentFragmentManager(), "export_options");
     }
 
-    private void startVideoExport(com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings settings) {
+    private void startVideoExport(
+        com.fadcam.ui.faditor.processors.VideoExporter.ExportSettings settings
+    ) {
         if (currentProject == null) {
             return;
         }
@@ -785,150 +961,204 @@ public class FaditorEditorFragment extends BaseFragment implements
         showProgress(getString(R.string.faditor_preparing_export), true);
 
         // Initialize video exporter
-        currentExporter = new com.fadcam.ui.faditor.processors.VideoExporter(requireContext());
+        currentExporter = new com.fadcam.ui.faditor.processors.VideoExporter(
+            requireContext()
+        );
 
         // Start export with progress tracking (Requirement 4.2, 4.3)
-        currentExporter.exportVideo(currentProject, settings,
-                new com.fadcam.ui.faditor.processors.VideoExporter.ExportCallback() {
-                    @Override
-                    public void onStarted() {
-                        requireActivity().runOnUiThread(() -> {
-                            showProgress(getString(R.string.faditor_export_starting), true);
+        currentExporter.exportVideo(
+            currentProject,
+            settings,
+            new com.fadcam.ui.faditor.processors.VideoExporter.ExportCallback() {
+                @Override
+                public void onStarted() {
+                    requireActivity().runOnUiThread(() -> {
+                            showProgress(
+                                getString(R.string.faditor_export_starting),
+                                true
+                            );
                             Log.d(TAG, "Export started");
                         });
-                    }
+                }
 
-                    @Override
-                    public void onProgress(int percentage) {
-                        requireActivity().runOnUiThread(() -> {
+                @Override
+                public void onProgress(int percentage) {
+                    requireActivity().runOnUiThread(() -> {
                             // Use enhanced progress tracking with percentage display
-                            String message = getString(R.string.faditor_export_progress, percentage);
+                            String message = getString(
+                                R.string.faditor_export_progress,
+                                percentage
+                            );
                             updateProgress(percentage, message);
                             Log.d(TAG, "Export progress: " + percentage + "%");
                         });
-                    }
+                }
 
-                    @Override
-                    public void onSuccess(java.io.File exportedFile) {
-                        requireActivity().runOnUiThread(() -> {
+                @Override
+                public void onSuccess(java.io.File exportedFile) {
+                    requireActivity().runOnUiThread(() -> {
                             currentExporter = null; // Clear reference
 
                             // Show success message with filename
-                            String successMessage = getString(R.string.faditor_export_success_message,
-                                    exportedFile.getName());
+                            String successMessage = getString(
+                                R.string.faditor_export_success_message,
+                                exportedFile.getName()
+                            );
                             showSuccessMessage(successMessage);
 
                             // Show export success dialog after a brief delay
-                            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                showExportSuccessDialog(exportedFile);
-                            }, 2500); // Allow success message to be seen
+                            new Handler(Looper.getMainLooper()).postDelayed(
+                                    () -> {
+                                        showExportSuccessDialog(exportedFile);
+                                    },
+                                    2500
+                                ); // Allow success message to be seen
 
-                            Log.d(TAG, "Export completed: " + exportedFile.getAbsolutePath());
+                            Log.d(
+                                TAG,
+                                "Export completed: " +
+                                exportedFile.getAbsolutePath()
+                            );
                         });
-                    }
+                }
 
-                    @Override
-                    public void onError(String errorMessage) {
-                        requireActivity().runOnUiThread(() -> {
+                @Override
+                public void onError(String errorMessage) {
+                    requireActivity().runOnUiThread(() -> {
                             currentExporter = null; // Clear reference
 
                             // Show error message with retry option
-                            String formattedError = getString(R.string.faditor_export_error_message, errorMessage);
+                            String formattedError = getString(
+                                R.string.faditor_export_error_message,
+                                errorMessage
+                            );
                             showErrorMessage(formattedError, true);
 
                             Log.e(TAG, "Export failed: " + errorMessage);
                         });
-                    }
+                }
 
-                    @Override
-                    public void onCancelled() {
-                        requireActivity().runOnUiThread(() -> {
+                @Override
+                public void onCancelled() {
+                    requireActivity().runOnUiThread(() -> {
                             currentExporter = null; // Clear reference
                             hideProgress();
-                            Toast.makeText(requireContext(),
-                                    R.string.faditor_export_cancelled,
-                                    Toast.LENGTH_SHORT).show();
+                            Toast.makeText(
+                                requireContext(),
+                                R.string.faditor_export_cancelled,
+                                Toast.LENGTH_SHORT
+                            ).show();
                             Log.d(TAG, "Export cancelled");
                         });
-                    }
-                });
+                }
+            }
+        );
     }
 
     private void showExportSuccessDialog(java.io.File exportedFile) {
         // Show success message with options to share or view (Requirement 4.4, 4.5)
         new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.faditor_export_completed)
-                .setMessage(getString(R.string.faditor_export_success_message, exportedFile.getName()))
-                .setPositiveButton(R.string.faditor_share_video, (dialog, which) -> {
+            .setTitle(R.string.faditor_export_completed)
+            .setMessage(
+                getString(
+                    R.string.faditor_export_success_message,
+                    exportedFile.getName()
+                )
+            )
+            .setPositiveButton(
+                R.string.faditor_share_video,
+                (dialog, which) -> {
                     shareExportedVideo(exportedFile);
-                })
-                .setNeutralButton(R.string.faditor_view_video, (dialog, which) -> {
-                    viewExportedVideo(exportedFile);
-                })
-                .setNegativeButton(R.string.faditor_close, (dialog, which) -> {
-                    dialog.dismiss();
-                })
-                .show();
+                }
+            )
+            .setNeutralButton(R.string.faditor_view_video, (dialog, which) -> {
+                viewExportedVideo(exportedFile);
+            })
+            .setNegativeButton(R.string.faditor_close, (dialog, which) -> {
+                dialog.dismiss();
+            })
+            .show();
     }
 
     private void showExportErrorDialog(String errorMessage) {
         // Show error message with retry option (Requirement 4.6)
         new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.faditor_export_failed)
-                .setMessage(getString(R.string.faditor_export_error_message, errorMessage))
-                .setPositiveButton(R.string.faditor_retry, (dialog, which) -> {
-                    exportProject(); // Retry export
-                })
-                .setNegativeButton(R.string.faditor_close, (dialog, which) -> {
-                    dialog.dismiss();
-                })
-                .show();
+            .setTitle(R.string.faditor_export_failed)
+            .setMessage(
+                getString(R.string.faditor_export_error_message, errorMessage)
+            )
+            .setPositiveButton(R.string.faditor_retry, (dialog, which) -> {
+                exportProject(); // Retry export
+            })
+            .setNegativeButton(R.string.faditor_close, (dialog, which) -> {
+                dialog.dismiss();
+            })
+            .show();
     }
 
     private void shareExportedVideo(java.io.File videoFile) {
         try {
-            android.content.Intent shareIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            android.content.Intent shareIntent = new android.content.Intent(
+                android.content.Intent.ACTION_SEND
+            );
             shareIntent.setType("video/*");
 
             // Use FileProvider for secure file sharing
-            android.net.Uri videoUri = androidx.core.content.FileProvider.getUriForFile(
+            android.net.Uri videoUri =
+                androidx.core.content.FileProvider.getUriForFile(
                     requireContext(),
                     requireContext().getPackageName() + ".fileprovider",
-                    videoFile);
+                    videoFile
+                );
 
             shareIntent.putExtra(android.content.Intent.EXTRA_STREAM, videoUri);
-            shareIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            shareIntent.addFlags(
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            );
 
-            startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.faditor_share_video)));
-
+            startActivity(
+                android.content.Intent.createChooser(
+                    shareIntent,
+                    getString(R.string.faditor_share_video)
+                )
+            );
         } catch (Exception e) {
             Log.e(TAG, "Error sharing video", e);
-            Toast.makeText(requireContext(),
-                    "Failed to share video: " + e.getMessage(),
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                requireContext(),
+                "Failed to share video: " + e.getMessage(),
+                Toast.LENGTH_LONG
+            ).show();
         }
     }
 
     private void viewExportedVideo(java.io.File videoFile) {
         try {
-            android.content.Intent viewIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            android.content.Intent viewIntent = new android.content.Intent(
+                android.content.Intent.ACTION_VIEW
+            );
 
             // Use FileProvider for secure file access
-            android.net.Uri videoUri = androidx.core.content.FileProvider.getUriForFile(
+            android.net.Uri videoUri =
+                androidx.core.content.FileProvider.getUriForFile(
                     requireContext(),
                     requireContext().getPackageName() + ".fileprovider",
-                    videoFile);
+                    videoFile
+                );
 
             viewIntent.setDataAndType(videoUri, "video/*");
-            viewIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            viewIntent.addFlags(
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            );
 
             startActivity(viewIntent);
-
         } catch (Exception e) {
             Log.e(TAG, "Error viewing video", e);
-            Toast.makeText(requireContext(),
-                    "Failed to open video: " + e.getMessage(),
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                requireContext(),
+                "Failed to open video: " + e.getMessage(),
+                Toast.LENGTH_LONG
+            ).show();
         }
     }
 
@@ -944,23 +1174,29 @@ public class FaditorEditorFragment extends BaseFragment implements
 
     public void showUnsavedChangesDialog() {
         new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.faditor_unsaved_changes_title)
-                .setMessage(R.string.faditor_unsaved_changes_message)
-                .setPositiveButton(R.string.faditor_save_and_exit, (dialog, which) -> {
+            .setTitle(R.string.faditor_unsaved_changes_title)
+            .setMessage(R.string.faditor_unsaved_changes_message)
+            .setPositiveButton(
+                R.string.faditor_save_and_exit,
+                (dialog, which) -> {
                     saveProject();
                     saveAndExit();
-                })
-                .setNegativeButton(R.string.faditor_discard_and_exit, (dialog, which) -> {
+                }
+            )
+            .setNegativeButton(
+                R.string.faditor_discard_and_exit,
+                (dialog, which) -> {
                     // Stop auto-save to prevent saving discarded changes
                     if (autoSaveManager != null) {
                         autoSaveManager.stopAutoSave();
                     }
                     NavigationUtils.returnToBrowser(this);
-                })
-                .setNeutralButton(R.string.faditor_cancel, (dialog, which) -> {
-                    dialog.dismiss();
-                })
-                .show();
+                }
+            )
+            .setNeutralButton(R.string.faditor_cancel, (dialog, which) -> {
+                dialog.dismiss();
+            })
+            .show();
     }
 
     // Progress methods and export state
@@ -975,9 +1211,18 @@ public class FaditorEditorFragment extends BaseFragment implements
         }
     }
 
-    private void showProgressWithPercentage(String message, int percentage, boolean cancellable) {
+    private void showProgressWithPercentage(
+        String message,
+        int percentage,
+        boolean cancellable
+    ) {
         if (progressOverlay != null) {
-            progressOverlay.showProgress(ProgressComponent.ProgressType.DETERMINATE, message, percentage, cancellable);
+            progressOverlay.showProgress(
+                ProgressComponent.ProgressType.DETERMINATE,
+                message,
+                percentage,
+                cancellable
+            );
             setupProgressListener();
         }
     }
@@ -1006,41 +1251,70 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Show non-intrusive performance warning
         if (getActivity() != null) {
             new Handler(Looper.getMainLooper()).post(() -> {
-                Toast.makeText(getActivity(), warning, Toast.LENGTH_SHORT).show();
-            });
+                    Toast.makeText(
+                        getActivity(),
+                        warning,
+                        Toast.LENGTH_SHORT
+                    ).show();
+                });
         }
-        Log.w(TAG, "Performance warning: " + warning + " - Recommendation: " + recommendation);
+        Log.w(
+            TAG,
+            "Performance warning: " +
+            warning +
+            " - Recommendation: " +
+            recommendation
+        );
     }
 
     // New UI interaction methods
 
     private void togglePlayPause() {
         if (videoPlayer != null) {
-            Log.d(TAG, "Toggle play/pause - current state: " + videoPlayer.isPlaying());
-            if (videoPlayer.isPlaying()) {
+            // -------------- Fix Start (togglePlayPause) --------------
+            boolean currentlyPlaying = videoPlayer.isPlaying();
+            Log.d(
+                TAG,
+                "Toggle play/pause - current state: " + currentlyPlaying
+            );
+
+            if (currentlyPlaying) {
                 videoPlayer.pause();
-                // Don't update button here - let the callback handle it
             } else {
                 videoPlayer.play();
-                // Don't update button here - let the callback handle it
             }
+
+            // Update button state immediately for better UX, callback will confirm
+            updatePlayPauseButton(!currentlyPlaying);
+            // -------------- Fix Ended (togglePlayPause) --------------
         }
     }
 
     private void updatePlayPauseButton(boolean isPlaying) {
         View view = getView();
         if (view != null) {
-            ImageButton playPauseButton = view.findViewById(R.id.play_pause_button);
+            ImageButton playPauseButton = view.findViewById(
+                R.id.play_pause_button
+            );
             if (playPauseButton != null) {
-                Log.d(TAG, "Updating play/pause button - isPlaying: " + isPlaying);
-                playPauseButton.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play_arrow);
+                Log.d(
+                    TAG,
+                    "Updating play/pause button - isPlaying: " + isPlaying
+                );
+                playPauseButton.setImageResource(
+                    isPlaying ? R.drawable.ic_pause : R.drawable.ic_play_arrow
+                );
             }
         }
     }
 
     private void toggleFullscreen() {
         // TODO: Implement fullscreen toggle
-        Toast.makeText(requireContext(), "Fullscreen mode coming soon", Toast.LENGTH_SHORT).show();
+        Toast.makeText(
+            requireContext(),
+            "Fullscreen mode coming soon",
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private void zoomOutTimeline() {
@@ -1055,37 +1329,82 @@ public class FaditorEditorFragment extends BaseFragment implements
         }
     }
 
+    // -------------- Fix Start (updateSeekBar) --------------
+    /**
+     * Update seek bar position without triggering change events
+     */
+    private void updateSeekBar(long positionMs) {
+        View view = getView();
+        if (view != null) {
+            SeekBar seekBar = view.findViewById(R.id.seek_bar);
+            if (
+                seekBar != null &&
+                currentProject != null &&
+                currentProject.getDuration() > 0
+            ) {
+                int progress = (int) (positionMs / 1000); // Convert to seconds
+                seekBar.setProgress(progress);
+            }
+        }
+    }
+
+    // -------------- Fix Ended (updateSeekBar) --------------
+
     private void onSplitToolSelected() {
         // TODO: Implement split tool
-        Toast.makeText(requireContext(), "Split tool selected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(
+            requireContext(),
+            "Split tool selected",
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private void onSpeedToolSelected() {
         // TODO: Implement speed tool
-        Toast.makeText(requireContext(), "Speed tool selected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(
+            requireContext(),
+            "Speed tool selected",
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private void onEffectsToolSelected() {
         // TODO: Implement effects tool
-        Toast.makeText(requireContext(), "Effects tool selected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(
+            requireContext(),
+            "Effects tool selected",
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private void onDeleteToolSelected() {
         // TODO: Implement delete tool
-        Toast.makeText(requireContext(), "Delete tool selected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(
+            requireContext(),
+            "Delete tool selected",
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private void onAddMediaSelected() {
         // TODO: Implement add media
-        Toast.makeText(requireContext(), "Add media selected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(
+            requireContext(),
+            "Add media selected",
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private void updateTimeDisplay(long currentPosition) {
         View view = getView();
         if (view != null && currentProject != null) {
-            TextView currentTimeText = view.findViewById(R.id.current_time_text);
+            TextView currentTimeText = view.findViewById(
+                R.id.current_time_text
+            );
             TextView totalTimeText = view.findViewById(R.id.total_time_text);
-            TextView timelineTimeDisplay = view.findViewById(R.id.timeline_time_display);
+            TextView timelineTimeDisplay = view.findViewById(
+                R.id.timeline_time_display
+            );
             SeekBar seekBar = view.findViewById(R.id.seek_bar);
 
             String currentTime = formatTime(currentPosition);
@@ -1104,7 +1423,8 @@ public class FaditorEditorFragment extends BaseFragment implements
             }
 
             if (seekBar != null && currentProject.getDuration() > 0) {
-                int progress = (int) (currentPosition * seekBar.getMax() / currentProject.getDuration());
+                int progress = (int) ((currentPosition * seekBar.getMax()) /
+                    currentProject.getDuration());
                 seekBar.setProgress(progress);
             }
         }
@@ -1123,11 +1443,17 @@ public class FaditorEditorFragment extends BaseFragment implements
     private void applyMaterial3Theming() {
         // Apply Material 3 button styles
         if (saveButton != null) {
-            Material3Utils.applyMaterial3ButtonStyle(saveButton, Material3Utils.ButtonStyle.TEXT);
+            Material3Utils.applyMaterial3ButtonStyle(
+                saveButton,
+                Material3Utils.ButtonStyle.TEXT
+            );
         }
 
         if (exportButton != null) {
-            Material3Utils.applyMaterial3ButtonStyle(exportButton, Material3Utils.ButtonStyle.FILLED);
+            Material3Utils.applyMaterial3ButtonStyle(
+                exportButton,
+                Material3Utils.ButtonStyle.FILLED
+            );
         }
 
         // Apply Material 3 motion to toolbar
@@ -1148,19 +1474,21 @@ public class FaditorEditorFragment extends BaseFragment implements
         if (editorToolbar != null) {
             editorToolbar.setNavigationOnClickListener(v -> {
                 // Add subtle animation to back button
-                v.animate()
-                        .scaleX(0.9f)
-                        .scaleY(0.9f)
-                        .setDuration(Material3Utils.MOTION_DURATION_SHORT_1)
-                        .withEndAction(() -> {
-                            v.animate()
-                                    .scaleX(1.0f)
-                                    .scaleY(1.0f)
-                                    .setDuration(Material3Utils.MOTION_DURATION_SHORT_2)
-                                    .start();
-                            onBackPressed();
-                        })
-                        .start();
+                v
+                    .animate()
+                    .scaleX(0.9f)
+                    .scaleY(0.9f)
+                    .setDuration(Material3Utils.MOTION_DURATION_SHORT_1)
+                    .withEndAction(() -> {
+                        v
+                            .animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(Material3Utils.MOTION_DURATION_SHORT_2)
+                            .start();
+                        onBackPressed();
+                    })
+                    .start();
             });
         }
     }
@@ -1184,7 +1512,9 @@ public class FaditorEditorFragment extends BaseFragment implements
     private void setupAccessibility() {
         // Enhanced content descriptions for editor components
         if (editorToolbar != null) {
-            editorToolbar.setNavigationContentDescription(getString(R.string.faditor_back_to_projects));
+            editorToolbar.setNavigationContentDescription(
+                getString(R.string.faditor_back_to_projects)
+            );
         }
 
         if (saveButton != null) {
@@ -1192,7 +1522,9 @@ public class FaditorEditorFragment extends BaseFragment implements
         }
 
         if (exportButton != null) {
-            exportButton.setContentDescription(getString(R.string.faditor_export));
+            exportButton.setContentDescription(
+                getString(R.string.faditor_export)
+            );
         }
 
         // Set up accessibility for timeline components
@@ -1207,29 +1539,46 @@ public class FaditorEditorFragment extends BaseFragment implements
      */
     private void setupTimelineAccessibility() {
         if (timeline != null) {
-            timeline.setContentDescription(getString(R.string.faditor_timeline));
-            timeline.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            timeline.setContentDescription(
+                getString(R.string.faditor_timeline)
+            );
+            timeline.setImportantForAccessibility(
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            );
         }
 
         // Add accessibility delegate for timeline interactions
         if (timeline != null) {
-            timeline.setAccessibilityDelegate(new View.AccessibilityDelegate() {
-                @Override
-                public void onInitializeAccessibilityNodeInfo(View host,
-                        android.view.accessibility.AccessibilityNodeInfo info) {
-                    super.onInitializeAccessibilityNodeInfo(host, info);
-                    info.setContentDescription(getString(R.string.faditor_timeline) + ". " +
-                            "Use to trim and edit video timeline.");
+            timeline.setAccessibilityDelegate(
+                new View.AccessibilityDelegate() {
+                    @Override
+                    public void onInitializeAccessibilityNodeInfo(
+                        View host,
+                        android.view.accessibility.AccessibilityNodeInfo info
+                    ) {
+                        super.onInitializeAccessibilityNodeInfo(host, info);
+                        info.setContentDescription(
+                            getString(R.string.faditor_timeline) +
+                            ". " +
+                            "Use to trim and edit video timeline."
+                        );
 
-                    // Add custom actions for timeline manipulation
-                    info.addAction(new android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction(
-                            android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
-                            "Seek forward"));
-                    info.addAction(new android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction(
-                            android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
-                            "Seek backward"));
+                        // Add custom actions for timeline manipulation
+                        info.addAction(
+                            new android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction(
+                                android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+                                "Seek forward"
+                            )
+                        );
+                        info.addAction(
+                            new android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction(
+                                android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+                                "Seek backward"
+                            )
+                        );
+                    }
                 }
-            });
+            );
         }
     }
 
@@ -1238,19 +1587,28 @@ public class FaditorEditorFragment extends BaseFragment implements
      */
     private void setupVideoPlayerAccessibility() {
         if (videoPlayer != null) {
-            videoPlayer.setContentDescription(getString(R.string.faditor_video_position));
-            videoPlayer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            videoPlayer.setContentDescription(
+                getString(R.string.faditor_video_position)
+            );
+            videoPlayer.setImportantForAccessibility(
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            );
         }
 
         if (controls != null) {
-            controls.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            controls.setImportantForAccessibility(
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            );
         }
     }
 
     /**
      * Show progress overlay with Material 3 animation
      */
-    private void showProgressWithAnimation(String message, boolean cancellable) {
+    private void showProgressWithAnimation(
+        String message,
+        boolean cancellable
+    ) {
         if (progressOverlay != null) {
             progressOverlay.setVisibility(View.VISIBLE);
             Material3Utils.animateFadeIn(progressOverlay);
@@ -1265,7 +1623,10 @@ public class FaditorEditorFragment extends BaseFragment implements
      * Hide progress overlay with Material 3 animation
      */
     private void hideProgressWithAnimation() {
-        if (progressOverlay != null && progressOverlay.getVisibility() == View.VISIBLE) {
+        if (
+            progressOverlay != null &&
+            progressOverlay.getVisibility() == View.VISIBLE
+        ) {
             Material3Utils.animateFadeOut(progressOverlay, () -> {
                 progressOverlay.setVisibility(View.GONE);
             });
@@ -1276,9 +1637,16 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Show subtle warning about slow auto-save
         if (getActivity() != null) {
             new Handler(Looper.getMainLooper()).post(() -> {
-                String message = "Auto-save is taking longer than usual (" + autoSaveTimeMs + "ms)";
-                Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
-            });
+                    String message =
+                        "Auto-save is taking longer than usual (" +
+                        autoSaveTimeMs +
+                        "ms)";
+                    Toast.makeText(
+                        getActivity(),
+                        message,
+                        Toast.LENGTH_SHORT
+                    ).show();
+                });
         }
     }
 
@@ -1298,11 +1666,16 @@ public class FaditorEditorFragment extends BaseFragment implements
 
                     // Check auto-save performance
                     if (autoSaveManager != null) {
-                        performanceOptimizer.checkAutoSavePerformance(autoSaveManager);
+                        performanceOptimizer.checkAutoSavePerformance(
+                            autoSaveManager
+                        );
                     }
 
                     // Log performance summary periodically (every minute)
-                    if (performanceMonitor != null && System.currentTimeMillis() % 60000 < 10000) {
+                    if (
+                        performanceMonitor != null &&
+                        System.currentTimeMillis() % 60000 < 10000
+                    ) {
                         performanceMonitor.logPerformanceSummary();
                     }
 
@@ -1326,22 +1699,24 @@ public class FaditorEditorFragment extends BaseFragment implements
 
     private void setupProgressListener() {
         if (progressOverlay != null) {
-            progressOverlay.setProgressListener(new ProgressComponent.ProgressListener() {
-                @Override
-                public void onCancelRequested() {
-                    cancelCurrentOperation();
-                }
+            progressOverlay.setProgressListener(
+                new ProgressComponent.ProgressListener() {
+                    @Override
+                    public void onCancelRequested() {
+                        cancelCurrentOperation();
+                    }
 
-                @Override
-                public void onRetryRequested() {
-                    retryCurrentOperation();
-                }
+                    @Override
+                    public void onRetryRequested() {
+                        retryCurrentOperation();
+                    }
 
-                @Override
-                public void onDismissRequested() {
-                    hideProgress();
+                    @Override
+                    public void onDismissRequested() {
+                        hideProgress();
+                    }
                 }
-            });
+            );
         }
     }
 
@@ -1361,7 +1736,11 @@ public class FaditorEditorFragment extends BaseFragment implements
         } else {
             // No operation to retry, just hide progress
             hideProgress();
-            Toast.makeText(requireContext(), "No operation to retry", Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                requireContext(),
+                "No operation to retry",
+                Toast.LENGTH_SHORT
+            ).show();
         }
     }
 
@@ -1384,19 +1763,32 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Simulate progress updates
         for (int i = 0; i <= 100; i += 10) {
             final int progress = i;
-            handler.postDelayed(() -> {
-                if (progressOverlay != null && progressOverlay.isProgressVisible()) {
-                    String message = getString(R.string.faditor_processing_video) + " Trimming...";
-                    updateProgress(progress, message);
+            handler.postDelayed(
+                () -> {
+                    if (
+                        progressOverlay != null &&
+                        progressOverlay.isProgressVisible()
+                    ) {
+                        String message =
+                            getString(R.string.faditor_processing_video) +
+                            " Trimming...";
+                        updateProgress(progress, message);
 
-                    // Simulate completion
-                    if (progress == 100) {
-                        handler.postDelayed(() -> {
-                            showSuccessMessage("Trim operation completed successfully");
-                        }, 500);
+                        // Simulate completion
+                        if (progress == 100) {
+                            handler.postDelayed(
+                                () -> {
+                                    showSuccessMessage(
+                                        "Trim operation completed successfully"
+                                    );
+                                },
+                                500
+                            );
+                        }
                     }
-                }
-            }, i * 100); // Update every 100ms
+                },
+                i * 100
+            ); // Update every 100ms
         }
     }
 
@@ -1441,42 +1833,51 @@ public class FaditorEditorFragment extends BaseFragment implements
     public void onCrashRecoveryAvailable(String projectId) {
         // Show crash recovery dialog (Requirement 12.4)
         new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.faditor_crash_recovery_title)
-                .setMessage(R.string.faditor_crash_recovery_message)
-                .setPositiveButton(R.string.faditor_recover, (dialog, which) -> {
-                    // Restore from crash recovery
-                    autoSaveManager.restoreFromCrashRecovery(projectId,
-                            new ProjectManager.EditorStateCallback() {
-                                @Override
-                                public void onEditorStateLoaded(EditorState state) {
-                                    if (state != null) {
-                                        editorState = state;
-                                        // Re-initialize editor with recovered state
-                                        initializeEditor();
-                                        Toast.makeText(requireContext(),
-                                                "Project recovered successfully",
-                                                Toast.LENGTH_SHORT).show();
-                                    }
-                                }
+            .setTitle(R.string.faditor_crash_recovery_title)
+            .setMessage(R.string.faditor_crash_recovery_message)
+            .setPositiveButton(R.string.faditor_recover, (dialog, which) -> {
+                // Restore from crash recovery
+                autoSaveManager.restoreFromCrashRecovery(
+                    projectId,
+                    new ProjectManager.EditorStateCallback() {
+                        @Override
+                        public void onEditorStateLoaded(EditorState state) {
+                            if (state != null) {
+                                editorState = state;
+                                // Re-initialize editor with recovered state
+                                initializeEditor();
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Project recovered successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show();
+                            }
+                        }
 
-                                @Override
-                                public void onEditorStateSaved(String projectId) {
-                                    // Not used in recovery
-                                }
+                        @Override
+                        public void onEditorStateSaved(String projectId) {
+                            // Not used in recovery
+                        }
 
-                                @Override
-                                public void onError(String errorMessage) {
-                                    Toast.makeText(requireContext(),
-                                            "Failed to recover project: " + errorMessage,
-                                            Toast.LENGTH_LONG).show();
-                                }
-                            });
-                })
-                .setNegativeButton(R.string.faditor_start_fresh, (dialog, which) -> {
+                        @Override
+                        public void onError(String errorMessage) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Failed to recover project: " + errorMessage,
+                                Toast.LENGTH_LONG
+                            ).show();
+                        }
+                    }
+                );
+            })
+            .setNegativeButton(
+                R.string.faditor_start_fresh,
+                (dialog, which) -> {
                     // Continue with current state
                     dialog.dismiss();
-                })
-                .show();
+                }
+            )
+            .show();
     }
 
     // ToolbarComponent.ToolbarListener implementation
@@ -1547,6 +1948,40 @@ public class FaditorEditorFragment extends BaseFragment implements
             currentProject.setDuration(durationMs);
         }
 
+        // -------------- Fix Start (onVideoLoaded) --------------
+        // Ensure proper initialization synchronization between video player and timeline
+        // Update timeline with video duration for OpenGL rendering
+        if (timeline != null) {
+            timeline.setVideoDuration(durationMs);
+
+            // Reset timeline to position 0 for proper initialization
+            timeline.setCurrentPosition(0);
+
+            // Set trim range if available, otherwise default to full video
+            if (currentProject.getCurrentTrim() != null) {
+                timeline.setTrimRange(
+                    currentProject.getCurrentTrim().getStartMs(),
+                    currentProject.getCurrentTrim().getEndMs()
+                );
+            } else {
+                timeline.setTrimRange(0, durationMs);
+            }
+        }
+
+        // Ensure video player is at position 0 and paused
+        if (videoPlayer != null) {
+            videoPlayer.seekTo(0);
+            videoPlayer.pause();
+        }
+
+        // Update all UI elements to show 0:00
+        updateTimeDisplay(0);
+        updateSeekBar(0);
+
+        // Update play/pause button state
+        updatePlayPauseButton(false);
+        // -------------- Fix Ended (onVideoLoaded) --------------
+
         // Update timeline with video duration for OpenGL rendering
         if (timeline != null) {
             timeline.setVideoDuration(durationMs);
@@ -1574,8 +2009,8 @@ public class FaditorEditorFragment extends BaseFragment implements
         // Show error message to user
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
-                showErrorMessage("Video playback error: " + error, false);
-            });
+                    showErrorMessage("Video playback error: " + error, false);
+                });
         }
     }
 
@@ -1587,7 +2022,10 @@ public class FaditorEditorFragment extends BaseFragment implements
 
         // Update project trim range
         if (currentProject != null) {
-            VideoProject.TrimRange trimRange = new VideoProject.TrimRange(startMs, endMs);
+            VideoProject.TrimRange trimRange = new VideoProject.TrimRange(
+                startMs,
+                endMs
+            );
             currentProject.setCurrentTrim(trimRange);
         }
 
@@ -1681,7 +2119,9 @@ public class FaditorEditorFragment extends BaseFragment implements
 
         // Provide haptic feedback for frame snapping
         if (getView() != null) {
-            getView().performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+            getView().performHapticFeedback(
+                android.view.HapticFeedbackConstants.CLOCK_TICK
+            );
         }
 
         // Update video position to snapped frame

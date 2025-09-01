@@ -159,7 +159,8 @@ public class FaditorMiniFragment extends BaseFragment implements
 
     private void loadProjects() {
         if (projectManager != null) {
-            projectManager.getRecentProjects().observe(this, projects -> {
+            // Use view lifecycle owner to avoid leaks and duplicate observers
+            projectManager.getRecentProjects().observe(getViewLifecycleOwner(), projects -> {
                 allProjects.clear();
                 if (projects != null) {
                     allProjects.addAll(projects);
@@ -598,8 +599,9 @@ public class FaditorMiniFragment extends BaseFragment implements
     public void onResume() {
         super.onResume();
 
-        // Refresh projects when returning to the fragment
-        loadProjects();
+        // No need to re-register observers here; LiveData will update the UI automatically.
+        // Keep any refresh logic lightweight if needed (e.g., re-query or sync) but avoid
+        // re-calling loadProjects() which registers observers repeatedly.
     }
 
     /**
