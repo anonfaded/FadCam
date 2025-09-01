@@ -4,7 +4,6 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-
 import com.fadcam.ui.faditor.persistence.AutoSaveManager;
 
 /**
@@ -12,55 +11,56 @@ import com.fadcam.ui.faditor.persistence.AutoSaveManager;
  * and optimization components for smooth video editing experience.
  * Implements requirements 7.3, 7.5, 7.6, 12.6 for comprehensive performance management.
  */
-public class PerformanceOptimizer implements 
+public class PerformanceOptimizer
+    implements
         PerformanceMonitor.PerformanceListener,
         MemoryOptimizer.MemoryOptimizationListener {
-    
+
     private static final String TAG = "PerformanceOptimizer";
-    
+
     // Performance thresholds for optimization triggers
     private static final long FRAME_DROP_THRESHOLD_COUNT = 5; // Trigger optimization after 5 frame drops
     private static final long SLOW_SEEK_THRESHOLD_COUNT = 3; // Trigger optimization after 3 slow seeks
     private static final long AUTO_SAVE_SLOW_THRESHOLD_MS = 2000; // 2 seconds for auto-save warning
-    
+
     // Singleton instance
     private static volatile PerformanceOptimizer instance;
-    
+
     private final Context context;
     private final PerformanceMonitor performanceMonitor;
     private final MemoryOptimizer memoryOptimizer;
     private final Handler mainHandler;
-    
+
     // Performance tracking
     private long frameDropCount = 0;
     private long slowSeekCount = 0;
     private boolean isOptimizationInProgress = false;
     private long lastOptimizationTime = 0;
     private static final long OPTIMIZATION_COOLDOWN_MS = 30000; // 30 seconds between optimizations
-    
+
     // Listeners
     private PerformanceOptimizationListener listener;
-    
+
     public interface PerformanceOptimizationListener {
         void onPerformanceOptimizationStarted(String reason);
         void onPerformanceOptimizationCompleted(String summary);
         void onPerformanceWarning(String warning, String recommendation);
         void onAutoSavePerformanceIssue(long autoSaveTimeMs);
     }
-    
+
     private PerformanceOptimizer(Context context) {
         this.context = context.getApplicationContext();
         this.performanceMonitor = PerformanceMonitor.getInstance();
         this.memoryOptimizer = MemoryOptimizer.getInstance(context);
         this.mainHandler = new Handler(Looper.getMainLooper());
-        
+
         // Register as listeners
         performanceMonitor.addPerformanceListener(this);
         memoryOptimizer.addListener(this);
-        
+
         Log.d(TAG, "PerformanceOptimizer initialized");
     }
-    
+
     public static PerformanceOptimizer getInstance(Context context) {
         if (instance == null) {
             synchronized (PerformanceOptimizer.class) {
@@ -71,7 +71,7 @@ public class PerformanceOptimizer implements
         }
         return instance;
     }
-    
+
     /**
      * Start performance optimization monitoring
      */
@@ -79,7 +79,7 @@ public class PerformanceOptimizer implements
         performanceMonitor.enableMonitoring();
         Log.i(TAG, "Performance optimization monitoring started");
     }
-    
+
     /**
      * Stop performance optimization monitoring
      */
@@ -87,14 +87,16 @@ public class PerformanceOptimizer implements
         performanceMonitor.disableMonitoring();
         Log.i(TAG, "Performance optimization monitoring stopped");
     }
-    
+
     /**
      * Set performance optimization listener
      */
-    public void setPerformanceOptimizationListener(PerformanceOptimizationListener listener) {
+    public void setPerformanceOptimizationListener(
+        PerformanceOptimizationListener listener
+    ) {
         this.listener = listener;
     }
-    
+
     /**
      * Perform comprehensive performance check and optimization
      */
@@ -103,34 +105,41 @@ public class PerformanceOptimizer implements
             Log.d(TAG, "Optimization already in progress, skipping");
             return;
         }
-        
+
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastOptimizationTime < OPTIMIZATION_COOLDOWN_MS) {
             Log.d(TAG, "Optimization cooldown active, skipping");
             return;
         }
-        
+
         isOptimizationInProgress = true;
         lastOptimizationTime = currentTime;
-        
-        Log.i(TAG, "Starting comprehensive performance optimization: " + reason);
-        
+
+        Log.i(
+            TAG,
+            "Starting comprehensive performance optimization: " + reason
+        );
+
         if (listener != null) {
             listener.onPerformanceOptimizationStarted(reason);
         }
-        
+
         // Perform optimization steps
         StringBuilder summary = new StringBuilder();
-        
+
         // 1. Check and optimize memory
         memoryOptimizer.checkMemoryStatus();
         summary.append("Memory check completed. ");
-        
+
         // 2. Check GPU memory usage
         long gpuMemoryMB = performanceMonitor.getGpuMemoryUsageMB();
-        if (gpuMemoryMB > 100) { // More than 100MB GPU memory
-            summary.append("High GPU memory usage detected (").append(gpuMemoryMB).append("MB). ");
-            
+        if (gpuMemoryMB > 100) {
+            // More than 100MB GPU memory
+            summary
+                .append("High GPU memory usage detected (")
+                .append(gpuMemoryMB)
+                .append("MB). ");
+
             if (listener != null) {
                 listener.onPerformanceWarning(
                     "High GPU memory usage: " + gpuMemoryMB + "MB",
@@ -138,14 +147,17 @@ public class PerformanceOptimizer implements
                 );
             }
         }
-        
+
         // 3. Check frame performance
-        PerformanceMonitor.PerformanceMetric frameMetric = performanceMonitor.getMetric("frame_render");
-        if (frameMetric != null && frameMetric.getAverageTimeMs() > 33.33) { // Slower than 30fps
-            summary.append("Frame rendering performance below 30fps (")
-                   .append(String.format("%.1f", frameMetric.getAverageTimeMs()))
-                   .append("ms avg). ");
-            
+        PerformanceMonitor.PerformanceMetric frameMetric =
+            performanceMonitor.getMetric("frame_render");
+        if (frameMetric != null && frameMetric.getAverageTimeMs() > 33.33) {
+            // Slower than 30fps
+            summary
+                .append("Frame rendering performance below 30fps (")
+                .append(String.format("%.1f", frameMetric.getAverageTimeMs()))
+                .append("ms avg). ");
+
             if (listener != null) {
                 listener.onPerformanceWarning(
                     "Frame rendering slower than 30fps",
@@ -153,14 +165,17 @@ public class PerformanceOptimizer implements
                 );
             }
         }
-        
+
         // 4. Check seek performance
-        PerformanceMonitor.PerformanceMetric seekMetric = performanceMonitor.getMetric("video_seek");
-        if (seekMetric != null && seekMetric.getAverageTimeMs() > 100) { // Slower than 100ms
-            summary.append("Video seeking slower than 100ms (")
-                   .append(String.format("%.1f", seekMetric.getAverageTimeMs()))
-                   .append("ms avg). ");
-            
+        PerformanceMonitor.PerformanceMetric seekMetric =
+            performanceMonitor.getMetric("video_seek");
+        if (seekMetric != null && seekMetric.getAverageTimeMs() > 100) {
+            // Slower than 100ms
+            summary
+                .append("Video seeking slower than 100ms (")
+                .append(String.format("%.1f", seekMetric.getAverageTimeMs()))
+                .append("ms avg). ");
+
             if (listener != null) {
                 listener.onPerformanceWarning(
                     "Video seeking slower than target",
@@ -168,21 +183,21 @@ public class PerformanceOptimizer implements
                 );
             }
         }
-        
+
         // 5. Reset counters
         frameDropCount = 0;
         slowSeekCount = 0;
-        
+
         isOptimizationInProgress = false;
-        
+
         String finalSummary = summary.toString();
         Log.i(TAG, "Performance optimization completed: " + finalSummary);
-        
+
         if (listener != null) {
             listener.onPerformanceOptimizationCompleted(finalSummary);
         }
     }
-    
+
     /**
      * Check auto-save performance and optimize if needed
      */
@@ -190,71 +205,107 @@ public class PerformanceOptimizer implements
         if (autoSaveManager == null) {
             return;
         }
-        
-        PerformanceMonitor.PerformanceMetric autoSaveMetric = autoSaveManager.getAutoSavePerformanceMetric();
+
+        PerformanceMonitor.PerformanceMetric autoSaveMetric =
+            autoSaveManager.getAutoSavePerformanceMetric();
         if (autoSaveMetric != null) {
             double avgTimeMs = autoSaveMetric.getAverageTimeMs();
-            
+
             if (avgTimeMs > AUTO_SAVE_SLOW_THRESHOLD_MS) {
-                Log.w(TAG, "Auto-save performance issue detected: " + avgTimeMs + "ms average");
-                
+                Log.w(
+                    TAG,
+                    "Auto-save performance issue detected: " +
+                    avgTimeMs +
+                    "ms average"
+                );
+
                 if (listener != null) {
                     listener.onAutoSavePerformanceIssue((long) avgTimeMs);
                     listener.onPerformanceWarning(
-                        "Auto-save taking too long: " + String.format("%.1f", avgTimeMs) + "ms",
+                        "Auto-save taking too long: " +
+                        String.format("%.1f", avgTimeMs) +
+                        "ms",
                         "Consider reducing project complexity or freeing up storage space"
                     );
                 }
-                
+
                 // Trigger memory optimization to help with auto-save performance
                 memoryOptimizer.checkMemoryStatus();
             }
         }
     }
-    
+
     /**
      * Get comprehensive performance report
      */
     public String getPerformanceReport() {
         StringBuilder report = new StringBuilder();
         report.append("=== Performance Report ===\n");
-        
+
         // Memory status
-        report.append("Available Memory: ").append(memoryOptimizer.getAvailableMemoryMB()).append("MB\n");
-        report.append("GPU Memory Usage: ").append(performanceMonitor.getGpuMemoryUsageMB()).append("MB\n");
-        report.append("Low Memory State: ").append(memoryOptimizer.isLowMemory()).append("\n");
-        
+        report
+            .append("Available Memory: ")
+            .append(memoryOptimizer.getAvailableMemoryMB())
+            .append("MB\n");
+        report
+            .append("GPU Memory Usage: ")
+            .append(performanceMonitor.getGpuMemoryUsageMB())
+            .append("MB\n");
+        report
+            .append("Low Memory State: ")
+            .append(memoryOptimizer.isLowMemory())
+            .append("\n");
+
         // Performance metrics
-        PerformanceMonitor.PerformanceMetric frameMetric = performanceMonitor.getMetric("frame_render");
+        PerformanceMonitor.PerformanceMetric frameMetric =
+            performanceMonitor.getMetric("frame_render");
         if (frameMetric != null) {
-            report.append("Frame Render: avg=").append(String.format("%.1f", frameMetric.getAverageTimeMs()))
-                  .append("ms, samples=").append(frameMetric.getSampleCount()).append("\n");
+            report
+                .append("Frame Render: avg=")
+                .append(String.format("%.1f", frameMetric.getAverageTimeMs()))
+                .append("ms, samples=")
+                .append(frameMetric.getSampleCount())
+                .append("\n");
         }
-        
-        PerformanceMonitor.PerformanceMetric seekMetric = performanceMonitor.getMetric("video_seek");
+
+        PerformanceMonitor.PerformanceMetric seekMetric =
+            performanceMonitor.getMetric("video_seek");
         if (seekMetric != null) {
-            report.append("Video Seek: avg=").append(String.format("%.1f", seekMetric.getAverageTimeMs()))
-                  .append("ms, samples=").append(seekMetric.getSampleCount()).append("\n");
+            report
+                .append("Video Seek: avg=")
+                .append(String.format("%.1f", seekMetric.getAverageTimeMs()))
+                .append("ms, samples=")
+                .append(seekMetric.getSampleCount())
+                .append("\n");
         }
-        
-        PerformanceMonitor.PerformanceMetric trimMetric = performanceMonitor.getMetric("trim_operation");
+
+        PerformanceMonitor.PerformanceMetric trimMetric =
+            performanceMonitor.getMetric("trim_operation");
         if (trimMetric != null) {
-            report.append("Trim Operation: avg=").append(String.format("%.1f", trimMetric.getAverageTimeMs()))
-                  .append("ms, samples=").append(trimMetric.getSampleCount()).append("\n");
+            report
+                .append("Trim Operation: avg=")
+                .append(String.format("%.1f", trimMetric.getAverageTimeMs()))
+                .append("ms, samples=")
+                .append(trimMetric.getSampleCount())
+                .append("\n");
         }
-        
+
         // Memory optimizer stats
         report.append(memoryOptimizer.getMemoryStats()).append("\n");
-        
+
         // Overall performance assessment
-        boolean isPerformanceGood = performanceMonitor.isPerformanceAcceptable();
-        report.append("Overall Performance: ").append(isPerformanceGood ? "GOOD" : "NEEDS OPTIMIZATION").append("\n");
-        
+        boolean isPerformanceGood =
+            performanceMonitor.isPerformanceAcceptable();
+        report
+            .append("Overall Performance: ")
+            .append(isPerformanceGood ? "GOOD" : "NEEDS OPTIMIZATION")
+            .append("\n");
+
         report.append("========================");
-        
+
         return report.toString();
     }
-    
+
     /**
      * Cleanup resources
      */
@@ -263,61 +314,90 @@ public class PerformanceOptimizer implements
         memoryOptimizer.removeListener(this);
         memoryOptimizer.cleanup();
         listener = null;
-        
+
         Log.d(TAG, "PerformanceOptimizer cleaned up");
     }
-    
+
     // PerformanceMonitor.PerformanceListener implementation
-    
+
     @Override
     public void onFrameDropDetected(long frameTimeMs) {
         frameDropCount++;
-        Log.w(TAG, "Frame drop detected: " + frameTimeMs + "ms (count: " + frameDropCount + ")");
-        
+        Log.w(
+            TAG,
+            "Frame drop detected: " +
+            frameTimeMs +
+            "ms (count: " +
+            frameDropCount +
+            ")"
+        );
+
         if (frameDropCount >= FRAME_DROP_THRESHOLD_COUNT) {
             performComprehensiveOptimization("Multiple frame drops detected");
         }
     }
-    
+
     @Override
     public void onMemoryWarning(long memoryUsageMB) {
         Log.w(TAG, "GPU memory warning: " + memoryUsageMB + "MB");
-        
+
         if (listener != null) {
             listener.onPerformanceWarning(
                 "High GPU memory usage: " + memoryUsageMB + "MB",
                 "Consider reducing video resolution or restarting the editor"
             );
         }
-        
+
         // Trigger immediate optimization for memory issues
         performComprehensiveOptimization("High GPU memory usage");
     }
-    
+
     @Override
     public void onSlowSeekDetected(long seekTimeMs) {
         slowSeekCount++;
-        Log.w(TAG, "Slow seek detected: " + seekTimeMs + "ms (count: " + slowSeekCount + ")");
-        
+        Log.w(
+            TAG,
+            "Slow seek detected: " +
+            seekTimeMs +
+            "ms (count: " +
+            slowSeekCount +
+            ")"
+        );
+
         if (slowSeekCount >= SLOW_SEEK_THRESHOLD_COUNT) {
             performComprehensiveOptimization("Multiple slow seeks detected");
         }
     }
-    
+
     @Override
-    public void onPerformanceMetricUpdated(String metricName, PerformanceMonitor.PerformanceMetric metric) {
+    public void onPerformanceMetricUpdated(
+        String metricName,
+        PerformanceMonitor.PerformanceMetric metric
+    ) {
         // Log significant performance changes
-        if ("frame_render".equals(metricName) && metric.getSampleCount() % 100 == 0) {
-            Log.d(TAG, "Frame render performance: avg=" + String.format("%.1f", metric.getAverageTimeMs()) + "ms");
+        // -------------- Fix Start (reduced logging frequency) --------------
+        // Only log frame render performance every 1000 samples and when performance is concerning
+        if (
+            "frame_render".equals(metricName) &&
+            metric.getSampleCount() % 1000 == 0 &&
+            metric.getAverageTimeMs() > 20.0f
+        ) {
+            Log.d(
+                TAG,
+                "Frame render performance: avg=" +
+                String.format("%.1f", metric.getAverageTimeMs()) +
+                "ms"
+            );
         }
+        // -------------- Fix Ended (reduced logging frequency) --------------
     }
-    
+
     // MemoryOptimizer.MemoryOptimizationListener implementation
-    
+
     @Override
     public void onLowMemoryWarning(long availableMemoryMB) {
         Log.w(TAG, "Low memory warning: " + availableMemoryMB + "MB available");
-        
+
         if (listener != null) {
             listener.onPerformanceWarning(
                 "Low device memory: " + availableMemoryMB + "MB available",
@@ -325,29 +405,48 @@ public class PerformanceOptimizer implements
             );
         }
     }
-    
+
     @Override
     public void onCriticalMemoryWarning(long availableMemoryMB) {
-        Log.e(TAG, "Critical memory warning: " + availableMemoryMB + "MB available");
-        
+        Log.e(
+            TAG,
+            "Critical memory warning: " + availableMemoryMB + "MB available"
+        );
+
         if (listener != null) {
             listener.onPerformanceWarning(
-                "Critical memory situation: " + availableMemoryMB + "MB available",
+                "Critical memory situation: " +
+                availableMemoryMB +
+                "MB available",
                 "Immediately close other apps or the editor may become unstable"
             );
         }
-        
+
         // Force immediate optimization for critical memory
         performComprehensiveOptimization("Critical memory situation");
     }
-    
+
     @Override
-    public void onMemoryOptimizationPerformed(String operation, long memoryFreedMB) {
-        Log.i(TAG, "Memory optimization performed: " + operation + ", freed " + memoryFreedMB + "MB");
-        
+    public void onMemoryOptimizationPerformed(
+        String operation,
+        long memoryFreedMB
+    ) {
+        Log.i(
+            TAG,
+            "Memory optimization performed: " +
+            operation +
+            ", freed " +
+            memoryFreedMB +
+            "MB"
+        );
+
         if (listener != null) {
             listener.onPerformanceOptimizationCompleted(
-                "Memory optimization: " + operation + " freed " + memoryFreedMB + "MB"
+                "Memory optimization: " +
+                operation +
+                " freed " +
+                memoryFreedMB +
+                "MB"
             );
         }
     }

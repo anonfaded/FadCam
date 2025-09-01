@@ -333,17 +333,10 @@ public class TimelineComponent extends View {
     }
 
     public void setVideoDuration(long duration) {
-        Log.d(TAG, "=== SET VIDEO DURATION ===");
-        Log.d(TAG, "Duration: " + duration + "ms");
-        Log.d(TAG, "Previous viewport: " + viewportStart + " - " + viewportEnd);
-
         this.videoDuration = duration;
         this.trimEnd = duration; // Default to full video
         this.viewportEnd = duration;
         updateViewport();
-
-        Log.d(TAG, "New viewport: " + viewportStart + " - " + viewportEnd);
-        Log.d(TAG, "========================");
         invalidate();
     }
 
@@ -405,45 +398,27 @@ public class TimelineComponent extends View {
             newPosition = snapToFrame(newPosition);
         }
 
-        Log.d(TAG, "=== SET CURRENT POSITION ===");
-        Log.d(TAG, "Input position: " + position + "ms");
-        Log.d(TAG, "Clamped position: " + newPosition + "ms");
-        Log.d(TAG, "Previous position: " + this.currentPosition + "ms");
-        Log.d(TAG, "Silent update: " + isSilentUpdate);
-        Log.d(TAG, "Video duration: " + videoDuration + "ms");
-        Log.d(TAG, "Viewport: " + viewportStart + " - " + viewportEnd);
+        // Only update if position actually changed (prevent feedback loops)
+        if (this.currentPosition != newPosition) {
+            this.currentPosition = newPosition;
 
-        this.currentPosition = newPosition;
-
-        // Ensure playhead is visible in viewport
-        ensurePlayheadVisible();
-
-        invalidate();
-
-        // -------------- Fix Start (debounced position change) --------------
-        if (listener != null && !isSilentUpdate) {
-            // If we're actively scrubbing, use debounced seeking
-            if (isScrubbing.get()) {
-                Log.d(
-                    TAG,
-                    "Scheduling debounced seek to: " +
-                    this.currentPosition +
-                    "ms"
-                );
-                scheduleDebounceSeek(this.currentPosition);
-            } else {
-                Log.d(
-                    TAG,
-                    "Immediate position change to: " +
-                    this.currentPosition +
-                    "ms"
-                );
-                // Immediate update for programmatic position changes
-                listener.onTimelinePositionChanged(this.currentPosition);
+            // Only update viewport if not actively scrubbing (prevent cascading updates)
+            if (!isActivelyScrubbing.get()) {
+                ensurePlayheadVisible();
             }
+
+            invalidate();
+
+            // -------------- Fix Start (professional position handling) --------------
+            if (listener != null && !isSilentUpdate) {
+                // If we're actively scrubbing, don't trigger seeks - visual only
+                if (!isActivelyScrubbing.get()) {
+                    // Only trigger actual video seeks when not scrubbing
+                    listener.onTimelinePositionChanged(this.currentPosition);
+                }
+            }
+            // -------------- Fix Ended (professional position handling) --------------
         }
-        // -------------- Fix Ended (debounced position change) --------------
-        Log.d(TAG, "===========================");
     }
 
     /**
@@ -883,16 +858,6 @@ public class TimelineComponent extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.d(
-            TAG,
-            "onTouchEvent: action=" +
-            event.getAction() +
-            " x=" +
-            event.getX() +
-            " y=" +
-            event.getY()
-        );
-
         boolean handled = scaleGestureDetector.onTouchEvent(event);
 
         if (!scaleGestureDetector.isInProgress()) {
@@ -900,10 +865,6 @@ public class TimelineComponent extends View {
             handled |= handleTouchEvent(event);
         }
 
-        Log.d(
-            TAG,
-            "onTouchEvent handled: " + (handled || super.onTouchEvent(event))
-        );
         return handled || super.onTouchEvent(event);
     }
 
@@ -1003,17 +964,8 @@ public class TimelineComponent extends View {
     }
 
     private boolean handleSingleTap(float x, float y) {
-        Log.d(TAG, "=== SINGLE TAP DEBUG ===");
-        Log.d(TAG, "Touch coordinates: (" + x + ", " + y + ")");
-        Log.d(TAG, "Timeline bounds: 0 to " + getWidth() + "px");
-
         // Tap to seek - use professional seeking for consistency
         long seekTime = pixelToTime(x);
-
-        Log.d(TAG, "Calculated seek time: " + seekTime + "ms");
-        Log.d(TAG, "Current position: " + currentPosition + "ms");
-        Log.d(TAG, "=======================");
-
         handleProfessionalSeek(seekTime);
         return true;
     }
@@ -1024,8 +976,6 @@ public class TimelineComponent extends View {
     private void handleProfessionalSeek(long seekTime) {
         // Immediate visual update
         setCurrentPositionInternal(seekTime);
-
-        Log.d(TAG, "Professional single-tap seek to: " + seekTime + "ms");
 
         // Async seek operation for smooth performance
         seekExecutor.submit(() -> {
@@ -1095,8 +1045,6 @@ public class TimelineComponent extends View {
         if (listener != null) {
             listener.onScrubbing(true, currentPosition);
         }
-
-        Log.d(TAG, "Professional scrubbing started - visual only mode");
     }
 
     private void stopScrubbing() {
@@ -1107,13 +1055,6 @@ public class TimelineComponent extends View {
         if (currentSeekTask != null && !currentSeekTask.isDone()) {
             currentSeekTask.cancel(true);
         }
-
-        Log.d(
-            TAG,
-            "Professional scrubbing ended - performing final seek to: " +
-            finalPosition +
-            "ms"
-        );
 
         // PROFESSIONAL EDITOR APPROACH: Single final seek after scrubbing ends
         // This is when the actual video seeking happens for exact frame accuracy
@@ -1128,8 +1069,6 @@ public class TimelineComponent extends View {
                     // Then: Single high-quality seek to exact final position
                     listener.onTimelinePositionChanged(finalPosition);
                 }
-
-                Log.d(TAG, "Final seek completed to: " + finalPosition + "ms");
             },
             50 // Small delay for smooth transition
         );
@@ -1158,20 +1097,6 @@ public class TimelineComponent extends View {
         // Immediately update visual position for responsive UI (120fps visual feedback)
         setCurrentPositionInternal(displayPosition);
         lastScrubbingPosition.set(newPosition);
-
-        // Enhanced logging for ultra-smooth scrubbing
-        if (newPosition % 100 == 0) {
-            Log.d(
-                TAG,
-                "Ultra-smooth scrub: " +
-                newPosition +
-                "ms (velocity: " +
-                String.format("%.2f", scrubVelocity) +
-                ", predicted: " +
-                predictedPosition +
-                ")"
-            );
-        }
 
         // Cancel any pending seek operations - we don't seek during active scrubbing
         if (currentSeekTask != null && !currentSeekTask.isDone()) {
@@ -1277,16 +1202,7 @@ public class TimelineComponent extends View {
             long cacheDirection = velocity > 0 ? 1 : -1;
 
             // This would trigger frame pre-caching in the video system
-            // For now, just log the predictive caching request
-            if (position % 500 == 0) {
-                Log.d(
-                    TAG,
-                    "Predictive caching: " +
-                    framesToCache +
-                    " frames in direction: " +
-                    (velocity > 0 ? "forward" : "backward")
-                );
-            }
+            // (Implementation would be in the video system layer)
         }
     }
 
@@ -1317,33 +1233,32 @@ public class TimelineComponent extends View {
     private void updateViewport() {
         if (videoDuration <= 0) return;
 
-        Log.d(TAG, "=== UPDATE VIEWPORT ===");
-        Log.d(TAG, "Video duration: " + videoDuration + "ms");
-        Log.d(TAG, "Zoom level: " + zoomLevel);
-        Log.d(TAG, "Current position: " + currentPosition + "ms");
-        Log.d(TAG, "Previous viewport: " + viewportStart + " - " + viewportEnd);
-
         long viewportDuration = (long) (videoDuration / zoomLevel);
 
         // Center viewport around current position
         long center = currentPosition;
-        viewportStart = Math.max(0, center - viewportDuration / 2);
-        viewportEnd = Math.min(videoDuration, viewportStart + viewportDuration);
+        long newViewportStart = Math.max(0, center - viewportDuration / 2);
+        long newViewportEnd = Math.min(
+            videoDuration,
+            newViewportStart + viewportDuration
+        );
 
         // Adjust if we hit the end
-        if (viewportEnd == videoDuration) {
-            viewportStart = Math.max(0, viewportEnd - viewportDuration);
+        if (newViewportEnd == videoDuration) {
+            newViewportStart = Math.max(0, newViewportEnd - viewportDuration);
         }
 
-        Log.d(TAG, "New viewport: " + viewportStart + " - " + viewportEnd);
-        Log.d(TAG, "Viewport duration: " + viewportDuration + "ms");
-        Log.d(TAG, "Timeline width: " + getWidth() + "px");
-        Log.d(TAG, "Pixels per ms: " + getPixelsPerMs());
-        Log.d(TAG, "=====================");
+        // Only update if viewport actually changed (prevent feedback loops)
+        if (
+            viewportStart != newViewportStart || viewportEnd != newViewportEnd
+        ) {
+            viewportStart = newViewportStart;
+            viewportEnd = newViewportEnd;
 
-        if (state != null) {
-            state.setViewportStart(viewportStart);
-            state.setViewportEnd(viewportEnd);
+            if (state != null) {
+                state.setViewportStart(viewportStart);
+                state.setViewportEnd(viewportEnd);
+            }
         }
     }
 
@@ -1366,37 +1281,14 @@ public class TimelineComponent extends View {
         if (videoDuration <= 0) return 0f;
 
         float pixelsPerMs = getPixelsPerMs();
-        float calculatedPixel = (timeMs - viewportStart) * pixelsPerMs;
-
-        if (timeMs == currentPosition) {
-            Log.d(TAG, "=== TIME TO PIXEL DEBUG (PLAYHEAD) ===");
-            Log.d(TAG, "Time: " + timeMs + "ms");
-            Log.d(TAG, "Viewport: " + viewportStart + " - " + viewportEnd);
-            Log.d(TAG, "Pixels per ms: " + pixelsPerMs);
-            Log.d(TAG, "Calculated pixel: " + calculatedPixel + "px");
-            Log.d(TAG, "Timeline width: " + getWidth() + "px");
-            Log.d(TAG, "===================================");
-        }
-
-        return calculatedPixel;
+        return (timeMs - viewportStart) * pixelsPerMs;
     }
 
     private long pixelToTime(float pixel) {
         if (videoDuration <= 0) return 0;
 
         float pixelsPerMs = getPixelsPerMs();
-        long calculatedTime = viewportStart + (long) (pixel / pixelsPerMs);
-
-        Log.d(TAG, "=== PIXEL TO TIME DEBUG ===");
-        Log.d(TAG, "Touch pixel: " + pixel);
-        Log.d(TAG, "Viewport: " + viewportStart + " - " + viewportEnd);
-        Log.d(TAG, "Video duration: " + videoDuration + "ms");
-        Log.d(TAG, "Timeline width: " + getWidth() + "px");
-        Log.d(TAG, "Pixels per ms: " + pixelsPerMs);
-        Log.d(TAG, "Calculated time: " + calculatedTime + "ms");
-        Log.d(TAG, "========================");
-
-        return calculatedTime;
+        return viewportStart + (long) (pixel / pixelsPerMs);
     }
 
     private long snapToFrame(long timeMs) {

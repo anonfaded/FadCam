@@ -232,10 +232,7 @@ public class VideoPlayerComponent extends FrameLayout {
 
                     @Override
                     public void onSeekCompleted(long positionMs) {
-                        Log.d(
-                            TAG,
-                            "OpenGL seek completed: " + positionMs + "ms"
-                        );
+                        // OpenGL seek completed
                         // Position updates handled by position update runnable
                         // Don't trigger additional position callback to prevent feedback loop
                     }
@@ -389,31 +386,7 @@ public class VideoPlayerComponent extends FrameLayout {
                 // Cancel previous seek and start new one
             }
 
-            Log.d(TAG, "=== STARTING SEEK TO: " + positionMs + "ms ===");
-
-            // Add stack trace to identify duplicate seek sources
-            StackTraceElement[] stackTrace =
-                Thread.currentThread().getStackTrace();
-            Log.d(
-                TAG,
-                "Seek called from: " +
-                stackTrace[3].getClassName() +
-                "." +
-                stackTrace[3].getMethodName() +
-                ":" +
-                stackTrace[3].getLineNumber()
-            );
-            if (stackTrace.length > 4) {
-                Log.d(
-                    TAG,
-                    "  -> " +
-                    stackTrace[4].getClassName() +
-                    "." +
-                    stackTrace[4].getMethodName() +
-                    ":" +
-                    stackTrace[4].getLineNumber()
-                );
-            }
+            // Seek operation initiated
 
             isSeekInProgress = true;
 
@@ -428,7 +401,7 @@ public class VideoPlayerComponent extends FrameLayout {
                 }
             } finally {
                 isSeekInProgress = false;
-                Log.d(TAG, "=== SEEK COMPLETED: " + positionMs + "ms ===");
+                // Seek operation completed
             }
         }
     }
@@ -438,7 +411,7 @@ public class VideoPlayerComponent extends FrameLayout {
      */
     public void setScrubbing(boolean scrubbing) {
         this.isScrubbing = scrubbing;
-        Log.d(TAG, "VideoPlayer scrubbing state set to: " + scrubbing);
+        // Scrubbing state changed
 
         if (scrubbing) {
             // Enable frame cache for smooth scrubbing

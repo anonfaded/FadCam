@@ -1933,8 +1933,8 @@ public class FaditorEditorFragment
 
         // Update timeline position with OpenGL frame rendering (prevent feedback loop)
         if (timeline != null) {
-            // Reduced logging to prevent spam
-            if (positionMs % 2000 == 0) {
+            // Further reduced logging to prevent spam - only log every 10 seconds
+            if (positionMs % 10000 == 0) {
                 Log.d(TAG, "Timeline silent update: " + positionMs + "ms");
             }
             isUpdatingFromVideoPlayer = true;
@@ -2043,8 +2043,6 @@ public class FaditorEditorFragment
 
     @Override
     public void onTimelinePositionChanged(long positionMs) {
-        Log.d(TAG, "Timeline position changed: " + positionMs + "ms");
-
         // Prevent feedback loop - ignore timeline changes that come from video player
         // updates
         if (isUpdatingFromVideoPlayer) {
@@ -2052,17 +2050,11 @@ public class FaditorEditorFragment
             return;
         }
 
-        Log.d(
-            TAG,
-            "Processing timeline-initiated seek to: " + positionMs + "ms"
-        );
-
         // Record seek performance for monitoring
         long seekStartTime = System.currentTimeMillis();
 
         // Seek video player to new position
         if (videoPlayer != null) {
-            Log.d(TAG, "Executing video player seek to: " + positionMs + "ms");
             videoPlayer.seekTo(positionMs);
         }
 
