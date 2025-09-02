@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Elevation Attributes -->
+    <attr name="elevationLevel0" format="dimension" />
+    <attr name="elevationLevel1" format="dimension" />
+    <attr name="elevationLevel2" format="dimension" />
+    <attr name="elevationLevel3" format="dimension" />
+    <attr name="elevationLevel4" format="dimension" />
+    <attr name="elevationLevel5" format="dimension" />
+    
+    <!-- Material 3 Motion Attributes -->
+    <attr name="motionDurationShort1" format="integer" />
+    <attr name="motionDurationShort2" format="integer" />
+    <attr name="motionDurationMedium1" format="integer" />
+    <attr name="motionDurationMedium2" format="integer" />
+    <attr name="motionDurationLong1" format="integer" />
+    <attr name="motionDurationLong2" format="integer" />
+    
+</resources>

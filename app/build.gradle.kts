@@ -134,6 +134,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
+    implementation(libs.room.runtime)
     implementation(libs.swiperefreshlayout)
     implementation(libs.viewpager2)
     implementation(libs.lifecycle.process)
@@ -141,6 +142,12 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     annotationProcessor(libs.compiler)
+    annotationProcessor(libs.room.compiler)
+    
+    // Test dependencies
+    testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.10.3")
+    testImplementation("org.mockito:mockito-core:4.11.0")
 
     implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
     implementation(libs.smart.exception.java)

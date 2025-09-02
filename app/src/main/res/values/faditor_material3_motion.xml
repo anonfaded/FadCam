@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Motion Duration Values -->
+    <integer name="material_motion_duration_short_1">75</integer>
+    <integer name="material_motion_duration_short_2">150</integer>
+    <integer name="material_motion_duration_medium_1">200</integer>
+    <integer name="material_motion_duration_medium_2">250</integer>
+    <integer name="material_motion_duration_long_1">300</integer>
+    <integer name="material_motion_duration_long_2">350</integer>
+    
+    <!-- Faditor-specific Motion Durations -->
+    <integer name="faditor_animation_duration_fast">150</integer>
+    <integer name="faditor_animation_duration_normal">250</integer>
+    <integer name="faditor_animation_duration_slow">350</integer>
+    
+    <!-- Timeline Animation Durations -->
+    <integer name="faditor_timeline_seek_duration">100</integer>
+    <integer name="faditor_timeline_zoom_duration">200</integer>
+    <integer name="faditor_timeline_scrub_duration">50</integer>
+    
+    <!-- UI Transition Durations -->
+    <integer name="faditor_fragment_transition_duration">300</integer>
+    <integer name="faditor_toolbar_transition_duration">200</integer>
+    <integer name="faditor_progress_fade_duration">150</integer>
+    
+    <!-- Material 3 Easing Curves (as interpolators) -->
+    <string name="material_motion_easing_standard" translatable="false">cubic-bezier(0.2, 0.0, 0, 1.0)</string>
+    <string name="material_motion_easing_decelerated" translatable="false">cubic-bezier(0.0, 0.0, 0.2, 1.0)</string>
+    <string name="material_motion_easing_accelerated" translatable="false">cubic-bezier(0.4, 0.0, 1.0, 1.0)</string>
+    <string name="material_motion_easing_emphasized" translatable="false">cubic-bezier(0.2, 0.0, 0, 1.0)</string>
+    
+</resources>

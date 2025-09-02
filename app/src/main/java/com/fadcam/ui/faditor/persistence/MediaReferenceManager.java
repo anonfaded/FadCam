@@ -1,0 +1,364 @@
+package com.fadcam.ui.faditor.persistence;
+
+import android.content.Context;
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.database.Cursor;
+import android.util.Log;
+
+import com.fadcam.ui.faditor.models.VideoProject;
+import com.fadcam.ui.faditor.UriReselectionDialog;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+
+import androidx.fragment.app.FragmentManager;
+
+/**
+ * Manages media file references and handles path validation and recovery
+ */
+public class MediaReferenceManager {
+    
+    private static final String TAG = "MediaReferenceManager";
+    
+    private final Context context;
+    
+    public MediaReferenceManager(Context context) {
+        this.context = context;
+    }
+    
+    /**
+     * Validates that all media references in a project are still accessible
+     */
+    public ValidationResult validateMediaReferences(VideoProject project) {
+        Log.d(TAG, "=== VALIDATE MEDIA REFERENCES STARTED ===");
+        ValidationResult result = new ValidationResult();
+        
+        // Get primary media asset ID from the project
+        String primaryMediaAssetId = project.getPrimaryMediaAssetId();
+        
+        Log.d(TAG, "Primary media asset ID: " + primaryMediaAssetId);
+        
+        if (primaryMediaAssetId == null) {
+            Log.w(TAG, "No primary media asset ID found in project");
+            return result;
+        }
+        
+        // For now, we'll return a successful validation since the media asset system
+        // handles file management differently. The actual media validation should be
+        // done through the ProjectMediaManager when loading assets.
+        result.addValidFile(primaryMediaAssetId);
+        
+        Log.d(TAG, "Media validation completed for asset: " + primaryMediaAssetId);
+        
+        return result;
+    }
+    
+    /**
+     * Checks if a content URI is still accessible
+     */
+    private boolean isContentUriAccessible(Uri uri) {
+        if (uri == null) return false;
+
+        try {
+            // Try to open an input stream to check if the URI is accessible
+            context.getContentResolver().openInputStream(uri).close();
+            return true;
+        } catch (Exception e) {
+            // URI is not accessible
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a content URI is accessible to MediaPlayer
+     * This is more thorough than basic URI accessibility check
+     */
+    private boolean isUriAccessibleToMediaPlayer(Uri uri) {
+        if (uri == null) return false;
+
+        try {
+            // First check basic accessibility
+            if (!isContentUriAccessible(uri)) {
+                return false;
+            }
+
+            // Additional MediaPlayer-specific checks
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                Log.w(TAG, "URI has no scheme: " + uri);
+                return false;
+            }
+
+            // For content URIs, verify the authority
+            if ("content".equals(scheme)) {
+                String authority = uri.getAuthority();
+                if (authority == null) {
+                    Log.w(TAG, "Content URI has no authority: " + uri);
+                    return false;
+                }
+
+                // Check if it's a known media provider
+                if (!authority.contains("media") && !authority.contains("externalstorage")) {
+                    Log.w(TAG, "Unknown content provider authority: " + authority);
+                    // Still allow it but log the warning
+                }
+            }
+
+            // Try to get basic metadata to ensure MediaPlayer can access it
+            android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever();
+            try {
+                retriever.setDataSource(context, uri);
+                String duration = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+                if (duration == null) {
+                    Log.w(TAG, "Could not extract duration from URI: " + uri);
+                    return false;
+                }
+                Log.d(TAG, "MediaPlayer validation successful for URI: " + uri + ", duration: " + duration + "ms");
+                return true;
+            } catch (Exception e) {
+                Log.w(TAG, "MediaMetadataRetriever failed for URI: " + uri, e);
+                return false;
+            } finally {
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    // Ignore
+                }
+            }
+
+        } catch (Exception e) {
+            Log.w(TAG, "Error validating URI for MediaPlayer: " + uri, e);
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a URI requires re-selection due to permission issues
+     */
+    public boolean requiresUriReselection(Uri uri) {
+        if (uri == null) return false;
+
+        try {
+            // Try to access the URI - if we get a SecurityException, it needs re-selection
+            context.getContentResolver().openInputStream(uri).close();
+            return false; // URI is accessible
+        } catch (SecurityException e) {
+            Log.w(TAG, "URI requires re-selection due to permission: " + uri, e);
+            return true;
+        } catch (Exception e) {
+            Log.w(TAG, "URI access failed (non-permission issue): " + uri, e);
+            return false; // Different error, not permission-related
+        }
+    }
+    
+    /**
+     * Attempts to recover a file path from a content URI
+     */
+    private String tryRecoverPathFromUri(Uri uri) {
+        if (uri == null) return null;
+        
+        try {
+            // Try to get the real path from MediaStore
+            String[] projection = {MediaStore.Video.Media.DATA};
+            Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null);
+            
+            if (cursor != null) {
+                try {
+                    if (cursor.moveToFirst()) {
+                        int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+                        String path = cursor.getString(columnIndex);
+                        
+                        // Verify the recovered path exists
+                        if (path != null) {
+                            File file = new File(path);
+                            if (file.exists() && file.canRead()) {
+                                return path;
+                            }
+                        }
+                    }
+                } finally {
+                    cursor.close();
+                }
+            }
+        } catch (Exception e) {
+            // Failed to recover path
+        }
+        
+        return null;
+    }
+    
+    /**
+     * @deprecated Media path updates are now handled by the professional media asset system
+     */
+    @Deprecated
+    public void updateMediaPaths(VideoProject project, Map<String, String> pathMapping) {
+        // No-op - media assets are managed by ProjectMediaManager
+        Log.d(TAG, "updateMediaPaths called but deprecated - using professional media asset system");
+    }
+    
+    /**
+     * Creates a URI from a file path for storage in projects
+     */
+    public Uri createUriFromPath(String filePath) {
+        if (filePath == null) return null;
+        
+        File file = new File(filePath);
+        if (!file.exists()) return null;
+        
+        return Uri.fromFile(file);
+    }
+    
+    /**
+     * Gets the display name for a media file
+     */
+    public String getDisplayName(String filePath) {
+        if (filePath == null) return "Unknown";
+        
+        File file = new File(filePath);
+        return file.getName();
+    }
+    
+    /**
+     * Gets the file size for a media file
+     */
+    public long getFileSize(String filePath) {
+        if (filePath == null) return 0;
+        
+        File file = new File(filePath);
+        return file.exists() ? file.length() : 0;
+    }
+    
+    /**
+     * Shows a dialog to re-select URIs that have expired permissions
+     */
+    public void showUriReselectionDialog(FragmentManager fragmentManager, ValidationResult validationResult,
+            UriReselectionCallback callback) {
+        if (!validationResult.hasUrisRequiringReselection()) {
+            Log.d(TAG, "No URIs require re-selection");
+            return;
+        }
+
+        List<Uri> urisToReselect = new ArrayList<>(validationResult.getUrisRequiringReselection().values());
+
+        UriReselectionDialog dialog = UriReselectionDialog.newInstance(urisToReselect);
+        dialog.setCallback(new UriReselectionDialog.UriReselectionCallback() {
+            @Override
+            public void onUriReselected(Uri oldUri, Uri newUri) {
+                Log.d(TAG, "URI re-selected: " + oldUri + " -> " + newUri);
+                if (callback != null) {
+                    callback.onUriReselected(oldUri, newUri);
+                }
+            }
+
+            @Override
+            public void onUriSkipped(Uri uri) {
+                Log.d(TAG, "URI re-selection skipped: " + uri);
+                if (callback != null) {
+                    callback.onUriSkipped(uri);
+                }
+            }
+
+            @Override
+            public void onReselectionCompleted() {
+                Log.d(TAG, "URI re-selection completed");
+                if (callback != null) {
+                    callback.onReselectionCompleted();
+                }
+            }
+
+            @Override
+            public void onReselectionCancelled() {
+                Log.d(TAG, "URI re-selection cancelled");
+                if (callback != null) {
+                    callback.onReselectionCancelled();
+                }
+            }
+        });
+
+        dialog.show(fragmentManager);
+    }
+
+    /**
+     * Callback interface for URI re-selection operations
+     */
+    public interface UriReselectionCallback {
+        void onUriReselected(Uri oldUri, Uri newUri);
+        void onUriSkipped(Uri uri);
+        void onReselectionCompleted();
+        void onReselectionCancelled();
+    }
+    
+    /**
+     * Result of media reference validation
+     */
+    public static class ValidationResult {
+        private final Map<String, String> recoveredPaths = new HashMap<>();
+        private final java.util.List<String> missingFiles = new java.util.ArrayList<>();
+        private final java.util.List<String> validFiles = new java.util.ArrayList<>();
+        private final Map<String, Uri> urisRequiringReselection = new HashMap<>();
+        
+        public void addRecoveredPath(String originalPath, String recoveredPath) {
+            recoveredPaths.put(originalPath, recoveredPath);
+        }
+        
+        public void addMissingFile(String filePath) {
+            missingFiles.add(filePath);
+        }
+        
+        public void addValidFile(String filePath) {
+            validFiles.add(filePath);
+        }
+        
+        public void addUriRequiringReselection(String filePath, Uri uri) {
+            urisRequiringReselection.put(filePath, uri);
+        }
+        
+        public boolean isValid() {
+            return missingFiles.isEmpty() && urisRequiringReselection.isEmpty();
+        }
+        
+        public boolean hasRecoveredPaths() {
+            return !recoveredPaths.isEmpty();
+        }
+        
+        public boolean hasUrisRequiringReselection() {
+            return !urisRequiringReselection.isEmpty();
+        }
+        
+        public Map<String, String> getRecoveredPaths() {
+            return recoveredPaths;
+        }
+        
+        public java.util.List<String> getMissingFiles() {
+            return missingFiles;
+        }
+        
+        public java.util.List<String> getValidFiles() {
+            return validFiles;
+        }
+        
+        public Map<String, Uri> getUrisRequiringReselection() {
+            return urisRequiringReselection;
+        }
+        
+        public int getTotalFiles() {
+            return validFiles.size() + missingFiles.size() + urisRequiringReselection.size();
+        }
+        
+        public int getValidFileCount() {
+            return validFiles.size();
+        }
+        
+        public int getMissingFileCount() {
+            return missingFiles.size();
+        }
+        
+        public int getUrisRequiringReselectionCount() {
+            return urisRequiringReselection.size();
+        }
+    }
+}

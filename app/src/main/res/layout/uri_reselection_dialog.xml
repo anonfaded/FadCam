@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/picker_bottom_sheet_gradient_bg_dynamic">
+
+    <!-- Close button -->
+    <ImageView
+        android:id="@+id/uri_reselection_close_btn"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="end"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_close"
+        android:contentDescription="Close"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/uri_reselection_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Re-select Video Files"
+        android:textColor="@color/colorHeading"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Message -->
+    <TextView
+        android:id="@+id/uri_reselection_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Some video files in this project have expired permissions and need to be re-selected."
+        android:textColor="@android:color/darker_gray"
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Description -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="The following files need to be re-selected due to expired access permissions:"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- File list container -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:id="@+id/uri_reselection_file_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/settings_group_card_bg"
+            android:padding="12dp" />
+    </ScrollView>
+
+    <!-- Action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/uri_reselection_select_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Select File"
+            android:background="@drawable/prefs_input_bg"
+            android:textColor="@android:color/white"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/uri_reselection_skip_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Skip"
+            android:background="@drawable/prefs_input_bg"
+            android:textColor="@android:color/white"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/uri_reselection_continue_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Continue"
+            android:background="@drawable/prefs_input_bg"
+            android:textColor="@android:color/white"
+            android:textAllCaps="false"
+            android:enabled="false" />
+    </LinearLayout>
+
+</LinearLayout>
