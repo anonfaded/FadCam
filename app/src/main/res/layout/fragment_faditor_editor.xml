@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout 
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -184,69 +184,113 @@
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:background="#FF1E1E1E"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@id/bottom_tools"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Timeline Header -->
+        <!-- Left Sidebar Controls -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:background="#FF2A2A2A">
+            android:layout_width="80dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="#FF2A2A2A"
+            android:paddingVertical="8dp">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Timeline"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+            <!-- Mute Button -->
+            <LinearLayout
+                android:id="@+id/mute_clip"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless">
 
-            <!-- Timeline Time Display -->
-            <TextView
-                android:id="@+id/timeline_time_display"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00 / 00:02"
-                android:textColor="#00BCD4"
-                android:textSize="12sp"
-                android:fontFamily="monospace"
-                android:layout_marginEnd="16dp" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_volume_up_24"
+                    android:tint="#FFFFFF"
+                    android:layout_marginEnd="4dp" />
 
-            <!-- Zoom Controls -->
-            <ImageButton
-                android:id="@+id/zoom_out_button"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mute\nClip"
+                    android:textColor="#FFFFFF"
+                    android:textSize="8sp"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="0.8" />
+
+            </LinearLayout>
+
+            <!-- Cover Button -->
+            <LinearLayout
+                android:id="@+id/cover_button"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_zoom_out"
-                android:tint="#FFFFFF"
-                android:layout_marginEnd="8dp"
-                android:contentDescription="Zoom Out" />
+                android:layout_marginTop="8dp">
 
-            <ImageButton
-                android:id="@+id/zoom_in_button"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_zoom_in"
-                android:tint="#FFFFFF"
-                android:contentDescription="Zoom In" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_video_placeholder"
+                    android:tint="#FFFFFF"
+                    android:layout_marginEnd="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cover"
+                    android:textColor="#FFFFFF"
+                    android:textSize="10sp"
+                    android:gravity="center" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Timeline Component -->
-        <com.fadcam.ui.faditor.components.TimelineComponent
-            android:id="@+id/timeline_component"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+        <!-- Timeline Area -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_margin="8dp" />
+            android:orientation="vertical">
+
+            <!-- Centered Time Display -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:background="#FF1E1E1E">
+
+                <TextView
+                    android:id="@+id/timeline_time_display"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace"
+                    android:background="#FF333333"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+            <!-- Timeline Component -->
+            <com.fadcam.ui.faditor.components.TimelineComponent
+                android:id="@+id/timeline_component"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -2,6 +2,7 @@ package com.fadcam.ui.faditor.components;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -26,7 +27,9 @@ import com.fadcam.R;
 import com.fadcam.ui.faditor.models.TimelineState;
 import com.fadcam.ui.faditor.persistence.AutoSaveManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,33 +46,42 @@ public class TimelineComponent extends View {
 
     private static final String TAG = "TimelineComponent";
 
-    // Constants for professional timeline
+    // Constants for professional CapCut-style timeline
     private static final float MIN_ZOOM = 0.1f;
     private static final float MAX_ZOOM = 50.0f;
-    private static final int TIMELINE_HEIGHT_DP = 120;
-    private static final int WAVEFORM_HEIGHT_DP = 40;
+    private static final int VIDEO_TRACK_HEIGHT_DP = 60;
+    private static final int AUDIO_TRACK_HEIGHT_DP = 50;
+    private static final int TRACK_MARGIN_DP = 8;
+    private static final int THUMBNAIL_WIDTH_DP = 80;
+    private static final int CENTER_PLAYHEAD_WIDTH_DP = 2;
+    private static final int WAVEFORM_SAMPLE_COUNT = 200;
+    private static final float FRAME_RATE = 30.0f;
+
+    // Legacy constants for compatibility
+    private static final int TIMELINE_HEIGHT_DP = 200;
     private static final int TRACK_HEIGHT_DP = 60;
+    private static final int WAVEFORM_HEIGHT_DP = 50;
     private static final int HANDLE_WIDTH_DP = 12;
-    private static final int PLAYHEAD_WIDTH_DP = 2;
     private static final int FRAME_SNAP_THRESHOLD_DP = 8;
     private static final int ZOOM_CONTROL_SIZE_DP = 40;
-    private static final float FRAME_RATE = 30.0f; // Default frame rate
 
-    // -------------- Fix Start (debouncing constants) --------------
-    private static final int SEEK_DEBOUNCE_DELAY_MS = 50; // 50ms debounce for smooth scrubbing
-    private static final int SCRUB_UPDATE_INTERVAL_MS = 16; // ~60fps for smooth preview updates
-    // -------------- Fix Ended (debouncing constants) --------------
-
-    // Colors
+    // Professional colors matching CapCut design - fixed visibility
     private static final int COLOR_TIMELINE_BG = 0xFF1E1E1E;
-    private static final int COLOR_TRACK_BG = 0xFF2D2D2D;
-    private static final int COLOR_TRIM_RANGE = 0xFF4CAF50;
-    private static final int COLOR_TRIM_HANDLE = 0xFF66BB6A;
-    private static final int COLOR_PLAYHEAD = 0xFFFF5722;
-    private static final int COLOR_WAVEFORM = 0xFF03DAC6;
-    private static final int COLOR_FRAME_MARKER = 0xFF757575;
-    private static final int COLOR_TIME_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_ZOOM_CONTROL = 0xFF424242;
+    private static final int COLOR_VIDEO_TRACK = 0xFF3A3A3A;
+    private static final int COLOR_AUDIO_TRACK = 0xFF1A4A1A;
+    private static final int COLOR_CENTER_PLAYHEAD = 0xFFFFFFFF;
+    private static final int COLOR_WAVEFORM = 0xFF00E676;
+    private static final int COLOR_VIDEO_FRAME_BORDER = 0xFF666666;
+    private static final int COLOR_TEXT = 0xFFFFFFFF;
+    private static final int COLOR_TRACK_LABEL = 0xFFBBBBBB;
+    private static final int COLOR_ADD_AUDIO_TEXT = 0xFF888888;
+    private static final int COLOR_RULER_BG = 0xFF2A2A2A;
+    private static final int COLOR_RULER_TICK = 0xFFFFFFFF;
+    private static final int COLOR_RULER_MINOR_TICK = 0xFF999999;
+
+    // Debouncing constants
+    private static final int SEEK_DEBOUNCE_DELAY_MS = 50;
+    private static final int SCRUB_UPDATE_INTERVAL_MS = 16;
 
     public interface TimelineListener {
         void onTrimRangeChanged(long startMs, long endMs);
@@ -94,22 +106,35 @@ public class TimelineComponent extends View {
 
     // Multi-track support
     private List<Track> tracks;
-    private int selectedTrackIndex = 0;
+    // Professional timeline tracks
+    private VideoTrack videoTrack;
+    private AudioTrack audioTrack;
+    private boolean hasVideo = false;
+    private boolean hasAudio = false;
 
     // Viewport and scrolling
-    private long viewportStart;
-    private long viewportEnd;
-    private float scrollX = 0f;
+    private long viewportStart = 0;
+    private long viewportEnd = 10000;
+    private float scrollX = 0;
 
-    // Interaction state
+    // Touch and interaction
+    private boolean isDragging = false;
     private boolean isDraggingStartHandle = false;
     private boolean isDraggingEndHandle = false;
     private boolean isDraggingPlayhead = false;
     private boolean frameSnappingEnabled = true;
-    private float lastTouchX;
-    private float lastTouchY;
+    private float lastTouchX = 0;
+    private float lastTouchY = 0;
 
-    // Waveform data
+    // Legacy compatibility
+    private int selectedTrackIndex = 0;
+
+    // Video thumbnails
+    private Map<Long, Bitmap> videoThumbnails = new HashMap<>();
+    private ExecutorService thumbnailExecutor;
+    private boolean isLoadingThumbnails = false;
+
+    // Audio waveform
     private float[] waveformData;
     private boolean isLoadingWaveform = false;
     private ExecutorService waveformExecutor;
@@ -191,8 +216,14 @@ public class TimelineComponent extends View {
         tracks.add(new Track("Video Track", Track.Type.VIDEO));
         tracks.add(new Track("Audio Track", Track.Type.AUDIO));
 
+        // Initialize professional tracks
+        videoTrack = new VideoTrack();
+        audioTrack = new AudioTrack();
+        videoThumbnails = new HashMap<>();
+
         // Initialize executors and handlers
         waveformExecutor = Executors.newSingleThreadExecutor();
+        thumbnailExecutor = Executors.newSingleThreadExecutor();
         mainHandler = new Handler(Looper.getMainLooper());
 
         // -------------- Fix Start (initialize debounce handler) --------------
@@ -241,34 +272,34 @@ public class TimelineComponent extends View {
         timelinePaint.setColor(COLOR_TIMELINE_BG);
 
         trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        trackPaint.setColor(COLOR_TRACK_BG);
+        trackPaint.setColor(COLOR_VIDEO_TRACK);
 
         trimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        trimPaint.setColor(COLOR_TRIM_RANGE);
+        trimPaint.setColor(COLOR_WAVEFORM);
         trimPaint.setAlpha(128);
 
         handlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        handlePaint.setColor(COLOR_TRIM_HANDLE);
+        handlePaint.setColor(COLOR_WAVEFORM);
 
         playheadPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        playheadPaint.setColor(COLOR_PLAYHEAD);
-        playheadPaint.setStrokeWidth(dpToPx(PLAYHEAD_WIDTH_DP));
+        playheadPaint.setColor(COLOR_CENTER_PLAYHEAD);
+        playheadPaint.setStrokeWidth(dpToPx(CENTER_PLAYHEAD_WIDTH_DP));
 
         waveformPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         waveformPaint.setColor(COLOR_WAVEFORM);
-        waveformPaint.setStrokeWidth(1f);
+        waveformPaint.setStrokeWidth(2f);
 
         framePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        framePaint.setColor(COLOR_FRAME_MARKER);
+        framePaint.setColor(COLOR_VIDEO_FRAME_BORDER);
         framePaint.setStrokeWidth(1f);
 
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(COLOR_TIME_TEXT);
+        textPaint.setColor(COLOR_TEXT);
         textPaint.setTextSize(dpToPx(12));
         textPaint.setTextAlign(Paint.Align.CENTER);
 
         zoomControlPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        zoomControlPaint.setColor(COLOR_ZOOM_CONTROL);
+        zoomControlPaint.setColor(COLOR_TRACK_LABEL);
     }
 
     private void initializeGestureDetectors() {
@@ -282,13 +313,35 @@ public class TimelineComponent extends View {
                     float distanceX,
                     float distanceY
                 ) {
-                    if (
-                        !isDraggingStartHandle &&
-                        !isDraggingEndHandle &&
-                        !isDraggingPlayhead
-                    ) {
-                        // Scroll timeline viewport
-                        scrollTimeline(distanceX);
+                    if (!isDragging) {
+                        float oldScrollX = scrollX;
+                        // Scroll timeline horizontally
+                        scrollX += distanceX;
+
+                        // Constrain scroll limits
+                        float maxScrollX = Math.max(
+                            0,
+                            videoDuration * getPixelsPerMs() - getWidth()
+                        );
+                        scrollX = Math.max(0, Math.min(scrollX, maxScrollX));
+
+                        // Provide visual feedback about scroll position
+                        if (scrollX != oldScrollX && listener != null) {
+                            float centerX = getWidth() / 2f;
+                            float pixelsPerMs = getPixelsPerMs();
+                            long centerTimePosition = Math.round(
+                                (scrollX + centerX) / pixelsPerMs
+                            );
+                            centerTimePosition = Math.max(
+                                0,
+                                Math.min(videoDuration, centerTimePosition)
+                            );
+
+                            // Update center line position display
+                            listener.onFrameSnapped(centerTimePosition);
+                        }
+
+                        invalidate();
                         return true;
                     }
                     return false;
@@ -296,7 +349,34 @@ public class TimelineComponent extends View {
 
                 @Override
                 public boolean onSingleTapUp(MotionEvent e) {
-                    return handleSingleTap(e.getX(), e.getY());
+                    // Convert touch position to time, accounting for center playhead
+                    float centerX = getWidth() / 2f;
+                    float touchOffset = e.getX() - centerX;
+                    long newPosition = Math.round(
+                        (scrollX + centerX + touchOffset) / getPixelsPerMs()
+                    );
+
+                    // Clamp to valid range
+                    newPosition = Math.max(
+                        0,
+                        Math.min(videoDuration, newPosition)
+                    );
+
+                    if (frameSnappingEnabled) {
+                        newPosition = snapToFrame(newPosition);
+                    }
+
+                    // Update playback position and immediately sync timeline
+                    setCurrentPosition(newPosition);
+
+                    // Force update scroll position to keep centered
+                    updateScrollForCenterPlayhead();
+
+                    if (listener != null) {
+                        listener.onTimelinePositionChanged(newPosition);
+                    }
+
+                    return true;
                 }
 
                 @Override
@@ -329,7 +409,19 @@ public class TimelineComponent extends View {
 
     public void setVideoUri(Uri videoUri) {
         this.videoUri = videoUri;
+        this.hasVideo = (videoUri != null);
+        Log.d(TAG, "Set video URI, hasVideo: " + hasVideo);
         loadWaveformData();
+        // Clear old thumbnails when new video is set
+        if (videoThumbnails != null) {
+            for (Bitmap bitmap : videoThumbnails.values()) {
+                if (bitmap != null && !bitmap.isRecycled()) {
+                    bitmap.recycle();
+                }
+            }
+            videoThumbnails.clear();
+        }
+        invalidate();
     }
 
     public void setVideoDuration(long duration) {
@@ -414,6 +506,9 @@ public class TimelineComponent extends View {
         if (this.currentPosition != newPosition) {
             this.currentPosition = newPosition;
 
+            // Update scroll to keep playhead centered (CapCut style)
+            updateScrollForCenterPlayhead();
+
             // Only update viewport if not actively scrubbing (prevent cascading updates)
             if (!isActivelyScrubbing.get()) {
                 ensurePlayheadVisible();
@@ -421,15 +516,17 @@ public class TimelineComponent extends View {
 
             invalidate();
 
-            // -------------- Fix Start (professional position handling) --------------
+            // -------------- Fix Start (professional position handling with progress sync) --------------
             if (listener != null && !isSilentUpdate) {
-                // If we're actively scrubbing, don't trigger seeks - visual only
-                if (!isActivelyScrubbing.get()) {
-                    // Only trigger actual video seeks when not scrubbing
-                    listener.onTimelinePositionChanged(this.currentPosition);
+                // Always update timeline position to sync progress bar
+                listener.onTimelinePositionChanged(this.currentPosition);
+
+                // If we're actively scrubbing, notify scrubbing state
+                if (isActivelyScrubbing.get()) {
+                    listener.onScrubbing(true, this.currentPosition);
                 }
             }
-            // -------------- Fix Ended (professional position handling) --------------
+            // -------------- Fix Ended (professional position handling with progress sync) --------------
         }
     }
 
@@ -596,122 +693,444 @@ public class TimelineComponent extends View {
         // Draw timeline background
         canvas.drawRect(0, 0, getWidth(), getHeight(), timelinePaint);
 
-        // Draw tracks
-        drawTracks(canvas);
+        // Save canvas state for scrolling
+        canvas.save();
+        canvas.translate(-scrollX, 0);
 
-        // Draw time markers and frame indicators
-        drawTimeMarkers(canvas);
+        // Draw timeline ruler first (background)
+        drawTimelineRuler(canvas);
 
-        // Draw waveform if available
-        drawWaveform(canvas);
+        // Draw professional tracks
+        drawVideoTrack(canvas);
+        drawAudioTrack(canvas);
 
-        // Draw trim range
-        drawTrimRange(canvas);
+        // Restore canvas for fixed elements
+        canvas.restore();
 
-        // Draw playhead
-        drawPlayhead(canvas);
-
-        // Draw zoom controls
-        drawZoomControls(canvas);
+        // Draw fixed center playhead line (CapCut style) - always in center
+        drawCenterPlayhead(canvas);
     }
 
     private void drawEmptyState(Canvas canvas) {
         canvas.drawRect(0, 0, getWidth(), getHeight(), timelinePaint);
 
-        String text = "No video loaded";
+        String text = "Import a video to start editing";
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(dpToPx(14));
         float textX = getWidth() / 2f;
         float textY = getHeight() / 2f;
         canvas.drawText(text, textX, textY, textPaint);
     }
 
-    private void drawTracks(Canvas canvas) {
-        int trackHeight = dpToPx(TRACK_HEIGHT_DP);
-        int currentY = 0;
-
-        for (int i = 0; i < tracks.size(); i++) {
-            Track track = tracks.get(i);
-
-            // Track background
-            trackPaint.setColor(
-                i == selectedTrackIndex
-                    ? COLOR_TRACK_BG
-                    : (COLOR_TRACK_BG & 0x80FFFFFF)
-            );
-            canvas.drawRect(
-                0,
-                currentY,
-                getWidth(),
-                currentY + trackHeight,
-                trackPaint
-            );
-
-            // Track label
-            textPaint.setTextAlign(Paint.Align.LEFT);
-            canvas.drawText(
-                track.getName(),
-                dpToPx(8),
-                currentY + trackHeight / 2f,
-                textPaint
-            );
-
-            currentY += trackHeight;
-        }
-    }
-
-    private void drawTimeMarkers(Canvas canvas) {
+    /**
+     * Draw professional timeline ruler with time markers (CapCut style)
+     */
+    private void drawTimelineRuler(Canvas canvas) {
         if (videoDuration <= 0) return;
 
+        int rulerHeight = dpToPx(25);
+        int viewWidth = getWidth();
+
+        // Draw ruler background only for visible area
+        trackPaint.setColor(COLOR_RULER_BG);
+        canvas.drawRect(0, 0, viewWidth, rulerHeight, trackPaint);
+
+        // Draw time markers only for visible area
         float pixelsPerMs = getPixelsPerMs();
-        long markerInterval = calculateMarkerInterval();
+        long startTime = Math.max(0, (long) (scrollX / pixelsPerMs));
+        long endTime = Math.min(
+            videoDuration,
+            (long) ((scrollX + viewWidth) / pixelsPerMs)
+        );
 
-        // Draw major time markers
-        for (long time = 0; time <= videoDuration; time += markerInterval) {
-            float x = timeToPixel(time);
+        textPaint.setColor(COLOR_TEXT);
+        textPaint.setTextSize(dpToPx(9));
+        textPaint.setTextAlign(Paint.Align.CENTER);
 
-            if (x >= 0 && x <= getWidth()) {
-                // Major marker line
-                canvas.drawLine(x, 0, x, getHeight(), framePaint);
+        // Draw second markers
+        long startSecond = startTime / 1000;
+        long endSecond = (endTime / 1000) + 1;
 
-                // Time text
-                String timeText = formatTime(time);
-                canvas.drawText(timeText, x, dpToPx(15), textPaint);
+        framePaint.setStrokeWidth(1f);
+
+        for (long second = startSecond; second <= endSecond; second++) {
+            long timeMs = second * 1000;
+            float x = timeToPixel(timeMs);
+
+            // Skip if outside visible area
+            if (x < 0 || x > viewWidth) continue;
+
+            boolean isMajorTick = (second % 5 == 0); // Every 5 seconds is major
+
+            if (isMajorTick) {
+                // Major tick - full height with time text
+                framePaint.setColor(COLOR_RULER_TICK);
+                canvas.drawLine(x, 0, x, rulerHeight * 0.7f, framePaint);
+
+                // Draw time text
+                String timeText = formatTime(timeMs);
+                canvas.drawText(
+                    timeText,
+                    x,
+                    rulerHeight - dpToPx(3),
+                    textPaint
+                );
+            } else {
+                // Minor tick - half height
+                framePaint.setColor(COLOR_RULER_MINOR_TICK);
+                canvas.drawLine(x, 0, x, rulerHeight * 0.4f, framePaint);
+
+                // Show second number for better navigation
+                textPaint.setTextSize(dpToPx(7));
+                textPaint.setColor(COLOR_RULER_MINOR_TICK);
+                canvas.drawText(
+                    String.valueOf(second % 60),
+                    x,
+                    rulerHeight * 0.8f,
+                    textPaint
+                );
+                textPaint.setTextSize(dpToPx(9));
+                textPaint.setColor(COLOR_TEXT);
             }
-        }
-
-        // Draw frame markers if zoomed in enough
-        if (frameSnappingEnabled && zoomLevel > 5.0f) {
-            drawFrameMarkers(canvas, pixelsPerMs);
         }
     }
 
-    private void drawFrameMarkers(Canvas canvas, float pixelsPerMs) {
-        long frameDurationMs = (long) (1000f / frameRate);
-        float framePixelWidth = frameDurationMs * pixelsPerMs;
+    /**
+     * Draw professional video track aligned under center playhead (CapCut style)
+     */
+    private void drawVideoTrack(Canvas canvas) {
+        Log.d(
+            TAG,
+            "drawVideoTrack - hasVideo: " +
+            hasVideo +
+            ", duration: " +
+            videoDuration
+        );
 
-        if (framePixelWidth > 2f) {
-            // Only draw if frames are visible
-            framePaint.setAlpha(64);
+        // Always draw something for debugging - either video track or placeholder
+        if (videoDuration <= 0) {
+            // Draw placeholder track
+            drawVideoTrackPlaceholder(canvas);
+            return;
+        }
 
-            long startFrame = viewportStart / frameDurationMs;
-            long endFrame = viewportEnd / frameDurationMs + 1;
+        int trackHeight = dpToPx(VIDEO_TRACK_HEIGHT_DP);
+        int margin = dpToPx(TRACK_MARGIN_DP);
+        int rulerHeight = dpToPx(25);
+        int trackY = rulerHeight + margin;
 
-            for (long frame = startFrame; frame <= endFrame; frame++) {
-                long frameTime = frame * frameDurationMs;
-                float x = timeToPixel(frameTime);
+        float pixelsPerMs = getPixelsPerMs();
+        float videoTrackWidth = videoDuration * pixelsPerMs;
 
-                if (x >= 0 && x <= getWidth()) {
-                    canvas.drawLine(
-                        x,
-                        getHeight() - dpToPx(20),
-                        x,
-                        getHeight(),
-                        framePaint
-                    );
+        // Calculate video track start position (aligned under center when position is 0)
+        float centerX = getWidth() / 2f;
+        float videoTrackStartX = centerX - (currentPosition * pixelsPerMs);
+
+        // Video track background - only draw the actual video length
+        trackPaint.setColor(COLOR_VIDEO_TRACK);
+        tempRectF.set(
+            videoTrackStartX,
+            trackY,
+            videoTrackStartX + videoTrackWidth,
+            trackY + trackHeight
+        );
+        canvas.drawRoundRect(tempRectF, dpToPx(6), dpToPx(6), trackPaint);
+
+        // Draw video thumbnails only for visible area
+        drawVideoThumbnails(
+            canvas,
+            videoTrackStartX,
+            trackY,
+            videoTrackWidth,
+            trackHeight,
+            centerX
+        );
+
+        // Draw video track border for better visibility
+        framePaint.setColor(COLOR_VIDEO_FRAME_BORDER);
+        framePaint.setStyle(Paint.Style.STROKE);
+        framePaint.setStrokeWidth(2f);
+        canvas.drawRoundRect(tempRectF, dpToPx(6), dpToPx(6), framePaint);
+        framePaint.setStyle(Paint.Style.FILL);
+    }
+
+    /**
+     * Draw professional audio track aligned with video track (CapCut style)
+     */
+    private void drawAudioTrack(Canvas canvas) {
+        int videoTrackHeight = dpToPx(VIDEO_TRACK_HEIGHT_DP);
+        int audioTrackHeight = dpToPx(AUDIO_TRACK_HEIGHT_DP);
+        int margin = dpToPx(TRACK_MARGIN_DP);
+        int rulerHeight = dpToPx(25);
+        int audioTrackY = rulerHeight + margin + videoTrackHeight + margin;
+
+        if (hasAudio && videoDuration > 0) {
+            float pixelsPerMs = getPixelsPerMs();
+            float audioTrackWidth = videoDuration * pixelsPerMs;
+
+            // Align with video track
+            float centerX = getWidth() / 2f;
+            float audioTrackStartX = centerX - (currentPosition * pixelsPerMs);
+
+            // Audio track background
+            trackPaint.setColor(COLOR_AUDIO_TRACK);
+            tempRectF.set(
+                audioTrackStartX,
+                audioTrackY,
+                audioTrackStartX + audioTrackWidth,
+                audioTrackY + audioTrackHeight
+            );
+            canvas.drawRoundRect(tempRectF, dpToPx(6), dpToPx(6), trackPaint);
+
+            // Draw audio waveform
+            drawAudioWaveform(
+                canvas,
+                audioTrackStartX,
+                audioTrackY,
+                audioTrackWidth,
+                audioTrackHeight
+            );
+        } else {
+            // Draw "Add audio" placeholder - fixed position
+            int viewWidth = getWidth();
+            trackPaint.setColor(0xFF1A3A1A);
+            tempRectF.set(
+                dpToPx(TRACK_MARGIN_DP),
+                audioTrackY,
+                viewWidth - dpToPx(TRACK_MARGIN_DP),
+                audioTrackY + audioTrackHeight
+            );
+            canvas.drawRoundRect(tempRectF, dpToPx(6), dpToPx(6), trackPaint);
+
+            drawAddAudioPlaceholder(
+                canvas,
+                dpToPx(TRACK_MARGIN_DP),
+                audioTrackY,
+                viewWidth - 2 * dpToPx(TRACK_MARGIN_DP),
+                audioTrackHeight
+            );
+        }
+    }
+
+    /**
+     * Draw video thumbnails in the video track (optimized for visible area)
+     */
+    private void drawVideoThumbnails(
+        Canvas canvas,
+        float trackStartX,
+        int y,
+        float trackWidth,
+        int height,
+        float centerX
+    ) {
+        if (videoDuration <= 0) return;
+
+        int thumbnailWidth = dpToPx(THUMBNAIL_WIDTH_DP);
+        int viewWidth = getWidth();
+
+        // Only draw thumbnails in visible area
+        float visibleStartX = Math.max(trackStartX, 0);
+        float visibleEndX = Math.min(trackStartX + trackWidth, viewWidth);
+
+        if (visibleStartX >= visibleEndX) return; // Track not visible
+
+        // Calculate which thumbnails to draw
+        int startThumbIndex = Math.max(
+            0,
+            (int) ((visibleStartX - trackStartX) / thumbnailWidth)
+        );
+        int endThumbIndex = (int) Math.ceil(
+            (visibleEndX - trackStartX) / thumbnailWidth
+        );
+
+        for (int i = startThumbIndex; i < endThumbIndex; i++) {
+            float thumbX = trackStartX + (i * thumbnailWidth);
+            float thumbEndX = Math.min(
+                thumbX + thumbnailWidth,
+                trackStartX + trackWidth
+            );
+
+            if (thumbX >= viewWidth || thumbEndX <= 0) continue; // Skip if outside view
+
+            // Calculate time position for this thumbnail
+            long timePosition = (long) ((i * thumbnailWidth) /
+                getPixelsPerMs());
+
+            // Constrain thumbnail to visible and track bounds
+            float actualThumbStartX = Math.max(thumbX, 0);
+            float actualThumbEndX = Math.min(thumbEndX, viewWidth);
+
+            if (actualThumbStartX >= actualThumbEndX) continue;
+
+            tempRectF.set(actualThumbStartX, y, actualThumbEndX, y + height);
+
+            Bitmap thumbnail = videoThumbnails.get(timePosition);
+            if (thumbnail != null && !thumbnail.isRecycled()) {
+                canvas.drawBitmap(thumbnail, null, tempRectF, null);
+            } else {
+                // Draw placeholder with subtle pattern
+                trackPaint.setColor(COLOR_VIDEO_TRACK);
+                canvas.drawRoundRect(
+                    tempRectF,
+                    dpToPx(2),
+                    dpToPx(2),
+                    trackPaint
+                );
+
+                // Request thumbnail if not loading
+                if (
+                    !isLoadingThumbnails &&
+                    timePosition >= 0 &&
+                    timePosition <= videoDuration
+                ) {
+                    requestVideoThumbnail(timePosition);
                 }
             }
-
-            framePaint.setAlpha(255);
         }
+    }
+
+    /**
+     * Draw audio waveform in the audio track
+     */
+    private void drawAudioWaveform(
+        Canvas canvas,
+        float trackStartX,
+        int y,
+        float trackWidth,
+        int height
+    ) {
+        if (waveformData == null || waveformData.length == 0) return;
+
+        waveformPaint.setColor(COLOR_WAVEFORM);
+        waveformPaint.setStrokeWidth(1.5f);
+
+        int centerY = y + height / 2;
+        int maxAmplitude = height / 3;
+        int viewWidth = getWidth();
+
+        // Only draw waveform for visible area
+        float visibleStartX = Math.max(trackStartX, 0);
+        float visibleEndX = Math.min(trackStartX + trackWidth, viewWidth);
+
+        if (visibleStartX >= visibleEndX) return;
+
+        float sampleWidth = trackWidth / waveformData.length;
+
+        for (int i = 0; i < waveformData.length; i++) {
+            float x1 = trackStartX + i * sampleWidth;
+
+            // Skip if outside visible area
+            if (x1 < visibleStartX - sampleWidth || x1 > visibleEndX) continue;
+
+            float amplitude = waveformData[i] * maxAmplitude;
+
+            // Draw waveform bar
+            canvas.drawLine(
+                x1,
+                centerY - amplitude,
+                x1,
+                centerY + amplitude,
+                waveformPaint
+            );
+        }
+    }
+
+    /**
+     * Draw "Add audio" placeholder in audio track
+     */
+    private void drawAddAudioPlaceholder(
+        Canvas canvas,
+        float x,
+        int y,
+        float width,
+        int height
+    ) {
+        // Draw "+" icon
+        textPaint.setColor(COLOR_ADD_AUDIO_TEXT);
+        textPaint.setTextSize(dpToPx(20));
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(
+            "+",
+            x + width / 2,
+            y + height / 2 - dpToPx(2),
+            textPaint
+        );
+
+        // Draw "Add audio" text
+        textPaint.setTextSize(dpToPx(10));
+        canvas.drawText(
+            "Add audio",
+            x + width / 2,
+            y + height / 2 + dpToPx(12),
+            textPaint
+        );
+    }
+
+    /**
+     * Draw fixed center playhead line (CapCut style)
+     */
+    private void drawCenterPlayhead(Canvas canvas) {
+        float centerX = getWidth() / 2f;
+
+        playheadPaint.setColor(COLOR_CENTER_PLAYHEAD);
+        playheadPaint.setStrokeWidth(dpToPx(CENTER_PLAYHEAD_WIDTH_DP));
+
+        // Draw vertical line from top to bottom
+        canvas.drawLine(centerX, 0, centerX, getHeight(), playheadPaint);
+
+        // Draw small triangle at top
+        tempPath.reset();
+        tempPath.moveTo(centerX, dpToPx(5));
+        tempPath.lineTo(centerX - dpToPx(4), dpToPx(15));
+        tempPath.lineTo(centerX + dpToPx(4), dpToPx(15));
+        tempPath.close();
+        canvas.drawPath(tempPath, playheadPaint);
+    }
+
+    /**
+     * Request video thumbnail for specific time position
+     */
+    private void requestVideoThumbnail(long timePositionMs) {
+        if (videoUri == null || thumbnailExecutor == null) return;
+
+        isLoadingThumbnails = true;
+        thumbnailExecutor.execute(() -> {
+            try {
+                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                retriever.setDataSource(getContext(), videoUri);
+
+                Bitmap thumbnail = retriever.getFrameAtTime(
+                    timePositionMs * 1000, // Convert to microseconds
+                    MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                );
+
+                if (thumbnail != null) {
+                    // Scale thumbnail to appropriate size
+                    int targetWidth = dpToPx(THUMBNAIL_WIDTH_DP);
+                    int targetHeight = dpToPx(VIDEO_TRACK_HEIGHT_DP);
+
+                    Bitmap scaledThumbnail = Bitmap.createScaledBitmap(
+                        thumbnail,
+                        targetWidth,
+                        targetHeight,
+                        true
+                    );
+
+                    thumbnail.recycle();
+
+                    mainHandler.post(() -> {
+                        videoThumbnails.put(timePositionMs, scaledThumbnail);
+                        invalidate();
+                        isLoadingThumbnails = false;
+                    });
+                }
+
+                retriever.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading video thumbnail", e);
+                mainHandler.post(() -> isLoadingThumbnails = false);
+            }
+        });
     }
 
     private void drawWaveform(Canvas canvas) {
@@ -920,54 +1339,96 @@ public class TimelineComponent extends View {
             return true;
         }
 
-        // Check trim handles
-        float startHandleX = timeToPixel(trimStart);
-        float endHandleX = timeToPixel(trimEnd);
-        int handleWidth = dpToPx(HANDLE_WIDTH_DP);
-
-        if (Math.abs(x - startHandleX) <= handleWidth) {
-            isDraggingStartHandle = true;
+        // For center playhead interaction, check if touching center area
+        float centerX = getWidth() / 2f;
+        if (Math.abs(x - centerX) <= dpToPx(FRAME_SNAP_THRESHOLD_DP)) {
+            isDragging = true;
             return true;
         }
 
-        if (Math.abs(x - endHandleX) <= handleWidth) {
-            isDraggingEndHandle = true;
-            return true;
-        }
-
-        // Check playhead
-        float playheadX = timeToPixel(currentPosition);
-        if (Math.abs(x - playheadX) <= dpToPx(FRAME_SNAP_THRESHOLD_DP)) {
-            isDraggingPlayhead = true;
-            startScrubbing();
-            return true;
-        }
-
-        return false;
+        // Otherwise, allow timeline scrolling
+        isDragging = true;
+        return true;
     }
 
     private boolean handleTouchMove(float x, float y) {
-        if (isDraggingStartHandle) {
-            long newStart = pixelToTime(x);
-            if (frameSnappingEnabled) {
-                newStart = snapToFrame(newStart);
-            }
-            setTrimRange(newStart, trimEnd);
-            return true;
-        }
+        if (!isDragging) return false;
 
-        if (isDraggingEndHandle) {
-            long newEnd = pixelToTime(x);
-            if (frameSnappingEnabled) {
-                newEnd = snapToFrame(newEnd);
-            }
-            setTrimRange(trimStart, newEnd);
-            return true;
-        }
+        float deltaX = x - lastTouchX;
+        float deltaY = y - lastTouchY;
 
-        if (isDraggingPlayhead) {
-            long newPosition = pixelToTime(x);
-            handleProfessionalScrubbing(newPosition);
+        // Check if this is a horizontal scroll gesture
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            float centerX = getWidth() / 2f;
+
+            // If touching near center, scrub the video
+            if (
+                Math.abs(lastTouchX - centerX) <=
+                dpToPx(FRAME_SNAP_THRESHOLD_DP * 2)
+            ) {
+                // Start scrubbing if not already
+                if (!isScrubbing.get()) {
+                    startScrubbing();
+                }
+
+                // Calculate new position based on touch offset from center
+                float pixelOffset = x - centerX;
+                long newPosition = Math.round(
+                    (scrollX + centerX + pixelOffset) / getPixelsPerMs()
+                );
+
+                // Clamp to valid range
+                newPosition = Math.max(0, Math.min(videoDuration, newPosition));
+
+                if (frameSnappingEnabled) {
+                    newPosition = snapToFrame(newPosition);
+                }
+
+                // Update position and notify listener immediately for responsive scrubbing
+                currentPosition = newPosition;
+                invalidate();
+
+                if (listener != null) {
+                    listener.onScrubbing(true, newPosition);
+                    listener.onTimelinePositionChanged(newPosition);
+                }
+            } else {
+                // Scroll timeline horizontally
+                float oldScrollX = scrollX;
+                scrollX -= deltaX;
+
+                // Constrain scroll limits
+                float maxScrollX = Math.max(
+                    0,
+                    videoDuration * getPixelsPerMs() - getWidth()
+                );
+                scrollX = Math.max(0, Math.min(scrollX, maxScrollX));
+
+                // Update center position based on scroll and provide feedback
+                if (scrollX != oldScrollX) {
+                    float pixelsPerMs = getPixelsPerMs();
+                    long centerTimePosition = Math.round(
+                        (scrollX + centerX) / pixelsPerMs
+                    );
+                    centerTimePosition = Math.max(
+                        0,
+                        Math.min(videoDuration, centerTimePosition)
+                    );
+
+                    // Update timeline display but don't trigger video seek during scroll
+                    if (listener != null) {
+                        listener.onFrameSnapped(centerTimePosition);
+                    }
+
+                    // Don't reset currentPosition during manual scroll
+                    // currentPosition should only change via setCurrentPosition calls
+                }
+
+                invalidate();
+            }
+
+            lastTouchX = x;
+            lastTouchY = y;
             return true;
         }
 
@@ -975,18 +1436,18 @@ public class TimelineComponent extends View {
     }
 
     private boolean handleTouchUp(float x, float y) {
-        boolean wasHandled =
-            isDraggingStartHandle || isDraggingEndHandle || isDraggingPlayhead;
+        boolean wasDragging = isDragging;
 
-        isDraggingStartHandle = false;
-        isDraggingEndHandle = false;
+        if (isDragging) {
+            isDragging = false;
 
-        if (isDraggingPlayhead) {
-            isDraggingPlayhead = false;
-            stopScrubbing();
+            // If we were scrubbing, stop scrubbing
+            if (isScrubbing.get()) {
+                stopScrubbing();
+            }
         }
 
-        return wasHandled;
+        return wasDragging;
     }
 
     private boolean handleSingleTap(float x, float y) {
@@ -1303,14 +1764,15 @@ public class TimelineComponent extends View {
         if (videoDuration <= 0) return 0f;
 
         float pixelsPerMs = getPixelsPerMs();
-        return (timeMs - viewportStart) * pixelsPerMs;
+        return timeMs * pixelsPerMs;
     }
 
-    private long pixelToTime(float pixel) {
-        if (videoDuration <= 0) return 0;
+    private long pixelToTime(float pixelX) {
+        if (videoDuration <= 0) return 0L;
 
         float pixelsPerMs = getPixelsPerMs();
-        return viewportStart + (long) (pixel / pixelsPerMs);
+        // Add scroll offset for proper timeline position calculation
+        return Math.round((pixelX + scrollX) / pixelsPerMs);
     }
 
     private long snapToFrame(long timeMs) {
@@ -1328,6 +1790,14 @@ public class TimelineComponent extends View {
         if (viewportDuration <= 30000) return 5000; // 5 seconds
         if (viewportDuration <= 300000) return 30000; // 30 seconds
         return 60000; // 1 minute
+    }
+
+    /**
+     * Calculate appropriate time interval for timeline ruler based on video duration
+     */
+    private long calculateTimeInterval() {
+        // Always use 1 second intervals for consistent, professional ruler
+        return 1000; // 1 second intervals for all videos
     }
 
     private String formatTime(long timeMs) {
@@ -1404,27 +1874,98 @@ public class TimelineComponent extends View {
             waveformExecutor.shutdown();
         }
 
-        // -------------- Fix Start (cleanup professional scrubbing) --------------
+        // -------------- Fix Start (cleanup professional timeline) --------------
+        // Cleanup thumbnail executor
+        if (thumbnailExecutor != null && !thumbnailExecutor.isShutdown()) {
+            thumbnailExecutor.shutdown();
+        }
+
+        // Cleanup video thumbnails
+        if (videoThumbnails != null) {
+            for (Bitmap bitmap : videoThumbnails.values()) {
+                if (bitmap != null && !bitmap.isRecycled()) {
+                    bitmap.recycle();
+                }
+            }
+            videoThumbnails.clear();
+        }
+
         // Cleanup professional scrubbing system
         if (seekExecutor != null && !seekExecutor.isShutdown()) {
             seekExecutor.shutdown();
         }
 
-        if (currentSeekTask != null && !currentSeekTask.isDone()) {
-            currentSeekTask.cancel(true);
+        if (scrubbingHandler != null) {
+            scrubbingHandler.removeCallbacksAndMessages(null);
         }
 
         if (seekDebounceHandler != null) {
             seekDebounceHandler.removeCallbacksAndMessages(null);
         }
 
-        if (scrubbingHandler != null) {
-            scrubbingHandler.removeCallbacksAndMessages(null);
+        if (mainHandler != null) {
+            mainHandler.removeCallbacksAndMessages(null);
         }
-        // -------------- Fix Ended (cleanup professional scrubbing) --------------
 
-        if (scrubAnimator != null) {
+        if (scrubAnimator != null && scrubAnimator.isRunning()) {
             scrubAnimator.cancel();
+        }
+        // -------------- Fix Ended (cleanup professional timeline) --------------
+    }
+
+    /**
+     * Draw video track placeholder when no video is loaded
+     */
+    private void drawVideoTrackPlaceholder(Canvas canvas) {
+        int trackHeight = dpToPx(VIDEO_TRACK_HEIGHT_DP);
+        int margin = dpToPx(TRACK_MARGIN_DP);
+        int rulerHeight = dpToPx(25);
+        int trackY = rulerHeight + margin;
+        int viewWidth = getWidth();
+
+        // Draw placeholder background
+        trackPaint.setColor(0xFF444444);
+        tempRectF.set(margin, trackY, viewWidth - margin, trackY + trackHeight);
+        canvas.drawRoundRect(tempRectF, dpToPx(6), dpToPx(6), trackPaint);
+
+        // Draw "No Video" text
+        textPaint.setColor(COLOR_TRACK_LABEL);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(dpToPx(12));
+        canvas.drawText(
+            "Import Video to Start Editing",
+            viewWidth / 2f,
+            trackY + trackHeight / 2f + dpToPx(4),
+            textPaint
+        );
+    }
+
+    /**
+     * Update scroll position to keep current playhead centered (CapCut style)
+     */
+    private void updateScrollForCenterPlayhead() {
+        if (videoDuration <= 0) return;
+
+        float pixelsPerMs = getPixelsPerMs();
+        float centerX = getWidth() / 2f;
+        float currentPositionPixel = currentPosition * pixelsPerMs;
+
+        // Calculate target scroll position to center current position
+        float targetScrollX = currentPositionPixel - centerX;
+
+        // Ensure we don't scroll too far
+        float maxScrollX = Math.max(
+            0,
+            videoDuration * pixelsPerMs - getWidth()
+        );
+        targetScrollX = Math.max(0, Math.min(targetScrollX, maxScrollX));
+
+        // Update scroll position (don't animate during manual control)
+        scrollX = targetScrollX;
+
+        // Always notify about position updates for display sync
+        if (listener != null) {
+            listener.onFrameSnapped(currentPosition);
         }
     }
 
@@ -1531,6 +2072,60 @@ public class TimelineComponent extends View {
     }
 
     public int getSelectedTrackIndex() {
-        return selectedTrackIndex;
+        return 0; // Always return 0 for compatibility
     }
+
+    // -------------- Fix Start (Professional Track Classes) --------------
+
+    /**
+     * Professional Video Track class
+     */
+    public static class VideoTrack {
+
+        private boolean enabled = true;
+        private boolean muted = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isMuted() {
+            return muted;
+        }
+
+        public void setMuted(boolean muted) {
+            this.muted = muted;
+        }
+    }
+
+    /**
+     * Professional Audio Track class
+     */
+    public static class AudioTrack {
+
+        private boolean enabled = false;
+        private boolean muted = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isMuted() {
+            return muted;
+        }
+
+        public void setMuted(boolean muted) {
+            this.muted = muted;
+        }
+    }
+
+    // -------------- Fix Ended (Professional Track Classes) --------------
 }
