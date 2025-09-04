@@ -65,6 +65,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private long seekStartPosition = 0L;
     private float gestureStartX = 0f;
     private float gestureStartY = 0f;
+    private int lastSeekDirection = 1; // 1 = right/forward, -1 = left/rewind
     private android.os.Handler controlsHideHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable controlsHideRunnable = null;
     // Periodic resume-save handler
@@ -558,6 +559,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 if (gestureMode == 1) {
                                     int pxPerSecond = Math.max(20, Math.round(w / 8f));
                                     long deltaMs = (long) ((dx / pxPerSecond) * 1000L);
+                                    // Track seek direction by dx sign so we can show arrow even when
+                                    // secondsDelta rounds to 0 initially.
+                                    try { lastSeekDirection = dx >= 0f ? 1 : -1; } catch (Exception ignored) {}
                                     long target = seekStartPosition + deltaMs;
                                     long dur = player != null ? player.getDuration() : com.google.android.exoplayer2.C.TIME_UNSET;
                                     if (dur != com.google.android.exoplayer2.C.TIME_UNSET) target = Math.max(0L, Math.min(dur, target));
@@ -2652,13 +2656,30 @@ public class VideoPlayerActivity extends AppCompatActivity {
         private void showSeekOverlay(int secondsDelta) {
             try {
                 String tag = "gesture_seek_overlay";
-                android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.CENTER, 0, 0);
+                // Place seek overlay at the top center so it doesn't collide with
+                // the player's main controls in the center of the screen.
+                int topMargin = (int) (48 * getResources().getDisplayMetrics().density);
+                // Use zero start/end margins so the overlay is perfectly centered horizontally.
+                android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL, 0, 0);
+                // If the overlay was just created or found, update its layout params to add a top margin
+                try {
+                    if (v != null && v.getLayoutParams() instanceof android.widget.FrameLayout.LayoutParams) {
+                        android.widget.FrameLayout.LayoutParams lp = (android.widget.FrameLayout.LayoutParams) v.getLayoutParams();
+                        lp.topMargin = topMargin;
+                        v.setLayoutParams(lp);
+                    }
+                } catch (Exception ignored) {}
                 if (v == null) return;
                 android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
                 android.widget.TextView tv = v.findViewById(R.id.overlay_text);
-                // Use forward/back icons depending on sign
-                if (secondsDelta >= 0) iv.setImageResource(R.drawable.ic_fast_forward_24);
-                else iv.setImageResource(R.drawable.ic_fast_rewind_24);
+                // Use forward/back icons depending on sign; when secondsDelta is 0 use
+                // the last detected swipe direction to choose orientation immediately.
+                if (secondsDelta > 0) iv.setImageResource(R.drawable.ic_fast_forward_24);
+                else if (secondsDelta < 0) iv.setImageResource(R.drawable.ic_fast_rewind_24);
+                else {
+                    if (lastSeekDirection >= 0) iv.setImageResource(R.drawable.ic_fast_forward_24);
+                    else iv.setImageResource(R.drawable.ic_fast_rewind_24);
+                }
                 tv.setText((secondsDelta >= 0 ? "+" : "") + secondsDelta + "s");
                 // Show with quick fade-in and keep visible until hideSeekOverlay() is called
                 // Cancel any running animations to avoid flicker
