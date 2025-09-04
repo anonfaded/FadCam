@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center">
-            
+
             <ImageView
                 android:id="@+id/ivAppTitle"
                 android:layout_width="190dp"
@@ -94,6 +94,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
             android:layout_marginEnd="3dp"
             android:layout_weight="1"
             app:cardBackgroundColor="?attr/colorDialog"
@@ -389,7 +390,7 @@
                             android:id="@+id/tvClock"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="15sp"
+                            android:textSize="13sp"
                             android:textStyle="bold"
                             android:layout_gravity="top"
                             android:textColor="?attr/colorHeading" />
@@ -398,7 +399,7 @@
                             android:id="@+id/tvDateEnglish"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="13sp"
+                            android:textSize="11sp"
                             android:layout_gravity="left"
                             android:textColor="?attr/colorOnSurface" />
 
@@ -407,7 +408,7 @@
                             android:layout_width="wrap_content"
                             android:layout_gravity="right"
                             android:layout_height="wrap_content"
-                            android:textSize="13sp"
+                            android:textSize="11sp"
                             android:textColor="?attr/colorOnSurface" />
 
                     </LinearLayout>
@@ -450,6 +451,8 @@
                         android:layout_marginStart="4dp"
                         android:layout_marginTop="0dp"
                         android:textColor="?attr/colorHeading"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
                         android:text="Stats" />
 
                 </LinearLayout>
