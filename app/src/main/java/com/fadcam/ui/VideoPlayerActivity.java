@@ -537,13 +537,22 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 int w = playerView.getWidth();
                                 int h = playerView.getHeight();
                                 if (gestureMode == 0) {
-                                    if (adx > touchSlop || ady > touchSlop) {
-                                        if (adx > ady) gestureMode = 1; // seek
-                                        else {
-                                            if (gestureStartX > (w * 0.66f)) gestureMode = 2; // volume
-                                            else if (gestureStartX < (w * 0.33f)) gestureMode = 3; // brightness
-                                            else gestureMode = 2; // default to volume
+                                    // Simplify: as soon as we detect movement beyond a small
+                                    // threshold, decide direction (horizontal/vertical) and
+                                    // use the start X to determine left/right half.
+                                    final int MINI_SLOP = Math.max(1, touchSlop / 3);
+                                    if (adx > MINI_SLOP || ady > MINI_SLOP) {
+                                        if (Math.abs(dy) > Math.abs(dx)) {
+                                            // vertical swipe — left half = brightness, right half = volume
+                                            if (gestureStartX > (w / 2f)) gestureMode = 2; // volume
+                                            else gestureMode = 3; // brightness
+                                        } else {
+                                            // horizontal swipe — seek
+                                            gestureMode = 1;
                                         }
+                                        // Movement indicates a deliberate gesture; cancel long-press
+                                        try { if (longPressRunnable[0] != null) handler.removeCallbacks(longPressRunnable[0]); } catch (Exception ignored) {}
+                                        pendingTap[0] = false;
                                     }
                                 }
                                 if (gestureMode == 1) {
@@ -710,7 +719,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             showQuickOverlay(false);
                             isLongPress[0] = false;
                         }
-                        // End any active gesture overlays
+                        // End any active gesture overlays (hide will animate out)
                         try {
                             if (gestureMode == 1) hideSeekOverlay();
                             else if (gestureMode == 2) hideVolumeOverlay();
@@ -2613,15 +2622,28 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (root == null) return null;
                 android.view.View existing = root.findViewWithTag(tag);
                 if (existing != null) return existing;
-                final android.view.View overlay = getLayoutInflater().inflate(R.layout.gesture_overlay, null);
+                // Inflate with root as parent (no attach) to pick up correct styling
+                final android.view.View overlay = getLayoutInflater().inflate(R.layout.gesture_overlay, (ViewGroup) root, false);
                 overlay.setTag(tag);
-                android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+                final android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
                 lp.gravity = gravity;
                 lp.setMarginStart(marginStart);
                 lp.setMarginEnd(marginEnd);
                 final android.widget.FrameLayout.LayoutParams _lp = lp;
                 final View _overlay = overlay;
-                root.post(new Runnable() { public void run() { ((android.widget.FrameLayout) root).addView(_overlay, _lp); } });
+                // Add to the window decor's content frame to ensure proper stacking (usually a FrameLayout)
+                final ViewGroup decor = (ViewGroup) getWindow().getDecorView().findViewById(android.R.id.content);
+                if (decor != null) {
+                    try {
+                        // Add synchronously so first show call immediately affects the attached view
+                        if (_overlay.getParent() == null) {
+                            _overlay.setVisibility(View.GONE);
+                            decor.addView(_overlay, _lp);
+                            _overlay.bringToFront();
+                            try { _overlay.setElevation(100f); } catch (Exception ignored) {}
+                        }
+                    } catch (Exception ignored) {}
+                }
                 return overlay;
             } catch (Exception ignored) {}
             return null;
@@ -2638,43 +2660,70 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (secondsDelta >= 0) iv.setImageResource(R.drawable.ic_fast_forward_24);
                 else iv.setImageResource(R.drawable.ic_fast_rewind_24);
                 tv.setText((secondsDelta >= 0 ? "+" : "") + secondsDelta + "s");
+                // Show with quick fade-in and keep visible until hideSeekOverlay() is called
+                // Cancel any running animations to avoid flicker
+                try { v.animate().cancel(); } catch (Exception ignored) {}
+                // Show immediately (no animated fade-in) so continuous MOVE will make the
+                // overlay visible without needing motion to stop.
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
-                // schedule fade
-                v.postDelayed(() -> {
-                    v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start();
-                }, 800);
             } catch (Exception ignored) {}
         }
 
         private void hideSeekOverlay() {
-            try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_seek_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {}
+            try {
+                View root = findViewById(android.R.id.content);
+                if (root == null) return;
+                View v = root.findViewWithTag("gesture_seek_overlay");
+                if (v != null) {
+                    try { v.animate().cancel(); } catch (Exception ignored) {}
+                    v.animate().alpha(0f).setDuration(300).withEndAction(() -> v.setVisibility(View.GONE)).start();
+                }
+            } catch (Exception ignored) {}
         }
 
     private void showVolumeOverlay(int percent) {
             try {
+                Log.d(TAG, "showVolumeOverlay percent=" + percent);
                 String tag = "gesture_volume_overlay";
                 int margin = (int) (16 * getResources().getDisplayMetrics().density);
                 android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL, 0, margin);
                 if (v == null) return;
         android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
         android.widget.TextView tv = v.findViewById(R.id.overlay_text);
-        // Choose icon based on volume level
-        if (percent <= 0) iv.setImageResource(R.drawable.ic_volume_off_24);
-        else iv.setImageResource(R.drawable.ic_volume_up_24);
-        // Tint to white for visibility
-        try { iv.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)); } catch (Exception ignored) {}
-        tv.setText(percent + "%");
+                // Choose icon based on volume level
+                if (percent <= 0) iv.setImageResource(R.drawable.ic_volume_off_24);
+                else iv.setImageResource(R.drawable.ic_volume_up_24);
+                // Tint: danger red when >60, white otherwise
+                try {
+                    if (percent > 60) iv.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.RED));
+                    else iv.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+                } catch (Exception ignored) {}
+                tv.setText(percent + "%");
+                // Show and keep visible until hideVolumeOverlay is called
+                // Cancel any ongoing animations and show immediately so MOVE shows overlay
+                try { v.animate().cancel(); } catch (Exception ignored) {}
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
-                v.postDelayed(() -> { v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start(); }, 1000);
+                Log.d(TAG, "showVolumeOverlay done, view visible=" + (v.getVisibility()==View.VISIBLE));
             } catch (Exception ignored) {}
         }
 
-        private void hideVolumeOverlay() { try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_volume_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {} }
+        private void hideVolumeOverlay() {
+            try {
+                View root = findViewById(android.R.id.content);
+                if (root == null) return;
+                View v = root.findViewWithTag("gesture_volume_overlay");
+                if (v != null) {
+                    try { v.animate().cancel(); } catch (Exception ignored) {}
+                    v.animate().alpha(0f).setDuration(300).withEndAction(() -> v.setVisibility(View.GONE)).start();
+                }
+            } catch (Exception ignored) {}
+        }
 
         private void showBrightnessOverlay(int percent) {
             try {
+                Log.d(TAG, "showBrightnessOverlay percent=" + percent);
                 String tag = "gesture_brightness_overlay";
                 int margin = (int) (16 * getResources().getDisplayMetrics().density);
                 android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL, margin, 0);
@@ -2683,21 +2732,39 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 android.widget.TextView tv = v.findViewById(R.id.overlay_text);
                 // Use a lightbulb icon for brightness
                 iv.setImageResource(R.drawable.ic_lightbulb);
-                // Tint based on percent (darker -> gray, brighter -> yellow)
+                // Tint brightness: red when >80, yellow 30-80, no tint under 30%
                 try {
-                    int yellow = android.graphics.Color.rgb(255, 204, 51);
-                    int gray = android.graphics.Color.DKGRAY;
-                    int tint = percent > 60 ? yellow : android.graphics.Color.WHITE;
-                    iv.setImageTintList(android.content.res.ColorStateList.valueOf(tint));
+                    if (percent > 80) {
+                        iv.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.RED));
+                    } else if (percent >= 30) {
+                        int yellow = android.graphics.Color.rgb(255, 204, 51);
+                        iv.setImageTintList(android.content.res.ColorStateList.valueOf(yellow));
+                    } else {
+                        // remove tint for low brightness
+                        iv.setImageTintList(null);
+                    }
                 } catch (Exception ignored) {}
                 tv.setText(percent + "%");
+                // Show and keep until hideBrightnessOverlay called
+                // Cancel any ongoing animations and show immediately so MOVE shows overlay
+                try { v.animate().cancel(); } catch (Exception ignored) {}
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
-                v.postDelayed(() -> { v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start(); }, 1000);
+                Log.d(TAG, "showBrightnessOverlay done, view visible=" + (v.getVisibility()==View.VISIBLE));
             } catch (Exception ignored) {}
         }
 
-        private void hideBrightnessOverlay() { try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_brightness_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {} }
+        private void hideBrightnessOverlay() {
+            try {
+                View root = findViewById(android.R.id.content);
+                if (root == null) return;
+                View v = root.findViewWithTag("gesture_brightness_overlay");
+                if (v != null) {
+                    try { v.animate().cancel(); } catch (Exception ignored) {}
+                    v.animate().alpha(0f).setDuration(300).withEndAction(() -> v.setVisibility(View.GONE)).start();
+                }
+            } catch (Exception ignored) {}
+        }
 
 
     @Override
