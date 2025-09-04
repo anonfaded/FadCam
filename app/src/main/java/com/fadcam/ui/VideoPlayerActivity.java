@@ -60,6 +60,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private int maxStreamVolume = 0;
     private int initialStreamVolume = 0;
     private float initialBrightness = -1f; // 0..1
+    private float lastGestureBrightness = -1f; // persisted across gesture sessions in-memory
     private int gestureMode = 0; // 0 = none, 1 = seek, 2 = volume, 3 = brightness
     private long seekStartPosition = 0L;
     private float gestureStartX = 0f;
@@ -194,8 +195,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         backButton = findViewById(com.fadcam.R.id.back_button);
         resetZoomButton = findViewById(com.fadcam.R.id.reset_zoom_button);
 
-        // Hide the back button by default; show only with controls
-        try { backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+    // Back button should be visible by default and hide together with controls
+    try { backButton.setVisibility(View.VISIBLE); } catch (Exception ignored) {}
         // Init audio manager for volume gestures
         try {
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -572,7 +573,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 } else if (gestureMode == 3) {
                                     try {
                                         float pct = -dy / (float) h;
-                                        float nb = Math.max(0f, Math.min(1f, initialBrightness + pct));
+                                        float base = lastGestureBrightness >= 0f ? lastGestureBrightness : initialBrightness;
+                                        float nb = Math.max(0f, Math.min(1f, base + pct));
                                         android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
                                         lp.screenBrightness = nb;
                                         getWindow().setAttributes(lp);
@@ -712,7 +714,26 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         try {
                             if (gestureMode == 1) hideSeekOverlay();
                             else if (gestureMode == 2) hideVolumeOverlay();
-                            else if (gestureMode == 3) hideBrightnessOverlay();
+                            else if (gestureMode == 3) {
+                                hideBrightnessOverlay();
+                                // Persist last brightness so next gesture starts from here
+                                try {
+                                    View root = findViewById(android.R.id.content);
+                                    View ov = root != null ? root.findViewWithTag("gesture_brightness_overlay") : null;
+                                    if (ov != null) {
+                                        TextView tv = ov.findViewById(R.id.overlay_text);
+                                        if (tv != null) {
+                                            String txt = tv.getText() != null ? tv.getText().toString().replace("%", "") : null;
+                                            if (txt != null && !txt.isEmpty()) {
+                                                try {
+                                                    int p = Integer.parseInt(txt.trim());
+                                                    lastGestureBrightness = Math.max(0f, Math.min(1f, p / 100f));
+                                                } catch (NumberFormatException ignored) {}
+                                            }
+                                        }
+                                    }
+                                } catch (Exception ignored) {}
+                            }
                         } catch (Exception ignored) {}
                         gestureMode = 0;
                     }
@@ -2426,14 +2447,22 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         // Enter immersive fullscreen (hide status and navigation bars)
         try {
-            final View decor = getWindow().getDecorView();
-            decor.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
-                View.SYSTEM_UI_FLAG_FULLSCREEN |
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            );
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                final android.view.WindowInsetsController wic = getWindow().getInsetsController();
+                if (wic != null) {
+                    wic.hide(android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
+                    wic.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                }
+            } else {
+                final View decor = getWindow().getDecorView();
+                decor.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                );
+            }
         } catch (Exception ignored) {}
 
         // Do not start the background service while activity is in foreground; handoff
@@ -2622,16 +2651,20 @@ public class VideoPlayerActivity extends AppCompatActivity {
             try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_seek_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {}
         }
 
-        private void showVolumeOverlay(int percent) {
+    private void showVolumeOverlay(int percent) {
             try {
                 String tag = "gesture_volume_overlay";
                 int margin = (int) (16 * getResources().getDisplayMetrics().density);
                 android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL, 0, margin);
                 if (v == null) return;
-                android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
-                android.widget.TextView tv = v.findViewById(R.id.overlay_text);
-                iv.setImageResource(R.drawable.ic_audio);
-                tv.setText(percent + "%");
+        android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
+        android.widget.TextView tv = v.findViewById(R.id.overlay_text);
+        // Choose icon based on volume level
+        if (percent <= 0) iv.setImageResource(R.drawable.ic_volume_off_24);
+        else iv.setImageResource(R.drawable.ic_volume_up_24);
+        // Tint to white for visibility
+        try { iv.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)); } catch (Exception ignored) {}
+        tv.setText(percent + "%");
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
                 v.postDelayed(() -> { v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start(); }, 1000);
@@ -2648,7 +2681,15 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (v == null) return;
                 android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
                 android.widget.TextView tv = v.findViewById(R.id.overlay_text);
-                iv.setImageResource(R.drawable.ic_arrow_up);
+                // Use a lightbulb icon for brightness
+                iv.setImageResource(R.drawable.ic_lightbulb);
+                // Tint based on percent (darker -> gray, brighter -> yellow)
+                try {
+                    int yellow = android.graphics.Color.rgb(255, 204, 51);
+                    int gray = android.graphics.Color.DKGRAY;
+                    int tint = percent > 60 ? yellow : android.graphics.Color.WHITE;
+                    iv.setImageTintList(android.content.res.ColorStateList.valueOf(tint));
+                } catch (Exception ignored) {}
                 tv.setText(percent + "%");
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
