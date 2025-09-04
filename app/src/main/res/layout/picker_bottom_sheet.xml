@@ -20,15 +20,26 @@
         android:paddingStart="6dp"
         android:paddingEnd="6dp">
 
-        <ImageView
-            android:id="@+id/picker_close_btn"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
+        <!-- Container for larger touch area -->
+        <FrameLayout
+            android:id="@+id/picker_close_btn_container"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_marginEnd="12dp"
-            android:src="@drawable/ic_close"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="?attr/pickerTextSecondary"
-            android:contentDescription="@string/close" />
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/picker_close_btn"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_close"
+                android:tint="?attr/pickerTextSecondary"
+                android:contentDescription="@string/close" />
+
+        </FrameLayout>
 
         <TextView
             android:id="@+id/picker_title"
