@@ -39,6 +39,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_USE_GRADIENT = "use_gradient_bg";
     public static final String ARG_GRID_MODE = "grid_mode"; // for icon grid
     public static final String ARG_HIDE_CHECK = "hide_check"; // hide selection checkmark UI
+    // When true, the fragment will only use items passed in ARG_ITEMS and will not
+    // reuse any previous instance state. Useful when the same fragment class is
+    // re-used across different callers and we must strictly show only provided items.
+    public static final String ARG_STRICT_ITEMS_ONLY = "strict_items_only";
     // Slider mode args
     public static final String ARG_SLIDER_MODE = "slider_mode";
     public static final String ARG_SLIDER_MIN = "slider_min";
@@ -317,8 +321,12 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         @Nullable Bundle savedInstanceState
     ) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
-        Bundle args = getArguments();
+    // -------------- Fix Start for this method(onViewCreated)-----------
+    Bundle args = getArguments();
+    // Reset items at the start of view creation so we don't accidentally
+    // reuse items from a previously created fragment instance. This ensures
+    // the fragment displays only the context-provided items (if any).
+    items = new ArrayList<>();
         android.util.Log.d(
             "PickerBottomSheet",
             "onViewCreated called, args=" + args
@@ -333,6 +341,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             resultKey = args.getString(ARG_RESULT_KEY, RESULT_KEY);
             ArrayList<OptionItem> list = args.getParcelableArrayList(ARG_ITEMS);
             if (list != null) items = list;
+            // If strict-items-only is requested and no items were provided explicitly,
+            // keep items empty rather than falling back to any previous state.
+            boolean strict = args.getBoolean(ARG_STRICT_ITEMS_ONLY, false);
+            if (strict && list == null) items = new ArrayList<>();
             helperText = args.getString(ARG_HELPER_TEXT, null);
             switchPresent = args.getBoolean(ARG_SWITCH_PRESENT, false);
             switchTitle = args.getString(ARG_SWITCH_TITLE, "");

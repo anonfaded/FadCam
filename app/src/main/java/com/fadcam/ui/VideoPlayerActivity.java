@@ -1758,6 +1758,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         else if (cur == 30) selId = "c_30s";
                         else if (cur > 0) selId = "c_custom";
                         PickerBottomSheetFragment sheetCtrl = PickerBottomSheetFragment.newInstance(getString(R.string.controls_hide_delay_title), itemsCtrl, selId, RK, getString(R.string.controls_hide_delay_helper));
+                        if (sheetCtrl.getArguments() == null) sheetCtrl.setArguments(new android.os.Bundle());
+                        sheetCtrl.getArguments().putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_STRICT_ITEMS_ONLY, true);
                         try { getSupportFragmentManager().clearFragmentResultListener(RK); } catch (Exception ignored) {}
                         getSupportFragmentManager().setFragmentResultListener(RK, this, (rkRes, b) -> {
                             String s = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
