@@ -436,7 +436,10 @@
     <string name="records_hide_thumbnails_subtitle">Show a minimal list without thumbnails</string>
     <string name="video_player_settings_helper_player">You can change these options here or from the Settings tab as well.</string>
     <string name="playback_controls_heading">Playback controls</string>
-    <string name="playback_controls_helper">Adjust playback speed or set a Quick Speed for press-and-hold. You can change these here or from the Video Player screen.</string>
+    <string name="playback_controls_helper">Adjust playback speed or set a Quick Speed for press-and-hold. You can change these settings here or from the Video Player screen.</string>
+    <string name="controls_hide_delay_title">Controls hide delay</string>
+    <string name="controls_hide_delay_subtitle">%1$ds</string>
+    <string name="controls_hide_delay_helper">Choose how many seconds the player controls remain visible before auto-hiding. Set Off to keep controls visible.</string>
     <string name="sound_heading">Audio during playback</string>
     <string name="seek_amount_title">Seek Amount</string>
     <string name="seek_amount_subtitle">%1$ds</string>

@@ -189,6 +189,43 @@
 
                 <View style="@style/SettingsDivider" />
 
+                <!-- Controls Hide Delay Row -->
+                <LinearLayout
+                    android:id="@+id/row_controller_timeout"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="timer"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/controls_hide_delay_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:id="@+id/sub_controller_timeout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
                 <!-- Keep Screen Awake Row -->
                 <LinearLayout
                     android:id="@+id/row_keep_screen_on"
