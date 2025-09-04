@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="12dp"
+    android:paddingTop="8dp"
     android:paddingBottom="20dp"
     android:paddingStart="14dp"
     android:paddingEnd="12dp">
@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingTop="12dp"
+        android:paddingTop="8dp"
         android:paddingBottom="12dp"
         android:paddingStart="6dp"
         android:paddingEnd="6dp">
