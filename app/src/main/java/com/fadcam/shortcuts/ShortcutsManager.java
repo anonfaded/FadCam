@@ -273,15 +273,42 @@ public class ShortcutsManager {
                     )
                 );
 
-                for (ShortcutInfoCompat info : pinned) {
+                // Do not call requestPinShortcut here — that triggers the launcher "Add to Home" prompt.
+                // Instead, attempt to update already-pinned shortcuts via the native ShortcutManager
+                // (no user prompt) so launchers that support updates will refresh the icon/label.
+                if (
+                    android.os.Build.VERSION.SDK_INT >=
+                    android.os.Build.VERSION_CODES.N_MR1
+                ) {
                     try {
-                        ShortcutManagerCompat.requestPinShortcut(
-                            ctx,
-                            info,
-                            null
-                        );
+                        android.content.pm.ShortcutManager sm =
+                            (android.content.pm.ShortcutManager) ctx.getSystemService(
+                                android.content.Context.SHORTCUT_SERVICE
+                            );
+                        if (sm != null) {
+                            List<android.content.pm.ShortcutInfo> nativeList =
+                                new ArrayList<>();
+                            for (ShortcutInfoCompat sc : pinned) {
+                                try {
+                                    android.content.pm.ShortcutInfo nativeInfo =
+                                        sc.toShortcutInfo();
+                                    if (nativeInfo != null) nativeList.add(
+                                        nativeInfo
+                                    );
+                                } catch (Throwable ignored) {
+                                    // Ignore conversion issues for individual items
+                                }
+                            }
+                            if (!nativeList.isEmpty()) {
+                                try {
+                                    sm.updateShortcuts(nativeList);
+                                } catch (Throwable ignored) {
+                                    // Best-effort only
+                                }
+                            }
+                        }
                     } catch (Throwable ignored) {
-                        // Best-effort: some launchers may reject or ignore re-requesting.
+                        // Best-effort only
                     }
                 }
             }
