@@ -134,6 +134,60 @@
 
             </LinearLayout>
 
+            <!-- Preview toggle row -->
+            <LinearLayout
+                android:id="@+id/row_preview_toggle"
+                style="@style/SettingsGroupRow">
+
+                <!-- Preview icon using Material Icons ligature -->
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/materialicons"
+                    android:text="visibility"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="18sp"
+                    android:gravity="center" />
+
+                <!-- Title and subtitle -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_preview_toggle_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/preview_enabled"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textAlignment="viewStart" />
+
+                    <TextView
+                        android:id="@+id/tv_preview_toggle_sub"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/preview_disabled"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"
+                        android:textAlignment="viewStart" />
+                </LinearLayout>
+
+                <!-- Switch at the end (SwitchCompat for consistent styling) -->
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_preview_toggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:focusable="true"
+                    android:clickable="true" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
 </LinearLayout>

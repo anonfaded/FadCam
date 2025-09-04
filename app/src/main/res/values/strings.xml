@@ -108,7 +108,7 @@
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>
-    
+
     <!-- Video Info Strings -->
     <string name="video_info_file_name">File Name</string>
     <string name="video_info_file_size">File Size</string>
@@ -173,6 +173,9 @@
     <string name="dialog_clock_englishtime">English Date with time</string>
     <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
     <string name="ui_preview_area">Preview Area</string>
+    <string name="preview_area_title">Preview Area</string>
+    <string name="preview_state_enable">Enable</string>
+    <string name="preview_state_disable">Disable</string>
     <string name="preview_enabled">Preview enabled</string>
     <string name="preview_disabled">Preview disabled</string>
     <string name="ae_lock_title">AE Lock</string>
@@ -371,7 +374,7 @@
     <string name="widgets_pin_unsupported">Pinning widgets is not supported by your launcher.</string>
     <string name="widget_clock_title">Clock widget</string>
     <string name="widgets_pin_fallback">If no prompt appears, long‑press your Home screen, open Widgets, and drag the FadCam Clock widget.</string>
-    
+
     <!-- Widget Customization -->
     <string name="widget_customize_title">Customize Clock Widget</string>
     <string name="widget_customize_description">Customize how your clock widget displays time and date</string>
@@ -382,7 +385,7 @@
     <string name="widget_arabic_date_title">Arabic Date</string>
     <string name="widget_arabic_date_format_title">Arabic Date Format</string>
     <string name="widget_branding_title">FadSecLab Branding</string>
-    
+
     <!-- Widget Option Descriptions -->
     <string name="widget_time_format_12h">12-hour (3:30 PM)</string>
     <string name="widget_time_format_24h">24-hour (15:30)</string>
@@ -393,7 +396,7 @@
     <string name="widget_branding_enabled">Enabled (with Black Background)</string>
     <string name="widget_branding_disabled">Disabled</string>
     <string name="widget_branding_requires_background">Requires Black Background</string>
-    
+
     <!-- Arabic Date Format Options -->
     <string name="arabic_date_format_title">Arabic Date Format</string>
     <string name="arabic_date_format_description">Choose how to display the Islamic date</string>
@@ -407,7 +410,7 @@
     <string name="arabic_date_description_mixed">Arabic Month, English Numbers</string>
     <string name="arabic_date_description_english">Full English</string>
     <string name="arabic_date_description_default">Full Arabic (Default)</string>
-    
+
     <string name="shortcuts_helper_text">Add shortcuts from above. They also work with automation apps (e.g., MacroDroid) to trigger actions like mapping volume buttons.</string>
     <string name="shortcuts_add_to_home">Add to Home screen</string>
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
@@ -446,7 +449,7 @@
     <string name="playback_speed_helper_settings">Default speed for video playback.</string>
     <string name="playback_speed_helper_player">Affects current playback only. To change the default for future videos, use Settings.</string>
     <string name="quick_speed_helper">Quick Speed applies only while you press and hold during playback.</string>
-    
+
     <!-- Auto Focus and Tap-to-Focus strings -->
     <string name="af_mode_title">Auto Focus Mode</string>
     <string name="af_continuous_title">Continuous Auto Focus</string>
@@ -686,7 +689,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="trash_restore_fail_toast">Error restoring items. Some files might not have been restored or gallery might not be updated. Check app permissions for storage.</string>
     <string name="trash_restore_cancelled_toast">Restore cancelled.</string>
     <string name="trash_fragment_title_text">Recently Deleted</string>
-    
+
     <!-- Fix Start: Cloak Recents strings -->
     <string name="setting_cloak_recents_title">Block Screenshots &amp; Hide in Recents</string>
     <string name="setting_cloak_recents_switch">Hide preview</string>
@@ -714,7 +717,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
         <item quantity="one">Items are automatically deleted after %1$d hour.</item>
         <item quantity="other">Items are automatically deleted after %1$d hours.</item>
     </plurals>
-    <string name="trash_auto_delete_info_manual">Items in trash are never deleted, delete the 
+    <string name="trash_auto_delete_info_manual">Items in trash are never deleted, delete the
     videos manually.</string>
     <plurals name="trash_item_remaining_days">
         <item quantity="one">%1$d day left</item>
@@ -822,7 +825,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_helper_create">Create protection for the Records tab using a 4‑digit PIN, password, or fingerprint. It will auto‑lock when the app goes to background.</string>
     <string name="applock_helper_manage_disabled">Tab Lock PIN is set. Toggle it on to require the PIN when returning to the app.</string>
     <string name="applock_helper_enabled">Tab Lock is active. You will need the PIN when opening the Records tab after leaving the app.</string>
-    
+
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verify PIN to Enable Tab Lock</string>
     <string name="applock_verify_to_disable">Verify PIN to Disable Tab Lock</string>
@@ -834,7 +837,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <string name="edit_with_faditorx">Edit with FaditorX</string>
     <string name="remote_coming_soon_badge">Coming Soon</string>
-    
+
     <!-- Update Bottom Sheet Strings -->
     <string name="update_sarcastic_heading">📦 Oh look, another update...</string>
     <string name="update_visit_github">Visit GitHub</string>
@@ -844,7 +847,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> is so last season.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is ready to impress with new features and bug fixes. Upgrade for a better ride!</string>
     <string name="update_variation_3">Your app is living in the past with &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is the future—faster, smarter, and shinier. Why not join in?</string>
     <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> has served you well, but &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is calling!&lt;br>Enjoy the latest improvements and a smoother experience—just a tap away.</string>
-    
+
 
 
     <!-- App Icon Strings -->
@@ -871,7 +874,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_preview">App icon preview</string>
     <!-- Launcher alias label for the Black icon: use a single space to appear blank -->
     <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
-    
+
     <!-- Misc -->
     <string name="changelog_label">What\'s New</string>
 
@@ -879,11 +882,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_auto_update_check_title">Auto Update Check</string>
     <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
     <!-- Fix End: Add auto update check toggle strings -->
-    
+
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Storage Location</string>
     <string name="storage_location_description">Choose where recordings are saved.</string>
-    
+
     <!-- Settings Home section headers and rows -->
     <string name="general">General</string>
     <string name="settings_section_app">App</string>
@@ -974,7 +977,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_setup_save">Save</string>
     <string name="notification_setup_cancel">Cancel</string>
     <string name="notification_setup_ok">OK</string>
-    
+
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Recording</string>
     <string name="notification_channel_system_updates">System Updates</string>
@@ -982,7 +985,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_channel_data_sync">Data Sync</string>
     <string name="notification_channel_generic">Notification Service</string>
     <string name="notification_channel_description">Service notifications</string>
-    
+
     <string name="notification_text_system_update_progress">Update in progress</string>
     <string name="notification_text_system_update_paused">Update paused</string>
     <string name="notification_text_downloading_progress">Download in progress</string>
@@ -1018,7 +1021,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_custom_editor_helper">Set a title and description below. Changes save automatically.</string>
     <string name="notification_custom_title_placeholder">Title (e.g. System Update)</string>
     <string name="notification_custom_text_placeholder">Description (e.g. Update in progress)</string>
-    
+
     <string-array name="notification_appearance_options">
         <item>FadCam (default)</item>
         <item>System Update</item>
@@ -1027,7 +1030,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
         <item>Backup</item>
         <item>Custom</item>
     </string-array>
-    
+
     <string name="camera_resource_cooldown">Camera resources are being released</string>
     <string name="camera_interrupted_title">Recording paused (camera in use)</string>
     <string name="camera_interrupted_description">Another app is using the camera. Recording will resume automatically when the camera is available.</string>
@@ -1075,11 +1078,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="debug_log_empty">No debug log yet</string>
     <string name="debug_log_share_fail">Share failed</string>
     <string name="debug_log_open_fail">Open failed</string>
-    
+
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Scroll to top</string>
     <string name="scroll_to_bottom">Scroll to bottom</string>
-    
+
     <!-- Trash Restore Destination Strings -->
     <string name="restore_destination_title">Choose Restore Location</string>
     <string name="restore_destination_downloads">Downloads Folder</string>
@@ -1095,7 +1098,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="restore_error_message">Failed to restore some items</string>
     <string name="restore_cancelled">Restore cancelled</string>
     <string name="restore_confirm_button">Restore</string>
-    
+
     <!-- Tips Navigation Strings -->
     <string name="close">Close</string>
     <string name="previous">Previous</string>

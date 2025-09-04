@@ -610,6 +610,16 @@ public class HomeFragment extends BaseFragment {
                         );
                         updateServiceWithCurrentSurface(null);
                     }
+
+                    // Notify sidebar and other listeners about the changed preview state
+                    try {
+                        Bundle result = new Bundle();
+                        result.putBoolean("preview_enabled", isPreviewEnabled);
+                        getParentFragmentManager().setFragmentResult(
+                            "home_sidebar_result",
+                            result
+                        );
+                    } catch (Exception ignored) {}
                 }
             }
         );
@@ -756,12 +766,8 @@ public class HomeFragment extends BaseFragment {
         startUpdatingClock(); // Start periodic clock updates
         startUpdatingInfo(); // Start periodic storage/estimate updates
         showCurrentCameraSelection(); // Show selected camera
-        // Restore preview state
-        isPreviewEnabled =
-            sharedPreferencesManager.sharedPreferences.getBoolean(
-                "preview_enabled",
-                true
-            );
+        // Restore preview state (use centralized SharedPreferencesManager API)
+        isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
         updatePreviewVisibility();
 
         // ----- Fix Start for this method(onStart) -----
@@ -3115,6 +3121,61 @@ public class HomeFragment extends BaseFragment {
                 }
             );
 
+        // Listen for preview toggles from HomeSidebarFragment (key: "home_sidebar_result")
+        getParentFragmentManager().setFragmentResultListener(
+                "home_sidebar_result",
+                this,
+                (requestKey, bundle) -> {
+                    if (bundle == null) return;
+                    if (!bundle.containsKey("preview_enabled")) return;
+                    boolean enabled = bundle.getBoolean(
+                        "preview_enabled",
+                        true
+                    );
+
+                    // Remember previous state so we can perform any additional actions when enabling
+                    boolean wasEnabled = isPreviewEnabled;
+
+                    // Update local preview state, persist, and apply immediately
+                    isPreviewEnabled = enabled;
+                    try {
+                        if (sharedPreferencesManager == null) {
+                            sharedPreferencesManager =
+                                SharedPreferencesManager.getInstance(
+                                    requireContext()
+                                );
+                        }
+                        sharedPreferencesManager.setPreviewEnabled(
+                            isPreviewEnabled
+                        );
+                    } catch (Exception ignored) {}
+
+                    // Update UI and service surface according to new state
+                    updatePreviewVisibility();
+
+                    // If we just enabled preview (was disabled before) ensure TextureView is reset
+                    // to avoid showing stale frames or an invalid surface. This mirrors the same
+                    // behavior used by the long-press handler which resets the TextureView when enabling.
+                    if (!wasEnabled && isPreviewEnabled) {
+                        try {
+                            resetTextureView();
+                        } catch (Exception ignored) {}
+                    }
+
+                    if (isRecordingOrPaused()) {
+                        if (
+                            isPreviewEnabled &&
+                            textureViewSurface != null &&
+                            textureViewSurface.isValid()
+                        ) {
+                            updateServiceWithCurrentSurface(textureViewSurface);
+                        } else {
+                            updateServiceWithCurrentSurface(null);
+                        }
+                    }
+                }
+            );
+
         setupTextureView(view);
         setupButtonListeners();
         setupLongPressListener(); // For Easter eggs on title
@@ -4031,7 +4092,11 @@ public class HomeFragment extends BaseFragment {
                 }
                 return handled;
             } catch (Exception ex) {
-                Log.w(TAG, "Gesture handling failed, falling back to older touch logic: " + (ex != null ? ex.getMessage() : ""));
+                Log.w(
+                    TAG,
+                    "Gesture handling failed, falling back to older touch logic: " +
+                    (ex != null ? ex.getMessage() : "")
+                );
                 // Fallback: existing logic for tap-to-focus on ACTION_UP
                 if (
                     event.getAction() == MotionEvent.ACTION_UP &&
