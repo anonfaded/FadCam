@@ -310,6 +310,11 @@ public class VideoSettingsFragment extends Fragment {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (sel != null && !sel.equals(current.toString())) {
                 prefs.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, sel).apply();
+
+                // Clear cached resolution lists when camera type changes to force refresh
+                cachedResolutionsFront.clear();
+                cachedResolutionsBack.clear();
+
                 refreshAllValues();
             }
         });
@@ -338,6 +343,10 @@ public class VideoSettingsFragment extends Fragment {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (sel != null && !sel.equals(saved)) {
                 prefs.setSelectedBackCameraId(sel);
+                // -------------- Fix Start (clearCacheOnLensChange)-----------
+                // Clear back camera cache when lens changes as different lenses may support different resolutions
+                cachedResolutionsBack.clear();
+                // -------------- Fix Ended (clearCacheOnLensChange)-----------
                 refreshAllValues();
             }
         });
@@ -726,8 +735,12 @@ public class VideoSettingsFragment extends Fragment {
             try {
                 String[] parts = dim.split("x");
                 Size candidate = new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
-                if (actualCameraId != null && createProfileForSize(actualCameraId, candidate) != null) {
+                CamcorderProfile profile = actualCameraId != null ? createProfileForSize(actualCameraId, candidate) : null;
+                if (profile != null) {
                     curated.add(candidate);
+                    Log.d(TAG, "Resolution Validation: " + dim + " - SUPPORTED (has recording profile)");
+                } else {
+                    Log.d(TAG, "Resolution Validation: " + dim + " - FILTERED OUT (no recording profile)");
                 }
             } catch (Exception ignored) {
             }
@@ -842,6 +855,16 @@ public class VideoSettingsFragment extends Fragment {
                 if (videoSizes != null) {
                     Arrays.sort(videoSizes, (s1, s2) -> Long.compare((long) s2.getWidth() * s2.getHeight(),
                             (long) s1.getWidth() * s1.getHeight()));
+                    
+                    // -------------- Fix Start (addResolutionDiagnosticLogging)-----------
+                    // Log all supported video sizes for diagnosis
+                    Log.d(TAG, "Video Sizes: Camera " + cameraId + " supports " + videoSizes.length + " video resolutions:");
+                    for (Size size : videoSizes) {
+                        Log.d(TAG, "Video Sizes: " + size.getWidth() + "x" + size.getHeight() + 
+                              " (reasonable: " + isReasonableVideoSize(size) + ")");
+                    }
+                    // -------------- Fix Ended (addResolutionDiagnosticLogging)-----------
+                    
                     for (Size size : videoSizes) {
                         if (isReasonableVideoSize(size))
                             supportedSizes.add(size);
@@ -876,13 +899,32 @@ public class VideoSettingsFragment extends Fragment {
             int[] qualities = { CamcorderProfile.QUALITY_2160P, CamcorderProfile.QUALITY_1080P,
                     CamcorderProfile.QUALITY_720P, CamcorderProfile.QUALITY_480P, CamcorderProfile.QUALITY_HIGH,
                     CamcorderProfile.QUALITY_LOW };
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                int[] ext = { CamcorderProfile.QUALITY_8KUHD, CamcorderProfile.QUALITY_2160P,
-                        CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P, CamcorderProfile.QUALITY_480P,
-                        CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_LOW };
-                qualities = ext;
-            }
+            // -------------- Fix Start (simplify8KDetection)-----------
+            // Add 8K support without unnecessary API checks - let hasProfile() handle availability
+            int[] ext = { CamcorderProfile.QUALITY_8KUHD, CamcorderProfile.QUALITY_2160P,
+                    CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P, CamcorderProfile.QUALITY_480P,
+                    CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_LOW };
+            qualities = ext;
+            // -------------- Fix Ended (simplify8KDetection)-----------
             int camIdInt = Integer.parseInt(cameraId);
+            
+            // -------------- Fix Start (simplified8KDiagnosticLogging)-----------
+            // Simplified diagnostic logging for 8K detection
+            if (size.getWidth() == 7680 && size.getHeight() == 4320) {
+                Log.d(TAG, "8K Detection: Checking 8K (7680x4320) for camera " + cameraId);
+                boolean has8K = CamcorderProfile.hasProfile(camIdInt, CamcorderProfile.QUALITY_8KUHD);
+                Log.d(TAG, "8K Detection: CamcorderProfile.hasProfile(QUALITY_8KUHD) = " + has8K);
+                if (has8K) {
+                    CamcorderProfile profile8K = CamcorderProfile.get(camIdInt, CamcorderProfile.QUALITY_8KUHD);
+                    if (profile8K != null) {
+                        Log.d(TAG, "8K Detection: 8K Profile dimensions = " + profile8K.videoFrameWidth + "x" + profile8K.videoFrameHeight);
+                    } else {
+                        Log.w(TAG, "8K Detection: 8K Profile is null despite hasProfile=true");
+                    }
+                }
+            }
+            // -------------- Fix Ended (simplified8KDiagnosticLogging)-----------
+            
             for (int q : qualities) {
                 if (CamcorderProfile.hasProfile(camIdInt, q)) {
                     CamcorderProfile p = CamcorderProfile.get(camIdInt, q);
@@ -890,6 +932,31 @@ public class VideoSettingsFragment extends Fragment {
                         return p;
                 }
             }
+            
+            // -------------- Fix Start (strictProfileMatching)-----------
+            // Only allow specific fallbacks for exact resolution matches to prevent phantom options
+            // 8K: Only if we have actual 8K profile
+            if (size.getWidth() == 7680 && size.getHeight() == 4320) {
+                if (CamcorderProfile.hasProfile(camIdInt, CamcorderProfile.QUALITY_8KUHD)) {
+                    CamcorderProfile p8k = CamcorderProfile.get(camIdInt, CamcorderProfile.QUALITY_8KUHD);
+                    if (p8k != null) {
+                        Log.d(TAG, "8K Fallback: Found 8K profile with dimensions " + p8k.videoFrameWidth + "x" + p8k.videoFrameHeight);
+                        return p8k;
+                    }
+                }
+            }
+            
+            // 4K: Only if we have actual 4K profile  
+            if (size.getWidth() == 3840 && size.getHeight() == 2160) {
+                if (CamcorderProfile.hasProfile(camIdInt, CamcorderProfile.QUALITY_2160P)) {
+                    CamcorderProfile p4k = CamcorderProfile.get(camIdInt, CamcorderProfile.QUALITY_2160P);
+                    if (p4k != null) {
+                        Log.d(TAG, "4K Fallback: Found 4K profile with dimensions " + p4k.videoFrameWidth + "x" + p4k.videoFrameHeight);
+                        return p4k;
+                    }
+                }
+            }
+            // -------------- Fix Ended (strictProfileMatching)-----------
         } catch (Exception e) {
             Log.e(TAG, "createProfileForSize error", e);
         }
@@ -899,9 +966,11 @@ public class VideoSettingsFragment extends Fragment {
     private List<CamcorderProfile> getCamcorderProfilesFallback(CameraType cameraType) {
         List<CamcorderProfile> profiles = new ArrayList<>();
         int cameraId = cameraType.getCameraId();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                && CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_8KUHD))
+        // -------------- Fix Start (simplify8KFallback)-----------
+        // Simplified: treat 8K like 4K - just check if profile exists, no API level checks
+        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_8KUHD))
             profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_8KUHD));
+        // -------------- Fix Ended (simplify8KFallback)-----------
         if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P))
             profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_2160P));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
