@@ -4031,11 +4031,7 @@ public class HomeFragment extends BaseFragment {
                 }
                 return handled;
             } catch (Exception ex) {
-                Log.w(
-                    TAG,
-                    "Gesture handling failed, falling back to older touch logic",
-                    ex
-                );
+                Log.w(TAG, "Gesture handling failed, falling back to older touch logic: " + (ex != null ? ex.getMessage() : ""));
                 // Fallback: existing logic for tap-to-focus on ACTION_UP
                 if (
                     event.getAction() == MotionEvent.ACTION_UP &&
