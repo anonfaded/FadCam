@@ -168,5 +168,5 @@
 
 # Aggressive optimization settings
 -repackageclasses ''
--flattenpackagehierarchy ''
+# -flattenpackagehierarchy '' # Removed: conflicts with -repackageclasses
 -mergeinterfacesaggressively
