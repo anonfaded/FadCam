@@ -26,6 +26,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Locale;
+import android.media.AudioManager;
+import android.provider.Settings;
 
 public class VideoPlayerActivity extends AppCompatActivity {
 
@@ -53,6 +55,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private SharedPreferencesManager spm;
     private com.fadcam.ui.custom.AudioWaveformView audioWaveformView;
     private android.net.Uri currentVideoUri;
+    // Gesture/interaction helpers
+    private AudioManager audioManager;
+    private int maxStreamVolume = 0;
+    private int initialStreamVolume = 0;
+    private float initialBrightness = -1f; // 0..1
+    private int gestureMode = 0; // 0 = none, 1 = seek, 2 = volume, 3 = brightness
+    private long seekStartPosition = 0L;
+    private float gestureStartX = 0f;
+    private float gestureStartY = 0f;
+    private android.os.Handler controlsHideHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable controlsHideRunnable = null;
     // Periodic resume-save handler
     private final android.os.Handler resumeSaveHandler = new android.os.Handler(
         android.os.Looper.getMainLooper()
@@ -181,6 +194,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
         backButton = findViewById(com.fadcam.R.id.back_button);
         resetZoomButton = findViewById(com.fadcam.R.id.reset_zoom_button);
 
+        // Hide the back button by default; show only with controls
+        try { backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+        // Init audio manager for volume gestures
+        try {
+            audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+            if (audioManager != null) maxStreamVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        } catch (Exception ignored) {}
+
         // *** FIX: Get the video URI using getData() ***
         Uri videoUri = getIntent().getData();
         this.currentVideoUri = videoUri; // Store for later use
@@ -282,14 +303,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     android.view.MotionEvent e
                 ) {
                     try {
-                        // Toggle controller visibility on single tap using a safe visibility check
-                        if (playerView != null) {
-                            boolean visible = isControllerVisibleSafe();
-                            if (visible) playerView.hideController();
-                            else playerView.showController();
-                            // record time so ACTION_UP handling can avoid double-processing
-                            lastSingleTapTime = System.currentTimeMillis();
-                        }
+                        // Toggle controller & back-button visibility on single tap
+                        toggleControllerAndBackButton();
+                        // record time so ACTION_UP handling can avoid double-processing
+                        lastSingleTapTime = System.currentTimeMillis();
                         return true;
                     } catch (Exception ex) {
                         Log.w(TAG, "singleTap error", ex);
@@ -405,6 +422,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             android.os.Looper.getMainLooper()
         );
         final boolean[] isLongPress = { false };
+        final Runnable[] longPressRunnable = new Runnable[1];
 
         // Combined touch listener: single tap toggles controller, double-tap seeks (no
         // controller show), long-press quick-speed
@@ -450,35 +468,43 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             !isPinching &&
                             currentScale <= 1.1f
                         ) {
-                            handler.postDelayed(
-                                () -> {
-                                    // On long-press - only if still single finger and not pinching/zoomed
-                                    if (
-                                        ev.getPointerCount() <= 1 &&
-                                        !isPinching &&
-                                        currentScale <= 1.1f
-                                    ) {
+                            // Capture canonical starting values immediately so swipes use them
+                            try {
+                                gestureMode = 0;
+                                gestureStartX = ev.getX();
+                                gestureStartY = ev.getY();
+                                if (audioManager != null) initialStreamVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                                try {
+                                    int sysBright = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS);
+                                    initialBrightness = Math.max(0f, Math.min(1f, sysBright / 255f));
+                                } catch (Exception be) {
+                                    try {
+                                        float b = getWindow().getAttributes().screenBrightness;
+                                        if (b < 0f) b = 0.5f;
+                                        initialBrightness = b;
+                                    } catch (Exception ignored) { initialBrightness = 0.5f; }
+                                }
+                                if (player != null) seekStartPosition = player.getCurrentPosition();
+                            } catch (Exception ignored) {}
+
+                            // Schedule a cancellable long-press runnable (quick-speed)
+                            longPressRunnable[0] = new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        if (!pendingTap[0] || isPinching || currentScale > 1.1f) return;
                                         isLongPress[0] = true;
                                         if (player != null) {
-                                            float start =
-                                                player.getPlaybackParameters().speed;
-                                            float target = spm != null
-                                                ? spm.getQuickSpeed()
-                                                : Constants.DEFAULT_QUICK_SPEED;
-                                            animatePlaybackSpeed(
-                                                start,
-                                                target,
-                                                200
-                                            );
+                                            float start = player.getPlaybackParameters().speed;
+                                            float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
+                                            animatePlaybackSpeed(start, target, 200);
                                             showQuickOverlay(true);
-                                            try {
-                                                playerView.hideController();
-                                            } catch (Exception ignored) {}
+                                            try { playerView.hideController(); } catch (Exception ignored) {}
                                         }
-                                    }
-                                },
-                                LONG_PRESS_MS
-                            );
+                                    } catch (Exception ignored) {}
+                                }
+                            };
+                            handler.postDelayed(longPressRunnable[0], LONG_PRESS_MS);
                         }
                     }
                     break;
@@ -496,6 +522,69 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     break;
                 case android.view.MotionEvent.ACTION_MOVE:
                     {
+                        // Gesture handling for single-finger swipes (seek horizontal, volume/brightness vertical)
+                        try {
+                            if (
+                                ev.getPointerCount() == 1 &&
+                                !scaleGestureDetector.isInProgress() &&
+                                currentScale <= 1.1f
+                            ) {
+                                float dx = ev.getX() - gestureStartX;
+                                float dy = ev.getY() - gestureStartY;
+                                float adx = Math.abs(dx);
+                                float ady = Math.abs(dy);
+                                int w = playerView.getWidth();
+                                int h = playerView.getHeight();
+                                if (gestureMode == 0) {
+                                    if (adx > touchSlop || ady > touchSlop) {
+                                        if (adx > ady) gestureMode = 1; // seek
+                                        else {
+                                            if (gestureStartX > (w * 0.66f)) gestureMode = 2; // volume
+                                            else if (gestureStartX < (w * 0.33f)) gestureMode = 3; // brightness
+                                            else gestureMode = 2; // default to volume
+                                        }
+                                    }
+                                }
+                                if (gestureMode == 1) {
+                                    int pxPerSecond = Math.max(20, Math.round(w / 8f));
+                                    long deltaMs = (long) ((dx / pxPerSecond) * 1000L);
+                                    long target = seekStartPosition + deltaMs;
+                                    long dur = player != null ? player.getDuration() : com.google.android.exoplayer2.C.TIME_UNSET;
+                                    if (dur != com.google.android.exoplayer2.C.TIME_UNSET) target = Math.max(0L, Math.min(dur, target));
+                                    else target = Math.max(0L, target);
+                                    if (player != null) player.seekTo(target);
+                                    showSeekOverlay((int) (deltaMs / 1000L));
+                                    pendingTap[0] = false;
+                                    // Cancel pending long-press quick-speed
+                                    try { if (longPressRunnable[0] != null) handler.removeCallbacks(longPressRunnable[0]); } catch (Exception ignored) {}
+                                    return true;
+                                } else if (gestureMode == 2) {
+                                    if (audioManager != null && maxStreamVolume > 0) {
+                                        float pct = -dy / (float) h;
+                                        int newVol = Math.max(0, Math.min(maxStreamVolume, initialStreamVolume + Math.round(pct * maxStreamVolume)));
+                                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0);
+                                        int percent = Math.round((newVol / (float) maxStreamVolume) * 100f);
+                                        showVolumeOverlay(percent);
+                                        pendingTap[0] = false;
+                                        try { if (longPressRunnable[0] != null) handler.removeCallbacks(longPressRunnable[0]); } catch (Exception ignored) {}
+                                        return true;
+                                    }
+                                } else if (gestureMode == 3) {
+                                    try {
+                                        float pct = -dy / (float) h;
+                                        float nb = Math.max(0f, Math.min(1f, initialBrightness + pct));
+                                        android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+                                        lp.screenBrightness = nb;
+                                        getWindow().setAttributes(lp);
+                                        int percent = Math.round(nb * 100f);
+                                        showBrightnessOverlay(percent);
+                                        pendingTap[0] = false;
+                                        try { if (longPressRunnable[0] != null) handler.removeCallbacks(longPressRunnable[0]); } catch (Exception ignored) {}
+                                        return true;
+                                    } catch (Exception ignored) {}
+                                }
+                            }
+                        } catch (Exception ignored) {}
                         // Advanced panning logic for both single and multi-finger
                         if (currentScale > 1.0f) {
                             float currentX = 0f,
@@ -582,7 +671,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             if (dx > touchSlop || dy > touchSlop) {
                                 pendingTap[0] = false;
                                 // Cancel long press if significant movement detected
-                                handler.removeCallbacksAndMessages(null);
+                                try { if (longPressRunnable[0] != null) handler.removeCallbacks(longPressRunnable[0]); } catch (Exception ignored) {}
                             }
                         }
 
@@ -599,7 +688,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 case android.view.MotionEvent.ACTION_UP:
                 case android.view.MotionEvent.ACTION_CANCEL:
                     {
-                        handler.removeCallbacksAndMessages(null);
+                        try { if (longPressRunnable[0] != null) handler.removeCallbacks(longPressRunnable[0]); } catch (Exception ignored) {}
 
                         // Reset pinching state when all fingers are lifted
                         if (ev.getPointerCount() <= 1) {
@@ -619,6 +708,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             showQuickOverlay(false);
                             isLongPress[0] = false;
                         }
+                        // End any active gesture overlays
+                        try {
+                            if (gestureMode == 1) hideSeekOverlay();
+                            else if (gestureMode == 2) hideVolumeOverlay();
+                            else if (gestureMode == 3) hideBrightnessOverlay();
+                        } catch (Exception ignored) {}
+                        gestureMode = 0;
                     }
                     break;
                 case android.view.MotionEvent.ACTION_POINTER_UP:
@@ -2328,6 +2424,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) {}
 
+        // Enter immersive fullscreen (hide status and navigation bars)
+        try {
+            final View decor = getWindow().getDecorView();
+            decor.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            );
+        } catch (Exception ignored) {}
+
         // Do not start the background service while activity is in foreground; handoff
         // occurs onPause only.
         // -------------- Fix Ended for this method(onResume)-----------
@@ -2442,6 +2550,114 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 .start();
         } catch (Exception ignored) {}
     }
+
+        // Toggle controller and back-button together; back button is only visible when controller is visible
+        private void toggleControllerAndBackButton() {
+            try {
+                if (playerView == null) return;
+                boolean visible = isControllerVisibleSafe();
+                if (visible) {
+                    playerView.hideController();
+                    try { backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+                    // Cancel any auto-hide runnable
+                    if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
+                } else {
+                    playerView.showController();
+                    try { backButton.setVisibility(View.VISIBLE); } catch (Exception ignored) {}
+                    // Schedule hide according to prefs
+                    int t = SharedPreferencesManager.getInstance(this).getPlayerControlsTimeoutSeconds();
+                    if (t > 0) {
+                        if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
+                        controlsHideRunnable = () -> {
+                            try { playerView.hideController(); backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+                        };
+                        controlsHideHandler.postDelayed(controlsHideRunnable, t * 1000L);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Simple transient overlays using a small inflated layout (icon + text)
+        private android.view.View ensureGestureOverlay(String tag, int gravity, int marginStart, int marginEnd) {
+            try {
+                final View root = findViewById(android.R.id.content);
+                if (root == null) return null;
+                android.view.View existing = root.findViewWithTag(tag);
+                if (existing != null) return existing;
+                final android.view.View overlay = getLayoutInflater().inflate(R.layout.gesture_overlay, null);
+                overlay.setTag(tag);
+                android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+                lp.gravity = gravity;
+                lp.setMarginStart(marginStart);
+                lp.setMarginEnd(marginEnd);
+                final android.widget.FrameLayout.LayoutParams _lp = lp;
+                final View _overlay = overlay;
+                root.post(new Runnable() { public void run() { ((android.widget.FrameLayout) root).addView(_overlay, _lp); } });
+                return overlay;
+            } catch (Exception ignored) {}
+            return null;
+        }
+
+        private void showSeekOverlay(int secondsDelta) {
+            try {
+                String tag = "gesture_seek_overlay";
+                android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.CENTER, 0, 0);
+                if (v == null) return;
+                android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
+                android.widget.TextView tv = v.findViewById(R.id.overlay_text);
+                // Use forward/back icons depending on sign
+                if (secondsDelta >= 0) iv.setImageResource(R.drawable.ic_fast_forward_24);
+                else iv.setImageResource(R.drawable.ic_fast_rewind_24);
+                tv.setText((secondsDelta >= 0 ? "+" : "") + secondsDelta + "s");
+                v.setVisibility(View.VISIBLE);
+                v.setAlpha(1f);
+                // schedule fade
+                v.postDelayed(() -> {
+                    v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start();
+                }, 800);
+            } catch (Exception ignored) {}
+        }
+
+        private void hideSeekOverlay() {
+            try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_seek_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {}
+        }
+
+        private void showVolumeOverlay(int percent) {
+            try {
+                String tag = "gesture_volume_overlay";
+                int margin = (int) (16 * getResources().getDisplayMetrics().density);
+                android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL, 0, margin);
+                if (v == null) return;
+                android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
+                android.widget.TextView tv = v.findViewById(R.id.overlay_text);
+                iv.setImageResource(R.drawable.ic_audio);
+                tv.setText(percent + "%");
+                v.setVisibility(View.VISIBLE);
+                v.setAlpha(1f);
+                v.postDelayed(() -> { v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start(); }, 1000);
+            } catch (Exception ignored) {}
+        }
+
+        private void hideVolumeOverlay() { try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_volume_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {} }
+
+        private void showBrightnessOverlay(int percent) {
+            try {
+                String tag = "gesture_brightness_overlay";
+                int margin = (int) (16 * getResources().getDisplayMetrics().density);
+                android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL, margin, 0);
+                if (v == null) return;
+                android.widget.ImageView iv = v.findViewById(R.id.overlay_icon);
+                android.widget.TextView tv = v.findViewById(R.id.overlay_text);
+                iv.setImageResource(R.drawable.ic_arrow_up);
+                tv.setText(percent + "%");
+                v.setVisibility(View.VISIBLE);
+                v.setAlpha(1f);
+                v.postDelayed(() -> { v.animate().alpha(0f).setDuration(220).withEndAction(() -> v.setVisibility(View.GONE)).start(); }, 1000);
+            } catch (Exception ignored) {}
+        }
+
+        private void hideBrightnessOverlay() { try { View root = findViewById(android.R.id.content); if (root==null) return; View v = root.findViewWithTag("gesture_brightness_overlay"); if (v!=null) v.setVisibility(View.GONE); } catch (Exception ignored) {} }
+
 
     @Override
     protected void onPause() {
