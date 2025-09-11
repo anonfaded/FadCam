@@ -52,9 +52,10 @@
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/tips_viewpager"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp" />
+        android:layout_marginEnd="16dp"
+        android:minHeight="200dp" />
 
     <!-- Page indicator dots -->
     <LinearLayout

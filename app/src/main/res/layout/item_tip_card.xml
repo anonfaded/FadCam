@@ -5,48 +5,67 @@
     android:layout_height="match_parent"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#1A1A1A">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:gravity="center">
+        android:padding="16dp"
+        android:minHeight="160dp">
 
-        <!-- Tip number/counter -->
-        <TextView
-            android:id="@+id/tip_counter"
-            android:layout_width="wrap_content"
+        <!-- Header row with icon and counter -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="1/11"
-            android:textColor="?attr/pickerIconTint"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
 
-        <!-- Lightbulb icon -->
-        <TextView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:fontFamily="@font/materialicons"
-            android:text="lightbulb"
-            android:textColor="?attr/pickerIconTint"
-            android:textSize="32sp"
-            android:gravity="center"
-            android:layout_marginBottom="16dp" />
+            <!-- Lightbulb icon on left -->
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:fontFamily="@font/materialicons"
+                android:text="lightbulb"
+                android:textColor="?attr/pickerIconTint"
+                android:textSize="24sp"
+                android:gravity="center" />
 
-        <!-- Tip content -->
+            <!-- Spacer to push counter to right -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Tip number/counter on right -->
+            <TextView
+                android:id="@+id/tip_counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1/11"
+                android:textColor="?attr/pickerIconTint"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Tip content taking all remaining space -->
         <TextView
             android:id="@+id/tip_content"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:text="Long press preview to disable it."
             android:textColor="?attr/pickerTextPrimary"
             android:textSize="16sp"
-            android:textAlignment="center"
+            android:gravity="center"
             android:lineSpacingExtra="4dp"
-            android:gravity="center" />
+            android:scrollbars="vertical"
+            android:maxLines="15"
+            android:ellipsize="none"
+            android:paddingHorizontal="8dp" />
 
     </LinearLayout>
 
