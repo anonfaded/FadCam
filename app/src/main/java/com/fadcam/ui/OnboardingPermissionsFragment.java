@@ -175,6 +175,10 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
             grantButton.setAlpha(1f);
             grantButton.setText(R.string.grant_permissions);
         }
+        
+
+        // Update battery optimization button status
+        updateBatteryOptimizationButton();
     }
 
     @Override
@@ -300,6 +304,33 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
             ViewGroup root = (ViewGroup) view;
             root.invalidate();
             root.requestLayout();
+        }
+    }
+
+    /**
+     * Updates the battery optimization button state based on current status
+     */
+    private void updateBatteryOptimizationButton() {
+        View view = getView();
+        if (view == null) return;
+        
+        MaterialButton batteryOptButton = view.findViewById(R.id.disable_battery_optimization_button);
+        if (batteryOptButton != null) {
+            android.os.PowerManager pm = (android.os.PowerManager) requireContext().getSystemService(android.content.Context.POWER_SERVICE);
+            boolean isIgnoring = false;
+            if (pm != null) {
+                isIgnoring = pm.isIgnoringBatteryOptimizations(requireContext().getPackageName());
+            }
+            
+            if (isIgnoring) {
+                batteryOptButton.setEnabled(false);
+                batteryOptButton.setAlpha(0.5f);
+                batteryOptButton.setText(R.string.permissions_granted);
+            } else {
+                batteryOptButton.setEnabled(true);
+                batteryOptButton.setAlpha(1f);
+                batteryOptButton.setText(R.string.disable_battery_optimization);
+            }
         }
     }
 } 
