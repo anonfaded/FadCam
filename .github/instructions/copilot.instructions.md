@@ -24,14 +24,6 @@ applyTo: '**'
 - Public classes/methods must have Javadoc with parameters, return values, and exceptions.  
 - Inline comments only for complex areas; don’t restate the obvious.
 
-### 🛠️ Fixing Code
-Always wrap fixes like this:
-```java
-// -------------- Fix Start (methodName)-----------
-...updated code...
-// -------------- Fix Ended (methodName)-----------
-```
-
 ### 🧠 Communication
 - Ask for clarification if requirements aren’t clear.  
 - Responses should stay short and focused.  
