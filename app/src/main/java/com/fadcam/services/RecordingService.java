@@ -108,6 +108,11 @@ public class RecordingService extends Service {
     private static final String CHANNEL_ID = "RecordingServiceChannel";
     private static final String TAG = "RecordingService"; // Use standard Log TAG
     private static volatile boolean isCameraResourceReleasing = false;
+    
+    // -------------- Fix Start (rapid start protection)-----------
+    private long lastStartAttemptTime = 0;
+    private static final long MIN_START_INTERVAL_MS = 2000; // 2 seconds minimum between starts
+    // -------------- Fix Ended (rapid start protection)-----------
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
@@ -582,6 +587,22 @@ public class RecordingService extends Service {
         }
         // ----- Fix End: Handle global app background/foreground actions -----
         if (Constants.INTENT_ACTION_START_RECORDING.equals(action)) {
+            // -------------- Fix Start (rapid start protection)-----------
+            // Check for rapid start attempts to prevent service startup issues
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastStartAttemptTime < MIN_START_INTERVAL_MS) {
+                Log.w(TAG, "START_RECORDING rejected - too rapid. Last attempt was " + 
+                      (currentTime - lastStartAttemptTime) + "ms ago");
+                mainHandler.post(() -> {
+                    Toast.makeText(getApplicationContext(),
+                            "Please wait before starting recording again",
+                            Toast.LENGTH_SHORT).show();
+                });
+                return START_STICKY;
+            }
+            lastStartAttemptTime = currentTime;
+            // -------------- Fix Ended (rapid start protection)-----------
+            
             // ----- Check for camera resource cooldown -----
             // Check if camera resources are still being released
             if (isCameraResourceReleasing) {
@@ -598,13 +619,23 @@ public class RecordingService extends Service {
 
             Log.i(TAG, "Handling START_RECORDING intent. Service recording state is " + recordingState);
 
-            // Reset recording state if it's somehow corrupted
+            // -------------- Fix Start (improved state validation)-----------
+            // Reset recording state if it's somehow corrupted or inconsistent
             if (recordingState != RecordingState.NONE && cameraDevice == null) {
                 Log.w(TAG,
                         "Recording state inconsistency detected. Resetting state from " + recordingState + " to NONE.");
                 recordingState = RecordingState.NONE;
                 sharedPreferencesManager.setRecordingInProgress(false);
             }
+            
+            // Additional safety check: if we're in STARTING state but no camera setup is pending,
+            // it means we got stuck in a previous rapid start attempt
+            if (recordingState == RecordingState.STARTING && !pendingStartRecording && cameraDevice == null) {
+                Log.w(TAG, "Found stuck STARTING state with no pending operations. Resetting to NONE.");
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+            }
+            // -------------- Fix Ended (improved state validation)-----------
 
             // Only proceed if we're in NONE state
             if (recordingState == RecordingState.NONE) {

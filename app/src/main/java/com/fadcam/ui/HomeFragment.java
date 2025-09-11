@@ -85,6 +85,7 @@ import com.fadcam.Utils;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
+import com.fadcam.utils.DebouncedRunnable;
 import com.fadcam.utils.DeviceHelper;
 import com.fadcam.utils.StorageInfoCache;
 import com.fadcam.utils.VideoStatsCache;
@@ -162,6 +163,11 @@ public class HomeFragment extends BaseFragment {
     private Handler handlerClock = new Handler();
     private Runnable updateInfoRunnable;
     private Runnable updateClockRunnable; // Declare here
+    
+    // -------------- Fix Start (debounced runnables for button clicks)-----------
+    private DebouncedRunnable debouncedStartRecording;
+    private DebouncedRunnable debouncedStopRecording;
+    // -------------- Fix Ended (debounced runnables for button clicks)-----------
 
     // Storage calculation executor for background processing
     private ExecutorService executorService;
@@ -1300,6 +1306,12 @@ public class HomeFragment extends BaseFragment {
                 buttonStartStop.setBackgroundTintList(
                     ColorStateList.valueOf(btnColor)
                 );
+                // -------------- Fix Start (ensure button is always enabled in idle state)-----------
+                // Force enable the button when resetting to idle state, regardless of any debouncing
+                buttonStartStop.setEnabled(true);
+                buttonStartStop.setAlpha(1.0f);
+                Log.d(TAG, "Start button force-enabled in resetUIButtonsToIdleState");
+                // -------------- Fix Ended (ensure button is always enabled in idle state)-----------
             }
             if (buttonPauseResume != null) {
                 buttonPauseResume.setVisibility(View.VISIBLE);
@@ -4277,7 +4289,26 @@ public class HomeFragment extends BaseFragment {
         );
     }
 
+    // -------------- Fix Start (setupButtonListeners with debouncing)-----------
     private void setupButtonListeners() {
+        // Initialize debounced runnables for start/stop actions to prevent rapid clicking
+        if (debouncedStartRecording == null) {
+            debouncedStartRecording = new DebouncedRunnable(() -> {
+                if (recordingState.equals(RecordingState.NONE)) {
+                    startRecording();
+                }
+            }, 1000); // 1 second debounce
+        }
+
+        if (debouncedStopRecording == null) {
+            debouncedStopRecording = new DebouncedRunnable(() -> {
+                if (!recordingState.equals(RecordingState.NONE)) {
+                    stopRecording();
+                    updateStats();
+                }
+            }, 500); // 0.5 second debounce for stop (shorter for responsiveness)
+        }
+
         buttonStartStop.setOnClickListener(v -> {
             // ----- Fix Start: Add debug logs and ensure recordingState is correct -----
             Log.d(
@@ -4287,6 +4318,12 @@ public class HomeFragment extends BaseFragment {
                 ", enabled=" +
                 buttonStartStop.isEnabled()
             );
+
+            // Prevent rapid clicking by temporarily disabling the button
+            if (!buttonStartStop.isEnabled()) {
+                Log.d(TAG, "Button click ignored - button disabled");
+                return;
+            }
 
             // If service is not running, force recordingState to NONE
             if (!isMyServiceRunning(RecordingService.class)) {
@@ -4298,13 +4335,24 @@ public class HomeFragment extends BaseFragment {
             }
             // ----- Fix End: Add debug logs and ensure recordingState is correct -----
 
+            // Temporarily disable button to prevent rapid clicks
+            buttonStartStop.setEnabled(false);
+            
+            // Re-enable after a short delay
+            handlerClock.postDelayed(() -> {
+                if (buttonStartStop != null && isAdded()) {
+                    buttonStartStop.setEnabled(true);
+                    Log.d(TAG, "Button re-enabled after cooldown period");
+                }
+            }, 1500); // 1.5 second cooldown
+
             if (recordingState.equals(RecordingState.NONE)) {
-                startRecording();
+                debouncedStartRecording.run();
             } else {
-                stopRecording();
-                updateStats();
+                debouncedStopRecording.run();
             }
         });
+    // -------------- Fix Ended (setupButtonListeners with debouncing)-----------
 
         buttonPauseResume.setOnClickListener(v -> {
             if (isPaused()) {
@@ -6728,6 +6776,16 @@ public class HomeFragment extends BaseFragment {
         if (fragmentHelper != null) {
             fragmentHelper.onDestroy();
             fragmentHelper = null;
+        }
+        
+        // Clean up debounced runnables
+        if (debouncedStartRecording != null) {
+            debouncedStartRecording.cancel();
+            debouncedStartRecording = null;
+        }
+        if (debouncedStopRecording != null) {
+            debouncedStopRecording.cancel();
+            debouncedStopRecording = null;
         }
         // -------------- Fix Ended (cleanup) --------------
     }
