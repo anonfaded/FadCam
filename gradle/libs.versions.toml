@@ -1,23 +1,26 @@
 [versions]
-agp = "8.9.3"
+agp = "8.12.3"
 appintroVersion = "6.3.1"
-camerax = "1.4.2"
-coreKtx = "1.16.0"
+camerax = "1.5.0"
+coreKtx = "1.17.0"
+coreSplashscreen = "1.0.1"
+documentfile = "1.1.0"
+localbroadcastmanager = "1.1.0"
 exoplayerCore = "2.19.1"
-glide = "4.14.2"
-gson = "2.10.1"
+glide = "5.0.5"
+gson = "2.13.2"
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
 appcompat = "1.7.1"
-lifecycleRuntime = "2.9.1"
-lottie = "6.4.0"
-material = "1.12.0"
-activity = "1.10.1"
+lifecycleRuntime = "2.9.3"
+lottie = "6.6.7"
+material = "1.13.0"
+activity = "1.11.0"
 constraintlayout = "2.2.1"
-navigationUiKtx = "2.9.0"
-okhttp = "4.12.0"
-osmdroidAndroid = "6.1.10"
+navigationUiKtx = "2.9.4"
+okhttp = "5.1.0"
+osmdroidAndroid = "6.1.20"
 smartExceptionJava = "0.2.1"
 swiperefreshlayout = "1.1.0"
 viewpager2 = "1.1.0"
@@ -31,6 +34,8 @@ camerax-video = { module = "androidx.camera:camera-video", version.ref = "camera
 camerax-extensions = { module = "androidx.camera:camera-extensions", version.ref = "camerax" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 exoplayer-core = { module = "com.google.android.exoplayer:exoplayer-core", version.ref = "exoplayerCore" }
 exoplayer-ui = { module = "com.google.android.exoplayer:exoplayer-ui", version.ref = "exoplayerCore" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
@@ -41,6 +46,7 @@ espresso-core = { group = "androidx.test.espresso", name = "espresso-core", vers
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleRuntime" }
 lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", version.ref = "lifecycleRuntime" }
+localbroadcastmanager = { module = "androidx.localbroadcastmanager:localbroadcastmanager", version.ref = "localbroadcastmanager" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }

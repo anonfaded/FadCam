@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.fadcam"
-    compileSdk = 35
+    compileSdk = 36
 
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
 
@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.fadcam"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 25
         versionName = "2.0.0-beta8"
         vectorDrawables.useSupportLibrary = true
@@ -138,7 +138,9 @@ dependencies {
     implementation(libs.viewpager2)
     implementation(libs.lifecycle.process)
     implementation(libs.lifecycle.runtime)
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(libs.core.splashscreen)
+    implementation(libs.documentfile)
+    implementation(libs.localbroadcastmanager)
 
     annotationProcessor(libs.compiler)
 

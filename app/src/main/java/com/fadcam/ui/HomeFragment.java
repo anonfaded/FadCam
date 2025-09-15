@@ -21,7 +21,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -29,11 +28,8 @@ import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.PowerManager;
-import android.os.StatFs;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -42,7 +38,6 @@ import android.provider.Settings;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.format.Formatter;
 import android.text.format.Formatter;
 import android.text.style.ForegroundColorSpan;
 import android.util.Range;
@@ -71,7 +66,6 @@ import androidx.cardview.widget.CardView; // Add this
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 import com.fadcam.CameraType;
@@ -112,8 +106,6 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set; // For combining lists
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Executors;
 
 public class HomeFragment extends BaseFragment {
@@ -1649,7 +1641,7 @@ public class HomeFragment extends BaseFragment {
                 Context.RECEIVER_NOT_EXPORTED
             );
         } else {
-            context.registerReceiver(recordingFailedReceiver, filter);
+            ContextCompat.registerReceiver(context, recordingFailedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         }
     }
 

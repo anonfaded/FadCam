@@ -2,13 +2,8 @@ package com.fadcam.ui;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -42,7 +37,6 @@ import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.core.text.HtmlCompat;
 // For getting drawables
 
 import com.bumptech.glide.Glide;
@@ -53,7 +47,6 @@ import com.fadcam.Constants;
 import com.fadcam.R;
 // Ensure VideoItem import is correct
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
 import com.fadcam.Utils; // Import Utils for the new formatter
 
 import java.io.File;
@@ -62,11 +55,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -79,7 +68,6 @@ import com.fadcam.SharedPreferencesManager;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import androidx.recyclerview.widget.DiffUtil;
-import android.graphics.drawable.GradientDrawable;
 import androidx.core.app.ShareCompat;
 import android.content.ContentResolver;
 import androidx.core.content.FileProvider;
