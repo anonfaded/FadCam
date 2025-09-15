@@ -84,11 +84,13 @@
                     android:textColor="?attr/colorHeading"/>
                 <TextView
                     android:id="@+id/value_record_audio"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
-                    android:textSize="13sp"/>
+                    android:textSize="13sp"
+                    android:gravity="end"/>
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
@@ -118,11 +120,13 @@
                     android:textColor="?attr/colorHeading"/>
                 <TextView
                     android:id="@+id/value_audio_input_source"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
-                    android:textSize="13sp"/>
+                    android:textSize="13sp"
+                    android:gravity="end"/>
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
@@ -152,11 +156,13 @@
                     android:textColor="?attr/colorHeading"/>
                 <TextView
                     android:id="@+id/value_noise_suppression"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
                     android:text="-"
                     android:textColor="@android:color/darker_gray"
-                    android:textSize="13sp"/>
+                    android:textSize="13sp"
+                    android:gravity="end"/>
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
