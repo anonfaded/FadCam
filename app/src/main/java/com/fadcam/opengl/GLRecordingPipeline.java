@@ -468,6 +468,27 @@ public class GLRecordingPipeline {
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
+                    
+                    // Add a fallback timeout to start muxer if audio track isn't added
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            synchronized (GLRecordingPipeline.this) {
+                                if (!muxerStarted && videoTrackIndex != -1 && audioTrackIndex == -1) {
+                                    Log.w(TAG, "FALLBACK: Starting muxer without audio track after timeout");
+                                    try {
+                                        if (mediaMuxer != null) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            Log.d(TAG, "Muxer started via fallback timeout (video-only mode)");
+                                        }
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "Failed to start muxer via fallback", e);
+                                    }
+                                }
+                            }
+                        }
+                    }, 3000); // 3 second timeout
                 }
 
                 // -------------- Fix Start for this method(startRecording)-----------
@@ -1014,6 +1035,7 @@ public class GLRecordingPipeline {
                             }
                         } else {
                             // Audio is enabled - check if audio track is already added
+                            Log.d(TAG, "Audio recording enabled, checking audio track status. AudioTrackIndex: " + audioTrackIndex);
                             if (audioTrackIndex != -1) {
                                 // Both tracks are ready, start muxer
                                 mediaMuxer.start();
@@ -1026,6 +1048,7 @@ public class GLRecordingPipeline {
                             } else {
                                 // Wait for audio track to be added
                                 Log.d(TAG, "Video track added, waiting for audio track before starting muxer");
+                                Log.d(TAG, "DEBUG: audioRecordingEnabled=" + audioRecordingEnabled + ", audioEncoder=" + (audioEncoder != null) + ", audioTrackIndex=" + audioTrackIndex);
                                 try {
                                     com.fadcam.Log.d(TAG, "Waiting for audio track before starting muxer");
                                 } catch (Throwable ignore) {
@@ -1713,8 +1736,12 @@ public class GLRecordingPipeline {
      * Call before starting audio thread.
      */
     private void setupAudio() {
-        if (!audioRecordingEnabled)
+        if (!audioRecordingEnabled) {
+            Log.d(TAG, "DEBUG: Audio recording disabled, skipping audio setup");
             return;
+        }
+        
+        Log.d(TAG, "DEBUG: Setting up audio encoder and recorder");
         try {
             // Configure MediaCodec for AAC
             MediaFormat audioFormat = MediaFormat.createAudioFormat(
@@ -1745,6 +1772,7 @@ public class GLRecordingPipeline {
             audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             audioEncoder.start();
             audioEncoderStarted = true;
+            Log.d(TAG, "DEBUG: Audio encoder created and started successfully");
 
             // Setup AudioRecord
             int channelConfig = audioChannelCount == 2 ? android.media.AudioFormat.CHANNEL_IN_STEREO
@@ -1755,6 +1783,7 @@ public class GLRecordingPipeline {
                     android.media.AudioFormat.ENCODING_PCM_16BIT);
             // Use 2x the minimum buffer size for best reliability
             int bufferSize = Math.max(minBufferSize * 2, audioSampleRate * audioChannelCount);
+            Log.d(TAG, "DEBUG: Audio buffer size calculated: " + bufferSize + " (min: " + minBufferSize + ")");
 
             // Check for RECORD_AUDIO permission before creating AudioRecord
             if (androidx.core.content.ContextCompat.checkSelfPermission(context,
@@ -1771,6 +1800,7 @@ public class GLRecordingPipeline {
             if (audioRecord.getState() != android.media.AudioRecord.STATE_INITIALIZED) {
                 throw new RuntimeException("AudioRecord initialization failed");
             }
+            Log.d(TAG, "DEBUG: AudioRecord created successfully with state: " + audioRecord.getState());
             // ----- Fix Start for this method(setupAudio)-----
             boolean noiseSuppression = com.fadcam.SharedPreferencesManager.getInstance(context)
                     .isNoiseSuppressionEnabled();
@@ -1869,7 +1899,7 @@ public class GLRecordingPipeline {
      * Call this regularly from the render loop or a timer.
      */
     private void drainAudioEncoder() {
-        if (!audioRecordingEnabled || audioEncoder == null) {
+        if (!audioRecordingEnabled || audioEncoder == null || !audioEncoderStarted) {
             return;
         }
         if (mediaMuxer == null) {
@@ -1885,6 +1915,7 @@ public class GLRecordingPipeline {
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat newFormat = audioEncoder.getOutputFormat();
                     Log.d(TAG, "Audio encoder output format changed: " + newFormat);
+                    Log.d(TAG, "DEBUG Audio FORMAT: muxerStarted=" + muxerStarted + ", audioTrackIndex=" + audioTrackIndex + ", videoTrackIndex=" + videoTrackIndex);
 
                     if (audioTrackIndex != -1) {
                         Log.w(TAG, "Audio format changed after track was added - continuing with existing track");
@@ -1895,17 +1926,19 @@ public class GLRecordingPipeline {
                     } else {
                         // Normal case - add audio track only if muxer hasn't started yet
                         try {
+                            Log.d(TAG, "DEBUG: About to add audio track to muxer");
                             audioTrackIndex = mediaMuxer.addTrack(newFormat);
                             Log.d(TAG, "Added audio track with index " + audioTrackIndex + " to muxer");
 
                             // Check if we can start the muxer now (video track should already be added)
                             if (!muxerStarted && videoTrackIndex != -1) {
                                 // Both tracks are ready - start muxer
+                                Log.d(TAG, "DEBUG: Both tracks ready, starting muxer now");
                                 mediaMuxer.start();
                                 muxerStarted = true;
                                 Log.d(TAG, "Started muxer after adding audio track - both tracks ready");
                             } else if (!muxerStarted) {
-                                Log.d(TAG, "Audio track added, waiting for video track before starting muxer");
+                                Log.d(TAG, "Audio track added, waiting for video track before starting muxer (videoTrackIndex=" + videoTrackIndex + ")");
                             }
                         } catch (Exception e) {
                             Log.e(TAG, "Error adding audio track to muxer", e);

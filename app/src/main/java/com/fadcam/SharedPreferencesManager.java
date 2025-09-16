@@ -19,6 +19,11 @@ public class SharedPreferencesManager {
     public static final String STORAGE_MODE_CUSTOM = "custom";
     public static final String PREF_CUSTOM_STORAGE_URI = "custom_storage_uri";
     // --- END STORAGE CONSTANTS ---
+    
+    // --- UPDATE CHECK CONSTANTS ---
+    public static final String PREF_AUTO_UPDATE_CHECK = "auto_update_check_enabled";
+    // --- END UPDATE CHECK CONSTANTS ---
+    
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris"; // Defined in Constants now
 
     private static SharedPreferencesManager instance;
@@ -1587,4 +1592,14 @@ public class SharedPreferencesManager {
         }
     }
     // -------------- Fix Ended for this method(getAppIconDisplayName)-----------
+    
+    /**
+     * Check if auto update checking is enabled
+     * @param context The context to access SharedPreferences
+     * @return true if auto update check is enabled, false otherwise
+     */
+    public static boolean isAutoUpdateCheckEnabled(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
+    }
 }

@@ -3,6 +3,7 @@ package com.fadcam.ui.picker;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -801,99 +802,37 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 R.id.picker_switch
             );
             TextView switchLabel = root.findViewById(R.id.picker_switch_label);
+            Log.d("PickerBottomSheet", "DEBUG: Switch setup - swc=" + swc + ", switchLabel=" + switchLabel + ", switchRow=" + switchRow);
             if (switchRow != null && swc != null && switchLabel != null) {
+                Log.d("PickerBottomSheet", "DEBUG: Setting up switch with title: " + switchTitle + ", state: " + switchState);
                 switchRow.setVisibility(View.VISIBLE);
-                // Only show divider if there are items below the switch (not for switch-only bottom sheets)
-                if (
-                    switchDivider != null && !items.isEmpty()
-                ) switchDivider.setVisibility(View.VISIBLE);
+                if (switchDivider != null && !items.isEmpty()) switchDivider.setVisibility(View.VISIBLE);
                 switchLabel.setText(switchTitle);
                 swc.setChecked(switchState);
                 switchRef = swc;
-                // initial apply to slider controls
-                try {
-                    com.google.android.material.slider.Slider s =
-                        root.findViewById(R.id.picker_slider);
-                    TextView tvVal = root.findViewById(
-                        R.id.picker_slider_value
-                    );
-                    TextView minus = root.findViewById(
-                        R.id.picker_slider_minus
-                    );
-                    TextView plus = root.findViewById(R.id.picker_slider_plus);
-                    android.widget.ImageView reset = root.findViewById(
-                        R.id.picker_slider_reset_icon
-                    );
-                    if (s != null) {
-                        s.setEnabled(!switchState);
-                        s.setAlpha(switchState ? 0.4f : 1f);
+
+                // Ensure row click triggers the switch's native toggle (keeps internal animations + accessibility)
+                switchRow.setOnClickListener(v -> {
+                    Log.d("PickerBottomSheet", "Row clicked -> performing switch click (prev state=" + swc.isChecked() + ")");
+                    swc.performClick();
+                });
+
+                // Single listener for state changes
+                swc.setOnCheckedChangeListener((button, checked) -> {
+                    Log.d("PickerBottomSheet", "Switch changed -> " + checked + " (title=" + switchTitle + ")");
+                    updateDependentRows(checked);
+                    // Persist video splitting flag if this sheet controls it
+                    try {
+                        if ("Enable Video Splitting".equals(switchTitle)) {
+                            com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setVideoSplittingEnabled(checked);
+                        }
+                    } catch (Exception e) {
+                        Log.w("PickerBottomSheet", "Failed to persist splitting flag", e);
                     }
-                    if (tvVal != null) tvVal.setAlpha(switchState ? 0.4f : 1f);
-                    if (minus != null) {
-                        minus.setEnabled(!switchState);
-                        minus.setClickable(!switchState);
-                        minus.setAlpha(switchState ? 0.4f : 1f);
-                    }
-                    if (plus != null) {
-                        plus.setEnabled(!switchState);
-                        plus.setClickable(!switchState);
-                        plus.setAlpha(switchState ? 0.4f : 1f);
-                    }
-                    if (reset != null) {
-                        reset.setEnabled(!switchState);
-                        reset.setClickable(!switchState);
-                        reset.setAlpha(switchState ? 0.4f : 1f);
-                    }
-                } catch (Exception ignored) {}
-                swc.setOnCheckedChangeListener((b, checked) -> {
-                    // send fragment result - use RK_AE_LOCK for AE Lock switch
                     Bundle result = new Bundle();
                     result.putBoolean(BUNDLE_SWITCH_STATE, checked);
-                    String switchResultKey = "Lock AE".equals(switchTitle)
-                        ? com.fadcam.Constants.RK_AE_LOCK
-                        : resultKey;
-                    getParentFragmentManager().setFragmentResult(
-                        switchResultKey,
-                        result
-                    );
-                    // Gray out slider controls when AE lock is on
-                    try {
-                        com.google.android.material.slider.Slider s =
-                            root.findViewById(R.id.picker_slider);
-                        TextView tvVal = root.findViewById(
-                            R.id.picker_slider_value
-                        );
-                        TextView minus = root.findViewById(
-                            R.id.picker_slider_minus
-                        );
-                        TextView plus = root.findViewById(
-                            R.id.picker_slider_plus
-                        );
-                        android.widget.ImageView reset = root.findViewById(
-                            R.id.picker_slider_reset_icon
-                        );
-                        if (s != null) {
-                            s.setEnabled(!checked);
-                            s.setAlpha(checked ? 0.4f : 1f);
-                        }
-                        if (tvVal != null) tvVal.setAlpha(checked ? 0.4f : 1f);
-                        if (minus != null) {
-                            minus.setEnabled(!checked);
-                            minus.setClickable(!checked);
-                            minus.setAlpha(checked ? 0.4f : 1f);
-                        }
-                        if (plus != null) {
-                            plus.setEnabled(!checked);
-                            plus.setClickable(!checked);
-                            plus.setAlpha(checked ? 0.4f : 1f);
-                        }
-                        if (reset != null) {
-                            reset.setEnabled(!checked);
-                            reset.setClickable(!checked);
-                            reset.setAlpha(checked ? 0.4f : 1f);
-                        }
-                    } catch (Exception ignored) {}
-                    updateDependentRows(checked);
+                    String switchResultKey = "Lock AE".equals(switchTitle) ? com.fadcam.Constants.RK_AE_LOCK : resultKey;
+                    getParentFragmentManager().setFragmentResult(switchResultKey, result);
                 });
             }
         }
@@ -1404,173 +1343,37 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
     }
 
-    // -------------- Fix Start for this method(updateDependentRows)-----------
-    private void updateDependentRows(boolean enabled) {
+    // Cache of dependent rows to avoid repeated traversal
+    private final java.util.Map<String, View> dependentRowMap = new java.util.HashMap<>();
+
+    private void collectDependentRows() {
+        dependentRowMap.clear();
         if (containerLayoutRef == null || switchDependentIds.isEmpty()) return;
         int childCount = containerLayoutRef.getChildCount();
         for (int i = 0; i < childCount; i++) {
             View child = containerLayoutRef.getChildAt(i);
             Object tag = child.getTag();
             if (tag instanceof String && switchDependentIds.contains(tag)) {
-                boolean active = enabled;
-                child.setEnabled(active);
-                child.setAlpha(active ? 1f : 0.4f);
-                if (active) {
-                    // Rebind click listener to ensure functionality after re-enable
-                    String id = (String) tag;
-                    OptionItem bound = null;
-                    for (OptionItem oi : items) {
-                        if (oi.id != null && oi.id.equals(id)) {
-                            bound = oi;
-                            break;
-                        }
-                    }
-                    if (bound != null) {
-                        final OptionItem item = bound;
-                        // Replace listener
-                        child.setOnClickListener(v -> {
-                            // Clear previous selection visuals
-                            int total = containerLayoutRef.getChildCount();
-                            for (int c = 0; c < total; c++) {
-                                View possible = containerLayoutRef.getChildAt(
-                                    c
-                                );
-                                View cc = possible.findViewById(
-                                    R.id.picker_item_check_container
-                                );
-                                ImageView ci = possible.findViewById(
-                                    R.id.picker_item_check
-                                );
-                                if (cc != null && ci != null) {
-                                    cc.setVisibility(View.INVISIBLE);
-                                    ci.setScaleX(0f);
-                                    ci.setScaleY(0f);
-                                    ci.setAlpha(0f);
-                                }
-                            }
-                            View checkContainer = child.findViewById(
-                                R.id.picker_item_check_container
-                            );
-                            ImageView checkIcon = child.findViewById(
-                                R.id.picker_item_check
-                            );
-                            if (checkContainer != null && checkIcon != null) {
-                                checkContainer.setVisibility(View.VISIBLE);
-                                AnimatorSet set = new AnimatorSet();
-                                ObjectAnimator sx = ObjectAnimator.ofFloat(
-                                    checkIcon,
-                                    View.SCALE_X,
-                                    0f,
-                                    1f
-                                );
-                                ObjectAnimator sy = ObjectAnimator.ofFloat(
-                                    checkIcon,
-                                    View.SCALE_Y,
-                                    0f,
-                                    1f
-                                );
-                                ObjectAnimator a = ObjectAnimator.ofFloat(
-                                    checkIcon,
-                                    View.ALPHA,
-                                    0f,
-                                    1f
-                                );
-                                sx.setDuration(140);
-                                sy.setDuration(140);
-                                a.setDuration(140);
-                                set.playTogether(sx, sy, a);
-                                set.start();
-                            }
-                            Bundle result = new Bundle();
-                            result.putString(BUNDLE_SELECTED_ID, item.id);
-                            getParentFragmentManager().setFragmentResult(
-                                resultKey,
-                                result
-                            );
-                            child.postDelayed(this::dismiss, 160);
-                        });
-                    }
-                }
+                dependentRowMap.put((String) tag, child);
             }
-            // If slider mode and switchPresent, wire switch row (optional AE lock switch)
-            try {
-                View root = getView();
-                if (root != null) {
-                    View switchRow = root.findViewById(R.id.picker_switch_row);
-                    TextView switchLabel = root.findViewById(
-                        R.id.picker_switch_label
-                    );
-                    androidx.appcompat.widget.SwitchCompat swc =
-                        root.findViewById(R.id.picker_switch);
-                    if (
-                        switchPresent &&
-                        switchRow != null &&
-                        switchLabel != null &&
-                        swc != null
-                    ) {
-                        switchRow.setVisibility(View.VISIBLE);
-                        switchLabel.setText(switchTitle);
-                        swc.setChecked(switchState);
-                        swc.setOnCheckedChangeListener((b, checked) -> {
-                            Bundle result = new Bundle();
-                            result.putBoolean(BUNDLE_SWITCH_STATE, checked);
-                            getParentFragmentManager().setFragmentResult(
-                                resultKey,
-                                result
-                            );
-                            // Gray out slider controls when switch (AE lock) is on
-                            try {
-                                com.google.android.material.slider.Slider s =
-                                    root.findViewById(R.id.picker_slider);
-                                TextView tvVal = root.findViewById(
-                                    R.id.picker_slider_value
-                                );
-                                TextView minus = root.findViewById(
-                                    R.id.picker_slider_minus
-                                );
-                                TextView plus = root.findViewById(
-                                    R.id.picker_slider_plus
-                                );
-                                android.widget.ImageView reset =
-                                    root.findViewById(
-                                        R.id.picker_slider_reset_icon
-                                    );
-                                if (s != null) {
-                                    s.setEnabled(!checked);
-                                    s.setAlpha(checked ? 0.4f : 1f);
-                                }
-                                if (tvVal != null) tvVal.setAlpha(
-                                    checked ? 0.4f : 1f
-                                );
-                                if (minus != null) minus.setAlpha(
-                                    checked ? 0.4f : 1f
-                                );
-                                if (plus != null) plus.setAlpha(
-                                    checked ? 0.4f : 1f
-                                );
-                                if (reset != null) reset.setAlpha(
-                                    checked ? 0.4f : 1f
-                                );
-                            } catch (Exception ignored) {}
-                        });
-                        // Apply initial disabled state
-                        if (switchState) {
-                            try {
-                                com.google.android.material.slider.Slider s =
-                                    root.findViewById(R.id.picker_slider);
-                                if (s != null) {
-                                    s.setEnabled(false);
-                                    s.setAlpha(0.4f);
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
         }
     }
 
-    // -------------- Fix Ended for this method(updateDependentRows)-----------
+    private void updateDependentRows(boolean enabled) {
+        if (dependentRowMap.isEmpty()) collectDependentRows();
+        for (View child : dependentRowMap.values()) {
+            if (child == null) continue;
+            float targetAlpha = enabled ? 1f : 0.4f;
+            boolean targetEnabled = enabled;
+            child.setEnabled(targetEnabled);
+            child.setAlpha(targetAlpha);
+            // Also adjust inner text views for clarity
+            View title = child.findViewById(R.id.picker_item_title);
+            View subtitle = child.findViewById(R.id.picker_item_subtitle);
+            if (title != null) { title.setEnabled(targetEnabled); title.setAlpha(enabled ? 1f : 0.5f); }
+            if (subtitle != null) { subtitle.setEnabled(targetEnabled); subtitle.setAlpha(enabled ? 1f : 0.5f); }
+        }
+    }
 
     // Branding dependency removed: branding is independent of background
 

@@ -804,7 +804,7 @@ public class HomeFragment extends BaseFragment {
 
         // ----- Update Check Bottom Sheet Start -----
         if (
-            com.fadcam.ui.SettingsFragment.isAutoUpdateCheckEnabled(
+            com.fadcam.SharedPreferencesManager.isAutoUpdateCheckEnabled(
                 requireContext()
             ) &&
             DeviceHelper.isInternetAvailable(requireContext())
