@@ -74,6 +74,7 @@ public class GLWatermarkRenderer {
 
     // Exposure compensation value (EV stops, e.g., -2.0 to +2.0)
     private float currentExposureCompensation = 0.0f;
+    private float lastLoggedExposureCompensation = Float.NaN; // Track last logged value
 
     // Using matrices in real-time for the first time in this app!
     // These 2x4 matrices define the vertex coordinates and texture mapping
@@ -884,8 +885,12 @@ public class GLWatermarkRenderer {
                             int exposureLoc = program.getExposureCompensationLocation();
                             if (exposureLoc >= 0) {
                                 GLES20.glUniform1f(exposureLoc, currentExposureCompensation);
-                                Log.d(TAG,
-                                        "Set exposure compensation to Grafika shader: " + currentExposureCompensation);
+                                // Only log when exposure value actually changes
+                                if (Float.isNaN(lastLoggedExposureCompensation) || 
+                                    Math.abs(currentExposureCompensation - lastLoggedExposureCompensation) > 0.001f) {
+                                    Log.d(TAG, "Set exposure compensation to Grafika shader: " + currentExposureCompensation);
+                                    lastLoggedExposureCompensation = currentExposureCompensation;
+                                }
                             }
 
                             int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");

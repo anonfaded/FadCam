@@ -133,6 +133,13 @@ public class GLRecordingPipeline {
     private String currentOutputFilePath;
     private FileDescriptor currentOutputFd;
     private boolean muxerStarted = false;
+    // --- Dashcam splitting additions ---
+    private long segmentBytesWritten = 0L; // Bytes written in current segment (video+audio)
+    private static final double ROLLOVER_PREEMPT_THRESHOLD_RATIO = 0.95; // Request keyframe early
+    private boolean pendingRollover = false; // Threshold near, waiting for keyframe
+    private boolean awaitingKeyframeForRollover = false; // Sync frame requested, waiting to hit size at keyframe
+    private boolean rolloverInProgress = false; // Guard against concurrent rollovers
+    private volatile boolean rolloverRequestedByDrain = false; // Set inside drain loop post keyframe write
 
     private int encoderWidth;
     private int encoderHeight;
@@ -148,6 +155,10 @@ public class GLRecordingPipeline {
     private boolean audioRecordingEnabled = false;
     private boolean audioThreadRunning = false;
     private final Object audioLock = new Object();
+    // Cached formats so we can recreate muxer for segment rollover without
+    // waiting for INFO_OUTPUT_FORMAT_CHANGED (only fired once per encoder start)
+    private MediaFormat cachedVideoFormat;
+    private MediaFormat cachedAudioFormat;
     // Audio settings (always set from preferences or app defaults)
     private int audioSource;
     private int audioSampleRate;
@@ -902,16 +913,23 @@ public class GLRecordingPipeline {
         audioTrackIndex = -1;
         videoTrackIndex = -1;
 
-        // Reset timestamp synchronization
-        synchronized (timestampLock) {
-            recordingStartTimeNanos = -1;
-            firstVideoTimestampNanos = -1;
+        // Only reset timestamps for very first segment; maintain monotonic PTS across segments
+        if (segmentNumber == 1) {
+            synchronized (timestampLock) {
+                recordingStartTimeNanos = -1;
+                firstVideoTimestampNanos = -1;
+            }
         }
 
         // DO NOT start muxer here - wait for encoder formats to be available
         // This prevents the format change issue that causes muxer restarts
-        muxerStarted = false;
-        Log.d(TAG, "Muxer created but not started - waiting for encoder formats");
+    muxerStarted = false;
+    Log.d(TAG, "Muxer created but not started - waiting for encoder formats");
+    // Reset per-segment state
+    segmentBytesWritten = 0L;
+    pendingRollover = false;
+    awaitingKeyframeForRollover = false;
+    rolloverRequestedByDrain = false;
     }
 
     private void setupEncoder() throws IOException {
@@ -1004,6 +1022,9 @@ public class GLRecordingPipeline {
                     MediaFormat newFormat = videoEncoder.getOutputFormat();
                     Log.d(TAG, "Encoder output format changed: " + newFormat);
 
+                    // Cache for future segment rollovers
+                    cachedVideoFormat = newFormat;
+
                     if (muxerStarted) {
                         // This should NOT happen if we wait for format before starting muxer
                         Log.e(TAG, "CRITICAL: Format changed after muxer started - this indicates a timing issue!");
@@ -1070,6 +1091,24 @@ public class GLRecordingPipeline {
                     }
 
                     // Check for valid data before writing to muxer
+                    boolean isKeyframe = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
+
+                    // Preemptive keyframe request when near threshold (only once)
+                    if (!pendingRollover && maxFileSizeBytes > 0 && segmentBytesWritten >= (long) (maxFileSizeBytes * ROLLOVER_PREEMPT_THRESHOLD_RATIO)) {
+                        try {
+                            if (android.os.Build.VERSION.SDK_INT >= 19) {
+                                android.os.Bundle params = new android.os.Bundle();
+                                params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+                                videoEncoder.setParameters(params);
+                                Log.d(TAG, "Requested sync frame pre-rollover at ~95% threshold");
+                            }
+                        } catch (Exception ex) {
+                            Log.w(TAG, "Failed requesting sync frame", ex);
+                        }
+                        pendingRollover = true;
+                        awaitingKeyframeForRollover = true;
+                    }
+
                     if (bufferInfo.size > 0 && muxerStarted) {
                         // Ensure we have valid data in the buffer
                         if (encodedData.remaining() < bufferInfo.size) {
@@ -1085,6 +1124,13 @@ public class GLRecordingPipeline {
                                 encodedData.position(bufferInfo.offset);
                                 encodedData.limit(bufferInfo.offset + bufferInfo.size);
                                 mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
+                                segmentBytesWritten += bufferInfo.size;
+                                if (!rolloverRequestedByDrain && awaitingKeyframeForRollover && isKeyframe && maxFileSizeBytes > 0 && segmentBytesWritten >= maxFileSizeBytes) {
+                                    Log.i(TAG, "Keyframe boundary reached with size >= limit (" + segmentBytesWritten + "); scheduling rollover");
+                                    awaitingKeyframeForRollover = false;
+                                    pendingRollover = false;
+                                    rolloverRequestedByDrain = true; // Will execute after draining
+                                }
                             } catch (Exception e) {
                                 Log.e(TAG, "Error writing video frame to muxer", e);
                                 try {
@@ -1124,81 +1170,54 @@ public class GLRecordingPipeline {
             if (audioRecordingEnabled && audioEncoder != null) {
                 drainAudioEncoder();
             }
+
+            // Perform rollover after draining to ensure clean boundary
+            if (rolloverRequestedByDrain && !rolloverInProgress) {
+                rolloverRequestedByDrain = false;
+                try {
+                    rolloverSegment();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Deferred rollover failed", ex);
+                }
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error draining encoder", e);
         }
     }
 
     private boolean shouldSplitSegment() {
-        // First check if video splitting is enabled (maxFileSizeBytes > 0)
-        if (maxFileSizeBytes <= 0) {
-            // No need to log every time as this is called frequently
-            return false; // Video splitting is disabled
-        }
+        if (maxFileSizeBytes <= 0) return false; // disabled
+        // Avoid repeated triggers during pending states
+        if (pendingRollover || awaitingKeyframeForRollover || rolloverInProgress || rolloverRequestedByDrain) return false;
 
-        try {
-            if (currentOutputFilePath != null) {
-                File f = new File(currentOutputFilePath);
-                if (f.exists()) {
-                    long currentSize = f.length();
-                    // Log periodically (e.g., every 10MB) to avoid log spam
-                    if (currentSize % (10 * 1024 * 1024) < 100 * 1024) { // Log every ~10MB
-                        Log.d(TAG, String.format("Current file size: %.2f MB / %.2f MB (%.1f%%)",
-                                currentSize / (1024.0 * 1024.0),
-                                maxFileSizeBytes / (1024.0 * 1024.0),
-                                (currentSize * 100.0) / maxFileSizeBytes));
-                    }
-
-                    if (currentSize >= maxFileSizeBytes) {
-                        Log.i(TAG,
-                                String.format(
-                                        "File size limit reached: %.2f MB >= %.2f MB, triggering segment rollover",
-                                        currentSize / (1024.0 * 1024.0),
-                                        maxFileSizeBytes / (1024.0 * 1024.0)));
-                        return true;
-                    }
+        if (segmentBytesWritten >= maxFileSizeBytes) {
+            // Force sync-frame rollover if we somehow exceeded without preemption
+            Log.i(TAG, "Segment bytes exceeded limit before keyframe; requesting sync frame now");
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= 19) {
+                    android.os.Bundle params = new android.os.Bundle();
+                    params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+                    videoEncoder.setParameters(params);
                 }
-                return false;
-            } else if (currentOutputFd != null) {
-                // For SAF, try to get file size via FileDescriptor (not always possible)
-                // This is a best-effort; may not work on all devices/URIs
-                try {
-                    RandomAccessFile raf = new RandomAccessFile("/proc/self/fd/" + currentOutputFd, "r");
-                    long currentSize = raf.length();
-                    raf.close();
-
-                    // Log periodically to avoid log spam
-                    if (currentSize % (10 * 1024 * 1024) < 100 * 1024) { // Log every ~10MB
-                        Log.d(TAG, String.format("Current SAF file size: %.2f MB / %.2f MB (%.1f%%)",
-                                currentSize / (1024.0 * 1024.0),
-                                maxFileSizeBytes / (1024.0 * 1024.0),
-                                (currentSize * 100.0) / maxFileSizeBytes));
-                    }
-
-                    if (currentSize >= maxFileSizeBytes) {
-                        Log.i(TAG,
-                                String.format(
-                                        "SAF file size limit reached: %.2f MB >= %.2f MB, triggering segment rollover",
-                                        currentSize / (1024.0 * 1024.0),
-                                        maxFileSizeBytes / (1024.0 * 1024.0)));
-                        return true;
-                    }
-                    return false;
-                } catch (Exception e) {
-                    // Fallback: skip splitting if we can't get size
-                    Log.w(TAG, "Unable to check SAF file size for splitting", e);
-                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to request sync frame in force path", e);
             }
-        } catch (Exception e) {
-            Log.w(TAG, "Error checking file size for segment split", e);
+            pendingRollover = true;
+            awaitingKeyframeForRollover = true;
+            return false;
         }
-        return false;
+        return false; // Actual rollover scheduled inside drainEncoder after keyframe
     }
 
     private void rolloverSegment() {
         try {
             Log.i(TAG, "Auto-splitting: segment size limit reached, rolling over to next segment");
             Log.d(TAG, "Current segment number: " + segmentNumber + ", rolling over to " + (segmentNumber + 1));
+            if (rolloverInProgress) {
+                Log.w(TAG, "Rollover already in progress; skipping");
+                return;
+            }
+            rolloverInProgress = true;
 
             // First, request the next segment file/descriptor from callback
             // This is done first to ensure we have a valid output before stopping the
@@ -1243,6 +1262,51 @@ public class GLRecordingPipeline {
                 // Create new muxer for the next segment
                 setupMuxer();
 
+                // Re-add cached tracks because encoder will NOT emit format changed again
+                if (cachedVideoFormat != null) {
+                    try {
+                        videoTrackIndex = mediaMuxer.addTrack(cachedVideoFormat);
+                        Log.d(TAG, "Added cached video track to new muxer. index=" + videoTrackIndex);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed adding cached video track to new muxer", e);
+                        throw e;
+                    }
+                } else {
+                    Log.w(TAG, "Video format not cached; new segment will wait for format change (unlikely)");
+                }
+
+                if (audioRecordingEnabled) {
+                    if (cachedAudioFormat != null) {
+                        try {
+                            audioTrackIndex = mediaMuxer.addTrack(cachedAudioFormat);
+                            Log.d(TAG, "Added cached audio track to new muxer. index=" + audioTrackIndex);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed adding cached audio track to new muxer", e);
+                            // Continue without audio for this segment
+                        }
+                    } else {
+                        Log.w(TAG, "Audio format not cached; audio may be missing in new segment");
+                    }
+                }
+
+                // Start muxer if conditions met (mirror initial logic)
+                if (!audioRecordingEnabled) {
+                    if (videoTrackIndex != -1 && !muxerStarted) {
+                        mediaMuxer.start();
+                        muxerStarted = true;
+                        Log.d(TAG, "Started new muxer (video-only) for segment " + segmentNumber);
+                    }
+                } else {
+                    if (videoTrackIndex != -1 && audioTrackIndex != -1 && !muxerStarted) {
+                        mediaMuxer.start();
+                        muxerStarted = true;
+                        Log.d(TAG, "Started new muxer (audio+video) for segment " + segmentNumber);
+                    } else {
+                        Log.d(TAG, "Deferred starting new muxer: videoTrackIndex=" + videoTrackIndex +
+                                ", audioTrackIndex=" + audioTrackIndex + ", muxerStarted=" + muxerStarted);
+                    }
+                }
+
                 // Force a frame render to ensure the encoder has valid data for the new segment
                 if (glRenderer != null) {
                     glRenderer.renderFrame();
@@ -1252,6 +1316,7 @@ public class GLRecordingPipeline {
                 Log.i(TAG, "Started new segment: " + segmentNumber +
                         (currentOutputFilePath != null ? " at path: " + currentOutputFilePath
                                 : " with file descriptor"));
+                rolloverInProgress = false;
             } catch (Exception e) {
                 Log.e(TAG, "Error setting up muxer for new segment", e);
                 throw e; // Re-throw to be caught by outer try-catch
@@ -1259,6 +1324,7 @@ public class GLRecordingPipeline {
         } catch (Exception e) {
             Log.e(TAG, "Error during segment rollover", e);
             stopRecording();
+            rolloverInProgress = false;
         }
     }
 
@@ -1839,7 +1905,7 @@ public class GLRecordingPipeline {
                 final int readBufferSize = Math.max(aacFrameSize * 4, 131072); // >= 128 KiB
                 byte[] readBuffer = new byte[readBufferSize];
                 long audioFramesWritten = 0L; // PCM frames (not bytes)
-                long lastPtsUs = 0L;
+                long lastPtsUs =  0L;
                 // -------------- Fix Ended for this method(startAudioThread)-----------
                 while (audioThreadRunning) {
                     int read = audioRecord.read(readBuffer, 0, readBuffer.length);
@@ -1917,6 +1983,9 @@ public class GLRecordingPipeline {
                     Log.d(TAG, "Audio encoder output format changed: " + newFormat);
                     Log.d(TAG, "DEBUG Audio FORMAT: muxerStarted=" + muxerStarted + ", audioTrackIndex=" + audioTrackIndex + ", videoTrackIndex=" + videoTrackIndex);
 
+                    // Cache audio format for future segment rollovers
+                    cachedAudioFormat = newFormat;
+
                     if (audioTrackIndex != -1) {
                         Log.w(TAG, "Audio format changed after track was added - continuing with existing track");
                         // Don't restart or replace tracks - this causes duration issues
@@ -1941,8 +2010,7 @@ public class GLRecordingPipeline {
                                 Log.d(TAG, "Audio track added, waiting for video track before starting muxer (videoTrackIndex=" + videoTrackIndex + ")");
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, "Error adding audio track to muxer", e);
-                            // Continue without audio track for video-only recording
+                            Log.e(TAG, "Failed to add audio track to muxer", e);
                         }
                     }
                 } else if (outputBufferIndex >= 0) {
