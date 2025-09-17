@@ -11,7 +11,8 @@ public class FileOperationTask {
     public enum OperationType {
         COPY_TO_GALLERY,
         MOVE_TO_GALLERY,
-        DELETE_FILE
+        DELETE_FILE,
+        RESTORE_FILE
     }
     
     public enum TaskStatus {
@@ -59,6 +60,8 @@ public class FileOperationTask {
                 return "Moving to Gallery";
             case DELETE_FILE:
                 return "Deleting file";
+            case RESTORE_FILE:
+                return "Restoring file";
             default:
                 return "Processing";
         }

@@ -97,6 +97,9 @@ public class FileOperationManager {
                 case DELETE_FILE:
                     executeDelete(task);
                     break;
+                case RESTORE_FILE:
+                    executeRestore(task);
+                    break;
             }
             
             task.status = FileOperationTask.TaskStatus.COMPLETED;
@@ -217,6 +220,30 @@ public class FileOperationManager {
             if (in == null) return 0;
             return in.available(); // Approximate size
         }
+    }
+    
+    /**
+     * Execute restore operation (placeholder - actual implementation depends on specific requirements)
+     */
+    private void executeRestore(FileOperationTask task) throws Exception {
+        Log.d(TAG, "executeRestore: Starting restore for " + task.fileName);
+        
+        // Since restore operations are currently handled by TrashFragment directly,
+        // this method serves as a placeholder for service notification purposes.
+        // The actual restore logic remains in TrashManager.restoreItemsFromTrash()
+        
+        // Simulate progress for notification
+        task.progress = 50;
+        task.totalBytes = 100;
+        notifyListener(listener -> listener.onTaskProgress(task));
+        
+        // Small delay to show progress
+        Thread.sleep(500);
+        
+        task.progress = 100;
+        notifyListener(listener -> listener.onTaskProgress(task));
+        
+        Log.d(TAG, "executeRestore: Completed restore placeholder for " + task.fileName);
     }
     
     private void notifyListener(ListenerCallback callback) {

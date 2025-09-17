@@ -8,6 +8,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import androidx.annotation.Nullable;
+import com.fadcam.R;
 
 /**
  * Foreground service for handling file operations in the background
@@ -27,6 +28,7 @@ public class FileOperationService extends Service implements FileOperationManage
     public static final String OP_COPY_TO_GALLERY = "copy_to_gallery";
     public static final String OP_MOVE_TO_GALLERY = "move_to_gallery";
     public static final String OP_DELETE_FILE = "delete_file";
+    public static final String OP_RESTORE_FILE = "restore_file";
     
     public interface ServiceCallback {
         void onOperationStarted(FileOperationTask task);
@@ -92,6 +94,9 @@ public class FileOperationService extends Service implements FileOperationManage
                 break;
             case OP_DELETE_FILE:
                 type = FileOperationTask.OperationType.DELETE_FILE;
+                break;
+            case OP_RESTORE_FILE:
+                type = FileOperationTask.OperationType.RESTORE_FILE;
                 break;
             default:
                 Log.e(TAG, "Unknown operation type: " + operationType);
@@ -189,13 +194,15 @@ public class FileOperationService extends Service implements FileOperationManage
         String fileName = task.displayName != null ? task.displayName : task.fileName;
         switch (task.type) {
             case COPY_TO_GALLERY:
-                return fileName + " copied to Gallery";
+                return getString(R.string.file_operation_copied_to_gallery, fileName);
             case MOVE_TO_GALLERY:
-                return fileName + " moved to Gallery";
+                return getString(R.string.file_operation_moved_to_gallery, fileName);
             case DELETE_FILE:
-                return fileName + " deleted";
+                return getString(R.string.file_operation_deleted, fileName);
+            case RESTORE_FILE:
+                return getString(R.string.file_operation_restored, fileName);
             default:
-                return fileName + " processed";
+                return getString(R.string.file_operation_processed, fileName);
         }
     }
     
@@ -222,6 +229,15 @@ public class FileOperationService extends Service implements FileOperationManage
     public static void startDeleteFile(Context context, Uri sourceUri, String fileName, String displayName) {
         Intent intent = new Intent(context, FileOperationService.class);
         intent.putExtra(EXTRA_OPERATION_TYPE, OP_DELETE_FILE);
+        intent.putExtra(EXTRA_SOURCE_URI, sourceUri.toString());
+        intent.putExtra(EXTRA_FILE_NAME, fileName);
+        intent.putExtra(EXTRA_DISPLAY_NAME, displayName);
+        context.startForegroundService(intent);
+    }
+    
+    public static void startRestoreFile(Context context, Uri sourceUri, String fileName, String displayName) {
+        Intent intent = new Intent(context, FileOperationService.class);
+        intent.putExtra(EXTRA_OPERATION_TYPE, OP_RESTORE_FILE);
         intent.putExtra(EXTRA_SOURCE_URI, sourceUri.toString());
         intent.putExtra(EXTRA_FILE_NAME, fileName);
         intent.putExtra(EXTRA_DISPLAY_NAME, displayName);

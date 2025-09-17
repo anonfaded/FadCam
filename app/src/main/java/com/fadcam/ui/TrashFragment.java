@@ -18,12 +18,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.MainActivity;
+import com.fadcam.service.FileOperationService;
+import com.fadcam.ui.InputActionBottomSheetFragment;
 import com.fadcam.R;
 import com.fadcam.model.TrashItem;
 import com.fadcam.utils.TrashManager;
 import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import androidx.appcompat.app.AlertDialog;
@@ -274,45 +277,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 return;
             }
 
-            // Use the themed dialog builder helper method
-            TextView messageView = new TextView(requireContext());
-            messageView.setText(getString(R.string.dialog_permanently_delete_message, selectedItems.size()));
-
-            // Set text color based on theme
-            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-
-            messageView.setTextColor(ContextCompat.getColor(requireContext(),
-                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-            messageView.setPadding(48, 32, 48, 0);
-            messageView.setTextSize(16);
-
-            AlertDialog dialog = themedDialogBuilder(requireContext())
-                    .setTitle(getString(R.string.dialog_permanently_delete_title))
-                    .setView(messageView)
-                    .setNegativeButton(getString(R.string.universal_cancel), null)
-                    .setPositiveButton(getString(R.string.universal_delete), (dialogInterface, which) -> {
-                        if (TrashManager.permanentlyDeleteItems(getContext(), selectedItems)) {
-                            Toast.makeText(getContext(),
-                                    getString(R.string.trash_items_deleted_toast, selectedItems.size()),
-                                    Toast.LENGTH_SHORT).show();
-                            loadTrashItems();
-                        } else {
-                            Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .create();
-
-            dialog.show();
-
-            // Apply theme-specific button colors
-            setDialogButtonColors(dialog);
-
-            // Set delete button to red color for emphasis
-            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-                int errorColor = ContextCompat.getColor(requireContext(), R.color.colorError);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(errorColor);
-            }
+            showDeleteConfirmationSheet(selectedItems);
         });
 
         buttonEmptyAllTrash.setOnClickListener(v -> {
@@ -321,44 +286,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 return;
             }
 
-            // Use the themed dialog builder helper method
-            TextView messageView = new TextView(requireContext());
-            messageView.setText(getString(R.string.dialog_empty_all_trash_message));
-
-            // Set text color based on theme
-            boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-
-            messageView.setTextColor(ContextCompat.getColor(requireContext(),
-                    isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-            messageView.setPadding(48, 32, 48, 0);
-            messageView.setTextSize(16);
-
-            AlertDialog dialog = themedDialogBuilder(requireContext())
-                    .setTitle(getString(R.string.trash_dialog_empty_all_title))
-                    .setView(messageView)
-                    .setNegativeButton(getString(R.string.universal_cancel), null)
-                    .setPositiveButton(getString(R.string.trash_button_empty_all_action), (dialogInterface, which) -> {
-                        if (TrashManager.emptyAllTrash(getContext())) {
-                            Toast.makeText(getContext(), getString(R.string.trash_emptied_toast), Toast.LENGTH_SHORT)
-                                    .show();
-                            loadTrashItems();
-                        } else {
-                            Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .create();
-
-            dialog.show();
-
-            // Apply theme-specific button colors
-            setDialogButtonColors(dialog);
-
-            // Set empty all button to red color for emphasis
-            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-                int errorColor = ContextCompat.getColor(requireContext(), R.color.colorError);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(errorColor);
-            }
+            showEmptyAllConfirmationSheet();
         });
         updateActionButtonsState(); // Initial state
     }
@@ -1269,30 +1197,14 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                     onRestoreFinished(false, getString(R.string.restore_cancelled));
                 })
                 .setPositiveButton(getString(R.string.restore_confirm_button), (dialogInterface, which) -> {
-                    onRestoreStarted(selectedItems.size());
-                    if (executorService == null || executorService.isShutdown()) {
-                        executorService = Executors.newSingleThreadExecutor();
-                    }
-                    executorService.submit(() -> {
-                        boolean success = TrashManager.restoreItemsFromTrash(getContext(), selectedItems, destination);
-                        String resultMessage = success
-                                ? getString(R.string.restore_success_message, selectedItems.size(), destinationName)
-                                : getString(R.string.restore_error_message);
-                        
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                onRestoreFinished(success, resultMessage);
-                                if (success) {
-                                    loadTrashItems(); // Refresh trash list
-                                    
-                                    // Add a small delay to ensure UI is ready, then refresh Records tab
-                                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                                        refreshRecordsFragment();
-                                    }, 100); // 100ms delay
-                                }
-                            });
-                        }
-                    });
+                    // Show progress notification and start background operation
+                    String itemText = selectedItems.size() == 1 ? 
+                        selectedItems.get(0).getOriginalDisplayName() : 
+                        selectedItems.size() + " items";
+                    Toast.makeText(getContext(), 
+                            getString(R.string.background_restore_progress, itemText),
+                            Toast.LENGTH_SHORT).show();
+                    performRestoreInBackground(selectedItems, destination);
                 })
                 .create();
 
@@ -1403,5 +1315,179 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         } catch (Exception e) {
             Log.e("TrashFragment", "Failed to refresh HomeFragment stats", e);
         }
+    }
+
+    /**
+     * Performs delete operation in background with progress notification
+     */
+    private void performDeleteInBackground(List<TrashItem> selectedItems) {
+        if (getContext() == null) return;
+        
+        // Perform actual operation in background
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = java.util.concurrent.Executors.newSingleThreadExecutor();
+        }
+        
+        executorService.submit(() -> {
+            boolean success = TrashManager.permanentlyDeleteItems(getContext(), selectedItems);
+            
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (success) {
+                        Toast.makeText(getContext(),
+                                getString(R.string.trash_items_deleted_toast, selectedItems.size()),
+                                Toast.LENGTH_SHORT).show();
+                        loadTrashItems();
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Performs restore operation in background with progress notification
+     */
+    private void performRestoreInBackground(List<TrashItem> selectedItems, TrashManager.RestoreDestination destination) {
+        if (getContext() == null) return;
+        
+        // Perform actual restore operation
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = java.util.concurrent.Executors.newSingleThreadExecutor();
+        }
+        
+        executorService.submit(() -> {
+            boolean success = TrashManager.restoreItemsFromTrash(getContext(), selectedItems, destination);
+            
+            String destinationName;
+            switch (destination) {
+                case DOWNLOADS_FOLDER:
+                    destinationName = getString(R.string.restore_destination_downloads);
+                    break;
+                case INTERNAL_STORAGE:
+                    destinationName = getString(R.string.restore_destination_internal);
+                    break;
+                case SAF_STORAGE:
+                    destinationName = getString(R.string.restore_destination_original);
+                    break;
+                default:
+                    destinationName = getString(R.string.restore_destination_downloads);
+                    break;
+            }
+            
+            String resultMessage = success
+                    ? getString(R.string.restore_success_message, selectedItems.size(), destinationName)
+                    : getString(R.string.restore_error_message);
+            
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), resultMessage, Toast.LENGTH_LONG).show();
+                    
+                    if (success) {
+                        loadTrashItems(); // Refresh trash list
+                        
+                        // Add a small delay to ensure UI is ready, then refresh Records tab
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            refreshRecordsFragment();
+                        }, 100);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Shows delete confirmation bottom sheet requiring typing "DELETE" to confirm
+     */
+    private void showDeleteConfirmationSheet(List<TrashItem> selectedItems) {
+        if (getContext() == null) return;
+
+        String title = getString(R.string.dialog_permanently_delete_title);
+        String actionTitle = getString(R.string.universal_delete);
+        String actionSubtitle = getString(R.string.dialog_permanently_delete_message, selectedItems.size());
+
+        // Create the delete confirmation sheet that requires typing "DELETE"
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newReset(
+                title,
+                "DELETE", // Required phrase to type
+                actionTitle,
+                actionSubtitle,
+                R.drawable.ic_delete // Delete icon
+        );
+
+        // Set up callback for when DELETE is typed correctly
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override
+            public void onImportConfirmed(JSONObject json) {
+                // Not used
+            }
+
+            @Override
+            public void onResetConfirmed() {
+                // Dismiss the sheet first
+                sheet.dismiss();
+                
+                // When DELETE is typed correctly, proceed with deletion
+                String itemText = selectedItems.size() == 1 ? 
+                    selectedItems.get(0).getOriginalDisplayName() : 
+                    selectedItems.size() + " items";
+                Toast.makeText(getContext(),
+                        getString(R.string.background_delete_progress, itemText),
+                        Toast.LENGTH_SHORT).show();
+                
+                // Start delete operation in background with service notifications
+                performDeleteInBackground(selectedItems);
+            }
+        });
+
+        sheet.show(getParentFragmentManager(), "delete_confirmation");
+    }
+
+    /**
+     * Shows empty all confirmation bottom sheet requiring typing "DELETE" to confirm
+     */
+    private void showEmptyAllConfirmationSheet() {
+        if (getContext() == null) return;
+
+        String title = getString(R.string.trash_dialog_empty_all_title);
+        String actionTitle = getString(R.string.trash_button_empty_all_action);
+        String actionSubtitle = getString(R.string.dialog_empty_all_trash_message);
+
+        // Create the empty all confirmation sheet that requires typing "DELETE"
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newReset(
+                title,
+                "DELETE", // Required phrase to type
+                actionTitle,
+                actionSubtitle,
+                R.drawable.ic_delete_all // Delete all icon
+        );
+
+        // Set up callback for when DELETE is typed correctly
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override
+            public void onImportConfirmed(JSONObject json) {
+                // Not used
+            }
+
+            @Override
+            public void onResetConfirmed() {
+                // Dismiss the sheet first
+                sheet.dismiss();
+                
+                // When DELETE is typed correctly, proceed with emptying all trash
+                if (TrashManager.emptyAllTrash(getContext())) {
+                    Toast.makeText(getContext(), getString(R.string.trash_emptied_toast), Toast.LENGTH_SHORT)
+                            .show();
+                    loadTrashItems();
+                } else {
+                    Toast.makeText(getContext(), getString(R.string.trash_error_deleting_items_toast),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        sheet.show(getParentFragmentManager(), "empty_all_confirmation");
     }
 }

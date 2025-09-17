@@ -112,6 +112,17 @@
     <string name="video_menu_save_move">Move to Gallery</string>
     <string name="video_menu_save_move_desc">Move file to Downloads/FadCam (saves storage space)</string>
     <string name="video_menu_save_longpress_helper">Long press "Save to Gallery" to choose between copy or move</string>
+    
+    <!-- File Operation Completion Messages -->
+    <string name="file_operation_copied_to_gallery">%1$s copied to Gallery</string>
+    <string name="file_operation_moved_to_gallery">%1$s moved to Gallery</string>
+    <string name="file_operation_deleted">%1$s deleted</string>
+    <string name="file_operation_restored">%1$s restored</string>
+    <string name="file_operation_processed">%1$s processed</string>
+    
+    <!-- Background Operation Progress Messages -->
+    <string name="background_delete_progress">Deleting %1$s in background…</string>
+    <string name="background_restore_progress">Restoring %1$s in background…</string>
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>
