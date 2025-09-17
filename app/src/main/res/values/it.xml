@@ -103,11 +103,27 @@
     <string name="home_sidebar_title">Home</string>
     <string name="home_options_title">Home Options</string>
     <string name="help_section">Help</string>
+    <string name="display_settings_title">Display</string>
     <string name="back">Back</string>
     <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
     <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/FadCam</string>
+    <string name="video_menu_save_copy_or_move_title">Save to Gallery</string>
+    <string name="video_menu_save_copy">Copy to Gallery</string>
+    <string name="video_menu_save_copy_desc">Create a copy in Downloads/FadCam (original file kept)</string>
+    <string name="video_menu_save_move">Move to Gallery</string>
+    <string name="video_menu_save_move_desc">Move file to Downloads/FadCam (saves storage space)</string>
+    <string name="video_menu_save_longpress_helper">Long press \"Save to Gallery\" to choose between copy or move</string>
+    <!-- File Operation Completion Messages -->
+    <string name="file_operation_copied_to_gallery">%1$s copied to Gallery</string>
+    <string name="file_operation_moved_to_gallery">%1$s moved to Gallery</string>
+    <string name="file_operation_deleted">%1$s deleted</string>
+    <string name="file_operation_restored">%1$s restored</string>
+    <string name="file_operation_processed">%1$s processed</string>
+    <!-- Background Operation Progress Messages -->
+    <string name="background_delete_progress">Deleting %1$s in background…</string>
+    <string name="background_restore_progress">Restoring %1$s in background…</string>
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>
@@ -295,10 +311,10 @@
     <string name="universal_confirm">Confirm</string>
     <string name="universal_close">Close</string>
     <string name="dialog_del_confirm">Delete</string>
-    <string name="dialog_multi_video_del_title">Eradicate Video(s)? </string>
+    <string name="dialog_multi_video_del_title">Delete selected videos?</string>
     <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? </string>
-    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! </string>
-    <string name="dialog_multi_video_del_no">No, Keep \'Em! </string>
+    <string name="dialog_multi_video_del_yes">Delete</string>
+    <string name="dialog_multi_video_del_no">Remove selected recording(s)</string>
     <string name="setting_language_title">App\'s Language</string>
     <string name="note_language">Select from dropdown.\n(Default: English)</string>
     <string name="location_permission_title">Location Permission</string>
@@ -331,6 +347,7 @@
     <string name="settings_location_watermark_title">Location Watermark</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
+    <string name="delete_single_video_subtitle">Remove this recording</string>
     <string name="switched_front_camera">Switched to front camera</string>
     <string name="switched_rear_camera">Switched to rear camera</string>
     <string name="notification_video_recording">Video recording</string>
