@@ -61,19 +61,19 @@
             android:layout_marginEnd="12dp"
             app:dividerColor="#404040"/>
 
-        <!-- Group: Help -->
+        <!-- Group: Display Settings -->
         <TextView
-            android:id="@+id/help_group_title"
+            android:id="@+id/display_group_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/help_section"
+            android:text="@string/display_settings_title"
             android:textColor="?attr/colorHeading"
             android:paddingTop="16dp"
             android:paddingBottom="8dp"
             android:textStyle="bold"
             android:textAlignment="viewStart"/>
 
-        <!-- Group card wrapper -->
+        <!-- Display settings group card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -82,62 +82,11 @@
             android:paddingBottom="4dp"
             android:background="@drawable/settings_group_card_bg">
 
-            <!-- Tips row -->
-            <LinearLayout
-                android:id="@+id/row_tips"
-                style="@style/SettingsGroupRow">
-
-                <!-- Tips icon using Material Icons ligature -->
-                <TextView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="16dp"
-                    android:fontFamily="@font/materialicons"
-                    android:text="lightbulb"
-                    android:textColor="?attr/colorHeading"
-                    android:textSize="18sp"
-                    android:gravity="center" />
-
-                <!-- Tips title and subtitle -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/tips_title"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textAlignment="viewStart" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/tips_subtitle"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="12sp"
-                        android:textAlignment="viewStart" />
-
-                </LinearLayout>
-
-                <!-- Arrow -->
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginStart="12dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@android:color/darker_gray" />
-
-            </LinearLayout>
-
             <!-- Preview toggle row -->
             <LinearLayout
                 android:id="@+id/row_preview_toggle"
-                style="@style/SettingsGroupRow">
+                style="@style/SettingsGroupRow"
+                android:layout_height="56dp">
 
                 <!-- Preview icon using Material Icons ligature -->
                 <TextView
@@ -155,7 +104,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
 
                     <TextView
                         android:id="@+id/tv_preview_toggle_title"
@@ -165,7 +115,8 @@
                         android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textAlignment="viewStart" />
+                        android:textAlignment="viewStart"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:id="@+id/tv_preview_toggle_sub"
@@ -173,7 +124,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/preview_disabled"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="12sp"
+                        android:textSize="11sp"
                         android:textAlignment="viewStart" />
                 </LinearLayout>
 
@@ -183,8 +134,88 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
+                    android:layout_gravity="center_vertical"
                     android:focusable="true"
                     android:clickable="true" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Group: Help & Support -->
+        <TextView
+            android:id="@+id/help_group_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/help_section"
+            android:textColor="?attr/colorHeading"
+            android:paddingTop="20dp"
+            android:paddingBottom="8dp"
+            android:textStyle="bold"
+            android:textAlignment="viewStart"/>
+
+        <!-- Help group card wrapper -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/settings_group_card_bg">
+
+            <!-- Tips row -->
+            <LinearLayout
+                android:id="@+id/row_tips"
+                style="@style/SettingsGroupRow"
+                android:layout_height="56dp">
+
+                <!-- Tips icon using Material Icons ligature -->
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/materialicons"
+                    android:text="lightbulb"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="18sp"
+                    android:gravity="center" />
+
+                <!-- Tips title and subtitle -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tips_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textAlignment="viewStart"
+                        android:layout_marginBottom="2dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tips_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="11sp"
+                        android:textAlignment="viewStart" />
+
+                </LinearLayout>
+
+                <!-- Arrow -->
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
 
             </LinearLayout>
 
