@@ -77,6 +77,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.service.FileOperationService;
 
 // Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
@@ -1143,10 +1144,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             
             switch (id) {
                 case "save_copy":
-                    saveVideoToGalleryInternal(videoItem, false); // false = copy
+                    // Start copy operation in background
+                    FileOperationService.startCopyToGallery(ctx, videoItem.uri, videoItem.displayName, videoItem.displayName);
                     break;
                 case "save_move":
-                    saveVideoToGalleryInternal(videoItem, true); // true = move
+                    // Start move operation in background
+                    FileOperationService.startMoveToGallery(ctx, videoItem.uri, videoItem.displayName, videoItem.displayName);
                     break;
             }
         });
@@ -1475,7 +1478,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // --- Restored Save to Gallery Logic (using actionListener for progress) ---
     // Wrapper for backward compatibility
     private void saveVideoToGalleryInternal(VideoItem videoItem) {
-        saveVideoToGalleryInternal(videoItem, false); // Default to copy behavior
+        // Use background service for copy operation
+        FileOperationService.startCopyToGallery(context, videoItem.uri, videoItem.displayName, videoItem.displayName);
     }
     
     // Enhanced version with copy/move option

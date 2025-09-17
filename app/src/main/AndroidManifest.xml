@@ -63,6 +63,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
@@ -405,6 +406,12 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+
+        <!-- File operation service for background copy/move/delete operations -->
+        <service
+            android:name=".service.FileOperationService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- Media button receiver to satisfy MediaSessionCompat requirement for a unique receiver -->
         <receiver
