@@ -55,6 +55,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private SharedPreferencesManager spm;
     private com.fadcam.ui.custom.AudioWaveformView audioWaveformView;
     private android.net.Uri currentVideoUri;
+    private com.google.android.material.slider.Slider timeSlider;
     // Gesture/interaction helpers
     private AudioManager audioManager;
     private int maxStreamVolume = 0;
@@ -68,6 +69,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private int lastSeekDirection = 1; // 1 = right/forward, -1 = left/rewind
     private android.os.Handler controlsHideHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable controlsHideRunnable = null;
+    // Controller enforcement during scrubbing
+    private android.os.Handler scrubControllerEnforceHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable scrubControllerEnforceRunnable = null;
     // Periodic resume-save handler
     private final android.os.Handler resumeSaveHandler = new android.os.Handler(
         android.os.Looper.getMainLooper()
@@ -171,6 +175,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // Guard to keep single-tap from being treated as part of double-tap or
     // re-triggering control toggles
     private long lastSingleTapTime = 0L;
+    // Keep track of controller auto-hide timeout and scrubbing state
+    private int controllerAutoHideMs = -1; // 0 means never hide
+    private boolean isTimebarScrubbing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -197,6 +204,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
         playerView = findViewById(com.fadcam.R.id.player_view);
         backButton = findViewById(com.fadcam.R.id.back_button);
         resetZoomButton = findViewById(com.fadcam.R.id.reset_zoom_button);
+        // Wire Material time slider if present in control layout
+        try {
+            timeSlider = playerView.findViewById(R.id.material_time_slider);
+        } catch (Exception ignored) {}
 
     // Back button should be visible by default and hide together with controls
     try { backButton.setVisibility(View.VISIBLE); } catch (Exception ignored) {}
@@ -263,35 +274,90 @@ public class VideoPlayerActivity extends AppCompatActivity {
             Log.w(TAG, "Failed to set status bar color", e);
         }
 
-        // ----- Fix Start: Programmatically set seekbar colors with fixed red color
-        // -----
-        // ExoPlayer's XML attributes may not always apply theme attributes at runtime,
-        // so set them here
-        View timeBar = playerView.findViewById(
-            com.google.android.exoplayer2.ui.R.id.exo_progress
-        );
-        if (
-            timeBar instanceof com.google.android.exoplayer2.ui.DefaultTimeBar
-        ) {
-            com.google.android.exoplayer2.ui.DefaultTimeBar bar =
-                (com.google.android.exoplayer2.ui.DefaultTimeBar) timeBar;
+        // Configure Material Slider colors and behavior if available
+        if (timeSlider != null) {
+            try {
+                int red = androidx.core.content.ContextCompat.getColor(this, R.color.redPastel);
+                int white40 = android.graphics.Color.parseColor("#40FFFFFF");
+                int white60 = android.graphics.Color.parseColor("#60FFFFFF");
+                timeSlider.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(red));
+                timeSlider.setTrackInactiveTintList(android.content.res.ColorStateList.valueOf(white40));
+                timeSlider.setHaloTintList(android.content.res.ColorStateList.valueOf(white60));
+                timeSlider.setThumbTintList(android.content.res.ColorStateList.valueOf(red));
+                // Ensure baseline range is sane
+                try {
+                    timeSlider.setValueFrom(0f);
+                    if (timeSlider.getValueTo() < 1f) timeSlider.setValueTo(1f);
+                    // Clamp current value into range
+                    float v = timeSlider.getValue();
+                    if (v < 0f) timeSlider.setValue(0f);
+                    else if (v > timeSlider.getValueTo()) timeSlider.setValue(timeSlider.getValueTo());
+                } catch (Exception ignored) {}
+            } catch (Exception ignored) {}
 
-            // Set colors programmatically with fixed red color for consistency
-            int played = androidx.core.content.ContextCompat.getColor(
-                this,
-                R.color.redPastel
-            ); // Fixed red color
-            int unplayed = android.graphics.Color.parseColor("#40FFFFFF"); // Semi-transparent white for unplayed
-            int buffered = android.graphics.Color.parseColor("#60FFFFFF"); // More opaque white for buffered
-            int scrubber = androidx.core.content.ContextCompat.getColor(
-                this,
-                R.color.redPastel
-            ); // Fixed red color for
-            // thumb
-            bar.setPlayedColor(played);
-            bar.setUnplayedColor(unplayed);
-            bar.setBufferedColor(buffered);
-            bar.setScrubberColor(scrubber);
+            // Keep controller visible while scrubbing via slider
+            timeSlider.addOnSliderTouchListener(new com.google.android.material.slider.Slider.OnSliderTouchListener() {
+                @Override
+                public void onStartTrackingTouch(com.google.android.material.slider.Slider slider) {
+                    isTimebarScrubbing = true;
+                    android.util.Log.d("VideoPlayerActivity", "Started scrubbing - enforcing controller visibility");
+                    try {
+                        if (playerView != null) {
+                            playerView.showController();
+                            playerView.setControllerShowTimeoutMs(0);
+                            if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
+                            
+                            // Start continuous enforcement to prevent any hide attempts during scrubbing
+                            startScrubControllerEnforcement();
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                @Override
+                public void onStopTrackingTouch(com.google.android.material.slider.Slider slider) {
+                    isTimebarScrubbing = false;
+                    android.util.Log.d("VideoPlayerActivity", "Stopped scrubbing - restoring normal controller behavior");
+                    try {
+                        // Stop continuous enforcement
+                        stopScrubControllerEnforcement();
+                        
+                        if (playerView != null) {
+                            if (controllerAutoHideMs >= 0) playerView.setControllerShowTimeoutMs(controllerAutoHideMs);
+                            playerView.showController();
+                            // restart hide schedule if timeout > 0
+                            int t = SharedPreferencesManager.getInstance(VideoPlayerActivity.this).getPlayerControlsTimeoutSeconds();
+                            if (t > 0) {
+                                if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
+                                controlsHideRunnable = () -> {
+                                    if (isTimebarScrubbing) return; // don't hide if user started scrubbing again
+                                    try { playerView.hideController(); backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+                                };
+                                controlsHideHandler.postDelayed(controlsHideRunnable, t * 1000L);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+
+            // Real-time scrubbing: throttle seek calls while dragging
+            timeSlider.addOnChangeListener(new com.google.android.material.slider.Slider.OnChangeListener() {
+                private long lastSeekUptime = 0L;
+                @Override
+                public void onValueChange(com.google.android.material.slider.Slider slider, float value, boolean fromUser) {
+                    if (!fromUser || player == null) return;
+                    long now = android.os.SystemClock.uptimeMillis();
+                    if (now - lastSeekUptime < 50) return; // throttle ~20fps
+                    lastSeekUptime = now;
+                    try {
+                        long dur = player.getDuration();
+                        if (dur > 0 && dur != com.google.android.exoplayer2.C.TIME_UNSET) {
+                            // Slider value is in milliseconds (0..duration). Seek directly using value.
+                            long clamped = Math.max(0L, Math.min(dur, (long) value));
+                            player.seekTo(clamped);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
         }
         // ----- Fix End: Programmatically set seekbar colors with fixed red color -----
 
@@ -338,9 +404,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         if (target < 0) target = 0;
                         if (player != null) player.seekTo(target);
                         // ensure controller is hidden for double-tap seek UX (no toggling)
-                        try {
-                            playerView.hideController();
-                        } catch (Exception ignored) {}
+                        try { if (!isTimebarScrubbing) playerView.hideController(); } catch (Exception ignored) {}
                         // show overlay and save position immediately
                         showDoubleTapOverlay(forward);
                         // Save & broadcast immediately
@@ -411,6 +475,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
             }
         );
 
+        // Hide old ExoPlayer time bar if present (we now use Material Slider)
+        try {
+            View legacyTimeBar = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+            if (legacyTimeBar != null) legacyTimeBar.setVisibility(View.GONE);
+        } catch (Exception ignored) {}
+
         // Do not set a simple touch listener here; setupPressAndHoldFor2x() will
         // install a combined listener
         // that handles single-tap, double-tap and press-and-hold behaviors together.
@@ -459,6 +529,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
             switch (ev.getActionMasked()) {
                 case android.view.MotionEvent.ACTION_DOWN:
                     {
+                        // Cancel scheduled hide to prevent hiding while user starts interaction
+                        try { if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable); } catch (Exception ignored) {}
                         isLongPress[0] = false;
                         pendingTap[0] = true;
                         downXY[0] = ev.getX();
@@ -503,7 +575,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                             float target = spm != null ? spm.getQuickSpeed() : Constants.DEFAULT_QUICK_SPEED;
                                             animatePlaybackSpeed(start, target, 200);
                                             showQuickOverlay(true);
-                                            try { playerView.hideController(); } catch (Exception ignored) {}
+                                            try { if (!isTimebarScrubbing) playerView.hideController(); } catch (Exception ignored) {}
                                         }
                                     } catch (Exception ignored) {}
                                 }
@@ -986,11 +1058,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (playerView != null) {
                     if (timeoutSec == 0) {
                         // 0 disables auto-hide (controller stays visible)
+                        controllerAutoHideMs = 0;
                         playerView.setControllerShowTimeoutMs(0);
                     } else {
-                        playerView.setControllerShowTimeoutMs(
-                            timeoutSec * 1000
-                        );
+                        controllerAutoHideMs = timeoutSec * 1000;
+                        playerView.setControllerShowTimeoutMs(timeoutSec * 1000);
                     }
                 }
                 // Register a listener to update controller timeout immediately when prefs change
@@ -1003,12 +1075,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         try {
                             int t = spm.getPlayerControlsTimeoutSeconds();
                             if (playerView != null) {
-                                if (
-                                    t == 0
-                                ) playerView.setControllerShowTimeoutMs(0);
-                                else playerView.setControllerShowTimeoutMs(
-                                    t * 1000
-                                );
+                                if (t == 0) {
+                                    controllerAutoHideMs = 0;
+                                    playerView.setControllerShowTimeoutMs(0);
+                                } else {
+                                    controllerAutoHideMs = t * 1000;
+                                    playerView.setControllerShowTimeoutMs(controllerAutoHideMs);
+                                }
                             }
                         } catch (Exception ignored) {}
                     }
@@ -1054,6 +1127,22 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         public void onSeekProcessed() {
                             // Save and broadcast immediately when user finishes a seek
                             saveCurrentPlaybackPosition();
+                        }
+                        @Override
+                        public void onEvents(com.google.android.exoplayer2.Player p, com.google.android.exoplayer2.Player.Events events) {
+                            // Update slider maximum on timeline changes
+                            if (timeSlider != null) {
+                                try {
+                                    long d = p.getDuration();
+                                    if (d > 0 && d != com.google.android.exoplayer2.C.TIME_UNSET) {
+                                        float newMax = (float) d;
+                                        // First update max, then clamp and update value if needed
+                                        timeSlider.setValueTo(newMax);
+                                        float curVal = timeSlider.getValue();
+                                        if (curVal > newMax) timeSlider.setValue(newMax);
+                                    }
+                                } catch (Exception ignored) {}
+                            }
                         }
                     }
                 );
@@ -1109,6 +1198,37 @@ public class VideoPlayerActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
             // Start periodic saves
             resumeSaveHandler.postDelayed(resumeSaveRunnable, 5000);
+            // Start periodic slider updates when not scrubbing
+            try {
+                android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
+                Runnable r = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (player != null && timeSlider != null && !isTimebarScrubbing) {
+                                long dur = player.getDuration();
+                                if (dur > 0 && dur != com.google.android.exoplayer2.C.TIME_UNSET) {
+                                    float newMax = (float) dur;
+                                    // Update max first
+                                    if (Math.abs(timeSlider.getValueTo() - newMax) > 0.5f) {
+                                        timeSlider.setValueTo(newMax);
+                                    }
+                                    long pos = player.getCurrentPosition();
+                                    float targetVal = (float) Math.max(0L, Math.min((long) newMax, pos));
+                                    // Avoid feedback loop by only setting if significantly changed and always <= valueTo
+                                    float cur = timeSlider.getValue();
+                                    if (targetVal > timeSlider.getValueTo()) targetVal = timeSlider.getValueTo();
+                                    if (Math.abs(cur - targetVal) > 5f) {
+                                        timeSlider.setValue(targetVal);
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                        h.postDelayed(this, 200);
+                    }
+                };
+                h.post(r);
+            } catch (Exception ignored) {}
             Log.i(
                 TAG,
                 "ExoPlayer initialized and started for URI: " + videoUri
@@ -1227,6 +1347,33 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void setupBackButton() {
         backButton.setOnClickListener(v -> finish());
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Enforce controller visibility during scrubbing by listening to visibility changes
+        try {
+            if (playerView != null) {
+                playerView.setControllerVisibilityListener(new StyledPlayerView.ControllerVisibilityListener() {
+                    @Override
+                    public void onVisibilityChanged(int visibility) {
+                        try {
+                            if (isTimebarScrubbing) {
+                                android.util.Log.w("VideoPlayerActivity", "ControllerVisibilityListener: visibility changed to " + 
+                                    (visibility == View.VISIBLE ? "VISIBLE" : "HIDDEN") + " during scrubbing - forcing visible");
+                                // Force controller visible during scrubbing regardless of any hide attempts
+                                playerView.setControllerShowTimeoutMs(0);
+                                playerView.showController();
+                                if (backButton != null) backButton.setVisibility(View.VISIBLE);
+                            } else {
+                                if (backButton != null) backButton.setVisibility(visibility == View.VISIBLE ? View.VISIBLE : View.GONE);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                });
+            }
+        } catch (Exception ignored) {}
     }
 
     // --- Playback Speed Controls ---
@@ -2601,6 +2748,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (playerView == null) return;
                 boolean visible = isControllerVisibleSafe();
                 if (visible) {
+                    if (isTimebarScrubbing) return; // don't allow hiding while scrubbing
                     playerView.hideController();
                     try { backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
                     // Cancel any auto-hide runnable
@@ -2613,6 +2761,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     if (t > 0) {
                         if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
                         controlsHideRunnable = () -> {
+                            if (isTimebarScrubbing) {
+                                // If scrubbing resumed before timer, reschedule once instead of hiding
+                                int t2 = SharedPreferencesManager.getInstance(this).getPlayerControlsTimeoutSeconds();
+                                if (t2 > 0) controlsHideHandler.postDelayed(controlsHideRunnable, t2 * 1000L);
+                                return;
+                            }
                             try { playerView.hideController(); backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
                         };
                         controlsHideHandler.postDelayed(controlsHideRunnable, t * 1000L);
@@ -2892,6 +3046,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
             audioWaveformView.cleanup();
             audioWaveformView = null;
         }
+
+        // Clean up scrub controller enforcement
+        stopScrubControllerEnforcement();
 
         super.onDestroy();
         // *** Release the player ***
@@ -3177,4 +3334,41 @@ public class VideoPlayerActivity extends AppCompatActivity {
     }
     // -------------- Fix Ended for
     // method(updateResetZoomButtonVisibility)-----------
+
+    // -------------- Scrub Controller Enforcement Methods -----------
+    private void startScrubControllerEnforcement() {
+        stopScrubControllerEnforcement(); // stop any existing enforcement
+        if (scrubControllerEnforceRunnable == null) {
+            scrubControllerEnforceRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (!isTimebarScrubbing) return; // stop if scrubbing ended
+                    
+                    try {
+                        if (playerView != null && !playerView.isControllerFullyVisible()) {
+                            android.util.Log.w("VideoPlayerActivity", "Controller became hidden during scrubbing - forcing it visible");
+                            playerView.setControllerShowTimeoutMs(0);
+                            playerView.showController();
+                            if (backButton != null) backButton.setVisibility(View.VISIBLE);
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("VideoPlayerActivity", "Error in scrub controller enforcement", e);
+                    }
+                    
+                    // Schedule next check if still scrubbing
+                    if (isTimebarScrubbing && scrubControllerEnforceHandler != null) {
+                        scrubControllerEnforceHandler.postDelayed(this, 100); // Check every 100ms
+                    }
+                }
+            };
+        }
+        scrubControllerEnforceHandler.post(scrubControllerEnforceRunnable);
+    }
+    
+    private void stopScrubControllerEnforcement() {
+        if (scrubControllerEnforceRunnable != null && scrubControllerEnforceHandler != null) {
+            scrubControllerEnforceHandler.removeCallbacks(scrubControllerEnforceRunnable);
+        }
+    }
+    // -------------- End Scrub Controller Enforcement Methods -----------
 }

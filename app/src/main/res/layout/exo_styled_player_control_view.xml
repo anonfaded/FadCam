@@ -23,7 +23,7 @@
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
         android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="12dp"
         android:background="@drawable/player_control_background_rounded"
         android:clipToOutline="true"
         android:layoutDirection="ltr">
@@ -33,22 +33,38 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Progress bar with waveform background -->
+            <!-- Progress bar with waveform background replaced by Material Slider -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
-                android:layout_marginBottom="4dp">
-                
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="0dp"
+                android:clipToPadding="false">
+
                 <com.fadcam.ui.custom.AudioWaveformView
                     android:id="@+id/audio_waveform"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:alpha="0.7" />
-                
-                <View android:id="@id/exo_progress_placeholder"
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/material_time_slider"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-                    
+                    android:layout_height="match_parent"
+                    android:paddingStart="8dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="0dp"
+                    android:valueFrom="0"
+                    android:valueTo="100"
+                    android:stepSize="0"
+                    app:thumbRadius="8dp"
+                    app:trackHeight="6dp"
+                    app:haloRadius="14dp"
+                    app:labelBehavior="gone"
+                    />
+
             </FrameLayout>
 
             <LinearLayout
