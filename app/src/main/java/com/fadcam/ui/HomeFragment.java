@@ -3189,7 +3189,7 @@ public class HomeFragment extends BaseFragment {
         // Initialize easter egg messages and setup listener for preview placeholder
         initializeMessages();
 
-        // ----- Fix Start: Apply dynamic theme colors to preview area cards -----
+    // ----- Fix Start: Apply dynamic theme colors to preview area cards -----
         CardView cardPreview = view.findViewById(R.id.cardPreview);
         CardView cardStats = view.findViewById(R.id.cardStats);
         CardView cardStorage = view.findViewById(R.id.cardStorage);
@@ -3571,6 +3571,9 @@ public class HomeFragment extends BaseFragment {
             // Skip storage widget to preserve semantic colors
             // setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
         }
+
+    // Enable tap on the Stats card to navigate to the Records tab
+    setupStatsCardNavigation(view);
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force
         // override for AMOLED and Red, use *_surface_dark) -----
 
@@ -7394,6 +7397,36 @@ public class HomeFragment extends BaseFragment {
                 }
                 return true; // Consume the long click
             });
+        }
+    }
+
+    /**
+     * Wires the "Stats" card to navigate to the Records tab.
+     * Applies only to Home and is safe across configuration changes.
+     */
+    private void setupStatsCardNavigation(@NonNull View root) {
+        try {
+            CardView stats = root.findViewById(R.id.cardStats);
+            if (stats == null) return;
+            stats.setClickable(true);
+            stats.setFocusable(true);
+            stats.setOnClickListener(v -> {
+                performHapticFeedback();
+                try {
+                    if (getActivity() instanceof com.fadcam.MainActivity) {
+                        com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
+                        // Switch both ViewPager2 page and BottomNavigation selection
+                        androidx.viewpager2.widget.ViewPager2 pager = act.findViewById(R.id.view_pager);
+                        if (pager != null) pager.setCurrentItem(1, true); // Records is index 1
+                        com.google.android.material.bottomnavigation.BottomNavigationView bnv = act.findViewById(R.id.bottom_navigation);
+                        if (bnv != null) bnv.setSelectedItemId(R.id.navigation_records);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to navigate to Records from Stats card", e);
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "setupStatsCardNavigation error", e);
         }
     }
 
