@@ -44,9 +44,9 @@
         <item>11/11 | Besoin d\'aide ? Rejoignez notre Discorde via la section À propos.</item>
     </string-array>
     <string name="mainpage_video_info">\n    <![CDATA[
-    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Vidéos : </b></font>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Vidéos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
-    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Utilisé</b></font>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Utilisé:</b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
     <string name="button_start">Démarrer</string>

@@ -296,10 +296,10 @@
     <string name="universal_confirm">Confirm</string>
     <string name="universal_close">Close</string>
     <string name="dialog_del_confirm">Delete</string>
-    <string name="dialog_multi_video_del_title">Eradicate Video(s)? </string>
+    <string name="dialog_multi_video_del_title">Delete selected videos?</string>
     <string name="dialog_multi_video_del_note">Are you absolutely, positively sure you want to nuke these video(s) out of existence? </string>
-    <string name="dialog_multi_video_del_yes">Yes, Nuke \'Em! </string>
-    <string name="dialog_multi_video_del_no">No, Keep \'Em! </string>
+    <string name="dialog_multi_video_del_yes">Delete</string>
+    <string name="dialog_multi_video_del_no">Remove selected recording(s)</string>
     <string name="setting_language_title">App\'s Language</string>
     <string name="note_language">Select from dropdown.\n(Default: English)</string>
     <string name="location_permission_title">Location Permission</string>
@@ -332,6 +332,7 @@
     <string name="settings_location_watermark_title">Location Watermark</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
+    <string name="delete_single_video_subtitle">Remove this recording</string>
     <string name="switched_front_camera">Switched to front camera</string>
     <string name="switched_rear_camera">Switched to rear camera</string>
     <string name="notification_video_recording">Video recording</string>

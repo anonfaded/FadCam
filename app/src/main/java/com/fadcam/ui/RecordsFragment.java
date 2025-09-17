@@ -356,82 +356,55 @@ public class RecordsFragment extends BaseFragment implements
 
         Log.i(TAG, "Delete requested for: " + videoItem.displayName);
 
-        // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
-                Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog
-                : R.style.ThemeOverlay_FadCam_Dialog;
+        // Show confirm-only bottom sheet (no typing). Proceed on confirm.
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
+                getString(R.string.delete_video_dialog_title),
+                getString(R.string.video_menu_del),
+                getString(R.string.delete_single_video_subtitle),
+                R.drawable.ic_delete,
+                getString(R.string.delete_video_dialog_message, videoItem.displayName)
+        );
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override public void onImportConfirmed(org.json.JSONObject json) { /* not used */ }
+            @Override public void onResetConfirmed() {
+                onMoveToTrashStarted(videoItem.displayName);
+                if (executorService == null || executorService.isShutdown()) {
+                    executorService = Executors.newSingleThreadExecutor();
+                }
+                executorService.submit(() -> {
+                    boolean success = moveToTrashVideoItem(videoItem);
+                    final String message = success
+                            ? getString(R.string.delete_video_success_toast, videoItem.displayName)
+                            : getString(R.string.delete_video_fail_toast, videoItem.displayName);
+                    onMoveToTrashFinished(success, message);
 
-        // Use a custom TextView for the message to ensure correct color
-        TextView messageView = new TextView(requireContext());
-        messageView.setText(getString(R.string.delete_video_dialog_message, videoItem.displayName));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(),
-                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-        messageView.setTextSize(16);
-        messageView.setPadding(48, 32, 48, 32);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (success) {
+                                // Invalidate cache when video is deleted
+                                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
 
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
-                .setTitle(getString(R.string.delete_video_dialog_title))
-                .setView(messageView)
-                .setNegativeButton(getString(R.string.universal_cancel), (dialog, which) -> {
-                    onMoveToTrashFinished(false, getString(R.string.delete_video_cancelled_toast));
-                })
-                .setPositiveButton(getString(R.string.video_menu_del), (dialog, which) -> {
-                    if (executorService == null || executorService.isShutdown()) {
-                        executorService = Executors.newSingleThreadExecutor();
+                                // Perform a complete refresh to ensure serial numbers are updated
+                                Log.d(TAG, "Single video deleted, performing full refresh to update serial numbers");
+                                if (recordsAdapter != null) {
+                                    recordsAdapter.clearCaches();
+                                }
+                                loadRecordsList();
+                            }
+                            if (isInSelectionMode && selectedUris.contains(videoItem.uri)) {
+                                selectedUris.remove(videoItem.uri);
+                                if (selectedUris.isEmpty()) {
+                                    exitSelectionMode();
+                                } else {
+                                    updateUiForSelectionMode();
+                                }
+                            }
+                        });
                     }
-                    executorService.submit(() -> {
-                        boolean success = moveToTrashVideoItem(videoItem);
-                        final String message = success
-                                ? getString(R.string.delete_video_success_toast, videoItem.displayName)
-                                : getString(R.string.delete_video_fail_toast, videoItem.displayName);
-                        onMoveToTrashFinished(success, message);
-
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                if (success) {
-                                    // Invalidate cache when video is deleted
-                                    com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
-
-                                    // Perform a complete refresh to ensure serial numbers are updated
-                                    Log.d(TAG,
-                                            "Single video deleted, performing full refresh to update serial numbers");
-                                    if (recordsAdapter != null) {
-                                        recordsAdapter.clearCaches(); // Clear any cached data
-                                    }
-                                    loadRecordsList(); // Complete refresh
-                                }
-                                if (isInSelectionMode && selectedUris.contains(videoItem.uri)) {
-                                    selectedUris.remove(videoItem.uri);
-                                    if (selectedUris.isEmpty()) {
-                                        exitSelectionMode();
-                                    } else {
-                                        updateUiForSelectionMode();
-                                    }
-                                }
-                            });
-                        }
-                    });
                 });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        // Set button colors based on theme
-        if (isSnowVeilTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-        } else if (isFadedNightTheme) {
-            // Set white button text for Faded Night theme
-            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
             }
-            if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
-            }
-        }
+        });
+        sheet.show(getParentFragmentManager(), "delete_single_confirm_sheet");
     }
 
     @Override
@@ -1802,60 +1775,68 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     // --- Selection Management ---
+    /** Enters selection mode and updates adapter/UI. */
     private void enterSelectionMode() {
-        if (isInSelectionMode)
-            return;
+        if (isInSelectionMode) return;
         isInSelectionMode = true;
-        selectedUris.clear(); // Start fresh
-        Log.i(TAG, ">>> Entering Selection Mode <<<");
-        if (recordsAdapter != null)
+        if (recordsAdapter != null) {
             recordsAdapter.setSelectionModeActive(true, selectedUris);
-        updateUiForSelectionMode(); // Update toolbar/FABs
+        }
+        updateUiForSelectionMode();
     }
 
+    /** Exits selection mode, clears selections, and updates adapter/UI. */
     private void exitSelectionMode() {
-        if (!isInSelectionMode)
-            return;
+        if (!isInSelectionMode) return;
         isInSelectionMode = false;
         selectedUris.clear();
-        Log.i(TAG, "<<< Exiting Selection Mode >>>");
-        if (recordsAdapter != null)
+        if (recordsAdapter != null) {
             recordsAdapter.setSelectionModeActive(false, selectedUris);
-        updateUiForSelectionMode(); // Update toolbar/FABs
+        }
+        updateUiForSelectionMode();
     }
 
-    private void updateDeleteButtonVisibility() {
-        if (fabDeleteSelected != null) {
-            fabDeleteSelected.setVisibility(selectedVideosUris.isEmpty() ? View.GONE : View.VISIBLE);
-        }
-    }
-
-    private void toggleSelection(Uri videoUri) {
-        if (!isInSelectionMode) { // Should theoretically not happen if called correctly
-            Log.w(TAG, "toggleSelection called but not in selection mode!");
-            enterSelectionMode(); // Enter mode if accidentally called outside
-            // return; // Or return after entering? Let's proceed to select/deselect.
-        }
-
-        boolean changed = false;
-        if (selectedUris.contains(videoUri)) {
-            selectedUris.remove(videoUri);
-            changed = true;
-            Log.d(TAG, "Deselected URI: " + videoUri);
+    /** Toggles a single item's selection state and refreshes adapter/UI. */
+    private void toggleSelection(@Nullable Uri uri) {
+        if (uri == null) return;
+        if (selectedUris.contains(uri)) {
+            selectedUris.remove(uri);
         } else {
-            selectedUris.add(videoUri);
-            changed = true;
-            Log.d(TAG, "Selected URI: " + videoUri);
+            selectedUris.add(uri);
         }
+        if (recordsAdapter != null) {
+            recordsAdapter.setSelectionModeActive(true, selectedUris);
+        }
+        updateUiForSelectionMode();
+    }
 
-        if (changed) {
-            // ** CRITICAL: Update the adapter with the new selection list **
-            if (recordsAdapter != null)
-                recordsAdapter.setSelectionModeActive(true, selectedUris);
-            updateUiForSelectionMode(); // Update toolbar count and FAB visibility
+    private void confirmDeleteSelected() {
+        vibrate();
+        if (!isAdded() || getContext() == null || selectedUris.isEmpty()) {
+            Log.w(TAG, "confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
+            return;
         }
-        // Exit selection mode if list becomes empty again? User preference.
-        // if(selectedUris.isEmpty()){ exitSelectionMode(); }
+        int count = selectedUris.size();
+        Log.d(TAG, "Showing confirm delete bottom sheet for " + count + " items.");
+
+        // Title reflects count; helper contains the previous note text.
+        String title = getResources().getString(R.string.dialog_multi_video_del_title) + " (" + count + ")";
+        String helper = getResources().getString(R.string.dialog_multi_video_del_note);
+
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
+                title,
+                getString(R.string.dialog_multi_video_del_yes),
+                getString(R.string.dialog_multi_video_del_no),
+                R.drawable.ic_delete
+        ).withHelperText(helper);
+
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override public void onImportConfirmed(org.json.JSONObject json) { /* not used */ }
+            @Override public void onResetConfirmed() {
+                deleteSelectedVideos();
+            }
+        });
+        sheet.show(getParentFragmentManager(), "delete_multi_confirm_sheet");
     }
 
     // --- UI Updates ---
@@ -1925,54 +1906,6 @@ public class RecordsFragment extends BaseFragment implements
     }
     // -------------- Fix Ended for this method(updateUiForSelectionMode)-----------
     // --- Deletion Logic ---
-
-    // Add null check in confirmDeleteSelected just in case
-    private void confirmDeleteSelected() {
-        vibrate();
-        if (!isAdded() || getContext() == null || selectedUris.isEmpty()) { // Added safety checks
-            Log.w(TAG,
-                    "confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
-            return;
-        }
-        int count = selectedUris.size();
-        Log.d(TAG, "Showing confirm delete dialog for " + count + " items.");
-
-        // Check current theme
-        String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME,
-                Constants.DEFAULT_APP_THEME);
-        boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
-        int dialogTheme = isSnowVeilTheme ? R.style.ThemeOverlay_FadCam_SnowVeil_Dialog
-                : R.style.ThemeOverlay_FadCam_Dialog;
-
-        // Use a custom TextView for the message to ensure correct color
-        TextView messageView = new TextView(requireContext());
-        messageView.setText(getResources().getString(R.string.dialog_multi_video_del_note));
-        messageView.setTextColor(ContextCompat.getColor(requireContext(),
-                isSnowVeilTheme ? android.R.color.black : android.R.color.white));
-        messageView.setTextSize(16);
-        messageView.setPadding(48, 32, 48, 32);
-
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), dialogTheme)
-                .setTitle(getResources().getString(R.string.dialog_multi_video_del_title) + " (" + count + ")")
-                .setView(messageView)
-                .setNegativeButton(getResources().getString(R.string.dialog_multi_video_del_no), null)
-                .setPositiveButton(getResources().getString(R.string.dialog_multi_video_del_yes),
-                        (dialog, which) -> deleteSelectedVideos());
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        // Set button colors based on theme
-        if (isSnowVeilTheme) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-        } else if (isFadedNightTheme) {
-            // Set white button text for Faded Night theme
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
-        }
-    }
 
     // --- deleteSelectedVideos (Corrected version from previous step) ---
     /** Handles deletion of selected videos */

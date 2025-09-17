@@ -43,6 +43,8 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     private static final String MODE_PREVIEW = "preview";
     private static final String MODE_RESET = "reset";
     private static final String MODE_INPUT = "input";
+    // Lightweight confirmation mode (no text input) for single-action confirms
+    private static final String MODE_CONFIRM = "confirm";
 
     public interface Callbacks {
         void onImportConfirmed(JSONObject json);
@@ -57,6 +59,20 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
 
     public void setCallbacks(Callbacks cb) {
         this.callbacks = cb;
+    }
+
+    /**
+     * Optional convenience to attach helper text (shown under the title) from callers
+     * without exposing internal argument keys.
+     */
+    public InputActionBottomSheetFragment withHelperText(@Nullable String helperText) {
+        Bundle args = getArguments();
+        if (args == null) {
+            args = new Bundle();
+            setArguments(args);
+        }
+        args.putString(ARG_HELPER_TEXT, helperText);
+        return this;
     }
 
     public static InputActionBottomSheetFragment newPreview(String title, String json) {
@@ -75,6 +91,31 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         b.putString(ARG_MODE, MODE_RESET);
         b.putString(ARG_TITLE, title);
         b.putString(ARG_REQUIRED_PHRASE, phrase);
+        f.setArguments(b);
+        return f;
+    }
+
+    /**
+     * Create a simple confirmation sheet with a single action row. No text input.
+     */
+    public static InputActionBottomSheetFragment newConfirm(String title, String actionTitle, String actionSubtitle,
+            int actionIconRes) {
+        return newConfirm(title, actionTitle, actionSubtitle, actionIconRes, null);
+    }
+
+    /**
+     * Create a simple confirmation sheet with a single action row and optional helper text.
+     */
+    public static InputActionBottomSheetFragment newConfirm(String title, String actionTitle, String actionSubtitle,
+            int actionIconRes, @Nullable String helperText) {
+        InputActionBottomSheetFragment f = new InputActionBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putString(ARG_MODE, MODE_CONFIRM);
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_ACTION_TITLE, actionTitle);
+        b.putString(ARG_ACTION_SUBTITLE, actionSubtitle);
+        b.putInt(ARG_ACTION_ICON, actionIconRes);
+        if (helperText != null) b.putString(ARG_HELPER_TEXT, helperText);
         f.setArguments(b);
         return f;
     }
@@ -168,8 +209,27 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
                 buildReset(list, args.getString(ARG_REQUIRED_PHRASE));
             } else if (MODE_INPUT.equals(mode)) {
                 buildInput(list, args.getString(ARG_INPUT_VALUE), args.getString(ARG_INPUT_HINT));
+            } else if (MODE_CONFIRM.equals(mode)) {
+                buildConfirm(list);
             }
         }
+    }
+
+    /** Build a confirm-only sheet with a single action row that triggers onResetConfirmed(). */
+    private void buildConfirm(LinearLayout parent) {
+        // No divider for single-row confirm sheet
+        Bundle args = getArguments();
+        String actionTitle = args != null ? args.getString(ARG_ACTION_TITLE) : null;
+        String actionSubtitle = args != null ? args.getString(ARG_ACTION_SUBTITLE) : null;
+        int actionIcon = args != null ? args.getInt(ARG_ACTION_ICON, R.drawable.ic_delete) : R.drawable.ic_delete;
+        final String finalActionTitle = actionTitle != null ? actionTitle : getString(R.string.prefs_reset_label);
+        final String finalActionSubtitle = actionSubtitle != null ? actionSubtitle : "";
+        // Destructive styling for confirm-only (used for delete/reset actions)
+        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, true, v -> {
+            // Dismiss first for snappy UX, then callback
+            try { dismiss(); } catch (Exception ignored) {}
+            if (callbacks != null) callbacks.onResetConfirmed();
+        }));
     }
 
     // -------------- Fix Start for this method(buildInput)-----------
@@ -201,7 +261,7 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         final String finalActionTitle = actionTitle != null ? actionTitle : getString(R.string.prefs_reset_label);
         final String finalActionSubtitle = actionSubtitle != null ? actionSubtitle : "";
 
-        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, v -> {
+        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, false, v -> {
             String val = input.getText().toString().trim();
             if (callbacks != null) {
                 callbacks.onInputConfirmed(val);
@@ -354,7 +414,7 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         final String finalActionSubtitle = actionSubtitle != null ? actionSubtitle
                 : getString(R.string.prefs_reset_subtitle);
 
-        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, v -> {
+        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, true, v -> {
             String val = input.getText().toString().trim();
             if (phrase != null && phrase.equals(val)) { // case sensitive match
                 if (callbacks != null) {
@@ -378,6 +438,14 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     private LinearLayout actionRow(int iconRes, String title, String subtitle, View.OnClickListener click) {
+        return actionRow(iconRes, title, subtitle, false, click);
+    }
+
+    /**
+     * Builds a standard action row. When destructive is true, applies a subtle red
+     * tinted background consistent with PickerBottomSheetFragment's delete styling.
+     */
+    private LinearLayout actionRow(int iconRes, String title, String subtitle, boolean destructive, View.OnClickListener click) {
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -413,6 +481,14 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         arrow.setImageTintList(
                 android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.darker_gray)));
         row.addView(arrow);
+
+        if (destructive) {
+            try {
+                // Apply subtle red overlay tint similar to PickerBottomSheetFragment
+                row.getBackground().mutate();
+                row.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x33FF3B30));
+            } catch (Exception ignored) {}
+        }
         return row;
     }
 
