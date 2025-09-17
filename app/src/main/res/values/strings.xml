@@ -106,6 +106,12 @@
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
     <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/FadCam</string>
+    <string name="video_menu_save_copy_or_move_title">Save to Gallery</string>
+    <string name="video_menu_save_copy">Copy to Gallery</string>
+    <string name="video_menu_save_copy_desc">Create a copy in Downloads/FadCam (original file kept)</string>
+    <string name="video_menu_save_move">Move to Gallery</string>
+    <string name="video_menu_save_move_desc">Move file to Downloads/FadCam (saves storage space)</string>
+    <string name="video_menu_save_longpress_helper">Long press "Save to Gallery" to choose between copy or move</string>
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>

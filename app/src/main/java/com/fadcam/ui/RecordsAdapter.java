@@ -992,12 +992,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Order mirrors existing menu; use contextual ligatures per repo policy and
         // helper subtitles
         // -------------- Fix Start for this method(showVideoActionsSheet)-----------
-        // Add helper text explaining the save destination
         items.add(new OptionItem(
                 "action_save",
                 ctx.getString(R.string.video_menu_save),
-                ctx.getString(R.string.video_menu_save_helper_downloads_fadcam,
-                        "Video will be saved to Downloads/FadCam"),
+                null, // No helper text, just title like other options
                 null,
                 null,
                 null,
@@ -1049,7 +1047,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
                     break;
                 case "action_save":
-                    saveVideoToGalleryInternal(videoItem);
+                    showSaveOptionsSheet(videoItem, ctx);
                     break;
                 case "action_fix_video":
                     fixVideoFile(videoItem);
@@ -1095,6 +1093,82 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         sheet.show(fm, "video_actions_sheet");
     }
     // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
+
+    // -------------- Save Options Sheet (Copy vs Move) -----------
+    private void showSaveOptionsSheet(VideoItem videoItem, Context ctx) {
+        if (!(ctx instanceof FragmentActivity)) {
+            // Fallback to default copy behavior
+            saveVideoToGalleryInternal(videoItem);
+            return;
+        }
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        
+        // Copy option (default)
+        items.add(new OptionItem(
+                "save_copy",
+                ctx.getString(R.string.video_menu_save_copy),
+                ctx.getString(R.string.video_menu_save_copy_desc),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "content_copy",
+                null,
+                null,
+                null));
+                
+        // Move option
+        items.add(new OptionItem(
+                "save_move",
+                ctx.getString(R.string.video_menu_save_move),
+                ctx.getString(R.string.video_menu_save_move_desc),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "drive_file_move",
+                null,
+                null,
+                null));
+
+        String resultKey = "save_options:" + (videoItem.uri != null ? videoItem.uri.toString() : System.identityHashCode(videoItem));
+        FragmentManager fm = ((FragmentActivity) ctx).getSupportFragmentManager();
+        fm.setFragmentResultListener(resultKey, (FragmentActivity) ctx, (requestKey, bundle) -> {
+            if (bundle == null) return;
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (id == null) return;
+            
+            switch (id) {
+                case "save_copy":
+                    saveVideoToGalleryInternal(videoItem, false); // false = copy
+                    break;
+                case "save_move":
+                    saveVideoToGalleryInternal(videoItem, true); // true = move
+                    break;
+            }
+        });
+
+        String sheetTitle = ctx.getString(R.string.video_menu_save_copy_or_move_title);
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                sheetTitle,
+                items,
+                "save_copy", // Default selection is copy
+                resultKey,
+                null,
+                true);
+
+        // Hide selection checkmarks
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+
+        sheet.show(fm, "save_options_sheet");
+    }
+    // -------------- End Save Options Sheet -----------
 
     private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
         Context context = holder.itemView.getContext();
@@ -1399,7 +1473,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // --- Restored Save to Gallery Logic (using actionListener for progress) ---
+    // Wrapper for backward compatibility
     private void saveVideoToGalleryInternal(VideoItem videoItem) {
+        saveVideoToGalleryInternal(videoItem, false); // Default to copy behavior
+    }
+    
+    // Enhanced version with copy/move option
+    private void saveVideoToGalleryInternal(VideoItem videoItem, boolean moveFile) {
         if (context == null || videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
             if (actionListener != null) {
                 // Run on UI thread if context is available to show Toast
@@ -1471,8 +1551,48 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 Utils.scanFileWithMediaStore(context, destFile.getAbsolutePath()); // Scan the new file
                 resultUri = Uri.fromFile(destFile); // Not entirely correct for MediaStore, but good for logs
                 success = true;
-                message = "Video saved to Downloads/FadCam";
-                Log.i(TAG, "Video saved successfully to: " + destFile.getAbsolutePath());
+                
+                // If move operation, delete the original file
+                if (moveFile && success) {
+                    try {
+                        boolean deleted = false;
+                        
+                        // Try to delete using File path (for app private directory files)
+                        if ("file".equals(sourceUri.getScheme())) {
+                            File originalFile = new File(sourceUri.getPath());
+                            if (originalFile.exists()) {
+                                deleted = originalFile.delete();
+                                Log.d(TAG, "Attempted File.delete() on: " + originalFile.getAbsolutePath() + ", success: " + deleted);
+                            }
+                        } else {
+                            // Fallback to ContentResolver for other URI schemes
+                            deleted = context.getContentResolver().delete(sourceUri, null, null) > 0;
+                            Log.d(TAG, "Attempted ContentResolver.delete() on: " + sourceUri + ", success: " + deleted);
+                        }
+                        
+                        if (deleted) {
+                            message = "Video moved to Downloads/FadCam";
+                            Log.i(TAG, "Original file deleted after move to: " + destFile.getAbsolutePath());
+                            // Notify the adapter to refresh the list
+                            if (context instanceof Activity) {
+                                ((Activity) context).runOnUiThread(() -> {
+                                    // Remove the item from the list if successfully moved
+                                    removeVideoItemFromList(videoItem);
+                                });
+                            }
+                        } else {
+                            message = "Video copied to Downloads/FadCam (original could not be deleted)";
+                            Log.w(TAG, "Could not delete original file after copy: " + sourceUri);
+                        }
+                    } catch (Exception moveEx) {
+                        Log.e(TAG, "Error deleting original file after copy: " + moveEx.getMessage());
+                        message = "Video copied to Downloads/FadCam (original could not be deleted)";
+                    }
+                } else {
+                    message = "Video saved to Downloads/FadCam";
+                }
+                
+                Log.i(TAG, "Video " + (moveFile ? "moved" : "copied") + " successfully to: " + destFile.getAbsolutePath());
 
             } catch (Exception e) {
                 Log.e(TAG, "Error saving video to gallery", e);
@@ -1501,6 +1621,29 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
             }
         });
+    }
+    
+    // Helper method to remove video item from list after move operation
+    private void removeVideoItemFromList(VideoItem videoItem) {
+        if (records == null || videoItem == null) return;
+        
+        int position = -1;
+        for (int i = 0; i < records.size(); i++) {
+            VideoItem item = records.get(i);
+            if (item != null && item.uri != null && item.uri.equals(videoItem.uri)) {
+                position = i;
+                break;
+            }
+        }
+        
+        if (position >= 0) {
+            records.remove(position);
+            notifyItemRemoved(position);
+            // Update item count if needed
+            if (records.isEmpty()) {
+                notifyDataSetChanged(); // Refresh to show empty state if applicable
+            }
+        }
     }
 
     // -------------- Fix Start (showVideoInfoDialog)-----------
