@@ -428,6 +428,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
         // If this fragment contains the AE Lock switch, prefer the persisted lock state so the UI
         // stays disabled/enabled consistently across openings.
+        // Also set up dependency for slider to be disabled when AE is locked.
         try {
             if (
                 switchPresent &&
@@ -438,6 +439,12 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     requireContext()
                 ).isAeLockedSaved();
                 switchState = saved;
+                
+                // For AE Lock, the slider should be disabled when lock is enabled
+                if (sliderMode) {
+                    switchDependentIds.clear();
+                    switchDependentIds.add("slider_row");
+                }
             }
         } catch (Exception ignored) {}
         containerLayoutRef = containerLayout;
@@ -820,14 +827,25 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 // Single listener for state changes
                 swc.setOnCheckedChangeListener((button, checked) -> {
                     Log.d("PickerBottomSheet", "Switch changed -> " + checked + " (title=" + switchTitle + ")");
-                    updateDependentRows(checked);
+                    
+                    // For AE Lock, dependent rows should be DISABLED when lock is ENABLED (inverted logic)
+                    boolean enableDependentRows = checked;
+                    if ("Lock AE".equals(switchTitle)) {
+                        enableDependentRows = !checked; // Invert: when AE locked, disable slider
+                    }
+                    updateDependentRows(enableDependentRows);
+                    
                     // Persist video splitting flag if this sheet controls it
                     try {
                         if ("Enable Video Splitting".equals(switchTitle)) {
                             com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setVideoSplittingEnabled(checked);
+                        } else if ("Lock AE".equals(switchTitle)) {
+                            // Also persist AE lock state directly for immediate consistency
+                            com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setSavedAeLock(checked);
+                            Log.d("PickerBottomSheet", "Saved AE lock state to prefs: " + checked);
                         }
                     } catch (Exception e) {
-                        Log.w("PickerBottomSheet", "Failed to persist splitting flag", e);
+                        Log.w("PickerBottomSheet", "Failed to persist switch state", e);
                     }
                     Bundle result = new Bundle();
                     result.putBoolean(BUNDLE_SWITCH_STATE, checked);
@@ -1173,7 +1191,11 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
         // Apply initial dependent disable state
         if (switchPresent) {
-            updateDependentRows(switchState);
+            boolean enableDependentRows = switchState;
+            if ("Lock AE".equals(switchTitle)) {
+                enableDependentRows = !switchState; // Invert: when AE locked, disable slider
+            }
+            updateDependentRows(enableDependentRows);
         }
 
         // Apply initial dependency states

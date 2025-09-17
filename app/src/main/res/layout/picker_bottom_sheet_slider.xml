@@ -137,7 +137,8 @@
                         android:paddingBottom="8dp"
                         android:layout_marginTop="8dp"
                         android:layout_marginStart="12dp"
-                        android:layout_marginEnd="12dp">
+                        android:layout_marginEnd="12dp"
+                        android:tag="slider_row">
 
                         <com.google.android.material.slider.Slider
                             android:id="@+id/picker_slider"
