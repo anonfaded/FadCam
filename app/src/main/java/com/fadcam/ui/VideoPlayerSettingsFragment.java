@@ -1003,6 +1003,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
         // -------------- Fix Start for this method(showPlaybackSpeedPicker)-----------
         final String RK = "rk_vps_playback_speed";
         float[] speedValues = new float[] {
+            0.25f,
             0.5f,
             0.6f,
             0.7f,
@@ -1018,6 +1019,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
             10.0f,
         };
         CharSequence[] labels = new CharSequence[] {
+            "0.25x",
             "0.5x",
             "0.6x",
             "0.7x",
@@ -1109,6 +1111,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
         // -------------- Fix Start for this method(showQuickSpeedPicker)-----------
         final String RK = "rk_vps_quick_speed";
         float[] speedValues = new float[] {
+            0.25f,
             0.5f,
             0.6f,
             0.7f,
@@ -1124,6 +1127,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
             10.0f,
         };
         CharSequence[] labels = new CharSequence[] {
+            "0.25x",
             "0.5x",
             "0.6x",
             "0.7x",
@@ -1399,7 +1403,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
 
     private String formatSpeed(float v) {
         try {
-            java.text.DecimalFormat df = new java.text.DecimalFormat("#.#");
+            java.text.DecimalFormat df = new java.text.DecimalFormat("#.##");
             return df.format(v) + "x";
         } catch (Exception e) {
             return v + "x";
@@ -1407,6 +1411,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
     }
 
     private String getPlaybackLabel(float v) {
+        if (Math.abs(v - 0.25f) < 0.001f) return "0.25x";
         if (Math.abs(v - 0.5f) < 0.001f) return "0.5x";
         if (Math.abs(v - 1.0f) < 0.001f) return "1x (Normal)";
         if (Math.abs(v - 1.5f) < 0.001f) return "1.5x";

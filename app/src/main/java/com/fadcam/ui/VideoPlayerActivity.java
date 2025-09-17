@@ -134,8 +134,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
         "rk_background_playback";
     // -------------- Fix Ended for field(video_settings_result_keys)-----------
 
-    // Playback speed options (include more slow-speed choices 0.5 -> 0.9)
+    // Playback speed options (include more slow-speed choices 0.25 -> 0.9)
     private final CharSequence[] speedOptions = {
+        "0.25x",
         "0.5x",
         "0.6x",
         "0.7x",
@@ -151,6 +152,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         "10x",
     };
     private final float[] speedValues = {
+        0.25f,
         0.5f,
         0.6f,
         0.7f,
@@ -165,7 +167,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         8.0f,
         10.0f,
     };
-    private int currentSpeedIndex = 5; // Index for 1.0x speed in updated speedValues
+    private int currentSpeedIndex = 6; // Index for 1.0x speed in updated speedValues (after adding 0.25x)
     // Guard to keep single-tap from being treated as part of double-tap or
     // re-triggering control toggles
     private long lastSingleTapTime = 0L;
@@ -946,7 +948,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             // Format like "2x" or "1.5x" without unnecessary decimals
             String formatted;
             try {
-                DecimalFormat df = new DecimalFormat("#.#");
+                DecimalFormat df = new DecimalFormat("#.##");
                 df.setDecimalSeparatorAlwaysShown(false);
                 formatted = df.format(quick) + "x";
             } catch (Exception e) {
@@ -1288,7 +1290,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             : Constants.DEFAULT_QUICK_SPEED;
         String quickSubtitle;
         try {
-            java.text.DecimalFormat df = new java.text.DecimalFormat("#.#");
+            java.text.DecimalFormat df = new java.text.DecimalFormat("#.##");
             quickSubtitle = df.format(quick) + "x";
         } catch (Exception e) {
             quickSubtitle = quick + "x";
