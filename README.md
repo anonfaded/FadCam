@@ -42,6 +42,13 @@
 <br>
 <br>
 
+<a href="https://play.google.com/store/apps/details?id=com.fadcam">
+    <img src="https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png"
+    alt="Pre-Register on Google Play"
+    height="50"></a>
+
+<br>
+
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
     alt="Get it on IoD"
@@ -57,8 +64,14 @@
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     alt="Get it on F-Droid"
     height="70"></a>
-
+    
 <br>
+
+<!--
+[![Pre-Register on Google Play](https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png)](https://play.google.com/store/apps/details?id=com.fadcam)
+
+[![Get it on Google Play](https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/GetItOnGooglePlay_Badge.png)](https://play.google.com/store/apps/details?id=com.fadcam)
+-->
 
 | ⭐ |<img src="https://github.com/user-attachments/assets/c730eda3-5887-458d-8df1-971a74807b73" style="width: 100px; height: auto;" > | *New app from FadSec-Lab suite:🎉* <br> Also, check out our new Windows app! Visit here: [FadCrypt](https://github.com/anonfaded/FadCrypt)  |
 |--|-------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -258,6 +271,14 @@ Download the latest `apk` file directly from the [releases page](https://github.
 [<img src="https://raw.githubusercontent.com/vadret/android/master/assets/get-github.png" alt="Get it on GitHub" height="70">](https://github.com/anonfaded/FadCam/releases)
 
 Or:
+
+
+<a href="https://play.google.com/store/apps/details?id=com.fadcam">
+    <img src="https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png"
+    alt="Pre-Register on Google Play"
+    height="50"></a>
+
+<br>
 
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
