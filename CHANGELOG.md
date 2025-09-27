@@ -73,13 +73,10 @@ FORMAT GUIDELINES:
 
 # 🐞 Bug Fixes & Improvements  
 - Crash prevented from rapid start clicks  
-- Video split issue fixed  
-- Preview area long-press disabling fixed  
 - Resolution handling fixed: valid 4K and 8K options  
 - Shortcuts now persist after app icon change  
 - Wrong duration bug fixed (short videos showing as hours)  
 - Fixed lens selection (wide lens was defaulting to main)  
-- Fixed unplayable videos via repair option  
 - Android 15 edge-to-edge display issues resolved  
 - Seamless camera interruptions: recording pauses if another app opens and resumes after  
 - Records tab loading optimized (faster video list)  
