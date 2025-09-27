@@ -7,9 +7,12 @@ FORMAT GUIDELINES:
 
 <!-- This is a comment -->  
 
-# ⚠️ Note  
-- ⚠️ Major migration: FadCam is now powered by a high-performance OpenGL pipeline for recording and watermarking. This replaces old post-processing, making saving lightning fast with real-time dashcam-style watermarking.  
+# ⚠️ Note ⚠️  
+- Major migration: FadCam is now powered by a high-performance OpenGL pipeline for recording and watermarking. This replaces old post-processing, making saving lightning fast with real-time dashcam-style watermarking.  
 - 🚀 Total: 20+ new features, multiple fixes, and full UI refactor.  
+
+# ⚠️ Yeah another Note ⚠️  
+- If you encounter any weird issues, it may be due to the refactoring. Backup the videos and then uninstall and reinstall the app. For assistance, you can join our Discord. Thank you for using FadCam:)
 
 ---
 
