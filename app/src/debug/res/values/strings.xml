@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FadCam Beta</string>
+    <color name="ic_launcher_background">#1e1e1e</color>
+</resources>

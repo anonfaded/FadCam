@@ -24,7 +24,7 @@ android {
         minSdk = 28
         targetSdk = 36
         versionCode = 27
-        versionName = "2.0.0"
+        versionName = "2.0.0-beta1"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15
@@ -48,6 +48,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".beta"
+            isDebuggable = true
+            // Use a different icon for debug builds
+            resValue("string", "app_name", "FadCam Beta")
+            // You can also add debug-specific configurations here
+        }
+        
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -57,6 +65,7 @@ android {
             )
             isDebuggable = false
             signingConfig = signingConfigs.getByName("release")
+            resValue("string", "app_name", "FadCam")
         }
     }
 
