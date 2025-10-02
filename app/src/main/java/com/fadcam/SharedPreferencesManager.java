@@ -23,6 +23,14 @@ public class SharedPreferencesManager {
     // --- UPDATE CHECK CONSTANTS ---
     public static final String PREF_AUTO_UPDATE_CHECK = "auto_update_check_enabled";
     // --- END UPDATE CHECK CONSTANTS ---
+
+    // --- RECORDING LOOP CONSTANTS ---
+    public static final String PREF_RECORDING_LOOP_ENABLED =
+            "video_splitting_enabled";
+    public static final boolean DEFAULT_RECORDING_LOOP_ENABLED = false;
+    public static final String PREF_RECORDING_LOOP_SIZE_MB = "recording_loop_size_mb";
+    public static final int DEFAULT_RECORDING_LOOP_SIZE_MB = 16384; // 16GB
+    // --- END RECORDING LOOP CONSTANTS ---
     
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris"; // Defined in Constants now
 
@@ -1602,4 +1610,47 @@ public class SharedPreferencesManager {
         SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
     }
+
+    // --- Start for Recording loop ---
+
+    public long getRecordingLoopLimitBytes() {
+        int mb = sharedPreferences.getInt(PREF_RECORDING_LOOP_SIZE_MB, DEFAULT_RECORDING_LOOP_SIZE_MB);
+        return mb > 0 ? mb * 1024L * 1024L : 0L;
+    }
+
+    public void setRecordingLoopLimitMb(int mb) {
+        sharedPreferences.edit().putInt(PREF_RECORDING_LOOP_SIZE_MB, mb).apply();
+        Log.d("SharedPrefs", "Loop storage limit set to: " + mb + " MB");
+    }
+
+    public boolean isRecordingLoopEnabled() {
+        return sharedPreferences.getBoolean(
+                PREF_RECORDING_LOOP_ENABLED,
+                DEFAULT_RECORDING_LOOP_ENABLED
+        );
+    }
+
+    public void setRecordingLoopEnabled(boolean enabled) {
+        sharedPreferences
+                .edit()
+                .putBoolean(PREF_RECORDING_LOOP_ENABLED, enabled)
+                .apply();
+    }
+
+    public int getRecordingLoopSizeMb() {
+        return sharedPreferences.getInt(
+                PREF_RECORDING_LOOP_SIZE_MB,
+                DEFAULT_RECORDING_LOOP_SIZE_MB
+        );
+    }
+
+    public void setRecordingLoopSizeMb(int sizeMb) {
+        sharedPreferences
+                .edit()
+                .putInt(PREF_RECORDING_LOOP_SIZE_MB, sizeMb)
+                .apply();
+    }
+
+// --- Ended for Recording loop ---
+
 }

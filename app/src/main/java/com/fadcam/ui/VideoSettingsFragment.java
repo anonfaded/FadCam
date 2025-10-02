@@ -70,6 +70,7 @@ public class VideoSettingsFragment extends Fragment {
     // Newly migrated rows
     private TextView valueZoomRatio;
     private TextView valueVideoSplitEnabled;
+    private TextView valueRecordingLoopEnabled;
     private TextView valueVideoSplitSize; // removed from layout (merged)
     private TextView valueBitrateHelper; // now null since helper removed
     // Optional helper text not in current layout
@@ -123,6 +124,7 @@ public class VideoSettingsFragment extends Fragment {
         valueLocationEmbed = root.findViewById(R.id.value_location_embed);
         valueZoomRatio = root.findViewById(R.id.value_zoom_ratio);
         valueVideoSplitEnabled = root.findViewById(R.id.value_video_split_enabled);
+        valueRecordingLoopEnabled = root.findViewById(R.id.value_recording_loop_enabled);
         valueVideoSplitSize = null; // merged design
         valueBitrateHelper = null; // helper removed from layout
     }
@@ -141,6 +143,12 @@ public class VideoSettingsFragment extends Fragment {
         View splitRow = root.findViewById(R.id.row_video_splitting);
         if (splitRow != null)
             splitRow.setOnClickListener(v -> showVideoSplittingBottomSheet());
+
+        View recLoop = root.findViewById(R.id.row_recording_loop);
+        if (recLoop != null){
+            recLoop.setOnClickListener(v -> showRecordingLoopBottomSheet());
+        }
+
         View locRow = root.findViewById(R.id.row_location_embed);
         if (locRow != null)
             locRow.setOnClickListener(v -> showLocationEmbedSheet());
@@ -218,6 +226,27 @@ public class VideoSettingsFragment extends Fragment {
                 valueVideoSplitEnabled.setText(label);
             } else {
                 valueVideoSplitEnabled.setText("Disabled");
+            }
+        }
+
+        if (valueRecordingLoopEnabled != null) {
+            boolean enabled = prefs.isRecordingLoopEnabled();
+            if (enabled) {
+                int mb = prefs.getRecordingLoopSizeMb();
+                String label;
+                if (mb == 500)
+                    label = "Enabled (500 MB)";
+                else if (mb == 1024)
+                    label = "Enabled (1 GB)";
+                else if (mb == 2048)
+                    label = "Enabled (2 GB)";
+                else if (mb == 16384)
+                    label = "Enabled (16 GB)";
+                else
+                    label = "Enabled (Custom " + mb + " MB)";
+                valueRecordingLoopEnabled.setText(label);
+            } else {
+                valueRecordingLoopEnabled.setText("Disabled");
             }
         }
 
@@ -1367,6 +1396,141 @@ public class VideoSettingsFragment extends Fragment {
         // -------------- Fix Ended for this
         // method(showCustomSplitSizeBottomSheet)-----------
     }
+
+    private void showRecordingLoopBottomSheet() {
+        boolean enabled = prefs.isRecordingLoopEnabled();
+        int mb = prefs.getRecordingLoopSizeMb();
+        String sizeLabel;
+        if (mb == 500)
+            sizeLabel = "500 MB";
+        else if (mb == 1024)
+            sizeLabel = "1 GB";
+        else if (mb == 2048)
+            sizeLabel = "2 GB";
+        else if (mb == 4096)
+            sizeLabel = "4 GB";
+        else
+            sizeLabel = "Custom (" + mb + " MB)";
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("size", "Change Loop Size (Current: " + sizeLabel + ")"));
+
+        final String resultKey = "picker_result_recording_loop";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            if (b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)) {
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                prefs.setRecordingLoopEnabled(state);
+                refreshAllValues();
+            }
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel == null)
+                return;
+            if ("size".equals(sel)) {
+                showRecordingLoopSizeBottomSheet();
+            }
+        });
+
+        String helper = getString(R.string.recording_loop_description);
+        ArrayList<String> dep = new ArrayList<>();
+        dep.add("size");
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitchDependencies(
+                        getString(R.string.recording_loop_title),
+                        items,
+                        null,
+                        resultKey,
+                        helper,
+                        getString(R.string.recording_loop_title),
+                        enabled,
+                        dep
+                );
+        sheet.show(getParentFragmentManager(), "recording_loop_picker");
+    }
+
+    private void showRecordingLoopSizeBottomSheet() {
+        if (!prefs.isRecordingLoopEnabled())
+            return;
+
+        final int[] presetMb = {500, 1024, 2048, 4096, -1};
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        for (int mb : presetMb) {
+            if (mb == -1)
+                items.add(new com.fadcam.ui.picker.OptionItem("custom", "Custom..."));
+            else
+                items.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(mb),
+                        (mb == 1024 ? "1 GB" :
+                                mb == 2048 ? "2 GB" :
+                                        mb == 4096 ? "4 GB" : mb + " MB")));
+        }
+
+        int current = prefs.getRecordingLoopSizeMb();
+        String currentId = null;
+        for (int mb : presetMb) {
+            if (mb == current) {
+                currentId = mb == -1 ? null : String.valueOf(mb);
+                break;
+            }
+        }
+
+        final String resultKey = "picker_result_recording_loop_size";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel == null)
+                return;
+            if ("custom".equals(sel)) {
+                showCustomRecordingLoopSizeBottomSheet();
+            } else {
+                try {
+                    int mbVal = Integer.parseInt(sel);
+                    prefs.setRecordingLoopSizeMb(mbVal);
+                    refreshAllValues();
+                } catch (Exception ignored) {}
+            }
+        });
+
+        String helper = getString(R.string.recording_loop_description);
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.recording_loop_title),
+                        items,
+                        currentId,
+                        resultKey,
+                        helper
+                );
+        sheet.show(getParentFragmentManager(), "recording_loop_size_picker");
+    }
+
+    private void showCustomRecordingLoopSizeBottomSheet() {
+        int current = prefs.getRecordingLoopSizeMb();
+        if (current == 500 || current == 1024 || current == 2048 || current == 4096)
+            current = 2048; // default dla custom
+
+        final String resultKey = "picker_result_recording_loop_custom";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            if (b.containsKey(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER)) {
+                int mb = b.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER);
+                prefs.setRecordingLoopSizeMb(mb);
+                refreshAllValues();
+            }
+        });
+
+        com.fadcam.ui.picker.NumberInputBottomSheetFragment sheet =
+                com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                        "Custom Loop Size (MB)",
+                        10,
+                        102400,
+                        current,
+                        "10 - 102400",
+                        0,
+                        0,
+                        null,
+                        null,
+                        resultKey
+                );
+        sheet.show(getParentFragmentManager(), "recording_loop_custom_input");
+    }
+
 
     private CamcorderProfile getCamcorderProfile(CameraType type) {
         try {
