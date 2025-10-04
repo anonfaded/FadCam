@@ -1602,4 +1602,74 @@ public class SharedPreferencesManager {
         SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
     }
+
+    // -------------- FadRec (Screen Recording) Preferences Start --------------
+
+    /**
+     * Gets the current screen recording audio source preference.
+     * @return Audio source string (mic or none)
+     */
+    public String getScreenRecordingAudioSource() {
+        return sharedPreferences.getString(
+            Constants.PREF_SCREEN_RECORDING_AUDIO_SOURCE,
+            Constants.AUDIO_SOURCE_MIC // Default to microphone
+        );
+    }
+
+    /**
+     * Sets the screen recording audio source preference.
+     * @param audioSource Audio source string (mic or none)
+     */
+    public void setScreenRecordingAudioSource(String audioSource) {
+        sharedPreferences
+            .edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_AUDIO_SOURCE, audioSource)
+            .apply();
+    }
+
+    /**
+     * Checks if watermark is enabled for screen recordings.
+     * @return true if watermark is enabled
+     */
+    public boolean isScreenRecordingWatermarkEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_SCREEN_RECORDING_WATERMARK_ENABLED,
+            false // Default to disabled
+        );
+    }
+
+    /**
+     * Sets the watermark enabled state for screen recordings.
+     * @param enabled true to enable watermark
+     */
+    public void setScreenRecordingWatermarkEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_SCREEN_RECORDING_WATERMARK_ENABLED, enabled)
+            .apply();
+    }
+
+    /**
+     * Checks if screen recording is currently in progress.
+     * @return true if screen recording is in progress
+     */
+    public boolean isScreenRecordingInProgress() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_IS_SCREEN_RECORDING_IN_PROGRESS,
+            false
+        );
+    }
+
+    /**
+     * Sets the screen recording in progress state.
+     * @param inProgress true if screen recording is in progress
+     */
+    public void setScreenRecordingInProgress(boolean inProgress) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_IS_SCREEN_RECORDING_IN_PROGRESS, inProgress)
+            .apply();
+    }
+
+    // -------------- FadRec (Screen Recording) Preferences End --------------
 }
