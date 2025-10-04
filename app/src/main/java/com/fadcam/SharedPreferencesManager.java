@@ -1671,5 +1671,28 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /**
+     * Gets the current recording mode (FadCam or FadRec).
+     * @return Current mode string (MODE_FADCAM or MODE_FADREC)
+     */
+    public String getCurrentRecordingMode() {
+        return sharedPreferences.getString(
+            "current_recording_mode",
+            Constants.MODE_FADCAM // Default to FadCam
+        );
+    }
+
+    /**
+     * Sets the current recording mode.
+     * @param mode Mode string (MODE_FADCAM or MODE_FADREC)
+     */
+    public void setCurrentRecordingMode(String mode) {
+        sharedPreferences
+            .edit()
+            .putString("current_recording_mode", mode)
+            .apply();
+        Log.d("SharedPrefs", "Recording mode changed to: " + mode);
+    }
+
     // -------------- FadRec (Screen Recording) Preferences End --------------
 }

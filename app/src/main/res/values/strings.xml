@@ -85,6 +85,23 @@
     <string name="button_pause">Pause</string>
     <string name="button_stop">Stop</string>
     <string name="button_resume">Resume</string>
+    
+    <!-- FadRec Screen Recording Strings -->
+    <string name="fadrec_start_screen_recording">Start Screen Recording</string>
+    <string name="fadrec_stop_screen_recording">Stop Screen Recording</string>
+    <string name="fadrec_pause_screen_recording">Pause Screen Recording</string>
+    <string name="fadrec_resume_screen_recording">Resume Screen Recording</string>
+    <string name="fadrec_screen_recording_started">Screen recording started</string>
+    <string name="fadrec_screen_recording_stopped">Screen recording stopped</string>
+    <string name="fadrec_screen_recording_paused">Screen recording paused</string>
+    <string name="fadrec_screen_recording_resumed">Screen recording resumed</string>
+    <string name="fadrec_notification_title">Screen Recording</string>
+    <string name="fadrec_notification_recording">Recording screen…</string>
+    <string name="fadrec_notification_paused">Recording paused</string>
+    <string name="fadrec_ready_to_record">Ready to record screen</string>
+    <string name="fadrec_permission_denied">Screen recording permission denied</string>
+    <string name="fadrec_mode_title">FadRec • Screen Recording</string>
+    
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>
     <string name="video_recording_paused">Recording paused</string>

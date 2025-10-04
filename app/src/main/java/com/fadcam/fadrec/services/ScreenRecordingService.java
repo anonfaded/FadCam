@@ -1,5 +1,6 @@
 package com.fadcam.fadrec.services;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -174,22 +175,30 @@ public class ScreenRecordingService extends Service {
             return;
         }
         
-        // Get MediaProjection result data from intent
-        int resultCode = intent.getIntExtra("resultCode", -1);
-        Intent data = intent.getParcelableExtra("data");
+        // Start foreground immediately to avoid crash
+        recordingState = ScreenRecordingState.NONE;
+        Notification notification = createNotification();
+        startForeground(NOTIFICATION_ID, notification);
         
-        if (resultCode == -1 || data == null) {
-            Log.e(TAG, "Missing MediaProjection permission data");
+        // Get MediaProjection result data from intent
+        int resultCode = intent.getIntExtra("resultCode", Activity.RESULT_CANCELED);
+        
+        // RESULT_OK is -1, RESULT_CANCELED is 0
+        if (resultCode != Activity.RESULT_OK) {
+            Log.e(TAG, "MediaProjection permission denied - resultCode: " + resultCode);
             Toast.makeText(this, "Screen recording permission required", Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
         }
         
-        // Initialize MediaProjection
+        Log.d(TAG, "Got resultCode: " + resultCode + " (RESULT_OK), creating MediaProjection");
+        
+        // Initialize MediaProjection using the intent directly
         try {
-            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data);
+            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, intent);
             if (mediaProjection == null) {
                 Log.e(TAG, "Failed to create MediaProjection");
+                Toast.makeText(this, "Failed to initialize screen recording", Toast.LENGTH_SHORT).show();
                 stopSelf();
                 return;
             }
@@ -197,6 +206,7 @@ public class ScreenRecordingService extends Service {
             Log.d(TAG, "MediaProjection created successfully");
         } catch (Exception e) {
             Log.e(TAG, "Error creating MediaProjection", e);
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
         }

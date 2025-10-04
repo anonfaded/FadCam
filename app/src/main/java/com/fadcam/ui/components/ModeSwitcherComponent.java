@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 
 /**
  * Component for handling the mode switcher (FadCam, FadRec, FadMic) functionality
@@ -19,6 +20,7 @@ public class ModeSwitcherComponent {
     private static final String TAG = "ModeSwitcherComponent";
     
     private final Context context;
+    private final SharedPreferencesManager sharedPreferencesManager;
     private String currentMode = Constants.MODE_FADCAM;
     private ModeSwitcherListener listener;
     
@@ -41,6 +43,7 @@ public class ModeSwitcherComponent {
      */
     public ModeSwitcherComponent(@NonNull Context context) {
         this.context = context;
+        this.sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
     }
     
     /**
@@ -57,10 +60,11 @@ public class ModeSwitcherComponent {
             // Setup click listeners
             setupClickListeners();
             
-            // Set initial state
-            updateActiveState(Constants.MODE_FADCAM);
+            // Set initial state from SharedPreferences
+            String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
+            updateActiveState(currentMode);
             
-            Log.d(TAG, "ModeSwitcher initialized successfully");
+            Log.d(TAG, "ModeSwitcher initialized successfully with mode: " + currentMode);
         } catch (Exception e) {
             Log.e(TAG, "Error initializing ModeSwitcher", e);
         }
@@ -99,10 +103,10 @@ public class ModeSwitcherComponent {
                 break;
                 
             case Constants.MODE_FADREC:
-                // Show coming soon for FadRec (Screen Recording)
-                showComingSoonToast("FadRec (Screen Recording)");
+                // FadRec (Screen Recording) is now available
+                updateActiveState(mode);
                 if (listener != null) {
-                    listener.onComingSoonRequested("FadRec");
+                    listener.onModeSelected(mode);
                 }
                 break;
                 
