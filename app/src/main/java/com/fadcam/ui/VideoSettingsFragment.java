@@ -229,19 +229,20 @@ public class VideoSettingsFragment extends Fragment {
             }
         }
 
+        // Recording Loop
         if (valueRecordingLoopEnabled != null) {
             boolean enabled = prefs.isRecordingLoopEnabled();
             if (enabled) {
                 int mb = prefs.getRecordingLoopSizeMb();
                 String label;
-                if (mb == 500)
-                    label = "Enabled (500 MB)";
-                else if (mb == 1024)
-                    label = "Enabled (1 GB)";
-                else if (mb == 2048)
-                    label = "Enabled (2 GB)";
+                if (mb == 4096)
+                    label = "Enabled (4 GB)";
                 else if (mb == 16384)
                     label = "Enabled (16 GB)";
+                else if (mb == 32768)
+                    label = "Enabled (32 GB)";
+                else if (mb == 65536)
+                    label = "Enabled (64 GB)";
                 else
                     label = "Enabled (Custom " + mb + " MB)";
                 valueRecordingLoopEnabled.setText(label);
@@ -1401,14 +1402,14 @@ public class VideoSettingsFragment extends Fragment {
         boolean enabled = prefs.isRecordingLoopEnabled();
         int mb = prefs.getRecordingLoopSizeMb();
         String sizeLabel;
-        if (mb == 500)
-            sizeLabel = "500 MB";
-        else if (mb == 1024)
-            sizeLabel = "1 GB";
-        else if (mb == 2048)
-            sizeLabel = "2 GB";
-        else if (mb == 4096)
-            sizeLabel = "4 GB";
+        if (mb == 4096)
+            sizeLabel = "Enabled (4 GB)";
+        else if (mb == 16384)
+            sizeLabel = "Enabled (16 GB)";
+        else if (mb == 32768)
+            sizeLabel = "Enabled (32 GB)";
+        else if (mb == 65536)
+            sizeLabel = "Enabled (64 GB)";
         else
             sizeLabel = "Custom (" + mb + " MB)";
 
