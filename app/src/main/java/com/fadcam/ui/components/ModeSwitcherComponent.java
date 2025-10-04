@@ -57,6 +57,12 @@ public class ModeSwitcherComponent {
             segmentFadRec = rootView.findViewById(R.id.segment_fadrec);
             segmentFadMic = rootView.findViewById(R.id.segment_fadmic);
             
+            // Hide "Soon" badge for FadRec since it's now available
+            View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
+            if (badgeFadRec != null) {
+                badgeFadRec.setVisibility(View.GONE);
+            }
+            
             // Setup click listeners
             setupClickListeners();
             
@@ -94,17 +100,19 @@ public class ModeSwitcherComponent {
     private void handleModeClick(String mode) {
         Log.d(TAG, "Mode clicked: " + mode);
         
+        // Update visual state for all modes
+        updateActiveState(mode);
+        
         switch (mode) {
             case Constants.MODE_FADCAM:
-                // FadCam is already active, no action needed
+                // FadCam mode selected
                 if (listener != null) {
                     listener.onModeSelected(mode);
                 }
                 break;
                 
             case Constants.MODE_FADREC:
-                // FadRec (Screen Recording) is now available
-                updateActiveState(mode);
+                // FadRec (Screen Recording) mode selected
                 if (listener != null) {
                     listener.onModeSelected(mode);
                 }
@@ -135,7 +143,7 @@ public class ModeSwitcherComponent {
         // Set active segment
         FrameLayout activeSegment = getSegmentForMode(activeMode);
         if (activeSegment != null) {
-            activeSegment.setSelected(true);
+            setSegmentActive(activeSegment);
         }
         
         Log.d(TAG, "Active mode updated to: " + activeMode);
@@ -148,6 +156,31 @@ public class ModeSwitcherComponent {
     private void resetSegmentState(FrameLayout segment) {
         if (segment != null) {
             segment.setSelected(false);
+            segment.setBackgroundResource(R.drawable.segment_inactive_background);
+            
+            // Update text color to inactive
+            android.widget.TextView textView = (android.widget.TextView) segment.getChildAt(0);
+            if (textView != null) {
+                textView.setTextColor(context.getResources().getColor(R.color.amoled_text_secondary, null));
+            }
+        }
+    }
+    
+    /**
+     * Set segment to active state
+     * @param segment The segment to activate
+     */
+    private void setSegmentActive(FrameLayout segment) {
+        if (segment != null) {
+            segment.setSelected(true);
+            segment.setBackgroundResource(R.drawable.segment_active_background);
+            
+            // Update text color to active (white)
+            android.widget.TextView textView = (android.widget.TextView) segment.getChildAt(0);
+            if (textView != null) {
+                textView.setTextColor(context.getResources().getColor(android.R.color.white, null));
+                textView.setTypeface(null, android.graphics.Typeface.BOLD);
+            }
         }
     }
     

@@ -267,17 +267,18 @@ public class ScreenRecordingService extends Service {
             mediaRecorder.setAudioSamplingRate(Constants.DEFAULT_AUDIO_SAMPLING_RATE);
         }
         
-        // Video configuration (default FHD 30fps)
-        mediaRecorder.setVideoSize(Constants.DEFAULT_SCREEN_RECORDING_WIDTH, 
-                                   Constants.DEFAULT_SCREEN_RECORDING_HEIGHT);
+        // Video configuration - Use actual screen resolution
+        mediaRecorder.setVideoSize(screenWidth, screenHeight);
         mediaRecorder.setVideoFrameRate(Constants.DEFAULT_SCREEN_RECORDING_FPS);
-        mediaRecorder.setVideoEncodingBitRate(Constants.DEFAULT_SCREEN_RECORDING_BITRATE);
+        
+        // Calculate bitrate based on resolution (higher res = higher bitrate)
+        int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
+        mediaRecorder.setVideoEncodingBitRate(calculatedBitrate);
         
         Log.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d",
-            Constants.DEFAULT_SCREEN_RECORDING_WIDTH,
-            Constants.DEFAULT_SCREEN_RECORDING_HEIGHT,
+            screenWidth, screenHeight,
             Constants.DEFAULT_SCREEN_RECORDING_FPS,
-            Constants.DEFAULT_SCREEN_RECORDING_BITRATE));
+            calculatedBitrate));
         
         // Set output file
         mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
@@ -286,11 +287,11 @@ public class ScreenRecordingService extends Service {
         mediaRecorder.prepare();
         Log.d(TAG, "MediaRecorder prepared");
         
-        // Create VirtualDisplay
+        // Create VirtualDisplay - MUST use same resolution as MediaRecorder
         virtualDisplay = mediaProjection.createVirtualDisplay(
             "FadRecDisplay",
-            Constants.DEFAULT_SCREEN_RECORDING_WIDTH,
-            Constants.DEFAULT_SCREEN_RECORDING_HEIGHT,
+            screenWidth,  // Use actual screen width
+            screenHeight, // Use actual screen height
             screenDensity,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
             mediaRecorder.getSurface(),
@@ -302,7 +303,8 @@ public class ScreenRecordingService extends Service {
             throw new IOException("Failed to create VirtualDisplay");
         }
         
-        Log.d(TAG, "VirtualDisplay created");
+        Log.d(TAG, String.format("VirtualDisplay created: %dx%d @%ddpi", 
+            screenWidth, screenHeight, screenDensity));
         
         // Start recording
         mediaRecorder.start();
@@ -483,30 +485,46 @@ public class ScreenRecordingService extends Service {
     }
 
     /**
-     * Creates output file with FadRec prefix in FadRec directory.
+     * Calculate appropriate bitrate based on resolution.
+     * Formula: pixels * fps * bpp (bits per pixel)
+     */
+    private int calculateBitrate(int width, int height) {
+        int pixels = width * height;
+        int fps = Constants.DEFAULT_SCREEN_RECORDING_FPS;
+        
+        // Use 0.07 bits per pixel for good quality
+        double bitsPerPixel = 0.07;
+        int bitrate = (int) (pixels * fps * bitsPerPixel);
+        
+        // Clamp between 2Mbps and 16Mbps
+        int minBitrate = 2_000_000;  // 2Mbps
+        int maxBitrate = 16_000_000; // 16Mbps
+        
+        return Math.max(minBitrate, Math.min(maxBitrate, bitrate));
+    }
+
+    /**
+     * Creates output file with FadRec prefix.
+     * Follows same logic as RecordingService - uses internal storage by default.
+     * Directory changed from "FadCam" to "FadRec" to keep files organized.
      */
     @Nullable
     private File createOutputFile() {
         try {
-            File recordsDir = getExternalFilesDir(null);
-            if (recordsDir == null) {
-                Log.e(TAG, "External files directory is null");
-                return null;
-            }
-            
-            File fadRecDir = new File(recordsDir, Constants.RECORDING_DIRECTORY_FADREC);
-            if (!fadRecDir.exists() && !fadRecDir.mkdirs()) {
-                Log.e(TAG, "Failed to create FadRec directory");
-                return null;
-            }
-            
-            // Generate filename with timestamp
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            String filename = Constants.RECORDING_FILE_PREFIX_FADREC + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;
+            String baseFilename = Constants.RECORDING_FILE_PREFIX_FADREC + timestamp + "." 
+                + Constants.RECORDING_FILE_EXTENSION;
             
-            File file = new File(fadRecDir, filename);
+            // Use internal storage (same as RecordingService), but FadRec directory
+            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY_FADREC);
+            if (!videoDir.exists() && !videoDir.mkdirs()) {
+                Log.e(TAG, "Cannot create FadRec directory: " + videoDir.getAbsolutePath());
+                Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
+                return null;
+            }
+            
+            File file = new File(videoDir, baseFilename);
             Log.d(TAG, "Output file: " + file.getAbsolutePath());
-            
             return file;
         } catch (Exception e) {
             Log.e(TAG, "Error creating output file", e);

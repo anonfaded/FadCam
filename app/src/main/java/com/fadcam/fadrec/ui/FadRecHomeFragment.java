@@ -159,17 +159,21 @@ public class FadRecHomeFragment extends HomeFragment {
             buttonTorchSwitch.setVisibility(View.GONE);
         }
         
-        // Hide camera preview (TextureView)
+        // Hide entire preview area including TextureView and placeholder
         View textureView = rootView.findViewById(com.fadcam.R.id.textureView);
         if (textureView != null) {
             textureView.setVisibility(View.GONE);
         }
         
-        // Show placeholder message
         View tvPreviewPlaceholder = rootView.findViewById(com.fadcam.R.id.tvPreviewPlaceholder);
-        if (tvPreviewPlaceholder != null && tvPreviewPlaceholder instanceof android.widget.TextView) {
-            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-            ((android.widget.TextView) tvPreviewPlaceholder).setText("Ready to record screen");
+        if (tvPreviewPlaceholder != null) {
+            tvPreviewPlaceholder.setVisibility(View.GONE);
+        }
+        
+        // Hide preview card container if it exists
+        View previewCard = rootView.findViewById(com.fadcam.R.id.cardPreview);
+        if (previewCard != null) {
+            previewCard.setVisibility(View.GONE);
         }
         
         // Hide recording tiles (AF, exposure, zoom - camera specific)
@@ -177,8 +181,7 @@ public class FadRecHomeFragment extends HomeFragment {
         if (tileAfToggle != null) {
             tileAfToggle.setVisibility(View.GONE);
         }
-        
-        View tileExp = rootView.findViewById(com.fadcam.R.id.tile_exp);
+                View tileExp = rootView.findViewById(com.fadcam.R.id.tile_exp);
         if (tileExp != null) {
             tileExp.setVisibility(View.GONE);
         }
@@ -417,10 +420,22 @@ public class FadRecHomeFragment extends HomeFragment {
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
                 );
+                // Green color for start button
+                buttonStartStop.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#4CAF50")
+                    )
+                );
             } else {
                 buttonStartStop.setText(com.fadcam.R.string.button_stop);
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_stop)
+                );
+                // Red color for stop button
+                buttonStartStop.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop)
+                    )
                 );
             }
         }
