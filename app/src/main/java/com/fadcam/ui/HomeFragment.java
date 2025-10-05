@@ -686,7 +686,16 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void resetTimers() {
+        // Avoid blindly resetting if we are in the middle of an existing recording.
+        if (isRecording() || isPaused()) {
+            Log.w(
+                TAG,
+                "resetTimers: Suppressed reset while recording. recordingStartTime=" + recordingStartTime
+            );
+            return;
+        }
         recordingStartTime = SystemClock.elapsedRealtime();
+        Log.d(TAG, "resetTimers: Set fresh recordingStartTime=" + recordingStartTime);
         updateStorageInfo();
     }
 
@@ -704,6 +713,10 @@ public class HomeFragment extends BaseFragment {
         sharedPreferencesManager = SharedPreferencesManager.getInstance(
             requireContext()
         );
+
+        // Note: No need to restore recordingStartTime here.
+        // Service is the single source of truth and will broadcast it via
+        // BROADCAST_ON_RECORDING_STATE_CALLBACK when we call fetchRecordingState() in onResume().
 
         // Check if it's the first launch
         // boolean isFirstLaunch = sharedPreferences.getBoolean(PREF_FIRST_LAUNCH,
@@ -946,6 +959,9 @@ public class HomeFragment extends BaseFragment {
                     recordingStateIntent = RecordingState.NONE;
                 }
 
+                // Note: Timer value is read directly from SharedPreferences by update methods
+                // No need to extract from broadcast - service writes to SharedPreferences
+
                 switch (recordingStateIntent) {
                     case NONE:
                         onRecordingStopped();
@@ -972,41 +988,9 @@ public class HomeFragment extends BaseFragment {
         broadcastOnRecordingStarted = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent i) {
-                // ----- Fix Start for this method(registerBroadcastOnRecordingStarted) -----
-                // Get the timestamp from the intent with current time as fallback
-                long startTimeFromService = i.getLongExtra(
-                    Constants.INTENT_EXTRA_RECORDING_START_TIME,
-                    SystemClock.elapsedRealtime()
-                );
-
-                // Validate the timestamp - ensure it's not ridicuously old or in the future
-                long currentTime = SystemClock.elapsedRealtime();
-
-                // Check if the time from service is within a reasonable range
-                // (not more than 5 seconds in the past or 1 second in the future)
-                if (
-                    startTimeFromService < currentTime - 5000 ||
-                    startTimeFromService > currentTime + 1000
-                ) {
-                    Log.w(
-                        TAG,
-                        "Received invalid recordingStartTime from service: " +
-                        startTimeFromService +
-                        ", current time: " +
-                        currentTime +
-                        ". Using current time instead."
-                    );
-                    startTimeFromService = currentTime;
-                }
-
-                // Set our recording start time to the validated time from service
-                recordingStartTime = startTimeFromService;
-                Log.d(
-                    TAG,
-                    "BROADCAST_ON_RECORDING_STARTED: Set recordingStartTime=" +
-                    recordingStartTime
-                );
-                // ----- Fix End for this method(registerBroadcastOnRecordingStarted) -----
+                // Note: Timer value is written to SharedPreferences by service
+                // Fragment reads it directly when calculating elapsed time
+                Log.d(TAG, "✅ BROADCAST_ON_RECORDING_STARTED received");
 
                 // Update our internal state first
                 onRecordingStarted(true);
@@ -1095,18 +1079,11 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void onRecordingStarted(boolean toast) {
-        Log.d(TAG, "onRecordingStarted. Toast: " + toast);
+        Log.d(TAG, "📍 onRecordingStarted(toast=" + toast + ") - Timer managed by service in SharedPreferences");
 
-        // ----- Fix Start for this method(onRecordingStarted) -----
-        // Reset recording start time to ensure a fresh start - always use current time
-        // This fixes cases where old stale timestamps might be causing incorrect
-        // elapsed time
-        recordingStartTime = SystemClock.elapsedRealtime();
-        Log.d(
-            TAG,
-            "onRecordingStarted: RESET recordingStartTime=" + recordingStartTime
-        );
-        // ----- Fix End for this method(onRecordingStarted) -----
+        // Note: Timer value (recordingStartTime) is managed by RecordingService
+        // Fragment reads it from SharedPreferences when calculating elapsed time
+        // This method only updates UI state
 
         recordingState = RecordingState.IN_PROGRESS;
         setUIForRecordingActive();
@@ -1239,6 +1216,10 @@ public class HomeFragment extends BaseFragment {
 
         // First update the recording state
         recordingState = RecordingState.NONE;
+        
+        // Reset timer (service will have cleared its value too)
+        recordingStartTime = 0;
+        Log.d(TAG, "onRecordingStopped: Reset recordingStartTime to 0");
 
         // Release wake lock if it was acquired
         releaseWakeLock();
@@ -1488,11 +1469,10 @@ public class HomeFragment extends BaseFragment {
             );
         }
 
-        Log.d(
-            TAG,
-            "onResume: Fetching current recording state from service..."
-        );
-        fetchRecordingState(); // Let service callback handle UI sync
+        // Note: No need to restore recordingStartTime from SharedPreferences.
+        // We'll fetch state from service which will broadcast the correct start time.
+        Log.d(TAG, "onResume: Fetching recording state from service (source of truth)...");
+        fetchRecordingState(); // Service will broadcast state + start time via callback
 
         registerBroadcastReceivers(); // Centralized registration
 
@@ -1503,6 +1483,9 @@ public class HomeFragment extends BaseFragment {
             TAG,
             "onResume: Loaded isPreviewEnabled state = " + isPreviewEnabled
         );
+
+        // Note: recordingStartTime already restored earlier (before fetchRecordingState)
+        // to prevent reset when onRecordingStarted is called
 
         // Update the preview visibility based on current state
         updatePreviewVisibility();
@@ -5021,19 +5004,25 @@ public class HomeFragment extends BaseFragment {
         long estimatedBytesUsed = 0;
 
         if (isRecording() || isPaused()) {
-            // Check if recordingStartTime is valid
-            if (recordingStartTime <= 0) {
-                recordingStartTime = SystemClock.elapsedRealtime();
-                Log.w(
-                    TAG,
-                    "updateStorageInfo: Invalid recordingStartTime detected, resetting to current time"
-                );
-            }
-
-            elapsedTime = Math.max(
-                0,
-                SystemClock.elapsedRealtime() - recordingStartTime
+            // Always read from SharedPreferences - service is the source of truth
+            long serviceStartTime = sharedPreferencesManager.sharedPreferences.getLong(
+                Constants.PREF_RECORDING_START_TIME,
+                0
             );
+            
+            long currentTime = SystemClock.elapsedRealtime();
+            Log.d(TAG, "🔍 Reading timer: serviceStartTime=" + serviceStartTime + ", currentTime=" + currentTime);
+            
+            if (serviceStartTime > 0) {
+                elapsedTime = Math.max(
+                    0,
+                    SystemClock.elapsedRealtime() - serviceStartTime
+                );
+                Log.d(TAG, "✅ Timer: elapsed=" + (elapsedTime/1000) + "s");
+            } else {
+                Log.e(TAG, "❌ Timer: Service start time is ZERO in SharedPreferences!");
+                elapsedTime = 0;
+            }
 
             // Calculate estimated bytes used during recording
             long effectiveBitrate = 0;
@@ -5071,9 +5060,10 @@ public class HomeFragment extends BaseFragment {
                 0,
                 effectiveBitrate - sharedPreferencesManager.getAudioBitrate()
             );
-        } else {
-            recordingStartTime = 0;
         }
+        // Note: Do NOT reset recordingStartTime here!
+        // Only service broadcasts should set this value.
+        // Resetting here causes race condition during orientation changes.
 
         // Adjust available bytes for recording
         long adjustedAvailable =
@@ -5514,18 +5504,8 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void run() {
                 if ((isRecording() || isPaused()) && isAdded()) {
-                    // Check if we have a valid recording start time
-                    if (recordingStartTime <= 0) {
-                        // Try to get the current system time as fallback
-                        recordingStartTime = SystemClock.elapsedRealtime();
-                        Log.w(
-                            TAG,
-                            "startUpdatingInfo: Invalid recordingStartTime detected, resetting to current time: " +
-                            recordingStartTime
-                        );
-                    }
-
                     // Always update storage info (lightweight)
+                    // Timer calculation now reads directly from SharedPreferences in updateStorageUiWithCachedInfo
                     updateStorageInfo();
 
                     // Update stats every 5 seconds during recording to avoid performance impact

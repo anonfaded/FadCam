@@ -29,6 +29,7 @@ public abstract class Constants {
     // *** End New Zoom Ratio Prefs ***
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
+    public static final String PREF_RECORDING_START_TIME = "recording_start_time"; // Stores recording start timestamp for orientation changes
     public static final String PREF_BOTH_TORCHES_ENABLED =
         "pref_both_torches_enabled";
     public static final String PREF_SELECTED_TORCH_SOURCE =
