@@ -86,16 +86,41 @@ public class ModeSwitcherComponent {
             segmentFadRec.setBackground(null);
             segmentFadMic.setBackground(null);
 
-            // Set selection state (exclusive) - simple programmatic backgrounds
+            // Set text colors immediately (before view is shown) to prevent flicker
+            // This must happen synchronously, not in post()
+            android.widget.TextView tvFadCam = (android.widget.TextView) segmentFadCam.getChildAt(0);
+            android.widget.TextView tvFadRec = (android.widget.TextView) segmentFadRec.getChildAt(0);
+            android.widget.TextView tvFadMic = (android.widget.TextView) segmentFadMic.getChildAt(0);
+            
+            int whiteColor = ContextCompat.getColor(context, android.R.color.white);
+            int grayColor = ContextCompat.getColor(context, R.color.amoled_text_secondary);
+            
+            if (tvFadCam != null) {
+                tvFadCam.setTextColor(Constants.MODE_FADCAM.equals(currentMode) ? whiteColor : grayColor);
+                tvFadCam.setTypeface(null, Constants.MODE_FADCAM.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            }
+            if (tvFadRec != null) {
+                tvFadRec.setTextColor(Constants.MODE_FADREC.equals(currentMode) ? whiteColor : grayColor);
+                tvFadRec.setTypeface(null, Constants.MODE_FADREC.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            }
+            if (tvFadMic != null) {
+                tvFadMic.setTextColor(Constants.MODE_FADMIC.equals(currentMode) ? whiteColor : grayColor);
+                tvFadMic.setTypeface(null, Constants.MODE_FADMIC.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            }
+
+            // Set backgrounds after text is set
             // Use post() to ensure view is fully laid out
-            rootView.post(() -> setExclusiveSelected(currentMode));
+            // Keep isInitializing true until post() completes to prevent animation
+            rootView.post(() -> {
+                setExclusiveSelected(currentMode);
+                isInitializing = false; // Now allow animations on user clicks
+            });
 
             setupClickListeners();
             Log.d(TAG, "ModeSwitcher initialized (active=" + currentMode + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error initializing ModeSwitcher", e);
-        } finally {
-            isInitializing = false;
+            isInitializing = false; // Reset on error
         }
     }
 
@@ -104,13 +129,43 @@ public class ModeSwitcherComponent {
      * Uses simple programmatic backgrounds - no drawable files
      */
     private void setExclusiveSelected(String mode) {
+        // Apply backgrounds to all segments
         applyBackground(segmentFadCam, Constants.MODE_FADCAM.equals(mode));
         applyBackground(segmentFadRec, Constants.MODE_FADREC.equals(mode));
         applyBackground(segmentFadMic, Constants.MODE_FADMIC.equals(mode));
         
-        styleText(segmentFadCam, Constants.MODE_FADCAM.equals(mode));
-        styleText(segmentFadRec, Constants.MODE_FADREC.equals(mode));
-        styleText(segmentFadMic, Constants.MODE_FADMIC.equals(mode));
+        // During initialization, ONLY set backgrounds, don't touch text at all
+        // Text will be set by the layout inflation and doesn't need animation
+        if (isInitializing) {
+            Log.d(TAG, "setExclusiveSelected - isInitializing=true, only backgrounds applied, skipping text");
+        } else {
+            // User click: instantly deactivate previous button, animate new one
+            Log.d(TAG, "setExclusiveSelected - user click, current=" + currentMode + ", new=" + mode);
+            
+            // Deactivate the previously active button instantly
+            if (Constants.MODE_FADCAM.equals(currentMode) && !Constants.MODE_FADCAM.equals(mode)) {
+                styleText(segmentFadCam, false, false);
+                Log.d(TAG, "Deactivating FadCam (was active)");
+            } else if (Constants.MODE_FADREC.equals(currentMode) && !Constants.MODE_FADREC.equals(mode)) {
+                styleText(segmentFadRec, false, false);
+                Log.d(TAG, "Deactivating FadRec (was active)");
+            } else if (Constants.MODE_FADMIC.equals(currentMode) && !Constants.MODE_FADMIC.equals(mode)) {
+                styleText(segmentFadMic, false, false);
+                Log.d(TAG, "Deactivating FadMic (was active)");
+            }
+            
+            // Animate the newly clicked button
+            if (Constants.MODE_FADCAM.equals(mode)) {
+                styleText(segmentFadCam, true, true);
+                Log.d(TAG, "Activating FadCam (animating)");
+            } else if (Constants.MODE_FADREC.equals(mode)) {
+                styleText(segmentFadRec, true, true);
+                Log.d(TAG, "Activating FadRec (animating)");
+            } else if (Constants.MODE_FADMIC.equals(mode)) {
+                styleText(segmentFadMic, true, true);
+                Log.d(TAG, "Activating FadMic (animating)");
+            }
+        }
         
         Log.d(TAG, String.format("setExclusiveSelected(%s): FadCam=%b FadRec=%b FadMic=%b", 
             mode, Constants.MODE_FADCAM.equals(mode), 
@@ -136,9 +191,8 @@ public class ModeSwitcherComponent {
             // Active: Red fill (#E43C3C)
             background.setColor(ContextCompat.getColor(context, R.color.redPastel));
         } else {
-            // Inactive: Transparent with subtle stroke
+            // Inactive: Transparent, no border
             background.setColor(ContextCompat.getColor(context, android.R.color.transparent));
-            background.setStroke(2, ContextCompat.getColor(context, R.color.amoled_border));
         }
         
         segment.setBackground(background);
@@ -149,23 +203,37 @@ public class ModeSwitcherComponent {
 
     /**
      * Style text (color and weight) with optional animation
+     * @param segment The segment to style
+     * @param active Whether this segment is active
+     * @param animate Whether to animate the color change
      */
-    private void styleText(FrameLayout segment, boolean active) {
+    private void styleText(FrameLayout segment, boolean active, boolean animate) {
         if (segment == null) return;
         android.widget.TextView tv = (android.widget.TextView) segment.getChildAt(0);
         if (tv == null) return;
         
-        int from = tv.getCurrentTextColor();
-        int to = ContextCompat.getColor(context, active ? android.R.color.white : R.color.amoled_text_secondary);
+        int currentColor = tv.getCurrentTextColor();
+        int targetColor = ContextCompat.getColor(context, active ? android.R.color.white : R.color.amoled_text_secondary);
         tv.setTypeface(null, active ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
         
-        if (from != to) {
-            ValueAnimator anim = ValueAnimator.ofObject(new ArgbEvaluator(), from, to);
+        // Only change color if it's actually different
+        if (currentColor == targetColor) {
+            Log.d(TAG, "styleText - segment=" + segment.getId() + " already has correct color, skipping");
+            return;
+        }
+        
+        Log.d(TAG, "styleText - segment=" + segment.getId() + ", active=" + active + ", animate=" + animate);
+        
+        if (animate) {
+            ValueAnimator anim = ValueAnimator.ofObject(new ArgbEvaluator(), currentColor, targetColor);
             anim.setDuration(ANIMATION_DURATION);
             anim.addUpdateListener(a -> tv.setTextColor((Integer) a.getAnimatedValue()));
             anim.start();
+            Log.d(TAG, "Text color animation STARTED for segment " + segment.getId());
         } else {
-            tv.setTextColor(to);
+            // No animation - instant color change
+            tv.setTextColor(targetColor);
+            Log.d(TAG, "Text color set INSTANTLY for segment " + segment.getId());
         }
     }
     
