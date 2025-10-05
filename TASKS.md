@@ -492,26 +492,6 @@ This document tracks the implementation of FadRec, the screen recording feature 
 
 **Status:** FadRec Feature 100% Complete for MVP! 🎉 Ready for User Testing
 
-**Recent Fixes:**
-
-- ✅ **Critical:** VirtualDisplay resolution now matches MediaRecorder (720x1612) - fixes black video bug
-- ✅ **UI:** ModeSwitcher visual state updates with background and text color changes
-- ✅ **UI:** "Soon" badge removed from FadRec button
-- ✅ **Animation:** Smooth 250ms animated transitions between modes (TransitionDrawable + ValueAnimator)
-- ✅ **Fix:** Removed hardcoded colors from XML layout - all segments start neutral
-- ✅ **Safety:** Added 500ms debouncing to prevent rapid button clicks
-- ✅ **Animation Fix:** Fixed multiple modes becoming active simultaneously (proper drawable transition)
-- ✅ **UI:** Initially show only start button; pause/stop buttons slide in during recording
-- ✅ **UI:** Large centered screen recording icon (80sp, 30% opacity) in preview area
-- ✅ **Fix:** Camera switch button now properly hidden in FadRec mode
-- ✅ **Animation:** Smooth 300ms button color transitions (green→red)
-- ✅ **Animation:** Pause button slides in from right with fade (300ms)
-- ✅ **Inheritance:** Custom FadRec preview layout completely overrides parent HomeFragment preview
-- ✅ **Fix:** Long press on preview disabled in FadRec mode (camera-specific feature)
-- ✅ **State:** Mode selection now saved to SharedPreferences and persists across app restarts
-- ✅ **Logic:** Mode switcher ignores redundant clicks on already-active mode
-- ✅ **Animation:** Improved segment state transitions with proper null checks and logging
-
 ---
 
 ## 🏗️ Architecture Overview
@@ -653,8 +633,6 @@ After making changes, build and install:
 
 ```bash
 ./gradlew compileDebugJavaWithJavac installDebug
-# Or on Linux/Mac:
-./gradlew compileDebugJavaWithJavac installDebug
 ```
 
 ---
@@ -664,14 +642,3 @@ After making changes, build and install:
 **Status:** 100% Complete for MVP Testing! 🎉
 **Progress:** 107/107 essential tasks (100%) complete
 
-**Latest Changes:**
-
-- Fixed mode switcher animation bug (multiple modes becoming active)
-- Added smooth animated button appearances (slide + fade)
-- Large centered screen recording icon (inspired by reference app)
-- Initially show only start button, pause/stop slide in during recording
-- All transitions smooth and polished (250-300ms animations)
-- Camera switch button properly hidden in FadRec mode
-
-- Removed "Soon" badge from FadRec
-- All core recording workflows functional
