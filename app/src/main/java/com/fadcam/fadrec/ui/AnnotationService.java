@@ -17,6 +17,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -24,6 +25,8 @@ import androidx.core.app.NotificationCompat;
 import com.fadcam.R;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.AnnotationStateManager;
+import com.fadcam.fadrec.ui.annotation.AnnotationPage;
+import com.fadcam.fadrec.ui.annotation.AnnotationLayer;
 
 /**
  * Service that provides floating annotation tools for drawing on screen during recording.
@@ -33,7 +36,7 @@ public class AnnotationService extends Service {
     private static final String TAG = "AnnotationService";
     private static final String CHANNEL_ID = "AnnotationServiceChannel";
     private static final int NOTIFICATION_ID = 3003;
-    private static final long AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+    private static final long AUTO_SAVE_INTERVAL = 5000; // 5 seconds backup save
     
     private WindowManager windowManager;
     private AnnotationView annotationView;
@@ -44,8 +47,15 @@ public class AnnotationService extends Service {
     private Handler autoSaveHandler;
     private Runnable autoSaveRunnable;
     
+    // Professional overlays
+    private PageTabBarOverlay pageTabBarOverlay;
+    private LayerPanelOverlay layerPanelOverlay;
+    
     // Toolbar controls
     private TextView btnUndo, btnRedo;
+    private TextView txtUndoCount, txtRedoCount;
+    private TextView btnPages, btnLayers;
+    private TextView txtPageInfo, txtLayerInfo;
     private TextView btnExpandCollapse;
     private TextView btnCloseAnnotation;
     private View expandableToolsSection;
@@ -98,6 +108,7 @@ public class AnnotationService extends Service {
         // Listen for state changes to update UI
         annotationView.setOnStateChangeListener(() -> {
             updateUndoRedoButtons();
+            saveCurrentState(); // Save immediately on every change
         });
         
         int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -127,6 +138,12 @@ public class AnnotationService extends Service {
         // Initialize toolbar controls
         btnUndo = toolbarView.findViewById(R.id.btnUndo);
         btnRedo = toolbarView.findViewById(R.id.btnRedo);
+        txtUndoCount = toolbarView.findViewById(R.id.txtUndoCount);
+        txtRedoCount = toolbarView.findViewById(R.id.txtRedoCount);
+        btnPages = toolbarView.findViewById(R.id.btnPages);
+        btnLayers = toolbarView.findViewById(R.id.btnLayers);
+        txtPageInfo = toolbarView.findViewById(R.id.txtPageInfo);
+        txtLayerInfo = toolbarView.findViewById(R.id.txtLayerInfo);
         btnExpandCollapse = toolbarView.findViewById(R.id.btnExpandCollapse);
         btnCloseAnnotation = toolbarView.findViewById(R.id.btnCloseAnnotation);
         expandableToolsSection = toolbarView.findViewById(R.id.expandableToolsSection);
@@ -190,6 +207,16 @@ public class AnnotationService extends Service {
                 annotationView.redo();
                 updateUndoRedoButtons();
             }
+        });
+        
+        // Pages button - show page tab bar overlay
+        btnPages.setOnClickListener(v -> {
+            showPageTabBar();
+        });
+        
+        // Layers button - show layer panel overlay
+        btnLayers.setOnClickListener(v -> {
+            showLayerPanel();
         });
         
         // Expand/Collapse button
@@ -376,16 +403,68 @@ public class AnnotationService extends Service {
     /**
      * Updates the undo/redo button states based on availability.
      * Enabled buttons have full opacity, disabled buttons are dimmed.
+     * Also updates the counters showing available operations.
      */
     private void updateUndoRedoButtons() {
         if (annotationView != null) {
-            btnUndo.setAlpha(annotationView.canUndo() ? 1.0f : 0.5f);
-            btnRedo.setAlpha(annotationView.canRedo() ? 1.0f : 0.5f);
+            // Update button states
+            boolean canUndo = annotationView.canUndo();
+            boolean canRedo = annotationView.canRedo();
+            
+            btnUndo.setAlpha(canUndo ? 1.0f : 0.5f);
+            btnRedo.setAlpha(canRedo ? 1.0f : 0.5f);
+            
+            // Update counters
+            int undoCount = annotationView.getUndoCount();
+            int redoCount = annotationView.getRedoCount();
+            
+            txtUndoCount.setText(String.valueOf(undoCount));
+            txtRedoCount.setText(String.valueOf(redoCount));
+            
+            // Dim counter text when no operations available
+            txtUndoCount.setAlpha(canUndo ? 1.0f : 0.5f);
+            txtRedoCount.setAlpha(canRedo ? 1.0f : 0.5f);
+            
+            // Update page and layer info
+            updatePageLayerInfo();
         }
     }
     
     /**
-     * Starts the auto-save timer to periodically persist annotation state.
+     * Updates the page and layer info labels.
+     */
+    private void updatePageLayerInfo() {
+        if (annotationView != null) {
+            AnnotationState state = annotationView.getState();
+            if (state != null) {
+                // Update page info (e.g., "2/3" means page 2 of 3 total)
+                int currentPageIndex = state.getActivePageIndex();
+                int totalPages = state.getPages().size();
+                txtPageInfo.setText((currentPageIndex + 1) + "/" + totalPages);
+                
+                // Update layer info
+                AnnotationPage currentPage = state.getActivePage();
+                if (currentPage != null) {
+                    int currentLayerIndex = currentPage.getActiveLayerIndex();
+                    AnnotationLayer currentLayer = currentPage.getActiveLayer();
+                    
+                    // Show layer number and lock status
+                    String layerText = "L" + (currentLayerIndex + 1);
+                    if (currentLayer != null && currentLayer.isLocked()) {
+                        layerText += "🔒"; // Add lock emoji when locked
+                    }
+                    txtLayerInfo.setText(layerText);
+                    
+                    // Change color based on lock state
+                    txtLayerInfo.setTextColor(currentLayer != null && currentLayer.isLocked() ? 
+                            0xFFFF5252 : 0xFF2196F3); // Red when locked, blue when unlocked
+                }
+            }
+        }
+    }
+    
+    /**
+     * Starts the auto-save timer as a backup (primary save is immediate on changes).
      */
     private void startAutoSave() {
         autoSaveHandler = new Handler(Looper.getMainLooper());
@@ -411,6 +490,229 @@ public class AnnotationService extends Service {
                 stateManager.setCurrentState(state);
                 stateManager.saveState();
                 Log.d(TAG, "State auto-saved");
+            }
+        }
+    }
+    
+    /**
+     * Show professional page tab bar overlay.
+     */
+    private void showPageTabBar() {
+        if (pageTabBarOverlay != null && pageTabBarOverlay.isShowing()) {
+            pageTabBarOverlay.hide();
+            return;
+        }
+        
+        // Close layer panel if open
+        if (layerPanelOverlay != null && layerPanelOverlay.isShowing()) {
+            layerPanelOverlay.hide();
+        }
+        
+        AnnotationState state = annotationView.getState();
+        if (state != null) {
+            pageTabBarOverlay = new PageTabBarOverlay(this, state);
+            pageTabBarOverlay.setOnPageActionListener(new PageTabBarOverlay.OnPageActionListener() {
+                @Override
+                public void onPageSelected(int index) {
+                    annotationView.switchToPage(index);
+                    updateUndoRedoButtons();
+                    pageTabBarOverlay.refresh();
+                    Toast.makeText(AnnotationService.this, "📄 " + state.getPages().get(index).getName(), Toast.LENGTH_SHORT).show();
+                }
+                
+                @Override
+                public void onPageAdded() {
+                    int newPageNumber = state.getPages().size() + 1;
+                    String pageName = "Page " + newPageNumber;
+                    annotationView.addPage(pageName);
+                    annotationView.switchToPage(state.getPages().size() - 1);
+                    updateUndoRedoButtons();
+                    Toast.makeText(AnnotationService.this, "✨ Created: " + pageName, Toast.LENGTH_SHORT).show();
+                }
+                
+                @Override
+                public void onPageDeleted(int index) {
+                    if (state.getPages().size() > 1) {
+                        String pageName = state.getPages().get(index).getName();
+                        state.removePage(index);
+                        annotationView.invalidate();
+                        updateUndoRedoButtons();
+                        pageTabBarOverlay.refresh();
+                        Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + pageName, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+            pageTabBarOverlay.show();
+        }
+    }
+    
+    /**
+     * Show professional layer panel overlay.
+     */
+    private void showLayerPanel() {
+        if (layerPanelOverlay != null && layerPanelOverlay.isShowing()) {
+            layerPanelOverlay.hide();
+            return;
+        }
+        
+        // Close page tab bar if open
+        if (pageTabBarOverlay != null && pageTabBarOverlay.isShowing()) {
+            pageTabBarOverlay.hide();
+        }
+        
+        AnnotationState state = annotationView.getState();
+        if (state != null) {
+            AnnotationPage currentPage = state.getActivePage();
+            if (currentPage != null) {
+                layerPanelOverlay = new LayerPanelOverlay(this, currentPage);
+                layerPanelOverlay.setOnLayerActionListener(new LayerPanelOverlay.OnLayerActionListener() {
+                    @Override
+                    public void onLayerSelected(int index) {
+                        currentPage.setActiveLayerIndex(index);
+                        annotationView.invalidate();
+                        updatePageLayerInfo();
+                        layerPanelOverlay.refresh();
+                        Toast.makeText(AnnotationService.this, "🎨 " + currentPage.getLayers().get(index).getName(), Toast.LENGTH_SHORT).show();
+                    }
+                    
+                    @Override
+                    public void onLayerVisibilityChanged(int index, boolean visible) {
+                        currentPage.getLayers().get(index).setVisible(visible);
+                        annotationView.invalidate();
+                        String msg = visible ? "👁️ Visible" : "🚫 Hidden";
+                        Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+                    
+                    @Override
+                    public void onLayerLockChanged(int index, boolean locked) {
+                        currentPage.getLayers().get(index).setLocked(locked);
+                        updatePageLayerInfo();
+                        String msg = locked ? "🔒 Locked" : "🔓 Unlocked";
+                        Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+                    
+                    @Override
+                    public void onLayerOpacityChanged(int index, float opacity) {
+                        currentPage.getLayers().get(index).setOpacity(opacity);
+                        annotationView.invalidate();
+                    }
+                    
+                    @Override
+                    public void onLayerAdded() {
+                        int newLayerNumber = currentPage.getLayers().size() + 1;
+                        String layerName = "Layer " + newLayerNumber;
+                        annotationView.addLayer(layerName);
+                        updatePageLayerInfo();
+                        layerPanelOverlay.refresh();
+                        Toast.makeText(AnnotationService.this, "✨ Created: " + layerName, Toast.LENGTH_SHORT).show();
+                    }
+                    
+                    @Override
+                    public void onLayerDeleted(int index) {
+                        if (currentPage.getLayers().size() > 1) {
+                            String layerName = currentPage.getLayers().get(index).getName();
+                            currentPage.removeLayer(index);
+                            annotationView.invalidate();
+                            updatePageLayerInfo();
+                            layerPanelOverlay.refresh();
+                            Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + layerName, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                layerPanelOverlay.show();
+            }
+        }
+    }
+    
+    /**
+     * Cycle to the next page (wraps around).
+     * @deprecated Use showPageTabBar() for professional UI
+     */
+    private void cycleToNextPage() {
+        if (annotationView != null) {
+            AnnotationState state = annotationView.getState();
+            if (state != null) {
+                int currentIndex = state.getActivePageIndex();
+                int totalPages = state.getPages().size();
+                int nextIndex = (currentIndex + 1) % totalPages;
+                
+                annotationView.switchToPage(nextIndex);
+                updateUndoRedoButtons();
+                
+                AnnotationPage page = state.getPages().get(nextIndex);
+                String message = "📄 " + page.getName() + " (" + (nextIndex + 1) + "/" + totalPages + ")";
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Switched to page: " + page.getName() + " (" + (nextIndex + 1) + "/" + totalPages + ")");
+            }
+        }
+    }
+    
+    /**
+     * Toggle active layer lock state.
+     */
+    private void toggleLayerLock() {
+        if (annotationView != null) {
+            AnnotationState state = annotationView.getState();
+            if (state != null) {
+                AnnotationPage currentPage = state.getActivePage();
+                if (currentPage != null) {
+                    AnnotationLayer currentLayer = currentPage.getActiveLayer();
+                    if (currentLayer != null) {
+                        boolean newLockState = !currentLayer.isLocked();
+                        currentLayer.setLocked(newLockState);
+                        annotationView.invalidate();
+                        updatePageLayerInfo(); // Update the lock indicator
+                        
+                        String lockIcon = newLockState ? "🔒" : "🔓";
+                        String message = lockIcon + " " + currentLayer.getName() + " " + (newLockState ? "Locked" : "Unlocked");
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Layer " + currentLayer.getName() + " locked: " + newLockState);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Add a new page.
+     */
+    private void addNewPage() {
+        if (annotationView != null) {
+            AnnotationState state = annotationView.getState();
+            if (state != null) {
+                int newPageNumber = state.getPages().size() + 1;
+                String pageName = "Page " + newPageNumber;
+                annotationView.addPage(pageName);
+                
+                // Switch to the new page
+                annotationView.switchToPage(state.getPages().size() - 1);
+                updateUndoRedoButtons();
+                
+                String message = "✨ Created: " + pageName;
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Added new page: " + pageName);
+            }
+        }
+    }
+    
+    /**
+     * Add a new layer to the current page.
+     */
+    private void addNewLayer() {
+        if (annotationView != null) {
+            AnnotationState state = annotationView.getState();
+            if (state != null) {
+                AnnotationPage currentPage = state.getActivePage();
+                if (currentPage != null) {
+                    int newLayerNumber = currentPage.getLayers().size() + 1;
+                    String layerName = "Layer " + newLayerNumber;
+                    annotationView.addLayer(layerName);
+                    updatePageLayerInfo(); // Update the layer counter
+                    
+                    String message = "✨ Created: " + layerName;
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Added new layer: " + layerName);
+                }
             }
         }
     }
@@ -454,6 +756,14 @@ public class AnnotationService extends Service {
         
         // Final save before shutdown
         saveCurrentState();
+        
+        // Clean up overlays
+        if (pageTabBarOverlay != null) {
+            pageTabBarOverlay.hide();
+        }
+        if (layerPanelOverlay != null) {
+            layerPanelOverlay.hide();
+        }
         
         // Clean up views
         if (annotationView != null) {

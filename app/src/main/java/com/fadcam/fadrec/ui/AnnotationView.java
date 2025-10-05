@@ -272,6 +272,22 @@ public class AnnotationView extends View {
     }
     
     /**
+     * Get number of available undo operations
+     */
+    public int getUndoCount() {
+        AnnotationPage currentPage = state.getActivePage();
+        return currentPage != null ? currentPage.getUndoStackSize() : 0;
+    }
+    
+    /**
+     * Get number of available redo operations
+     */
+    public int getRedoCount() {
+        AnnotationPage currentPage = state.getActivePage();
+        return currentPage != null ? currentPage.getRedoStackSize() : 0;
+    }
+    
+    /**
      * Toggle blackboard mode (black background)
      */
     public void setBlackboardMode(boolean enabled) {

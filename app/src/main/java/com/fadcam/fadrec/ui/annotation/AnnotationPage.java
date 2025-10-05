@@ -126,6 +126,14 @@ public class AnnotationPage implements Serializable {
         return !redoStack.isEmpty();
     }
     
+    public int getUndoStackSize() {
+        return undoStack.size();
+    }
+    
+    public int getRedoStackSize() {
+        return redoStack.size();
+    }
+    
     public void undo() {
         if (canUndo()) {
             DrawingCommand command = undoStack.pop();

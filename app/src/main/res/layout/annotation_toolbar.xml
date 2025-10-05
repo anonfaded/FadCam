@@ -14,37 +14,37 @@
         android:orientation="horizontal"
         android:gravity="center">
 
-        <!-- Undo Button -->
-        <TextView
-            android:id="@+id/btnUndo"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:gravity="center"
-            android:text="undo"
-            android:textSize="20sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="@font/materialicons"
-            android:background="@drawable/floating_button_item_bg"
-            android:clickable="true"
-            android:focusable="true"
-            android:layout_margin="2dp"
-            android:alpha="0.5" />
+                <!-- Undo Button with Counter -->
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+            
+            <TextView android:id="@+id/btnUndo" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="undo" android:textSize="20sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:alpha="0.5" />
+            
+            <TextView android:id="@+id/txtUndoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="8sp" android:textColor="#9E9E9E" android:gravity="center" android:layout_marginTop="1dp" />
+        </LinearLayout>
 
-        <!-- Redo Button -->
-        <TextView
-            android:id="@+id/btnRedo"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:gravity="center"
-            android:text="redo"
-            android:textSize="20sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="@font/materialicons"
-            android:background="@drawable/floating_button_item_bg"
-            android:clickable="true"
-            android:focusable="true"
-            android:layout_margin="2dp"
-            android:alpha="0.5" />
+        <!-- Redo Button with Counter -->
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+            
+            <TextView android:id="@+id/btnRedo" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="redo" android:textSize="20sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:alpha="0.5" />
+            
+            <TextView android:id="@+id/txtRedoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="8sp" android:textColor="#9E9E9E" android:gravity="center" android:layout_marginTop="1dp" />
+        </LinearLayout>
+
+        <!-- Pages Button with Label -->
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+            
+            <TextView android:id="@+id/btnPages" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="tab" android:textSize="20sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
+            
+            <TextView android:id="@+id/txtPageInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1/1" android:textSize="8sp" android:textColor="#4CAF50" android:gravity="center" android:layout_marginTop="1dp" />
+        </LinearLayout>
+
+        <!-- Layers Button with Label -->
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+            
+            <TextView android:id="@+id/btnLayers" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="layers" android:textSize="20sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
+            
+            <TextView android:id="@+id/txtLayerInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="L1" android:textSize="8sp" android:textColor="#2196F3" android:gravity="center" android:layout_marginTop="1dp" />
+        </LinearLayout>
 
         <!-- Expand/Collapse Toggle -->
         <TextView

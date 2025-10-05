@@ -476,13 +476,13 @@ This document tracks the implementation of FadRec, the screen recording feature 
   - [x] Blackboard/whiteboard mode toggle
   - [x] Collapsible floating toolbar for minimal screen usage
   - [x] Clear selection indicators for active tools/colors
-  - [ ] **Layer System** - Multiple layers per page with visibility/lock controls
-  - [ ] **Version Control** - Undo/Redo with 50-operation history per page
-  - [ ] **State Persistence** - Auto-save with crash recovery
-  - [ ] **Paging/Tabs** - Multiple independent annotation pages
-  - [ ] **Layer Management UI** - Bottom sheet for layer operations
-  - [ ] **Page Management UI** - Tab bar for page switching
-  - [ ] **Auto-save** - Periodic save every 30 seconds + on pause/destroy
+  - [x] **Layer System** - Multiple layers per page with visibility/lock controls
+  - [x] **Version Control** - Undo/Redo with 50-operation history per page
+  - [x] **State Persistence** - Auto-save with crash recovery (immediate save)
+  - [x] **Paging/Tabs** - Multiple independent annotation pages
+  - [x] **Layer Management UI** - Professional side panel with eye/lock icons and opacity sliders
+  - [x] **Page Management UI** - Horizontal tab bar at top for page switching
+  - [x] **Auto-save** - Immediate save on every action + 5-second backup timer
 
 ---
 
