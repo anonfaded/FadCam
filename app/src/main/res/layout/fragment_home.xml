@@ -156,13 +156,24 @@
         </LinearLayout>
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" app:cardBackgroundColor="?attr/colorSurface" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/layoutCards" app:strokeColor="#4CAF50" app:strokeWidth="15dp">
+    <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/layoutCards" app:strokeColor="#4CAF50" app:strokeWidth="15dp">
 
-        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/colorSurface">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
 
+            <!-- Background bubble shape (darker, behind everything) -->
+            <ImageView android:id="@+id/ivBubbleBackground" android:layout_width="240dp" android:layout_height="240dp" android:layout_gravity="center" android:src="@drawable/bubble_shape" android:tint="?attr/colorHeading" android:alpha="0.15" android:scaleType="fitCenter" android:contentDescription="Bubble background shape" />
+
+            <!-- Camera CCTV icon (overlayed on top of bubble) -->
+            <ImageView android:id="@+id/ivCameraIconPreview" android:layout_width="140dp" android:layout_height="140dp" android:layout_gravity="center" android:src="@drawable/cctv" android:tint="?attr/colorHeading" android:alpha="0.3" android:scaleType="fitCenter" android:contentDescription="Camera icon" />
+
+            <!-- TextureView for live camera preview (shows on top when recording) -->
             <TextureView android:id="@+id/textureView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
 
-            <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/colorOnSurface" android:textSize="24sp" />
+            <!-- Hidden placeholder text (replaced by icons) -->
+            <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/colorOnSurface" android:textSize="24sp" android:visibility="gone" />
+
+            <!-- Hint text for long press to enable preview (shown when recording with preview disabled) -->
+            <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="30dp" android:text="Long press to enable preview" android:textColor="?attr/colorHeading" android:textSize="12sp" android:alpha="0.6" android:visibility="gone" />
 
         </FrameLayout>
     </androidx.cardview.widget.CardView>

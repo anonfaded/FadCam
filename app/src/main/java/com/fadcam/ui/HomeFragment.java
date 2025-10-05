@@ -190,6 +190,7 @@ public class HomeFragment extends BaseFragment {
     
     private ImageView btnHamburgerMenu;
     private TextView tvPreviewPlaceholder;
+    private TextView tvPreviewHint; // Hint text for long press to enable preview
     
     /**
      * Changed from private to protected to allow FadRecHomeFragment to access in overridden methods.
@@ -536,9 +537,9 @@ public class HomeFragment extends BaseFragment {
      * (card long-press, texture long-press via GestureDetector).
      */
     private void handlePreviewLongPress() {
-        // When not recording, show a random funny message
+        // Only handle preview toggle when recording - do nothing when idle
         if (!isRecordingOrPaused()) {
-            showRandomMessage();
+            // showRandomMessage(); // Removed: No funny messages, just show layered icons
             return;
         }
 
@@ -650,6 +651,7 @@ public class HomeFragment extends BaseFragment {
                 // Show preview
                 textureView.setVisibility(View.VISIBLE);
                 tvPreviewPlaceholder.setVisibility(View.GONE);
+                if (tvPreviewHint != null) tvPreviewHint.setVisibility(View.GONE);
                 Log.d(TAG, "Preview enabled and recording - showing preview");
 
                 // Ensure surface is sent to service
@@ -661,24 +663,24 @@ public class HomeFragment extends BaseFragment {
                     updateServiceWithCurrentSurface(textureViewSurface);
                 }
             } else {
-                // Hide preview
+                // Hide preview but show hint text (using layered icons with hint)
                 textureView.setVisibility(View.INVISIBLE);
-                tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-                tvPreviewPlaceholder.setText("Long press to enable preview");
+                tvPreviewPlaceholder.setVisibility(View.GONE); // Keep hidden
+                if (tvPreviewHint != null) tvPreviewHint.setVisibility(View.VISIBLE); // Show hint
                 Log.d(
                     TAG,
-                    "Preview disabled but recording - showing placeholder"
+                    "Preview disabled but recording - showing hint text"
                 );
 
                 // Send null surface to service
                 updateServiceWithCurrentSurface(null);
             }
         } else {
-            // Not recording, show placeholder
+            // Not recording, keep placeholder and hint hidden (using layered icons only)
             textureView.setVisibility(View.INVISIBLE);
-            tvPreviewPlaceholder.setVisibility(View.VISIBLE);
-            tvPreviewPlaceholder.setText(getString(R.string.ui_preview_area));
-            Log.d(TAG, "Not recording - showing placeholder text");
+            tvPreviewPlaceholder.setVisibility(View.GONE); // Keep hidden
+            if (tvPreviewHint != null) tvPreviewHint.setVisibility(View.GONE); // Hide hint
+            Log.d(TAG, "Not recording - keeping placeholder hidden");
         }
         // ----- Fix Ended for this method(updatePreviewVisibility)-----
     }
@@ -3199,7 +3201,7 @@ public class HomeFragment extends BaseFragment {
 
         setupTextureView(view);
         setupButtonListeners();
-        setupLongPressListener(); // For Easter eggs on title
+        setupLongPressListener(); // Re-enabled for preview toggle during recording
         setupClockLongPressListener(); // For display options on clock
         setupAppLogoLongPressListener(view); // <<< CALL NEW METHOD
 
@@ -3241,9 +3243,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.red_theme_text_secondary_dark
             );
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                redSurface
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     redSurface
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(redSurface);
             if (cardStorage != null) cardStorage.setCardBackgroundColor(
                 redSurface
@@ -3265,9 +3267,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.gold_theme_text_secondary_dark
             );
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                goldSurface
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     goldSurface
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 goldSurface
             );
@@ -3292,9 +3294,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.silentforest_theme_text_secondary_dark
             );
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                forestSurface
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     forestSurface
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 forestSurface
             );
@@ -3327,9 +3329,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.shadowalloy_theme_text_secondary_dark
             );
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                alloySurface
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     alloySurface
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 alloySurface
             );
@@ -3358,9 +3360,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.pookiepink_theme_text_secondary_dark
             );
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                pinkSurface
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     pinkSurface
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 pinkSurface
             );
@@ -3398,22 +3400,23 @@ public class HomeFragment extends BaseFragment {
             );
 
             // Preview area gets darker gray for better contrast
-            if (cardPreview != null) {
-                cardPreview.setCardBackgroundColor(snowSurface);
-                // Also set the background of the FrameLayout inside the CardView
-                View frameLayout = cardPreview.getChildAt(0);
-                if (frameLayout != null) {
-                    frameLayout.setBackgroundColor(snowSurface);
-                }
-                // Use a post-layout runnable to ensure the color is applied after all layout
-                // operations
-                cardPreview.post(() -> {
-                    cardPreview.setCardBackgroundColor(snowSurface);
-                    if (frameLayout != null) {
-                        frameLayout.setBackgroundColor(snowSurface);
-                    }
-                });
-            }
+            // Commented: Keep preview transparent with layered icons
+            // if (cardPreview != null) {
+            //     cardPreview.setCardBackgroundColor(snowSurface);
+            //     // Also set the background of the FrameLayout inside the CardView
+            //     View frameLayout = cardPreview.getChildAt(0);
+            //     if (frameLayout != null) {
+            //         frameLayout.setBackgroundColor(snowSurface);
+            //     }
+            //     // Use a post-layout runnable to ensure the color is applied after all layout
+            //     // operations
+            //     cardPreview.post(() -> {
+            //         cardPreview.setCardBackgroundColor(snowSurface);
+            //         if (frameLayout != null) {
+            //             frameLayout.setBackgroundColor(snowSurface);
+            //         }
+            //     });
+            // }
 
             // Other cards get white background
             if (cardStats != null) cardStats.setCardBackgroundColor(
@@ -3450,23 +3453,24 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.amoled_text_secondary_dark
             );
-            if (cardPreview != null) {
-                cardPreview.setCardBackgroundColor(fadedNightSurface);
-                // Also set the background of the FrameLayout inside the CardView to ensure it
-                // overrides the layout attribute
-                View frameLayout = cardPreview.getChildAt(0);
-                if (frameLayout != null) {
-                    frameLayout.setBackgroundColor(fadedNightSurface);
-                }
-                // Use a post-layout runnable to ensure the color is applied after all layout
-                // operations
-                cardPreview.post(() -> {
-                    cardPreview.setCardBackgroundColor(fadedNightSurface);
-                    if (frameLayout != null) {
-                        frameLayout.setBackgroundColor(fadedNightSurface);
-                    }
-                });
-            }
+            // Commented: Keep preview transparent with layered icons
+            // if (cardPreview != null) {
+            //     cardPreview.setCardBackgroundColor(fadedNightSurface);
+            //     // Also set the background of the FrameLayout inside the CardView to ensure it
+            //     // overrides the layout attribute
+            //     View frameLayout = cardPreview.getChildAt(0);
+            //     if (frameLayout != null) {
+            //         frameLayout.setBackgroundColor(fadedNightSurface);
+            //     }
+            //     // Use a post-layout runnable to ensure the color is applied after all layout
+            //     // operations
+            //     cardPreview.post(() -> {
+            //         cardPreview.setCardBackgroundColor(fadedNightSurface);
+            //         if (frameLayout != null) {
+            //             frameLayout.setBackgroundColor(fadedNightSurface);
+            //         }
+            //     });
+            // }
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 fadedNightSurface
             );
@@ -3500,9 +3504,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.amoled_text_secondary_dark
             );
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                amoledSurface
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     amoledSurface
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 amoledSurface
             );
@@ -3534,23 +3538,24 @@ public class HomeFragment extends BaseFragment {
                 requireContext(),
                 R.color.gray_text_light
             );
-            if (cardPreview != null) {
-                cardPreview.setCardBackgroundColor(darkSurface);
-                // Also set the background of the FrameLayout inside the CardView to ensure it
-                // overrides the layout attribute
-                View frameLayout = cardPreview.getChildAt(0);
-                if (frameLayout != null) {
-                    frameLayout.setBackgroundColor(darkSurface);
-                }
-                // Use a post-layout runnable to ensure the color is applied after all layout
-                // operations
-                cardPreview.post(() -> {
-                    cardPreview.setCardBackgroundColor(darkSurface);
-                    if (frameLayout != null) {
-                        frameLayout.setBackgroundColor(darkSurface);
-                    }
-                });
-            }
+            // Commented: Keep preview transparent with layered icons
+            // if (cardPreview != null) {
+            //     cardPreview.setCardBackgroundColor(darkSurface);
+            //     // Also set the background of the FrameLayout inside the CardView to ensure it
+            //     // overrides the layout attribute
+            //     View frameLayout = cardPreview.getChildAt(0);
+            //     if (frameLayout != null) {
+            //         frameLayout.setBackgroundColor(darkSurface);
+            //     }
+            //     // Use a post-layout runnable to ensure the color is applied after all layout
+            //     // operations
+            //     cardPreview.post(() -> {
+            //         cardPreview.setCardBackgroundColor(darkSurface);
+            //         if (frameLayout != null) {
+            //             frameLayout.setBackgroundColor(darkSurface);
+            //         }
+            //     });
+            // }
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 darkSurface
             );
@@ -3566,9 +3571,9 @@ public class HomeFragment extends BaseFragment {
             applyMidnightDuskThemeToTiles();
         } else {
             // Fallback for other themes: use dialog color for cards
-            if (cardPreview != null) cardPreview.setCardBackgroundColor(
-                colorDialog
-            );
+            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
+            //     colorDialog
+            // ); // Commented: Keep preview transparent with layered icons
             if (cardStats != null) cardStats.setCardBackgroundColor(
                 colorDialog
             );
@@ -3593,6 +3598,11 @@ public class HomeFragment extends BaseFragment {
     setupStatsCardNavigation(view);
         // ----- Fix End: Apply dynamic theme colors to preview area cards (force
         // override for AMOLED and Red, use *_surface_dark) -----
+
+        // Force transparent background for preview card (override theme colors)
+        if (cardPreview != null) {
+            cardPreview.setCardBackgroundColor(android.graphics.Color.TRANSPARENT);
+        }
 
         // Apply theme-specific colors to mode switcher
         applyModeSwitcherTheming(themeName);
@@ -3736,7 +3746,7 @@ public class HomeFragment extends BaseFragment {
 
         // updateTip(); // Duplicate call? Check if startTipsAnimation is sufficient
         setupButtonListeners();
-        setupLongPressListener();
+        setupLongPressListener(); // Re-enabled for preview toggle during recording
         updatePreviewVisibility(); // CRUCIAL: Update visibility based on the loaded state
 
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
@@ -7477,6 +7487,7 @@ public class HomeFragment extends BaseFragment {
         }
 
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
+        tvPreviewHint = view.findViewById(R.id.tvPreviewHint);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
