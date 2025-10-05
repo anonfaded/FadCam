@@ -1672,6 +1672,29 @@ public class SharedPreferencesManager {
     }
 
     /**
+     * Gets the screen recording state.
+     * @return State string (NONE, IN_PROGRESS, PAUSED)
+     */
+    public String getScreenRecordingState() {
+        return sharedPreferences.getString(
+            Constants.PREF_SCREEN_RECORDING_STATE,
+            "NONE" // Default to NONE
+        );
+    }
+
+    /**
+     * Sets the screen recording state.
+     * @param state State string (NONE, IN_PROGRESS, PAUSED)
+     */
+    public void setScreenRecordingState(String state) {
+        sharedPreferences
+            .edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_STATE, state)
+            .apply();
+        Log.d("SharedPrefs", "Screen recording state changed to: " + state);
+    }
+
+    /**
      * Gets the current recording mode (FadCam or FadRec).
      * @return Current mode string (MODE_FADCAM or MODE_FADREC)
      */

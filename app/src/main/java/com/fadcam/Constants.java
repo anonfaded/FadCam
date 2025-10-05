@@ -153,6 +153,8 @@ public abstract class Constants {
         "pref_screen_recording_watermark_enabled"; // boolean
     public static final String PREF_IS_SCREEN_RECORDING_IN_PROGRESS =
         "pref_is_screen_recording_in_progress"; // boolean
+    public static final String PREF_SCREEN_RECORDING_STATE =
+        "pref_screen_recording_state"; // NONE/IN_PROGRESS/PAUSED
 
     // Default screen recording quality settings
     public static final int DEFAULT_SCREEN_RECORDING_WIDTH = 1920; // FHD

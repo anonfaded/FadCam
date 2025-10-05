@@ -3,7 +3,7 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginStart="16dp" android:layout_marginEnd="16dp" android:layout_marginTop="8dp" app:cardBackgroundColor="?attr/colorSurface" app:cardCornerRadius="16dp" app:cardElevation="0dp">
 
-    <!-- Centered screen recording icon -->
-    <TextView android:id="@+id/tvScreenRecordingIcon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="screen_share" android:textSize="80sp" android:textColor="?attr/colorHeading" android:alpha="0.3" android:fontFamily="@font/materialicons" />
+    <!-- Centered screen recording icon (PNG drawable) -->
+    <ImageView android:id="@+id/ivScreenRecordingIcon" android:layout_width="100dp" android:layout_height="100dp" android:layout_gravity="center" android:src="@drawable/screen_recorder" android:tint="?attr/colorHeading" android:alpha="0.3" android:scaleType="fitCenter" android:contentDescription="Screen recording icon" />
 
 </androidx.cardview.widget.CardView>

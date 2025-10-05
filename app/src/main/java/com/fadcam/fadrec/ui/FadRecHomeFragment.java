@@ -12,6 +12,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -138,9 +139,6 @@ public class FadRecHomeFragment extends HomeFragment {
             // Hide camera-specific controls
             hideCameraControls(rootView);
             
-            // Update info cards to show screen recording info
-            updateInfoCardsForScreenMode();
-            
             Log.d(TAG, "UI customization complete");
         } catch (Exception e) {
             Log.e(TAG, "Error customizing UI for screen recording", e);
@@ -151,14 +149,14 @@ public class FadRecHomeFragment extends HomeFragment {
      * Hide camera-specific controls that are not relevant for screen recording.
      */
     private void hideCameraControls(View rootView) {
-        // Hide camera switch button (moved to button row)
+        // Hide camera switch button
         View buttonCamSwitch = rootView.findViewById(com.fadcam.R.id.buttonCamSwitch);
         if (buttonCamSwitch != null) {
             buttonCamSwitch.setVisibility(View.GONE);
             Log.d(TAG, "Camera switch button hidden");
         }
         
-        // Torch button
+        // Hide torch button
         View buttonTorchSwitch = rootView.findViewById(com.fadcam.R.id.buttonTorchSwitch);
         if (buttonTorchSwitch != null) {
             buttonTorchSwitch.setVisibility(View.GONE);
@@ -175,6 +173,9 @@ public class FadRecHomeFragment extends HomeFragment {
             tvPreviewPlaceholder.setVisibility(View.GONE);
         }
         
+        // Update camera info card to show screen recording info instead
+        updateCardForScreenRecording(rootView);
+        
         // Hide recording tiles (AF, exposure, zoom - camera specific)
         View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
         if (tileAfToggle != null) {
@@ -188,6 +189,13 @@ public class FadRecHomeFragment extends HomeFragment {
         View tileZoom = rootView.findViewById(com.fadcam.R.id.tile_zoom);
         if (tileZoom != null) {
             tileZoom.setVisibility(View.GONE);
+        }
+        
+        // Hide recording controls title (AF · Exposure · Zoom)
+        View tvRecordingControlsTitle = rootView.findViewById(com.fadcam.R.id.tv_recording_controls_title);
+        if (tvRecordingControlsTitle != null) {
+            tvRecordingControlsTitle.setVisibility(View.GONE);
+            Log.d(TAG, "Recording controls title hidden");
         }
         
         // Replace preview card content with custom FadRec screen icon
@@ -230,50 +238,76 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     /**
-     * Update info cards to show screen recording information.
-     * Overrides camera info with device screen resolution.
+     * Update the camera info card to show screen recording information.
+     * Modifies icon, title, and subtitle to reflect screen recording mode.
+     * Uses OOP inheritance - overrides parent's camera card with screen recording info.
      */
-    private void updateInfoCardsForScreenMode() {
-        try {
-            // Get device screen resolution
-            WindowManager windowManager = 
-                (WindowManager) requireContext().getSystemService(Context.WINDOW_SERVICE);
+    private void updateCardForScreenRecording(View rootView) {
+        // Post to ensure parent's view initialization is complete
+        rootView.post(() -> {
+            // Find card elements using the original camera IDs (parent's elements)
+            View oldIconView = rootView.findViewById(com.fadcam.R.id.ivCameraIcon);
+            TextView tvCameraTitle = rootView.findViewById(com.fadcam.R.id.tvCameraTitle);
+            TextView tvCameraSubtitle = rootView.findViewById(com.fadcam.R.id.tvCameraSubtitle);
             
-            if (windowManager != null) {
-                DisplayMetrics metrics = new DisplayMetrics();
-                windowManager.getDefaultDisplay().getRealMetrics(metrics);
+            if (oldIconView != null && oldIconView.getParent() instanceof android.view.ViewGroup) {
+                // Replace TextView icon with ImageView for PNG drawable
+                android.view.ViewGroup parent = (android.view.ViewGroup) oldIconView.getParent();
+                int index = parent.indexOfChild(oldIconView);
                 
-                String screenResolution = metrics.widthPixels + "x" + metrics.heightPixels;
+                // Create new ImageView for screen recording icon
+                android.widget.ImageView ivScreenRecordIcon = new android.widget.ImageView(requireContext());
+                ivScreenRecordIcon.setId(com.fadcam.R.id.ivCameraIcon); // Keep same ID
                 
-                // Update camera card title to show screen resolution
-                View rootView = getView();
-                if (rootView != null) {
-                    android.widget.TextView tvCameraTitle = 
-                        rootView.findViewById(com.fadcam.R.id.tvCameraTitle);
-                    if (tvCameraTitle != null) {
-                        tvCameraTitle.setText(screenResolution);
-                    }
+                // Set layout params (same as original TextView)
+                // Use 28dp for icon to match other icons in the card and add small padding
+                final float d = getResources().getDisplayMetrics().density;
+                int size = (int) (28 * d);
+                android.view.ViewGroup.MarginLayoutParams layoutParams = 
+                    new android.view.ViewGroup.MarginLayoutParams(size, size);
+                layoutParams.setMarginEnd((int) (4 * d));
+                ivScreenRecordIcon.setLayoutParams(layoutParams);
+                
+                // Set the PNG drawable
+                ivScreenRecordIcon.setImageResource(com.fadcam.R.drawable.screen_recorder);
+                
+                // Apply tint (green color matching camera icon)
+                ivScreenRecordIcon.setColorFilter(
+                    ContextCompat.getColor(requireContext(), com.fadcam.R.color.greenPastel),
+                    android.graphics.PorterDuff.Mode.SRC_IN
+                );
+                
+                ivScreenRecordIcon.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
+                ivScreenRecordIcon.setPadding((int)(4*d), (int)(4*d), (int)(4*d), (int)(4*d));
+                
+                // Replace the old TextView with new ImageView
+                parent.removeViewAt(index);
+                parent.addView(ivScreenRecordIcon, index);
+                
+                Log.d(TAG, "Card icon replaced with screen_recorder.png");
+            }
+            
+            if (tvCameraTitle != null) {
+                // Get device screen resolution
+                android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                if (getActivity() != null) {
+                    getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+                    int width = metrics.widthPixels;
+                    int height = metrics.heightPixels;
                     
-                    // Update subtitle
-                    android.widget.TextView tvCameraSubtitle = 
-                        rootView.findViewById(com.fadcam.R.id.tvCameraSubtitle);
+                    // Update title to show screen recording info
+                    tvCameraTitle.setText("Screen Recording");
+                    Log.d(TAG, "Card title updated to Screen Recording");
+                    
+                    // Update subtitle with device screen resolution and fps
                     if (tvCameraSubtitle != null) {
-                        tvCameraSubtitle.setText("Screen Recording • FHD 30fps");
-                    }
-                    
-                    // Update icon to screen_share
-                    android.widget.TextView ivCameraIcon = 
-                        rootView.findViewById(com.fadcam.R.id.ivCameraIcon);
-                    if (ivCameraIcon != null) {
-                        ivCameraIcon.setText("screen_share");
+                        String subtitle = width + "x" + height + " • 30fps";
+                        tvCameraSubtitle.setText(subtitle);
+                        Log.d(TAG, "Card subtitle updated to: " + subtitle);
                     }
                 }
-                
-                Log.d(TAG, "Info cards updated with screen resolution: " + screenResolution);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Error updating info cards for screen mode", e);
-        }
+        });
     }
 
     /**
@@ -284,8 +318,11 @@ public class FadRecHomeFragment extends HomeFragment {
         MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
         
+        // Load persisted state on initialization
+        loadPersistedRecordingState();
+        
         // Initially hide pause button (will appear during recording)
-        if (buttonPauseResume != null) {
+        if (buttonPauseResume != null && screenRecordingState == ScreenRecordingState.NONE) {
             buttonPauseResume.setVisibility(View.GONE);
         }
         
@@ -332,6 +369,29 @@ public class FadRecHomeFragment extends HomeFragment {
         }
         
         Log.d(TAG, "Button handlers setup complete");
+    }
+    
+    /**
+     * Load persisted recording state from SharedPreferences.
+     */
+    private void loadPersistedRecordingState() {
+        String persistedState = sharedPreferencesManager.getScreenRecordingState();
+        try {
+            screenRecordingState = ScreenRecordingState.valueOf(persistedState);
+            Log.d(TAG, "Loaded persisted state: " + screenRecordingState);
+            updateUIForRecordingState();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load persisted state, defaulting to NONE", e);
+            screenRecordingState = ScreenRecordingState.NONE;
+        }
+    }
+    
+    /**
+     * Persist recording state to SharedPreferences.
+     */
+    private void persistRecordingState(ScreenRecordingState state) {
+        sharedPreferencesManager.setScreenRecordingState(state.name());
+        Log.d(TAG, "Persisted state: " + state);
     }
 
     /**
@@ -406,6 +466,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 switch (action) {
                     case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
                         screenRecordingState = ScreenRecordingState.IN_PROGRESS;
+                        persistRecordingState(screenRecordingState);
                         updateUIForRecordingState();
                         Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_started, 
                             Toast.LENGTH_SHORT).show();
@@ -413,6 +474,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         
                     case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
                         screenRecordingState = ScreenRecordingState.NONE;
+                        persistRecordingState(screenRecordingState);
                         updateUIForRecordingState();
                         Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_stopped, 
                             Toast.LENGTH_SHORT).show();
@@ -420,6 +482,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         
                     case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
                         screenRecordingState = ScreenRecordingState.PAUSED;
+                        persistRecordingState(screenRecordingState);
                         updateUIForRecordingState();
                         Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_paused, 
                             Toast.LENGTH_SHORT).show();
@@ -427,6 +490,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         
                     case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
                         screenRecordingState = ScreenRecordingState.IN_PROGRESS;
+                        persistRecordingState(screenRecordingState);
                         updateUIForRecordingState();
                         Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_resumed, 
                             Toast.LENGTH_SHORT).show();
@@ -437,6 +501,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         if (stateStr != null) {
                             try {
                                 screenRecordingState = ScreenRecordingState.valueOf(stateStr);
+                                persistRecordingState(screenRecordingState);
                                 updateUIForRecordingState();
                             } catch (IllegalArgumentException e) {
                                 Log.e(TAG, "Invalid state: " + stateStr, e);
@@ -576,12 +641,6 @@ public class FadRecHomeFragment extends HomeFragment {
     public void onResume() {
         super.onResume();
         Log.d(TAG, "FadRecHomeFragment resumed");
-        
-        // Check current recording state from preferences
-        if (sharedPreferencesManager.isScreenRecordingInProgress()) {
-            screenRecordingState = ScreenRecordingState.IN_PROGRESS;
-            updateUIForRecordingState();
-        }
     }
 
     @Override
