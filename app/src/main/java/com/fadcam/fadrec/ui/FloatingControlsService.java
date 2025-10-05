@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
@@ -34,8 +35,10 @@ public class FloatingControlsService extends Service {
     private View floatingView;
     private View quickMenuView;
     private TextView btnFloating;
-    private View btnStart, btnPause, btnResume, btnStop;
+    private View btnStartStop, btnPauseResume;
     private View btnCloseMenu;
+    private TextView iconStartStop, labelStartStop;
+    private TextView iconPauseResume, labelPauseResume;
     
     private boolean isMenuExpanded = false;
     private ScreenRecordingState recordingState = ScreenRecordingState.NONE;
@@ -144,31 +147,38 @@ public class FloatingControlsService extends Service {
         // Inflate quick menu layout
         quickMenuView = LayoutInflater.from(this).inflate(R.layout.floating_quick_menu, null);
         
-        btnStart = quickMenuView.findViewById(R.id.btnStartRec);
-        btnPause = quickMenuView.findViewById(R.id.btnPauseRec);
-        btnResume = quickMenuView.findViewById(R.id.btnResumeRec);
-        btnStop = quickMenuView.findViewById(R.id.btnStopRec);
+        btnStartStop = quickMenuView.findViewById(R.id.btnStartStopRec);
+        btnPauseResume = quickMenuView.findViewById(R.id.btnPauseResumeRec);
         btnCloseMenu = quickMenuView.findViewById(R.id.btnCloseMenu);
         
+        iconStartStop = quickMenuView.findViewById(R.id.iconStartStop);
+        labelStartStop = quickMenuView.findViewById(R.id.labelStartStop);
+        iconPauseResume = quickMenuView.findViewById(R.id.iconPauseResume);
+        labelPauseResume = quickMenuView.findViewById(R.id.labelPauseResume);
+        
         // Set up click listeners
-        btnStart.setOnClickListener(v -> {
-            sendBroadcast(new Intent(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
-            hideQuickMenu();
+        btnStartStop.setOnClickListener(v -> {
+            if (btnStartStop.isEnabled()) {
+                if (recordingState == ScreenRecordingState.NONE) {
+                    // Start recording
+                    sendBroadcast(new Intent(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
+                } else {
+                    // Stop recording (works for both IN_PROGRESS and PAUSED)
+                    sendBroadcast(new Intent(Constants.ACTION_STOP_SCREEN_RECORDING));
+                }
+            }
         });
         
-        btnPause.setOnClickListener(v -> {
-            sendBroadcast(new Intent(Constants.ACTION_PAUSE_SCREEN_RECORDING));
-            hideQuickMenu();
-        });
-        
-        btnResume.setOnClickListener(v -> {
-            sendBroadcast(new Intent(Constants.ACTION_RESUME_SCREEN_RECORDING));
-            hideQuickMenu();
-        });
-        
-        btnStop.setOnClickListener(v -> {
-            sendBroadcast(new Intent(Constants.ACTION_STOP_SCREEN_RECORDING));
-            hideQuickMenu();
+        btnPauseResume.setOnClickListener(v -> {
+            if (btnPauseResume.isEnabled()) {
+                if (recordingState == ScreenRecordingState.IN_PROGRESS) {
+                    // Pause recording
+                    sendBroadcast(new Intent(Constants.ACTION_PAUSE_SCREEN_RECORDING));
+                } else if (recordingState == ScreenRecordingState.PAUSED) {
+                    // Resume recording
+                    sendBroadcast(new Intent(Constants.ACTION_RESUME_SCREEN_RECORDING));
+                }
+            }
         });
         
         btnCloseMenu.setOnClickListener(v -> {
@@ -226,12 +236,51 @@ public class FloatingControlsService extends Service {
     private void updateQuickMenuButtons() {
         if (quickMenuView == null) return;
         
-        btnStart.setVisibility(recordingState == ScreenRecordingState.NONE ? View.VISIBLE : View.GONE);
-        btnPause.setVisibility(recordingState == ScreenRecordingState.IN_PROGRESS ? View.VISIBLE : View.GONE);
-        btnResume.setVisibility(recordingState == ScreenRecordingState.PAUSED ? View.VISIBLE : View.GONE);
-        btnStop.setVisibility(recordingState != ScreenRecordingState.NONE ? View.VISIBLE : View.GONE);
+        switch (recordingState) {
+            case NONE:
+                // Start/Stop button shows "Start" (enabled)
+                btnStartStop.setEnabled(true);
+                iconStartStop.setText("fiber_manual_record");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+                labelStartStop.setText(R.string.floating_menu_start_short);
+                
+                // Pause/Resume button is disabled
+                btnPauseResume.setEnabled(false);
+                iconPauseResume.setText("pause");
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                labelPauseResume.setText(R.string.floating_menu_pause);
+                break;
+                
+            case IN_PROGRESS:
+                // Start/Stop button shows "Stop" (enabled)
+                btnStartStop.setEnabled(true);
+                iconStartStop.setText("stop");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                labelStartStop.setText(R.string.floating_menu_stop_short);
+                
+                // Pause/Resume button shows "Pause" (enabled)
+                btnPauseResume.setEnabled(true);
+                iconPauseResume.setText("pause");
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
+                labelPauseResume.setText(R.string.floating_menu_pause);
+                break;
+                
+            case PAUSED:
+                // Start/Stop button shows "Stop" (enabled)
+                btnStartStop.setEnabled(true);
+                iconStartStop.setText("stop");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                labelStartStop.setText(R.string.floating_menu_stop_short);
+                
+                // Pause/Resume button shows "Resume" (enabled)
+                btnPauseResume.setEnabled(true);
+                iconPauseResume.setText("play_arrow");
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+                labelPauseResume.setText(R.string.floating_menu_resume);
+                break;
+        }
     }
-
+    
     private void registerStateReceiver() {
         stateReceiver = new BroadcastReceiver() {
             @Override

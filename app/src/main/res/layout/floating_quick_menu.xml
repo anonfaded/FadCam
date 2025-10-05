@@ -1,219 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="280dp"
-    android:layout_height="280dp"
-    android:background="@drawable/floating_menu_bg"
-    android:padding="20dp">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/floating_menu_bg" android:padding="12dp" android:minWidth="200dp">
 
-    <!-- Close Button (Top Right) -->
-    <FrameLayout
-        android:id="@+id/btnCloseMenu"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:clickable="true"
-        android:focusable="true">
+    <!-- Header with close button -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="8dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="close"
-            android:textSize="24sp"
-            android:textColor="#B0FFFFFF"
-            android:fontFamily="@font/materialicons" />
-    </FrameLayout>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/floating_menu_title" android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" />
 
-    <!-- Center Container for Grid -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:paddingTop="20dp">
+        <TextView android:id="@+id/btnCloseMenu" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="close" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="?android:attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
 
-        <!-- Top Row (Start, Pause) -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
+    <!-- Control Buttons Row -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="4dp" android:paddingBottom="8dp">
 
-            <!-- Start Recording -->
-            <LinearLayout
-                android:id="@+id/btnStartRec"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="8dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="16dp">
+        <!-- Start/Stop Button -->
+        <LinearLayout android:id="@+id/btnStartStopRec" android:layout_width="80dp" android:layout_height="80dp" android:orientation="vertical" android:gravity="center" android:padding="8dp" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp">
 
-                <!-- Icon Circle -->
-                <FrameLayout
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/assistive_touch_icon_bg">
+            <TextView android:id="@+id/iconStartStop" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="fiber_manual_record" android:textSize="28sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="fiber_manual_record"
-                        android:textSize="28sp"
-                        android:textColor="#FFFFFF"
-                        android:fontFamily="@font/materialicons" />
-                </FrameLayout>
-
-                <!-- Label -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/floating_menu_start_short"
-                    android:textSize="11sp"
-                    android:textColor="#E0FFFFFF"
-                    android:gravity="center"
-                    android:maxLines="1" />
-            </LinearLayout>
-
-            <!-- Pause Recording -->
-            <LinearLayout
-                android:id="@+id/btnPauseRec"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="8dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="gone">
-
-                <!-- Icon Circle -->
-                <FrameLayout
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/assistive_touch_icon_bg">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="pause"
-                        android:textSize="28sp"
-                        android:textColor="#FFFFFF"
-                        android:fontFamily="@font/materialicons" />
-                </FrameLayout>
-
-                <!-- Label -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/floating_menu_pause"
-                    android:textSize="11sp"
-                    android:textColor="#E0FFFFFF"
-                    android:gravity="center"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <TextView android:id="@+id/labelStartStop" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/floating_menu_start_short" android:textSize="11sp" android:textColor="#FFFFFF" />
         </LinearLayout>
 
-        <!-- Bottom Row (Resume, Stop) -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+        <!-- Pause/Resume Button -->
+        <LinearLayout android:id="@+id/btnPauseResumeRec" android:layout_width="80dp" android:layout_height="80dp" android:orientation="vertical" android:gravity="center" android:padding="8dp" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="8dp">
 
-            <!-- Resume Recording -->
-            <LinearLayout
-                android:id="@+id/btnResumeRec"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="8dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="16dp"
-                android:visibility="gone">
+            <TextView android:id="@+id/iconPauseResume" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="pause" android:textSize="28sp" android:textColor="#FF9800" android:fontFamily="@font/materialicons" />
 
-                <!-- Icon Circle -->
-                <FrameLayout
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/assistive_touch_icon_bg">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="play_arrow"
-                        android:textSize="28sp"
-                        android:textColor="#FFFFFF"
-                        android:fontFamily="@font/materialicons" />
-                </FrameLayout>
-
-                <!-- Label -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/floating_menu_resume"
-                    android:textSize="11sp"
-                    android:textColor="#E0FFFFFF"
-                    android:gravity="center"
-                    android:maxLines="1" />
-            </LinearLayout>
-
-            <!-- Stop Recording -->
-            <LinearLayout
-                android:id="@+id/btnStopRec"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="8dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="gone">
-
-                <!-- Icon Circle -->
-                <FrameLayout
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/assistive_touch_icon_bg">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="stop"
-                        android:textSize="28sp"
-                        android:textColor="#FFFFFF"
-                        android:fontFamily="@font/materialicons" />
-                </FrameLayout>
-
-                <!-- Label -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/floating_menu_stop_short"
-                    android:textSize="11sp"
-                    android:textColor="#E0FFFFFF"
-                    android:gravity="center"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <TextView android:id="@+id/labelPauseResume" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/floating_menu_pause" android:textSize="11sp" android:textColor="#FFFFFF" />
         </LinearLayout>
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>

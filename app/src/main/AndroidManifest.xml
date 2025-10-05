@@ -39,7 +39,7 @@
 
     <uses-permission android:name="android.permission.CAMERA"/>
 
-    <!-- Overlay permission for floating controls -->
+    <!-- Overlay permission for floating controls and touch indicator -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Camera feature declarations -->

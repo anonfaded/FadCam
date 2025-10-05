@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Disabled state -->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="#30FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+
+    <!-- Normal state -->
+    <item>
+        <ripple android:color="#50FFFFFF">
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#50FFFFFF" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+        </ripple>
+    </item>
+</selector>

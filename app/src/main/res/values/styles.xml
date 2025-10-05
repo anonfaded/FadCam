@@ -51,9 +51,9 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
         <item name="android:background">#262626</item>
-    <!-- Match SettingsGroupRow horizontal insets (14dp start / 12dp end) -->
-    <item name="android:layout_marginStart">14dp</item>
-    <item name="android:layout_marginEnd">12dp</item>
+        <!-- Match SettingsGroupRow horizontal insets (14dp start / 12dp end) -->
+        <item name="android:layout_marginStart">14dp</item>
+        <item name="android:layout_marginEnd">12dp</item>
     </style>
 
     <!-- TextAppearances for AppWidget (Ubuntu font) -->
@@ -63,5 +63,12 @@
     </style>
     <style name="WidgetText.Ubuntu.Bold" parent="WidgetText.Ubuntu.Regular">
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Switch theme for floating menu -->
+    <style name="SwitchTheme" parent="Theme.AppCompat.Light">
+        <item name="colorControlActivated">#4CAF50</item>
+        <item name="colorSwitchThumbNormal">#FFFFFF</item>
+        <item name="android:colorForeground">#FFFFFF</item>
     </style>
 </resources>

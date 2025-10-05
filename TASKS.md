@@ -470,8 +470,8 @@ This document tracks the implementation of FadRec, the screen recording feature 
 - [ ] **Internal audio capture** - Record system/app audio (Android 10+ with restrictions)
 - [ ] **Resolution options** - Add 720p, 1440p, 4K options later
 - [ ] **FPS options** - Add 60fps, 120fps options later
-- [ ] **Orientation lock** - Lock to portrait/landscape if needed
-- [ ] **Show touches/taps** - Visual feedback for tutorials
+- [x] **Orientation lock** - Lock to portrait/landscape if needed
+- [x] **Show touches/taps** - Visual feedback for tutorials (app-level only due to Android security)
 
 ---
 
@@ -641,4 +641,3 @@ After making changes, build and install:
 **Version:** 5.0 (Polished UI/UX with Smooth Animations)
 **Status:** 100% Complete for MVP Testing! 🎉
 **Progress:** 107/107 essential tasks (100%) complete
-
