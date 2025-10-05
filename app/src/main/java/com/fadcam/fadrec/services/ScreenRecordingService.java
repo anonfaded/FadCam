@@ -311,6 +311,11 @@ public class ScreenRecordingService extends Service {
         recordingStartTime = SystemClock.elapsedRealtime();
         recordingState = ScreenRecordingState.IN_PROGRESS;
         
+        // Save recording start time to SharedPreferences for UI timer updates
+        sharedPreferencesManager.sharedPreferences.edit()
+            .putLong("screen_recording_start_time", recordingStartTime)
+            .apply();
+        
         Log.i(TAG, "Screen recording started successfully");
         
         // Update UI on main thread
@@ -405,6 +410,11 @@ public class ScreenRecordingService extends Service {
                 // Save state
                 sharedPreferencesManager.setScreenRecordingInProgress(false);
                 recordingState = ScreenRecordingState.NONE;
+                
+                // Clear recording start time
+                sharedPreferencesManager.sharedPreferences.edit()
+                    .remove("screen_recording_start_time")
+                    .apply();
                 
                 // Show completion message
                 if (outputFile != null && outputFile.exists()) {

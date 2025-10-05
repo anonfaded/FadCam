@@ -179,10 +179,15 @@ public class HomeFragment extends BaseFragment {
     private TextView tvSpaceTitle;
     private TextView tvSpaceSubtitle;
     // inline total will be rendered in tvSpaceTitle using spans
-    private TextView tvElapsedTitle;
-    private TextView tvElapsedSubtitle;
-    private TextView tvRemainingTitle;
-    private TextView tvRemainingSubtitle;
+    
+    /**
+     * Changed from private to protected to allow FadRecHomeFragment to update timer displays.
+     */
+    protected TextView tvElapsedTitle;
+    protected TextView tvElapsedSubtitle;
+    protected TextView tvRemainingTitle;
+    protected TextView tvRemainingSubtitle;
+    
     private ImageView btnHamburgerMenu;
     private TextView tvPreviewPlaceholder;
     
@@ -4948,7 +4953,11 @@ public class HomeFragment extends BaseFragment {
         tvDateArabic.setText(displayOption == 2 ? currentDateArabic : "");
     }
 
-    private void updateStorageInfo() {
+    /**
+     * Update storage info and timer displays.
+     * Changed from private to protected to allow FadRecHomeFragment to override with screen recording logic.
+     */
+    protected void updateStorageInfo() {
         Log.d(TAG, "updateStorageInfo: Updating storage information");
 
         // -------------- Fix Start (updateStorageInfo) - Professional storage caching

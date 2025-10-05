@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -27,6 +28,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ScreenRecordingState;
 import com.fadcam.ui.HomeFragment;
+import com.fadcam.utils.StorageInfoCache;
 import com.google.android.material.button.MaterialButton;
 
 /**
@@ -58,6 +60,10 @@ public class FadRecHomeFragment extends HomeFragment {
     // Debouncing for button clicks to prevent rapid start/stop
     private long lastClickTime = 0;
     private static final long DEBOUNCE_DELAY_MS = 500; // 500ms debounce
+    
+    // Timer handler for live updates of elapsed/remaining time
+    private android.os.Handler timerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable timerUpdateRunnable;
 
     /**
      * Create a new instance of FadRecHomeFragment.
@@ -131,6 +137,7 @@ public class FadRecHomeFragment extends HomeFragment {
     /**
      * Override parent's method to handle button reset for screen recording mode.
      * In FadRec mode, we don't have camera switch or torch, and pause is always enabled.
+     * IMPORTANT: Only reset to idle if truly idle - preserve recording state.
      */
     @Override
     protected void resetUIButtonsToIdleState() {
@@ -141,29 +148,69 @@ public class FadRecHomeFragment extends HomeFragment {
         }
         
         try {
-            // Reset Start/Stop button to green "Start" state (using inherited protected field)
-            if (buttonStartStop != null) {
-                buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
-                buttonStartStop.setIcon(
-                    AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
-                );
-                buttonStartStop.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(
-                        android.graphics.Color.parseColor("#4CAF50")
-                    )
-                );
-                buttonStartStop.setEnabled(true);
-                buttonStartStop.setAlpha(1.0f);
+            // Check current recording state before resetting
+            ScreenRecordingState currentState = screenRecordingState;
+            
+            // Only reset to idle if actually idle, otherwise preserve recording state
+            if (currentState == ScreenRecordingState.NONE) {
+                // Reset Start/Stop button to green "Start" state (using inherited protected field)
+                if (buttonStartStop != null) {
+                    buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
+                    buttonStartStop.setIcon(
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
+                    );
+                    buttonStartStop.setBackgroundTintList(
+                        android.content.res.ColorStateList.valueOf(
+                            android.graphics.Color.parseColor("#4CAF50")
+                        )
+                    );
+                    buttonStartStop.setEnabled(true);
+                    buttonStartStop.setAlpha(1.0f);
+                }
+                Log.d(TAG, "FadRec: Start button reset to idle (green Start)");
+            } else {
+                // Recording in progress or paused - keep stop button state
+                if (buttonStartStop != null) {
+                    buttonStartStop.setText(com.fadcam.R.string.button_stop);
+                    buttonStartStop.setIcon(
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_stop)
+                    );
+                    buttonStartStop.setBackgroundTintList(
+                        android.content.res.ColorStateList.valueOf(
+                            androidx.core.content.ContextCompat.getColor(getContext(), com.fadcam.R.color.button_stop)
+                        )
+                    );
+                    buttonStartStop.setEnabled(true);
+                    buttonStartStop.setAlpha(1.0f);
+                }
+                Log.d(TAG, "FadRec: Start button kept as Stop (recording active: " + currentState + ")");
             }
             
             // Keep pause button ENABLED (different from parent which disables it)
             if (buttonPauseResume != null) {
                 buttonPauseResume.setVisibility(View.VISIBLE);
-                buttonPauseResume.setEnabled(true); // Always enabled in FadRec
-                buttonPauseResume.setAlpha(1.0f); // Fully opaque
-                buttonPauseResume.setIcon(
-                    AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_pause)
-                );
+                
+                // Enable/disable based on recording state
+                if (currentState == ScreenRecordingState.NONE) {
+                    // Not recording: gray out pause button
+                    buttonPauseResume.setEnabled(false);
+                    buttonPauseResume.setAlpha(0.5f);
+                } else {
+                    // Recording or paused: enable pause button
+                    buttonPauseResume.setEnabled(true);
+                    buttonPauseResume.setAlpha(1.0f);
+                }
+                
+                // Icon-only, no text label (like FadCam)
+                if (currentState == ScreenRecordingState.PAUSED) {
+                    buttonPauseResume.setIcon(
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
+                    );
+                } else {
+                    buttonPauseResume.setIcon(
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_pause)
+                    );
+                }
             }
             
             // Keep camera controls HIDDEN (parent makes them visible)
@@ -174,7 +221,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 buttonTorchSwitch.setVisibility(View.GONE);
             }
             
-            Log.d(TAG, "FadRec: UI elements reset to idle state (screen recording mode)");
+            Log.d(TAG, "FadRec: UI elements reset complete (screen recording mode, state: " + currentState + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error in resetUIButtonsToIdleState", e);
         }
@@ -386,6 +433,40 @@ public class FadRecHomeFragment extends HomeFragment {
                 }
             }
         });
+    }
+
+    /**
+     * Update camera info card with screen recording text (called during timer updates).
+     * This prevents parent's updateStorageInfo from resetting it back to camera info.
+     */
+    private void updateScreenRecordingCardInfo() {
+        if (!isAdded() || getView() == null) {
+            return;
+        }
+        
+        try {
+            View rootView = getView();
+            TextView tvCameraTitle = rootView.findViewById(com.fadcam.R.id.tvCameraTitle);
+            TextView tvCameraSubtitle = rootView.findViewById(com.fadcam.R.id.tvCameraSubtitle);
+            
+            if (tvCameraTitle != null) {
+                tvCameraTitle.setText("Screen Recording");
+            }
+            
+            if (tvCameraSubtitle != null) {
+                // Get device screen resolution
+                android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                if (getActivity() != null) {
+                    getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+                    int width = metrics.widthPixels;
+                    int height = metrics.heightPixels;
+                    String subtitle = width + "x" + height + " • 30fps";
+                    tvCameraSubtitle.setText(subtitle);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating screen recording card info", e);
+        }
     }
 
     /**
@@ -630,29 +711,46 @@ public class FadRecHomeFragment extends HomeFragment {
             }
         }
         
-        // Update Pause/Resume button (always visible, just change icon/text)
+        // Update Pause/Resume button (always visible, icon-only like FadCam)
         if (buttonPauseResume != null) {
             buttonPauseResume.setVisibility(View.VISIBLE); // Always visible
-            if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
-                buttonPauseResume.setText(com.fadcam.R.string.button_pause);
+            
+            // Enable/disable based on recording state
+            if (screenRecordingState == ScreenRecordingState.NONE) {
+                // Not recording: gray out pause button
+                buttonPauseResume.setEnabled(false);
+                buttonPauseResume.setAlpha(0.5f);
+                buttonPauseResume.setIcon(
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
+                );
+            } else if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
+                // Recording: Enable with pause icon (no text label)
+                buttonPauseResume.setEnabled(true);
+                buttonPauseResume.setAlpha(1.0f);
                 buttonPauseResume.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
                 );
             } else if (screenRecordingState == ScreenRecordingState.PAUSED) {
-                buttonPauseResume.setText(com.fadcam.R.string.button_resume);
+                // Paused: Enable with resume/play icon (no text label)
+                buttonPauseResume.setEnabled(true);
+                buttonPauseResume.setAlpha(1.0f);
                 buttonPauseResume.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
-                );
-            } else {
-                // NONE state: Show pause button (disabled or default state)
-                buttonPauseResume.setText(com.fadcam.R.string.button_pause);
-                buttonPauseResume.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
                 );
             }
         }
         
         Log.d(TAG, "UI updated for state: " + screenRecordingState);
+        
+        // Start/stop timer updates based on state
+        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
+            screenRecordingState == ScreenRecordingState.PAUSED) {
+            // Recording active - start live timer updates
+            startTimerUpdates();
+        } else {
+            // Not recording - stop timer updates
+            stopTimerUpdates();
+        }
     }
     
     /**
@@ -704,6 +802,176 @@ public class FadRecHomeFragment extends HomeFragment {
         }
     }
 
+    /**
+     * Override parent's storage/timer update to show screen recording elapsed/remaining time.
+     * This updates the timer cards with screen recording-specific data instead of camera data.
+     */
+    @Override
+    protected void updateStorageInfo() {
+        // Call parent first to update storage info (estimate time card)
+        super.updateStorageInfo();
+        
+        // Now override elapsed and remaining time for screen recording
+        if (!isAdded() || getActivity() == null) {
+            return;
+        }
+        
+        try {
+            long elapsedTime = 0;
+            long remainingTime = 0;
+            
+            // Calculate elapsed time if recording
+            if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
+                screenRecordingState == ScreenRecordingState.PAUSED) {
+                
+                // Get recording start time from SharedPreferences (set by service)
+                long recordingStartTime = sharedPreferencesManager.sharedPreferences.getLong(
+                    "screen_recording_start_time", 0
+                );
+                
+                if (recordingStartTime > 0) {
+                    elapsedTime = Math.max(0, SystemClock.elapsedRealtime() - recordingStartTime);
+                }
+                
+                // Calculate remaining time based on storage and bitrate
+                // For screen recording, we use video bitrate from settings
+                try {
+                    // Get storage info from cache
+                    StorageInfoCache.StorageInfo storageInfo = 
+                        StorageInfoCache.getCachedStorageInfo();
+                    
+                    if (storageInfo == null) {
+                        // No cache, skip remaining time calculation
+                        remainingTime = 0;
+                    } else {
+                        long availableBytes = storageInfo.availableBytes;
+                        
+                        // Estimate bytes used so far
+                        long videoBitrate = sharedPreferencesManager.getCurrentBitrate(); // bits per second
+                        long audioBitrate = sharedPreferencesManager.getAudioBitrate(); // bits per second
+                        long totalBitrate = videoBitrate + audioBitrate;
+                        
+                        if (elapsedTime > 0 && totalBitrate > 0) {
+                            long estimatedBytesUsed = (elapsedTime * totalBitrate) / 8000; // Convert to bytes
+                            availableBytes = Math.max(0, availableBytes - estimatedBytesUsed);
+                        }
+                        
+                        // Calculate remaining time
+                        if (totalBitrate > 0 && availableBytes > 0) {
+                            remainingTime = (availableBytes * 8) / totalBitrate; // Convert bytes to seconds
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error calculating remaining time", e);
+                    remainingTime = 0;
+                }
+            }
+            
+            // Format elapsed time
+            long elapsedMinutes = elapsedTime / 60000;
+            long elapsedSeconds = (elapsedTime / 1000) % 60;
+            final String elapsedTimeText = String.format(
+                java.util.Locale.getDefault(),
+                "%02d:%02d",
+                elapsedMinutes,
+                elapsedSeconds
+            );
+            
+            // Format remaining time
+            long days = remainingTime / (24 * 3600);
+            long hours = (remainingTime % (24 * 3600)) / 3600;
+            long minutes = (remainingTime % 3600) / 60;
+            long seconds = remainingTime % 60;
+            
+            String remainingTimeText;
+            if (days > 0) {
+                remainingTimeText = String.format(
+                    java.util.Locale.getDefault(),
+                    "%dd %02dh %02dm",
+                    days, hours, minutes
+                );
+            } else if (hours > 0) {
+                remainingTimeText = String.format(
+                    java.util.Locale.getDefault(),
+                    "%02dh %02dm",
+                    hours, minutes
+                );
+            } else {
+                remainingTimeText = String.format(
+                    java.util.Locale.getDefault(),
+                    "%02d:%02d",
+                    minutes, seconds
+                );
+            }
+            
+            // Update UI on main thread
+            getActivity().runOnUiThread(() -> {
+                // Update camera info card (override parent's camera text)
+                updateScreenRecordingCardInfo();
+                
+                // Update elapsed time
+                if (tvElapsedTitle != null) {
+                    tvElapsedTitle.setText(elapsedTimeText);
+                }
+                if (tvElapsedSubtitle != null) {
+                    tvElapsedSubtitle.setText("Elapsed time");
+                }
+                
+                // Update remaining time
+                if (tvRemainingTitle != null) {
+                    tvRemainingTitle.setText(remainingTimeText);
+                }
+                if (tvRemainingSubtitle != null) {
+                    tvRemainingSubtitle.setText("Remaining time");
+                }
+            });
+            
+            Log.d(TAG, "Timer updated - Elapsed: " + elapsedTimeText + ", Remaining: " + remainingTimeText);
+        } catch (Exception e) {
+            Log.e(TAG, "Error in updateStorageInfo override", e);
+        }
+    }
+
+    /**
+     * Start the timer that updates elapsed/remaining time every second during recording.
+     */
+    private void startTimerUpdates() {
+        // Stop any existing timer first
+        stopTimerUpdates();
+        
+        timerUpdateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isAdded() && (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
+                                  screenRecordingState == ScreenRecordingState.PAUSED)) {
+                    // Update the timer display
+                    updateStorageInfo();
+                    
+                    // Schedule next update in 1 second
+                    timerHandler.postDelayed(this, 1000);
+                } else {
+                    // Not recording anymore, stop the timer
+                    Log.d(TAG, "Timer stopped - not recording");
+                }
+            }
+        };
+        
+        // Start the timer immediately
+        timerHandler.post(timerUpdateRunnable);
+        Log.d(TAG, "Timer updates started");
+    }
+    
+    /**
+     * Stop the timer updates.
+     */
+    private void stopTimerUpdates() {
+        if (timerUpdateRunnable != null) {
+            timerHandler.removeCallbacks(timerUpdateRunnable);
+            timerUpdateRunnable = null;
+            Log.d(TAG, "Timer updates stopped");
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume(); // MUST call super - Android requirement
@@ -716,17 +984,29 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Just reload persisted state to sync with service
         loadPersistedRecordingState();
+        
+        // Start timer updates if recording is active
+        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
+            screenRecordingState == ScreenRecordingState.PAUSED) {
+            startTimerUpdates();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
         Log.d(TAG, "FadRecHomeFragment paused");
+        
+        // Stop timer updates when fragment is paused
+        stopTimerUpdates();
     }
 
     @Override
     public void onDestroyView() {
         Log.d(TAG, "FadRecHomeFragment view destroyed");
+        
+        // Stop timer updates
+        stopTimerUpdates();
         
         // Unregister broadcast receivers
         if (screenRecordingStateReceiver != null) {
