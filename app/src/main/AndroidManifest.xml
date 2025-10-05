@@ -266,6 +266,9 @@
         <!-- Floating controls overlay service for FadRec -->
         <service android:name=".fadrec.ui.FloatingControlsService" android:enabled="true" android:exported="false" />
 
+        <!-- Annotation overlay service for FadRec -->
+        <service android:name=".fadrec.ui.AnnotationService" android:enabled="true" android:exported="false" />
+
         <service android:name=".services.TorchService" android:foregroundServiceType="camera" android:exported="true">
         </service>
         <receiver android:name=".receivers.TorchToggleReceiver" android:exported="true">

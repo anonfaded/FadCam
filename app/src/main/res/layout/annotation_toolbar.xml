@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collapsible annotation toolbar with drawing tools -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/floating_menu_bg"
+    android:padding="6dp">
+
+    <!-- Main Compact Toolbar (always visible) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Expand/Collapse Toggle -->
+        <TextView
+            android:id="@+id/btnExpandCollapse"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="keyboard_arrow_down"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/materialicons"
+            android:background="@drawable/floating_button_item_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_margin="2dp" />
+
+        <!-- Close Button -->
+        <TextView
+            android:id="@+id/btnCloseAnnotation"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="close"
+            android:textSize="20sp"
+            android:textColor="#FF5252"
+            android:fontFamily="@font/materialicons"
+            android:background="@drawable/floating_button_item_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_margin="2dp" />
+    </LinearLayout>
+
+    <!-- Expandable Tools Section (hidden by default) -->
+    <LinearLayout
+        android:id="@+id/expandableToolsSection"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#30FFFFFF"
+            android:layout_marginVertical="4dp" />
+
+        <!-- Pen Tool with Label -->
+        <LinearLayout
+            android:id="@+id/btnPenTool"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/iconPenTool"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="edit"
+                android:textSize="22sp"
+                android:textColor="#4CAF50"
+                android:fontFamily="@font/materialicons"
+                android:background="@drawable/annotation_tool_bg" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pen"
+                android:textSize="10sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+
+        <!-- Eraser Tool with Label -->
+        <LinearLayout
+            android:id="@+id/btnEraserTool"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/iconEraserTool"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="ink_eraser"
+                android:textSize="22sp"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/materialicons"
+                android:background="@drawable/annotation_tool_bg" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Erase"
+                android:textSize="10sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#30FFFFFF"
+            android:layout_marginVertical="4dp" />
+
+        <!-- Colors Section with Label -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Colors"
+            android:textSize="9sp"
+            android:textColor="#9E9E9E"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="4dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <View
+                android:id="@+id/btnColorRed"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_margin="3dp"
+                android:background="@drawable/annotation_color_circle"
+                android:backgroundTint="#F44336"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/btnColorBlue"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_margin="3dp"
+                android:background="@drawable/annotation_color_circle"
+                android:backgroundTint="#2196F3"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/btnColorGreen"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_margin="3dp"
+                android:background="@drawable/annotation_color_circle"
+                android:backgroundTint="#4CAF50"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <View
+                android:id="@+id/btnColorYellow"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_margin="3dp"
+                android:background="@drawable/annotation_color_circle"
+                android:backgroundTint="#FFEB3B"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/btnColorWhite"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_margin="3dp"
+                android:background="@drawable/annotation_color_circle"
+                android:backgroundTint="#FFFFFF"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/btnColorBlack"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_margin="3dp"
+                android:background="@drawable/annotation_color_circle"
+                android:backgroundTint="#000000"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#30FFFFFF"
+            android:layout_marginVertical="4dp" />
+
+        <!-- Stroke Width Section with Label -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Size"
+            android:textSize="9sp"
+            android:textColor="#9E9E9E"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="4dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <View
+                android:id="@+id/btnWidthThin"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/annotation_width_circle"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/btnWidthMedium"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/annotation_width_circle"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/btnWidthThick"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/annotation_width_circle"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#30FFFFFF"
+            android:layout_marginVertical="4dp" />
+
+        <!-- Clear All with Label -->
+        <LinearLayout
+            android:id="@+id/btnClearAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="delete_sweep"
+                android:textSize="22sp"
+                android:textColor="#FF5252"
+                android:fontFamily="@font/materialicons"
+                android:background="@drawable/floating_button_item_bg" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear"
+                android:textSize="10sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+
+        <!-- Blackboard/Whiteboard Toggle with Label -->
+        <LinearLayout
+            android:id="@+id/btnBlackboardToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/iconBlackboardToggle"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="square"
+                android:textSize="22sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="@font/materialicons"
+                android:background="@drawable/floating_button_item_bg" />
+
+            <TextView
+                android:id="@+id/labelBlackboardToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Board"
+                android:textSize="10sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

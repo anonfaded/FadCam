@@ -39,8 +39,11 @@ public class FloatingControlsService extends Service {
     private View btnCloseMenu;
     private TextView iconStartStop, labelStartStop;
     private TextView iconPauseResume, labelPauseResume;
+    private View btnAnnotations;
+    private androidx.appcompat.widget.SwitchCompat annotationSwitch;
     
     private boolean isMenuExpanded = false;
+    private boolean isAnnotationActive = false;
     private ScreenRecordingState recordingState = ScreenRecordingState.NONE;
     
     private int initialX, initialY;
@@ -156,6 +159,9 @@ public class FloatingControlsService extends Service {
         iconPauseResume = quickMenuView.findViewById(R.id.iconPauseResume);
         labelPauseResume = quickMenuView.findViewById(R.id.labelPauseResume);
         
+        btnAnnotations = quickMenuView.findViewById(R.id.btnAnnotations);
+        annotationSwitch = quickMenuView.findViewById(R.id.annotationSwitch);
+        
         // Set up click listeners
         btnStartStop.setOnClickListener(v -> {
             if (btnStartStop.isEnabled()) {
@@ -183,6 +189,15 @@ public class FloatingControlsService extends Service {
         
         btnCloseMenu.setOnClickListener(v -> {
             hideQuickMenu();
+        });
+        
+        // Setup annotation switch listener
+        annotationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                startAnnotations();
+            } else {
+                stopAnnotations();
+            }
         });
         
         // Set up window parameters for menu
@@ -279,6 +294,21 @@ public class FloatingControlsService extends Service {
                 labelPauseResume.setText(R.string.floating_menu_resume);
                 break;
         }
+    }
+    
+    private void startAnnotations() {
+        Intent intent = new Intent(this, AnnotationService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+        isAnnotationActive = true;
+    }
+    
+    private void stopAnnotations() {
+        stopService(new Intent(this, AnnotationService.class));
+        isAnnotationActive = false;
     }
     
     private void registerStateReceiver() {
