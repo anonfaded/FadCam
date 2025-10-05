@@ -185,9 +185,15 @@ public class HomeFragment extends BaseFragment {
     private TextView tvRemainingSubtitle;
     private ImageView btnHamburgerMenu;
     private TextView tvPreviewPlaceholder;
-    private MaterialButton buttonStartStop;
-    private MaterialButton buttonPauseResume;
-    private Button buttonCamSwitch;
+    
+    /**
+     * Changed from private to protected to allow FadRecHomeFragment to access in overridden methods.
+     */
+    protected MaterialButton buttonStartStop;
+    protected MaterialButton buttonPauseResume;
+    protected Button buttonCamSwitch;
+    protected MaterialButton buttonTorchSwitch;
+    
     private boolean isPreviewEnabled = true;
 
     private View cardPreview;
@@ -243,7 +249,7 @@ public class HomeFragment extends BaseFragment {
     private boolean areCameraResourcesAvailable = true; // Default to true
     // ----- Fix End for camera resource availability receiver -----
 
-    private MaterialButton buttonTorchSwitch;
+    // buttonTorchSwitch declaration moved to line 195 (changed to protected)
 
     private CameraManager cameraManager;
     private String cameraId;
@@ -1265,8 +1271,11 @@ public class HomeFragment extends BaseFragment {
      * and related UI elements (like preview) to their default IDLE state.
      * This means recording is stopped and the user can initiate a new one.
      * Should only be called when the fragment is attached and view is available.
+     * 
+     * Note: Changed from private to protected to allow FadRecHomeFragment to override
+     * with screen recording-specific behavior.
      */
-    private void resetUIButtonsToIdleState() {
+    protected void resetUIButtonsToIdleState() {
         Log.d(TAG, "Reset UI to idle state");
         if (!isAdded() || getContext() == null || getView() == null) {
             Log.w(
@@ -1336,9 +1345,12 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
-     * Updates the start button state based on camera resource availability
+     * Updates the start button state based on camera resource availability.
+     * 
+     * Note: Changed from private to protected to allow FadRecHomeFragment to override
+     * with screen recording-specific behavior.
      */
-    private void updateStartButtonAvailability() {
+    protected void updateStartButtonAvailability() {
         if (!isAdded() || buttonStartStop == null) {
             return;
         }

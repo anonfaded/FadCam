@@ -129,6 +129,82 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     /**
+     * Override parent's method to handle button reset for screen recording mode.
+     * In FadRec mode, we don't have camera switch or torch, and pause is always enabled.
+     */
+    @Override
+    protected void resetUIButtonsToIdleState() {
+        Log.d(TAG, "FadRec: Reset UI to idle state");
+        if (!isAdded() || getContext() == null || getView() == null) {
+            Log.w(TAG, "resetUIButtonsToIdleState: Fragment/context unavailable");
+            return;
+        }
+        
+        try {
+            // Reset Start/Stop button to green "Start" state (using inherited protected field)
+            if (buttonStartStop != null) {
+                buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
+                buttonStartStop.setIcon(
+                    AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
+                );
+                buttonStartStop.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#4CAF50")
+                    )
+                );
+                buttonStartStop.setEnabled(true);
+                buttonStartStop.setAlpha(1.0f);
+            }
+            
+            // Keep pause button ENABLED (different from parent which disables it)
+            if (buttonPauseResume != null) {
+                buttonPauseResume.setVisibility(View.VISIBLE);
+                buttonPauseResume.setEnabled(true); // Always enabled in FadRec
+                buttonPauseResume.setAlpha(1.0f); // Fully opaque
+                buttonPauseResume.setIcon(
+                    AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_pause)
+                );
+            }
+            
+            // Keep camera controls HIDDEN (parent makes them visible)
+            if (buttonCamSwitch != null) {
+                buttonCamSwitch.setVisibility(View.GONE);
+            }
+            if (buttonTorchSwitch != null) {
+                buttonTorchSwitch.setVisibility(View.GONE);
+            }
+            
+            Log.d(TAG, "FadRec: UI elements reset to idle state (screen recording mode)");
+        } catch (Exception e) {
+            Log.e(TAG, "Error in resetUIButtonsToIdleState", e);
+        }
+    }
+
+    /**
+     * Override parent's method to prevent camera-specific button state updates.
+     * In FadRec mode, start button is always available (no camera dependency).
+     */
+    @Override
+    protected void updateStartButtonAvailability() {
+        if (!isAdded() || buttonStartStop == null) {
+            return;
+        }
+        
+        // For screen recording, start button is always enabled when idle
+        // (no camera resource dependency like parent has)
+        if (screenRecordingState == ScreenRecordingState.NONE) {
+            buttonStartStop.setEnabled(true);
+            buttonStartStop.setAlpha(1.0f);
+            Log.d(TAG, "Start button availability updated: always enabled for screen recording");
+        }
+        
+        // Also ensure camera controls stay hidden
+        if (buttonCamSwitch != null) {
+            buttonCamSwitch.setVisibility(View.GONE);
+        }
+    }
+
+    /**
      * Customize the UI for screen recording mode.
      * Hides camera-specific controls and updates info cards.
      */
@@ -147,19 +223,21 @@ public class FadRecHomeFragment extends HomeFragment {
 
     /**
      * Hide camera-specific controls that are not relevant for screen recording.
+     * Clean implementation - our override of resetUIButtonsToIdleState() handles persistence.
      */
     private void hideCameraControls(View rootView) {
-        // Hide camera switch button
-        View buttonCamSwitch = rootView.findViewById(com.fadcam.R.id.buttonCamSwitch);
-        if (buttonCamSwitch != null) {
-            buttonCamSwitch.setVisibility(View.GONE);
+        // Hide camera switch button (single call - no timing workarounds needed)
+        View camSwitchBtn = rootView.findViewById(com.fadcam.R.id.buttonCamSwitch);
+        if (camSwitchBtn != null) {
+            camSwitchBtn.setVisibility(View.GONE);
             Log.d(TAG, "Camera switch button hidden");
         }
         
         // Hide torch button
-        View buttonTorchSwitch = rootView.findViewById(com.fadcam.R.id.buttonTorchSwitch);
-        if (buttonTorchSwitch != null) {
-            buttonTorchSwitch.setVisibility(View.GONE);
+        View torchBtn = rootView.findViewById(com.fadcam.R.id.buttonTorchSwitch);
+        if (torchBtn != null) {
+            torchBtn.setVisibility(View.GONE);
+            Log.d(TAG, "Torch button hidden");
         }
         
         // Hide entire preview area (TextureView and placeholder from parent layout)
@@ -312,6 +390,7 @@ public class FadRecHomeFragment extends HomeFragment {
 
     /**
      * Setup button click handlers for start/stop/pause/resume.
+     * No need to force-enable buttons - our override handles that.
      */
     private void setupButtonHandlers(View rootView) {
         // Find buttons
@@ -320,11 +399,6 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Load persisted state on initialization
         loadPersistedRecordingState();
-        
-        // Initially hide pause button (will appear during recording)
-        if (buttonPauseResume != null && screenRecordingState == ScreenRecordingState.NONE) {
-            buttonPauseResume.setVisibility(View.GONE);
-        }
         
         // Start/Stop button
         if (buttonStartStop != null) {
@@ -537,20 +611,15 @@ public class FadRecHomeFragment extends HomeFragment {
         // Update Start/Stop button with animation
         if (buttonStartStop != null) {
             if (screenRecordingState == ScreenRecordingState.NONE) {
-                // IDLE STATE: Show only start button
+                // IDLE STATE: Green start button
                 buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
                 );
                 // Green color for start button
                 animateButtonColor(buttonStartStop, android.graphics.Color.parseColor("#4CAF50"));
-                
-                // Hide pause button when idle
-                if (buttonPauseResume != null) {
-                    animateButtonVisibility(buttonPauseResume, false);
-                }
             } else {
-                // RECORDING STATE: Show stop button (red)
+                // RECORDING STATE: Red stop button
                 buttonStartStop.setText(com.fadcam.R.string.button_stop);
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_stop)
@@ -558,30 +627,28 @@ public class FadRecHomeFragment extends HomeFragment {
                 // Red color for stop button
                 animateButtonColor(buttonStartStop, 
                     androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop));
-                
-                // Show pause button when recording
-                if (buttonPauseResume != null) {
-                    animateButtonVisibility(buttonPauseResume, true);
-                }
             }
         }
         
-        // Update Pause/Resume button
+        // Update Pause/Resume button (always visible, just change icon/text)
         if (buttonPauseResume != null) {
+            buttonPauseResume.setVisibility(View.VISIBLE); // Always visible
             if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
-                buttonPauseResume.setVisibility(View.VISIBLE);
                 buttonPauseResume.setText(com.fadcam.R.string.button_pause);
                 buttonPauseResume.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
                 );
             } else if (screenRecordingState == ScreenRecordingState.PAUSED) {
-                buttonPauseResume.setVisibility(View.VISIBLE);
                 buttonPauseResume.setText(com.fadcam.R.string.button_resume);
                 buttonPauseResume.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
                 );
             } else {
-                buttonPauseResume.setVisibility(View.GONE);
+                // NONE state: Show pause button (disabled or default state)
+                buttonPauseResume.setText(com.fadcam.R.string.button_pause);
+                buttonPauseResume.setIcon(
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
+                );
             }
         }
         
@@ -639,8 +706,16 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     public void onResume() {
-        super.onResume();
+        super.onResume(); // MUST call super - Android requirement
+        
         Log.d(TAG, "FadRecHomeFragment resumed");
+        
+        // Parent's onResume() queries camera state and calls resetUIButtonsToIdleState()
+        // Since we've overridden resetUIButtonsToIdleState(), our version runs instead
+        // Our override keeps pause enabled and camera controls hidden - no timing hacks needed!
+        
+        // Just reload persisted state to sync with service
+        loadPersistedRecordingState();
     }
 
     @Override
