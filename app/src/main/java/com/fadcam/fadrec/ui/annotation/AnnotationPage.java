@@ -1,6 +1,9 @@
 package com.fadcam.fadrec.ui.annotation;
 
-import java.io.Serializable;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -10,8 +13,7 @@ import java.util.UUID;
  * Represents a single annotation page with multiple layers and version control.
  * Each page has independent undo/redo history.
  */
-public class AnnotationPage implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class AnnotationPage {
     
     private String id;
     private String name;
@@ -21,7 +23,7 @@ public class AnnotationPage implements Serializable {
     private long createdAt;
     private long modifiedAt;
     
-    // Version control (not serialized - rebuilt from operations)
+    // Version control (not serialized - rebuilt on load)
     private transient Stack<DrawingCommand> undoStack;
     private transient Stack<DrawingCommand> redoStack;
     private static final int MAX_HISTORY_SIZE = 50;
@@ -157,13 +159,48 @@ public class AnnotationPage implements Serializable {
         redoStack.clear();
     }
     
+    // JSON serialization
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("id", id);
+        json.put("name", name);
+        json.put("activeLayerIndex", activeLayerIndex);
+        json.put("blackboardMode", blackboardMode);
+        json.put("createdAt", createdAt);
+        json.put("modifiedAt", modifiedAt);
+        
+        JSONArray layersArray = new JSONArray();
+        for (AnnotationLayer layer : layers) {
+            layersArray.put(layer.toJSON());
+        }
+        json.put("layers", layersArray);
+        
+        return json;
+    }
+    
+    public static AnnotationPage fromJSON(JSONObject json) throws JSONException {
+        AnnotationPage page = new AnnotationPage(json.getString("name"));
+        page.id = json.getString("id");
+        page.activeLayerIndex = json.getInt("activeLayerIndex");
+        page.blackboardMode = json.getBoolean("blackboardMode");
+        page.createdAt = json.getLong("createdAt");
+        page.modifiedAt = json.getLong("modifiedAt");
+        
+        // Clear default layer and load from JSON
+        page.layers.clear();
+        JSONArray layersArray = json.getJSONArray("layers");
+        for (int i = 0; i < layersArray.length(); i++) {
+            JSONObject layerJson = layersArray.getJSONObject(i);
+            page.layers.add(AnnotationLayer.fromJSON(layerJson));
+        }
+        
+        return page;
+    }
+    
     /**
      * Reconstruct transient fields after deserialization
      */
     public void reconstruct() {
         initializeStacks();
-        for (AnnotationLayer layer : layers) {
-            layer.reconstruct();
-        }
     }
 }

@@ -24,9 +24,13 @@ import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
-import com.fadcam.fadrec.ui.annotation.AnnotationStateManager;
+import com.fadcam.fadrec.ui.annotation.ProjectFileManager;
 import com.fadcam.fadrec.ui.annotation.AnnotationPage;
 import com.fadcam.fadrec.ui.annotation.AnnotationLayer;
+import com.fadcam.fadrec.ui.annotation.TextEditorDialog;
+import com.fadcam.fadrec.ui.annotation.ShapePickerDialog;
+import com.fadcam.fadrec.ui.annotation.objects.TextObject;
+import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
 
 /**
  * Service that provides floating annotation tools for drawing on screen during recording.
@@ -43,7 +47,7 @@ public class AnnotationService extends Service {
     private View toolbarView;
     
     // State management
-    private AnnotationStateManager stateManager;
+    private ProjectFileManager projectFileManager;
     private Handler autoSaveHandler;
     private Runnable autoSaveRunnable;
     
@@ -59,8 +63,8 @@ public class AnnotationService extends Service {
     private TextView btnExpandCollapse;
     private TextView btnCloseAnnotation;
     private View expandableToolsSection;
-    private View btnPenTool, btnEraserTool;
-    private TextView iconPenTool, iconEraserTool;
+    private View btnSelectTool, btnPenTool, btnEraserTool, btnTextTool, btnShapeTool;
+    private TextView iconSelectTool, iconPenTool, iconEraserTool, iconTextTool, iconShapeTool;
     private View btnColorRed, btnColorBlue, btnColorGreen, btnColorYellow, btnColorWhite, btnColorBlack;
     private View btnWidthThin, btnWidthMedium, btnWidthThick;
     private View btnClearAll;
@@ -90,8 +94,8 @@ public class AnnotationService extends Service {
         
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
-        // Initialize state manager
-        stateManager = new AnnotationStateManager(this);
+        // Initialize project file manager
+        projectFileManager = new ProjectFileManager(this);
         
         setupAnnotationCanvas();
         setupToolbar();
@@ -101,8 +105,8 @@ public class AnnotationService extends Service {
     private void setupAnnotationCanvas() {
         annotationView = new AnnotationView(this);
         
-        // Load saved state or create new
-        AnnotationState state = stateManager.getCurrentState();
+        // Create new state (no legacy loading)
+        AnnotationState state = new AnnotationState();
         annotationView.setState(state);
         
         // Listen for state changes to update UI
@@ -148,10 +152,16 @@ public class AnnotationService extends Service {
         btnCloseAnnotation = toolbarView.findViewById(R.id.btnCloseAnnotation);
         expandableToolsSection = toolbarView.findViewById(R.id.expandableToolsSection);
         
+        btnSelectTool = toolbarView.findViewById(R.id.btnSelectTool);
         btnPenTool = toolbarView.findViewById(R.id.btnPenTool);
         btnEraserTool = toolbarView.findViewById(R.id.btnEraserTool);
+        btnTextTool = toolbarView.findViewById(R.id.btnTextTool);
+        btnShapeTool = toolbarView.findViewById(R.id.btnShapeTool);
+        iconSelectTool = toolbarView.findViewById(R.id.iconSelectTool);
         iconPenTool = toolbarView.findViewById(R.id.iconPenTool);
         iconEraserTool = toolbarView.findViewById(R.id.iconEraserTool);
+        iconTextTool = toolbarView.findViewById(R.id.iconTextTool);
+        iconShapeTool = toolbarView.findViewById(R.id.iconShapeTool);
         
         btnColorRed = toolbarView.findViewById(R.id.btnColorRed);
         btnColorBlue = toolbarView.findViewById(R.id.btnColorBlue);
@@ -235,14 +245,37 @@ public class AnnotationService extends Service {
         btnCloseAnnotation.setOnClickListener(v -> stopSelf());
         
         // Tool selection
+        btnSelectTool.setOnClickListener(v -> {
+            boolean newSelectionMode = !annotationView.isSelectionMode();
+            annotationView.setSelectionMode(newSelectionMode);
+            updateSelectToolHighlight(newSelectionMode);
+            if (newSelectionMode) {
+                Toast.makeText(this, "👆 Selection mode: Tap to select, drag to move", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "🖊️ Draw mode", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
         btnPenTool.setOnClickListener(v -> {
             annotationView.setPenMode();
+            annotationView.setSelectionMode(false); // Exit selection mode
             updateToolSelection(true);
+            updateSelectToolHighlight(false);
         });
         
         btnEraserTool.setOnClickListener(v -> {
             annotationView.setEraserMode();
+            annotationView.setSelectionMode(false); // Exit selection mode
             updateToolSelection(false);
+            updateSelectToolHighlight(false);
+        });
+        
+        btnTextTool.setOnClickListener(v -> {
+            showTextEditorDialog();
+        });
+        
+        btnShapeTool.setOnClickListener(v -> {
+            showShapePickerDialog();
         });
         
         // Color selection
@@ -358,6 +391,16 @@ public class AnnotationService extends Service {
             iconPenTool.setBackgroundResource(R.drawable.annotation_tool_bg);
             iconEraserTool.setTextColor(0xFFFF9800);
             iconEraserTool.setBackgroundResource(R.drawable.annotation_tool_selected_bg);
+        }
+    }
+    
+    private void updateSelectToolHighlight(boolean isSelected) {
+        if (isSelected) {
+            iconSelectTool.setTextColor(0xFF4CAF50); // Green when active
+            iconSelectTool.setBackgroundResource(R.drawable.annotation_tool_selected_bg);
+        } else {
+            iconSelectTool.setTextColor(0xFF4CAF50); // Green default
+            iconSelectTool.setBackgroundResource(R.drawable.annotation_tool_bg);
         }
     }
     
@@ -483,13 +526,13 @@ public class AnnotationService extends Service {
      * Saves the current annotation state to persistent storage.
      */
     private void saveCurrentState() {
-        if (annotationView != null && stateManager != null) {
+        if (annotationView != null && projectFileManager != null) {
             AnnotationState state = annotationView.getState();
             if (state != null) {
-                // Update the manager's current state before saving
-                stateManager.setCurrentState(state);
-                stateManager.saveState();
-                Log.d(TAG, "State auto-saved");
+                boolean success = projectFileManager.autoSave(state);
+                if (success) {
+                    Log.d(TAG, "State auto-saved to .fadrec format");
+                }
             }
         }
     }
@@ -773,5 +816,80 @@ public class AnnotationService extends Service {
         if (toolbarView != null) {
             windowManager.removeView(toolbarView);
         }
+    }
+    
+    /**
+     * Show text editor dialog to add text objects
+     */
+    private void showTextEditorDialog() {
+        TextEditorDialog dialog = new TextEditorDialog(this);
+        dialog.setOnTextConfirmedListener((text, fontSize, color, bold, italic, alignment) -> {
+            // Create text object at center of screen
+            float centerX = annotationView.getWidth() / 2f;
+            float centerY = annotationView.getHeight() / 2f;
+            
+            TextObject textObject = new TextObject(text, centerX, centerY);
+            textObject.setFontSize(fontSize);
+            textObject.setTextColor(color);
+            textObject.setBold(bold);
+            textObject.setItalic(italic);
+            textObject.setAlignment(alignment);
+            
+            // Add to active layer
+            AnnotationPage currentPage = annotationView.getState().getActivePage();
+            if (currentPage != null) {
+                AnnotationLayer activeLayer = currentPage.getActiveLayer();
+                if (activeLayer != null && !activeLayer.isLocked()) {
+                    activeLayer.addObject(textObject);
+                    annotationView.invalidate();
+                    saveCurrentState();
+                    Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        dialog.show();
+    }
+    
+    /**
+     * Show shape picker dialog to select shape type
+     */
+    private void showShapePickerDialog() {
+        ShapePickerDialog dialog = new ShapePickerDialog(this);
+        dialog.setOnShapeSelectedListener((shapeType, color, filled) -> {
+            // Create shape object at center of screen with default size
+            float centerX = annotationView.getWidth() / 2f;
+            float centerY = annotationView.getHeight() / 2f;
+            float size = 200f;
+            
+            ShapeObject shapeObject = new ShapeObject(
+                shapeType,
+                centerX - size/2,
+                centerY - size/2,
+                centerX + size/2,
+                centerY + size/2
+            );
+            
+            shapeObject.setFillColor(filled ? (color & 0x00FFFFFF) | 0x80000000 : 0x00000000); // Semi-transparent fill
+            shapeObject.setStrokeColor(color);
+            shapeObject.setStrokeWidth(4f);
+            shapeObject.setFilled(filled);
+            
+            // Add to active layer
+            AnnotationPage currentPage = annotationView.getState().getActivePage();
+            if (currentPage != null) {
+                AnnotationLayer activeLayer = currentPage.getActiveLayer();
+                if (activeLayer != null && !activeLayer.isLocked()) {
+                    activeLayer.addObject(shapeObject);
+                    annotationView.invalidate();
+                    saveCurrentState();
+                    Toast.makeText(this, "📐 Shape added!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        dialog.show();
     }
 }

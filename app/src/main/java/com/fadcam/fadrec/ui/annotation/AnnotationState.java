@@ -48,6 +48,8 @@ public class AnnotationState implements Serializable {
     
     public int getActivePageIndex() { return activePageIndex; }
     
+    public long getCreatedAt() { return createdAt; }
+    
     public void setActivePageIndex(int index) {
         if (index >= 0 && index < pages.size()) {
             this.activePageIndex = index;
@@ -92,7 +94,6 @@ public class AnnotationState implements Serializable {
     public boolean isEraserMode() { return isEraserMode; }
     public void setEraserMode(boolean enabled) { this.isEraserMode = enabled; }
     
-    public long getCreatedAt() { return createdAt; }
     public long getModifiedAt() { return modifiedAt; }
     
     /**

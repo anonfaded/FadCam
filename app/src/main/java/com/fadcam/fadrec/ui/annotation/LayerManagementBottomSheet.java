@@ -86,7 +86,7 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
             boolean isActive = page.getActiveLayerIndex() == position;
             
             holder.txtLayerName.setText(layer.getName());
-            holder.txtLayerInfo.setText(layer.getPaths().size() + " paths");
+            holder.txtLayerInfo.setText(layer.getObjects().size() + " objects");
             
             // Highlight active layer
             holder.itemView.setBackgroundResource(isActive ? 

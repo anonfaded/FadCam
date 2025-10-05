@@ -2,8 +2,10 @@ package com.fadcam.fadrec.ui;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,6 +16,8 @@ import com.fadcam.fadrec.ui.annotation.AnnotationPage;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.ClearLayerCommand;
 import com.fadcam.fadrec.ui.annotation.DrawingPath;
+import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
+import com.fadcam.fadrec.ui.annotation.objects.PathObject;
 
 /**
  * Custom view for drawing annotations on screen during recording.
@@ -29,6 +33,13 @@ public class AnnotationView extends View {
     private Paint drawPaint;
     private Path currentPath;
     private Paint blackboardPaint;
+    
+    // Selection mode state
+    private boolean selectionMode = false;
+    private AnnotationObject selectedObject = null;
+    private float lastTouchX;
+    private float lastTouchY;
+    private Paint selectionPaint;
     
     // Callback for state changes
     private OnStateChangeListener stateChangeListener;
@@ -63,6 +74,13 @@ public class AnnotationView extends View {
         blackboardPaint = new Paint();
         blackboardPaint.setColor(0xFF000000);
         blackboardPaint.setStyle(Paint.Style.FILL);
+        
+        // Setup selection paint (for highlighting selected objects)
+        selectionPaint = new Paint();
+        selectionPaint.setColor(0xFF4CAF50); // Green
+        selectionPaint.setStyle(Paint.Style.STROKE);
+        selectionPaint.setStrokeWidth(4f);
+        selectionPaint.setAntiAlias(true);
         
         currentPath = new Path();
     }
@@ -116,22 +134,31 @@ public class AnnotationView extends View {
         for (AnnotationLayer layer : currentPage.getLayers()) {
             if (!layer.isVisible()) continue;
             
-            // Apply layer opacity
-            int alpha = (int) (layer.getOpacity() * 255);
+            // Create identity matrix (no transformation yet)
+            Matrix transform = new Matrix();
             
-            // Draw all paths in this layer
-            for (DrawingPath drawingPath : layer.getPaths()) {
-                if (drawingPath.path != null && drawingPath.paint != null) {
-                    // Apply layer opacity to path
-                    Paint layerPaint = new Paint(drawingPath.paint);
-                    layerPaint.setAlpha(alpha);
-                    canvas.drawPath(drawingPath.path, layerPaint);
+            // Draw all objects in this layer
+            for (AnnotationObject obj : layer.getObjects()) {
+                if (obj.isVisible()) {
+                    // Apply layer opacity
+                    float originalOpacity = obj.getOpacity();
+                    obj.setOpacity(originalOpacity * layer.getOpacity());
+                    obj.draw(canvas, transform);
+                    obj.setOpacity(originalOpacity); // Restore original
+                    
+                    // Draw selection highlight if this object is selected
+                    if (selectionMode && selectedObject == obj) {
+                        RectF bounds = obj.getBounds();
+                        canvas.drawRect(bounds, selectionPaint);
+                    }
                 }
             }
         }
         
-        // Draw current path being drawn
-        canvas.drawPath(currentPath, drawPaint);
+        // Draw current path being drawn (only in draw mode)
+        if (!selectionMode) {
+            canvas.drawPath(currentPath, drawPaint);
+        }
     }
     
     @Override
@@ -145,6 +172,40 @@ public class AnnotationView extends View {
         float x = event.getX();
         float y = event.getY();
         
+        // Handle selection mode (tap to select, drag to move)
+        if (selectionMode) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    // Try to find and select an object at touch point
+                    selectedObject = findObjectAtPoint(x, y, currentPage);
+                    lastTouchX = x;
+                    lastTouchY = y;
+                    invalidate();
+                    return true;
+                    
+                case MotionEvent.ACTION_MOVE:
+                    // Move selected object
+                    if (selectedObject != null) {
+                        float dx = x - lastTouchX;
+                        float dy = y - lastTouchY;
+                        selectedObject.translate(dx, dy);
+                        lastTouchX = x;
+                        lastTouchY = y;
+                        invalidate();
+                    }
+                    return true;
+                    
+                case MotionEvent.ACTION_UP:
+                    // Finish moving (deselect on next tap or keep selected)
+                    if (selectedObject != null) {
+                        notifyStateChanged();
+                    }
+                    return true;
+            }
+            return false;
+        }
+        
+        // Handle draw mode (original behavior)
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 currentPath.moveTo(x, y);
@@ -171,6 +232,26 @@ public class AnnotationView extends View {
         }
         
         return false;
+    }
+    
+    /**
+     * Find the topmost object at the given point
+     */
+    private AnnotationObject findObjectAtPoint(float x, float y, AnnotationPage page) {
+        // Search from top layer to bottom
+        for (int i = page.getLayers().size() - 1; i >= 0; i--) {
+            AnnotationLayer layer = page.getLayers().get(i);
+            if (!layer.isVisible()) continue;
+            
+            // Search from top object to bottom in this layer
+            for (int j = layer.getObjects().size() - 1; j >= 0; j--) {
+                AnnotationObject obj = layer.getObjects().get(j);
+                if (obj.isVisible() && obj.contains(x, y)) {
+                    return obj;
+                }
+            }
+        }
+        return null;
     }
     
     /**
@@ -333,5 +414,31 @@ public class AnnotationView extends View {
             currentPage.addLayer(name);
             notifyStateChanged();
         }
+    }
+    
+    /**
+     * Enable selection mode (for moving objects)
+     */
+    public void setSelectionMode(boolean enabled) {
+        selectionMode = enabled;
+        if (!enabled) {
+            selectedObject = null; // Clear selection when exiting selection mode
+        }
+        invalidate();
+    }
+    
+    /**
+     * Check if selection mode is active
+     */
+    public boolean isSelectionMode() {
+        return selectionMode;
+    }
+    
+    /**
+     * Deselect currently selected object
+     */
+    public void deselectObject() {
+        selectedObject = null;
+        invalidate();
     }
 }

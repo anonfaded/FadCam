@@ -1,26 +1,28 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
+
 /**
- * Command for clearing all paths from a layer.
+ * Command for clearing all objects from a layer.
  */
 public class ClearLayerCommand implements DrawingCommand {
     private AnnotationLayer layer;
-    private java.util.List<DrawingPath> previousPaths;
+    private java.util.List<AnnotationObject> previousObjects;
     
     public ClearLayerCommand(AnnotationLayer layer) {
         this.layer = layer;
-        this.previousPaths = new java.util.ArrayList<>(layer.getPaths());
+        this.previousObjects = new java.util.ArrayList<>(layer.getObjects());
     }
     
     @Override
     public void execute() {
-        layer.clearPaths();
+        layer.clearObjects();
     }
     
     @Override
     public void undo() {
-        layer.getPaths().clear();
-        layer.getPaths().addAll(previousPaths);
+        layer.getObjects().clear();
+        layer.getObjects().addAll(previousObjects);
     }
     
     @Override

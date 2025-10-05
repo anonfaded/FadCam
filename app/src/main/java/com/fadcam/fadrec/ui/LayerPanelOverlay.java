@@ -136,7 +136,7 @@ public class LayerPanelOverlay {
         TextView btnDeleteLayer = layerView.findViewById(R.id.btnDeleteLayer);
         
         txtLayerName.setText(layer.getName());
-        txtLayerInfo.setText(layer.getPaths().size() + " paths");
+        txtLayerInfo.setText(layer.getObjects().size() + " objects");
         
         // Highlight active layer
         if (isActive) {

@@ -1,20 +1,28 @@
 package com.fadcam.fadrec.ui.annotation;
 
-import java.io.Serializable;
+import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
+import com.fadcam.fadrec.ui.annotation.objects.PathObject;
+import com.fadcam.fadrec.ui.annotation.objects.TextObject;
+import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Represents a single annotation layer with drawing paths.
+ * Represents a single annotation layer with mixed objects (paths, text, shapes).
  * Each layer can be shown/hidden, locked/unlocked, and has opacity control.
+ * Now supports heterogeneous object types for professional vector editing.
  */
-public class AnnotationLayer implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class AnnotationLayer {
     
     private String id;
     private String name;
-    private List<DrawingPath> paths;
+    private List<AnnotationObject> objects; // Changed from List<DrawingPath>
     private boolean visible;
     private boolean locked;
     private float opacity; // 0.0 to 1.0
@@ -23,11 +31,73 @@ public class AnnotationLayer implements Serializable {
     public AnnotationLayer(String name) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
-        this.paths = new ArrayList<>();
+        this.objects = new ArrayList<>();
         this.visible = true;
         this.locked = false;
         this.opacity = 1.0f;
         this.createdAt = System.currentTimeMillis();
+    }
+    
+    // JSON serialization
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("id", id);
+        json.put("name", name);
+        json.put("visible", visible);
+        json.put("locked", locked);
+        json.put("opacity", opacity);
+        json.put("createdAt", createdAt);
+        
+        JSONArray objectsArray = new JSONArray();
+        for (AnnotationObject obj : objects) {
+            objectsArray.put(obj.toJSON());
+        }
+        json.put("objects", objectsArray);
+        
+        return json;
+    }
+    
+    public static AnnotationLayer fromJSON(JSONObject json) throws JSONException {
+        AnnotationLayer layer = new AnnotationLayer(json.getString("name"));
+        layer.id = json.getString("id");
+        layer.visible = json.getBoolean("visible");
+        layer.locked = json.getBoolean("locked");
+        layer.opacity = (float) json.getDouble("opacity");
+        layer.createdAt = json.getLong("createdAt");
+        
+        JSONArray objectsArray = json.getJSONArray("objects");
+        for (int i = 0; i < objectsArray.length(); i++) {
+            JSONObject objJson = objectsArray.getJSONObject(i);
+            AnnotationObject obj = deserializeObject(objJson);
+            if (obj != null) {
+                layer.objects.add(obj);
+            }
+        }
+        
+        return layer;
+    }
+    
+    private static AnnotationObject deserializeObject(JSONObject json) throws JSONException {
+        String typeStr = json.getString("type");
+        AnnotationObject.ObjectType type = AnnotationObject.ObjectType.valueOf(typeStr);
+        
+        AnnotationObject obj;
+        switch (type) {
+            case PATH:
+                obj = new PathObject();
+                break;
+            case TEXT:
+                obj = new TextObject();
+                break;
+            case SHAPE:
+                obj = new ShapeObject();
+                break;
+            default:
+                return null;
+        }
+        
+        obj.fromJSON(json);
+        return obj;
     }
     
     // Getters and setters
@@ -35,10 +105,37 @@ public class AnnotationLayer implements Serializable {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     
-    public List<DrawingPath> getPaths() { return paths; }
-    public void addPath(DrawingPath path) { paths.add(path); }
-    public void removePath(DrawingPath path) { paths.remove(path); }
-    public void clearPaths() { paths.clear(); }
+    public List<AnnotationObject> getObjects() { return objects; }
+    public void addObject(AnnotationObject object) { objects.add(object); }
+    public void removeObject(AnnotationObject object) { objects.remove(object); }
+    public void clearObjects() { objects.clear(); }
+    
+    // Backward compatibility - convert DrawingPath to PathObject
+    @Deprecated
+    public void addPath(DrawingPath path) {
+        // Convert old DrawingPath to new PathObject
+        PathObject pathObj = new PathObject(path.path, path.color, path.strokeWidth, path.isEraser);
+        objects.add(pathObj);
+    }
+    
+    @Deprecated
+    public void removePath(DrawingPath path) {
+        // Find and remove PathObject with matching properties
+        // Note: This is a best-effort removal for backward compatibility
+        for (int i = objects.size() - 1; i >= 0; i--) {
+            AnnotationObject obj = objects.get(i);
+            if (obj instanceof PathObject) {
+                // For now, just remove the last PathObject (typical undo scenario)
+                objects.remove(i);
+                break;
+            }
+        }
+    }
+    
+    @Deprecated
+    public void clearPaths() {
+        clearObjects();
+    }
     
     public boolean isVisible() { return visible; }
     public void setVisible(boolean visible) { this.visible = visible; }
@@ -52,13 +149,4 @@ public class AnnotationLayer implements Serializable {
     }
     
     public long getCreatedAt() { return createdAt; }
-    
-    /**
-     * Reconstruct transient fields after deserialization
-     */
-    public void reconstruct() {
-        for (DrawingPath path : paths) {
-            path.reconstruct();
-        }
-    }
 }
