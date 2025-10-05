@@ -1,12 +1,16 @@
 package com.fadcam.ui.components;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
@@ -15,9 +19,11 @@ import com.fadcam.SharedPreferencesManager;
 /**
  * Component for handling the mode switcher (FadCam, FadRec, FadMic) functionality
  * Follows modular design principles with clean separation of concerns
+ * Features smooth animated transitions between modes
  */
 public class ModeSwitcherComponent {
     private static final String TAG = "ModeSwitcherComponent";
+    private static final int ANIMATION_DURATION = 160; // Text color fade only
     
     private final Context context;
     private final SharedPreferencesManager sharedPreferencesManager;
@@ -28,6 +34,9 @@ public class ModeSwitcherComponent {
     private FrameLayout segmentFadCam;
     private FrameLayout segmentFadRec;
     private FrameLayout segmentFadMic;
+
+    // Guard during initialization
+    private boolean isInitializing = false;
     
     /**
      * Interface for mode switcher callbacks
@@ -52,27 +61,111 @@ public class ModeSwitcherComponent {
      */
     public void initialize(@NonNull View rootView) {
         try {
-            // Find mode switcher segments
+            isInitializing = true;
+
             segmentFadCam = rootView.findViewById(R.id.segment_fadcam);
             segmentFadRec = rootView.findViewById(R.id.segment_fadrec);
             segmentFadMic = rootView.findViewById(R.id.segment_fadmic);
-            
-            // Hide "Soon" badge for FadRec since it's now available
-            View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
-            if (badgeFadRec != null) {
-                badgeFadRec.setVisibility(View.GONE);
+
+            if (segmentFadCam == null || segmentFadRec == null || segmentFadMic == null) {
+                Log.e(TAG, "Segment views missing");
+                return;
             }
-            
-            // Setup click listeners
+
+            // Remove FadRec badge (now available)
+            View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
+            if (badgeFadRec != null) badgeFadRec.setVisibility(View.GONE);
+
+            // Resolve persisted mode (fallback if invalid / coming soon)
+            String persisted = sharedPreferencesManager.getCurrentRecordingMode();
+            if (Constants.MODE_FADMIC.equals(persisted)) persisted = Constants.MODE_FADCAM;
+            currentMode = persisted;
+
+            // Force clear all backgrounds first to prevent any hardcoded/cached backgrounds
+            segmentFadCam.setBackground(null);
+            segmentFadRec.setBackground(null);
+            segmentFadMic.setBackground(null);
+
+            // Set selection state (exclusive) - simple programmatic backgrounds
+            // Use post() to ensure view is fully laid out
+            rootView.post(() -> setExclusiveSelected(currentMode));
+
             setupClickListeners();
-            
-            // Set initial state from SharedPreferences
-            String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
-            updateActiveState(currentMode);
-            
-            Log.d(TAG, "ModeSwitcher initialized successfully with mode: " + currentMode);
+            Log.d(TAG, "ModeSwitcher initialized (active=" + currentMode + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error initializing ModeSwitcher", e);
+        } finally {
+            isInitializing = false;
+        }
+    }
+
+    /**
+     * Set one mode as active, others as inactive
+     * Uses simple programmatic backgrounds - no drawable files
+     */
+    private void setExclusiveSelected(String mode) {
+        applyBackground(segmentFadCam, Constants.MODE_FADCAM.equals(mode));
+        applyBackground(segmentFadRec, Constants.MODE_FADREC.equals(mode));
+        applyBackground(segmentFadMic, Constants.MODE_FADMIC.equals(mode));
+        
+        styleText(segmentFadCam, Constants.MODE_FADCAM.equals(mode));
+        styleText(segmentFadRec, Constants.MODE_FADREC.equals(mode));
+        styleText(segmentFadMic, Constants.MODE_FADMIC.equals(mode));
+        
+        Log.d(TAG, String.format("setExclusiveSelected(%s): FadCam=%b FadRec=%b FadMic=%b", 
+            mode, Constants.MODE_FADCAM.equals(mode), 
+            Constants.MODE_FADREC.equals(mode), 
+            Constants.MODE_FADMIC.equals(mode)));
+    }
+    
+    /**
+     * Apply background programmatically - no drawable files needed
+     * Creates a simple rounded rectangle with solid color
+     */
+    private void applyBackground(FrameLayout segment, boolean active) {
+        if (segment == null) return;
+        
+        // Force clear existing background first
+        segment.setBackground(null);
+        
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.RECTANGLE);
+        background.setCornerRadius(32f); // 32dp radius for rounded corners
+        
+        if (active) {
+            // Active: Red fill (#E43C3C)
+            background.setColor(ContextCompat.getColor(context, R.color.redPastel));
+        } else {
+            // Inactive: Transparent with subtle stroke
+            background.setColor(ContextCompat.getColor(context, android.R.color.transparent));
+            background.setStroke(2, ContextCompat.getColor(context, R.color.amoled_border));
+        }
+        
+        segment.setBackground(background);
+        segment.setSelected(active);
+        
+        Log.d(TAG, "applyBackground: " + segment.getId() + " active=" + active);
+    }
+
+    /**
+     * Style text (color and weight) with optional animation
+     */
+    private void styleText(FrameLayout segment, boolean active) {
+        if (segment == null) return;
+        android.widget.TextView tv = (android.widget.TextView) segment.getChildAt(0);
+        if (tv == null) return;
+        
+        int from = tv.getCurrentTextColor();
+        int to = ContextCompat.getColor(context, active ? android.R.color.white : R.color.amoled_text_secondary);
+        tv.setTypeface(null, active ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        
+        if (from != to) {
+            ValueAnimator anim = ValueAnimator.ofObject(new ArgbEvaluator(), from, to);
+            anim.setDuration(ANIMATION_DURATION);
+            anim.addUpdateListener(a -> tv.setTextColor((Integer) a.getAnimatedValue()));
+            anim.start();
+        } else {
+            tv.setTextColor(to);
         }
     }
     
@@ -100,8 +193,20 @@ public class ModeSwitcherComponent {
     private void handleModeClick(String mode) {
         Log.d(TAG, "Mode clicked: " + mode);
         
-        // Update visual state for all modes
-        updateActiveState(mode);
+        if (isInitializing) return;
+
+        if (mode.equals(currentMode)) return; // no-op
+
+        if (Constants.MODE_FADMIC.equals(mode)) { // blocked mode
+            showComingSoonToast("FadMic (Mic Recording)");
+            if (listener != null) listener.onComingSoonRequested("FadMic");
+            return;
+        }
+
+        currentMode = mode;
+        setExclusiveSelected(currentMode);
+        sharedPreferencesManager.setCurrentRecordingMode(currentMode);
+        Log.d(TAG, "Mode switched -> " + currentMode);
         
         switch (mode) {
             case Constants.MODE_FADCAM:
@@ -132,56 +237,39 @@ public class ModeSwitcherComponent {
      * Update the active state visual indicator
      * @param activeMode The currently active mode
      */
-    private void updateActiveState(String activeMode) {
-        currentMode = activeMode;
-        
-        // Reset all segments to inactive state
-        resetSegmentState(segmentFadCam);
-        resetSegmentState(segmentFadRec);
-        resetSegmentState(segmentFadMic);
-        
-        // Set active segment
-        FrameLayout activeSegment = getSegmentForMode(activeMode);
-        if (activeSegment != null) {
-            setSegmentActive(activeSegment);
-        }
-        
-        Log.d(TAG, "Active mode updated to: " + activeMode);
-    }
+    private void updateActiveState(String activeMode) { setExclusiveSelected(activeMode); }
     
     /**
-     * Reset segment to inactive state
+     * Reset segment to inactive state with smooth animation
      * @param segment The segment to reset
      */
-    private void resetSegmentState(FrameLayout segment) {
-        if (segment != null) {
-            segment.setSelected(false);
-            segment.setBackgroundResource(R.drawable.segment_inactive_background);
-            
-            // Update text color to inactive
-            android.widget.TextView textView = (android.widget.TextView) segment.getChildAt(0);
-            if (textView != null) {
-                textView.setTextColor(context.getResources().getColor(R.color.amoled_text_secondary, null));
-            }
-        }
-    }
+    private void resetSegmentState(FrameLayout segment) { }
     
     /**
-     * Set segment to active state
+     * Set segment to active state with smooth animation
      * @param segment The segment to activate
      */
-    private void setSegmentActive(FrameLayout segment) {
-        if (segment != null) {
-            segment.setSelected(true);
-            segment.setBackgroundResource(R.drawable.segment_active_background);
-            
-            // Update text color to active (white)
-            android.widget.TextView textView = (android.widget.TextView) segment.getChildAt(0);
-            if (textView != null) {
-                textView.setTextColor(context.getResources().getColor(android.R.color.white, null));
-                textView.setTypeface(null, android.graphics.Typeface.BOLD);
-            }
-        }
+    private void setSegmentActive(FrameLayout segment) { }
+    
+    /**
+     * Animate background drawable change with smooth transition
+     * @param segment The segment to animate
+     * @param toActive Whether animating to active or inactive state
+     */
+    private void animateBackgroundChange(FrameLayout segment, boolean toActive) { }
+    
+    /**
+     * Animate text color change
+     * @param textView The TextView to animate
+     * @param fromColor Starting color
+     * @param toColor Ending color
+     */
+    private void animateTextColor(android.widget.TextView textView, int fromColor, int toColor) {
+        ValueAnimator colorAnimator = ValueAnimator.ofObject(new ArgbEvaluator(), fromColor, toColor);
+        colorAnimator.setDuration(ANIMATION_DURATION);
+        colorAnimator.addUpdateListener(animator -> 
+            textView.setTextColor((Integer) animator.getAnimatedValue()));
+        colorAnimator.start();
     }
     
     /**

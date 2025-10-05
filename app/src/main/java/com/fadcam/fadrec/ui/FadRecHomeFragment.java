@@ -53,6 +53,10 @@ public class FadRecHomeFragment extends HomeFragment {
     
     // Broadcast receivers for screen recording state
     private BroadcastReceiver screenRecordingStateReceiver;
+    
+    // Debouncing for button clicks to prevent rapid start/stop
+    private long lastClickTime = 0;
+    private static final long DEBOUNCE_DELAY_MS = 500; // 500ms debounce
 
     /**
      * Create a new instance of FadRecHomeFragment.
@@ -147,10 +151,11 @@ public class FadRecHomeFragment extends HomeFragment {
      * Hide camera-specific controls that are not relevant for screen recording.
      */
     private void hideCameraControls(View rootView) {
-        // Camera switch button
+        // Hide camera switch button (moved to button row)
         View buttonCamSwitch = rootView.findViewById(com.fadcam.R.id.buttonCamSwitch);
         if (buttonCamSwitch != null) {
             buttonCamSwitch.setVisibility(View.GONE);
+            Log.d(TAG, "Camera switch button hidden");
         }
         
         // Torch button
@@ -159,7 +164,7 @@ public class FadRecHomeFragment extends HomeFragment {
             buttonTorchSwitch.setVisibility(View.GONE);
         }
         
-        // Hide entire preview area including TextureView and placeholder
+        // Hide entire preview area (TextureView and placeholder from parent layout)
         View textureView = rootView.findViewById(com.fadcam.R.id.textureView);
         if (textureView != null) {
             textureView.setVisibility(View.GONE);
@@ -170,18 +175,12 @@ public class FadRecHomeFragment extends HomeFragment {
             tvPreviewPlaceholder.setVisibility(View.GONE);
         }
         
-        // Hide preview card container if it exists
-        View previewCard = rootView.findViewById(com.fadcam.R.id.cardPreview);
-        if (previewCard != null) {
-            previewCard.setVisibility(View.GONE);
-        }
-        
         // Hide recording tiles (AF, exposure, zoom - camera specific)
         View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
         if (tileAfToggle != null) {
             tileAfToggle.setVisibility(View.GONE);
         }
-                View tileExp = rootView.findViewById(com.fadcam.R.id.tile_exp);
+        View tileExp = rootView.findViewById(com.fadcam.R.id.tile_exp);
         if (tileExp != null) {
             tileExp.setVisibility(View.GONE);
         }
@@ -191,7 +190,43 @@ public class FadRecHomeFragment extends HomeFragment {
             tileZoom.setVisibility(View.GONE);
         }
         
+        // Replace preview card content with custom FadRec screen icon
+        replacePreviewWithScreenIcon(rootView);
+        
         Log.d(TAG, "Camera controls hidden");
+    }
+    
+    /**
+     * Replace the preview card content with a custom screen recording icon layout.
+     * This completely overrides the parent's camera preview with FadRec-specific UI.
+     */
+    private void replacePreviewWithScreenIcon(View rootView) {
+        // Find the preview card container
+        android.view.ViewGroup previewCard = 
+            rootView.findViewById(com.fadcam.R.id.cardPreview);
+        
+        if (previewCard != null) {
+            // Remove all child views from the card
+            previewCard.removeAllViews();
+            
+            // Inflate custom FadRec screen icon layout
+            View screenIconView = getLayoutInflater().inflate(
+                com.fadcam.R.layout.fadrec_screen_icon, 
+                previewCard, 
+                false
+            );
+            
+            // Add the custom layout to the card
+            previewCard.addView(screenIconView);
+            previewCard.setVisibility(View.VISIBLE);
+            
+            // IMPORTANT: Disable long press listener from parent HomeFragment
+            // FadRec doesn't need camera preview toggle functionality
+            previewCard.setOnLongClickListener(null);
+            previewCard.setLongClickable(false);
+            
+            Log.d(TAG, "Preview card replaced with screen recording icon, long press disabled");
+        }
     }
 
     /**
@@ -249,9 +284,22 @@ public class FadRecHomeFragment extends HomeFragment {
         MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
         
+        // Initially hide pause button (will appear during recording)
+        if (buttonPauseResume != null) {
+            buttonPauseResume.setVisibility(View.GONE);
+        }
+        
         // Start/Stop button
         if (buttonStartStop != null) {
             buttonStartStop.setOnClickListener(v -> {
+                // Debounce rapid clicks
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastClickTime < DEBOUNCE_DELAY_MS) {
+                    Log.d(TAG, "Button click ignored (debounced)");
+                    return;
+                }
+                lastClickTime = currentTime;
+                
                 if (screenRecordingState == ScreenRecordingState.NONE) {
                     // Start recording
                     requestScreenRecordingPermissionAndStart();
@@ -265,6 +313,14 @@ public class FadRecHomeFragment extends HomeFragment {
         // Pause/Resume button
         if (buttonPauseResume != null) {
             buttonPauseResume.setOnClickListener(v -> {
+                // Debounce rapid clicks
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastClickTime < DEBOUNCE_DELAY_MS) {
+                    Log.d(TAG, "Button click ignored (debounced)");
+                    return;
+                }
+                lastClickTime = currentTime;
+                
                 if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
                     // Pause recording
                     mediaProjectionHelper.pauseScreenRecording();
@@ -413,30 +469,35 @@ public class FadRecHomeFragment extends HomeFragment {
         MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
         
-        // Update Start/Stop button
+        // Update Start/Stop button with animation
         if (buttonStartStop != null) {
             if (screenRecordingState == ScreenRecordingState.NONE) {
+                // IDLE STATE: Show only start button
                 buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
                 );
                 // Green color for start button
-                buttonStartStop.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(
-                        android.graphics.Color.parseColor("#4CAF50")
-                    )
-                );
+                animateButtonColor(buttonStartStop, android.graphics.Color.parseColor("#4CAF50"));
+                
+                // Hide pause button when idle
+                if (buttonPauseResume != null) {
+                    animateButtonVisibility(buttonPauseResume, false);
+                }
             } else {
+                // RECORDING STATE: Show stop button (red)
                 buttonStartStop.setText(com.fadcam.R.string.button_stop);
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_stop)
                 );
                 // Red color for stop button
-                buttonStartStop.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(
-                        androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop)
-                    )
-                );
+                animateButtonColor(buttonStartStop, 
+                    androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop));
+                
+                // Show pause button when recording
+                if (buttonPauseResume != null) {
+                    animateButtonVisibility(buttonPauseResume, true);
+                }
             }
         }
         
@@ -460,6 +521,55 @@ public class FadRecHomeFragment extends HomeFragment {
         }
         
         Log.d(TAG, "UI updated for state: " + screenRecordingState);
+    }
+    
+    /**
+     * Animate button background color change
+     */
+    private void animateButtonColor(MaterialButton button, int toColor) {
+        try {
+            android.animation.ValueAnimator colorAnimator = android.animation.ValueAnimator.ofArgb(
+                ((android.graphics.drawable.ColorDrawable) button.getBackground()).getColor(),
+                toColor
+            );
+            colorAnimator.setDuration(300);
+            colorAnimator.addUpdateListener(animator -> 
+                button.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf((Integer) animator.getAnimatedValue())
+                )
+            );
+            colorAnimator.start();
+        } catch (Exception e) {
+            // Fallback to instant change
+            button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(toColor));
+        }
+    }
+    
+    /**
+     * Animate button visibility (slide in/out)
+     */
+    private void animateButtonVisibility(MaterialButton button, boolean show) {
+        if (show && button.getVisibility() == View.GONE) {
+            // Slide in from right with fade
+            button.setVisibility(View.VISIBLE);
+            button.setAlpha(0f);
+            button.setTranslationX(50f);
+            button.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .setDuration(300)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+        } else if (!show && button.getVisibility() == View.VISIBLE) {
+            // Slide out to right with fade
+            button.animate()
+                .alpha(0f)
+                .translationX(50f)
+                .setDuration(300)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> button.setVisibility(View.GONE))
+                .start();
+        }
     }
 
     @Override
