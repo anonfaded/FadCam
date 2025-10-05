@@ -471,7 +471,18 @@ This document tracks the implementation of FadRec, the screen recording feature 
 - [ ] **Resolution options** - Add 720p, 1440p, 4K options later
 - [ ] **FPS options** - Add 60fps, 120fps options later
 - [x] **Orientation lock** - Lock to portrait/landscape if needed
-- [x] **Show touches/taps** - Visual feedback for tutorials (app-level only due to Android security)
+- [x] **Annotation System** - Complete drawing/blackboard feature with advanced capabilities
+  - [x] Basic drawing with pen, eraser, colors, stroke widths
+  - [x] Blackboard/whiteboard mode toggle
+  - [x] Collapsible floating toolbar for minimal screen usage
+  - [x] Clear selection indicators for active tools/colors
+  - [ ] **Layer System** - Multiple layers per page with visibility/lock controls
+  - [ ] **Version Control** - Undo/Redo with 50-operation history per page
+  - [ ] **State Persistence** - Auto-save with crash recovery
+  - [ ] **Paging/Tabs** - Multiple independent annotation pages
+  - [ ] **Layer Management UI** - Bottom sheet for layer operations
+  - [ ] **Page Management UI** - Tab bar for page switching
+  - [ ] **Auto-save** - Periodic save every 30 seconds + on pause/destroy
 
 ---
 

@@ -7,7 +7,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,21 +22,30 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
+import com.fadcam.fadrec.ui.annotation.AnnotationState;
+import com.fadcam.fadrec.ui.annotation.AnnotationStateManager;
 
 /**
  * Service that provides floating annotation tools for drawing on screen during recording.
- * Manages the annotation canvas and toolbar overlay.
+ * Manages the annotation canvas, toolbar overlay, and state persistence with auto-save.
  */
 public class AnnotationService extends Service {
     private static final String TAG = "AnnotationService";
     private static final String CHANNEL_ID = "AnnotationServiceChannel";
     private static final int NOTIFICATION_ID = 3003;
+    private static final long AUTO_SAVE_INTERVAL = 30000; // 30 seconds
     
     private WindowManager windowManager;
     private AnnotationView annotationView;
     private View toolbarView;
     
+    // State management
+    private AnnotationStateManager stateManager;
+    private Handler autoSaveHandler;
+    private Runnable autoSaveRunnable;
+    
     // Toolbar controls
+    private TextView btnUndo, btnRedo;
     private TextView btnExpandCollapse;
     private TextView btnCloseAnnotation;
     private View expandableToolsSection;
@@ -69,12 +80,25 @@ public class AnnotationService extends Service {
         
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
+        // Initialize state manager
+        stateManager = new AnnotationStateManager(this);
+        
         setupAnnotationCanvas();
         setupToolbar();
+        startAutoSave();
     }
     
     private void setupAnnotationCanvas() {
         annotationView = new AnnotationView(this);
+        
+        // Load saved state or create new
+        AnnotationState state = stateManager.getCurrentState();
+        annotationView.setState(state);
+        
+        // Listen for state changes to update UI
+        annotationView.setOnStateChangeListener(() -> {
+            updateUndoRedoButtons();
+        });
         
         int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -93,7 +117,7 @@ public class AnnotationService extends Service {
         params.gravity = Gravity.TOP | Gravity.START;
         
         windowManager.addView(annotationView, params);
-        Log.d(TAG, "Annotation canvas added to window");
+        Log.d(TAG, "Annotation canvas added to window with saved state");
     }
     
     private void setupToolbar() {
@@ -101,6 +125,8 @@ public class AnnotationService extends Service {
         toolbarView = inflater.inflate(R.layout.annotation_toolbar, null);
         
         // Initialize toolbar controls
+        btnUndo = toolbarView.findViewById(R.id.btnUndo);
+        btnRedo = toolbarView.findViewById(R.id.btnRedo);
         btnExpandCollapse = toolbarView.findViewById(R.id.btnExpandCollapse);
         btnCloseAnnotation = toolbarView.findViewById(R.id.btnCloseAnnotation);
         expandableToolsSection = toolbarView.findViewById(R.id.expandableToolsSection);
@@ -150,6 +176,22 @@ public class AnnotationService extends Service {
     }
     
     private void setupToolbarListeners() {
+        // Undo button
+        btnUndo.setOnClickListener(v -> {
+            if (annotationView.canUndo()) {
+                annotationView.undo();
+                updateUndoRedoButtons();
+            }
+        });
+        
+        // Redo button
+        btnRedo.setOnClickListener(v -> {
+            if (annotationView.canRedo()) {
+                annotationView.redo();
+                updateUndoRedoButtons();
+            }
+        });
+        
         // Expand/Collapse button
         btnExpandCollapse.setOnClickListener(v -> {
             isExpanded = !isExpanded;
@@ -331,6 +373,48 @@ public class AnnotationService extends Service {
         }
     }
     
+    /**
+     * Updates the undo/redo button states based on availability.
+     * Enabled buttons have full opacity, disabled buttons are dimmed.
+     */
+    private void updateUndoRedoButtons() {
+        if (annotationView != null) {
+            btnUndo.setAlpha(annotationView.canUndo() ? 1.0f : 0.5f);
+            btnRedo.setAlpha(annotationView.canRedo() ? 1.0f : 0.5f);
+        }
+    }
+    
+    /**
+     * Starts the auto-save timer to periodically persist annotation state.
+     */
+    private void startAutoSave() {
+        autoSaveHandler = new Handler(Looper.getMainLooper());
+        autoSaveRunnable = new Runnable() {
+            @Override
+            public void run() {
+                saveCurrentState();
+                autoSaveHandler.postDelayed(this, AUTO_SAVE_INTERVAL);
+            }
+        };
+        autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_INTERVAL);
+        Log.d(TAG, "Auto-save started (interval: " + AUTO_SAVE_INTERVAL + "ms)");
+    }
+    
+    /**
+     * Saves the current annotation state to persistent storage.
+     */
+    private void saveCurrentState() {
+        if (annotationView != null && stateManager != null) {
+            AnnotationState state = annotationView.getState();
+            if (state != null) {
+                // Update the manager's current state before saving
+                stateManager.setCurrentState(state);
+                stateManager.saveState();
+                Log.d(TAG, "State auto-saved");
+            }
+        }
+    }
+    
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -362,6 +446,16 @@ public class AnnotationService extends Service {
         super.onDestroy();
         Log.d(TAG, "AnnotationService destroyed");
         
+        // Stop auto-save timer
+        if (autoSaveHandler != null && autoSaveRunnable != null) {
+            autoSaveHandler.removeCallbacks(autoSaveRunnable);
+            Log.d(TAG, "Auto-save stopped");
+        }
+        
+        // Final save before shutdown
+        saveCurrentState();
+        
+        // Clean up views
         if (annotationView != null) {
             windowManager.removeView(annotationView);
         }
