@@ -49,6 +49,7 @@ public class FadRecHomeFragment extends HomeFragment {
     private MediaProjectionHelper mediaProjectionHelper;
     private ActivityResultLauncher<Intent> screenCapturePermissionLauncher;
     private ActivityResultLauncher<String> audioPermissionLauncher;
+    private ActivityResultLauncher<Intent> overlayPermissionLauncher;
     
     // Screen recording state
     private ScreenRecordingState screenRecordingState = ScreenRecordingState.NONE;
@@ -115,6 +116,36 @@ public class FadRecHomeFragment extends HomeFragment {
                     Toast.makeText(requireContext(), 
                         com.fadcam.R.string.fadrec_permission_denied, 
                         Toast.LENGTH_SHORT).show();
+                }
+            }
+        );
+        
+        // Register overlay permission launcher for floating controls
+        overlayPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (android.provider.Settings.canDrawOverlays(requireContext())) {
+                    Log.d(TAG, "Overlay permission granted");
+                    // Enable floating controls
+                    sharedPreferencesManager.setFloatingControlsEnabled(true);
+                    // Update switch if view exists
+                    if (getView() != null) {
+                        View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
+                        if (cardFloatingControls != null) {
+                            androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                                cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
+                            if (switchFloatingControls != null) {
+                                switchFloatingControls.setChecked(true);
+                            }
+                        }
+                    }
+                    startFloatingControlsService();
+                } else {
+                    Log.w(TAG, "Overlay permission denied");
+                    com.fadcam.Utils.showQuickToast(
+                        requireContext(),
+                        com.fadcam.R.string.floating_controls_permission_needed
+                    );
                 }
             }
         );
@@ -323,10 +354,139 @@ public class FadRecHomeFragment extends HomeFragment {
             Log.d(TAG, "Recording controls title hidden");
         }
         
+        // Setup floating controls toggle card in the tiles area
+        setupFloatingControlsCard(rootView);
+        
         // Replace preview card content with custom FadRec screen icon
         replacePreviewWithScreenIcon(rootView);
         
         Log.d(TAG, "Camera controls hidden");
+    }
+    
+    /**
+     * Setup floating controls toggle card in the camera tiles area.
+     * Shows toggle switch to enable/disable floating assistive touch overlay.
+     */
+    private void setupFloatingControlsCard(View rootView) {
+        // Inflate floating controls card
+        View cardFloatingControls = getLayoutInflater().inflate(
+            com.fadcam.R.layout.card_floating_controls,
+            null
+        );
+        
+        // Find the parent layout where tiles were (should be tile_af_toggle's parent)
+        View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
+        android.view.ViewGroup tilesParent = null;
+        
+        if (tileAfToggle != null && tileAfToggle.getParent() instanceof android.view.ViewGroup) {
+            tilesParent = (android.view.ViewGroup) tileAfToggle.getParent();
+        }
+        
+        if (tilesParent != null) {
+            // Add the floating controls card at the beginning
+            tilesParent.addView(cardFloatingControls, 0);
+            
+            // Setup switch
+            androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
+            
+            if (switchFloatingControls != null) {
+                // Set initial state from SharedPreferences
+                boolean isEnabled = sharedPreferencesManager.isFloatingControlsEnabled();
+                switchFloatingControls.setChecked(isEnabled);
+                
+                // Handle switch toggle
+                switchFloatingControls.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (isChecked) {
+                        // Request overlay permission if not granted
+                        if (!android.provider.Settings.canDrawOverlays(requireContext())) {
+                            // Show permission dialog
+                            requestOverlayPermission();
+                            // Uncheck the switch until permission is granted
+                            buttonView.setChecked(false);
+                        } else {
+                            // Enable floating controls
+                            sharedPreferencesManager.setFloatingControlsEnabled(true);
+                            startFloatingControlsService();
+                        }
+                    } else {
+                        // Disable floating controls
+                        sharedPreferencesManager.setFloatingControlsEnabled(false);
+                        stopFloatingControlsService();
+                    }
+                });
+                
+                // If already enabled and permission granted, start service
+                if (isEnabled && android.provider.Settings.canDrawOverlays(requireContext())) {
+                    startFloatingControlsService();
+                }
+            }
+            
+            Log.d(TAG, "Floating controls card added");
+        }
+    }
+    
+    /**
+     * Request overlay permission for floating controls.
+     * Shows an informative dialog before opening system settings.
+     */
+    private void requestOverlayPermission() {
+        // Show informative Material dialog first
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(com.fadcam.R.string.floating_controls_permission_title)
+            .setMessage(com.fadcam.R.string.floating_controls_permission_message)
+            .setPositiveButton(com.fadcam.R.string.floating_controls_permission_grant, (dialog, which) -> {
+                try {
+                    android.content.Intent intent = new android.content.Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:" + requireContext().getPackageName())
+                    );
+                    overlayPermissionLauncher.launch(intent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error requesting overlay permission", e);
+                    com.fadcam.Utils.showQuickToast(
+                        requireContext(),
+                        com.fadcam.R.string.floating_controls_permission_needed
+                    );
+                }
+            })
+            .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
+                dialog.dismiss();
+            })
+            .setCancelable(true)
+            .show();
+    }
+    
+    /**
+     * Start the floating controls overlay service.
+     */
+    private void startFloatingControlsService() {
+        try {
+            android.content.Intent intent = new android.content.Intent(
+                requireContext(),
+                FloatingControlsService.class
+            );
+            requireContext().startService(intent);
+            Log.d(TAG, "Floating controls service started");
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting floating controls service", e);
+        }
+    }
+    
+    /**
+     * Stop the floating controls overlay service.
+     */
+    private void stopFloatingControlsService() {
+        try {
+            android.content.Intent intent = new android.content.Intent(
+                requireContext(),
+                FloatingControlsService.class
+            );
+            requireContext().stopService(intent);
+            Log.d(TAG, "Floating controls service stopped");
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping floating controls service", e);
+        }
     }
     
     /**
@@ -671,6 +831,42 @@ public class FadRecHomeFragment extends HomeFragment {
                             }
                         }
                         break;
+                        
+                    // Handle overlay actions
+                    case Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY:
+                        Log.d(TAG, "Received ACTION_START_SCREEN_RECORDING_FROM_OVERLAY");
+                        if (screenRecordingState == ScreenRecordingState.NONE) {
+                            // Always request permission (MediaProjection needs explicit user consent each time)
+                            requestScreenCapturePermission();
+                        }
+                        break;
+                        
+                    case Constants.ACTION_PAUSE_SCREEN_RECORDING:
+                        Log.d(TAG, "Received ACTION_PAUSE_SCREEN_RECORDING");
+                        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
+                            if (mediaProjectionHelper != null) {
+                                mediaProjectionHelper.pauseScreenRecording();
+                            }
+                        }
+                        break;
+                        
+                    case Constants.ACTION_RESUME_SCREEN_RECORDING:
+                        Log.d(TAG, "Received ACTION_RESUME_SCREEN_RECORDING");
+                        if (screenRecordingState == ScreenRecordingState.PAUSED) {
+                            if (mediaProjectionHelper != null) {
+                                mediaProjectionHelper.resumeScreenRecording();
+                            }
+                        }
+                        break;
+                        
+                    case Constants.ACTION_STOP_SCREEN_RECORDING:
+                        Log.d(TAG, "Received ACTION_STOP_SCREEN_RECORDING");
+                        if (screenRecordingState != ScreenRecordingState.NONE) {
+                            if (mediaProjectionHelper != null) {
+                                mediaProjectionHelper.stopScreenRecording();
+                            }
+                        }
+                        break;
                 }
             }
         };
@@ -682,6 +878,11 @@ public class FadRecHomeFragment extends HomeFragment {
         filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
         filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
         filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
+        // Add overlay actions
+        filter.addAction(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY);
+        filter.addAction(Constants.ACTION_PAUSE_SCREEN_RECORDING);
+        filter.addAction(Constants.ACTION_RESUME_SCREEN_RECORDING);
+        filter.addAction(Constants.ACTION_STOP_SCREEN_RECORDING);
         
         requireContext().registerReceiver(screenRecordingStateReceiver, filter);
         Log.d(TAG, "Screen recording broadcast receivers registered");

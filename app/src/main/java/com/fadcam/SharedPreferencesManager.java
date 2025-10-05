@@ -1717,5 +1717,28 @@ public class SharedPreferencesManager {
         Log.d("SharedPrefs", "Recording mode changed to: " + mode);
     }
 
+    /**
+     * Gets whether floating controls (assistive touch) is enabled for FadRec.
+     * @return true if floating controls enabled, false otherwise
+     */
+    public boolean isFloatingControlsEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_FLOATING_CONTROLS_ENABLED,
+            false // Default: disabled
+        );
+    }
+
+    /**
+     * Sets whether floating controls (assistive touch) is enabled for FadRec.
+     * @param enabled true to enable, false to disable
+     */
+    public void setFloatingControlsEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_FLOATING_CONTROLS_ENABLED, enabled)
+            .apply();
+        Log.d("SharedPrefs", "Floating controls enabled: " + enabled);
+    }
+
     // -------------- FadRec (Screen Recording) Preferences End --------------
 }

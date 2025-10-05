@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/cardFloatingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/colorSurface" app:cardCornerRadius="8dp" app:cardElevation="4dp" app:strokeColor="#4CAF50" app:strokeWidth="2dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
+
+        <!-- Icon -->
+        <TextView android:id="@+id/ivFloatingControlsIcon" android:layout_width="28dp" android:layout_height="28dp" android:text="touch_app" android:textSize="20sp" android:gravity="center" android:fontFamily="@font/materialicons" android:textColor="?attr/colorOnSurface" android:layout_marginEnd="4dp" android:layout_gravity="center" />
+
+        <!-- Title -->
+        <TextView android:id="@+id/tvFloatingControlsTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/floating_controls_title" android:textSize="13sp" android:textStyle="bold" android:textColor="?attr/colorHeading" android:layout_marginStart="4dp" android:layout_gravity="center" />
+
+        <!-- Spacer to push switch to right -->
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+        <!-- Switch -->
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchFloatingControls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

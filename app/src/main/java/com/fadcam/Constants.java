@@ -30,6 +30,7 @@ public abstract class Constants {
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
     public static final String PREF_RECORDING_START_TIME = "recording_start_time"; // Stores recording start timestamp for orientation changes
+    public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for FadRec
     public static final String PREF_BOTH_TORCHES_ENABLED =
         "pref_both_torches_enabled";
     public static final String PREF_SELECTED_TORCH_SOURCE =
@@ -134,6 +135,16 @@ public abstract class Constants {
         "com.fadcam.ACTION_PAUSE_SCREEN_RECORDING";
     public static final String INTENT_ACTION_RESUME_SCREEN_RECORDING =
         "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
+    
+    // Floating controls actions (from overlay)
+    public static final String ACTION_START_SCREEN_RECORDING_FROM_OVERLAY =
+        "com.fadcam.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY";
+    public static final String ACTION_PAUSE_SCREEN_RECORDING =
+        "com.fadcam.ACTION_PAUSE_SCREEN_RECORDING";
+    public static final String ACTION_RESUME_SCREEN_RECORDING =
+        "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
+    public static final String ACTION_STOP_SCREEN_RECORDING =
+        "com.fadcam.ACTION_STOP_SCREEN_RECORDING";
 
     // Screen recording broadcast actions
     public static final String BROADCAST_ON_SCREEN_RECORDING_STARTED =
