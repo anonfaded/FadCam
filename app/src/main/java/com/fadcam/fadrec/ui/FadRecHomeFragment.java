@@ -339,6 +339,14 @@ public class FadRecHomeFragment extends HomeFragment {
             rootView.findViewById(com.fadcam.R.id.cardPreview);
         
         if (previewCard != null) {
+            // Make the parent card background transparent for FadRec
+            if (previewCard instanceof androidx.cardview.widget.CardView) {
+                ((androidx.cardview.widget.CardView) previewCard).setCardBackgroundColor(
+                    android.graphics.Color.TRANSPARENT
+                );
+            }
+            previewCard.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            
             // Remove all child views from the card
             previewCard.removeAllViews();
             
@@ -358,7 +366,7 @@ public class FadRecHomeFragment extends HomeFragment {
             previewCard.setOnLongClickListener(null);
             previewCard.setLongClickable(false);
             
-            Log.d(TAG, "Preview card replaced with screen recording icon, long press disabled");
+            Log.d(TAG, "Preview card replaced with screen recording icon, background transparent");
         }
     }
 
