@@ -4,7 +4,10 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
@@ -56,14 +59,29 @@ public class AnnotationService extends Service {
     private PageTabBarOverlay pageTabBarOverlay;
     private LayerPanelOverlay layerPanelOverlay;
     
-    // Toolbar controls
+    // Unified toolbar controls
+    private TextView btnExpandCollapse;
+    private TextView btnCloseAnnotation;
+    private View expandableContent;
+    
+    // Recording controls
+    private View btnStartStopRec, btnPauseResumeRec;
+    private TextView iconStartStop, labelStartStop;
+    private TextView iconPauseResume, labelPauseResume;
+    private com.fadcam.fadrec.ScreenRecordingState recordingState = com.fadcam.fadrec.ScreenRecordingState.NONE;
+    
+    // Annotation tools section
+    private View annotationsHeader;
+    private TextView annotationsExpandIcon;
+    private View annotationsContent;
+    private androidx.appcompat.widget.SwitchCompat snapGuidesSwitch;
+    private boolean isAnnotationsExpanded = false;
+    
+    // Annotation toolbar controls
     private TextView btnUndo, btnRedo;
     private TextView txtUndoCount, txtRedoCount;
     private TextView btnPages, btnLayers;
     private TextView txtPageInfo, txtLayerInfo;
-    private TextView btnExpandCollapse;
-    private TextView btnCloseAnnotation;
-    private View expandableToolsSection;
     private View btnSelectTool, btnPenTool, btnEraserTool, btnTextTool, btnShapeTool;
     private TextView iconSelectTool, iconPenTool, iconEraserTool, iconTextTool, iconShapeTool;
     private View btnColorRed, btnColorBlue, btnColorGreen, btnColorYellow, btnColorWhite, btnColorBlack;
@@ -74,6 +92,9 @@ public class AnnotationService extends Service {
     
     // State
     private boolean isExpanded = false;
+    
+    // Broadcast receiver for floating menu actions
+    private BroadcastReceiver menuActionReceiver;
     
     // Toolbar dragging
     private int toolbarInitialX, toolbarInitialY;
@@ -104,6 +125,8 @@ public class AnnotationService extends Service {
         setupAnnotationCanvas();
         setupToolbar();
         startAutoSave();
+        registerMenuActionReceiver();
+        registerRecordingStateReceiver();
     }
     
     private void setupAnnotationCanvas() {
@@ -151,9 +174,28 @@ public class AnnotationService extends Service {
     
     private void setupToolbar() {
         LayoutInflater inflater = LayoutInflater.from(this);
-        toolbarView = inflater.inflate(R.layout.annotation_toolbar, null);
+        toolbarView = inflater.inflate(R.layout.annotation_toolbar_unified, null);
         
-        // Initialize toolbar controls
+        // Initialize main expand/collapse and close buttons
+        btnExpandCollapse = toolbarView.findViewById(R.id.btnExpandCollapse);
+        btnCloseAnnotation = toolbarView.findViewById(R.id.btnCloseAnnotation);
+        expandableContent = toolbarView.findViewById(R.id.expandableContent);
+        
+        // Initialize recording controls
+        btnStartStopRec = toolbarView.findViewById(R.id.btnStartStopRec);
+        btnPauseResumeRec = toolbarView.findViewById(R.id.btnPauseResumeRec);
+        iconStartStop = toolbarView.findViewById(R.id.iconStartStop);
+        labelStartStop = toolbarView.findViewById(R.id.labelStartStop);
+        iconPauseResume = toolbarView.findViewById(R.id.iconPauseResume);
+        labelPauseResume = toolbarView.findViewById(R.id.labelPauseResume);
+        
+        // Initialize annotations section
+        annotationsHeader = toolbarView.findViewById(R.id.annotationsHeader);
+        annotationsExpandIcon = toolbarView.findViewById(R.id.annotationsExpandIcon);
+        annotationsContent = toolbarView.findViewById(R.id.annotationsContent);
+        snapGuidesSwitch = toolbarView.findViewById(R.id.snapGuidesSwitch);
+        
+        // Initialize annotation toolbar controls
         btnUndo = toolbarView.findViewById(R.id.btnUndo);
         btnRedo = toolbarView.findViewById(R.id.btnRedo);
         txtUndoCount = toolbarView.findViewById(R.id.txtUndoCount);
@@ -162,9 +204,6 @@ public class AnnotationService extends Service {
         btnLayers = toolbarView.findViewById(R.id.btnLayers);
         txtPageInfo = toolbarView.findViewById(R.id.txtPageInfo);
         txtLayerInfo = toolbarView.findViewById(R.id.txtLayerInfo);
-        btnExpandCollapse = toolbarView.findViewById(R.id.btnExpandCollapse);
-        btnCloseAnnotation = toolbarView.findViewById(R.id.btnCloseAnnotation);
-        expandableToolsSection = toolbarView.findViewById(R.id.expandableToolsSection);
         
         btnSelectTool = toolbarView.findViewById(R.id.btnSelectTool);
         btnPenTool = toolbarView.findViewById(R.id.btnPenTool);
@@ -243,20 +282,69 @@ public class AnnotationService extends Service {
             showLayerPanel();
         });
         
-        // Expand/Collapse button
+        // Main Expand/Collapse button (toggles entire expandable content)
         btnExpandCollapse.setOnClickListener(v -> {
             isExpanded = !isExpanded;
             if (isExpanded) {
-                expandableToolsSection.setVisibility(View.VISIBLE);
-                btnExpandCollapse.setText("keyboard_arrow_up");
+                expandableContent.setVisibility(View.VISIBLE);
+                btnExpandCollapse.setText("chevron_left");
             } else {
-                expandableToolsSection.setVisibility(View.GONE);
-                btnExpandCollapse.setText("keyboard_arrow_down");
+                expandableContent.setVisibility(View.GONE);
+                btnExpandCollapse.setText("chevron_right");
             }
         });
         
-        // Close button
-        btnCloseAnnotation.setOnClickListener(v -> stopSelf());
+        // Close button - stops annotation service completely
+        btnCloseAnnotation.setOnClickListener(v -> {
+            // Save state before closing
+            saveCurrentState();
+            
+            // Stop the service (this will trigger onDestroy)
+            stopSelf();
+            
+            Toast.makeText(this, "Annotations closed", Toast.LENGTH_SHORT).show();
+        });
+        
+        // Annotations section header (toggles annotation tools)
+        annotationsHeader.setOnClickListener(v -> {
+            isAnnotationsExpanded = !isAnnotationsExpanded;
+            if (isAnnotationsExpanded) {
+                annotationsContent.setVisibility(View.VISIBLE);
+                annotationsExpandIcon.setText("expand_less");
+            } else {
+                annotationsContent.setVisibility(View.GONE);
+                annotationsExpandIcon.setText("expand_more");
+            }
+        });
+        
+        // Snap guides switch
+        snapGuidesSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (annotationView != null) {
+                annotationView.setSnapGuidesEnabled(isChecked);
+                Log.d(TAG, "Snap guides " + (isChecked ? "enabled" : "disabled"));
+            }
+        });
+        
+        // Recording controls
+        btnStartStopRec.setOnClickListener(v -> {
+            if (btnStartStopRec.isEnabled()) {
+                if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
+                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
+                } else {
+                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_STOP_SCREEN_RECORDING));
+                }
+            }
+        });
+        
+        btnPauseResumeRec.setOnClickListener(v -> {
+            if (btnPauseResumeRec.isEnabled()) {
+                if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
+                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_PAUSE_SCREEN_RECORDING));
+                } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.PAUSED) {
+                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_RESUME_SCREEN_RECORDING));
+                }
+            }
+        });
         
         // Tool selection
         btnSelectTool.setOnClickListener(v -> {
@@ -800,10 +888,125 @@ public class AnnotationService extends Service {
                 .build();
     }
     
+    /**
+     * Register broadcast receiver for floating menu actions
+     */
+    private void registerMenuActionReceiver() {
+        menuActionReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action == null) return;
+                
+                switch (action) {
+                    case "com.fadcam.fadrec.TOGGLE_SNAP_GUIDES":
+                        boolean enabled = intent.getBooleanExtra("enabled", true);
+                        if (annotationView != null) {
+                            annotationView.setSnapGuidesEnabled(enabled);
+                            Log.d(TAG, "Snap guides " + (enabled ? "enabled" : "disabled"));
+                        }
+                        break;
+                        
+                    case "com.fadcam.fadrec.ADD_TEXT":
+                        showTextEditorDialog();
+                        break;
+                        
+                    case "com.fadcam.fadrec.ADD_SHAPE":
+                        showShapePickerDialog();
+                        break;
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("com.fadcam.fadrec.TOGGLE_SNAP_GUIDES");
+        filter.addAction("com.fadcam.fadrec.ADD_TEXT");
+        filter.addAction("com.fadcam.fadrec.ADD_SHAPE");
+        registerReceiver(menuActionReceiver, filter);
+        Log.d(TAG, "Menu action receiver registered");
+    }
+    
+    /**
+     * Register broadcast receiver for recording state updates
+     */
+    private BroadcastReceiver recordingStateReceiver;
+    
+    private void registerRecordingStateReceiver() {
+        recordingStateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String stateStr = intent.getStringExtra("recordingState");
+                if (stateStr != null) {
+                    try {
+                        recordingState = com.fadcam.fadrec.ScreenRecordingState.valueOf(stateStr);
+                        updateRecordingButtons();
+                        Log.d(TAG, "Recording state updated: " + recordingState);
+                    } catch (IllegalArgumentException e) {
+                        Log.e(TAG, "Invalid state: " + stateStr, e);
+                    }
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter(com.fadcam.Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
+        registerReceiver(recordingStateReceiver, filter);
+        Log.d(TAG, "Recording state receiver registered");
+    }
+    
+    private void updateRecordingButtons() {
+        if (btnStartStopRec == null) return;
+        
+        switch (recordingState) {
+            case NONE:
+                btnStartStopRec.setEnabled(true);
+                iconStartStop.setText("fiber_manual_record");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+                labelStartStop.setText(R.string.floating_menu_start_short);
+                
+                btnPauseResumeRec.setEnabled(false);
+                iconPauseResume.setText("pause");
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                labelPauseResume.setText(R.string.floating_menu_pause);
+                break;
+                
+            case IN_PROGRESS:
+                btnStartStopRec.setEnabled(true);
+                iconStartStop.setText("stop");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                labelStartStop.setText(R.string.floating_menu_stop_short);
+                
+                btnPauseResumeRec.setEnabled(true);
+                iconPauseResume.setText("pause");
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
+                labelPauseResume.setText(R.string.floating_menu_pause);
+                break;
+                
+            case PAUSED:
+                btnStartStopRec.setEnabled(true);
+                iconStartStop.setText("stop");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                labelStartStop.setText(R.string.floating_menu_stop_short);
+                
+                btnPauseResumeRec.setEnabled(true);
+                iconPauseResume.setText("play_arrow");
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+                labelPauseResume.setText(R.string.floating_menu_resume);
+                break;
+        }
+    }
+    
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "AnnotationService destroyed");
+        
+        // Unregister broadcast receivers
+        if (menuActionReceiver != null) {
+            unregisterReceiver(menuActionReceiver);
+        }
+        if (recordingStateReceiver != null) {
+            unregisterReceiver(recordingStateReceiver);
+        }
         
         // Stop auto-save timer
         if (autoSaveHandler != null && autoSaveRunnable != null) {

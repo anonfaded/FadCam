@@ -33,16 +33,23 @@ public class FloatingControlsService extends Service {
     
     private WindowManager windowManager;
     private View floatingView;
-    private View quickMenuView;
+    private View unifiedMenuView;
     private TextView btnFloating;
     private View btnStartStop, btnPauseResume;
     private View btnCloseMenu;
     private TextView iconStartStop, labelStartStop;
     private TextView iconPauseResume, labelPauseResume;
-    private View btnAnnotations;
+    
+    // Annotations section
+    private View annotationsHeader;
+    private TextView annotationsExpandIcon;
+    private View annotationsContent;
     private androidx.appcompat.widget.SwitchCompat annotationSwitch;
+    private androidx.appcompat.widget.SwitchCompat snapGuidesSwitch;
+    private View btnAddText, btnAddShape;
     
     private boolean isMenuExpanded = false;
+    private boolean isAnnotationsExpanded = false;
     private boolean isAnnotationActive = false;
     private ScreenRecordingState recordingState = ScreenRecordingState.NONE;
     
@@ -145,24 +152,31 @@ public class FloatingControlsService extends Service {
     }
 
     private void showQuickMenu() {
-        if (quickMenuView != null) return;
+        if (unifiedMenuView != null) return;
         
-        // Inflate quick menu layout
-        quickMenuView = LayoutInflater.from(this).inflate(R.layout.floating_quick_menu, null);
+        // Inflate unified menu layout
+        unifiedMenuView = LayoutInflater.from(this).inflate(R.layout.floating_unified_menu, null);
         
-        btnStartStop = quickMenuView.findViewById(R.id.btnStartStopRec);
-        btnPauseResume = quickMenuView.findViewById(R.id.btnPauseResumeRec);
-        btnCloseMenu = quickMenuView.findViewById(R.id.btnCloseMenu);
+        // Recording controls
+        btnStartStop = unifiedMenuView.findViewById(R.id.btnStartStopRec);
+        btnPauseResume = unifiedMenuView.findViewById(R.id.btnPauseResumeRec);
+        btnCloseMenu = unifiedMenuView.findViewById(R.id.btnCloseMenu);
         
-        iconStartStop = quickMenuView.findViewById(R.id.iconStartStop);
-        labelStartStop = quickMenuView.findViewById(R.id.labelStartStop);
-        iconPauseResume = quickMenuView.findViewById(R.id.iconPauseResume);
-        labelPauseResume = quickMenuView.findViewById(R.id.labelPauseResume);
+        iconStartStop = unifiedMenuView.findViewById(R.id.iconStartStop);
+        labelStartStop = unifiedMenuView.findViewById(R.id.labelStartStop);
+        iconPauseResume = unifiedMenuView.findViewById(R.id.iconPauseResume);
+        labelPauseResume = unifiedMenuView.findViewById(R.id.labelPauseResume);
         
-        btnAnnotations = quickMenuView.findViewById(R.id.btnAnnotations);
-        annotationSwitch = quickMenuView.findViewById(R.id.annotationSwitch);
+        // Annotations section
+        annotationsHeader = unifiedMenuView.findViewById(R.id.annotationsHeader);
+        annotationsExpandIcon = unifiedMenuView.findViewById(R.id.annotationsExpandIcon);
+        annotationsContent = unifiedMenuView.findViewById(R.id.annotationsContent);
+        annotationSwitch = unifiedMenuView.findViewById(R.id.annotationSwitch);
+        snapGuidesSwitch = unifiedMenuView.findViewById(R.id.snapGuidesSwitch);
+        btnAddText = unifiedMenuView.findViewById(R.id.btnAddText);
+        btnAddShape = unifiedMenuView.findViewById(R.id.btnAddShape);
         
-        // Set up click listeners
+        // Set up recording control listeners
         btnStartStop.setOnClickListener(v -> {
             if (btnStartStop.isEnabled()) {
                 if (recordingState == ScreenRecordingState.NONE) {
@@ -191,13 +205,38 @@ public class FloatingControlsService extends Service {
             hideQuickMenu();
         });
         
-        // Setup annotation switch listener
+        // Annotations header toggle
+        annotationsHeader.setOnClickListener(v -> {
+            toggleAnnotationsSection();
+        });
+        
+        // Annotation switch listener
         annotationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 startAnnotations();
             } else {
                 stopAnnotations();
             }
+        });
+        
+        // Snap guides switch listener
+        snapGuidesSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Send broadcast to AnnotationView to toggle snap guides
+            Intent intent = new Intent("com.fadcam.fadrec.TOGGLE_SNAP_GUIDES");
+            intent.putExtra("enabled", isChecked);
+            sendBroadcast(intent);
+        });
+        
+        // Add text button
+        btnAddText.setOnClickListener(v -> {
+            Intent intent = new Intent("com.fadcam.fadrec.ADD_TEXT");
+            sendBroadcast(intent);
+        });
+        
+        // Add shape button
+        btnAddShape.setOnClickListener(v -> {
+            Intent intent = new Intent("com.fadcam.fadrec.ADD_SHAPE");
+            sendBroadcast(intent);
         });
         
         // Set up window parameters for menu
@@ -215,41 +254,43 @@ public class FloatingControlsService extends Service {
         
         menuParams.gravity = Gravity.CENTER;
         
-        windowManager.addView(quickMenuView, menuParams);
+        windowManager.addView(unifiedMenuView, menuParams);
         isMenuExpanded = true;
         
         updateQuickMenuButtons();
     }
 
+    private void toggleAnnotationsSection() {
+        isAnnotationsExpanded = !isAnnotationsExpanded;
+        
+        if (isAnnotationsExpanded) {
+            annotationsContent.setVisibility(View.VISIBLE);
+            annotationsExpandIcon.setText("expand_less");
+        } else {
+            annotationsContent.setVisibility(View.GONE);
+            annotationsExpandIcon.setText("expand_more");
+        }
+    }
+
     private void hideQuickMenu() {
-        if (quickMenuView != null) {
-            windowManager.removeView(quickMenuView);
-            quickMenuView = null;
+        if (unifiedMenuView != null) {
+            windowManager.removeView(unifiedMenuView);
+            unifiedMenuView = null;
             isMenuExpanded = false;
+            isAnnotationsExpanded = false;
         }
     }
 
     private void updateFloatingButtonState() {
         if (btnFloating == null) return;
         
-        switch (recordingState) {
-            case NONE:
-                btnFloating.setText("fiber_manual_record");
-                btnFloating.setTextColor(getResources().getColor(android.R.color.white));
-                break;
-            case IN_PROGRESS:
-                btnFloating.setText("stop_circle");
-                btnFloating.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-                break;
-            case PAUSED:
-                btnFloating.setText("play_circle");
-                btnFloating.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
-                break;
-        }
+        // Always show chevron_right icon - menu expands on click
+        btnFloating.setText("chevron_right");
+        btnFloating.setTextColor(getResources().getColor(android.R.color.white));
     }
 
     private void updateQuickMenuButtons() {
-        if (quickMenuView == null) return;
+        if (unifiedMenuView == null) return;
         
         switch (recordingState) {
             case NONE:
@@ -341,8 +382,8 @@ public class FloatingControlsService extends Service {
             windowManager.removeView(floatingView);
         }
         
-        if (quickMenuView != null) {
-            windowManager.removeView(quickMenuView);
+        if (unifiedMenuView != null) {
+            windowManager.removeView(unifiedMenuView);
         }
         
         if (stateReceiver != null) {

@@ -111,6 +111,13 @@
     <string name="floating_menu_stop">Stop Recording</string>
     <string name="floating_menu_stop_short">Stop</string>
     <string name="floating_menu_annotations">Annotations</string>
+    <string name="recording_controls">Recording Controls</string>
+    <string name="annotations">Annotations</string>
+    <string name="annotation_tools">Annotation Tools</string>
+    <string name="enable_annotations">Enable Annotations</string>
+    <string name="snap_guides">Snap Guides</string>
+    <string name="add_text">Add Text</string>
+    <string name="add_shape">Add Shape</string>
     <string name="fadrec_ready_to_record">Ready to record screen</string>
     <string name="fadrec_permission_denied">Screen recording permission denied</string>
     <string name="fadrec_mode_title">FadRec • Screen Recording</string>

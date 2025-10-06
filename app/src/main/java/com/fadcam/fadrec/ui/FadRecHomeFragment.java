@@ -126,7 +126,7 @@ public class FadRecHomeFragment extends HomeFragment {
             result -> {
                 if (android.provider.Settings.canDrawOverlays(requireContext())) {
                     Log.d(TAG, "Overlay permission granted");
-                    // Enable floating controls
+                    // Enable unified annotation overlay
                     sharedPreferencesManager.setFloatingControlsEnabled(true);
                     // Update switch if view exists
                     if (getView() != null) {
@@ -139,7 +139,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             }
                         }
                     }
-                    startFloatingControlsService();
+                    startAnnotationService();
                 } else {
                     Log.w(TAG, "Overlay permission denied");
                     com.fadcam.Utils.showQuickToast(
@@ -405,20 +405,20 @@ public class FadRecHomeFragment extends HomeFragment {
                             // Uncheck the switch until permission is granted
                             buttonView.setChecked(false);
                         } else {
-                            // Enable floating controls
+                            // Enable unified annotation overlay
                             sharedPreferencesManager.setFloatingControlsEnabled(true);
-                            startFloatingControlsService();
+                            startAnnotationService();
                         }
                     } else {
-                        // Disable floating controls
+                        // Disable annotation overlay
                         sharedPreferencesManager.setFloatingControlsEnabled(false);
-                        stopFloatingControlsService();
+                        stopAnnotationService();
                     }
                 });
                 
-                // If already enabled and permission granted, start service
+                // If already enabled and permission granted, start unified annotation service
                 if (isEnabled && android.provider.Settings.canDrawOverlays(requireContext())) {
-                    startFloatingControlsService();
+                    startAnnotationService();
                 }
             }
             
@@ -458,35 +458,59 @@ public class FadRecHomeFragment extends HomeFragment {
     }
     
     /**
-     * Start the floating controls overlay service.
+     * Start the unified annotation overlay service.
      */
-    private void startFloatingControlsService() {
+    private void startAnnotationService() {
         try {
             android.content.Intent intent = new android.content.Intent(
                 requireContext(),
-                FloatingControlsService.class
+                AnnotationService.class
             );
-            requireContext().startService(intent);
-            Log.d(TAG, "Floating controls service started");
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                requireContext().startForegroundService(intent);
+            } else {
+                requireContext().startService(intent);
+            }
+            Log.d(TAG, "Annotation service started");
         } catch (Exception e) {
-            Log.e(TAG, "Error starting floating controls service", e);
+            Log.e(TAG, "Error starting annotation service", e);
         }
     }
     
     /**
-     * Stop the floating controls overlay service.
+     * Stop the unified annotation overlay service.
      */
-    private void stopFloatingControlsService() {
+    private void stopAnnotationService() {
         try {
             android.content.Intent intent = new android.content.Intent(
                 requireContext(),
-                FloatingControlsService.class
+                AnnotationService.class
             );
             requireContext().stopService(intent);
-            Log.d(TAG, "Floating controls service stopped");
+            Log.d(TAG, "Annotation service stopped");
         } catch (Exception e) {
-            Log.e(TAG, "Error stopping floating controls service", e);
+            Log.e(TAG, "Error stopping annotation service", e);
         }
+    }
+    
+    /**
+     * Start the floating controls overlay service.
+     * @deprecated Use startAnnotationService() instead - old service is no longer used
+     */
+    @Deprecated
+    private void startFloatingControlsService() {
+        // Redirect to unified annotation service
+        startAnnotationService();
+    }
+    
+    /**
+     * Stop the floating controls overlay service.
+     * @deprecated Use stopAnnotationService() instead - old service is no longer used
+     */
+    @Deprecated
+    private void stopFloatingControlsService() {
+        // Redirect to unified annotation service
+        stopAnnotationService();
     }
     
     /**
