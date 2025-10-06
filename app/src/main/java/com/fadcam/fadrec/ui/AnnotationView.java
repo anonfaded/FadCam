@@ -55,10 +55,22 @@ public class AnnotationView extends View {
     private float initialScale = 1.0f;
     private float initialRotation = 0f;
     
-    // Snap-to-angle configuration
+    // Snap guides toggle
+    private boolean snapGuidesEnabled = true; // Can be toggled by user
+    
+    // Rotation snap configuration
     private static final float[] SNAP_ANGLES = {0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f};
-    private static final float SNAP_THRESHOLD = 5f; // Degrees within which to snap
+    private static final float SNAP_THRESHOLD = 10f; // Degrees within which to show snap guide (increased)
+    private static final float SNAP_STRENGTH = 0.15f; // How much to pull toward snap (reduced for smoother feel)
     private float snappedAngle = -1f; // -1 means no snap active
+    private float lastSnappedAngle = -1f; // Track last snap to prevent oscillation
+    
+    // Position snap configuration (safe area guides)
+    private static final float SAFE_AREA_MARGIN = 60f; // Distance from screen edge for safe area
+    private static final float POSITION_SNAP_THRESHOLD = 15f; // Pixels within which to show position guide
+    private static final float POSITION_SNAP_STRENGTH = 0.2f; // Pull strength for position snapping
+    private float snappedHorizontalLine = -1f; // -1 means no horizontal snap active
+    private float snappedVerticalLine = -1f; // -1 means no vertical snap active
     
     // Long-press detection
     private Handler longPressHandler;
@@ -145,6 +157,25 @@ public class AnnotationView extends View {
         this.textEditRequestListener = listener;
     }
     
+    /**
+     * Toggle snap guides on/off
+     */
+    public void setSnapGuidesEnabled(boolean enabled) {
+        this.snapGuidesEnabled = enabled;
+        if (!enabled) {
+            // Clear any active snaps
+            snappedAngle = -1f;
+            snappedHorizontalLine = -1f;
+            snappedVerticalLine = -1f;
+            lastSnappedAngle = -1f;
+        }
+        invalidate();
+    }
+    
+    public boolean isSnapGuidesEnabled() {
+        return snapGuidesEnabled;
+    }
+    
     private void notifyStateChanged() {
         if (stateChangeListener != null) {
             stateChangeListener.onStateChanged();
@@ -206,14 +237,24 @@ public class AnnotationView extends View {
                     
                     // Draw selection highlight if this object is selected
                     if ((selectionMode || isLongPressing) && selectedObject == obj) {
-                        // Draw snap line if snapping is active during rotation
-                        if (activeHandle == HandleType.TOP && snappedAngle >= 0) {
-                            drawSnapLine(canvas, obj, snappedAngle);
+                        // Draw snap guides if enabled and active
+                        if (snapGuidesEnabled) {
+                            if (activeHandle == HandleType.TOP && snappedAngle >= 0) {
+                                drawRotationSnapLine(canvas, obj, snappedAngle);
+                            }
+                            if (activeHandle == HandleType.NONE && (snappedHorizontalLine >= 0 || snappedVerticalLine >= 0)) {
+                                drawPositionSnapLines(canvas);
+                            }
                         }
                         drawSelectionHandles(canvas, obj);
                     }
                 }
             }
+        }
+        
+        // Draw safe area guides if snap is enabled and object is selected
+        if (snapGuidesEnabled && selectionMode && selectedObject != null && activeHandle == HandleType.NONE) {
+            drawSafeAreaGuides(canvas);
         }
         
         // Draw current path being drawn (only in draw mode and not long-pressing)
@@ -223,9 +264,60 @@ public class AnnotationView extends View {
     }
     
     /**
-     * Draw snap guide line when rotating near snap angles
+     * Draw safe area guide lines (Instagram-style)
      */
-    private void drawSnapLine(Canvas canvas, AnnotationObject obj, float angle) {
+    private void drawSafeAreaGuides(Canvas canvas) {
+        Paint guidePaint = new Paint();
+        guidePaint.setColor(0x30FFFFFF); // Very subtle white
+        guidePaint.setStrokeWidth(1f);
+        guidePaint.setAntiAlias(true);
+        
+        // Top safe area
+        canvas.drawLine(0, SAFE_AREA_MARGIN, getWidth(), SAFE_AREA_MARGIN, guidePaint);
+        
+        // Bottom safe area
+        float bottomLine = getHeight() - SAFE_AREA_MARGIN;
+        canvas.drawLine(0, bottomLine, getWidth(), bottomLine, guidePaint);
+        
+        // Left safe area
+        canvas.drawLine(SAFE_AREA_MARGIN, 0, SAFE_AREA_MARGIN, getHeight(), guidePaint);
+        
+        // Right safe area
+        float rightLine = getWidth() - SAFE_AREA_MARGIN;
+        canvas.drawLine(rightLine, 0, rightLine, getHeight(), guidePaint);
+        
+        // Center lines (horizontal and vertical)
+        float centerX = getWidth() / 2f;
+        float centerY = getHeight() / 2f;
+        canvas.drawLine(0, centerY, getWidth(), centerY, guidePaint);
+        canvas.drawLine(centerX, 0, centerX, getHeight(), guidePaint);
+    }
+    
+    /**
+     * Draw position snap guide lines when near snap points
+     */
+    private void drawPositionSnapLines(Canvas canvas) {
+        Paint snapPaint = new Paint();
+        snapPaint.setColor(0xFF4CAF50); // Green
+        snapPaint.setStrokeWidth(2f);
+        snapPaint.setAlpha(200); // Semi-transparent
+        snapPaint.setAntiAlias(true);
+        
+        // Draw horizontal snap line
+        if (snappedHorizontalLine >= 0) {
+            canvas.drawLine(0, snappedHorizontalLine, getWidth(), snappedHorizontalLine, snapPaint);
+        }
+        
+        // Draw vertical snap line
+        if (snappedVerticalLine >= 0) {
+            canvas.drawLine(snappedVerticalLine, 0, snappedVerticalLine, getHeight(), snapPaint);
+        }
+    }
+    
+    /**
+     * Draw rotation snap guide line when rotating near snap angles
+     */
+    private void drawRotationSnapLine(Canvas canvas, AnnotationObject obj, float angle) {
         RectF bounds = obj.getBounds();
         float centerX = bounds.centerX();
         float centerY = bounds.centerY();
@@ -252,32 +344,47 @@ public class AnnotationView extends View {
     
     /**
      * Draw Telegram/Instagram-style selection handles with dotted border
-     * Border rotates and scales with the object
+     * Border rotates and scales with the object, but handles stay consistent size
      */
     private void drawSelectionHandles(Canvas canvas, AnnotationObject obj) {
         RectF bounds = obj.getBounds();
         float centerX = bounds.centerX();
         float centerY = bounds.centerY();
+        float rotation = obj.getRotation();
+        float scale = obj.getScale();
         
+        // First pass: Draw border with rotation and scale
         canvas.save();
+        canvas.rotate(rotation, centerX, centerY);
+        canvas.scale(scale, scale, centerX, centerY);
         
-        // Apply same transformations as the object
-        canvas.rotate(obj.getRotation(), centerX, centerY);
-        canvas.scale(obj.getScale(), obj.getScale(), centerX, centerY);
-        
-        // Calculate dynamic dash pattern based on perimeter and scale
+        // Calculate dynamic dash pattern - keep dash size consistent, increase count
         float perimeter = 2 * (bounds.width() + bounds.height());
-        float scaledPerimeter = perimeter * obj.getScale();
-        float dashLength = scaledPerimeter / 40f; // ~40 dashes around perimeter
-        float gapLength = dashLength * 0.5f;
+        float scaledPerimeter = perimeter * scale;
+        
+        // Fixed dash size (doesn't scale with object)
+        float baseDashLength = 10f; // Consistent dash size
+        float baseGapLength = 5f;   // Consistent gap size
+        
+        // Scale the pattern inversely so it appears consistent
+        float dashLength = baseDashLength / scale;
+        float gapLength = baseGapLength / scale;
         
         // Update selection paint with dynamic dash pattern
         Paint dynamicSelectionPaint = new Paint(selectionPaint);
         dynamicSelectionPaint.setPathEffect(new DashPathEffect(new float[]{dashLength, gapLength}, 0));
+        dynamicSelectionPaint.setStrokeWidth(4f / scale); // Keep stroke width consistent
         
         // Draw dotted border with rounded corners
-        float cornerRadius = 8f;
+        float cornerRadius = 8f / scale; // Keep corner radius consistent
         canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, dynamicSelectionPaint);
+        
+        canvas.restore();
+        
+        // Second pass: Draw handles with rotation only (no scale)
+        // This keeps handles at consistent size
+        canvas.save();
+        canvas.rotate(rotation, centerX, centerY);
         
         // Handle paint (white circle with green border)
         Paint handlePaint = new Paint();
@@ -288,54 +395,59 @@ public class AnnotationView extends View {
         Paint handleBorderPaint = new Paint();
         handleBorderPaint.setColor(0xFF4CAF50);
         handleBorderPaint.setStyle(Paint.Style.STROKE);
-        handleBorderPaint.setStrokeWidth(3f);
+        handleBorderPaint.setStrokeWidth(4f);
         handleBorderPaint.setAntiAlias(true);
         
-        float handleRadius = 12f;
+        float handleRadius = 16f; // Larger for better visibility and touch
+        
+        // Calculate scaled bound positions
+        float scaledLeft = centerX + (bounds.left - centerX) * scale;
+        float scaledRight = centerX + (bounds.right - centerX) * scale;
+        float scaledTop = centerY + (bounds.top - centerY) * scale;
+        float scaledBottom = centerY + (bounds.bottom - centerY) * scale;
+        float scaledCenterY = centerY + (bounds.centerY() - centerY) * scale;
         
         // Left handle (for scaling)
-        float leftX = bounds.left;
-        float leftY = bounds.centerY();
-        canvas.drawCircle(leftX, leftY, handleRadius, handlePaint);
-        canvas.drawCircle(leftX, leftY, handleRadius, handleBorderPaint);
+        canvas.drawCircle(scaledLeft, scaledCenterY, handleRadius, handlePaint);
+        canvas.drawCircle(scaledLeft, scaledCenterY, handleRadius, handleBorderPaint);
         
         // Right handle (for scaling)
-        float rightX = bounds.right;
-        float rightY = bounds.centerY();
-        canvas.drawCircle(rightX, rightY, handleRadius, handlePaint);
-        canvas.drawCircle(rightX, rightY, handleRadius, handleBorderPaint);
+        canvas.drawCircle(scaledRight, scaledCenterY, handleRadius, handlePaint);
+        canvas.drawCircle(scaledRight, scaledCenterY, handleRadius, handleBorderPaint);
         
         // Top rotation handle (slightly above)
-        float topX = bounds.centerX();
-        float topY = bounds.top - 30;
+        float topHandleY = scaledTop - 30;
         
         // Draw line from top of box to rotation handle
-        canvas.drawLine(bounds.centerX(), bounds.top, topX, topY, selectionPaint);
+        Paint linePaint = new Paint(selectionPaint);
+        linePaint.setPathEffect(null); // Solid line
+        canvas.drawLine(centerX, scaledTop, centerX, topHandleY, linePaint);
         
         // Draw rotation handle
-        canvas.drawCircle(topX, topY, handleRadius, handlePaint);
-        canvas.drawCircle(topX, topY, handleRadius, handleBorderPaint);
+        canvas.drawCircle(centerX, topHandleY, handleRadius, handlePaint);
+        canvas.drawCircle(centerX, topHandleY, handleRadius, handleBorderPaint);
         
         // If it's a text object, add an "Edit" button at bottom
         if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.TextObject) {
-            canvas.restore(); // Restore to remove scale transform
-            canvas.save(); // Save again for just rotation
-            canvas.rotate(obj.getRotation(), centerX, centerY);
+            float editHandleY = scaledBottom + 30;
             
-            float editX = bounds.centerX();
-            float editY = bounds.bottom * obj.getScale() + (bounds.centerY() * (1 - obj.getScale())) + 30;
+            // Draw edit button (same size as other handles)
+            canvas.drawCircle(centerX, editHandleY, handleRadius, handlePaint);
+            canvas.drawCircle(centerX, editHandleY, handleRadius, handleBorderPaint);
             
-            // Draw edit button with consistent size (same as other handles)
-            canvas.drawCircle(editX, editY, handleRadius, handlePaint);
-            canvas.drawCircle(editX, editY, handleRadius, handleBorderPaint);
+            // Draw edit emoji ✏️ centered properly
+            Paint emojiPaint = new Paint();
+            emojiPaint.setColor(0xFF4CAF50);
+            emojiPaint.setTextSize(handleRadius * 1.6f);
+            emojiPaint.setTextAlign(Paint.Align.CENTER);
+            emojiPaint.setAntiAlias(true);
             
-            // Draw edit emoji ✏️
-            Paint textPaint = new Paint();
-            textPaint.setColor(0xFF4CAF50);
-            textPaint.setTextSize(handleRadius * 1.4f);
-            textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setAntiAlias(true);
-            canvas.drawText("✏️", editX, editY + handleRadius * 0.5f, textPaint);
+            // Get text bounds for precise centering
+            Paint.FontMetrics fm = emojiPaint.getFontMetrics();
+            float textHeight = fm.descent - fm.ascent;
+            float textOffset = textHeight / 2f - fm.descent;
+            
+            canvas.drawText("✏️", centerX, editHandleY + textOffset, emojiPaint);
         }
         
         canvas.restore();
@@ -398,7 +510,10 @@ public class AnnotationView extends View {
         float localY = ry + centerY;
         
         // Test in original bounds
-        return bounds.contains(localX, localY);
+        boolean contains = bounds.contains(localX, localY);
+        android.util.Log.d("AnnotationView", String.format("containsPoint for %s: touch=(%.1f,%.1f) local=(%.1f,%.1f) bounds=[%.1f,%.1f,%.1f,%.1f] result=%b",
+            obj.getClass().getSimpleName(), px, py, localX, localY, bounds.left, bounds.top, bounds.right, bounds.bottom, contains));
+        return contains;
     }
     
     @Override
@@ -423,55 +538,93 @@ public class AnnotationView extends View {
                     // If we have a selected object, check if clicking on it or its handles
                     if (selectedObject != null) {
                         RectF bounds = selectedObject.getBounds();
-                        float handleRadius = 40f; // Touch radius
+                        float handleRadius = 16f; // Visual size (same as drawing)
+                        float touchRadius = handleRadius + 8f; // Slightly larger for easier touch
                         float centerX = bounds.centerX();
                         float centerY = bounds.centerY();
                         float rotation = selectedObject.getRotation();
                         float scale = selectedObject.getScale();
                         
-                        // Calculate transformed handle positions (after rotation and scale)
+                        android.util.Log.d("AnnotationView", String.format(
+                            "Touch at (%.1f, %.1f), object at (%.1f, %.1f), scale=%.2f, rotation=%.1f°",
+                            x, y, centerX, centerY, scale, rotation
+                        ));
+                        
+                        // Calculate scaled bound positions (same as drawing)
+                        float scaledLeft = centerX + (bounds.left - centerX) * scale;
+                        float scaledRight = centerX + (bounds.right - centerX) * scale;
+                        float scaledTop = centerY + (bounds.top - centerY) * scale;
+                        float scaledBottom = centerY + (bounds.bottom - centerY) * scale;
+                        float scaledCenterY = centerY + (bounds.centerY() - centerY) * scale;
+                        
+                        // Transform handle positions with rotation only (no scale on handles themselves)
+                        float radians = (float) Math.toRadians(rotation);
+                        float cos = (float) Math.cos(radians);
+                        float sin = (float) Math.sin(radians);
                         
                         // Left handle
-                        float[] leftPos = transformPoint(bounds.left, bounds.centerY(), centerX, centerY, rotation, scale);
-                        float distLeft = (float) Math.sqrt((x - leftPos[0]) * (x - leftPos[0]) + (y - leftPos[1]) * (y - leftPos[1]));
+                        float leftDx = scaledLeft - centerX;
+                        float leftDy = scaledCenterY - centerY;
+                        float leftX = centerX + leftDx * cos - leftDy * sin;
+                        float leftY = centerY + leftDx * sin + leftDy * cos;
+                        float distLeft = (float) Math.sqrt((x - leftX) * (x - leftX) + (y - leftY) * (y - leftY));
                         
                         // Right handle
-                        float[] rightPos = transformPoint(bounds.right, bounds.centerY(), centerX, centerY, rotation, scale);
-                        float distRight = (float) Math.sqrt((x - rightPos[0]) * (x - rightPos[0]) + (y - rightPos[1]) * (y - rightPos[1]));
+                        float rightDx = scaledRight - centerX;
+                        float rightDy = scaledCenterY - centerY;
+                        float rightX = centerX + rightDx * cos - rightDy * sin;
+                        float rightY = centerY + rightDx * sin + rightDy * cos;
+                        float distRight = (float) Math.sqrt((x - rightX) * (x - rightX) + (y - rightY) * (y - rightY));
                         
                         // Top rotation handle
-                        float[] topPos = transformPoint(bounds.centerX(), bounds.top - 30, centerX, centerY, rotation, scale);
-                        float distTop = (float) Math.sqrt((x - topPos[0]) * (x - topPos[0]) + (y - topPos[1]) * (y - topPos[1]));
+                        float topDx = 0; // centerX - centerX
+                        float topDy = (scaledTop - 30) - centerY;
+                        float topX = centerX + topDx * cos - topDy * sin;
+                        float topY = centerY + topDx * sin + topDy * cos;
+                        float distTop = (float) Math.sqrt((x - topX) * (x - topX) + (y - topY) * (y - topY));
+                        
+                        android.util.Log.d("AnnotationView", String.format(
+                            "Handle distances - Left:%.1f Right:%.1f Top:%.1f (radius:%.1f)",
+                            distLeft, distRight, distTop, touchRadius
+                        ));
                         
                         // Edit button for text (bottom)
                         float distEdit = Float.MAX_VALUE;
                         if (selectedObject instanceof com.fadcam.fadrec.ui.annotation.objects.TextObject) {
-                            float[] editPos = transformPoint(bounds.centerX(), bounds.bottom + 30, centerX, centerY, rotation, scale);
-                            distEdit = (float) Math.sqrt((x - editPos[0]) * (x - editPos[0]) + (y - editPos[1]) * (y - editPos[1]));
+                            float editDx = 0; // centerX - centerX
+                            float editDy = (scaledBottom + 30) - centerY;
+                            float editX = centerX + editDx * cos - editDy * sin;
+                            float editY = centerY + editDx * sin + editDy * cos;
+                            distEdit = (float) Math.sqrt((x - editX) * (x - editX) + (y - editY) * (y - editY));
                         }
                         
                         // Check handles in priority order: edit first (more specific), then rotation, then scale
-                        if (distEdit < handleRadius) {
+                        if (distEdit < touchRadius) {
                             // Edit button clicked
                             activeHandle = HandleType.EDIT;
+                            android.util.Log.d("AnnotationView", "EDIT handle activated");
                             showTextEditDialog((com.fadcam.fadrec.ui.annotation.objects.TextObject) selectedObject);
                             return true;
-                        } else if (distTop < handleRadius) {
+                        } else if (distTop < touchRadius) {
                             // Rotation handle
                             activeHandle = HandleType.TOP;
                             initialRotation = selectedObject.getRotation();
+                            android.util.Log.d("AnnotationView", "ROTATION handle activated");
                             return true;
-                        } else if (distLeft < handleRadius) {
+                        } else if (distLeft < touchRadius) {
                             // Left scale handle
                             activeHandle = HandleType.LEFT;
+                            android.util.Log.d("AnnotationView", "LEFT SCALE handle activated");
                             return true;
-                        } else if (distRight < handleRadius) {
+                        } else if (distRight < touchRadius) {
                             // Right scale handle
                             activeHandle = HandleType.RIGHT;
+                            android.util.Log.d("AnnotationView", "RIGHT SCALE handle activated");
                             return true;
                         } else if (containsPoint(selectedObject, x, y)) {
                             // Clicked inside object - start drag
                             activeHandle = HandleType.NONE;
+                            android.util.Log.d("AnnotationView", "DRAG mode activated (inside object)");
                             return true;
                         } else {
                             // Clicked outside - try to select another object or exit selection mode
@@ -517,20 +670,39 @@ public class AnnotationView extends View {
                                 float angle2 = (float) Math.toDegrees(Math.atan2(y - centerY, x - centerX));
                                 float angleDelta = angle2 - angle1;
                                 
+                                android.util.Log.d("AnnotationView", String.format(
+                                    "Rotation calc: angle1=%.1f° angle2=%.1f° delta=%.1f° currentRot=%.1f°",
+                                    angle1, angle2, angleDelta, selectedObject.getRotation()
+                                ));
+                                
                                 float newRotation = selectedObject.getRotation() + angleDelta;
                                 
                                 // Normalize to 0-360
                                 while (newRotation < 0) newRotation += 360;
                                 while (newRotation >= 360) newRotation -= 360;
                                 
-                                // Check for snap angles
-                                snappedAngle = -1f;
-                                for (float snapAngle : SNAP_ANGLES) {
-                                    float diff = Math.abs(newRotation - snapAngle);
-                                    if (diff <= SNAP_THRESHOLD) {
-                                        newRotation = snapAngle;
-                                        snappedAngle = snapAngle;
-                                        break;
+                                // Only apply snapping if enabled
+                                if (snapGuidesEnabled) {
+                                    // Check for snap angles - VISUAL GUIDES ONLY (no magnetic pull)
+                                    snappedAngle = -1f;
+                                    float closestSnapAngle = -1f;
+                                    float minDiff = Float.MAX_VALUE;
+                                    
+                                    for (float snapAngle : SNAP_ANGLES) {
+                                        float diff = Math.abs(newRotation - snapAngle);
+                                        // Handle wraparound at 0/360
+                                        if (diff > 180) diff = 360 - diff;
+                                        
+                                        if (diff < minDiff) {
+                                            minDiff = diff;
+                                            closestSnapAngle = snapAngle;
+                                        }
+                                    }
+                                    
+                                    // Show snap line if within threshold (visual guide ONLY)
+                                    if (minDiff <= SNAP_THRESHOLD) {
+                                        snappedAngle = closestSnapAngle;
+                                        // NO magnetic pull - just show the guide line
                                     }
                                 }
                                 
@@ -556,8 +728,72 @@ public class AnnotationView extends View {
                                 break;
                                 
                             case NONE:
-                                // Normal drag - move object
-                                selectedObject.translate(dx, dy);
+                                // Normal drag - move object with position snapping
+                                android.util.Log.d("AnnotationView", String.format("Dragging object: type=%s, before=(%.1f, %.1f), dx=%.1f, dy=%.1f", 
+                                    selectedObject.getClass().getSimpleName(), selectedObject.getX(), selectedObject.getY(), dx, dy));
+                                
+                                float newX = selectedObject.getX() + dx;
+                                float newY = selectedObject.getY() + dy;
+                                
+                                // Apply position snapping if enabled
+                                if (snapGuidesEnabled) {
+                                    snappedHorizontalLine = -1f;
+                                    snappedVerticalLine = -1f;
+                                    
+                                    // Define snap points
+                                    float[] horizontalSnapPoints = {
+                                        SAFE_AREA_MARGIN,           // Top safe area
+                                        getHeight() / 2f,           // Center
+                                        getHeight() - SAFE_AREA_MARGIN  // Bottom safe area
+                                    };
+                                    
+                                    float[] verticalSnapPoints = {
+                                        SAFE_AREA_MARGIN,           // Left safe area
+                                        getWidth() / 2f,            // Center
+                                        getWidth() - SAFE_AREA_MARGIN   // Right safe area
+                                    };
+                                    
+                                    // Check horizontal snapping (Y position)
+                                    float minYDist = Float.MAX_VALUE;
+                                    float closestYSnap = -1f;
+                                    for (float snapPoint : horizontalSnapPoints) {
+                                        float dist = Math.abs(newY - snapPoint);
+                                        if (dist < minYDist && dist < POSITION_SNAP_THRESHOLD) {
+                                            minYDist = dist;
+                                            closestYSnap = snapPoint;
+                                        }
+                                    }
+                                    
+                                    if (closestYSnap >= 0) {
+                                        snappedHorizontalLine = closestYSnap;
+                                        // Apply gentle magnetic pull
+                                        float pullAmount = (POSITION_SNAP_THRESHOLD - minYDist) / POSITION_SNAP_THRESHOLD;
+                                        newY = newY + (closestYSnap - newY) * pullAmount * POSITION_SNAP_STRENGTH;
+                                    }
+                                    
+                                    // Check vertical snapping (X position)
+                                    float minXDist = Float.MAX_VALUE;
+                                    float closestXSnap = -1f;
+                                    for (float snapPoint : verticalSnapPoints) {
+                                        float dist = Math.abs(newX - snapPoint);
+                                        if (dist < minXDist && dist < POSITION_SNAP_THRESHOLD) {
+                                            minXDist = dist;
+                                            closestXSnap = snapPoint;
+                                        }
+                                    }
+                                    
+                                    if (closestXSnap >= 0) {
+                                        snappedVerticalLine = closestXSnap;
+                                        // Apply gentle magnetic pull
+                                        float pullAmount = (POSITION_SNAP_THRESHOLD - minXDist) / POSITION_SNAP_THRESHOLD;
+                                        newX = newX + (closestXSnap - newX) * pullAmount * POSITION_SNAP_STRENGTH;
+                                    }
+                                }
+                                
+                                // Apply the new position
+                                selectedObject.setX(newX);
+                                selectedObject.setY(newY);
+                                android.util.Log.d("AnnotationView", String.format("After drag: (%.1f, %.1f)", newX, newY));
                                 break;
                         }
                         
@@ -570,7 +806,11 @@ public class AnnotationView extends View {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     activeHandle = HandleType.NONE;
-                    snappedAngle = -1f; // Clear snap indication
+                    snappedAngle = -1f; // Clear rotation snap
+                    lastSnappedAngle = -1f; // Clear rotation snap memory
+                    snappedHorizontalLine = -1f; // Clear position snaps
+                    snappedVerticalLine = -1f;
+                    invalidate(); // Redraw to remove snap lines
                     notifyStateChanged();
                     return true;
             }
