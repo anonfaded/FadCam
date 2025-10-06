@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -18,11 +19,16 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
+import android.widget.GridLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+
+import java.io.File;
 import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
@@ -84,14 +90,24 @@ public class AnnotationService extends Service {
     private TextView txtPageInfo, txtLayerInfo;
     private View btnSelectTool, btnPenTool, btnEraserTool, btnTextTool, btnShapeTool;
     private TextView iconSelectTool, iconPenTool, iconEraserTool, iconTextTool, iconShapeTool;
-    private View btnColorRed, btnColorBlue, btnColorGreen, btnColorYellow, btnColorWhite, btnColorBlack;
-    private View btnWidthThin, btnWidthMedium, btnWidthThick;
+    private View btnColorRed, btnColorBlue, btnColorGreen, btnColorYellow, btnColorWhite, btnColorBlack, btnColorPicker;
+    private View btnWidthThin, btnWidthMedium, btnWidthThick, btnWidthExtraThick;
     private View btnClearAll;
-    private View btnBlackboardToggle;
-    private TextView iconBlackboardToggle, labelBlackboardToggle;
+    private View btnBoardNone, btnBoardBlack, btnBoardWhite;
+    private TextView iconBoardNone, iconBoardBlack, iconBoardWhite;
     
-    // State
+    // State management
     private boolean isExpanded = false;
+    private boolean overlayVisible = true;      // Controls if arrow overlay is shown
+    private boolean annotationEnabled = false;  // Controls if drawing is active (DEFAULT: OFF)
+    private boolean canvasHidden = false;       // Controls if canvas drawings are hidden (except pinned layers)
+    
+    // Annotation control buttons
+    private View btnToggleAnnotation;
+    private View btnToggleCanvasVisibility;
+    
+    // Window params for annotation canvas (need to update flags dynamically)
+    private WindowManager.LayoutParams annotationCanvasParams;
     
     // Broadcast receiver for floating menu actions
     private BroadcastReceiver menuActionReceiver;
@@ -104,6 +120,149 @@ public class AnnotationService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+    
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.getAction() != null) {
+            String action = intent.getAction();
+            switch (action) {
+                case "ACTION_TOGGLE_MENU":
+                    toggleMenu();
+                    break;
+                case "ACTION_OPEN_PROJECTS":
+                    showProjectManagementDialog();
+                    break;
+            }
+        }
+        return START_STICKY;
+    }
+    
+    private void toggleMenu() {
+        // Toggle overlay visibility (show/hide everything)
+        if (overlayVisible) {
+            hideOverlay();
+        } else {
+            showOverlay();
+        }
+    }
+    
+    /**
+     * Show project management dialog
+     */
+    private void showProjectManagementDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+        
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_project_management, null);
+        builder.setView(dialogView);
+        
+        android.app.AlertDialog dialog = builder.create();
+        
+        // Set dialog window type for overlay
+        if (dialog.getWindow() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+            } else {
+                dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            }
+        }
+        
+        // Setup project list and buttons
+        android.widget.ListView projectList = dialogView.findViewById(R.id.projectList);
+        View btnNewProject = dialogView.findViewById(R.id.btnNewProject);
+        View btnClose = dialogView.findViewById(R.id.btnCloseDialog);
+        TextView txtCurrentProject = dialogView.findViewById(R.id.txtCurrentProject);
+        
+        // Display current project
+        txtCurrentProject.setText("Current: " + (currentProjectName != null ? currentProjectName : "Untitled"));
+        
+        // Get projects directory from ProjectFileManager
+        File documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+        File fadrecDir = new File(documentsDir, "FadRec");
+        File projectsDir = new File(fadrecDir, "Projects");
+        
+        // Ensure directory exists
+        if (!projectsDir.exists()) {
+            projectsDir.mkdirs();
+        }
+        
+        // Load all .fadrec projects
+        File[] projectFiles = projectsDir.listFiles((dir, name) -> name.endsWith(".fadrec"));
+        
+        java.util.List<String> projectNames = new java.util.ArrayList<>();
+        if (projectFiles != null && projectFiles.length > 0) {
+            for (File file : projectFiles) {
+                projectNames.add(file.getName().replace(".fadrec", ""));
+            }
+            // Sort by name
+            java.util.Collections.sort(projectNames, java.util.Collections.reverseOrder());
+        } else {
+            projectNames.add("(No saved projects yet)");
+        }
+        
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                this, android.R.layout.simple_list_item_1, projectNames
+        );
+        projectList.setAdapter(adapter);
+        
+        // Handle project selection
+        projectList.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedProject = projectNames.get(position);
+            if (!selectedProject.equals("(No saved projects yet)")) {
+                loadProject(selectedProject);
+                Toast.makeText(this, "Loaded: " + selectedProject, Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            }
+        });
+        
+        // New project button
+        btnNewProject.setOnClickListener(v -> {
+            createNewProject();
+            dialog.dismiss();
+        });
+        
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+    
+    private void loadProject(String projectName) {
+        // Save current project first
+        saveCurrentState();
+        
+        // Load new project
+        currentProjectName = projectName;
+        AnnotationState loadedState = projectFileManager.loadProject(projectName);
+        
+        if (loadedState != null && annotationView != null) {
+            annotationView.setState(loadedState);
+            updateUndoRedoButtons();
+            updatePageLayerInfo();
+            Toast.makeText(this, "✅ Loaded: " + projectName, Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void createNewProject() {
+        // Save current first
+        saveCurrentState();
+        
+        // Generate new project name with timestamp
+        String newProjectName = "Project_" + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
+        currentProjectName = newProjectName;
+        
+        // Create fresh state
+        AnnotationState newState = new AnnotationState();
+        if (annotationView != null) {
+            annotationView.setState(newState);
+            updateUndoRedoButtons();
+            updatePageLayerInfo();
+        }
+        
+        // Save the new project (state first, then name)
+        projectFileManager.saveProject(newState, currentProjectName);
+        
+        Toast.makeText(this, "📝 New Project: " + newProjectName, Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "Created new project: " + newProjectName);
     }
     
     @Override
@@ -132,6 +291,9 @@ public class AnnotationService extends Service {
     private void setupAnnotationCanvas() {
         annotationView = new AnnotationView(this);
         
+        // IMPORTANT: Disable annotation by default so user doesn't see accidental drawings
+        annotationView.setEnabled(false);
+        
         // Create new state (no legacy loading)
         AnnotationState state = new AnnotationState();
         annotationView.setState(state);
@@ -156,19 +318,20 @@ public class AnnotationService extends Service {
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 : WindowManager.LayoutParams.TYPE_PHONE;
         
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+        annotationCanvasParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 layoutType,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, // Start with NOT_TOUCHABLE since annotation starts disabled
                 PixelFormat.TRANSLUCENT
         );
         
-        params.gravity = Gravity.TOP | Gravity.START;
+        annotationCanvasParams.gravity = Gravity.TOP | Gravity.START;
         
-        windowManager.addView(annotationView, params);
+        windowManager.addView(annotationView, annotationCanvasParams);
         Log.d(TAG, "Annotation canvas added to window with saved state");
     }
     
@@ -180,6 +343,10 @@ public class AnnotationService extends Service {
         btnExpandCollapse = toolbarView.findViewById(R.id.btnExpandCollapse);
         btnCloseAnnotation = toolbarView.findViewById(R.id.btnCloseAnnotation);
         expandableContent = toolbarView.findViewById(R.id.expandableContent);
+        
+        // Initialize Quick Access buttons
+        btnToggleAnnotation = toolbarView.findViewById(R.id.btnToggleAnnotation);
+        btnToggleCanvasVisibility = toolbarView.findViewById(R.id.btnToggleCanvasVisibility);
         
         // Initialize recording controls
         btnStartStopRec = toolbarView.findViewById(R.id.btnStartStopRec);
@@ -222,15 +389,22 @@ public class AnnotationService extends Service {
         btnColorYellow = toolbarView.findViewById(R.id.btnColorYellow);
         btnColorWhite = toolbarView.findViewById(R.id.btnColorWhite);
         btnColorBlack = toolbarView.findViewById(R.id.btnColorBlack);
+        btnColorPicker = toolbarView.findViewById(R.id.btnColorPicker);
         
         btnWidthThin = toolbarView.findViewById(R.id.btnWidthThin);
         btnWidthMedium = toolbarView.findViewById(R.id.btnWidthMedium);
         btnWidthThick = toolbarView.findViewById(R.id.btnWidthThick);
+        btnWidthExtraThick = toolbarView.findViewById(R.id.btnWidthExtraThick);
         
         btnClearAll = toolbarView.findViewById(R.id.btnClearAll);
-        btnBlackboardToggle = toolbarView.findViewById(R.id.btnBlackboardToggle);
-        iconBlackboardToggle = toolbarView.findViewById(R.id.iconBlackboardToggle);
-        labelBlackboardToggle = toolbarView.findViewById(R.id.labelBlackboardToggle);
+        
+        // Board tool icons (new design)
+        btnBoardNone = toolbarView.findViewById(R.id.btnBoardNone);
+        btnBoardBlack = toolbarView.findViewById(R.id.btnBoardBlack);
+        btnBoardWhite = toolbarView.findViewById(R.id.btnBoardWhite);
+        iconBoardNone = toolbarView.findViewById(R.id.iconBoardNone);
+        iconBoardBlack = toolbarView.findViewById(R.id.iconBoardBlack);
+        iconBoardWhite = toolbarView.findViewById(R.id.iconBoardWhite);
         
         setupToolbarListeners();
         setupToolbarDragging();
@@ -252,6 +426,10 @@ public class AnnotationService extends Service {
         params.y = 100;
         
         windowManager.addView(toolbarView, params);
+        
+        // Set initial state: Annotation DISABLED by default so user can use phone normally
+        setAnnotationEnabled(false);
+        
         Log.d(TAG, "Annotation toolbar added to window");
     }
     
@@ -285,24 +463,49 @@ public class AnnotationService extends Service {
         // Main Expand/Collapse button (toggles entire expandable content)
         btnExpandCollapse.setOnClickListener(v -> {
             isExpanded = !isExpanded;
+            
+            WindowManager.LayoutParams wmParams = (WindowManager.LayoutParams) toolbarView.getLayoutParams();
+            Log.d(TAG, "=== TOOLBAR WIDTH CHANGE ===");
+            Log.d(TAG, "Current WindowManager width: " + wmParams.width);
+            
             if (isExpanded) {
                 expandableContent.setVisibility(View.VISIBLE);
                 btnExpandCollapse.setText("chevron_left");
+                btnCloseAnnotation.setVisibility(View.VISIBLE);
+                
+                // Set WindowManager params to 240dp when expanded (increased for color picker icon)
+                int widthPx = (int) (240 * getResources().getDisplayMetrics().density);
+                wmParams.width = widthPx;
+                Log.d(TAG, "EXPANDED: Setting WindowManager width to 240dp (" + widthPx + "px)");
             } else {
                 expandableContent.setVisibility(View.GONE);
                 btnExpandCollapse.setText("chevron_right");
+                btnCloseAnnotation.setVisibility(View.GONE);
+                
+                // Set WindowManager params to wrap_content when collapsed
+                wmParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                Log.d(TAG, "COLLAPSED: Setting WindowManager width to WRAP_CONTENT");
             }
+            
+            windowManager.updateViewLayout(toolbarView, wmParams);
+            Log.d(TAG, "WindowManager params updated");
+            Log.d(TAG, "=========================");
+            updateNotification();
         });
         
-        // Close button - stops annotation service completely
+        // Close button - shows confirmation dialog before closing
         btnCloseAnnotation.setOnClickListener(v -> {
-            // Save state before closing
-            saveCurrentState();
-            
-            // Stop the service (this will trigger onDestroy)
-            stopSelf();
-            
-            Toast.makeText(this, "Annotations closed", Toast.LENGTH_SHORT).show();
+            showCloseConfirmationDialog();
+        });
+        
+        // Enable/Disable Annotation button
+        btnToggleAnnotation.setOnClickListener(v -> {
+            toggleAnnotation();
+        });
+        
+        // Hide/Show Canvas button
+        btnToggleCanvasVisibility.setOnClickListener(v -> {
+            toggleCanvasVisibility();
         });
         
         // Annotations section header (toggles annotation tools)
@@ -439,20 +642,43 @@ public class AnnotationService extends Service {
             updateWidthSelection(btnWidthThick);
         });
         
+        btnWidthExtraThick.setOnClickListener(v -> {
+            annotationView.setStrokeWidth(3); // Extra thick stroke
+            updateWidthSelection(btnWidthExtraThick);
+        });
+        
+        // Color picker - shows Material Design color picker dialog
+        btnColorPicker.setOnClickListener(v -> {
+            showColorPickerDialog();
+        });
+        
         // Clear all
         btnClearAll.setOnClickListener(v -> annotationView.clearAll());
         
-        // Blackboard toggle
-        btnBlackboardToggle.setOnClickListener(v -> {
-            boolean newMode = !annotationView.isBlackboardMode();
-            annotationView.setBlackboardMode(newMode);
-            updateBlackboardToggle(newMode);
+        // Board tool icons (new design - replaces toggle)
+        btnBoardNone.setOnClickListener(v -> {
+            annotationView.setBlackboardMode(false); // None = transparent
+            annotationView.setWhiteboardMode(false);
+            updateBoardSelection(btnBoardNone);
+        });
+        
+        btnBoardBlack.setOnClickListener(v -> {
+            annotationView.setBlackboardMode(true);
+            annotationView.setWhiteboardMode(false);
+            updateBoardSelection(btnBoardBlack);
+        });
+        
+        btnBoardWhite.setOnClickListener(v -> {
+            annotationView.setBlackboardMode(false);
+            annotationView.setWhiteboardMode(true);
+            updateBoardSelection(btnBoardWhite);
         });
         
         // Set default selections
         updateToolSelection(true); // Pen selected by default
         updateColorSelection(btnColorRed); // Red selected by default
         updateWidthSelection(btnWidthMedium); // Medium width by default
+        updateBoardSelection(btnBoardNone); // None board by default
     }
     
     private void setupToolbarDragging() {
@@ -515,8 +741,15 @@ public class AnnotationService extends Service {
         resetColorBorder(btnColorWhite);
         resetColorBorder(btnColorBlack);
         
-        // Add thick white border to selected color
-        selectedColor.setBackgroundResource(R.drawable.annotation_color_selected);
+        // Color picker uses special icon style, reset it
+        if (btnColorPicker != null) {
+            btnColorPicker.setBackgroundResource(R.drawable.annotation_color_circle);
+        }
+        
+        // Add thick white border to selected color (unless it's color picker)
+        if (selectedColor != btnColorPicker) {
+            selectedColor.setBackgroundResource(R.drawable.annotation_color_selected);
+        }
     }
     
     private void resetColorBorder(View colorView) {
@@ -528,21 +761,77 @@ public class AnnotationService extends Service {
         btnWidthThin.setBackgroundResource(R.drawable.annotation_width_circle);
         btnWidthMedium.setBackgroundResource(R.drawable.annotation_width_circle);
         btnWidthThick.setBackgroundResource(R.drawable.annotation_width_circle);
+        btnWidthExtraThick.setBackgroundResource(R.drawable.annotation_width_circle);
         
         // Highlight selected width with colored background
         selectedWidth.setBackgroundResource(R.drawable.annotation_width_selected);
     }
     
-    private void updateBlackboardToggle(boolean enabled) {
-        if (enabled) {
-            iconBlackboardToggle.setTextColor(0xFF000000);
-            iconBlackboardToggle.setBackgroundColor(0xFFFFFFFF);
-            labelBlackboardToggle.setText("Board ON");
-        } else {
-            iconBlackboardToggle.setTextColor(0xFF9E9E9E);
-            iconBlackboardToggle.setBackgroundResource(R.drawable.floating_button_item_bg);
-            labelBlackboardToggle.setText("Board");
+    private void updateBoardSelection(View selectedBoard) {
+        // Reset all board tools
+        iconBoardNone.setBackgroundResource(R.drawable.annotation_tool_bg);
+        iconBoardBlack.setBackgroundResource(R.drawable.annotation_tool_bg);
+        iconBoardWhite.setBackgroundResource(R.drawable.annotation_tool_bg);
+        
+        // Highlight selected board
+        if (selectedBoard == btnBoardNone) {
+            iconBoardNone.setBackgroundResource(R.drawable.annotation_tool_selected_bg);
+        } else if (selectedBoard == btnBoardBlack) {
+            iconBoardBlack.setBackgroundResource(R.drawable.annotation_tool_selected_bg);
+        } else if (selectedBoard == btnBoardWhite) {
+            iconBoardWhite.setBackgroundResource(R.drawable.annotation_tool_selected_bg);
         }
+    }
+    
+    private void showColorPickerDialog() {
+        // Create Material Design color picker dialog
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+        builder.setTitle("Pick a Color");
+        
+        // Create grid of color swatches
+        GridLayout colorGrid = new GridLayout(this);
+        colorGrid.setColumnCount(6);
+        colorGrid.setPadding(32, 32, 32, 32);
+        
+        // Common colors
+        int[] colors = {
+            0xFFF44336, 0xFFE91E63, 0xFF9C27B0, 0xFF673AB7,
+            0xFF3F51B5, 0xFF2196F3, 0xFF03A9F4, 0xFF00BCD4,
+            0xFF009688, 0xFF4CAF50, 0xFF8BC34A, 0xFFCDDC39,
+            0xFFFFEB3B, 0xFFFFC107, 0xFFFF9800, 0xFFFF5722,
+            0xFF795548, 0xFF9E9E9E, 0xFF607D8B, 0xFF000000,
+            0xFFFFFFFF, 0xFFFF1744, 0xFF00E676, 0xFF2979FF
+        };
+        
+        for (int color : colors) {
+            View colorSwatch = new View(this);
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            params.width = 80;
+            params.height = 80;
+            params.setMargins(8, 8, 8, 8);
+            colorSwatch.setLayoutParams(params);
+            colorSwatch.setBackgroundColor(color);
+            colorSwatch.setElevation(4);
+            colorSwatch.setOnClickListener(v -> {
+                annotationView.setColor(color);
+                annotationView.setPenMode();
+                updateToolSelection(true);
+                // Visual feedback - glow the color picker button
+                btnColorPicker.setBackgroundResource(R.drawable.annotation_color_selected);
+            });
+            colorGrid.addView(colorSwatch);
+        }
+        
+        builder.setView(colorGrid);
+        builder.setNegativeButton("Cancel", null);
+        
+        // Create and configure dialog with overlay window type for Service context
+        android.app.AlertDialog dialog = builder.create();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+        }
+        dialog.show();
     }
     
     /**
@@ -737,6 +1026,14 @@ public class AnnotationService extends Service {
                     }
                     
                     @Override
+                    public void onLayerPinnedChanged(int index, boolean pinned) {
+                        currentPage.getLayers().get(index).setPinned(pinned);
+                        annotationView.invalidate();
+                        String msg = pinned ? "📌 Pinned (stays visible when canvas hidden)" : "📌 Unpinned";
+                        Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+                    
+                    @Override
                     public void onLayerOpacityChanged(int index, float opacity) {
                         currentPage.getLayers().get(index).setOpacity(opacity);
                         annotationView.invalidate();
@@ -879,13 +1176,47 @@ public class AnnotationService extends Service {
     }
     
     private Notification createNotification() {
+        // Toggle menu action
+        Intent toggleIntent = new Intent(this, AnnotationService.class);
+        toggleIntent.setAction("ACTION_TOGGLE_MENU");
+        android.app.PendingIntent togglePendingIntent = android.app.PendingIntent.getService(
+                this, 0, toggleIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+        );
+        
+        // Project management action
+        Intent projectIntent = new Intent(this, AnnotationService.class);
+        projectIntent.setAction("ACTION_OPEN_PROJECTS");
+        android.app.PendingIntent projectPendingIntent = android.app.PendingIntent.getService(
+                this, 1, projectIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+        );
+        
+        String contentText = overlayVisible 
+            ? "Overlay visible - Tap to hide" 
+            : "Overlay hidden - Tap to show";
+        
+        String annotationStatus = annotationEnabled ? " | ✏️ Enabled" : " | 📱 Disabled";
+        
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Annotations Active")
-                .setContentText("Draw on screen during recording")
+                .setContentTitle("Annotation" + annotationStatus)
+                .setContentText(contentText)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
+                .addAction(R.drawable.ic_launcher_foreground, overlayVisible ? "Hide" : "Show", togglePendingIntent)
+                .addAction(R.drawable.ic_launcher_foreground, "Projects", projectPendingIntent)
                 .build();
+    }
+    
+    /**
+     * Update notification text based on expanded state
+     */
+    private void updateNotification() {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(NOTIFICATION_ID, createNotification());
+        }
     }
     
     /**
@@ -995,10 +1326,359 @@ public class AnnotationService extends Service {
         }
     }
     
+    /**
+     * Show confirmation dialog before closing annotations
+     */
+    private void showCloseConfirmationDialog() {
+        // Since we're in a service, we need to create a dialog with TYPE_APPLICATION_OVERLAY
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+        
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_annotation_close_confirm, null);
+        builder.setView(dialogView);
+        
+        android.app.AlertDialog dialog = builder.create();
+        
+        // Set dialog window type for overlay
+        if (dialog.getWindow() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+            } else {
+                dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            }
+        }
+        
+        // Find buttons in custom layout
+        View btnHideOverlayDialog = dialogView.findViewById(R.id.btnHideOverlay);
+        View btnStopService = dialogView.findViewById(R.id.btnStopService);
+        View btnCancel = dialogView.findViewById(R.id.btnCancel);
+        
+        btnHideOverlayDialog.setOnClickListener(v -> {
+            // Save current state
+            saveCurrentState();
+            
+            // Hide the entire overlay
+            hideOverlay();
+            
+            Toast.makeText(this, "Overlay hidden. Use notification to show again.", Toast.LENGTH_LONG).show();
+            dialog.dismiss();
+        });
+        
+        btnStopService.setOnClickListener(v -> {
+            // Save before stopping
+            saveCurrentState();
+            
+            // Send broadcast to turn off menu switch
+            Intent intent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+            sendBroadcast(intent);
+            
+            // Stop the service completely
+            stopSelf();
+            Toast.makeText(this, "Annotation service stopped", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+        
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+        });
+        
+        dialog.show();
+    }
+    
+    /**
+     * Toggle annotation enable/disable state (controls if drawing is active)
+     */
+    private void toggleAnnotation() {
+        annotationEnabled = !annotationEnabled;
+        setAnnotationEnabled(annotationEnabled);
+    }
+    
+    /**
+     * Set annotation enabled/disabled state with proper UI feedback
+     */
+    private void setAnnotationEnabled(boolean enabled) {
+        annotationEnabled = enabled;
+        
+        if (annotationView != null) {
+            annotationView.setEnabled(enabled);
+            
+            // CRITICAL: Update window flags so touches pass through when disabled
+            if (annotationCanvasParams != null) {
+                if (enabled) {
+                    // Remove FLAG_NOT_TOUCHABLE so annotation receives touches
+                    annotationCanvasParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                } else {
+                    // Add FLAG_NOT_TOUCHABLE so touches pass through to phone
+                    annotationCanvasParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                }
+                windowManager.updateViewLayout(annotationView, annotationCanvasParams);
+                Log.d(TAG, "Canvas window flags updated: touchable=" + enabled);
+            }
+        }
+        
+        // Update button appearance
+        TextView iconAnnotation = btnToggleAnnotation.findViewById(R.id.iconToggleAnnotation);
+        TextView labelAnnotation = btnToggleAnnotation.findViewById(R.id.labelToggleAnnotation);
+        TextView descAnnotation = btnToggleAnnotation.findViewById(R.id.descToggleAnnotation);
+        
+        if (enabled) {
+            // Annotation ENABLED - ready to draw
+            iconAnnotation.setText("edit");
+            iconAnnotation.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+            labelAnnotation.setText("Disable Annotation");
+            descAnnotation.setText("Disable to use screen normally");
+            Toast.makeText(this, "✏️ Annotation Enabled - Draw freely", Toast.LENGTH_SHORT).show();
+        } else {
+            // Annotation DISABLED - can use phone normally
+            iconAnnotation.setText("edit_off");
+            iconAnnotation.setTextColor(getResources().getColor(android.R.color.darker_gray));
+            labelAnnotation.setText("Enable Annotation");
+            descAnnotation.setText("Enable to use annotation tools");
+            Toast.makeText(this, "📱 Annotation Disabled - Use phone normally", Toast.LENGTH_SHORT).show();
+        }
+        
+        // Gray out or enable all annotation tools based on state
+        updateAnnotationToolsState(enabled);
+        
+        updateNotification();
+        Log.d(TAG, "Annotation enabled: " + enabled);
+    }
+    
+    /**
+     * Toggle canvas visibility (hide/show drawings, respecting pinned layers)
+     */
+    private void toggleCanvasVisibility() {
+        canvasHidden = !canvasHidden;
+        setCanvasVisibility(!canvasHidden);
+    }
+    
+    /**
+     * Set canvas visibility with proper UI feedback
+     */
+    private void setCanvasVisibility(boolean visible) {
+        canvasHidden = !visible;
+        
+        // Update AnnotationView to hide unpinned layers
+        if (annotationView != null) {
+            annotationView.setCanvasHidden(canvasHidden);
+        }
+        
+        // Update button appearance
+        TextView iconCanvas = btnToggleCanvasVisibility.findViewById(R.id.iconToggleCanvasVisibility);
+        TextView labelCanvas = btnToggleCanvasVisibility.findViewById(R.id.labelToggleCanvasVisibility);
+        TextView descCanvas = btnToggleCanvasVisibility.findViewById(R.id.descToggleCanvasVisibility);
+        
+        if (visible) {
+            // Canvas VISIBLE - all layers shown
+            iconCanvas.setText("visibility");
+            iconCanvas.setTextColor(getResources().getColor(android.R.color.holo_blue_light));
+            labelCanvas.setText("Hide Canvas");
+            descCanvas.setText("Hide all drawings (pinned layers stay)");
+            Toast.makeText(this, "👁️ Canvas Visible", Toast.LENGTH_SHORT).show();
+        } else {
+            // Canvas HIDDEN - only pinned layers shown
+            iconCanvas.setText("visibility_off");
+            iconCanvas.setTextColor(getResources().getColor(android.R.color.darker_gray));
+            labelCanvas.setText("Show Canvas");
+            descCanvas.setText("Pinned layers still visible");
+            Toast.makeText(this, "Canvas Hidden - Pinned layers still visible", Toast.LENGTH_SHORT).show();
+        }
+        
+        Log.d(TAG, "Canvas visible: " + visible);
+    }
+    
+    /**
+     * Update all annotation tools to be enabled or grayed out
+     */
+    private void updateAnnotationToolsState(boolean enabled) {
+        float alpha = enabled ? 1.0f : 0.3f;
+        
+        // Undo/Redo buttons - visual and functional disable
+        if (btnUndo != null) {
+            btnUndo.setAlpha(alpha);
+            btnUndo.setEnabled(enabled);
+            btnUndo.setClickable(enabled);
+        }
+        if (btnRedo != null) {
+            btnRedo.setAlpha(alpha);
+            btnRedo.setEnabled(enabled);
+            btnRedo.setClickable(enabled);
+        }
+        if (txtUndoCount != null) txtUndoCount.setAlpha(alpha);
+        if (txtRedoCount != null) txtRedoCount.setAlpha(alpha);
+        
+        // Pages and Layers
+        if (btnPages != null) {
+            btnPages.setAlpha(alpha);
+            btnPages.setEnabled(enabled);
+            btnPages.setClickable(enabled);
+        }
+        if (btnLayers != null) {
+            btnLayers.setAlpha(alpha);
+            btnLayers.setEnabled(enabled);
+            btnLayers.setClickable(enabled);
+        }
+        if (txtPageInfo != null) txtPageInfo.setAlpha(alpha);
+        if (txtLayerInfo != null) txtLayerInfo.setAlpha(alpha);
+        
+        // Clear All
+        if (btnClearAll != null) {
+            btnClearAll.setAlpha(alpha);
+            btnClearAll.setEnabled(enabled);
+            btnClearAll.setClickable(enabled);
+        }
+        
+        // Tool icons
+        if (iconSelectTool != null) iconSelectTool.setAlpha(alpha);
+        if (iconPenTool != null) iconPenTool.setAlpha(alpha);
+        if (iconEraserTool != null) iconEraserTool.setAlpha(alpha);
+        if (iconTextTool != null) iconTextTool.setAlpha(alpha);
+        if (iconShapeTool != null) iconShapeTool.setAlpha(alpha);
+        
+        // Tool buttons (disable clicks completely)
+        if (btnSelectTool != null) {
+            btnSelectTool.setEnabled(enabled);
+            btnSelectTool.setClickable(enabled);
+            btnSelectTool.setAlpha(alpha);
+        }
+        if (btnPenTool != null) {
+            btnPenTool.setEnabled(enabled);
+            btnPenTool.setClickable(enabled);
+            btnPenTool.setAlpha(alpha);
+        }
+        if (btnEraserTool != null) {
+            btnEraserTool.setEnabled(enabled);
+            btnEraserTool.setClickable(enabled);
+            btnEraserTool.setAlpha(alpha);
+        }
+        if (btnTextTool != null) {
+            btnTextTool.setEnabled(enabled);
+            btnTextTool.setClickable(enabled);
+            btnTextTool.setAlpha(alpha);
+        }
+        if (btnShapeTool != null) {
+            btnShapeTool.setEnabled(enabled);
+            btnShapeTool.setClickable(enabled);
+            btnShapeTool.setAlpha(alpha);
+        }
+        
+        // Color buttons
+        if (btnColorRed != null) {
+            btnColorRed.setAlpha(alpha);
+            btnColorRed.setEnabled(enabled);
+            btnColorRed.setClickable(enabled);
+        }
+        if (btnColorBlue != null) {
+            btnColorBlue.setAlpha(alpha);
+            btnColorBlue.setEnabled(enabled);
+            btnColorBlue.setClickable(enabled);
+        }
+        if (btnColorGreen != null) {
+            btnColorGreen.setAlpha(alpha);
+            btnColorGreen.setEnabled(enabled);
+            btnColorGreen.setClickable(enabled);
+        }
+        if (btnColorYellow != null) {
+            btnColorYellow.setAlpha(alpha);
+            btnColorYellow.setEnabled(enabled);
+            btnColorYellow.setClickable(enabled);
+        }
+        if (btnColorWhite != null) {
+            btnColorWhite.setAlpha(alpha);
+            btnColorWhite.setEnabled(enabled);
+            btnColorWhite.setClickable(enabled);
+        }
+        if (btnColorBlack != null) {
+            btnColorBlack.setAlpha(alpha);
+            btnColorBlack.setEnabled(enabled);
+            btnColorBlack.setClickable(enabled);
+        }
+        
+        // Width buttons
+        if (btnWidthThin != null) {
+            btnWidthThin.setAlpha(alpha);
+            btnWidthThin.setEnabled(enabled);
+            btnWidthThin.setClickable(enabled);
+        }
+        if (btnWidthMedium != null) {
+            btnWidthMedium.setAlpha(alpha);
+            btnWidthMedium.setEnabled(enabled);
+            btnWidthMedium.setClickable(enabled);
+        }
+        if (btnWidthThick != null) {
+            btnWidthThick.setAlpha(alpha);
+            btnWidthThick.setEnabled(enabled);
+            btnWidthThick.setClickable(enabled);
+        }
+        
+        // Background board tools
+        if (btnBoardNone != null) {
+            btnBoardNone.setAlpha(alpha);
+            btnBoardNone.setEnabled(enabled);
+            btnBoardNone.setClickable(enabled);
+        }
+        if (btnBoardBlack != null) {
+            btnBoardBlack.setAlpha(alpha);
+            btnBoardBlack.setEnabled(enabled);
+            btnBoardBlack.setClickable(enabled);
+        }
+        if (btnBoardWhite != null) {
+            btnBoardWhite.setAlpha(alpha);
+            btnBoardWhite.setEnabled(enabled);
+            btnBoardWhite.setClickable(enabled);
+        }
+        
+        // Snap guides switch
+        if (snapGuidesSwitch != null) {
+            snapGuidesSwitch.setAlpha(alpha);
+            snapGuidesSwitch.setEnabled(enabled);
+            snapGuidesSwitch.setClickable(enabled);
+        }
+        
+        Log.d(TAG, "Annotation tools state updated: " + (enabled ? "enabled" : "disabled"));
+    }
+    
+    /**
+     * Hide the entire overlay (arrow and expandable content)
+     */
+    private void hideOverlay() {
+        overlayVisible = false;
+        
+        if (toolbarView != null) {
+            toolbarView.setVisibility(View.GONE);
+        }
+        if (annotationView != null) {
+            annotationView.setVisibility(View.GONE);
+        }
+        
+        updateNotification();
+        Log.d(TAG, "Overlay hidden");
+    }
+    
+    /**
+     * Show the overlay (toolbar and canvas)
+     */
+    private void showOverlay() {
+        overlayVisible = true;
+        
+        if (toolbarView != null) {
+            toolbarView.setVisibility(View.VISIBLE);
+        }
+        if (annotationView != null) {
+            annotationView.setVisibility(View.VISIBLE);
+        }
+        
+        updateNotification();
+        Log.d(TAG, "Overlay shown");
+    }
+    
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "AnnotationService destroyed");
+        
+        // Send broadcast to turn off menu switch in app
+        Intent intent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+        sendBroadcast(intent);
         
         // Unregister broadcast receivers
         if (menuActionReceiver != null) {

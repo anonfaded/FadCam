@@ -30,6 +30,7 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
         void onLayerVisibilityChanged(int layerIndex, boolean visible);
         void onLayerLockChanged(int layerIndex, boolean locked);
         void onLayerOpacityChanged(int layerIndex, float opacity);
+        void onLayerPinnedChanged(int layerIndex, boolean pinned);
         void onLayerAdded(String name);
         void onLayerDeleted(int layerIndex);
         void onLayerReordered(int fromIndex, int toIndex);
@@ -108,6 +109,14 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
                 }
             });
             
+            // Pin toggle
+            holder.switchPinned.setChecked(layer.isPinned());
+            holder.switchPinned.setOnCheckedChangeListener((btn, checked) -> {
+                if (listener != null) {
+                    listener.onLayerPinnedChanged(position, checked);
+                }
+            });
+            
             // Opacity slider
             holder.seekOpacity.setProgress((int)(layer.getOpacity() * 100));
             holder.txtOpacity.setText((int)(layer.getOpacity() * 100) + "%");
@@ -148,6 +157,7 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
         TextView txtLayerInfo;
         SwitchCompat switchVisible;
         SwitchCompat switchLocked;
+        SwitchCompat switchPinned;
         SeekBar seekOpacity;
         TextView txtOpacity;
         TextView btnDelete;
@@ -158,6 +168,7 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
             txtLayerInfo = itemView.findViewById(R.id.txtLayerInfo);
             switchVisible = itemView.findViewById(R.id.switchVisible);
             switchLocked = itemView.findViewById(R.id.switchLocked);
+            switchPinned = itemView.findViewById(R.id.switchPinned);
             seekOpacity = itemView.findViewById(R.id.seekOpacity);
             txtOpacity = itemView.findViewById(R.id.txtOpacity);
             btnDelete = itemView.findViewById(R.id.btnDeleteLayer);

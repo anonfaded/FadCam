@@ -20,6 +20,7 @@ public class AnnotationPage {
     private List<AnnotationLayer> layers;
     private int activeLayerIndex;
     private boolean blackboardMode;
+    private boolean whiteboardMode;
     private long createdAt;
     private long modifiedAt;
     
@@ -34,6 +35,7 @@ public class AnnotationPage {
         this.layers = new ArrayList<>();
         this.activeLayerIndex = 0;
         this.blackboardMode = false;
+        this.whiteboardMode = false;
         this.createdAt = System.currentTimeMillis();
         this.modifiedAt = createdAt;
         
@@ -75,6 +77,14 @@ public class AnnotationPage {
     public boolean isBlackboardMode() { return blackboardMode; }
     public void setBlackboardMode(boolean enabled) { 
         this.blackboardMode = enabled;
+        if (enabled) this.whiteboardMode = false; // Mutually exclusive
+        this.modifiedAt = System.currentTimeMillis();
+    }
+    
+    public boolean isWhiteboardMode() { return whiteboardMode; }
+    public void setWhiteboardMode(boolean enabled) { 
+        this.whiteboardMode = enabled;
+        if (enabled) this.blackboardMode = false; // Mutually exclusive
         this.modifiedAt = System.currentTimeMillis();
     }
     
@@ -166,6 +176,7 @@ public class AnnotationPage {
         json.put("name", name);
         json.put("activeLayerIndex", activeLayerIndex);
         json.put("blackboardMode", blackboardMode);
+        json.put("whiteboardMode", whiteboardMode);
         json.put("createdAt", createdAt);
         json.put("modifiedAt", modifiedAt);
         
@@ -183,6 +194,7 @@ public class AnnotationPage {
         page.id = json.getString("id");
         page.activeLayerIndex = json.getInt("activeLayerIndex");
         page.blackboardMode = json.getBoolean("blackboardMode");
+        page.whiteboardMode = json.optBoolean("whiteboardMode", false); // Safe for old saves
         page.createdAt = json.getLong("createdAt");
         page.modifiedAt = json.getLong("modifiedAt");
         

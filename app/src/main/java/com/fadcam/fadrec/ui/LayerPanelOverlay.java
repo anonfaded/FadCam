@@ -36,6 +36,7 @@ public class LayerPanelOverlay {
         void onLayerVisibilityChanged(int index, boolean visible);
         void onLayerLockChanged(int index, boolean locked);
         void onLayerOpacityChanged(int index, float opacity);
+        void onLayerPinnedChanged(int index, boolean pinned);
         void onLayerAdded();
         void onLayerDeleted(int index);
     }
@@ -131,6 +132,7 @@ public class LayerPanelOverlay {
         TextView txtLayerInfo = layerView.findViewById(R.id.txtLayerInfo);
         TextView btnVisibility = layerView.findViewById(R.id.btnVisibility);
         TextView btnLock = layerView.findViewById(R.id.btnLock);
+        TextView btnPin = layerView.findViewById(R.id.btnPin);
         SeekBar seekOpacity = layerView.findViewById(R.id.seekOpacity);
         TextView txtOpacity = layerView.findViewById(R.id.txtOpacity);
         TextView btnDeleteLayer = layerView.findViewById(R.id.btnDeleteLayer);
@@ -174,6 +176,17 @@ public class LayerPanelOverlay {
                 listener.onLayerLockChanged(index, newState);
                 btnLock.setText(newState ? "lock" : "lock_open");
                 btnLock.setTextColor(newState ? 0xFFFF5252 : 0xFF9E9E9E);
+            }
+        });
+        
+        // Pin button
+        btnPin.setText("push_pin");
+        btnPin.setTextColor(layer.isPinned() ? 0xFFFF9800 : 0xFF9E9E9E);
+        btnPin.setOnClickListener(v -> {
+            if (listener != null) {
+                boolean newState = !layer.isPinned();
+                listener.onLayerPinnedChanged(index, newState);
+                btnPin.setTextColor(newState ? 0xFFFF9800 : 0xFF9E9E9E);
             }
         });
         

@@ -25,6 +25,7 @@ public class AnnotationLayer {
     private List<AnnotationObject> objects; // Changed from List<DrawingPath>
     private boolean visible;
     private boolean locked;
+    private boolean pinned; // NEW: Pinned layers stay visible even when canvas is hidden
     private float opacity; // 0.0 to 1.0
     private long createdAt;
     
@@ -34,6 +35,7 @@ public class AnnotationLayer {
         this.objects = new ArrayList<>();
         this.visible = true;
         this.locked = false;
+        this.pinned = false; // Default: not pinned
         this.opacity = 1.0f;
         this.createdAt = System.currentTimeMillis();
     }
@@ -45,6 +47,7 @@ public class AnnotationLayer {
         json.put("name", name);
         json.put("visible", visible);
         json.put("locked", locked);
+        json.put("pinned", pinned); // Save pinned state
         json.put("opacity", opacity);
         json.put("createdAt", createdAt);
         
@@ -62,6 +65,7 @@ public class AnnotationLayer {
         layer.id = json.getString("id");
         layer.visible = json.getBoolean("visible");
         layer.locked = json.getBoolean("locked");
+        layer.pinned = json.getBoolean("pinned");
         layer.opacity = (float) json.getDouble("opacity");
         layer.createdAt = json.getLong("createdAt");
         
@@ -142,6 +146,9 @@ public class AnnotationLayer {
     
     public boolean isLocked() { return locked; }
     public void setLocked(boolean locked) { this.locked = locked; }
+    
+    public boolean isPinned() { return pinned; }
+    public void setPinned(boolean pinned) { this.pinned = pinned; }
     
     public float getOpacity() { return opacity; }
     public void setOpacity(float opacity) { 

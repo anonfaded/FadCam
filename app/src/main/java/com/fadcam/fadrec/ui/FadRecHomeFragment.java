@@ -163,9 +163,39 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Register broadcast receivers
         registerScreenRecordingReceivers();
+        registerAnnotationServiceReceiver();
     }
-
+    
     /**
+     * Register broadcast receiver to listen for annotation service stop
+     */
+    private void registerAnnotationServiceReceiver() {
+        BroadcastReceiver annotationServiceReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(intent.getAction())) {
+                    // Service stopped, turn off the menu switch
+                    if (getView() != null) {
+                        View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
+                        if (cardFloatingControls != null) {
+                            androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                                cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
+                            if (switchFloatingControls != null) {
+                                switchFloatingControls.setChecked(false);
+                            }
+                        }
+                    }
+                    // Update SharedPreferences
+                    sharedPreferencesManager.setFloatingControlsEnabled(false);
+                    Log.d(TAG, "Annotation service stopped - menu switch turned off");
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+        requireContext().registerReceiver(annotationServiceReceiver, filter);
+    }
+        /**
      * Override parent's method to handle button reset for screen recording mode.
      * In FadRec mode, we don't have camera switch or torch, and pause is always enabled.
      * IMPORTANT: Only reset to idle if truly idle - preserve recording state.

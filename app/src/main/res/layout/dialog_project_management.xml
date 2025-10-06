@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:background="@drawable/floating_menu_bg">
+
+    <!-- Title -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Annotation Projects" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:paddingBottom="8dp" />
+
+    <!-- Current Project -->
+    <TextView android:id="@+id/txtCurrentProject" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Current: Untitled" android:textSize="13sp" android:textColor="#4CAF50" android:gravity="center" android:paddingBottom="12dp" />
+
+    <!-- Info -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap a project to load it, or create a new one." android:textSize="12sp" android:textColor="#B0FFFFFF" android:gravity="center" android:paddingBottom="12dp" />
+
+    <!-- Project List -->
+    <ListView android:id="@+id/projectList" android:layout_width="match_parent" android:layout_height="200dp" android:background="#20FFFFFF" android:padding="8dp" android:divider="#30FFFFFF" android:dividerHeight="1dp" />
+
+    <!-- Buttons -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp" android:gravity="center">
+
+        <!-- New Project -->
+        <LinearLayout android:id="@+id/btnNewProject" android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp" android:orientation="horizontal" android:gravity="center" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp">
+
+            <TextView android:layout_width="24dp" android:layout_height="24dp" android:text="add" android:textSize="20sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" android:gravity="center" android:layout_marginEnd="6dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="New Project" android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Close -->
+        <LinearLayout android:id="@+id/btnCloseDialog" android:layout_width="wrap_content" android:layout_height="48dp" android:orientation="horizontal" android:gravity="center" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:paddingHorizontal="16dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Close" android:textSize="13sp" android:textColor="#9E9E9E" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

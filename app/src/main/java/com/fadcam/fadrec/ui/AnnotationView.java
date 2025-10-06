@@ -38,6 +38,7 @@ public class AnnotationView extends View {
     private Paint drawPaint;
     private Path currentPath;
     private Paint blackboardPaint;
+    private Paint whiteboardPaint;
     
     // Selection mode state
     private boolean selectionMode = false;
@@ -57,6 +58,9 @@ public class AnnotationView extends View {
     
     // Snap guides toggle
     private boolean snapGuidesEnabled = true; // Can be toggled by user
+    
+    // Canvas visibility (hide/show with pinned layer exemption)
+    private boolean canvasHidden = false;
     
     // Rotation snap configuration
     private static final float[] SNAP_ANGLES = {0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f};
@@ -121,6 +125,11 @@ public class AnnotationView extends View {
         blackboardPaint.setColor(0xFF000000);
         blackboardPaint.setStyle(Paint.Style.FILL);
         
+        // Setup whiteboard background paint
+        whiteboardPaint = new Paint();
+        whiteboardPaint.setColor(0xFFFFFFFF);
+        whiteboardPaint.setStyle(Paint.Style.FILL);
+        
         // Setup selection paint (dotted border)
         selectionPaint = new Paint();
         selectionPaint.setColor(0xFF4CAF50); // Green
@@ -176,6 +185,18 @@ public class AnnotationView extends View {
         return snapGuidesEnabled;
     }
     
+    /**
+     * Set canvas visibility (hide unpinned layers)
+     */
+    public void setCanvasHidden(boolean hidden) {
+        this.canvasHidden = hidden;
+        invalidate(); // Trigger redraw
+    }
+    
+    public boolean isCanvasHidden() {
+        return canvasHidden;
+    }
+    
     private void notifyStateChanged() {
         if (stateChangeListener != null) {
             stateChangeListener.onStateChanged();
@@ -214,14 +235,19 @@ public class AnnotationView extends View {
         AnnotationPage currentPage = state.getActivePage();
         if (currentPage == null) return;
         
-        // Draw blackboard background if enabled
+        // Draw background (blackboard, whiteboard, or transparent)
         if (currentPage.isBlackboardMode()) {
             canvas.drawRect(0, 0, getWidth(), getHeight(), blackboardPaint);
+        } else if (currentPage.isWhiteboardMode()) {
+            canvas.drawRect(0, 0, getWidth(), getHeight(), whiteboardPaint);
         }
         
         // Draw all layers (bottom to top)
         for (AnnotationLayer layer : currentPage.getLayers()) {
             if (!layer.isVisible()) continue;
+            
+            // Skip non-pinned layers if canvas is hidden
+            if (canvasHidden && !layer.isPinned()) continue;
             
             // Create identity matrix (no transformation yet)
             Matrix transform = new Matrix();
@@ -518,11 +544,29 @@ public class AnnotationView extends View {
     
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        // CRITICAL: Respect enabled state - if disabled, don't process any touches
+        if (!isEnabled()) {
+            return false;
+        }
+        
         AnnotationPage currentPage = state.getActivePage();
         if (currentPage == null) return false;
         
         AnnotationLayer currentLayer = currentPage.getActiveLayer();
         if (currentLayer == null || currentLayer.isLocked()) return false;
+        
+        // CRITICAL: Block ALL touch events when canvas is hidden UNLESS drawing on a pinned layer
+        if (canvasHidden && !currentLayer.isPinned()) {
+            // Show helpful toast only on ACTION_DOWN (not on every move)
+            if (event.getAction() == MotionEvent.ACTION_DOWN && getContext() != null) {
+                android.widget.Toast.makeText(
+                    getContext(), 
+                    "⚠️ Canvas hidden! Show canvas or switch to a pinned layer to draw", 
+                    android.widget.Toast.LENGTH_SHORT
+                ).show();
+            }
+            return false; // Block ALL touch events (DOWN, MOVE, UP)
+        }
         
         float x = event.getX();
         float y = event.getY();
@@ -1093,6 +1137,26 @@ public class AnnotationView extends View {
     public boolean isBlackboardMode() {
         AnnotationPage currentPage = state.getActivePage();
         return currentPage != null && currentPage.isBlackboardMode();
+    }
+    
+    /**
+     * Toggle whiteboard mode (white background)
+     */
+    public void setWhiteboardMode(boolean enabled) {
+        AnnotationPage currentPage = state.getActivePage();
+        if (currentPage != null) {
+            currentPage.setWhiteboardMode(enabled);
+            invalidate();
+            notifyStateChanged();
+        }
+    }
+    
+    /**
+     * Check if whiteboard mode is enabled
+     */
+    public boolean isWhiteboardMode() {
+        AnnotationPage currentPage = state.getActivePage();
+        return currentPage != null && currentPage.isWhiteboardMode();
     }
     
     /**
