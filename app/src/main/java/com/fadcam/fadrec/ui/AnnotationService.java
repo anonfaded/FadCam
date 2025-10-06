@@ -23,6 +23,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.GridLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -111,6 +112,8 @@ public class AnnotationService extends Service {
     
     // Broadcast receiver for floating menu actions
     private BroadcastReceiver menuActionReceiver;
+    private BroadcastReceiver recordingStateReceiver;
+    private BroadcastReceiver colorPickerReceiver;
     
     // Toolbar dragging
     private int toolbarInitialX, toolbarInitialY;
@@ -286,6 +289,7 @@ public class AnnotationService extends Service {
         startAutoSave();
         registerMenuActionReceiver();
         registerRecordingStateReceiver();
+        registerColorPickerReceiver();
     }
     
     private void setupAnnotationCanvas() {
@@ -746,14 +750,23 @@ public class AnnotationService extends Service {
             btnColorPicker.setBackgroundResource(R.drawable.annotation_color_circle);
         }
         
-        // Add thick white border to selected color (unless it's color picker)
-        if (selectedColor != btnColorPicker) {
-            selectedColor.setBackgroundResource(R.drawable.annotation_color_selected);
+        // Add green border to selected color
+        if (selectedColor != null && selectedColor != btnColorPicker) {
+            // Use foreground for the green border overlay
+            selectedColor.setForeground(getResources().getDrawable(R.drawable.annotation_color_selected, null));
         }
     }
     
     private void resetColorBorder(View colorView) {
-        colorView.setBackgroundResource(R.drawable.annotation_color_circle);
+        // Clear foreground (green border)
+        colorView.setForeground(null);
+        
+        // Restore proper background
+        if (colorView == btnColorBlack) {
+            colorView.setBackgroundResource(R.drawable.annotation_color_circle_black);
+        } else {
+            colorView.setBackgroundResource(R.drawable.annotation_color_circle);
+        }
     }
     
     private void updateWidthSelection(View selectedWidth) {
@@ -784,54 +797,14 @@ public class AnnotationService extends Service {
     }
     
     private void showColorPickerDialog() {
-        // Create Material Design color picker dialog
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
-        builder.setTitle("Pick a Color");
-        
-        // Create grid of color swatches
-        GridLayout colorGrid = new GridLayout(this);
-        colorGrid.setColumnCount(6);
-        colorGrid.setPadding(32, 32, 32, 32);
-        
-        // Common colors
-        int[] colors = {
-            0xFFF44336, 0xFFE91E63, 0xFF9C27B0, 0xFF673AB7,
-            0xFF3F51B5, 0xFF2196F3, 0xFF03A9F4, 0xFF00BCD4,
-            0xFF009688, 0xFF4CAF50, 0xFF8BC34A, 0xFFCDDC39,
-            0xFFFFEB3B, 0xFFFFC107, 0xFFFF9800, 0xFFFF5722,
-            0xFF795548, 0xFF9E9E9E, 0xFF607D8B, 0xFF000000,
-            0xFFFFFFFF, 0xFFFF1744, 0xFF00E676, 0xFF2979FF
-        };
-        
-        for (int color : colors) {
-            View colorSwatch = new View(this);
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 80;
-            params.height = 80;
-            params.setMargins(8, 8, 8, 8);
-            colorSwatch.setLayoutParams(params);
-            colorSwatch.setBackgroundColor(color);
-            colorSwatch.setElevation(4);
-            colorSwatch.setOnClickListener(v -> {
-                annotationView.setColor(color);
-                annotationView.setPenMode();
-                updateToolSelection(true);
-                // Visual feedback - glow the color picker button
-                btnColorPicker.setBackgroundResource(R.drawable.annotation_color_selected);
-            });
-            colorGrid.addView(colorSwatch);
-        }
-        
-        builder.setView(colorGrid);
-        builder.setNegativeButton("Cancel", null);
-        
-        // Create and configure dialog with overlay window type for Service context
-        android.app.AlertDialog dialog = builder.create();
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-        }
-        dialog.show();
+        // Launch transparent dialog activity instead of trying to show dialog from service
+        Intent intent = new Intent(this, ColorPickerDialogActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+    
+    private int dpToPx(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
     }
     
     /**
@@ -1260,8 +1233,6 @@ public class AnnotationService extends Service {
     /**
      * Register broadcast receiver for recording state updates
      */
-    private BroadcastReceiver recordingStateReceiver;
-    
     private void registerRecordingStateReceiver() {
         recordingStateReceiver = new BroadcastReceiver() {
             @Override
@@ -1282,6 +1253,26 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter(com.fadcam.Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         registerReceiver(recordingStateReceiver, filter);
         Log.d(TAG, "Recording state receiver registered");
+    }
+    
+    private void registerColorPickerReceiver() {
+        colorPickerReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int selectedColor = intent.getIntExtra(ColorPickerDialogActivity.EXTRA_SELECTED_COLOR, 0);
+                if (selectedColor != 0) {
+                    annotationView.setColor(selectedColor);
+                    annotationView.setPenMode();
+                    updateToolSelection(true);
+                    updateColorSelection(null);
+                    Log.d(TAG, "Color selected from picker: " + Integer.toHexString(selectedColor));
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter(ColorPickerDialogActivity.ACTION_COLOR_SELECTED);
+        registerReceiver(colorPickerReceiver, filter);
+        Log.d(TAG, "Color picker receiver registered");
     }
     
     private void updateRecordingButtons() {
@@ -1686,6 +1677,9 @@ public class AnnotationService extends Service {
         }
         if (recordingStateReceiver != null) {
             unregisterReceiver(recordingStateReceiver);
+        }
+        if (colorPickerReceiver != null) {
+            unregisterReceiver(colorPickerReceiver);
         }
         
         // Stop auto-save timer

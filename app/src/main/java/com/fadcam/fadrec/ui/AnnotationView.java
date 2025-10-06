@@ -1036,9 +1036,10 @@ public class AnnotationView extends View {
     public void setStrokeWidth(int width) {
         float strokeWidth;
         switch (width) {
-            case 0: strokeWidth = 4f; break;
-            case 1: strokeWidth = 8f; break;
-            case 2: strokeWidth = 16f; break;
+            case 0: strokeWidth = 4f; break;   // Thin (8dp visual)
+            case 1: strokeWidth = 8f; break;   // Medium (16dp visual)
+            case 2: strokeWidth = 16f; break;  // Thick (24dp visual)
+            case 3: strokeWidth = 32f; break;  // Extra Thick (32dp visual)
             default: strokeWidth = 8f;
         }
         state.setCurrentStrokeWidth(strokeWidth);

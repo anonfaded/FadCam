@@ -210,7 +210,7 @@
 
                     <View android:id="@+id/btnColorWhite" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#FFFFFF" android:clickable="true" android:focusable="true" />
 
-                    <View android:id="@+id/btnColorBlack" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#000000" android:clickable="true" android:focusable="true" />
+                    <View android:id="@+id/btnColorBlack" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle_black" android:clickable="true" android:focusable="true" />
 
                     <!-- Color Picker -->
                     <TextView android:id="@+id/btnColorPicker" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:gravity="center" android:text="palette" android:textSize="16sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_color_circle" android:backgroundTint="#424242" android:clickable="true" android:focusable="true" />
