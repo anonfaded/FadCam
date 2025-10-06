@@ -25,6 +25,7 @@ public abstract class AnnotationObject {
     protected ObjectType type;
     protected float x, y;                 // Position
     protected float rotation;             // Rotation in degrees
+    protected float scale;                // Scale factor (1.0 = 100%)
     protected boolean visible;
     protected boolean locked;
     protected float opacity;              // 0.0 to 1.0
@@ -37,6 +38,7 @@ public abstract class AnnotationObject {
         this.x = 0;
         this.y = 0;
         this.rotation = 0;
+        this.scale = 1.0f;
         this.visible = true;
         this.locked = false;
         this.opacity = 1.0f;
@@ -58,6 +60,7 @@ public abstract class AnnotationObject {
         json.put("x", x);
         json.put("y", y);
         json.put("rotation", rotation);
+        json.put("scale", scale);
         json.put("visible", visible);
         json.put("locked", locked);
         json.put("opacity", opacity);
@@ -71,6 +74,7 @@ public abstract class AnnotationObject {
         this.x = (float) json.getDouble("x");
         this.y = (float) json.getDouble("y");
         this.rotation = (float) json.getDouble("rotation");
+        this.scale = json.has("scale") ? (float) json.getDouble("scale") : 1.0f; // Backward compatible
         this.visible = json.getBoolean("visible");
         this.locked = json.getBoolean("locked");
         this.opacity = (float) json.getDouble("opacity");
@@ -103,6 +107,12 @@ public abstract class AnnotationObject {
     public float getRotation() { return rotation; }
     public void setRotation(float rotation) {
         this.rotation = rotation;
+        this.modifiedAt = System.currentTimeMillis();
+    }
+    
+    public float getScale() { return scale; }
+    public void setScale(float scale) {
+        this.scale = Math.max(0.1f, Math.min(5.0f, scale)); // Limit 0.1x to 5x
         this.modifiedAt = System.currentTimeMillis();
     }
     

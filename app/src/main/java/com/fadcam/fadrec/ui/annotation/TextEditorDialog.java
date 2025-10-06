@@ -45,6 +45,7 @@ public class TextEditorDialog extends Dialog {
     private boolean isBold = false;
     private boolean isItalic = false;
     private Paint.Align alignment = Paint.Align.LEFT;
+    private String initialText = ""; // Store text before onCreate()
     
     public TextEditorDialog(@NonNull Context context) {
         super(context);
@@ -102,6 +103,29 @@ public class TextEditorDialog extends Dialog {
             findViewById(R.id.colorBlue),
             findViewById(R.id.colorBlack)
         };
+        
+        // Apply initial text if it was set before onCreate()
+        if (!initialText.isEmpty()) {
+            editTextContent.setText(initialText);
+        }
+        
+        // Apply initial values to UI
+        seekBarFontSize.setProgress((int)(fontSize - 12));
+        txtFontSizeValue.setText(((int)fontSize) + "sp");
+        updateStyleButton(btnBoldToggle, isBold);
+        updateStyleButton(btnItalicToggle, isItalic);
+        
+        // Highlight selected color
+        int[] colorValues = {0xFFFFFFFF, 0xFFF44336, 0xFFFFEB3B, 0xFF4CAF50, 0xFF2196F3, 0xFF000000};
+        for (int i = 0; i < colorViews.length; i++) {
+            if (colorValues[i] == textColor) {
+                colorViews[i].setAlpha(1.0f);
+            } else {
+                colorViews[i].setAlpha(0.5f);
+            }
+        }
+        
+        updatePreview();
     }
     
     private void setupListeners() {
@@ -208,5 +232,63 @@ public class TextEditorDialog extends Dialog {
         else style = android.graphics.Typeface.NORMAL;
         
         editTextContent.setTypeface(null, style);
+    }
+    
+    // Setter methods for editing existing text
+    public void setText(String text) {
+        this.initialText = text; // Store for onCreate()
+        if (editTextContent != null) {
+            editTextContent.setText(text);
+        }
+    }
+    
+    public void setFontSize(float size) {
+        this.fontSize = size;
+        if (seekBarFontSize != null) {
+            seekBarFontSize.setProgress((int)(size - 12));
+        }
+        if (txtFontSizeValue != null) {
+            txtFontSizeValue.setText(((int)size) + "sp");
+        }
+        if (editTextContent != null) {
+            updatePreview();
+        }
+    }
+    
+    public void setColor(int color) {
+        this.textColor = color;
+        // Highlight matching color if exists
+        if (colorViews != null) {
+            for (View view : colorViews) {
+                view.setAlpha(0.5f);
+            }
+        }
+        if (editTextContent != null) {
+            updatePreview();
+        }
+    }
+    
+    public void setBold(boolean bold) {
+        this.isBold = bold;
+        if (btnBoldToggle != null) {
+            updateStyleButton(btnBoldToggle, bold);
+        }
+        if (editTextContent != null) {
+            updatePreview();
+        }
+    }
+    
+    public void setItalic(boolean italic) {
+        this.isItalic = italic;
+        if (btnItalicToggle != null) {
+            updateStyleButton(btnItalicToggle, italic);
+        }
+        if (editTextContent != null) {
+            updatePreview();
+        }
+    }
+    
+    public void setAlignment(Paint.Align align) {
+        this.alignment = align;
     }
 }

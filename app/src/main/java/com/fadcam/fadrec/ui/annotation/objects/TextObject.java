@@ -64,15 +64,34 @@ public class TextObject extends AnnotationObject {
         Typeface typeface = Typeface.create(fontFamily, style);
         paint.setTypeface(typeface);
         
+        // Update bounds for rendering (also used by getBounds())
+        String[] lines = text.split("\n");
+        float lineHeight = paint.descent() - paint.ascent();
+        
+        // Calculate text bounds
+        float maxWidth = 0;
+        for (String line : lines) {
+            float width = paint.measureText(line);
+            if (width > maxWidth) maxWidth = width;
+        }
+        float totalHeight = lineHeight * lines.length;
+        
         // Apply transformation
         canvas.save();
         canvas.concat(transform);
+        
+        // Move to text position
         canvas.translate(x, y);
-        canvas.rotate(rotation);
+        
+        // Rotate around center of text bounds
+        float centerOffsetX = maxWidth / 2f;
+        float centerOffsetY = totalHeight / 2f;
+        canvas.rotate(rotation, centerOffsetX, centerOffsetY);
+        
+        // Apply scale around center
+        canvas.scale(scale, scale, centerOffsetX, centerOffsetY);
         
         // Draw text
-        String[] lines = text.split("\n");
-        float lineHeight = paint.descent() - paint.ascent();
         float yOffset = 0;
         
         for (String line : lines) {
@@ -160,11 +179,36 @@ public class TextObject extends AnnotationObject {
         );
     }
     
-    // Check if point is within text bounds (for hit testing)
+    // Check if point is within text bounds (for hit testing with rotation/scale support)
+    @Override
     public boolean contains(float px, float py) {
-        // Transform point to local coordinates
-        float localX = px - x;
-        float localY = py - y;
+        RectF bounds = getBounds();
+        float centerX = bounds.centerX();
+        float centerY = bounds.centerY();
+        
+        // Transform touch point to object's local space (inverse transformation)
+        // Translate to origin
+        float tx = px - centerX;
+        float ty = py - centerY;
+        
+        // Inverse rotation
+        float radians = (float) Math.toRadians(-rotation);
+        float cos = (float) Math.cos(radians);
+        float sin = (float) Math.sin(radians);
+        float rx = tx * cos - ty * sin;
+        float ry = tx * sin + ty * cos;
+        
+        // Inverse scale
+        if (scale != 0) {
+            rx /= scale;
+            ry /= scale;
+        }
+        
+        // Translate back
+        float localX = rx + centerX;
+        float localY = ry + centerY;
+        
+        // Test in original bounds
         return bounds.contains(localX, localY);
     }
     
@@ -214,5 +258,47 @@ public class TextObject extends AnnotationObject {
         this.modifiedAt = System.currentTimeMillis();
     }
     
-    public RectF getBounds() { return new RectF(bounds); }
+    @Override
+    public RectF getBounds() {
+        // Calculate bounds dynamically for hit testing
+        if (text == null || text.isEmpty()) {
+            return new RectF(x, y, x + 50, y + 50); // Default small bounds
+        }
+        
+        Paint paint = new Paint();
+        paint.setTextSize(fontSize);
+        paint.setTextAlign(alignment);
+        
+        // Set typeface based on style
+        int style = Typeface.NORMAL;
+        if (bold && italic) style = Typeface.BOLD_ITALIC;
+        else if (bold) style = Typeface.BOLD;
+        else if (italic) style = Typeface.ITALIC;
+        
+        Typeface typeface = Typeface.create(fontFamily, style);
+        paint.setTypeface(typeface);
+        
+        // Calculate dimensions
+        String[] lines = text.split("\n");
+        float maxWidth = 0;
+        for (String line : lines) {
+            float width = paint.measureText(line);
+            if (width > maxWidth) maxWidth = width;
+        }
+        float lineHeight = paint.descent() - paint.ascent();
+        float totalHeight = lineHeight * lines.length;
+        
+        // Calculate bounds (accounting for alignment)
+        float left = x;
+        float right = x + maxWidth;
+        if (alignment == Paint.Align.CENTER) {
+            left = x - maxWidth / 2;
+            right = x + maxWidth / 2;
+        } else if (alignment == Paint.Align.RIGHT) {
+            left = x - maxWidth;
+            right = x;
+        }
+        
+        return new RectF(left, y - lineHeight * 0.8f, right, y + totalHeight);
+    }
 }

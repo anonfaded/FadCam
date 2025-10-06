@@ -50,6 +50,7 @@ public class AnnotationService extends Service {
     private ProjectFileManager projectFileManager;
     private Handler autoSaveHandler;
     private Runnable autoSaveRunnable;
+    private String currentProjectName; // Track current project to avoid creating new files
     
     // Professional overlays
     private PageTabBarOverlay pageTabBarOverlay;
@@ -97,6 +98,9 @@ public class AnnotationService extends Service {
         // Initialize project file manager
         projectFileManager = new ProjectFileManager(this);
         
+        // Generate single project name for this session (or load last project)
+        currentProjectName = projectFileManager.getOrCreateCurrentProject();
+        
         setupAnnotationCanvas();
         setupToolbar();
         startAutoSave();
@@ -113,6 +117,16 @@ public class AnnotationService extends Service {
         annotationView.setOnStateChangeListener(() -> {
             updateUndoRedoButtons();
             saveCurrentState(); // Save immediately on every change
+        });
+        
+        // Listen for selection mode changes to update toolbar
+        annotationView.setOnSelectionModeChangeListener(isActive -> {
+            updateSelectToolHighlight(isActive);
+        });
+        
+        // Listen for text edit requests
+        annotationView.setOnTextEditRequestListener(textObject -> {
+            showTextEditorDialog(textObject);
         });
         
         int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -526,12 +540,12 @@ public class AnnotationService extends Service {
      * Saves the current annotation state to persistent storage.
      */
     private void saveCurrentState() {
-        if (annotationView != null && projectFileManager != null) {
+        if (annotationView != null && projectFileManager != null && currentProjectName != null) {
             AnnotationState state = annotationView.getState();
             if (state != null) {
-                boolean success = projectFileManager.autoSave(state);
+                boolean success = projectFileManager.saveProject(state, currentProjectName);
                 if (success) {
-                    Log.d(TAG, "State auto-saved to .fadrec format");
+                    Log.d(TAG, "State saved to: " + currentProjectName + ".fadrec");
                 }
             }
         }
@@ -822,30 +836,61 @@ public class AnnotationService extends Service {
      * Show text editor dialog to add text objects
      */
     private void showTextEditorDialog() {
+        showTextEditorDialog(null);
+    }
+    
+    /**
+     * Show text editor dialog to add or edit text objects
+     */
+    private void showTextEditorDialog(TextObject existingTextObject) {
         TextEditorDialog dialog = new TextEditorDialog(this);
+        
+        // Pre-fill dialog if editing existing text
+        if (existingTextObject != null) {
+            dialog.setText(existingTextObject.getText());
+            dialog.setFontSize(existingTextObject.getFontSize());
+            dialog.setColor(existingTextObject.getTextColor());
+            dialog.setBold(existingTextObject.isBold());
+            dialog.setItalic(existingTextObject.isItalic());
+            dialog.setAlignment(existingTextObject.getAlignment());
+        }
+        
         dialog.setOnTextConfirmedListener((text, fontSize, color, bold, italic, alignment) -> {
-            // Create text object at center of screen
-            float centerX = annotationView.getWidth() / 2f;
-            float centerY = annotationView.getHeight() / 2f;
-            
-            TextObject textObject = new TextObject(text, centerX, centerY);
-            textObject.setFontSize(fontSize);
-            textObject.setTextColor(color);
-            textObject.setBold(bold);
-            textObject.setItalic(italic);
-            textObject.setAlignment(alignment);
-            
-            // Add to active layer
-            AnnotationPage currentPage = annotationView.getState().getActivePage();
-            if (currentPage != null) {
-                AnnotationLayer activeLayer = currentPage.getActiveLayer();
-                if (activeLayer != null && !activeLayer.isLocked()) {
-                    activeLayer.addObject(textObject);
-                    annotationView.invalidate();
-                    saveCurrentState();
-                    Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+            if (existingTextObject != null) {
+                // Update existing text object
+                existingTextObject.setText(text);
+                existingTextObject.setFontSize(fontSize);
+                existingTextObject.setTextColor(color);
+                existingTextObject.setBold(bold);
+                existingTextObject.setItalic(italic);
+                existingTextObject.setAlignment(alignment);
+                annotationView.invalidate();
+                saveCurrentState();
+                Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
+            } else {
+                // Create new text object at center of screen
+                float centerX = annotationView.getWidth() / 2f;
+                float centerY = annotationView.getHeight() / 2f;
+                
+                TextObject textObject = new TextObject(text, centerX, centerY);
+                textObject.setFontSize(fontSize);
+                textObject.setTextColor(color);
+                textObject.setBold(bold);
+                textObject.setItalic(italic);
+                textObject.setAlignment(alignment);
+                
+                // Add to active layer
+                AnnotationPage currentPage = annotationView.getState().getActivePage();
+                if (currentPage != null) {
+                    AnnotationLayer activeLayer = currentPage.getActiveLayer();
+                    if (activeLayer != null && !activeLayer.isLocked()) {
+                        activeLayer.addObject(textObject);
+                        annotationView.invalidate();
+                        saveCurrentState();
+                        Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });

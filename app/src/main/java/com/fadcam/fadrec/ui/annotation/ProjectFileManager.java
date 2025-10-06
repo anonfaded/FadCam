@@ -1,6 +1,7 @@
 package com.fadcam.fadrec.ui.annotation;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Environment;
 import android.util.Log;
 
@@ -40,12 +41,16 @@ public class ProjectFileManager {
     private static final String TAG = "ProjectFileManager";
     private static final String FILE_EXTENSION = ".fadrec";
     private static final String PROJECT_VERSION = "1.0";
+    private static final String PREFS_NAME = "FadRecProjects";
+    private static final String KEY_CURRENT_PROJECT = "current_project";
     
     private final Context context;
     private final File projectsDir;
+    private final SharedPreferences prefs;
     
     public ProjectFileManager(Context context) {
         this.context = context;
+        this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         
         // Create projects directory: ~/Documents/FadRec/Projects/
         File documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
@@ -167,6 +172,45 @@ public class ProjectFileManager {
             Log.e(TAG, "Failed to load project", e);
             return null;
         }
+    }
+    
+    /**
+     * Get or create current project name (persistent across app restarts)
+     */
+    public String getOrCreateCurrentProject() {
+        // Check if we have a saved current project
+        String savedProject = prefs.getString(KEY_CURRENT_PROJECT, null);
+        
+        if (savedProject != null && projectExists(savedProject)) {
+            Log.i(TAG, "Resuming project: " + savedProject);
+            return savedProject;
+        }
+        
+        // Create new project with timestamp
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
+                .format(new Date());
+        String projectName = "Recording_" + timestamp;
+        
+        // Save as current project
+        prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
+        Log.i(TAG, "Created new project: " + projectName);
+        
+        return projectName;
+    }
+    
+    /**
+     * Create a brand new project (user action)
+     */
+    public String createNewProject() {
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
+                .format(new Date());
+        String projectName = "Recording_" + timestamp;
+        
+        // Save as current project
+        prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
+        Log.i(TAG, "User created new project: " + projectName);
+        
+        return projectName;
     }
     
     /**

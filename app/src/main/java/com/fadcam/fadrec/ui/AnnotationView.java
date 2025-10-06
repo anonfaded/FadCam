@@ -2,11 +2,15 @@ package com.fadcam.fadrec.ui;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.DashPathEffect;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -25,6 +29,7 @@ import com.fadcam.fadrec.ui.annotation.objects.PathObject;
  */
 public class AnnotationView extends View {
     private static final String TAG = "AnnotationView";
+    private static final long LONG_PRESS_TIMEOUT = 500; // ms
     
     // State management
     private AnnotationState state;
@@ -39,13 +44,37 @@ public class AnnotationView extends View {
     private AnnotationObject selectedObject = null;
     private float lastTouchX;
     private float lastTouchY;
+    private float lastDrawX; // Last point for path drawing
+    private float lastDrawY;
     private Paint selectionPaint;
+    private boolean wasInSelectionMode = false; // Track if we auto-entered selection
+    
+    // Handle dragging
+    private enum HandleType { NONE, LEFT, RIGHT, TOP, EDIT }
+    private HandleType activeHandle = HandleType.NONE;
+    private float initialScale = 1.0f;
+    private float initialRotation = 0f;
+    
+    // Long-press detection
+    private Handler longPressHandler;
+    private Runnable longPressRunnable;
+    private boolean isLongPressing = false;
     
     // Callback for state changes
     private OnStateChangeListener stateChangeListener;
+    private OnSelectionModeChangeListener selectionModeChangeListener;
+    private OnTextEditRequestListener textEditRequestListener;
     
     public interface OnStateChangeListener {
         void onStateChanged();
+    }
+    
+    public interface OnSelectionModeChangeListener {
+        void onSelectionModeChanged(boolean isActive);
+    }
+    
+    public interface OnTextEditRequestListener {
+        void onTextEditRequested(com.fadcam.fadrec.ui.annotation.objects.TextObject textObject);
     }
     
     public AnnotationView(Context context) {
@@ -75,12 +104,16 @@ public class AnnotationView extends View {
         blackboardPaint.setColor(0xFF000000);
         blackboardPaint.setStyle(Paint.Style.FILL);
         
-        // Setup selection paint (for highlighting selected objects)
+        // Setup selection paint (dotted border)
         selectionPaint = new Paint();
         selectionPaint.setColor(0xFF4CAF50); // Green
         selectionPaint.setStyle(Paint.Style.STROKE);
         selectionPaint.setStrokeWidth(4f);
         selectionPaint.setAntiAlias(true);
+        selectionPaint.setPathEffect(new DashPathEffect(new float[]{10, 5}, 0)); // Dotted
+        
+        // Setup long-press handler
+        longPressHandler = new Handler(Looper.getMainLooper());
         
         currentPath = new Path();
     }
@@ -99,9 +132,29 @@ public class AnnotationView extends View {
         this.stateChangeListener = listener;
     }
     
+    public void setOnSelectionModeChangeListener(OnSelectionModeChangeListener listener) {
+        this.selectionModeChangeListener = listener;
+    }
+    
+    public void setOnTextEditRequestListener(OnTextEditRequestListener listener) {
+        this.textEditRequestListener = listener;
+    }
+    
     private void notifyStateChanged() {
         if (stateChangeListener != null) {
             stateChangeListener.onStateChanged();
+        }
+    }
+    
+    private void notifySelectionModeChanged(boolean isActive) {
+        if (selectionModeChangeListener != null) {
+            selectionModeChangeListener.onSelectionModeChanged(isActive);
+        }
+    }
+    
+    private void showTextEditDialog(com.fadcam.fadrec.ui.annotation.objects.TextObject textObject) {
+        if (textEditRequestListener != null) {
+            textEditRequestListener.onTextEditRequested(textObject);
         }
     }
     
@@ -147,18 +200,165 @@ public class AnnotationView extends View {
                     obj.setOpacity(originalOpacity); // Restore original
                     
                     // Draw selection highlight if this object is selected
-                    if (selectionMode && selectedObject == obj) {
-                        RectF bounds = obj.getBounds();
-                        canvas.drawRect(bounds, selectionPaint);
+                    if ((selectionMode || isLongPressing) && selectedObject == obj) {
+                        drawSelectionHandles(canvas, obj);
                     }
                 }
             }
         }
         
-        // Draw current path being drawn (only in draw mode)
-        if (!selectionMode) {
+        // Draw current path being drawn (only in draw mode and not long-pressing)
+        if (!selectionMode && !isLongPressing) {
             canvas.drawPath(currentPath, drawPaint);
         }
+    }
+    
+    /**
+     * Draw Telegram/Instagram-style selection handles with dotted border
+     * Border rotates and scales with the object
+     */
+    private void drawSelectionHandles(Canvas canvas, AnnotationObject obj) {
+        RectF bounds = obj.getBounds();
+        float centerX = bounds.centerX();
+        float centerY = bounds.centerY();
+        
+        canvas.save();
+        
+        // Apply same transformations as the object
+        canvas.rotate(obj.getRotation(), centerX, centerY);
+        canvas.scale(obj.getScale(), obj.getScale(), centerX, centerY);
+        
+        // Calculate dynamic dash pattern based on perimeter and scale
+        float perimeter = 2 * (bounds.width() + bounds.height());
+        float scaledPerimeter = perimeter * obj.getScale();
+        float dashLength = scaledPerimeter / 40f; // ~40 dashes around perimeter
+        float gapLength = dashLength * 0.5f;
+        
+        // Update selection paint with dynamic dash pattern
+        Paint dynamicSelectionPaint = new Paint(selectionPaint);
+        dynamicSelectionPaint.setPathEffect(new DashPathEffect(new float[]{dashLength, gapLength}, 0));
+        
+        // Draw dotted border with rounded corners
+        float cornerRadius = 8f;
+        canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, dynamicSelectionPaint);
+        
+        // Handle paint (white circle with green border)
+        Paint handlePaint = new Paint();
+        handlePaint.setColor(0xFFFFFFFF);
+        handlePaint.setStyle(Paint.Style.FILL);
+        handlePaint.setAntiAlias(true);
+        
+        Paint handleBorderPaint = new Paint();
+        handleBorderPaint.setColor(0xFF4CAF50);
+        handleBorderPaint.setStyle(Paint.Style.STROKE);
+        handleBorderPaint.setStrokeWidth(3f);
+        handleBorderPaint.setAntiAlias(true);
+        
+        float handleRadius = 12f;
+        
+        // Left handle (for scaling)
+        float leftX = bounds.left;
+        float leftY = bounds.centerY();
+        canvas.drawCircle(leftX, leftY, handleRadius, handlePaint);
+        canvas.drawCircle(leftX, leftY, handleRadius, handleBorderPaint);
+        
+        // Right handle (for scaling)
+        float rightX = bounds.right;
+        float rightY = bounds.centerY();
+        canvas.drawCircle(rightX, rightY, handleRadius, handlePaint);
+        canvas.drawCircle(rightX, rightY, handleRadius, handleBorderPaint);
+        
+        // Top rotation handle (slightly above)
+        float topX = bounds.centerX();
+        float topY = bounds.top - 30;
+        
+        // Draw line from top of box to rotation handle
+        canvas.drawLine(bounds.centerX(), bounds.top, topX, topY, selectionPaint);
+        
+        // Draw rotation handle
+        canvas.drawCircle(topX, topY, handleRadius, handlePaint);
+        canvas.drawCircle(topX, topY, handleRadius, handleBorderPaint);
+        
+        // If it's a text object, add an "Edit" button at bottom
+        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.TextObject) {
+            float editX = bounds.centerX();
+            float editY = bounds.bottom + 30;
+            
+            // Draw edit button (circle with "E" text)
+            canvas.drawCircle(editX, editY, handleRadius * 1.5f, handlePaint);
+            canvas.drawCircle(editX, editY, handleRadius * 1.5f, handleBorderPaint);
+            
+            // Draw "E" text
+            Paint textPaint = new Paint();
+            textPaint.setColor(0xFF4CAF50);
+            textPaint.setTextSize(handleRadius * 1.8f);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setAntiAlias(true);
+            textPaint.setFakeBoldText(true);
+            canvas.drawText("E", editX, editY + handleRadius * 0.6f, textPaint);
+        }
+        
+        canvas.restore();
+    }
+    
+    /**
+     * Transform a point by rotation and scale around a center point
+     */
+    private float[] transformPoint(float px, float py, float centerX, float centerY, float rotation, float scale) {
+        // Translate to origin
+        float tx = px - centerX;
+        float ty = py - centerY;
+        
+        // Apply scale
+        tx *= scale;
+        ty *= scale;
+        
+        // Apply rotation
+        float radians = (float) Math.toRadians(rotation);
+        float cos = (float) Math.cos(radians);
+        float sin = (float) Math.sin(radians);
+        float rx = tx * cos - ty * sin;
+        float ry = tx * sin + ty * cos;
+        
+        // Translate back
+        return new float[]{rx + centerX, ry + centerY};
+    }
+    
+    /**
+     * Check if a point is inside a rotated/scaled object
+     * Use inverse transformation to test in object's local space
+     */
+    private boolean containsPoint(AnnotationObject obj, float px, float py) {
+        RectF bounds = obj.getBounds();
+        float centerX = bounds.centerX();
+        float centerY = bounds.centerY();
+        float rotation = obj.getRotation();
+        float scale = obj.getScale();
+        
+        // Transform touch point to object's local space (inverse transformation)
+        // Translate to origin
+        float tx = px - centerX;
+        float ty = py - centerY;
+        
+        // Inverse rotation
+        float radians = (float) Math.toRadians(-rotation);
+        float cos = (float) Math.cos(radians);
+        float sin = (float) Math.sin(radians);
+        float rx = tx * cos - ty * sin;
+        float ry = tx * sin + ty * cos;
+        
+        // Inverse scale
+        if (scale != 0) {
+            rx /= scale;
+            ry /= scale;
+        }
+        
+        // Translate back
+        float localX = rx + centerX;
+        float localY = ry + centerY;
+        
+        // Test in original bounds
+        return bounds.contains(localX, localY);
     }
     
     @Override
@@ -176,19 +376,134 @@ public class AnnotationView extends View {
         if (selectionMode) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    // Try to find and select an object at touch point
-                    selectedObject = findObjectAtPoint(x, y, currentPage);
                     lastTouchX = x;
                     lastTouchY = y;
-                    invalidate();
-                    return true;
+                    activeHandle = HandleType.NONE;
+                    
+                    // If we have a selected object, check if clicking on it or its handles
+                    if (selectedObject != null) {
+                        RectF bounds = selectedObject.getBounds();
+                        float handleRadius = 40f; // Touch radius
+                        float centerX = bounds.centerX();
+                        float centerY = bounds.centerY();
+                        float rotation = selectedObject.getRotation();
+                        float scale = selectedObject.getScale();
+                        
+                        // Calculate transformed handle positions (after rotation and scale)
+                        
+                        // Left handle
+                        float[] leftPos = transformPoint(bounds.left, bounds.centerY(), centerX, centerY, rotation, scale);
+                        float distLeft = (float) Math.sqrt((x - leftPos[0]) * (x - leftPos[0]) + (y - leftPos[1]) * (y - leftPos[1]));
+                        
+                        // Right handle
+                        float[] rightPos = transformPoint(bounds.right, bounds.centerY(), centerX, centerY, rotation, scale);
+                        float distRight = (float) Math.sqrt((x - rightPos[0]) * (x - rightPos[0]) + (y - rightPos[1]) * (y - rightPos[1]));
+                        
+                        // Top rotation handle
+                        float[] topPos = transformPoint(bounds.centerX(), bounds.top - 30, centerX, centerY, rotation, scale);
+                        float distTop = (float) Math.sqrt((x - topPos[0]) * (x - topPos[0]) + (y - topPos[1]) * (y - topPos[1]));
+                        
+                        // Edit button for text (bottom)
+                        float distEdit = Float.MAX_VALUE;
+                        if (selectedObject instanceof com.fadcam.fadrec.ui.annotation.objects.TextObject) {
+                            float[] editPos = transformPoint(bounds.centerX(), bounds.bottom + 30, centerX, centerY, rotation, scale);
+                            distEdit = (float) Math.sqrt((x - editPos[0]) * (x - editPos[0]) + (y - editPos[1]) * (y - editPos[1]));
+                        }
+                        
+                        // Check handles in priority order: edit first (more specific), then rotation, then scale
+                        if (distEdit < handleRadius) {
+                            // Edit button clicked
+                            activeHandle = HandleType.EDIT;
+                            showTextEditDialog((com.fadcam.fadrec.ui.annotation.objects.TextObject) selectedObject);
+                            return true;
+                        } else if (distTop < handleRadius) {
+                            // Rotation handle
+                            activeHandle = HandleType.TOP;
+                            initialRotation = selectedObject.getRotation();
+                            return true;
+                        } else if (distLeft < handleRadius) {
+                            // Left scale handle
+                            activeHandle = HandleType.LEFT;
+                            return true;
+                        } else if (distRight < handleRadius) {
+                            // Right scale handle
+                            activeHandle = HandleType.RIGHT;
+                            return true;
+                        } else if (containsPoint(selectedObject, x, y)) {
+                            // Clicked inside object - start drag
+                            activeHandle = HandleType.NONE;
+                            return true;
+                        } else {
+                            // Clicked outside - try to select another object or exit selection mode
+                            AnnotationObject newSelection = findObjectAtPoint(x, y, currentPage);
+                            if (newSelection != null) {
+                                selectedObject = newSelection;
+                            } else {
+                                // Clicked on empty space - exit selection mode
+                                selectedObject = null;
+                                selectionMode = false;
+                                notifySelectionModeChanged(false);
+                            }
+                            activeHandle = HandleType.NONE;
+                            invalidate();
+                            return true;
+                        }
+                    } else {
+                        // No selection - try to find and select an object or exit selection mode
+                        selectedObject = findObjectAtPoint(x, y, currentPage);
+                        if (selectedObject == null) {
+                            // No object found - exit selection mode
+                            selectionMode = false;
+                            notifySelectionModeChanged(false);
+                        }
+                        invalidate();
+                        return true;
+                    }
                     
                 case MotionEvent.ACTION_MOVE:
-                    // Move selected object
                     if (selectedObject != null) {
+                        RectF bounds = selectedObject.getBounds();
                         float dx = x - lastTouchX;
                         float dy = y - lastTouchY;
-                        selectedObject.translate(dx, dy);
+                        
+                        switch (activeHandle) {
+                            case TOP:
+                                // Rotate around center
+                                float centerX = bounds.centerX();
+                                float centerY = bounds.centerY();
+                                
+                                // Calculate angle from center to current touch point
+                                float angle1 = (float) Math.toDegrees(Math.atan2(lastTouchY - centerY, lastTouchX - centerX));
+                                float angle2 = (float) Math.toDegrees(Math.atan2(y - centerY, x - centerX));
+                                float angleDelta = angle2 - angle1;
+                                
+                                selectedObject.setRotation(selectedObject.getRotation() + angleDelta);
+                                break;
+                                
+                            case LEFT:
+                                // Scale by dragging left handle (inverse direction)
+                                float scaleLeftDelta = -dx / 100f; // Negative for left handle
+                                float newScaleLeft = selectedObject.getScale() + scaleLeftDelta;
+                                if (newScaleLeft > 0.1f && newScaleLeft < 5.0f) {
+                                    selectedObject.setScale(newScaleLeft);
+                                }
+                                break;
+                                
+                            case RIGHT:
+                                // Scale by dragging right handle (normal direction)
+                                float scaleRightDelta = dx / 100f;
+                                float newScaleRight = selectedObject.getScale() + scaleRightDelta;
+                                if (newScaleRight > 0.1f && newScaleRight < 5.0f) {
+                                    selectedObject.setScale(newScaleRight);
+                                }
+                                break;
+                                
+                            case NONE:
+                                // Normal drag - move object
+                                selectedObject.translate(dx, dy);
+                                break;
+                        }
+                        
                         lastTouchX = x;
                         lastTouchY = y;
                         invalidate();
@@ -196,38 +511,130 @@ public class AnnotationView extends View {
                     return true;
                     
                 case MotionEvent.ACTION_UP:
-                    // Finish moving (deselect on next tap or keep selected)
-                    if (selectedObject != null) {
-                        notifyStateChanged();
-                    }
+                case MotionEvent.ACTION_CANCEL:
+                    activeHandle = HandleType.NONE;
+                    notifyStateChanged();
                     return true;
             }
             return false;
         }
         
-        // Handle draw mode (original behavior)
+        // Handle draw mode with single-tap selection and long-press quick-drag
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                currentPath.moveTo(x, y);
+                // Check if touching an object
+                AnnotationObject touchedObject = findObjectAtPoint(x, y, currentPage);
+                
+                if (touchedObject != null) {
+                    // Object touched - start long-press timer for quick drag
+                    isLongPressing = false;
+                    lastTouchX = x;
+                    lastTouchY = y;
+                    
+                    longPressRunnable = () -> {
+                        // Long press detected! Enable quick drag (no selection mode)
+                        isLongPressing = true;
+                        selectedObject = touchedObject;
+                        invalidate();
+                    };
+                    
+                    longPressHandler.postDelayed(longPressRunnable, LONG_PRESS_TIMEOUT);
+                    // Don't start path yet - wait to see if it's tap, long-press, or draw
+                } else {
+                    // Normal drawing - no object touched
+                    currentPath.reset();
+                    currentPath.moveTo(x, y);
+                    lastDrawX = x;
+                    lastDrawY = y;
+                }
                 return true;
                 
             case MotionEvent.ACTION_MOVE:
-                currentPath.lineTo(x, y);
-                invalidate();
+                // Cancel long-press if moved too much
+                if (longPressRunnable != null) {
+                    float dx = x - lastTouchX;
+                    float dy = y - lastTouchY;
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 10) {
+                        longPressHandler.removeCallbacks(longPressRunnable);
+                        longPressRunnable = null;
+                        
+                        // Start drawing path now (was waiting for long-press)
+                        if (!isLongPressing) {
+                            currentPath.reset();
+                            currentPath.moveTo(lastTouchX, lastTouchY);
+                            lastDrawX = lastTouchX;
+                            lastDrawY = lastTouchY;
+                        }
+                    }
+                }
+                
+                if (isLongPressing && selectedObject != null) {
+                    // Move object while long-pressing
+                    float dx = x - lastTouchX;
+                    float dy = y - lastTouchY;
+                    selectedObject.translate(dx, dy);
+                    lastTouchX = x;
+                    lastTouchY = y;
+                    invalidate();
+                } else if (longPressRunnable == null && !isLongPressing) {
+                    // Normal drawing (only if not waiting for long-press)
+                    currentPath.quadTo(lastDrawX, lastDrawY, (x + lastDrawX) / 2, (y + lastDrawY) / 2);
+                    lastDrawX = x;
+                    lastDrawY = y;
+                    invalidate();
+                }
                 return true;
                 
             case MotionEvent.ACTION_UP:
-                // Create command and execute it (adds to history)
-                AddPathCommand command = new AddPathCommand(
-                    currentLayer, 
-                    new Path(currentPath), 
-                    new Paint(drawPaint)
-                );
-                currentPage.executeCommand(command);
+            case MotionEvent.ACTION_CANCEL:
+                // Cancel any pending long-press
+                if (longPressRunnable != null) {
+                    longPressHandler.removeCallbacks(longPressRunnable);
+                    AnnotationObject touchedObj = findObjectAtPoint(x, y, currentPage);
+                    
+                    // If we didn't move and didn't long-press, it's a single tap
+                    if (!isLongPressing && touchedObj != null) {
+                        float dx = x - lastTouchX;
+                        float dy = y - lastTouchY;
+                        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 10) {
+                            // Single tap on object - enter selection mode!
+                            selectionMode = true;
+                            selectedObject = touchedObj;
+                            invalidate();
+                            notifyStateChanged();
+                            notifySelectionModeChanged(true); // Update toolbar
+                            return true;
+                        }
+                    }
+                    
+                    longPressRunnable = null;
+                }
                 
-                currentPath = new Path();
-                invalidate();
-                notifyStateChanged();
+                if (isLongPressing) {
+                    // Finish quick drag (long-press move)
+                    isLongPressing = false;
+                    selectedObject = null;
+                    invalidate();
+                    notifyStateChanged();
+                } else {
+                    // Finish drawing path
+                    if (currentPath != null && !currentPath.isEmpty()) {
+                        AddPathCommand command = new AddPathCommand(
+                            currentLayer, 
+                            new Path(currentPath), 
+                            new Paint(drawPaint)
+                        );
+                        currentPage.executeCommand(command);
+                        
+                        currentPath = new Path();
+                        invalidate();
+                        notifyStateChanged();
+                    }
+                }
                 return true;
         }
         
@@ -421,9 +828,11 @@ public class AnnotationView extends View {
      */
     public void setSelectionMode(boolean enabled) {
         selectionMode = enabled;
+        wasInSelectionMode = false; // Reset auto-entry flag
         if (!enabled) {
             selectedObject = null; // Clear selection when exiting selection mode
         }
+        notifySelectionModeChanged(enabled); // Update toolbar UI
         invalidate();
     }
     

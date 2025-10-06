@@ -47,8 +47,9 @@ public class ShapeObject extends AnnotationObject {
     public ShapeObject(ShapeType type, float left, float top, float right, float bottom) {
         this();
         this.shapeType = type;
+        // Store bounds in world space
         this.bounds.set(left, top, right, bottom);
-        this.x = left;
+        this.x = left; // Position at top-left
         this.y = top;
     }
     
@@ -62,8 +63,9 @@ public class ShapeObject extends AnnotationObject {
         
         canvas.save();
         canvas.concat(transform);
-        canvas.translate(x, y);
-        canvas.rotate(rotation);
+        // Rotate at center and apply scale
+        canvas.rotate(rotation, bounds.centerX(), bounds.centerY());
+        canvas.scale(scale, scale, bounds.centerX(), bounds.centerY());
         
         switch (shapeType) {
             case RECTANGLE:
@@ -280,11 +282,17 @@ public class ShapeObject extends AnnotationObject {
         );
     }
     
+    @Override
+    public void translate(float dx, float dy) {
+        super.translate(dx, dy); // Update x, y
+        // Also update bounds since they're in world space
+        bounds.offset(dx, dy);
+    }
+    
     // Check if point is within shape bounds
+    @Override
     public boolean contains(float px, float py) {
-        float localX = px - x;
-        float localY = py - y;
-        return bounds.contains(localX, localY);
+        return bounds.contains(px, py); // Bounds are in world space
     }
     
     // Getters and setters
@@ -294,7 +302,10 @@ public class ShapeObject extends AnnotationObject {
         this.modifiedAt = System.currentTimeMillis();
     }
     
-    public RectF getBounds() { return new RectF(bounds); }
+    public RectF getBounds() { 
+        // Bounds are already in world space
+        return new RectF(bounds);
+    }
     public void setBounds(float left, float top, float right, float bottom) {
         this.bounds.set(left, top, right, bottom);
         this.modifiedAt = System.currentTimeMillis();
