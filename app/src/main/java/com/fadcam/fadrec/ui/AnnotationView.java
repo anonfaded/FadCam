@@ -55,6 +55,11 @@ public class AnnotationView extends View {
     private float initialScale = 1.0f;
     private float initialRotation = 0f;
     
+    // Snap-to-angle configuration
+    private static final float[] SNAP_ANGLES = {0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f};
+    private static final float SNAP_THRESHOLD = 5f; // Degrees within which to snap
+    private float snappedAngle = -1f; // -1 means no snap active
+    
     // Long-press detection
     private Handler longPressHandler;
     private Runnable longPressRunnable;
@@ -201,6 +206,10 @@ public class AnnotationView extends View {
                     
                     // Draw selection highlight if this object is selected
                     if ((selectionMode || isLongPressing) && selectedObject == obj) {
+                        // Draw snap line if snapping is active during rotation
+                        if (activeHandle == HandleType.TOP && snappedAngle >= 0) {
+                            drawSnapLine(canvas, obj, snappedAngle);
+                        }
                         drawSelectionHandles(canvas, obj);
                     }
                 }
@@ -211,6 +220,34 @@ public class AnnotationView extends View {
         if (!selectionMode && !isLongPressing) {
             canvas.drawPath(currentPath, drawPaint);
         }
+    }
+    
+    /**
+     * Draw snap guide line when rotating near snap angles
+     */
+    private void drawSnapLine(Canvas canvas, AnnotationObject obj, float angle) {
+        RectF bounds = obj.getBounds();
+        float centerX = bounds.centerX();
+        float centerY = bounds.centerY();
+        
+        Paint snapLinePaint = new Paint();
+        snapLinePaint.setColor(0xFF4CAF50); // Green
+        snapLinePaint.setStrokeWidth(2f);
+        snapLinePaint.setAlpha(180); // Semi-transparent
+        snapLinePaint.setAntiAlias(true);
+        
+        // Draw a line through the center at the snap angle
+        float length = Math.max(getWidth(), getHeight());
+        float radians = (float) Math.toRadians(angle);
+        
+        float dx = (float) Math.cos(radians) * length;
+        float dy = (float) Math.sin(radians) * length;
+        
+        canvas.drawLine(
+            centerX - dx, centerY - dy,
+            centerX + dx, centerY + dy,
+            snapLinePaint
+        );
     }
     
     /**
@@ -281,21 +318,24 @@ public class AnnotationView extends View {
         
         // If it's a text object, add an "Edit" button at bottom
         if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.TextObject) {
+            canvas.restore(); // Restore to remove scale transform
+            canvas.save(); // Save again for just rotation
+            canvas.rotate(obj.getRotation(), centerX, centerY);
+            
             float editX = bounds.centerX();
-            float editY = bounds.bottom + 30;
+            float editY = bounds.bottom * obj.getScale() + (bounds.centerY() * (1 - obj.getScale())) + 30;
             
-            // Draw edit button (circle with "E" text)
-            canvas.drawCircle(editX, editY, handleRadius * 1.5f, handlePaint);
-            canvas.drawCircle(editX, editY, handleRadius * 1.5f, handleBorderPaint);
+            // Draw edit button with consistent size (same as other handles)
+            canvas.drawCircle(editX, editY, handleRadius, handlePaint);
+            canvas.drawCircle(editX, editY, handleRadius, handleBorderPaint);
             
-            // Draw "E" text
+            // Draw edit emoji ✏️
             Paint textPaint = new Paint();
             textPaint.setColor(0xFF4CAF50);
-            textPaint.setTextSize(handleRadius * 1.8f);
+            textPaint.setTextSize(handleRadius * 1.4f);
             textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.setAntiAlias(true);
-            textPaint.setFakeBoldText(true);
-            canvas.drawText("E", editX, editY + handleRadius * 0.6f, textPaint);
+            canvas.drawText("✏️", editX, editY + handleRadius * 0.5f, textPaint);
         }
         
         canvas.restore();
@@ -468,7 +508,7 @@ public class AnnotationView extends View {
                         
                         switch (activeHandle) {
                             case TOP:
-                                // Rotate around center
+                                // Rotate around center with snap-to-angle
                                 float centerX = bounds.centerX();
                                 float centerY = bounds.centerY();
                                 
@@ -477,7 +517,24 @@ public class AnnotationView extends View {
                                 float angle2 = (float) Math.toDegrees(Math.atan2(y - centerY, x - centerX));
                                 float angleDelta = angle2 - angle1;
                                 
-                                selectedObject.setRotation(selectedObject.getRotation() + angleDelta);
+                                float newRotation = selectedObject.getRotation() + angleDelta;
+                                
+                                // Normalize to 0-360
+                                while (newRotation < 0) newRotation += 360;
+                                while (newRotation >= 360) newRotation -= 360;
+                                
+                                // Check for snap angles
+                                snappedAngle = -1f;
+                                for (float snapAngle : SNAP_ANGLES) {
+                                    float diff = Math.abs(newRotation - snapAngle);
+                                    if (diff <= SNAP_THRESHOLD) {
+                                        newRotation = snapAngle;
+                                        snappedAngle = snapAngle;
+                                        break;
+                                    }
+                                }
+                                
+                                selectedObject.setRotation(newRotation);
                                 break;
                                 
                             case LEFT:
@@ -513,6 +570,7 @@ public class AnnotationView extends View {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     activeHandle = HandleType.NONE;
+                    snappedAngle = -1f; // Clear snap indication
                     notifyStateChanged();
                     return true;
             }
@@ -604,6 +662,7 @@ public class AnnotationView extends View {
                             // Single tap on object - enter selection mode!
                             selectionMode = true;
                             selectedObject = touchedObj;
+                            currentPath.reset(); // Clear any accidental path
                             invalidate();
                             notifyStateChanged();
                             notifySelectionModeChanged(true); // Update toolbar
@@ -618,10 +677,11 @@ public class AnnotationView extends View {
                     // Finish quick drag (long-press move)
                     isLongPressing = false;
                     selectedObject = null;
+                    currentPath.reset(); // Clear path (wasn't drawing)
                     invalidate();
                     notifyStateChanged();
-                } else {
-                    // Finish drawing path
+                } else if (longPressRunnable == null) {
+                    // Only save path if we were actually drawing (not waiting for tap)
                     if (currentPath != null && !currentPath.isEmpty()) {
                         AddPathCommand command = new AddPathCommand(
                             currentLayer, 

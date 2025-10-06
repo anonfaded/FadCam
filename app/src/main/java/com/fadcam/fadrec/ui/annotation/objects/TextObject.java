@@ -80,22 +80,23 @@ public class TextObject extends AnnotationObject {
         canvas.save();
         canvas.concat(transform);
         
-        // Move to text position
+        // Move to center position (x, y is now center)
         canvas.translate(x, y);
         
-        // Rotate around center of text bounds
-        float centerOffsetX = maxWidth / 2f;
-        float centerOffsetY = totalHeight / 2f;
-        canvas.rotate(rotation, centerOffsetX, centerOffsetY);
+        // Rotate around center (at origin now after translate)
+        canvas.rotate(rotation);
         
         // Apply scale around center
-        canvas.scale(scale, scale, centerOffsetX, centerOffsetY);
+        canvas.scale(scale, scale);
         
-        // Draw text
-        float yOffset = 0;
+        // Draw text offset by half dimensions so it's centered at (0,0)
+        // Note: drawText Y is the baseline, not top
+        float startX = -maxWidth / 2f;
+        float startY = -totalHeight / 2f - paint.ascent(); // Adjust for baseline
+        float yOffset = startY;
         
         for (String line : lines) {
-            canvas.drawText(line, 0, yOffset, paint);
+            canvas.drawText(line, startX, yOffset, paint);
             yOffset += lineHeight;
         }
         
@@ -182,14 +183,12 @@ public class TextObject extends AnnotationObject {
     // Check if point is within text bounds (for hit testing with rotation/scale support)
     @Override
     public boolean contains(float px, float py) {
-        RectF bounds = getBounds();
-        float centerX = bounds.centerX();
-        float centerY = bounds.centerY();
-        
         // Transform touch point to object's local space (inverse transformation)
-        // Translate to origin
-        float tx = px - centerX;
-        float ty = py - centerY;
+        // Since bounds are now centered at (x, y), we work in that coordinate system
+        
+        // Translate to object center (x, y)
+        float tx = px - x;
+        float ty = py - y;
         
         // Inverse rotation
         float radians = (float) Math.toRadians(-rotation);
@@ -204,12 +203,14 @@ public class TextObject extends AnnotationObject {
             ry /= scale;
         }
         
-        // Translate back
-        float localX = rx + centerX;
-        float localY = ry + centerY;
+        // Now rx, ry are in local unscaled/unrotated space centered at origin
+        // Get bounds dimensions
+        RectF bounds = getBounds();
+        float halfWidth = (bounds.right - bounds.left) / 2f;
+        float halfHeight = (bounds.bottom - bounds.top) / 2f;
         
-        // Test in original bounds
-        return bounds.contains(localX, localY);
+        // Test if point is within bounds (centered at origin)
+        return Math.abs(rx) <= halfWidth && Math.abs(ry) <= halfHeight;
     }
     
     // Getters and setters
@@ -288,17 +289,16 @@ public class TextObject extends AnnotationObject {
         float lineHeight = paint.descent() - paint.ascent();
         float totalHeight = lineHeight * lines.length;
         
-        // Calculate bounds (accounting for alignment)
-        float left = x;
-        float right = x + maxWidth;
-        if (alignment == Paint.Align.CENTER) {
-            left = x - maxWidth / 2;
-            right = x + maxWidth / 2;
-        } else if (alignment == Paint.Align.RIGHT) {
-            left = x - maxWidth;
-            right = x;
-        }
+        // Return bounds centered at (x, y) for consistent rotation/scale
+        // This ensures text doesn't drift when size changes
+        float halfWidth = maxWidth / 2f;
+        float halfHeight = totalHeight / 2f;
         
-        return new RectF(left, y - lineHeight * 0.8f, right, y + totalHeight);
+        return new RectF(
+            x - halfWidth,
+            y - halfHeight,
+            x + halfWidth,
+            y + halfHeight
+        );
     }
 }
