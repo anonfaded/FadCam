@@ -72,10 +72,14 @@ public class AnnotationService extends Service {
     private View expandableContent;
     
     // Recording controls
+    private View recordingControlsContainer;
+    private View btnRecordingCollapsed;
+    private View recordingControlsExpanded;
     private View btnStartStopRec, btnPauseResumeRec;
     private TextView iconStartStop, labelStartStop;
     private TextView iconPauseResume, labelPauseResume;
     private com.fadcam.fadrec.ScreenRecordingState recordingState = com.fadcam.fadrec.ScreenRecordingState.NONE;
+    private boolean isRecordingControlsExpanded = false;
     
     // Annotation tools section
     private View annotationsHeader;
@@ -398,6 +402,9 @@ public class AnnotationService extends Service {
         btnToggleCanvasVisibility = toolbarView.findViewById(R.id.btnToggleCanvasVisibility);
         
         // Initialize recording controls
+        recordingControlsContainer = toolbarView.findViewById(R.id.recordingControlsContainer);
+        btnRecordingCollapsed = toolbarView.findViewById(R.id.btnRecordingCollapsed);
+        recordingControlsExpanded = toolbarView.findViewById(R.id.recordingControlsExpanded);
         btnStartStopRec = toolbarView.findViewById(R.id.btnStartStopRec);
         btnPauseResumeRec = toolbarView.findViewById(R.id.btnPauseResumeRec);
         iconStartStop = toolbarView.findViewById(R.id.iconStartStop);
@@ -596,17 +603,23 @@ public class AnnotationService extends Service {
             }
         });
         
-        // Recording controls
-        btnStartStopRec.setOnClickListener(v -> {
-            if (btnStartStopRec.isEnabled()) {
-                if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
-                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
-                } else {
-                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_STOP_SCREEN_RECORDING));
-                }
+        // Recording controls - Collapsed button click to START recording
+        btnRecordingCollapsed.setOnClickListener(v -> {
+            if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
+                // Start recording - this will trigger state change which will expand the UI
+                sendBroadcast(new Intent(com.fadcam.Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
             }
         });
         
+        // Recording controls - Start/Stop button (in expanded state)
+        btnStartStopRec.setOnClickListener(v -> {
+            if (btnStartStopRec.isEnabled()) {
+                // This button is only for STOP when recording is in progress
+                sendBroadcast(new Intent(com.fadcam.Constants.ACTION_STOP_SCREEN_RECORDING));
+            }
+        });
+        
+        // Recording controls - Pause/Resume button (in expanded state)
         btnPauseResumeRec.setOnClickListener(v -> {
             if (btnPauseResumeRec.isEnabled()) {
                 if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
@@ -1504,11 +1517,11 @@ public class AnnotationService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Annotation" + annotationStatus)
                 .setContentText(contentText)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_draw_edit)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
-                .addAction(R.drawable.ic_launcher_foreground, overlayVisible ? "Hide" : "Show", togglePendingIntent)
-                .addAction(R.drawable.ic_launcher_foreground, "Projects", projectPendingIntent)
+                .addAction(R.drawable.ic_draw_edit, overlayVisible ? "Hide" : "Show", togglePendingIntent)
+                .addAction(R.drawable.ic_draw_edit, "Projects", projectPendingIntent)
                 .build();
     }
     
@@ -1610,39 +1623,64 @@ public class AnnotationService extends Service {
         
         switch (recordingState) {
             case NONE:
-                btnStartStopRec.setEnabled(true);
-                iconStartStop.setText("fiber_manual_record");
-                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_green_light));
-                labelStartStop.setText(R.string.floating_menu_start_short);
-                
-                btnPauseResumeRec.setEnabled(false);
-                iconPauseResume.setText("pause");
-                iconPauseResume.setTextColor(getResources().getColor(android.R.color.darker_gray));
-                labelPauseResume.setText(R.string.floating_menu_pause);
+                // Collapsed state - show green "Ready to record" button
+                if (isRecordingControlsExpanded) {
+                    toggleRecordingControlsExpansion(); // Collapse to single button
+                }
                 break;
                 
             case IN_PROGRESS:
-                btnStartStopRec.setEnabled(true);
-                iconStartStop.setText("stop");
-                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_red_light));
-                labelStartStop.setText(R.string.floating_menu_stop_short);
+                // Expanded state - show Stop (red) and Pause (orange) buttons
+                if (!isRecordingControlsExpanded) {
+                    toggleRecordingControlsExpansion(); // Expand to 2 buttons
+                }
                 
+                // Stop button - enabled with red background
+                btnStartStopRec.setEnabled(true);
+                btnStartStopRec.setAlpha(1.0f);
+                btnStartStopRec.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(android.R.color.holo_red_light)));
+                iconStartStop.setText("stop");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.white));
+                labelStartStop.setText(R.string.floating_menu_stop_short);
+                labelStartStop.setTextColor(getResources().getColor(android.R.color.white));
+                
+                // Pause button - enabled with darker orange background for better contrast
                 btnPauseResumeRec.setEnabled(true);
+                btnPauseResumeRec.setAlpha(1.0f);
+                btnPauseResumeRec.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#EF6C00"))); // Darker orange (Material Orange 800)
                 iconPauseResume.setText("pause");
-                iconPauseResume.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.white));
                 labelPauseResume.setText(R.string.floating_menu_pause);
+                labelPauseResume.setTextColor(getResources().getColor(android.R.color.white));
                 break;
                 
             case PAUSED:
-                btnStartStopRec.setEnabled(true);
-                iconStartStop.setText("stop");
-                iconStartStop.setTextColor(getResources().getColor(android.R.color.holo_red_light));
-                labelStartStop.setText(R.string.floating_menu_stop_short);
+                // Expanded state - show Stop (red) and Resume (green) buttons
+                if (!isRecordingControlsExpanded) {
+                    toggleRecordingControlsExpansion(); // Expand to 2 buttons
+                }
                 
+                // Stop button - enabled with red background
+                btnStartStopRec.setEnabled(true);
+                btnStartStopRec.setAlpha(1.0f);
+                btnStartStopRec.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(android.R.color.holo_red_light)));
+                iconStartStop.setText("stop");
+                iconStartStop.setTextColor(getResources().getColor(android.R.color.white));
+                labelStartStop.setText(R.string.floating_menu_stop_short);
+                labelStartStop.setTextColor(getResources().getColor(android.R.color.white));
+                
+                // Resume button - enabled with same green as main button (#4CAF50)
                 btnPauseResumeRec.setEnabled(true);
+                btnPauseResumeRec.setAlpha(1.0f);
+                btnPauseResumeRec.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#4CAF50"))); // Same green as "Ready to record" button
                 iconPauseResume.setText("play_arrow");
-                iconPauseResume.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+                iconPauseResume.setTextColor(getResources().getColor(android.R.color.white));
                 labelPauseResume.setText(R.string.floating_menu_resume);
+                labelPauseResume.setTextColor(getResources().getColor(android.R.color.white));
                 break;
         }
     }
@@ -1747,6 +1785,43 @@ public class AnnotationService extends Service {
         }
         
         Log.d(TAG, "Canvas visible: " + visible);
+    }
+    
+    /**
+     * Toggle recording controls expansion (collapsed single button <-> expanded 2 buttons)
+     */
+    private void toggleRecordingControlsExpansion() {
+        isRecordingControlsExpanded = !isRecordingControlsExpanded;
+        
+        if (isRecordingControlsExpanded) {
+            // Animate collapse to expand
+            btnRecordingCollapsed.setVisibility(View.GONE);
+            recordingControlsExpanded.setVisibility(View.VISIBLE);
+            
+            // Optionally add fade animation
+            recordingControlsExpanded.setAlpha(0f);
+            recordingControlsExpanded.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start();
+        } else {
+            // Animate expand to collapse
+            recordingControlsExpanded.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction(() -> {
+                    recordingControlsExpanded.setVisibility(View.GONE);
+                    btnRecordingCollapsed.setVisibility(View.VISIBLE);
+                    btnRecordingCollapsed.setAlpha(0f);
+                    btnRecordingCollapsed.animate()
+                        .alpha(1f)
+                        .setDuration(200)
+                        .start();
+                })
+                .start();
+        }
+        
+        Log.d(TAG, "Recording controls expanded: " + isRecordingControlsExpanded);
     }
     
     /**
