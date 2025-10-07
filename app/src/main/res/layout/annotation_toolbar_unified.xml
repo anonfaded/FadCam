@@ -1,24 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Unified Toolbar: Recording Controls + Annotations in ONE expandable overlay -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/floating_menu_bg" android:padding="8dp">
+<!-- Unified Toolbar: Arrow OUTSIDE, Menu appears beside it -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="304dp"
+    android:layout_height="wrap_content">
 
-    <!-- Compact Header (always visible) -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
-
-        <!-- Expand/Collapse Arrow -->
-        <TextView android:id="@+id/btnExpandCollapse" android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:text="chevron_right" android:textSize="24sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_margin="2dp" />
-
-        <!-- Close/Minimize Button (hidden when collapsed) -->
-        <TextView android:id="@+id/btnCloseAnnotation" android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:text="close" android:textSize="24sp" android:textColor="#FF6B6B" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_margin="2dp" android:layout_marginStart="4dp" android:visibility="gone" />
-    </LinearLayout>
-
-    <!-- Expandable Content (hidden by default) - Wrapped in ScrollView for landscape/small screens -->
-    <ScrollView android:id="@+id/expandableContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxHeight="500dp" android:visibility="gone" android:scrollbars="none">
+    <!-- Expandable Content (menu background) - Hidden by default -->
+    <ScrollView
+        android:id="@+id/expandableContent"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:maxHeight="500dp"
+        android:visibility="gone"
+        android:scrollbars="none"
+        android:background="@drawable/floating_menu_bg"
+        android:padding="8dp">
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-
-            <!-- Divider -->
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#30FFFFFF" android:layout_marginVertical="8dp" />
 
             <!-- ANNOTATION CONTROLS -->
             <!-- QUICK ACCESS -->
@@ -265,4 +263,7 @@
         </LinearLayout>
     </ScrollView>
 
-</LinearLayout>
+    <!-- Arrow Button (always visible, OUTSIDE menu) - Overlays on right edge -->
+    <TextView android:id="@+id/btnExpandCollapse" android:layout_width="20dp" android:layout_height="48dp" android:layout_gravity="end|center_vertical" android:gravity="center" android:text="chevron_right" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:clickable="true" android:focusable="true" android:background="@drawable/floating_menu_bg" android:padding="0dp" />
+
+</FrameLayout>
