@@ -716,5 +716,27 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">true</item>
+        <!-- Dark theme colors -->
+        <item name="colorPrimary">@color/picker_button_background</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">#2C2C2C</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">#B0B0B0</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.Body</item>
+    </style>
+    
+    <!-- Material Alert Dialog Title Style -->
+    <style name="MaterialAlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/white</item>
+        <item name="fontFamily">@font/ubuntu_regular</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- Material Alert Dialog Body Style -->
+    <style name="MaterialAlertDialog.Body" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+        <item name="android:textColor">#B0B0B0</item>
+        <item name="fontFamily">@font/ubuntu_regular</item>
     </style>
 </resources>

@@ -21,13 +21,20 @@ import java.util.Locale;
  * Manages .fadrec project files for annotation state persistence.
  * Format: JSON-based project file (like .psd for Photoshop).
  * 
+ * NEW Structure (v2.0): Each project is now a folder containing:
+ * ~/Documents/FadRec/Projects/{ProjectName}/
+ *   ├── project.fadrec (main project file)
+ *   ├── thumbnail.png (auto-generated preview)
+ *   └── assets/ (for future: images, videos, etc)
+ * 
  * File Structure:
  * {
  *   "version": "1.0",
  *   "metadata": {
- *     "name": "Recording_2025-10-05",
+ *     "name": "My Tutorial",
  *     "created": 1728123456789,
- *     "modified": 1728123456789
+ *     "modified": 1728123456789,
+ *     "description": "Optional description"
  *   },
  *   "canvasSettings": {
  *     "width": 1080,
@@ -39,7 +46,8 @@ import java.util.Locale;
  */
 public class ProjectFileManager {
     private static final String TAG = "ProjectFileManager";
-    private static final String FILE_EXTENSION = ".fadrec";
+    private static final String PROJECT_FILE_NAME = "project.fadrec";
+    private static final String THUMBNAIL_FILE_NAME = "thumbnail.png";
     private static final String PROJECT_VERSION = "1.0";
     private static final String PREFS_NAME = "FadRecProjects";
     private static final String KEY_CURRENT_PROJECT = "current_project";
@@ -64,7 +72,52 @@ public class ProjectFileManager {
     }
     
     /**
-     * Save annotation state to .fadrec file
+     * Sanitize project name for file system use.
+     * Replaces spaces with underscores, removes special chars.
+     */
+    public static String sanitizeProjectName(String name) {
+        if (name == null || name.isEmpty()) {
+            return "Untitled";
+        }
+        
+        // Replace spaces with underscores
+        name = name.trim().replaceAll("\\s+", "_");
+        
+        // Remove special characters (keep alphanumeric, underscore, hyphen, period)
+        name = name.replaceAll("[^a-zA-Z0-9_\\-.]", "");
+        
+        // Ensure it's not empty after cleaning
+        if (name.isEmpty()) {
+            return "Untitled";
+        }
+        
+        return name;
+    }
+    
+    /**
+     * Get project folder for a given project name.
+     */
+    private File getProjectFolder(String projectName) {
+        String sanitized = sanitizeProjectName(projectName);
+        return new File(projectsDir, sanitized);
+    }
+    
+    /**
+     * Get project file within project folder.
+     */
+    private File getProjectFile(String projectName) {
+        return new File(getProjectFolder(projectName), PROJECT_FILE_NAME);
+    }
+    
+    /**
+     * Get thumbnail file within project folder.
+     */
+    public File getThumbnailFile(String projectName) {
+        return new File(getProjectFolder(projectName), THUMBNAIL_FILE_NAME);
+    }
+    
+    /**
+     * Save annotation state to .fadrec file in project folder
      */
     public boolean saveProject(AnnotationState state, String projectName) {
         Log.i(TAG, "========== SAVING PROJECT: " + projectName + " ==========");
@@ -119,8 +172,15 @@ public class ProjectFileManager {
             Log.d(TAG, "  Total objects: " + totalObjects);
             Log.d(TAG, "  Active page: " + (state.getActivePageIndex() + 1));
             
-            // Write to file
-            File projectFile = new File(projectsDir, projectName + FILE_EXTENSION);
+            // Create project folder if it doesn't exist
+            File projectFolder = getProjectFolder(projectName);
+            if (!projectFolder.exists()) {
+                projectFolder.mkdirs();
+                Log.d(TAG, "  Created project folder: " + projectFolder.getAbsolutePath());
+            }
+            
+            // Write to project.fadrec file
+            File projectFile = getProjectFile(projectName);
             FileWriter writer = new FileWriter(projectFile);
             writer.write(project.toString(2)); // Pretty print with indent
             writer.close();
@@ -136,12 +196,12 @@ public class ProjectFileManager {
     }
     
     /**
-     * Load annotation state from .fadrec file
+     * Load annotation state from .fadrec file in project folder
      */
     public AnnotationState loadProject(String projectName) {
         Log.i(TAG, "========== LOADING PROJECT FROM FILE: " + projectName + " ==========");
         try {
-            File projectFile = new File(projectsDir, projectName + FILE_EXTENSION);
+            File projectFile = getProjectFile(projectName);
             if (!projectFile.exists()) {
                 Log.e(TAG, "❌ Project file not found: " + projectFile.getAbsolutePath());
                 return null;
@@ -215,6 +275,10 @@ public class ProjectFileManager {
                 }
             }
             
+            // CRITICAL: Reconstruct transient fields (Paths, etc)
+            Log.d(TAG, "  Reconstructing transient fields for rendering...");
+            state.reconstruct();
+            
             Log.i(TAG, "✅ Project loaded successfully");
             Log.d(TAG, "  Total pages loaded: " + state.getPages().size());
             Log.d(TAG, "  Total objects: " + totalObjects);
@@ -242,7 +306,7 @@ public class ProjectFileManager {
         // Create new project with timestamp
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
-        String projectName = "Recording_" + timestamp;
+        String projectName = "FadRec_" + timestamp;
         
         // Save as current project
         prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
@@ -257,7 +321,7 @@ public class ProjectFileManager {
     public String createNewProject() {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
-        String projectName = "Recording_" + timestamp;
+        String projectName = "FadRec_" + timestamp;
         
         // Save as current project
         prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
@@ -272,28 +336,93 @@ public class ProjectFileManager {
     public boolean autoSave(AnnotationState state) {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
-        String projectName = "Recording_" + timestamp;
+        String projectName = "FadRec_" + timestamp;
         return saveProject(state, projectName);
     }
     
     /**
-     * Get all project files
+     * Get all project folders
      */
     public File[] listProjects() {
-        return projectsDir.listFiles((dir, name) -> name.endsWith(FILE_EXTENSION));
+        File[] folders = projectsDir.listFiles(File::isDirectory);
+        if (folders == null) {
+            return new File[0];
+        }
+        return folders;
     }
     
     /**
-     * Delete project file
+     * Delete project folder and all its contents
      */
     public boolean deleteProject(String projectName) {
-        File projectFile = new File(projectsDir, projectName + FILE_EXTENSION);
-        if (projectFile.exists()) {
-            boolean deleted = projectFile.delete();
-            Log.i(TAG, "Project deleted: " + projectFile.getAbsolutePath());
+        File projectFolder = getProjectFolder(projectName);
+        if (projectFolder.exists() && projectFolder.isDirectory()) {
+            boolean deleted = deleteRecursive(projectFolder);
+            if (deleted) {
+                Log.i(TAG, "✅ Project deleted: " + projectFolder.getAbsolutePath());
+            }
             return deleted;
         }
         return false;
+    }
+    
+    /**
+     * Recursively delete a directory and its contents
+     */
+    private boolean deleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory()) {
+            File[] children = fileOrDirectory.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursive(child);
+                }
+            }
+        }
+        return fileOrDirectory.delete();
+    }
+    
+    /**
+     * Rename project folder and update current project preference.
+     * This actually moves the folder and updates all references.
+     */
+    public boolean renameProject(String oldName, String newName) {
+        if (oldName == null || newName == null || oldName.equals(newName)) {
+            Log.w(TAG, "Invalid rename operation: " + oldName + " → " + newName);
+            return false;
+        }
+        
+        // Sanitize new name
+        String sanitizedNewName = sanitizeProjectName(newName);
+        
+        File oldFolder = getProjectFolder(oldName);
+        File newFolder = getProjectFolder(sanitizedNewName);
+        
+        if (!oldFolder.exists()) {
+            Log.e(TAG, "❌ Cannot rename: old folder doesn't exist: " + oldFolder.getAbsolutePath());
+            return false;
+        }
+        
+        if (newFolder.exists()) {
+            Log.e(TAG, "❌ Cannot rename: new folder already exists: " + newFolder.getAbsolutePath());
+            return false;
+        }
+        
+        boolean renamed = oldFolder.renameTo(newFolder);
+        if (renamed) {
+            Log.i(TAG, "✅ Project folder renamed: " + oldName + " → " + sanitizedNewName);
+            
+            // Update current project preference if this was the active project
+            String currentProject = prefs.getString(KEY_CURRENT_PROJECT, null);
+            if (oldName.equals(currentProject)) {
+                prefs.edit().putString(KEY_CURRENT_PROJECT, sanitizedNewName).apply();
+                Log.i(TAG, "Updated current project preference to: " + sanitizedNewName);
+            }
+            
+            return true;
+        } else {
+            Log.e(TAG, "❌ Failed to rename project folder");
+            return false;
+        }
     }
     
     /**
@@ -307,7 +436,7 @@ public class ProjectFileManager {
      * Check if project exists
      */
     public boolean projectExists(String projectName) {
-        File projectFile = new File(projectsDir, projectName + FILE_EXTENSION);
-        return projectFile.exists();
+        File projectFolder = getProjectFolder(projectName);
+        return projectFolder.exists() && projectFolder.isDirectory();
     }
 }

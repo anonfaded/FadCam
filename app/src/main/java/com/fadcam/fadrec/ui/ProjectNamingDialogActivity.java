@@ -111,13 +111,14 @@ public class ProjectNamingDialogActivity extends Activity {
             } else {
                 window.setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
             }
+            
+            // Adjust window to keyboard - don't resize, just pan
+            window.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN |
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+            );
         }
         
         alertDialog.show();
-        
-        // Show keyboard for immediate typing
-        if (window != null) {
-            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        }
     }
 }

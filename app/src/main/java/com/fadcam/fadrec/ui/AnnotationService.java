@@ -126,6 +126,7 @@ public class AnnotationService extends Service {
     private BroadcastReceiver recordingStateReceiver;
     private BroadcastReceiver colorPickerReceiver;
     private BroadcastReceiver projectNamingReceiver;
+    private BroadcastReceiver projectSelectionReceiver;
     
     // Toolbar dragging
     private int toolbarInitialX, toolbarInitialY;
@@ -189,47 +190,77 @@ public class AnnotationService extends Service {
         // Setup project list and buttons
         android.widget.ListView projectList = dialogView.findViewById(R.id.projectList);
         View btnNewProject = dialogView.findViewById(R.id.btnNewProject);
+        View btnDeleteAll = dialogView.findViewById(R.id.btnDeleteAll);
         View btnClose = dialogView.findViewById(R.id.btnCloseDialog);
         TextView txtCurrentProject = dialogView.findViewById(R.id.txtCurrentProject);
+        TextView txtProjectsPath = dialogView.findViewById(R.id.txtProjectsPath);
         
         // Display current project
-        txtCurrentProject.setText("Current: " + (currentProjectName != null ? currentProjectName : "Untitled"));
-        
-        // Get projects directory from ProjectFileManager
-        File documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        File fadrecDir = new File(documentsDir, "FadRec");
-        File projectsDir = new File(fadrecDir, "Projects");
-        
-        // Ensure directory exists
-        if (!projectsDir.exists()) {
-            projectsDir.mkdirs();
-        }
-        
-        // Load all .fadrec projects
-        File[] projectFiles = projectsDir.listFiles((dir, name) -> name.endsWith(".fadrec"));
-        
-        java.util.List<String> projectNames = new java.util.ArrayList<>();
-        if (projectFiles != null && projectFiles.length > 0) {
-            for (File file : projectFiles) {
-                projectNames.add(file.getName().replace(".fadrec", ""));
+        if (currentProjectName != null) {
+            // Get display name from metadata if available
+            AnnotationState state = annotationView.getState();
+            String displayName = currentProjectName;
+            if (state != null && state.getMetadata() != null) {
+                displayName = state.getMetadata().optString("name", currentProjectName);
             }
-            // Sort by name
-            java.util.Collections.sort(projectNames, java.util.Collections.reverseOrder());
+            txtCurrentProject.setText("Current: " + displayName);
         } else {
-            projectNames.add("(No saved projects yet)");
+            txtCurrentProject.setText("Current: None");
         }
         
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
-                this, android.R.layout.simple_list_item_1, projectNames
-        );
+        // Display projects path
+        String projectsPath = projectFileManager.getProjectsPath();
+        // Convert to user-friendly path
+        String userFriendlyPath = projectsPath.replace(android.os.Environment.getExternalStorageDirectory().getPath(), "~");
+        txtProjectsPath.setText("Projects saved at: " + userFriendlyPath);
+        
+        // Load all project folders
+        File[] projectFolders = projectFileManager.listProjects();
+        
+        java.util.List<ProjectInfo> projects = new java.util.ArrayList<>();
+        if (projectFolders != null && projectFolders.length > 0) {
+            for (File folder : projectFolders) {
+                String projectName = folder.getName();
+                ProjectInfo info = new ProjectInfo();
+                info.folderName = projectName;
+                info.displayName = projectName;
+                info.description = "";
+                info.thumbnailFile = projectFileManager.getThumbnailFile(projectName);
+                
+                // Try to load metadata for display name and description
+                try {
+                    AnnotationState loadedState = projectFileManager.loadProject(projectName);
+                    if (loadedState != null && loadedState.getMetadata() != null) {
+                        info.displayName = loadedState.getMetadata().optString("name", projectName);
+                        info.description = loadedState.getMetadata().optString("description", "");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to load metadata for project: " + projectName, e);
+                }
+                
+                projects.add(info);
+            }
+            
+            // Sort by folder name (newest first, assuming timestamp-based names)
+            java.util.Collections.sort(projects, (a, b) -> b.folderName.compareTo(a.folderName));
+        }
+        
+        if (projects.isEmpty()) {
+            ProjectInfo emptyInfo = new ProjectInfo();
+            emptyInfo.displayName = "(No saved projects yet)";
+            emptyInfo.description = "Create a new project to get started";
+            projects.add(emptyInfo);
+        }
+        
+        // Custom adapter with thumbnails and delete buttons
+        ProjectListAdapter adapter = new ProjectListAdapter(this, projects, projectFileManager, dialog);
         projectList.setAdapter(adapter);
         
         // Handle project selection
         projectList.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedProject = projectNames.get(position);
-            if (!selectedProject.equals("(No saved projects yet)")) {
-                loadProject(selectedProject);
-                Toast.makeText(this, "Loaded: " + selectedProject, Toast.LENGTH_SHORT).show();
+            ProjectInfo selectedProject = projects.get(position);
+            if (selectedProject.folderName != null) {
+                loadProject(selectedProject.folderName);
                 dialog.dismiss();
             }
         });
@@ -240,9 +271,130 @@ public class AnnotationService extends Service {
             dialog.dismiss();
         });
         
+        // Delete all button
+        btnDeleteAll.setOnClickListener(v -> {
+            showDeleteAllConfirmation(dialog);
+        });
+        
         btnClose.setOnClickListener(v -> dialog.dismiss());
         
         dialog.show();
+    }
+    
+    /**
+     * Show confirmation dialog for deleting all projects
+     */
+    private void showDeleteAllConfirmation(android.app.AlertDialog parentDialog) {
+        new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("Delete All Projects?")
+            .setMessage("This will permanently delete ALL projects. This action cannot be undone!")
+            .setPositiveButton("Delete All", (dialog, which) -> {
+                File[] projects = projectFileManager.listProjects();
+                if (projects != null) {
+                    for (File project : projects) {
+                        projectFileManager.deleteProject(project.getName());
+                    }
+                    Toast.makeText(this, "All projects deleted", Toast.LENGTH_SHORT).show();
+                    parentDialog.dismiss();
+                    // Create a new project
+                    createNewProject();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Helper class to hold project information for the list
+     */
+    private static class ProjectInfo {
+        String folderName;
+        String displayName;
+        String description;
+        File thumbnailFile;
+    }
+    
+    /**
+     * Custom adapter for project list with thumbnails and delete buttons
+     */
+    private class ProjectListAdapter extends android.widget.ArrayAdapter<ProjectInfo> {
+        private final ProjectFileManager projectFileManager;
+        private final android.app.AlertDialog parentDialog;
+        
+        public ProjectListAdapter(Context context, java.util.List<ProjectInfo> projects, 
+                                 ProjectFileManager fileManager, android.app.AlertDialog dialog) {
+            super(context, 0, projects);
+            this.projectFileManager = fileManager;
+            this.parentDialog = dialog;
+        }
+        
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ProjectInfo project = getItem(position);
+            
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(
+                    R.layout.item_project_list, parent, false);
+            }
+            
+            // Find views
+            android.widget.ImageView imgThumbnail = convertView.findViewById(R.id.imgProjectThumbnail);
+            TextView txtName = convertView.findViewById(R.id.txtProjectName);
+            TextView txtDesc = convertView.findViewById(R.id.txtProjectDescription);
+            View btnDelete = convertView.findViewById(R.id.btnDeleteProject);
+            
+            // Set data
+            txtName.setText(project.displayName);
+            
+            if (project.description != null && !project.description.isEmpty()) {
+                txtDesc.setText(project.description);
+                txtDesc.setVisibility(View.VISIBLE);
+            } else {
+                txtDesc.setText("No description added");
+                txtDesc.setAlpha(0.5f);
+                txtDesc.setVisibility(View.VISIBLE);
+            }
+            
+            // Load thumbnail if exists
+            if (project.thumbnailFile != null && project.thumbnailFile.exists()) {
+                android.graphics.Bitmap thumbnail = android.graphics.BitmapFactory.decodeFile(
+                    project.thumbnailFile.getAbsolutePath());
+                imgThumbnail.setImageBitmap(thumbnail);
+            } else {
+                imgThumbnail.setImageResource(R.drawable.screen_recorder);
+            }
+            
+            // Hide delete button for empty placeholder
+            if (project.folderName == null) {
+                btnDelete.setVisibility(View.GONE);
+            } else {
+                btnDelete.setVisibility(View.VISIBLE);
+                btnDelete.setOnClickListener(v -> {
+                    showDeleteProjectConfirmation(project.displayName, project.folderName);
+                });
+            }
+            
+            return convertView;
+        }
+        
+        private void showDeleteProjectConfirmation(String displayName, String folderName) {
+            new android.app.AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Dialog_Alert)
+                .setTitle("Delete Project?")
+                .setMessage("Delete \"" + displayName + "\"? This cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    boolean deleted = projectFileManager.deleteProject(folderName);
+                    if (deleted) {
+                        Toast.makeText(getContext(), "Project deleted", Toast.LENGTH_SHORT).show();
+                        parentDialog.dismiss();
+                        // Reopen dialog to refresh list
+                        showProjectManagementDialog();
+                    } else {
+                        Toast.makeText(getContext(), "Failed to delete project", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+        }
     }
     
     private void loadProject(String projectName) {
@@ -251,8 +403,13 @@ public class AnnotationService extends Service {
         // Save current project first
         saveCurrentState();
         
-        // Load new project
+        // Update current project name and save to preferences
         currentProjectName = projectName;
+        android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
+        prefs.edit().putString("current_project", currentProjectName).apply();
+        Log.d(TAG, "Updated current project preference: " + currentProjectName);
+        
+        // Load new project
         AnnotationState loadedState = projectFileManager.loadProject(projectName);
         
         if (loadedState != null && annotationView != null) {
@@ -270,12 +427,16 @@ public class AnnotationService extends Service {
             // Apply state to view
             annotationView.setState(loadedState);
             
-            // Force complete redraw
-            annotationView.invalidate();
-            annotationView.requestLayout();
+            // Force complete redraw with post
+            annotationView.post(() -> {
+                annotationView.invalidate();
+                annotationView.requestLayout();
+                Log.d(TAG, "Post-load redraw completed");
+            });
             
             updateUndoRedoButtons();
             updatePageLayerInfo();
+            updateProjectNameDisplay();
             updateNotification();
             
             Toast.makeText(this, "✅ Loaded: " + projectName, Toast.LENGTH_SHORT).show();
@@ -303,9 +464,13 @@ public class AnnotationService extends Service {
         // Save current first
         saveCurrentState();
         
-        // Generate new project name with timestamp
-        String newProjectName = "Project_" + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
+        // Generate new project name with timestamp - using FadRec prefix
+        String newProjectName = "FadRec_" + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
         currentProjectName = newProjectName;
+        
+        // Update preference
+        android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
+        prefs.edit().putString("current_project", currentProjectName).apply();
         
         // Create fresh state
         AnnotationState newState = new AnnotationState();
@@ -313,9 +478,10 @@ public class AnnotationService extends Service {
             annotationView.setState(newState);
             updateUndoRedoButtons();
             updatePageLayerInfo();
+            updateProjectNameDisplay();
         }
         
-        // Save the new project (state first, then name)
+        // Save the new project
         projectFileManager.saveProject(newState, currentProjectName);
         
         Toast.makeText(this, "📝 New Project: " + newProjectName, Toast.LENGTH_SHORT).show();
@@ -351,6 +517,7 @@ public class AnnotationService extends Service {
         registerRecordingStateReceiver();
         registerColorPickerReceiver();
         registerProjectNamingReceiver();
+        registerProjectSelectionReceiver();
         
         Log.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
     }
@@ -372,8 +539,12 @@ public class AnnotationService extends Service {
                 // Apply the loaded state to annotation view
                 annotationView.setState(loadedState);
                 
-                // Force redraw
-                annotationView.invalidate();
+                // Force complete redraw with post to ensure view is ready
+                annotationView.post(() -> {
+                    annotationView.invalidate();
+                    annotationView.requestLayout();
+                    Log.d(TAG, "Post-load redraw triggered");
+                });
                 
                 updateUndoRedoButtons();
                 updatePageLayerInfo();
@@ -1271,14 +1442,10 @@ public class AnnotationService extends Service {
     
     /**
      * Shows dialog to browse and manage all projects.
+     * Uses the existing project management dialog from notification.
      */
     private void showProjectsDialog() {
-        // TODO: Implement ProjectSelectionDialogActivity
-        Toast.makeText(this, "Projects manager coming soon!", Toast.LENGTH_SHORT).show();
-        
-        // Intent intent = new Intent(this, ProjectSelectionDialogActivity.class);
-        // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        // startActivity(intent);
+        showProjectManagementDialog();
     }
     
     private int dpToPx(int dp) {
@@ -1772,31 +1939,51 @@ public class AnnotationService extends Service {
                 String newDescription = intent.getStringExtra(ProjectNamingDialogActivity.EXTRA_PROJECT_DESCRIPTION);
                 
                 if (newName != null && !newName.isEmpty()) {
-                    Log.i(TAG, "Project rename requested: '" + currentProjectName + "' → '" + newName + "'");
-                    
-                    // Update current project name
                     String oldName = currentProjectName;
-                    currentProjectName = newName;
+                    Log.i(TAG, "========== PROJECT RENAME ==========");
+                    Log.i(TAG, "Old name: '" + oldName + "'");
+                    Log.i(TAG, "New name: '" + newName + "'");
                     
-                    // Update metadata with description
+                    // Update metadata first (before renaming file)
                     AnnotationState state = annotationView.getState();
                     if (state != null && state.getMetadata() != null) {
                         try {
                             state.getMetadata().put("name", newName);
                             state.getMetadata().put("description", newDescription);
+                            Log.d(TAG, "Metadata updated");
                         } catch (org.json.JSONException e) {
                             Log.e(TAG, "Failed to update metadata", e);
                         }
                     }
                     
-                    // Save project with new name
-                    saveCurrentState();
+                    // Save current state to old file first
+                    projectFileManager.saveProject(state, oldName);
+                    Log.d(TAG, "Saved state to old file: " + oldName);
                     
-                    // Update UI
-                    updateProjectNameDisplay();
-                    updateNotification();
+                    // Rename the project file
+                    boolean renamed = projectFileManager.renameProject(oldName, newName);
                     
-                    Log.i(TAG, "✅ Project renamed successfully");
+                    if (renamed) {
+                        // Update current project name AFTER successful rename
+                        currentProjectName = newName;
+                        Log.i(TAG, "✅ Project renamed successfully");
+                        
+                        // Update UI
+                        updateProjectNameDisplay();
+                        updateNotification();
+                    } else {
+                        Log.e(TAG, "❌ Failed to rename project file, keeping old name");
+                        // Revert metadata if rename failed
+                        try {
+                            if (state != null && state.getMetadata() != null) {
+                                state.getMetadata().put("name", oldName);
+                            }
+                        } catch (org.json.JSONException e) {
+                            Log.e(TAG, "Failed to revert metadata", e);
+                        }
+                    }
+                    
+                    Log.i(TAG, "====================================");
                 }
             }
         };
@@ -1804,6 +1991,42 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter(ProjectNamingDialogActivity.ACTION_PROJECT_RENAMED);
         registerReceiver(projectNamingReceiver, filter);
         Log.d(TAG, "Project naming receiver registered");
+    }
+    
+    /**
+     * Registers broadcast receiver to handle project selection from project manager.
+     */
+    private void registerProjectSelectionReceiver() {
+        projectSelectionReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String selectedProject = intent.getStringExtra(ProjectSelectionDialogActivity.EXTRA_PROJECT_NAME);
+                
+                if (selectedProject != null && !selectedProject.isEmpty()) {
+                    Log.i(TAG, "========== PROJECT SWITCH ==========");
+                    Log.i(TAG, "Current project: " + currentProjectName);
+                    Log.i(TAG, "Loading project: " + selectedProject);
+                    
+                    // Save current project before switching
+                    if (annotationView != null && currentProjectName != null) {
+                        AnnotationState currentState = annotationView.getState();
+                        if (currentState != null) {
+                            projectFileManager.saveProject(currentState, currentProjectName);
+                            Log.d(TAG, "Saved current project: " + currentProjectName);
+                        }
+                    }
+                    
+                    // Load the selected project
+                    loadProject(selectedProject);
+                    
+                    Log.i(TAG, "====================================");
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter(ProjectSelectionDialogActivity.ACTION_PROJECT_SELECTED);
+        registerReceiver(projectSelectionReceiver, filter);
+        Log.d(TAG, "Project selection receiver registered");
     }
     
     /**
@@ -2248,6 +2471,9 @@ public class AnnotationService extends Service {
         }
         if (projectNamingReceiver != null) {
             unregisterReceiver(projectNamingReceiver);
+        }
+        if (projectSelectionReceiver != null) {
+            unregisterReceiver(projectSelectionReceiver);
         }
         
         // Stop auto-save timer

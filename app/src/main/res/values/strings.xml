@@ -1175,5 +1175,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="manage_projects">Manage Projects</string>
     <string name="name_your_project">Name Your Project</string>
     <string name="project_naming_message">Give your project a memorable name and description to organize your recordings</string>
+    <string name="fadrec_projects">FadRec Projects</string>
+    <string name="delete_project">Delete Project</string>
+    <string name="delete_all">Delete All</string>
+    <string name="new_project">New Project</string>
     
 </resources>

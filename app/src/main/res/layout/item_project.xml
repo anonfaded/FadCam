@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/project_item_bg"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp"
+    android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Project Name -->
+    <TextView
+        android:id="@+id/txtProjectItemName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Project Name"
+        android:textSize="15sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:fontFamily="@font/ubuntu_regular"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Project Description -->
+    <TextView
+        android:id="@+id/txtProjectItemDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Description of the project"
+        android:textSize="12sp"
+        android:textColor="#B0B0B0"
+        android:fontFamily="@font/ubuntu_regular"
+        android:layout_marginTop="4dp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Project Metadata (Date, Size) -->
+    <TextView
+        android:id="@+id/txtProjectItemMeta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Modified: Oct 7, 2025 • 12.5 KB"
+        android:textSize="10sp"
+        android:textColor="#808080"
+        android:fontFamily="@font/ubuntu_regular"
+        android:layout_marginTop="6dp" />
+
+</LinearLayout>

@@ -107,17 +107,70 @@ public class PathObject extends AnnotationObject {
         return clone;
     }
     
-    // SVG path conversion (simplified - stores move/line commands)
+    // SVG path conversion - stores path as list of coordinates
     private String pathToSvgString(Path path) {
-        // TODO: Implement proper SVG path serialization
-        // For now, return empty string (we'll store raw path in memory)
-        return "";
+        if (path == null) return "";
+        
+        // Convert path to array of points
+        android.graphics.PathMeasure pm = new android.graphics.PathMeasure(path, false);
+        float[] point = new float[2];
+        StringBuilder sb = new StringBuilder();
+        
+        float distance = 0;
+        float length = pm.getLength();
+        float step = Math.max(1f, length / 500); // Sample up to 500 points
+        
+        while (distance < length) {
+            pm.getPosTan(distance, point, null);
+            if (sb.length() > 0) {
+                sb.append(",");
+            }
+            sb.append(point[0]).append(",").append(point[1]);
+            distance += step;
+        }
+        
+        // Add final point
+        if (length > 0) {
+            pm.getPosTan(length, point, null);
+            if (sb.length() > 0) {
+                sb.append(",");
+            }
+            sb.append(point[0]).append(",").append(point[1]);
+        }
+        
+        return sb.toString();
     }
     
     private Path svgStringToPath(String svgData) {
-        // TODO: Implement proper SVG path deserialization
-        // For now, return empty path
-        return new Path();
+        Path path = new Path();
+        if (svgData == null || svgData.isEmpty()) {
+            return path;
+        }
+        
+        try {
+            String[] coords = svgData.split(",");
+            if (coords.length < 2) {
+                return path;
+            }
+            
+            // First point - moveTo
+            float x = Float.parseFloat(coords[0]);
+            float y = Float.parseFloat(coords[1]);
+            path.moveTo(x, y);
+            
+            // Remaining points - lineTo
+            for (int i = 2; i < coords.length; i += 2) {
+                if (i + 1 < coords.length) {
+                    x = Float.parseFloat(coords[i]);
+                    y = Float.parseFloat(coords[i + 1]);
+                    path.lineTo(x, y);
+                }
+            }
+        } catch (NumberFormatException e) {
+            android.util.Log.e("PathObject", "Failed to parse SVG path data", e);
+        }
+        
+        return path;
     }
     
     // Getters and setters
