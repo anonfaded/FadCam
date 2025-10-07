@@ -374,39 +374,23 @@ public class AnnotationService extends Service {
         arrowParams.windowAnimations = 0; // Disable animations
         arrowParams.gravity = Gravity.TOP | Gravity.END;
         arrowParams.x = 0;
-        arrowParams.y = 100;
+        
+        // Position arrow at ~60% down screen for easy thumb reach
+        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(metrics);
+        int screenHeight = metrics.heightPixels;
+        arrowParams.y = (int) (screenHeight * 0.6); // 60% down from top
         
         windowManager.addView(arrowOverlay, arrowParams);
-        Log.d(TAG, "Arrow overlay added at x=0, y=100 (RIGHT edge)");
+        Log.d(TAG, "Arrow overlay added at x=0, y=" + arrowParams.y + " (RIGHT edge, 60% down) - ALWAYS ON TOP");
         
         // Set initial arrow size for RIGHT edge (vertical layout)
-        ViewGroup.LayoutParams arrowLayoutParams = btnExpandCollapse.getLayoutParams();
-        arrowLayoutParams.width = dpToPx(20);
-        arrowLayoutParams.height = dpToPx(48);
-        btnExpandCollapse.setLayoutParams(arrowLayoutParams);
-        btnExpandCollapse.requestLayout();
+        currentEdge = EdgePosition.RIGHT;
+        adaptLayoutForEdge(EdgePosition.RIGHT);
         
         // ===== MENU OVERLAY SETUP =====
-        // Use the unified toolbar layout but extract just the expandableContent
-        View tempToolbar = inflater.inflate(R.layout.annotation_toolbar_unified, null);
-        expandableContent = tempToolbar.findViewById(R.id.expandableContent);
-        
-        // Remove expandableContent from its parent (FrameLayout) so we can add it to window
-        ((ViewGroup)expandableContent.getParent()).removeView(expandableContent);
-        
-        // Now toolbarView is just the expandableContent (the menu)
-        toolbarView = expandableContent;
-        
-        // Initialize Quick Access buttons (these are in the unified layout, not in expandableContent)
-        // We'll need to handle this differently - for now skip them or add separate overlay
-        // Let's keep the full toolbar but only show expandableContent
-        
-        // Actually, let's use the full unified layout as the menu overlay
+        // Use the full unified layout as the menu overlay
         toolbarView = inflater.inflate(R.layout.annotation_toolbar_unified, null);
-        btnExpandCollapse = null; // Arrow is in separate overlay, clear this reference
-        
-        // Re-get the arrow button from the arrow overlay
-        btnExpandCollapse = arrowOverlay.findViewById(R.id.btnExpandCollapse);
         expandableContent = toolbarView.findViewById(R.id.expandableContent);
         
         // Initialize Quick Access buttons
@@ -487,18 +471,16 @@ public class AnnotationService extends Service {
         menuParams.windowAnimations = 0; // Disable animations
         menuParams.gravity = Gravity.TOP | Gravity.END;
         menuParams.x = dpToPx(24); // 24dp offset from arrow
-        menuParams.y = 100;
+        menuParams.y = arrowParams.y; // Match arrow Y position
         
         // Keep toolbarView visible but content hidden - FrameLayout is always visible as container
         toolbarView.setVisibility(View.VISIBLE);
         expandableContent.setVisibility(View.GONE); // Only the content inside starts hidden
         windowManager.addView(toolbarView, menuParams);
-        Log.d(TAG, "Menu overlay added at x=24dp, y=100 (offset from arrow)");
+        Log.d(TAG, "Menu overlay added at x=24dp, y=" + menuParams.y + " (offset from arrow)");
         
         setupToolbarListeners();
         setupToolbarDragging();
-        
-        currentEdge = EdgePosition.RIGHT; // Set initial edge
         
         // Set initial arrow direction based on starting position (right edge)
         updateArrowDirection(arrowParams);
