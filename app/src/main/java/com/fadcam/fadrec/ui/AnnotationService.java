@@ -351,10 +351,62 @@ public class AnnotationService extends Service {
     
     private void setupToolbar() {
         LayoutInflater inflater = LayoutInflater.from(this);
-        toolbarView = inflater.inflate(R.layout.annotation_toolbar_unified, null);
         
-        // Initialize main expand/collapse and close buttons
-        btnExpandCollapse = toolbarView.findViewById(R.id.btnExpandCollapse);
+        // ================ CREATE TWO SEPARATE OVERLAYS ================
+        // 1. ARROW BUTTON OVERLAY (stays fixed at edge)
+        // 2. MENU CONTENT OVERLAY (fades in/out beside arrow)
+        
+        int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                : WindowManager.LayoutParams.TYPE_PHONE;
+        
+        // ===== ARROW OVERLAY SETUP =====
+        arrowOverlay = inflater.inflate(R.layout.annotation_arrow_button, null);
+        btnExpandCollapse = arrowOverlay.findViewById(R.id.btnExpandCollapse);
+        
+        arrowParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                layoutType,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+        );
+        arrowParams.windowAnimations = 0; // Disable animations
+        arrowParams.gravity = Gravity.TOP | Gravity.END;
+        arrowParams.x = 0;
+        arrowParams.y = 100;
+        
+        windowManager.addView(arrowOverlay, arrowParams);
+        Log.d(TAG, "Arrow overlay added at x=0, y=100 (RIGHT edge)");
+        
+        // Set initial arrow size for RIGHT edge (vertical layout)
+        ViewGroup.LayoutParams arrowLayoutParams = btnExpandCollapse.getLayoutParams();
+        arrowLayoutParams.width = dpToPx(20);
+        arrowLayoutParams.height = dpToPx(48);
+        btnExpandCollapse.setLayoutParams(arrowLayoutParams);
+        btnExpandCollapse.requestLayout();
+        
+        // ===== MENU OVERLAY SETUP =====
+        // Use the unified toolbar layout but extract just the expandableContent
+        View tempToolbar = inflater.inflate(R.layout.annotation_toolbar_unified, null);
+        expandableContent = tempToolbar.findViewById(R.id.expandableContent);
+        
+        // Remove expandableContent from its parent (FrameLayout) so we can add it to window
+        ((ViewGroup)expandableContent.getParent()).removeView(expandableContent);
+        
+        // Now toolbarView is just the expandableContent (the menu)
+        toolbarView = expandableContent;
+        
+        // Initialize Quick Access buttons (these are in the unified layout, not in expandableContent)
+        // We'll need to handle this differently - for now skip them or add separate overlay
+        // Let's keep the full toolbar but only show expandableContent
+        
+        // Actually, let's use the full unified layout as the menu overlay
+        toolbarView = inflater.inflate(R.layout.annotation_toolbar_unified, null);
+        btnExpandCollapse = null; // Arrow is in separate overlay, clear this reference
+        
+        // Re-get the arrow button from the arrow overlay
+        btnExpandCollapse = arrowOverlay.findViewById(R.id.btnExpandCollapse);
         expandableContent = toolbarView.findViewById(R.id.expandableContent);
         
         // Initialize Quick Access buttons
@@ -419,41 +471,42 @@ public class AnnotationService extends Service {
         iconBoardBlack = toolbarView.findViewById(R.id.iconBoardBlack);
         iconBoardWhite = toolbarView.findViewById(R.id.iconBoardWhite);
         
-        setupToolbarListeners();
-        setupToolbarDragging();
+        // Hide the arrow button in the unified layout since we have separate arrow overlay
+        TextView btnExpandCollapseInMenu = toolbarView.findViewById(R.id.btnExpandCollapse);
+        if (btnExpandCollapseInMenu != null) {
+            btnExpandCollapseInMenu.setVisibility(View.GONE);
+        }
         
-        // No need to manage background dynamically anymore - it's in the XML for each component
-        
-        int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                : WindowManager.LayoutParams.TYPE_PHONE;
-        
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+        menuParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutType,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT
         );
+        menuParams.windowAnimations = 0; // Disable animations
+        menuParams.gravity = Gravity.TOP | Gravity.END;
+        menuParams.x = dpToPx(24); // 24dp offset from arrow
+        menuParams.y = 100;
         
-        params.gravity = Gravity.TOP | Gravity.END;
-        // Start at right edge, fully touching
-        params.x = 0;
-        params.y = 100;
+        // Keep toolbarView visible but content hidden - FrameLayout is always visible as container
+        toolbarView.setVisibility(View.VISIBLE);
+        expandableContent.setVisibility(View.GONE); // Only the content inside starts hidden
+        windowManager.addView(toolbarView, menuParams);
+        Log.d(TAG, "Menu overlay added at x=24dp, y=100 (offset from arrow)");
+        
+        setupToolbarListeners();
+        setupToolbarDragging();
+        
         currentEdge = EdgePosition.RIGHT; // Set initial edge
         
-        windowManager.addView(toolbarView, params);
-        
-        // Set initial arrow and menu positioning (arrow at top, not center)
-        updateArrowAndMenuPosition();
-        
         // Set initial arrow direction based on starting position (right edge)
-        updateArrowDirection(params);
+        updateArrowDirection(arrowParams);
         
         // Set initial state: Annotation DISABLED by default so user can use phone normally
         setAnnotationEnabled(false);
         
-        Log.d(TAG, "Annotation toolbar added to window");
+        Log.d(TAG, "Two separate overlays created - arrow and menu are now independent");
     }
     
     private void setupToolbarListeners() {
@@ -483,7 +536,7 @@ public class AnnotationService extends Service {
             showLayerPanel();
         });
         
-        // Main Expand/Collapse button (toggles entire expandable content)
+        // Main Expand/Collapse button (toggles menu overlay visibility with fade)
         btnExpandCollapse.setOnClickListener(v -> {
             // Prevent multiple clicks during animation
             if (isAnimating) {
@@ -494,79 +547,41 @@ public class AnnotationService extends Service {
             isExpanded = !isExpanded;
             isAnimating = true;
             
-            WindowManager.LayoutParams wmParams = (WindowManager.LayoutParams) toolbarView.getLayoutParams();
-            
-            Log.d(TAG, "=== TOOLBAR EXPAND/COLLAPSE ===");
+            Log.d(TAG, "=== MENU OVERLAY TOGGLE ===");
             Log.d(TAG, "Action: " + (isExpanded ? "EXPANDING" : "COLLAPSING"));
             Log.d(TAG, "Current Edge: " + currentEdge);
-            Log.d(TAG, "WindowManager Params - x: " + wmParams.x + ", y: " + wmParams.y + ", gravity: " + wmParams.gravity);
-            
-            // Log arrow layout params BEFORE
-            FrameLayout.LayoutParams arrowParams = (FrameLayout.LayoutParams) btnExpandCollapse.getLayoutParams();
-            Log.d(TAG, "Arrow BEFORE - width: " + arrowParams.width + ", height: " + arrowParams.height + 
-                  ", gravity: " + arrowParams.gravity + ", margins: [" + arrowParams.leftMargin + "," + 
-                  arrowParams.topMargin + "," + arrowParams.rightMargin + "," + arrowParams.bottomMargin + "]");
-            
-            // Log menu layout params BEFORE
-            FrameLayout.LayoutParams menuParams = (FrameLayout.LayoutParams) expandableContent.getLayoutParams();
-            Log.d(TAG, "Menu BEFORE - gravity: " + menuParams.gravity + ", margins: [" + 
-                  menuParams.leftMargin + "," + menuParams.topMargin + "," + 
-                  menuParams.rightMargin + "," + menuParams.bottomMargin + "]");
+            Log.d(TAG, "Arrow Params - x: " + arrowParams.x + ", y: " + arrowParams.y);
+            Log.d(TAG, "Menu Params - x: " + menuParams.x + ", y: " + menuParams.y);
             
             if (isExpanded) {
-                // EXPANDING: Fade in menu smoothly
-                Log.d(TAG, "Starting EXPAND animation - fade in menu");
+                // EXPANDING: Show menu overlay with fade-in
+                Log.d(TAG, "Starting EXPAND - showing menu overlay");
+                expandableContent.setVisibility(View.VISIBLE); // Make the content inside visible
                 expandableContent.setAlpha(0f);
-                expandableContent.setVisibility(View.VISIBLE);
                 expandableContent.animate()
                     .alpha(1f)
                     .setDuration(200)
                     .withEndAction(() -> {
                         isAnimating = false;
-                        Log.d(TAG, "EXPAND animation completed");
-                        
-                        // Log arrow layout params AFTER
-                        FrameLayout.LayoutParams arrowAfter = (FrameLayout.LayoutParams) btnExpandCollapse.getLayoutParams();
-                        Log.d(TAG, "Arrow AFTER EXPAND - width: " + arrowAfter.width + ", height: " + arrowAfter.height + 
-                              ", gravity: " + arrowAfter.gravity + ", margins: [" + arrowAfter.leftMargin + "," + 
-                              arrowAfter.topMargin + "," + arrowAfter.rightMargin + "," + arrowAfter.bottomMargin + "]");
+                        Log.d(TAG, "EXPAND completed - menu visible");
                     })
                     .start();
-                    
-                updateArrowDirection(wmParams);
-                Log.d(TAG, "EXPANDED: Menu shown beside arrow on edge: " + currentEdge);
+                updateArrowDirection(arrowParams);
             } else {
-                // COLLAPSING: Fade out menu smoothly
-                Log.d(TAG, "Starting COLLAPSE animation - fade out menu");
+                // COLLAPSING: Hide menu overlay with fade-out
+                Log.d(TAG, "Starting COLLAPSE - hiding menu overlay");
                 expandableContent.animate()
                     .alpha(0f)
                     .setDuration(150)
                     .withEndAction(() -> {
                         expandableContent.setVisibility(View.GONE);
-                        expandableContent.setAlpha(1f); // Reset for next time
+                        expandableContent.setAlpha(1f);
                         isAnimating = false;
-                        Log.d(TAG, "COLLAPSE animation completed");
-                        
-                        // Log arrow layout params AFTER
-                        FrameLayout.LayoutParams arrowAfter = (FrameLayout.LayoutParams) btnExpandCollapse.getLayoutParams();
-                        Log.d(TAG, "Arrow AFTER COLLAPSE - width: " + arrowAfter.width + ", height: " + arrowAfter.height + 
-                              ", gravity: " + arrowAfter.gravity + ", margins: [" + arrowAfter.leftMargin + "," + 
-                              arrowAfter.topMargin + "," + arrowAfter.rightMargin + "," + arrowAfter.bottomMargin + "]");
-                        
-                        WindowManager.LayoutParams wmParamsAfter = (WindowManager.LayoutParams) toolbarView.getLayoutParams();
-                        Log.d(TAG, "WindowManager Params AFTER COLLAPSE - x: " + wmParamsAfter.x + ", y: " + wmParamsAfter.y + ", gravity: " + wmParamsAfter.gravity);
+                        Log.d(TAG, "COLLAPSE completed - menu hidden");
                     })
                     .start();
-                    
-                updateArrowDirection(wmParams);
-                Log.d(TAG, "COLLAPSED: Only arrow shown");
+                updateArrowDirection(arrowParams);
             }
-            
-            // Log WindowManager params AFTER immediate changes
-            Log.d(TAG, "WindowManager Params AFTER immediate changes - x: " + wmParams.x + ", y: " + wmParams.y + ", gravity: " + wmParams.gravity);
-            
-            // Update notification state only
-            updateNotification();
         });
         
         // Enable/Disable Annotation button
@@ -753,8 +768,7 @@ public class AnnotationService extends Service {
     }
     
     private void setupToolbarDragging() {
-        // Make the arrow button draggable when collapsed
-        // Make the entire toolbar draggable when expanded
+        // Make both overlays draggable together
         View.OnTouchListener dragListener = new View.OnTouchListener() {
             private boolean isDragging = false;
             private static final int CLICK_THRESHOLD = 10; // pixels
@@ -762,12 +776,10 @@ public class AnnotationService extends Service {
             
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                WindowManager.LayoutParams params = (WindowManager.LayoutParams) toolbarView.getLayoutParams();
-                
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        toolbarInitialX = params.x;
-                        toolbarInitialY = params.y;
+                        toolbarInitialX = arrowParams.x;
+                        toolbarInitialY = arrowParams.y;
                         toolbarInitialTouchX = event.getRawX();
                         toolbarInitialTouchY = event.getRawY();
                         isDragging = false;
@@ -784,10 +796,16 @@ public class AnnotationService extends Service {
                         }
                         
                         if (isDragging) {
-                            // Fix inverted horizontal movement (x coordinate)
-                            params.x = toolbarInitialX - (int) deltaX;
-                            params.y = toolbarInitialY + (int) deltaY;
-                            windowManager.updateViewLayout(toolbarView, params);
+                            // Update both overlays together
+                            arrowParams.x = toolbarInitialX - (int) deltaX;
+                            arrowParams.y = toolbarInitialY + (int) deltaY;
+                            windowManager.updateViewLayout(arrowOverlay, arrowParams);
+                            
+                            // Menu follows with appropriate offset based on edge
+                            // During drag, maintain relative position (menu to the right for simplicity)
+                            menuParams.x = arrowParams.x + dpToPx(24);
+                            menuParams.y = arrowParams.y;
+                            windowManager.updateViewLayout(toolbarView, menuParams);
                         }
                         return true;
                         
@@ -798,9 +816,7 @@ public class AnnotationService extends Service {
                             isAnimating = false;
                             
                             // Smart snap-to-edge behavior
-                            snapToEdgeIfNeeded(params);
-                            // Update arrow direction based on position
-                            updateArrowDirection(params);
+                            snapToEdgeIfNeeded();
                             isDragging = false;
                             return true;
                         } else if (v.getId() == R.id.btnExpandCollapse) {
@@ -816,17 +832,17 @@ public class AnnotationService extends Service {
         
         // Set touch listener on arrow button (always draggable)
         btnExpandCollapse.setOnTouchListener(dragListener);
-        // Set touch listener on root toolbar view (draggable when expanded)
+        // Set touch listener on menu overlay (draggable when visible)
         toolbarView.setOnTouchListener(dragListener);
     }
     
     /**
      * Snap toolbar to nearest screen edge if close enough
-     * Also adapts layout for top/bottom vs left/right positioning
+     * Updates both arrow and menu overlays together
      */
-    private void snapToEdgeIfNeeded(WindowManager.LayoutParams params) {
+    private void snapToEdgeIfNeeded() {
         Log.d(TAG, ">>> snapToEdgeIfNeeded() called");
-        Log.d(TAG, "Current params - x: " + params.x + ", y: " + params.y + ", gravity: " + params.gravity);
+        Log.d(TAG, "Arrow params - x: " + arrowParams.x + ", y: " + arrowParams.y);
         
         android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
         windowManager.getDefaultDisplay().getMetrics(metrics);
@@ -836,12 +852,12 @@ public class AnnotationService extends Service {
         int snapThreshold = dpToPx(100); // Snap if within 100dp of edge
         
         // Calculate actual position
-        int actualX = screenWidth - params.x;
-        int actualY = params.y;
+        int actualX = screenWidth - arrowParams.x;
+        int actualY = arrowParams.y;
         
         // Determine closest edge
         int distanceToLeft = actualX;
-        int distanceToRight = params.x;
+        int distanceToRight = arrowParams.x;
         int distanceToTop = actualY;
         int distanceToBottom = screenHeight - actualY;
         
@@ -852,57 +868,67 @@ public class AnnotationService extends Service {
         if (minDistance > snapThreshold) {
             Log.d(TAG, "Not snapping - distance " + minDistance + " > threshold " + snapThreshold);
             currentEdge = EdgePosition.CENTER;
-            windowManager.updateViewLayout(toolbarView, params);
+            windowManager.updateViewLayout(arrowOverlay, arrowParams);
+            windowManager.updateViewLayout(toolbarView, menuParams);
             Log.d(TAG, "<<< snapToEdgeIfNeeded() - NO SNAP");
             return;
         }
         
-        // Snap to nearest edge
+        // Snap to nearest edge and update both overlays
         if (minDistance == distanceToLeft) {
-            // Snap to LEFT - fully touch edge
+            // Snap to LEFT edge
             Log.d(TAG, "Snapping to LEFT edge");
             currentEdge = EdgePosition.LEFT;
-            params.x = screenWidth; // Fully touching left edge
-            // Keep gravity consistent - don't change it
+            arrowParams.x = screenWidth; // Fully touching left edge
+            // Menu should be to the RIGHT of arrow (arrow is 20dp + 4dp gap)
+            menuParams.x = screenWidth - dpToPx(304); // 280dp menu + 24dp for arrow+gap
             adaptLayoutForEdge(EdgePosition.LEFT);
-            updateArrowAndMenuPosition(); // Update arrow and menu positions after snap
             
         } else if (minDistance == distanceToRight) {
-            // Snap to RIGHT - fully touch edge
+            // Snap to RIGHT edge
             Log.d(TAG, "Snapping to RIGHT edge");
             currentEdge = EdgePosition.RIGHT;
-            params.x = 0; // Fully touching right edge
-            // Keep gravity consistent - don't change it
+            arrowParams.x = 0; // Fully touching right edge
+            menuParams.x = dpToPx(24); // Menu offset to left (20dp arrow + 4dp gap)
             adaptLayoutForEdge(EdgePosition.RIGHT);
-            updateArrowAndMenuPosition(); // Update arrow and menu positions after snap
             
         } else if (minDistance == distanceToTop) {
-            // Snap to TOP - fully touch edge
+            // Snap to TOP edge
             Log.d(TAG, "Snapping to TOP edge");
             currentEdge = EdgePosition.TOP;
-            params.y = 0; // Fully touching top edge
-            // Keep gravity consistent - don't change it
+            arrowParams.y = 0; // Fully touching top edge
+            // Menu should be BELOW arrow (arrow is 20dp + 4dp gap)
+            menuParams.y = dpToPx(24);
+            // Keep menu x centered with arrow
+            menuParams.x = arrowParams.x;
             adaptLayoutForEdge(EdgePosition.TOP);
-            updateArrowAndMenuPosition(); // Update arrow and menu positions after snap
             
         } else {
-            // Snap to BOTTOM - fully touch edge
+            // Snap to BOTTOM edge
             Log.d(TAG, "Snapping to BOTTOM edge");
             currentEdge = EdgePosition.BOTTOM;
-            params.y = screenHeight; // Fully touching bottom edge
-            // Keep gravity consistent - don't change it
+            arrowParams.y = screenHeight; // Fully touching bottom edge
+            // Menu should be ABOVE arrow (need to account for menu height)
+            // Use negative offset from bottom
+            menuParams.y = screenHeight - dpToPx(500); // Menu max height + gap
+            // Keep menu x centered with arrow
+            menuParams.x = arrowParams.x;
             adaptLayoutForEdge(EdgePosition.BOTTOM);
-            updateArrowAndMenuPosition(); // Update arrow and menu positions after snap
         }
         
-        Log.d(TAG, "Calling windowManager.updateViewLayout() after snap");
-        Log.d(TAG, "Final params - x: " + params.x + ", y: " + params.y + ", gravity: " + params.gravity);
-        windowManager.updateViewLayout(toolbarView, params);
+        Log.d(TAG, "Updating both overlays after snap");
+        Log.d(TAG, "Arrow final - x: " + arrowParams.x + ", y: " + arrowParams.y);
+        Log.d(TAG, "Menu final - x: " + menuParams.x + ", y: " + menuParams.y);
+        
+        windowManager.updateViewLayout(arrowOverlay, arrowParams);
+        windowManager.updateViewLayout(toolbarView, menuParams);
+        updateArrowDirection(arrowParams);
+        
         Log.d(TAG, "<<< snapToEdgeIfNeeded() - SNAPPED to " + currentEdge);
     }
     
     /**
-     * Adapt arrow button layout based on edge position
+     * Adapt arrow button size based on edge position
      * Top/Bottom: horizontal layout (wider, shorter)
      * Left/Right: vertical layout (narrower, taller)
      */
@@ -912,7 +938,7 @@ public class AnnotationService extends Service {
         switch (edge) {
             case TOP:
             case BOTTOM:
-                // Horizontal layout for top/bottom - thinner
+                // Horizontal layout for top/bottom
                 layoutParams.width = dpToPx(48);
                 layoutParams.height = dpToPx(20);
                 break;
@@ -920,7 +946,7 @@ public class AnnotationService extends Service {
             case LEFT:
             case RIGHT:
             default:
-                // Vertical layout for left/right - thinner
+                // Vertical layout for left/right
                 layoutParams.width = dpToPx(20);
                 layoutParams.height = dpToPx(48);
                 break;
@@ -934,79 +960,6 @@ public class AnnotationService extends Service {
      * Also sets appropriate corner radius for edge
      */
     
-    private void updateArrowAndMenuPosition() {
-        // Position arrow and menu based on which edge toolbar is on
-        // Arrow always stays at TOP of menu (not center) for consistency
-        Log.d(TAG, ">>> updateArrowAndMenuPosition() called for edge: " + currentEdge);
-        
-        FrameLayout.LayoutParams arrowParams = (FrameLayout.LayoutParams) btnExpandCollapse.getLayoutParams();
-        FrameLayout.LayoutParams menuParams = (FrameLayout.LayoutParams) expandableContent.getLayoutParams();
-        
-        Log.d(TAG, "Arrow params BEFORE update - gravity: " + arrowParams.gravity + 
-              ", margins: [" + arrowParams.leftMargin + "," + arrowParams.topMargin + "," + 
-              arrowParams.rightMargin + "," + arrowParams.bottomMargin + "]");
-        Log.d(TAG, "Menu params BEFORE update - gravity: " + menuParams.gravity + 
-              ", margins: [" + menuParams.leftMargin + "," + menuParams.topMargin + "," + 
-              menuParams.rightMargin + "," + menuParams.bottomMargin + "]");
-        
-        // Clear all margins first
-        menuParams.setMargins(0, 0, 0, 0);
-        
-        switch (currentEdge) {
-            case LEFT:
-                // Arrow on LEFT edge at TOP, menu to its RIGHT
-                Log.d(TAG, "Setting LEFT edge layout");
-                arrowParams.gravity = Gravity.START | Gravity.TOP;
-                menuParams.gravity = Gravity.START | Gravity.TOP;
-                menuParams.setMarginStart(dpToPx(24)); // Minimal gap (20dp arrow + 4dp spacing)
-                break;
-                
-            case RIGHT:
-                // Arrow on RIGHT edge at TOP, menu to its LEFT
-                Log.d(TAG, "Setting RIGHT edge layout");
-                arrowParams.gravity = Gravity.END | Gravity.TOP;
-                menuParams.gravity = Gravity.END | Gravity.TOP;
-                menuParams.setMarginEnd(dpToPx(24)); // Minimal gap (20dp arrow + 4dp spacing)
-                break;
-                
-            case TOP:
-                // Arrow on TOP edge, menu BELOW it
-                Log.d(TAG, "Setting TOP edge layout");
-                arrowParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-                menuParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-                menuParams.topMargin = dpToPx(52); // Gap for arrow (48dp arrow + 4dp spacing)
-                break;
-                
-            case BOTTOM:
-                // Arrow on BOTTOM edge, menu ABOVE it
-                Log.d(TAG, "Setting BOTTOM edge layout");
-                arrowParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-                menuParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-                menuParams.bottomMargin = dpToPx(52); // Gap for arrow (48dp arrow + 4dp spacing)
-                break;
-                
-            case CENTER:
-            default:
-                // Default: treat as right edge
-                Log.d(TAG, "Setting CENTER/default (RIGHT) edge layout");
-                arrowParams.gravity = Gravity.END | Gravity.TOP;
-                menuParams.gravity = Gravity.END | Gravity.TOP;
-                menuParams.setMarginEnd(dpToPx(24));
-                break;
-        }
-        
-        btnExpandCollapse.setLayoutParams(arrowParams);
-        expandableContent.setLayoutParams(menuParams);
-        
-        Log.d(TAG, "Arrow params AFTER update - gravity: " + arrowParams.gravity + 
-              ", margins: [" + arrowParams.leftMargin + "," + arrowParams.topMargin + "," + 
-              arrowParams.rightMargin + "," + arrowParams.bottomMargin + "]");
-        Log.d(TAG, "Menu params AFTER update - gravity: " + menuParams.gravity + 
-              ", margins: [" + menuParams.leftMargin + "," + menuParams.topMargin + "," + 
-              menuParams.rightMargin + "," + menuParams.bottomMargin + "]");
-        
-        Log.d(TAG, "<<< updateArrowAndMenuPosition() completed for edge: " + currentEdge);
-    }
     
     private void updateArrowDirection(WindowManager.LayoutParams params) {
         Log.d(TAG, ">>> updateArrowDirection() called");
@@ -2039,6 +1992,11 @@ public class AnnotationService extends Service {
         // Clean up views
         if (annotationView != null) {
             windowManager.removeView(annotationView);
+        }
+        
+        // Remove both overlays
+        if (arrowOverlay != null) {
+            windowManager.removeView(arrowOverlay);
         }
         
         if (toolbarView != null) {
