@@ -295,15 +295,49 @@ public class ProjectFileManager {
      * Get or create current project name (persistent across app restarts)
      */
     public String getOrCreateCurrentProject() {
+        Log.d(TAG, "getOrCreateCurrentProject() called");
+        
         // Check if we have a saved current project
         String savedProject = prefs.getString(KEY_CURRENT_PROJECT, null);
+        Log.d(TAG, "Saved project from preferences: " + savedProject);
         
-        if (savedProject != null && projectExists(savedProject)) {
-            Log.i(TAG, "Resuming project: " + savedProject);
-            return savedProject;
+        // Get all existing projects to find the latest one
+        File[] existingProjects = listProjects();
+        Log.d(TAG, "Found " + (existingProjects != null ? existingProjects.length : 0) + " existing projects");
+        
+        if (existingProjects != null && existingProjects.length > 0) {
+            // Sort by last modified date (newest first)
+            java.util.Arrays.sort(existingProjects, (a, b) -> 
+                Long.compare(b.lastModified(), a.lastModified()));
+            
+            String latestProject = existingProjects[0].getName();
+            long latestModified = existingProjects[0].lastModified();
+            
+            Log.d(TAG, "Latest project by modified date: " + latestProject);
+            Log.d(TAG, "Latest project modified at: " + new java.util.Date(latestModified));
+            
+            // If saved project exists and is the same as latest, use it
+            if (savedProject != null && savedProject.equals(latestProject) && projectExists(savedProject)) {
+                Log.i(TAG, "✅ Resuming saved project (which is also the latest): " + savedProject);
+                return savedProject;
+            }
+            
+            // If saved project exists but isn't the latest, or doesn't exist anymore
+            if (savedProject != null) {
+                if (projectExists(savedProject)) {
+                    Log.i(TAG, "⚠️ Saved project exists but NOT the latest. Latest: " + latestProject);
+                } else {
+                    Log.i(TAG, "⚠️ Saved project doesn't exist anymore: " + savedProject);
+                }
+            }
+            
+            // Use the latest project
+            Log.i(TAG, "✅ Using latest project by modified date: " + latestProject);
+            prefs.edit().putString(KEY_CURRENT_PROJECT, latestProject).apply();
+            return latestProject;
         }
         
-        // Create new project with timestamp
+        // No existing projects, create new one with timestamp
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
         String projectName = "FadRec_" + timestamp;

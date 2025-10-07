@@ -101,6 +101,7 @@
             android:orientation="horizontal" 
             android:gravity="center" 
             android:background="@drawable/floating_button_item_bg" 
+            android:backgroundTint="#F44336"
             android:clickable="true" 
             android:focusable="true" 
             android:paddingHorizontal="16dp"
@@ -111,7 +112,7 @@
                 android:layout_height="wrap_content" 
                 android:text="@string/delete_all" 
                 android:textSize="13sp" 
-                android:textColor="#F44336" 
+                android:textColor="#FFFFFF" 
                 android:fontFamily="@font/ubuntu_regular" />
         </LinearLayout>
 
@@ -132,7 +133,7 @@
                 android:layout_height="wrap_content" 
                 android:text="@string/close" 
                 android:textSize="13sp" 
-                android:textColor="#9E9E9E" 
+                android:textColor="#FFFFFF" 
                 android:fontFamily="@font/ubuntu_regular" />
         </LinearLayout>
     </LinearLayout>

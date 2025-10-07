@@ -1179,5 +1179,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="delete_project">Delete Project</string>
     <string name="delete_all">Delete All</string>
     <string name="new_project">New Project</string>
+    <string name="delete">Delete</string>
     
 </resources>

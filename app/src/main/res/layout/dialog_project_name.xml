@@ -35,6 +35,17 @@
             android:maxLines="1"
             android:imeOptions="actionNext"
             android:inputType="text"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Sanitized Name Preview -->
+        <TextView
+            android:id="@+id/tvSanitizedPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Will be saved as: untitled"
+            android:textSize="11sp"
+            android:textColor="#4CAF50"
+            android:fontFamily="@font/ubuntu_regular"
             android:layout_marginBottom="16dp" />
 
         <!-- Project Description Input -->

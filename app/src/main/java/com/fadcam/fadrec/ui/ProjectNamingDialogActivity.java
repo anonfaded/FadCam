@@ -4,15 +4,19 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.fadcam.R;
+import com.fadcam.fadrec.ui.annotation.ProjectFileManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
@@ -59,12 +63,16 @@ public class ProjectNamingDialogActivity extends Activity {
         
         EditText etProjectName = dialogView.findViewById(R.id.etProjectName);
         EditText etProjectDescription = dialogView.findViewById(R.id.etProjectDescription);
+        TextView tvSanitizedPreview = dialogView.findViewById(R.id.tvSanitizedPreview);
         
         // Load Ubuntu font for EditTexts
         Typeface ubuntuFont = ResourcesCompat.getFont(this, R.font.ubuntu_regular);
         if (ubuntuFont != null) {
             etProjectName.setTypeface(ubuntuFont);
             etProjectDescription.setTypeface(ubuntuFont);
+            if (tvSanitizedPreview != null) {
+                tvSanitizedPreview.setTypeface(ubuntuFont);
+            }
         }
         
         // Pre-fill with current values
@@ -73,6 +81,28 @@ public class ProjectNamingDialogActivity extends Activity {
         
         // Select all text for easy replacement
         etProjectName.selectAll();
+        
+        // Show real-time sanitized preview
+        if (tvSanitizedPreview != null) {
+            tvSanitizedPreview.setText("Will be saved as: " + 
+                ProjectFileManager.sanitizeProjectName(currentProjectName));
+            
+            etProjectName.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    String input = s.toString().trim();
+                    String sanitized = ProjectFileManager.sanitizeProjectName(
+                        input.isEmpty() ? "Untitled" : input);
+                    tvSanitizedPreview.setText("Will be saved as: " + sanitized);
+                }
+                
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
         
         // Create Material dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
@@ -89,7 +119,7 @@ public class ProjectNamingDialogActivity extends Activity {
                 newName = "Untitled Project";
             }
             
-            // Send broadcast with new name and description
+            // Send broadcast with new name and description (will be sanitized by receiver)
             Intent resultIntent = new Intent(ACTION_PROJECT_RENAMED);
             resultIntent.putExtra(EXTRA_PROJECT_NAME, newName);
             resultIntent.putExtra(EXTRA_PROJECT_DESCRIPTION, newDescription);

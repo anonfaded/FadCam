@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.ContextThemeWrapper;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
@@ -43,6 +44,7 @@ import com.fadcam.fadrec.ui.annotation.TextEditorDialog;
 import com.fadcam.fadrec.ui.annotation.ShapePickerDialog;
 import com.fadcam.fadrec.ui.annotation.objects.TextObject;
 import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * Service that provides floating annotation tools for drawing on screen during recording.
@@ -195,15 +197,11 @@ public class AnnotationService extends Service {
         TextView txtCurrentProject = dialogView.findViewById(R.id.txtCurrentProject);
         TextView txtProjectsPath = dialogView.findViewById(R.id.txtProjectsPath);
         
-        // Display current project
+        // Display current project - always show sanitized folder name
         if (currentProjectName != null) {
-            // Get display name from metadata if available
-            AnnotationState state = annotationView.getState();
-            String displayName = currentProjectName;
-            if (state != null && state.getMetadata() != null) {
-                displayName = state.getMetadata().optString("name", currentProjectName);
-            }
-            txtCurrentProject.setText("Current: " + displayName);
+            // Always display the sanitized folder name (which is what's actually used)
+            String sanitizedName = ProjectFileManager.sanitizeProjectName(currentProjectName);
+            txtCurrentProject.setText("Current: " + sanitizedName);
         } else {
             txtCurrentProject.setText("Current: None");
         }
@@ -223,15 +221,15 @@ public class AnnotationService extends Service {
                 String projectName = folder.getName();
                 ProjectInfo info = new ProjectInfo();
                 info.folderName = projectName;
+                // Always display sanitized folder name (what's actually saved on disk)
                 info.displayName = projectName;
                 info.description = "";
                 info.thumbnailFile = projectFileManager.getThumbnailFile(projectName);
                 
-                // Try to load metadata for display name and description
+                // Try to load metadata for description only (name is always the folder name)
                 try {
                     AnnotationState loadedState = projectFileManager.loadProject(projectName);
                     if (loadedState != null && loadedState.getMetadata() != null) {
-                        info.displayName = loadedState.getMetadata().optString("name", projectName);
                         info.description = loadedState.getMetadata().optString("description", "");
                     }
                 } catch (Exception e) {
@@ -285,7 +283,10 @@ public class AnnotationService extends Service {
      * Show confirmation dialog for deleting all projects
      */
     private void showDeleteAllConfirmation(android.app.AlertDialog parentDialog) {
-        new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        Context themedContext = new ContextThemeWrapper(this, R.style.Base_Theme_FadCam);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
+        
+        androidx.appcompat.app.AlertDialog deleteAllDialog = builder
             .setTitle("Delete All Projects?")
             .setMessage("This will permanently delete ALL projects. This action cannot be undone!")
             .setPositiveButton("Delete All", (dialog, which) -> {
@@ -301,7 +302,18 @@ public class AnnotationService extends Service {
                 }
             })
             .setNegativeButton("Cancel", null)
-            .show();
+            .create();
+        
+        // Set dialog window type for overlay
+        if (deleteAllDialog.getWindow() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                deleteAllDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+            } else {
+                deleteAllDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            }
+        }
+        
+        deleteAllDialog.show();
     }
     
     /**
@@ -378,22 +390,36 @@ public class AnnotationService extends Service {
         }
         
         private void showDeleteProjectConfirmation(String displayName, String folderName) {
-            new android.app.AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Dialog_Alert)
+            Context themedContext = new ContextThemeWrapper(AnnotationService.this, R.style.Base_Theme_FadCam);
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
+            
+            androidx.appcompat.app.AlertDialog deleteDialog = builder
                 .setTitle("Delete Project?")
                 .setMessage("Delete \"" + displayName + "\"? This cannot be undone.")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     boolean deleted = projectFileManager.deleteProject(folderName);
                     if (deleted) {
-                        Toast.makeText(getContext(), "Project deleted", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AnnotationService.this, "Project deleted", Toast.LENGTH_SHORT).show();
                         parentDialog.dismiss();
                         // Reopen dialog to refresh list
                         showProjectManagementDialog();
                     } else {
-                        Toast.makeText(getContext(), "Failed to delete project", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AnnotationService.this, "Failed to delete project", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+            
+            // Set dialog window type for overlay
+            if (deleteDialog.getWindow() != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    deleteDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+                } else {
+                    deleteDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                }
+            }
+            
+            deleteDialog.show();
         }
     }
     
@@ -527,37 +553,100 @@ public class AnnotationService extends Service {
      */
     private void loadLastProject() {
         if (currentProjectName != null && projectFileManager != null) {
-            Log.i(TAG, "Attempting to load last project: " + currentProjectName);
-            
-            AnnotationState loadedState = projectFileManager.loadProject(currentProjectName);
-            
-            if (loadedState != null && annotationView != null) {
-                Log.i(TAG, "✅ Successfully loaded project: " + currentProjectName);
-                Log.d(TAG, "  - Pages: " + loadedState.getPages().size());
-                Log.d(TAG, "  - Current page index: " + loadedState.getActivePageIndex());
+            // Check if project exists
+            if (projectFileManager.projectExists(currentProjectName)) {
+                Log.i(TAG, "Found existing project: " + currentProjectName);
                 
-                // Apply the loaded state to annotation view
-                annotationView.setState(loadedState);
-                
-                // Force complete redraw with post to ensure view is ready
-                annotationView.post(() -> {
-                    annotationView.invalidate();
-                    annotationView.requestLayout();
-                    Log.d(TAG, "Post-load redraw triggered");
-                });
-                
-                updateUndoRedoButtons();
-                updatePageLayerInfo();
-                updateProjectNameDisplay(); // Update project name/description in toolbar
-                
-                Log.i(TAG, "Project state applied to AnnotationView");
+                // Show startup dialog: Continue or Create New
+                showStartupDialog(currentProjectName);
             } else {
-                Log.w(TAG, "⚠️ Failed to load project or project doesn't exist yet: " + currentProjectName);
-                Log.i(TAG, "Starting with fresh state");
+                Log.w(TAG, "Saved project doesn't exist, starting fresh");
+                startFreshProject();
             }
         } else {
             Log.w(TAG, "No current project name or ProjectFileManager not initialized");
+            startFreshProject();
         }
+    }
+    
+    /**
+     * Show dialog asking user to continue with last project or create new
+     */
+    private void showStartupDialog(String existingProjectName) {
+        String sanitizedName = ProjectFileManager.sanitizeProjectName(existingProjectName);
+        
+        Context themedContext = new ContextThemeWrapper(this, R.style.Base_Theme_FadCam);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
+        
+        androidx.appcompat.app.AlertDialog startupDialog = builder
+            .setTitle("Welcome Back!")
+            .setMessage("Continue with project \"" + sanitizedName + "\" or start a new one?")
+            .setPositiveButton("Continue", (dialog, which) -> {
+                Log.i(TAG, "User chose to continue with: " + existingProjectName);
+                loadExistingProject(existingProjectName);
+            })
+            .setNegativeButton("New Project", (dialog, which) -> {
+                Log.i(TAG, "User chose to create new project");
+                createNewProject();
+            })
+            .setCancelable(false)
+            .create();
+        
+        // Set dialog window type for overlay
+        if (startupDialog.getWindow() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+            } else {
+                startupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            }
+        }
+        
+        startupDialog.show();
+    }
+    
+    /**
+     * Load an existing project
+     */
+    private void loadExistingProject(String projectName) {
+        Log.i(TAG, "Attempting to load last project: " + projectName);
+        
+        AnnotationState loadedState = projectFileManager.loadProject(projectName);
+        
+        if (loadedState != null && annotationView != null) {
+            Log.i(TAG, "✅ Successfully loaded project: " + projectName);
+            Log.d(TAG, "  - Pages: " + loadedState.getPages().size());
+            Log.d(TAG, "  - Current page index: " + loadedState.getActivePageIndex());
+            
+            // Apply the loaded state to annotation view
+            annotationView.setState(loadedState);
+            
+            // Force complete redraw with post to ensure view is ready
+            annotationView.post(() -> {
+                annotationView.invalidate();
+                annotationView.requestLayout();
+                Log.d(TAG, "Post-load redraw triggered");
+            });
+            
+            updateUndoRedoButtons();
+            updatePageLayerInfo();
+            updateProjectNameDisplay();
+            
+            Log.i(TAG, "Project state applied to AnnotationView");
+        } else {
+            Log.w(TAG, "⚠️ Failed to load project: " + projectName);
+            Log.i(TAG, "Starting with fresh state");
+            startFreshProject();
+        }
+    }
+    
+    /**
+     * Start with a fresh project (no existing data)
+     */
+    private void startFreshProject() {
+        Log.i(TAG, "Starting with fresh state");
+        updateUndoRedoButtons();
+        updatePageLayerInfo();
+        updateProjectNameDisplay();
     }
     
     private void setupAnnotationCanvas() {
@@ -1938,18 +2027,25 @@ public class AnnotationService extends Service {
                 String newName = intent.getStringExtra(ProjectNamingDialogActivity.EXTRA_PROJECT_NAME);
                 String newDescription = intent.getStringExtra(ProjectNamingDialogActivity.EXTRA_PROJECT_DESCRIPTION);
                 
-                if (newName != null && !newName.isEmpty()) {
+                AnnotationState state = annotationView != null ? annotationView.getState() : null;
+                
+                if (newName != null && !newName.isEmpty() && !newName.equals(currentProjectName)) {
+                    // User is renaming the project
                     String oldName = currentProjectName;
+                    String sanitizedNewName = ProjectFileManager.sanitizeProjectName(newName);
+                    
                     Log.i(TAG, "========== PROJECT RENAME ==========");
                     Log.i(TAG, "Old name: '" + oldName + "'");
-                    Log.i(TAG, "New name: '" + newName + "'");
+                    Log.i(TAG, "New name (user input): '" + newName + "'");
+                    Log.i(TAG, "New name (sanitized): '" + sanitizedNewName + "'");
                     
-                    // Update metadata first (before renaming file)
-                    AnnotationState state = annotationView.getState();
+                    // Update metadata with sanitized name
                     if (state != null && state.getMetadata() != null) {
                         try {
-                            state.getMetadata().put("name", newName);
-                            state.getMetadata().put("description", newDescription);
+                            state.getMetadata().put("name", sanitizedNewName);
+                            if (newDescription != null) {
+                                state.getMetadata().put("description", newDescription);
+                            }
                             Log.d(TAG, "Metadata updated");
                         } catch (org.json.JSONException e) {
                             Log.e(TAG, "Failed to update metadata", e);
@@ -1960,15 +2056,19 @@ public class AnnotationService extends Service {
                     projectFileManager.saveProject(state, oldName);
                     Log.d(TAG, "Saved state to old file: " + oldName);
                     
-                    // Rename the project file
-                    boolean renamed = projectFileManager.renameProject(oldName, newName);
+                    // Rename the project folder with sanitized name
+                    boolean renamed = projectFileManager.renameProject(oldName, sanitizedNewName);
                     
                     if (renamed) {
                         // Update current project name AFTER successful rename
-                        currentProjectName = newName;
+                        currentProjectName = sanitizedNewName;
                         Log.i(TAG, "✅ Project renamed successfully");
                         
-                        // Update UI
+                        // Update preferences with new name
+                        android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
+                        prefs.edit().putString("current_project", currentProjectName).apply();
+                        
+                        // Update UI immediately
                         updateProjectNameDisplay();
                         updateNotification();
                     } else {
@@ -1984,6 +2084,25 @@ public class AnnotationService extends Service {
                     }
                     
                     Log.i(TAG, "====================================");
+                } else {
+                    // Just updating description (or keeping same name)
+                    if (state != null && state.getMetadata() != null) {
+                        try {
+                            if (newDescription != null) {
+                                state.getMetadata().put("description", newDescription);
+                                Log.d(TAG, "Description updated to: " + newDescription);
+                            }
+                            
+                            // Save the project with updated description
+                            projectFileManager.saveProject(state, currentProjectName);
+                            Log.d(TAG, "Project saved with updated metadata");
+                            
+                            // Update UI immediately
+                            updateProjectNameDisplay();
+                        } catch (org.json.JSONException e) {
+                            Log.e(TAG, "Failed to update description", e);
+                        }
+                    }
                 }
             }
         };
@@ -2039,12 +2158,15 @@ public class AnnotationService extends Service {
         android.widget.TextView txtCurrentProjectDesc = toolbarView.findViewById(R.id.txtCurrentProjectDesc);
         
         if (txtCurrentProjectName != null) {
-            txtCurrentProjectName.setText(currentProjectName != null && !currentProjectName.isEmpty() 
-                ? currentProjectName : getString(R.string.untitled_project));
+            // Always show the sanitized folder name (what's actually used on disk)
+            String sanitizedName = currentProjectName != null && !currentProjectName.isEmpty()
+                ? ProjectFileManager.sanitizeProjectName(currentProjectName)
+                : getString(R.string.untitled_project);
+            txtCurrentProjectName.setText(sanitizedName);
         }
         
         if (txtCurrentProjectDesc != null) {
-            AnnotationState state = annotationView.getState();
+            AnnotationState state = annotationView != null ? annotationView.getState() : null;
             String description = "";
             if (state != null && state.getMetadata() != null) {
                 description = state.getMetadata().optString("description", "");

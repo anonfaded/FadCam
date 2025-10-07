@@ -3,17 +3,17 @@
     <!-- Disabled state -->
     <item android:state_enabled="false">
         <shape android:shape="rectangle">
-            <solid android:color="#30FFFFFF" />
+            <solid android:color="#2A2A2A" />
             <corners android:radius="12dp" />
         </shape>
     </item>
 
     <!-- Normal state -->
     <item>
-        <ripple android:color="#50FFFFFF">
+        <ripple android:color="#40FFFFFF">
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#50FFFFFF" />
+                    <solid android:color="#2A2A2A" />
                     <corners android:radius="12dp" />
                 </shape>
             </item>
