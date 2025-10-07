@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Selected layer background -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#402196F3" />
+    <solid android:color="@color/annotation_button_bg" />
     <corners android:radius="8dp" />
     <stroke
         android:width="2dp"
-        android:color="#2196F3" />
+        android:color="@color/annotation_active_border" />
 </shape>

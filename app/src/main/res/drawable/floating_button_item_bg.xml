@@ -3,8 +3,9 @@
     <!-- Disabled state -->
     <item android:state_enabled="false">
         <shape android:shape="rectangle">
-            <solid android:color="#2A2A2A" />
+            <solid android:color="#1E1E1E" /> <!-- Darker for disabled -->
             <corners android:radius="12dp" />
+            <stroke android:width="1dp" android:color="@color/annotation_border_subtle" />
         </shape>
     </item>
 
@@ -13,8 +14,9 @@
         <ripple android:color="#40FFFFFF">
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#2A2A2A" />
+                    <solid android:color="#1E1E1E" /> <!-- Dark gray -->
                     <corners android:radius="12dp" />
+                    <stroke android:width="1dp" android:color="@color/annotation_border_subtle" />
                 </shape>
             </item>
         </ripple>

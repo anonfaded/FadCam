@@ -88,6 +88,7 @@ public class AnnotationService extends Service {
     private View annotationsHeader;
     private TextView annotationsExpandIcon;
     private View annotationsContent;
+    private TextView iconSnapGuides, labelSnapGuides;
     private androidx.appcompat.widget.SwitchCompat snapGuidesSwitch;
     private boolean isAnnotationsExpanded = false;
     
@@ -426,8 +427,14 @@ public class AnnotationService extends Service {
     private void loadProject(String projectName) {
         Log.i(TAG, "========== LOADING PROJECT: " + projectName + " ==========");
         
-        // Save current project first
-        saveCurrentState();
+        // Only save current project if it's different from the one we're loading
+        // This prevents overwriting the project we're about to load with stale data
+        if (!projectName.equals(currentProjectName) && currentProjectName != null) {
+            Log.d(TAG, "Saving current project before switching: " + currentProjectName);
+            saveCurrentState();
+        } else {
+            Log.d(TAG, "Skipping save - loading same project or no current project");
+        }
         
         // Update current project name and save to preferences
         currentProjectName = projectName;
@@ -487,8 +494,11 @@ public class AnnotationService extends Service {
     }
     
     private void createNewProject() {
-        // Save current first
-        saveCurrentState();
+        // Save current project before creating new one (if exists)
+        if (currentProjectName != null) {
+            Log.d(TAG, "Saving current project before creating new: " + currentProjectName);
+            saveCurrentState();
+        }
         
         // Generate new project name with timestamp - using FadRec prefix
         String newProjectName = "FadRec_" + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
@@ -528,24 +538,34 @@ public class AnnotationService extends Service {
         projectFileManager = new ProjectFileManager(this);
         Log.d(TAG, "ProjectFileManager initialized");
         
-        // Get or create current project name
-        currentProjectName = projectFileManager.getOrCreateCurrentProject();
-        Log.i(TAG, "Current project name: " + currentProjectName);
-        
-        setupAnnotationCanvas();
-        setupToolbar();
-        
-        // Load last saved project automatically
-        loadLastProject();
-        
-        startAutoSave();
-        registerMenuActionReceiver();
-        registerRecordingStateReceiver();
-        registerColorPickerReceiver();
-        registerProjectNamingReceiver();
-        registerProjectSelectionReceiver();
-        
-        Log.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
+        // Move project scanning to background thread to avoid UI lag
+        new Thread(() -> {
+            // Get or create current project name (file scanning happens here)
+            currentProjectName = projectFileManager.getOrCreateCurrentProject();
+            Log.i(TAG, "Current project name: " + currentProjectName);
+            
+            // Switch back to main thread for UI operations
+            new Handler(Looper.getMainLooper()).post(() -> {
+                setupAnnotationCanvas();
+                setupToolbar();
+                
+                // Load last saved project automatically
+                loadLastProject();
+                
+                startAutoSave();
+                registerMenuActionReceiver();
+                registerRecordingStateReceiver();
+                registerColorPickerReceiver();
+                registerProjectNamingReceiver();
+                registerProjectSelectionReceiver();
+                
+                // Broadcast that service is ready (dismiss loading dialog)
+                Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
+                sendBroadcast(readyIntent);
+                
+                Log.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
+            });
+        }).start();
     }
     
     /**
@@ -781,6 +801,8 @@ public class AnnotationService extends Service {
         annotationsHeader = toolbarView.findViewById(R.id.annotationsHeader);
         annotationsExpandIcon = toolbarView.findViewById(R.id.annotationsExpandIcon);
         annotationsContent = toolbarView.findViewById(R.id.annotationsContent);
+        iconSnapGuides = toolbarView.findViewById(R.id.iconSnapGuides);
+        labelSnapGuides = toolbarView.findViewById(R.id.labelSnapGuides);
         snapGuidesSwitch = toolbarView.findViewById(R.id.snapGuidesSwitch);
         
         // Initialize annotation toolbar controls
@@ -2279,7 +2301,8 @@ public class AnnotationService extends Service {
             }
         }
         
-        // Update button appearance
+        // Update button appearance and state
+        btnToggleAnnotation.setSelected(enabled); // Set selected state for green border
         TextView iconAnnotation = btnToggleAnnotation.findViewById(R.id.iconToggleAnnotation);
         TextView labelAnnotation = btnToggleAnnotation.findViewById(R.id.labelToggleAnnotation);
         TextView descAnnotation = btnToggleAnnotation.findViewById(R.id.descToggleAnnotation);
@@ -2326,7 +2349,8 @@ public class AnnotationService extends Service {
             annotationView.setCanvasHidden(canvasHidden);
         }
         
-        // Update button appearance
+        // Update button appearance and state
+        btnToggleCanvasVisibility.setSelected(!visible); // Set selected state when canvas is hidden
         TextView iconCanvas = btnToggleCanvasVisibility.findViewById(R.id.iconToggleCanvasVisibility);
         TextView labelCanvas = btnToggleCanvasVisibility.findViewById(R.id.labelToggleCanvasVisibility);
         TextView descCanvas = btnToggleCanvasVisibility.findViewById(R.id.descToggleCanvasVisibility);
@@ -2510,6 +2534,18 @@ public class AnnotationService extends Service {
             btnWidthThick.setEnabled(enabled);
             btnWidthThick.setClickable(enabled);
         }
+        if (btnWidthExtraThick != null) {
+            btnWidthExtraThick.setAlpha(alpha);
+            btnWidthExtraThick.setEnabled(enabled);
+            btnWidthExtraThick.setClickable(enabled);
+        }
+        
+        // Color picker (custom color button)
+        if (btnColorPicker != null) {
+            btnColorPicker.setAlpha(alpha);
+            btnColorPicker.setEnabled(enabled);
+            btnColorPicker.setClickable(enabled);
+        }
         
         // Background board tools
         if (btnBoardNone != null) {
@@ -2528,7 +2564,9 @@ public class AnnotationService extends Service {
             btnBoardWhite.setClickable(enabled);
         }
         
-        // Snap guides switch
+        // Snap guides icon, label, and switch
+        if (iconSnapGuides != null) iconSnapGuides.setAlpha(alpha);
+        if (labelSnapGuides != null) labelSnapGuides.setAlpha(alpha);
         if (snapGuidesSwitch != null) {
             snapGuidesSwitch.setAlpha(alpha);
             snapGuidesSwitch.setEnabled(enabled);

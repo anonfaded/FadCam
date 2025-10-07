@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quick Access button state-aware background -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Active/Selected state - green border -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/annotation_button_bg" />
+            <corners android:radius="8dp" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/annotation_active_border" />
+        </shape>
+    </item>
+    
+    <!-- Normal state - subtle border -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/annotation_button_bg" />
+            <corners android:radius="8dp" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/annotation_border_subtle" />
+        </shape>
+    </item>
+</selector>

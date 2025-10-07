@@ -3,6 +3,7 @@ package com.fadcam.fadrec.ui;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import androidx.core.content.ContextCompat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -156,14 +157,17 @@ public class LayerPanelOverlay {
         });
         
         // Visibility button
+        int greenAccent = ContextCompat.getColor(context, R.color.annotation_heading_accent);
+        int grayInactive = 0xFF9E9E9E;
+        
         btnVisibility.setText(layer.isVisible() ? "visibility" : "visibility_off");
-        btnVisibility.setTextColor(layer.isVisible() ? 0xFF4CAF50 : 0xFF9E9E9E);
+        btnVisibility.setTextColor(layer.isVisible() ? greenAccent : grayInactive);
         btnVisibility.setOnClickListener(v -> {
             if (listener != null) {
                 boolean newState = !layer.isVisible();
                 listener.onLayerVisibilityChanged(index, newState);
                 btnVisibility.setText(newState ? "visibility" : "visibility_off");
-                btnVisibility.setTextColor(newState ? 0xFF4CAF50 : 0xFF9E9E9E);
+                btnVisibility.setTextColor(newState ? greenAccent : grayInactive);
             }
         });
         

@@ -159,7 +159,7 @@
                 android:text="Quick Access" 
                 android:textSize="12sp" 
                 android:textStyle="bold" 
-                android:textColor="#FFFFFF" 
+                android:textColor="@color/annotation_heading_accent" 
                 android:fontFamily="@font/ubuntu_regular" 
                 android:paddingStart="12dp" 
                 android:paddingTop="8dp" 
@@ -185,7 +185,7 @@
                     android:orientation="horizontal" 
                     android:gravity="center_vertical"
                     android:paddingHorizontal="8dp"
-                    android:background="@drawable/floating_button_item_bg" 
+                    android:background="@drawable/quick_access_button_bg" 
                     android:clickable="true" 
                     android:focusable="true" 
                     android:layout_marginEnd="4dp">
@@ -237,7 +237,7 @@
                     android:orientation="horizontal" 
                     android:gravity="center_vertical"
                     android:paddingHorizontal="8dp"
-                    android:background="@drawable/floating_button_item_bg" 
+                    android:background="@drawable/quick_access_button_bg" 
                     android:clickable="true" 
                     android:focusable="true"
                     android:layout_marginStart="4dp">
@@ -288,7 +288,7 @@
                 android:text="Project" 
                 android:textSize="12sp" 
                 android:textStyle="bold" 
-                android:textColor="#FFFFFF" 
+                android:textColor="@color/annotation_heading_accent" 
                 android:fontFamily="@font/ubuntu_regular" 
                 android:paddingStart="12dp" 
                 android:paddingTop="8dp" 
@@ -420,14 +420,15 @@
             </LinearLayout>
 
             <!-- Divider -->
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#30FFFFFF" android:layout_marginVertical="8dp" />
+            <!-- Divider before Annotation Tools section -->
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/annotation_border_divider" android:layout_marginVertical="8dp" />
 
             <!-- ANNOTATION TOOLS SECTION -->
             <LinearLayout android:id="@+id/annotationsHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="6dp" android:paddingBottom="6dp" android:background="?android:attr/selectableItemBackground" android:clickable="true" android:focusable="true">
 
-                <TextView android:layout_width="24dp" android:layout_height="24dp" android:gravity="center" android:text="edit" android:textSize="20sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="8dp" />
+                <TextView android:layout_width="24dp" android:layout_height="24dp" android:gravity="center" android:text="edit" android:textSize="20sp" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/materialicons" android:layout_marginEnd="8dp" />
 
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/annotation_tools" android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/annotation_tools" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" />
 
                 <TextView android:id="@+id/annotationsExpandIcon" android:layout_width="20dp" android:layout_height="20dp" android:gravity="center" android:text="expand_more" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" />
             </LinearLayout>
@@ -438,9 +439,9 @@
                 <!-- Snap Guides Switch -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="6dp" android:paddingBottom="6dp">
 
-                    <TextView android:layout_width="20dp" android:layout_height="20dp" android:gravity="center" android:text="grid_on" android:textSize="14sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="8dp" />
+                    <TextView android:id="@+id/iconSnapGuides" android:layout_width="20dp" android:layout_height="20dp" android:gravity="center" android:text="grid_on" android:textSize="14sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="8dp" />
 
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/snap_guides" android:textSize="11sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" />
+                    <TextView android:id="@+id/labelSnapGuides" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/snap_guides" android:textSize="11sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" />
 
                     <androidx.appcompat.widget.SwitchCompat android:id="@+id/snapGuidesSwitch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:theme="@style/SwitchTheme" android:checked="true" />
                 </LinearLayout>
@@ -490,7 +491,7 @@
                 </LinearLayout>
 
                 <!-- Tools Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tools" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="8dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tools" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="8dp" android:paddingBottom="2dp" />
 
                 <!-- Tools Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="4dp">
@@ -537,7 +538,7 @@
                 </LinearLayout>
 
                 <!-- Colors Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Colors" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Colors" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
 
                 <!-- Colors Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp">
@@ -559,7 +560,7 @@
                 </LinearLayout>
 
                 <!-- Stroke Size Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stroke Size" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stroke Size" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
 
                 <!-- Stroke Widths Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="6dp">
@@ -574,7 +575,7 @@
                 </LinearLayout>
 
                 <!-- Board Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Board" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFF" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Board" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
 
                 <!-- Background Tools Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="6dp">

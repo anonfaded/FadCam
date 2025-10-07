@@ -14,7 +14,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingBottom="8dp">
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp">
 
         <TextView
             android:layout_width="0dp"
@@ -23,8 +24,9 @@
             android:text="🎨 Layers"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:layout_marginStart="8dp" />
+            android:textColor="@color/annotation_heading_accent"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="12dp" />
 
         <TextView
             android:id="@+id/btnAddLayer"
@@ -33,7 +35,7 @@
             android:gravity="center"
             android:text="add"
             android:textSize="20sp"
-            android:textColor="#2196F3"
+            android:textColor="@color/annotation_heading_accent"
             android:fontFamily="@font/materialicons"
             android:background="@drawable/floating_button_item_bg"
             android:clickable="true"

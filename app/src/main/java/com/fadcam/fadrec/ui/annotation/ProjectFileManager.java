@@ -185,8 +185,14 @@ public class ProjectFileManager {
             writer.write(project.toString(2)); // Pretty print with indent
             writer.close();
             
+            // CRITICAL: Update folder's lastModified timestamp so getOrCreateCurrentProject() finds latest correctly
+            // Note: We update the FILE timestamp, not folder (folder timestamp doesn't always update reliably)
+            long currentTime = System.currentTimeMillis();
+            boolean timestampUpdated = projectFile.setLastModified(currentTime);
+            
             Log.i(TAG, "✅ Project saved successfully: " + projectFile.getAbsolutePath());
             Log.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
+            Log.d(TAG, "  File timestamp updated: " + timestampUpdated + " → " + new java.util.Date(projectFile.lastModified()));
             return true;
             
         } catch (JSONException | IOException e) {
@@ -306,15 +312,22 @@ public class ProjectFileManager {
         Log.d(TAG, "Found " + (existingProjects != null ? existingProjects.length : 0) + " existing projects");
         
         if (existingProjects != null && existingProjects.length > 0) {
-            // Sort by last modified date (newest first)
-            java.util.Arrays.sort(existingProjects, (a, b) -> 
-                Long.compare(b.lastModified(), a.lastModified()));
+            // Sort by project FILE (project.fadrec) last modified date (newest first)
+            // This is more reliable than folder timestamps
+            java.util.Arrays.sort(existingProjects, (a, b) -> {
+                File fileA = new File(a, PROJECT_FILE_NAME);
+                File fileB = new File(b, PROJECT_FILE_NAME);
+                long timeA = fileA.exists() ? fileA.lastModified() : a.lastModified();
+                long timeB = fileB.exists() ? fileB.lastModified() : b.lastModified();
+                return Long.compare(timeB, timeA);
+            });
             
             String latestProject = existingProjects[0].getName();
-            long latestModified = existingProjects[0].lastModified();
+            File latestProjectFile = new File(existingProjects[0], PROJECT_FILE_NAME);
+            long latestModified = latestProjectFile.exists() ? latestProjectFile.lastModified() : existingProjects[0].lastModified();
             
-            Log.d(TAG, "Latest project by modified date: " + latestProject);
-            Log.d(TAG, "Latest project modified at: " + new java.util.Date(latestModified));
+            Log.d(TAG, "Latest project by FILE modified date: " + latestProject);
+            Log.d(TAG, "Latest project file modified at: " + new java.util.Date(latestModified));
             
             // If saved project exists and is the same as latest, use it
             if (savedProject != null && savedProject.equals(latestProject) && projectExists(savedProject)) {

@@ -1,34 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Individual layer row in layer panel -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/settings_home_row_bg" android:padding="10dp" android:layout_margin="3dp" android:clickable="true" android:focusable="true">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/settings_home_row_bg"
+    android:padding="12dp"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    android:clickable="true"
+    android:focusable="true">
 
     <!-- Layer name and delete button -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="4dp">
 
-        <TextView android:id="@+id/txtLayerName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Layer 1" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" android:singleLine="true" android:ellipsize="end" />
+        <TextView
+            android:id="@+id/txtLayerName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Layer 1"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:paddingEnd="8dp" />
 
-        <TextView android:id="@+id/btnDeleteLayer" android:layout_width="24dp" android:layout_height="24dp" android:gravity="center" android:text="delete" android:textSize="16sp" android:textColor="#FF5252" android:fontFamily="@font/materialicons" android:clickable="true" android:focusable="true" android:visibility="gone" />
+        <TextView
+            android:id="@+id/btnDeleteLayer"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="delete"
+            android:textSize="16sp"
+            android:textColor="#FF5252"
+            android:fontFamily="@font/materialicons"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- Layer info -->
-    <TextView android:id="@+id/txtLayerInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5 paths" android:textSize="11sp" android:textColor="#9E9E9E" android:layout_marginTop="2dp" />
+    <TextView
+        android:id="@+id/txtLayerInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0 objects"
+        android:textSize="11sp"
+        android:textColor="#9E9E9E"
+        android:paddingBottom="8dp" />
 
     <!-- Controls: Visibility and Lock buttons -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
 
-        <TextView android:id="@+id/btnVisibility" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="visibility" android:textSize="20sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" android:clickable="true" android:focusable="true" android:background="@drawable/floating_button_item_bg" />
+        <TextView
+            android:id="@+id/btnVisibility"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="visibility"
+            android:textSize="20sp"
+            android:textColor="@color/annotation_heading_accent"
+            android:fontFamily="@font/materialicons"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/floating_button_item_bg" />
 
-        <TextView android:id="@+id/btnLock" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="lock_open" android:textSize="20sp" android:textColor="#9E9E9E" android:fontFamily="@font/materialicons" android:clickable="true" android:focusable="true" android:background="@drawable/floating_button_item_bg" android:layout_marginStart="8dp" />
+        <TextView
+            android:id="@+id/btnLock"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="lock_open"
+            android:textSize="20sp"
+            android:textColor="#9E9E9E"
+            android:fontFamily="@font/materialicons"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/floating_button_item_bg"
+            android:layout_marginStart="8dp" />
 
-        <TextView android:id="@+id/btnPin" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="push_pin" android:textSize="20sp" android:textColor="#9E9E9E" android:fontFamily="@font/materialicons" android:clickable="true" android:focusable="true" android:background="@drawable/floating_button_item_bg" android:layout_marginStart="8dp" />
+        <TextView
+            android:id="@+id/btnPin"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="push_pin"
+            android:textSize="20sp"
+            android:textColor="#9E9E9E"
+            android:fontFamily="@font/materialicons"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/floating_button_item_bg"
+            android:layout_marginStart="8dp" />
 
-        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <!-- Opacity label -->
-        <TextView android:id="@+id/txtOpacity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100%" android:textSize="12sp" android:textColor="#FFFFFF" android:gravity="end" android:minWidth="40dp" />
+        <TextView
+            android:id="@+id/txtOpacity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100%"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:gravity="end"
+            android:minWidth="40dp" />
     </LinearLayout>
 
     <!-- Opacity slider -->
-    <SeekBar android:id="@+id/seekOpacity" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progress="100" android:layout_marginTop="4dp" />
+    <SeekBar
+        android:id="@+id/seekOpacity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="100"
+        android:paddingTop="4dp" />
 
 </LinearLayout>

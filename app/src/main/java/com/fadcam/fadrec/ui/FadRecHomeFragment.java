@@ -65,6 +65,9 @@ public class FadRecHomeFragment extends HomeFragment {
     // Timer handler for live updates of elapsed/remaining time
     private android.os.Handler timerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable timerUpdateRunnable;
+    
+    // Material loading dialog for annotation service startup
+    private androidx.appcompat.app.AlertDialog loadingDialog;
 
     /**
      * Create a new instance of FadRecHomeFragment.
@@ -173,7 +176,8 @@ public class FadRecHomeFragment extends HomeFragment {
         BroadcastReceiver annotationServiceReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(intent.getAction())) {
+                String action = intent.getAction();
+                if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(action)) {
                     // Service stopped, turn off the menu switch
                     if (getView() != null) {
                         View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
@@ -188,11 +192,19 @@ public class FadRecHomeFragment extends HomeFragment {
                     // Update SharedPreferences
                     sharedPreferencesManager.setFloatingControlsEnabled(false);
                     Log.d(TAG, "Annotation service stopped - menu switch turned off");
+                } else if ("com.fadcam.fadrec.ANNOTATION_SERVICE_READY".equals(action)) {
+                    // Service initialization complete, dismiss loading dialog
+                    if (loadingDialog != null && loadingDialog.isShowing()) {
+                        loadingDialog.dismiss();
+                        Log.d(TAG, "Annotation service ready - loading dialog dismissed");
+                    }
                 }
             }
         };
         
-        IntentFilter filter = new IntentFilter("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+        filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
         requireContext().registerReceiver(annotationServiceReceiver, filter);
     }
         /**
@@ -492,6 +504,19 @@ public class FadRecHomeFragment extends HomeFragment {
      */
     private void startAnnotationService() {
         try {
+            // Show Material Design loading dialog while service initializes
+            if (loadingDialog == null || !loadingDialog.isShowing()) {
+                // Create Material Design dialog with custom layout
+                android.view.LayoutInflater inflater = android.view.LayoutInflater.from(requireContext());
+                android.view.View dialogView = inflater.inflate(com.fadcam.R.layout.dialog_loading, null);
+                
+                loadingDialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setView(dialogView)
+                    .setCancelable(false)
+                    .create();
+                loadingDialog.show();
+            }
+            
             android.content.Intent intent = new android.content.Intent(
                 requireContext(),
                 AnnotationService.class
@@ -504,6 +529,9 @@ public class FadRecHomeFragment extends HomeFragment {
             Log.d(TAG, "Annotation service started");
         } catch (Exception e) {
             Log.e(TAG, "Error starting annotation service", e);
+            if (loadingDialog != null && loadingDialog.isShowing()) {
+                loadingDialog.dismiss();
+            }
         }
     }
     
@@ -1267,6 +1295,12 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onDestroyView() {
         Log.d(TAG, "FadRecHomeFragment view destroyed");
+        
+        // Dismiss loading dialog if showing
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+            loadingDialog = null;
+        }
         
         // Stop timer updates
         stopTimerUpdates();
