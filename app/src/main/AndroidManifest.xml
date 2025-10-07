@@ -272,6 +272,9 @@
         <!-- Transparent dialog activity for color picker -->
         <activity android:name=".fadrec.ui.ColorPickerDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />
 
+        <!-- Transparent dialog activity for project naming -->
+        <activity android:name=".fadrec.ui.ProjectNamingDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />
+
         <service android:name=".services.TorchService" android:foregroundServiceType="camera" android:exported="true">
         </service>
         <receiver android:name=".receivers.TorchToggleReceiver" android:exported="true">

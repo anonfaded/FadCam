@@ -10,6 +10,7 @@ import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -145,9 +146,29 @@ public class AnnotationView extends View {
     }
     
     public void setState(AnnotationState state) {
+        Log.d(TAG, "========== setState() called ==========");
+        Log.d(TAG, "  New state pages: " + (state != null ? state.getPages().size() : "null"));
+        
+        if (state != null) {
+            for (int i = 0; i < state.getPages().size(); i++) {
+                AnnotationPage page = state.getPages().get(i);
+                int totalObjects = 0;
+                for (AnnotationLayer layer : page.getLayers()) {
+                    totalObjects += layer.getObjects().size();
+                }
+                Log.d(TAG, "    Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + totalObjects + " objects");
+            }
+            Log.d(TAG, "  Active page index: " + state.getActivePageIndex());
+        }
+        
         this.state = state;
         updatePaintFromState();
+        
+        Log.d(TAG, "  Calling invalidate() to trigger redraw...");
         invalidate();
+        
+        Log.d(TAG, "  View dimensions: " + getWidth() + "x" + getHeight());
+        Log.d(TAG, "========== setState() complete, should redraw now ==========");
     }
     
     public AnnotationState getState() {

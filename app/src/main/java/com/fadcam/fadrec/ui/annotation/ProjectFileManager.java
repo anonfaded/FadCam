@@ -67,6 +67,7 @@ public class ProjectFileManager {
      * Save annotation state to .fadrec file
      */
     public boolean saveProject(AnnotationState state, String projectName) {
+        Log.i(TAG, "========== SAVING PROJECT: " + projectName + " ==========");
         try {
             JSONObject project = new JSONObject();
             
@@ -74,10 +75,21 @@ public class ProjectFileManager {
             project.put("version", PROJECT_VERSION);
             
             // Metadata
-            JSONObject metadata = new JSONObject();
-            metadata.put("name", projectName);
-            metadata.put("created", state.getCreatedAt());
+            JSONObject metadata = state.getMetadata();
+            if (metadata == null) {
+                metadata = new JSONObject();
+            }
+            
+            // Ensure core metadata fields are present
+            if (!metadata.has("name")) {
+                metadata.put("name", projectName);
+            }
+            if (!metadata.has("created")) {
+                metadata.put("created", state.getCreatedAt());
+            }
             metadata.put("modified", System.currentTimeMillis());
+            
+            // Description field preserved if exists
             project.put("metadata", metadata);
             
             // Canvas settings (placeholder for future)
@@ -89,11 +101,23 @@ public class ProjectFileManager {
             
             // Pages
             JSONArray pagesArray = new JSONArray();
-            for (AnnotationPage page : state.getPages()) {
+            int totalObjects = 0;
+            for (int i = 0; i < state.getPages().size(); i++) {
+                AnnotationPage page = state.getPages().get(i);
                 pagesArray.put(page.toJSON());
+                
+                // Count objects
+                for (AnnotationLayer layer : page.getLayers()) {
+                    totalObjects += layer.getObjects().size();
+                }
+                Log.d(TAG, "  Page " + (i+1) + ": " + page.getLayers().size() + " layers");
             }
             project.put("pages", pagesArray);
             project.put("currentPageIndex", state.getActivePageIndex());
+            
+            Log.d(TAG, "  Total pages: " + state.getPages().size());
+            Log.d(TAG, "  Total objects: " + totalObjects);
+            Log.d(TAG, "  Active page: " + (state.getActivePageIndex() + 1));
             
             // Write to file
             File projectFile = new File(projectsDir, projectName + FILE_EXTENSION);
@@ -101,11 +125,12 @@ public class ProjectFileManager {
             writer.write(project.toString(2)); // Pretty print with indent
             writer.close();
             
-            Log.i(TAG, "Project saved: " + projectFile.getAbsolutePath());
+            Log.i(TAG, "✅ Project saved successfully: " + projectFile.getAbsolutePath());
+            Log.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
             return true;
             
         } catch (JSONException | IOException e) {
-            Log.e(TAG, "Failed to save project", e);
+            Log.e(TAG, "❌ Failed to save project: " + projectName, e);
             return false;
         }
     }
@@ -114,12 +139,16 @@ public class ProjectFileManager {
      * Load annotation state from .fadrec file
      */
     public AnnotationState loadProject(String projectName) {
+        Log.i(TAG, "========== LOADING PROJECT FROM FILE: " + projectName + " ==========");
         try {
             File projectFile = new File(projectsDir, projectName + FILE_EXTENSION);
             if (!projectFile.exists()) {
-                Log.e(TAG, "Project file not found: " + projectFile.getAbsolutePath());
+                Log.e(TAG, "❌ Project file not found: " + projectFile.getAbsolutePath());
                 return null;
             }
+            
+            Log.d(TAG, "  File found: " + projectFile.getAbsolutePath());
+            Log.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
             
             // Read file
             FileReader reader = new FileReader(projectFile);
@@ -136,18 +165,38 @@ public class ProjectFileManager {
             
             // Verify version
             String version = project.getString("version");
+            Log.d(TAG, "  Project version: " + version);
             if (!version.equals(PROJECT_VERSION)) {
-                Log.w(TAG, "Project version mismatch: " + version);
+                Log.w(TAG, "⚠️ Project version mismatch: expected " + PROJECT_VERSION + ", got " + version);
             }
             
             // Create state
             AnnotationState state = new AnnotationState();
             
+            // Load metadata if exists
+            if (project.has("metadata")) {
+                JSONObject metadata = project.getJSONObject("metadata");
+                state.setMetadata(metadata);
+                Log.d(TAG, "  Metadata loaded: " + metadata.toString());
+            }
+            
             // Load pages
             JSONArray pagesArray = project.getJSONArray("pages");
+            Log.d(TAG, "  Loading " + pagesArray.length() + " pages...");
+            
+            int totalObjects = 0;
             for (int i = 0; i < pagesArray.length(); i++) {
                 JSONObject pageJson = pagesArray.getJSONObject(i);
                 AnnotationPage page = AnnotationPage.fromJSON(pageJson);
+                
+                // Count objects in this page
+                int pageObjects = 0;
+                for (AnnotationLayer layer : page.getLayers()) {
+                    pageObjects += layer.getObjects().size();
+                }
+                totalObjects += pageObjects;
+                
+                Log.d(TAG, "    Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + pageObjects + " objects");
                 
                 // Remove default page if loading first page
                 if (i == 0 && state.getPages().size() == 1) {
@@ -162,14 +211,18 @@ public class ProjectFileManager {
                 int currentIndex = project.getInt("currentPageIndex");
                 if (currentIndex >= 0 && currentIndex < state.getPages().size()) {
                     state.setActivePageIndex(currentIndex);
+                    Log.d(TAG, "  Active page set to: " + (currentIndex + 1));
                 }
             }
             
-            Log.i(TAG, "Project loaded: " + projectFile.getAbsolutePath());
+            Log.i(TAG, "✅ Project loaded successfully");
+            Log.d(TAG, "  Total pages loaded: " + state.getPages().size());
+            Log.d(TAG, "  Total objects: " + totalObjects);
             return state;
             
         } catch (JSONException | IOException e) {
-            Log.e(TAG, "Failed to load project", e);
+            Log.e(TAG, "❌ Failed to load project: " + projectName, e);
+            e.printStackTrace();
             return null;
         }
     }

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Project Name Input -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/project_name_label"
+        android:textSize="12sp"
+        android:textColor="#666666"
+        android:textStyle="bold"
+        android:fontFamily="@font/ubuntu_regular"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/etProjectName"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="@string/project_name_hint"
+        android:textSize="15sp"
+        android:fontFamily="@font/ubuntu_regular"
+        android:background="@drawable/edit_text_bg"
+        android:paddingHorizontal="12dp"
+        android:maxLines="1"
+        android:imeOptions="actionNext"
+        android:inputType="text"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Project Description Input -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/project_desc_label"
+        android:textSize="12sp"
+        android:textColor="#666666"
+        android:textStyle="bold"
+        android:fontFamily="@font/ubuntu_regular"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/etProjectDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="80dp"
+        android:hint="@string/project_desc_hint"
+        android:textSize="13sp"
+        android:fontFamily="@font/ubuntu_regular"
+        android:background="@drawable/edit_text_bg"
+        android:padding="12dp"
+        android:gravity="top|start"
+        android:maxLines="4"
+        android:imeOptions="actionDone"
+        android:inputType="textMultiLine|textCapSentences" />
+
+</LinearLayout>

@@ -1164,4 +1164,16 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="done">Done</string>
+
+    <!-- Project Management Strings -->
+    <string name="project_name_label">Project Name</string>
+    <string name="project_name_hint">e.g., Tutorial Video, Game Recording</string>
+    <string name="project_desc_label">Description (Optional)</string>
+    <string name="project_desc_hint">What is this project about?</string>
+    <string name="untitled_project">Untitled Project</string>
+    <string name="tap_to_add_description">Tap to add description</string>
+    <string name="manage_projects">Manage Projects</string>
+    <string name="name_your_project">Name Your Project</string>
+    <string name="project_naming_message">Give your project a memorable name and description to organize your recordings</string>
+    
 </resources>

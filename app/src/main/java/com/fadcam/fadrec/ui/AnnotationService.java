@@ -24,6 +24,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -124,6 +125,7 @@ public class AnnotationService extends Service {
     private BroadcastReceiver menuActionReceiver;
     private BroadcastReceiver recordingStateReceiver;
     private BroadcastReceiver colorPickerReceiver;
+    private BroadcastReceiver projectNamingReceiver;
     
     // Toolbar dragging
     private int toolbarInitialX, toolbarInitialY;
@@ -244,6 +246,8 @@ public class AnnotationService extends Service {
     }
     
     private void loadProject(String projectName) {
+        Log.i(TAG, "========== LOADING PROJECT: " + projectName + " ==========");
+        
         // Save current project first
         saveCurrentState();
         
@@ -252,11 +256,47 @@ public class AnnotationService extends Service {
         AnnotationState loadedState = projectFileManager.loadProject(projectName);
         
         if (loadedState != null && annotationView != null) {
+            Log.i(TAG, "✅ Project loaded successfully from file");
+            Log.d(TAG, "  - Total pages: " + loadedState.getPages().size());
+            Log.d(TAG, "  - Active page index: " + loadedState.getActivePageIndex());
+            
+            // Log each page details
+            for (int i = 0; i < loadedState.getPages().size(); i++) {
+                AnnotationPage page = loadedState.getPages().get(i);
+                Log.d(TAG, "  - Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + 
+                      "Total objects across all layers: " + getTotalObjectsInPage(page));
+            }
+            
+            // Apply state to view
             annotationView.setState(loadedState);
+            
+            // Force complete redraw
+            annotationView.invalidate();
+            annotationView.requestLayout();
+            
             updateUndoRedoButtons();
             updatePageLayerInfo();
+            updateNotification();
+            
             Toast.makeText(this, "✅ Loaded: " + projectName, Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "========== PROJECT LOADED AND APPLIED ==========");
+        } else {
+            Log.e(TAG, "❌ Failed to load project: " + projectName);
+            Log.e(TAG, "  - loadedState is null: " + (loadedState == null));
+            Log.e(TAG, "  - annotationView is null: " + (annotationView == null));
+            Toast.makeText(this, "❌ Failed to load project", Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    /**
+     * Helper to count total objects in a page across all layers
+     */
+    private int getTotalObjectsInPage(AnnotationPage page) {
+        int count = 0;
+        for (AnnotationLayer layer : page.getLayers()) {
+            count += layer.getObjects().size();
+        }
+        return count;
     }
     
     private void createNewProject() {
@@ -285,7 +325,7 @@ public class AnnotationService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "AnnotationService created");
+        Log.d(TAG, "============ AnnotationService onCreate START ============");
         
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, createNotification());
@@ -294,19 +334,63 @@ public class AnnotationService extends Service {
         
         // Initialize project file manager
         projectFileManager = new ProjectFileManager(this);
+        Log.d(TAG, "ProjectFileManager initialized");
         
-        // Generate single project name for this session (or load last project)
+        // Get or create current project name
         currentProjectName = projectFileManager.getOrCreateCurrentProject();
+        Log.i(TAG, "Current project name: " + currentProjectName);
         
         setupAnnotationCanvas();
         setupToolbar();
+        
+        // Load last saved project automatically
+        loadLastProject();
+        
         startAutoSave();
         registerMenuActionReceiver();
         registerRecordingStateReceiver();
         registerColorPickerReceiver();
+        registerProjectNamingReceiver();
+        
+        Log.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
+    }
+    
+    /**
+     * Load the last saved project on service start
+     */
+    private void loadLastProject() {
+        if (currentProjectName != null && projectFileManager != null) {
+            Log.i(TAG, "Attempting to load last project: " + currentProjectName);
+            
+            AnnotationState loadedState = projectFileManager.loadProject(currentProjectName);
+            
+            if (loadedState != null && annotationView != null) {
+                Log.i(TAG, "✅ Successfully loaded project: " + currentProjectName);
+                Log.d(TAG, "  - Pages: " + loadedState.getPages().size());
+                Log.d(TAG, "  - Current page index: " + loadedState.getActivePageIndex());
+                
+                // Apply the loaded state to annotation view
+                annotationView.setState(loadedState);
+                
+                // Force redraw
+                annotationView.invalidate();
+                
+                updateUndoRedoButtons();
+                updatePageLayerInfo();
+                updateProjectNameDisplay(); // Update project name/description in toolbar
+                
+                Log.i(TAG, "Project state applied to AnnotationView");
+            } else {
+                Log.w(TAG, "⚠️ Failed to load project or project doesn't exist yet: " + currentProjectName);
+                Log.i(TAG, "Starting with fresh state");
+            }
+        } else {
+            Log.w(TAG, "No current project name or ProjectFileManager not initialized");
+        }
     }
     
     private void setupAnnotationCanvas() {
+        Log.d(TAG, "Setting up annotation canvas...");
         annotationView = new AnnotationView(this);
         
         // IMPORTANT: Disable annotation by default so user doesn't see accidental drawings
@@ -400,6 +484,27 @@ public class AnnotationService extends Service {
         // Initialize Quick Access buttons
         btnToggleAnnotation = toolbarView.findViewById(R.id.btnToggleAnnotation);
         btnToggleCanvasVisibility = toolbarView.findViewById(R.id.btnToggleCanvasVisibility);
+        
+        // Initialize Project Manager
+        LinearLayout btnCurrentProject = toolbarView.findViewById(R.id.btnCurrentProject);
+        LinearLayout btnManageProjects = toolbarView.findViewById(R.id.btnManageProjects);
+        TextView txtCurrentProjectName = toolbarView.findViewById(R.id.txtCurrentProjectName);
+        TextView txtCurrentProjectDesc = toolbarView.findViewById(R.id.txtCurrentProjectDesc);
+        
+        // Update current project display
+        if (txtCurrentProjectName != null) {
+            txtCurrentProjectName.setText(currentProjectName != null && !currentProjectName.isEmpty() 
+                ? currentProjectName : "Untitled Project");
+        }
+        
+        // Setup project manager listeners
+        if (btnCurrentProject != null) {
+            btnCurrentProject.setOnClickListener(v -> showProjectNamingDialog());
+        }
+        
+        if (btnManageProjects != null) {
+            btnManageProjects.setOnClickListener(v -> showProjectsDialog());
+        }
         
         // Initialize recording controls
         recordingControlsContainer = toolbarView.findViewById(R.id.recordingControlsContainer);
@@ -1146,6 +1251,36 @@ public class AnnotationService extends Service {
         startActivity(intent);
     }
     
+    /**
+     * Shows dialog to name/rename the current project and add description.
+     */
+    private void showProjectNamingDialog() {
+        Intent intent = new Intent(this, ProjectNamingDialogActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra("currentProjectName", currentProjectName);
+        
+        // Load current description if it exists
+        AnnotationState currentState = annotationView.getState();
+        if (currentState != null && currentState.getMetadata() != null) {
+            String description = currentState.getMetadata().optString("description", "");
+            intent.putExtra("currentDescription", description);
+        }
+        
+        startActivity(intent);
+    }
+    
+    /**
+     * Shows dialog to browse and manage all projects.
+     */
+    private void showProjectsDialog() {
+        // TODO: Implement ProjectSelectionDialogActivity
+        Toast.makeText(this, "Projects manager coming soon!", Toast.LENGTH_SHORT).show();
+        
+        // Intent intent = new Intent(this, ProjectSelectionDialogActivity.class);
+        // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        // startActivity(intent);
+    }
+    
     private int dpToPx(int dp) {
         return (int) (dp * getResources().getDisplayMetrics().density);
     }
@@ -1492,11 +1627,22 @@ public class AnnotationService extends Service {
     }
     
     private Notification createNotification() {
+        // Open app intent - tap notification to open FadCam app
+        Intent openAppIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        if (openAppIntent == null) {
+            openAppIntent = new Intent(this, com.fadcam.MainActivity.class);
+        }
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        android.app.PendingIntent openAppPendingIntent = android.app.PendingIntent.getActivity(
+                this, 0, openAppIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+        );
+        
         // Toggle menu action
         Intent toggleIntent = new Intent(this, AnnotationService.class);
         toggleIntent.setAction("ACTION_TOGGLE_MENU");
         android.app.PendingIntent togglePendingIntent = android.app.PendingIntent.getService(
-                this, 0, toggleIntent,
+                this, 1, toggleIntent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
         );
         
@@ -1504,22 +1650,19 @@ public class AnnotationService extends Service {
         Intent projectIntent = new Intent(this, AnnotationService.class);
         projectIntent.setAction("ACTION_OPEN_PROJECTS");
         android.app.PendingIntent projectPendingIntent = android.app.PendingIntent.getService(
-                this, 1, projectIntent,
+                this, 2, projectIntent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
         );
-        
-        String contentText = overlayVisible 
-            ? "Overlay visible - Tap to hide" 
-            : "Overlay hidden - Tap to show";
         
         String annotationStatus = annotationEnabled ? " | ✏️ Enabled" : " | 📱 Disabled";
         
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Annotation" + annotationStatus)
-                .setContentText(contentText)
+                .setContentTitle("FadRec Annotation" + annotationStatus)
+                .setContentText("Tap to open FadCam • Project: " + (currentProjectName != null ? currentProjectName : "None"))
                 .setSmallIcon(R.drawable.ic_draw_edit)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
+                .setContentIntent(openAppPendingIntent)
                 .addAction(R.drawable.ic_draw_edit, overlayVisible ? "Hide" : "Show", togglePendingIntent)
                 .addAction(R.drawable.ic_draw_edit, "Projects", projectPendingIntent)
                 .build();
@@ -1616,6 +1759,81 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter(ColorPickerDialogActivity.ACTION_COLOR_SELECTED);
         registerReceiver(colorPickerReceiver, filter);
         Log.d(TAG, "Color picker receiver registered");
+    }
+    
+    /**
+     * Registers broadcast receiver to handle project rename events.
+     */
+    private void registerProjectNamingReceiver() {
+        projectNamingReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String newName = intent.getStringExtra(ProjectNamingDialogActivity.EXTRA_PROJECT_NAME);
+                String newDescription = intent.getStringExtra(ProjectNamingDialogActivity.EXTRA_PROJECT_DESCRIPTION);
+                
+                if (newName != null && !newName.isEmpty()) {
+                    Log.i(TAG, "Project rename requested: '" + currentProjectName + "' → '" + newName + "'");
+                    
+                    // Update current project name
+                    String oldName = currentProjectName;
+                    currentProjectName = newName;
+                    
+                    // Update metadata with description
+                    AnnotationState state = annotationView.getState();
+                    if (state != null && state.getMetadata() != null) {
+                        try {
+                            state.getMetadata().put("name", newName);
+                            state.getMetadata().put("description", newDescription);
+                        } catch (org.json.JSONException e) {
+                            Log.e(TAG, "Failed to update metadata", e);
+                        }
+                    }
+                    
+                    // Save project with new name
+                    saveCurrentState();
+                    
+                    // Update UI
+                    updateProjectNameDisplay();
+                    updateNotification();
+                    
+                    Log.i(TAG, "✅ Project renamed successfully");
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter(ProjectNamingDialogActivity.ACTION_PROJECT_RENAMED);
+        registerReceiver(projectNamingReceiver, filter);
+        Log.d(TAG, "Project naming receiver registered");
+    }
+    
+    /**
+     * Updates the project name and description display in the toolbar.
+     */
+    private void updateProjectNameDisplay() {
+        if (toolbarView == null) return;
+        
+        android.widget.TextView txtCurrentProjectName = toolbarView.findViewById(R.id.txtCurrentProjectName);
+        android.widget.TextView txtCurrentProjectDesc = toolbarView.findViewById(R.id.txtCurrentProjectDesc);
+        
+        if (txtCurrentProjectName != null) {
+            txtCurrentProjectName.setText(currentProjectName != null && !currentProjectName.isEmpty() 
+                ? currentProjectName : getString(R.string.untitled_project));
+        }
+        
+        if (txtCurrentProjectDesc != null) {
+            AnnotationState state = annotationView.getState();
+            String description = "";
+            if (state != null && state.getMetadata() != null) {
+                description = state.getMetadata().optString("description", "");
+            }
+            
+            txtCurrentProjectDesc.setText(description.isEmpty() 
+                ? getString(R.string.tap_to_add_description) 
+                : description);
+            
+            // Dim text if no description
+            txtCurrentProjectDesc.setAlpha(description.isEmpty() ? 0.5f : 1.0f);
+        }
     }
     
     private void updateRecordingButtons() {
@@ -2027,6 +2245,9 @@ public class AnnotationService extends Service {
         }
         if (colorPickerReceiver != null) {
             unregisterReceiver(colorPickerReceiver);
+        }
+        if (projectNamingReceiver != null) {
+            unregisterReceiver(projectNamingReceiver);
         }
         
         // Stop auto-save timer

@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import org.json.JSONObject;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,7 @@ public class AnnotationState implements Serializable {
     private int activePageIndex;
     private long createdAt;
     private long modifiedAt;
+    private transient JSONObject metadata; // Project metadata (name, description, etc)
     
     // Drawing tool state (shared across all pages)
     private int currentColor;
@@ -26,6 +29,7 @@ public class AnnotationState implements Serializable {
         this.activePageIndex = 0;
         this.createdAt = System.currentTimeMillis();
         this.modifiedAt = createdAt;
+        this.metadata = new JSONObject();
         
         // Default tool state
         this.currentColor = 0xFFF44336; // Red
@@ -96,10 +100,27 @@ public class AnnotationState implements Serializable {
     
     public long getModifiedAt() { return modifiedAt; }
     
+    // Metadata (project name, description, etc)
+    public JSONObject getMetadata() {
+        if (metadata == null) {
+            metadata = new JSONObject();
+        }
+        return metadata;
+    }
+    
+    public void setMetadata(JSONObject metadata) {
+        this.metadata = metadata;
+    }
+    
     /**
      * Reconstruct transient fields after deserialization
      */
     public void reconstruct() {
+        // Reconstruct metadata if null
+        if (metadata == null) {
+            metadata = new JSONObject();
+        }
+        
         for (AnnotationPage page : pages) {
             page.reconstruct();
         }
