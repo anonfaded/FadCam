@@ -84,6 +84,17 @@ public class AnnotationService extends Service {
     private com.fadcam.fadrec.ScreenRecordingState recordingState = com.fadcam.fadrec.ScreenRecordingState.NONE;
     private boolean isRecordingControlsExpanded = false;
     
+    // Project section
+    private View quickAccessHeader;
+    private TextView quickAccessExpandIcon;
+    private View quickAccessContent;
+    private boolean isQuickAccessExpanded = true; // Default open
+    
+    private View projectHeader;
+    private TextView projectExpandIcon;
+    private View projectContent;
+    private boolean isProjectExpanded = false;
+    
     // Annotation tools section
     private View annotationsHeader;
     private TextView annotationsExpandIcon;
@@ -130,6 +141,8 @@ public class AnnotationService extends Service {
     private BroadcastReceiver colorPickerReceiver;
     private BroadcastReceiver projectNamingReceiver;
     private BroadcastReceiver projectSelectionReceiver;
+    private BroadcastReceiver layerRenameReceiver;
+    private BroadcastReceiver pageRenameReceiver;
     
     // Toolbar dragging
     private int toolbarInitialX, toolbarInitialY;
@@ -600,7 +613,7 @@ public class AnnotationService extends Service {
         
         androidx.appcompat.app.AlertDialog startupDialog = builder
             .setTitle("Welcome Back!")
-            .setMessage("Continue with project \"" + sanitizedName + "\" or start a new one?")
+            .setMessage("Continue with your last saved project \"" + sanitizedName + "\" or start a new one?")
             .setPositiveButton("Continue", (dialog, which) -> {
                 Log.i(TAG, "User chose to continue with: " + existingProjectName);
                 loadExistingProject(existingProjectName);
@@ -747,7 +760,7 @@ public class AnnotationService extends Service {
         android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
         windowManager.getDefaultDisplay().getMetrics(metrics);
         int screenHeight = metrics.heightPixels;
-        arrowParams.y = (int) (screenHeight * 0.6); // 60% down from top
+        arrowParams.y = (int) (screenHeight * 0.5); // Center vertically
         
         windowManager.addView(arrowOverlay, arrowParams);
         Log.d(TAG, "Arrow overlay added at x=0, y=" + arrowParams.y + " (RIGHT edge, 60% down) - ALWAYS ON TOP");
@@ -796,6 +809,16 @@ public class AnnotationService extends Service {
         labelStartStop = toolbarView.findViewById(R.id.labelStartStop);
         iconPauseResume = toolbarView.findViewById(R.id.iconPauseResume);
         labelPauseResume = toolbarView.findViewById(R.id.labelPauseResume);
+        
+        // Initialize quick access section
+        quickAccessHeader = toolbarView.findViewById(R.id.quickAccessHeader);
+        quickAccessExpandIcon = toolbarView.findViewById(R.id.quickAccessExpandIcon);
+        quickAccessContent = toolbarView.findViewById(R.id.quickAccessContent);
+        
+        // Initialize project section
+        projectHeader = toolbarView.findViewById(R.id.projectHeader);
+        projectExpandIcon = toolbarView.findViewById(R.id.projectExpandIcon);
+        projectContent = toolbarView.findViewById(R.id.projectContent);
         
         // Initialize annotations section
         annotationsHeader = toolbarView.findViewById(R.id.annotationsHeader);
@@ -969,6 +992,34 @@ public class AnnotationService extends Service {
         btnToggleCanvasVisibility.setOnClickListener(v -> {
             toggleCanvasVisibility();
         });
+        
+        // Quick Access section header (toggles quick access content)
+        if (quickAccessHeader != null) {
+            quickAccessHeader.setOnClickListener(v -> {
+                isQuickAccessExpanded = !isQuickAccessExpanded;
+                if (isQuickAccessExpanded) {
+                    quickAccessContent.setVisibility(View.VISIBLE);
+                    quickAccessExpandIcon.setText("expand_less");
+                } else {
+                    quickAccessContent.setVisibility(View.GONE);
+                    quickAccessExpandIcon.setText("expand_more");
+                }
+            });
+        }
+        
+        // Project section header (toggles project content)
+        if (projectHeader != null) {
+            projectHeader.setOnClickListener(v -> {
+                isProjectExpanded = !isProjectExpanded;
+                if (isProjectExpanded) {
+                    projectContent.setVisibility(View.VISIBLE);
+                    projectExpandIcon.setText("expand_less");
+                } else {
+                    projectContent.setVisibility(View.GONE);
+                    projectExpandIcon.setText("expand_more");
+                }
+            });
+        }
         
         // Annotations section header (toggles annotation tools)
         annotationsHeader.setOnClickListener(v -> {
@@ -1687,21 +1738,42 @@ public class AnnotationService extends Service {
                 public void onPageAdded() {
                     int newPageNumber = state.getPages().size() + 1;
                     String pageName = "Page " + newPageNumber;
+                    Log.d(TAG, "=== PAGE ADD STARTED ===");
+                    Log.d(TAG, "Current page count: " + state.getPages().size());
+                    Log.d(TAG, "New page name: " + pageName);
+                    
                     annotationView.addPage(pageName);
                     annotationView.switchToPage(state.getPages().size() - 1);
+                    
+                    Log.d(TAG, "Page added. New page count: " + state.getPages().size());
+                    Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                    Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                    
                     updateUndoRedoButtons();
                     Toast.makeText(AnnotationService.this, "✨ Created: " + pageName, Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "=== PAGE ADD COMPLETED ===");
                 }
                 
                 @Override
                 public void onPageDeleted(int index) {
                     if (state.getPages().size() > 1) {
                         String pageName = state.getPages().get(index).getName();
+                        Log.d(TAG, "=== PAGE DELETE STARTED ===");
+                        Log.d(TAG, "Deleting page: " + pageName + " at index: " + index);
+                        Log.d(TAG, "Current page count: " + state.getPages().size());
+                        
                         state.removePage(index);
                         annotationView.invalidate();
+                        annotationView.notifyStateChanged(); // Trigger undo/redo snapshot
+                        
+                        Log.d(TAG, "Page deleted. New page count: " + state.getPages().size());
+                        Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                        Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                        
                         updateUndoRedoButtons();
                         pageTabBarOverlay.refresh();
                         Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + pageName, Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "=== PAGE DELETE COMPLETED ===");
                     }
                 }
             });
@@ -1764,6 +1836,7 @@ public class AnnotationService extends Service {
                     
                     @Override
                     public void onLayerOpacityChanged(int index, float opacity) {
+                        Log.d(TAG, "Layer opacity changed: index=" + index + ", opacity=" + opacity);
                         currentPage.getLayers().get(index).setOpacity(opacity);
                         annotationView.invalidate();
                     }
@@ -1772,21 +1845,50 @@ public class AnnotationService extends Service {
                     public void onLayerAdded() {
                         int newLayerNumber = currentPage.getLayers().size() + 1;
                         String layerName = "Layer " + newLayerNumber;
-                        annotationView.addLayer(layerName);
+                        Log.d(TAG, "=== LAYER ADD STARTED ===");
+                        Log.d(TAG, "Current layer count: " + currentPage.getLayers().size());
+                        Log.d(TAG, "New layer name: " + layerName);
+                        
+                        // Use command pattern to enable undo/redo
+                        com.fadcam.fadrec.ui.annotation.AddLayerCommand command = 
+                            new com.fadcam.fadrec.ui.annotation.AddLayerCommand(currentPage, layerName);
+                        currentPage.executeCommand(command);
+                        annotationView.invalidate();
+                        annotationView.notifyStateChanged();
+                        
+                        Log.d(TAG, "Layer added. New layer count: " + currentPage.getLayers().size());
+                        Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                        Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                        
                         updatePageLayerInfo();
                         layerPanelOverlay.refresh();
                         Toast.makeText(AnnotationService.this, "✨ Created: " + layerName, Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "=== LAYER ADD COMPLETED ===");
                     }
                     
                     @Override
                     public void onLayerDeleted(int index) {
                         if (currentPage.getLayers().size() > 1) {
                             String layerName = currentPage.getLayers().get(index).getName();
-                            currentPage.removeLayer(index);
+                            Log.d(TAG, "=== LAYER DELETE STARTED ===");
+                            Log.d(TAG, "Deleting layer: " + layerName + " at index: " + index);
+                            Log.d(TAG, "Current layer count: " + currentPage.getLayers().size());
+                            
+                            // Use command pattern to enable undo/redo
+                            com.fadcam.fadrec.ui.annotation.DeleteLayerCommand command = 
+                                new com.fadcam.fadrec.ui.annotation.DeleteLayerCommand(currentPage, index);
+                            currentPage.executeCommand(command);
                             annotationView.invalidate();
+                            annotationView.notifyStateChanged();
+                            
+                            Log.d(TAG, "Layer deleted. New layer count: " + currentPage.getLayers().size());
+                            Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                            Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                            
                             updatePageLayerInfo();
                             layerPanelOverlay.refresh();
                             Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + layerName, Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, "=== LAYER DELETE COMPLETED ===");
                         }
                     }
                 });
@@ -2168,6 +2270,181 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter(ProjectSelectionDialogActivity.ACTION_PROJECT_SELECTED);
         registerReceiver(projectSelectionReceiver, filter);
         Log.d(TAG, "Project selection receiver registered");
+        
+        // Register layer rename receiver
+        layerRenameReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int layerIndex = intent.getIntExtra("layer_index", -1);
+                String currentName = intent.getStringExtra("layer_name");
+                if (layerIndex >= 0) {
+                    showLayerRenameDialog(layerIndex, currentName);
+                }
+            }
+        };
+        IntentFilter layerRenameFilter = new IntentFilter("com.fadcam.fadrec.RENAME_LAYER");
+        registerReceiver(layerRenameReceiver, layerRenameFilter);
+        
+        // Register page rename receiver
+        pageRenameReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int pageIndex = intent.getIntExtra("page_index", -1);
+                String currentName = intent.getStringExtra("page_name");
+                if (pageIndex >= 0) {
+                    showPageRenameDialog(pageIndex, currentName);
+                }
+            }
+        };
+        IntentFilter pageRenameFilter = new IntentFilter("com.fadcam.fadrec.RENAME_PAGE");
+        registerReceiver(pageRenameReceiver, pageRenameFilter);
+    }
+    
+    /**
+     * Show rename dialog for layer (Material Design)
+     */
+    private void showLayerRenameDialog(int layerIndex, String currentName) {
+        Log.d(TAG, "showLayerRenameDialog called for index: " + layerIndex + ", name: " + currentName);
+        if (annotationView == null) {
+            Log.w(TAG, "AnnotationView is null, cannot show rename dialog");
+            return;
+        }
+        AnnotationState currentState = annotationView.getState();
+        
+        try {
+            // Inflate custom Material Design dialog layout
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_material_rename, null);
+            
+            TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
+            TextView dialogSubtitle = dialogView.findViewById(R.id.dialogSubtitle);
+            android.widget.EditText inputName = dialogView.findViewById(R.id.inputName);
+            TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
+            TextView btnRename = dialogView.findViewById(R.id.btnRename);
+            
+            dialogTitle.setText("Rename Layer");
+            dialogSubtitle.setText("Enter new name for layer");
+            inputName.setText(currentName);
+            inputName.setSelectAllOnFocus(true);
+            
+            // Create dialog
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
+            builder.setView(dialogView);
+            android.app.AlertDialog dialog = builder.create();
+            
+            // Set window type for Service overlay
+            if (dialog.getWindow() != null) {
+                int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                        : WindowManager.LayoutParams.TYPE_PHONE;
+                dialog.getWindow().setType(layoutType);
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+            
+            // Button handlers
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+            
+            btnRename.setOnClickListener(v -> {
+                String newName = inputName.getText().toString().trim();
+                if (!newName.isEmpty()) {
+                    AnnotationPage currentPage = currentState.getActivePage();
+                    if (currentPage != null && layerIndex < currentPage.getLayers().size()) {
+                        currentPage.getLayers().get(layerIndex).setName(newName);
+                        if (layerPanelOverlay != null) {
+                            layerPanelOverlay.refresh();
+                        }
+                        Log.d(TAG, "Layer renamed to: " + newName);
+                        Toast.makeText(this, "✏️ Renamed to: " + newName, Toast.LENGTH_SHORT).show();
+                    }
+                }
+                dialog.dismiss();
+            });
+            
+            dialog.show();
+            Log.d(TAG, "Rename layer dialog shown");
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing rename layer dialog", e);
+            Toast.makeText(this, "Error showing rename dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Show rename dialog for page (Material Design)
+     */
+    private void showPageRenameDialog(int pageIndex, String currentName) {
+        Log.d(TAG, "showPageRenameDialog called for index: " + pageIndex + ", name: " + currentName);
+        if (annotationView == null) {
+            Log.w(TAG, "AnnotationView is null, cannot show rename dialog");
+            return;
+        }
+        AnnotationState currentState = annotationView.getState();
+        
+        try {
+            // Inflate custom Material Design dialog layout
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_material_rename, null);
+            
+            TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
+            TextView dialogSubtitle = dialogView.findViewById(R.id.dialogSubtitle);
+            android.widget.EditText inputName = dialogView.findViewById(R.id.inputName);
+            TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
+            TextView btnRename = dialogView.findViewById(R.id.btnRename);
+            
+            dialogTitle.setText("Rename Page");
+            dialogSubtitle.setText("Enter new name for page");
+            inputName.setText(currentName);
+            inputName.setSelectAllOnFocus(true);
+            
+            // Create dialog
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
+            builder.setView(dialogView);
+            android.app.AlertDialog dialog = builder.create();
+            
+            // Set window type for Service overlay
+            if (dialog.getWindow() != null) {
+                int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                        : WindowManager.LayoutParams.TYPE_PHONE;
+                dialog.getWindow().setType(layoutType);
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+            
+            // Button handlers
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+            
+            btnRename.setOnClickListener(v -> {
+                String newName = inputName.getText().toString().trim();
+                if (!newName.isEmpty()) {
+                    if (pageIndex < currentState.getPages().size()) {
+                        currentState.getPages().get(pageIndex).setName(newName);
+                        if (pageTabBarOverlay != null) {
+                            pageTabBarOverlay.refresh();
+                        }
+                        updatePageLayerInfo();
+                        Log.d(TAG, "Page renamed to: " + newName);
+                        Toast.makeText(this, "✏️ Renamed to: " + newName, Toast.LENGTH_SHORT).show();
+                    }
+                }
+                dialog.dismiss();
+            });
+            
+            dialog.show();
+            Log.d(TAG, "Rename page dialog shown");
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing rename page dialog", e);
+            Toast.makeText(this, "Error showing rename dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Create EditText for input dialogs
+     */
+    private android.widget.EditText createInputEditText(String currentValue) {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setId(android.R.id.edit);
+        input.setText(currentValue);
+        input.setSelectAllOnFocus(true);
+        input.setSingleLine(true);
+        input.setPadding(50, 40, 50, 40);
+        return input;
     }
     
     /**
@@ -2634,6 +2911,12 @@ public class AnnotationService extends Service {
         }
         if (projectSelectionReceiver != null) {
             unregisterReceiver(projectSelectionReceiver);
+        }
+        if (layerRenameReceiver != null) {
+            unregisterReceiver(layerRenameReceiver);
+        }
+        if (pageRenameReceiver != null) {
+            unregisterReceiver(pageRenameReceiver);
         }
         
         // Stop auto-save timer

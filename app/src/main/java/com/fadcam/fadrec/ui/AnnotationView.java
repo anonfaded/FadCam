@@ -218,7 +218,7 @@ public class AnnotationView extends View {
         return canvasHidden;
     }
     
-    private void notifyStateChanged() {
+    public void notifyStateChanged() {
         if (stateChangeListener != null) {
             stateChangeListener.onStateChanged();
         }

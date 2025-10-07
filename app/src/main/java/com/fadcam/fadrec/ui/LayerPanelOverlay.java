@@ -11,6 +11,7 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.widget.SwitchCompat;
 
@@ -84,6 +85,7 @@ public class LayerPanelOverlay {
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 : WindowManager.LayoutParams.TYPE_PHONE;
         
+        // Use WRAP_CONTENT for dynamic sizing based on content
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -137,6 +139,11 @@ public class LayerPanelOverlay {
         SeekBar seekOpacity = layerView.findViewById(R.id.seekOpacity);
         TextView txtOpacity = layerView.findViewById(R.id.txtOpacity);
         TextView btnDeleteLayer = layerView.findViewById(R.id.btnDeleteLayer);
+        TextView btnDragHandle = layerView.findViewById(R.id.btnDragHandle);
+        TextView btnRenameLayer = layerView.findViewById(R.id.btnRenameLayer);
+        
+        android.util.Log.d("LayerPanelOverlay", "Creating layer view for: " + layer.getName() + " (index " + index + ")");
+        android.util.Log.d("LayerPanelOverlay", "btnRenameLayer found: " + (btnRenameLayer != null));
         
         txtLayerName.setText(layer.getName());
         txtLayerInfo.setText(layer.getObjects().size() + " objects");
@@ -162,35 +169,41 @@ public class LayerPanelOverlay {
         
         btnVisibility.setText(layer.isVisible() ? "visibility" : "visibility_off");
         btnVisibility.setTextColor(layer.isVisible() ? greenAccent : grayInactive);
+        btnVisibility.setSelected(layer.isVisible()); // Set selected state for green border
         btnVisibility.setOnClickListener(v -> {
             if (listener != null) {
                 boolean newState = !layer.isVisible();
                 listener.onLayerVisibilityChanged(index, newState);
                 btnVisibility.setText(newState ? "visibility" : "visibility_off");
                 btnVisibility.setTextColor(newState ? greenAccent : grayInactive);
+                btnVisibility.setSelected(newState); // Update selected state
             }
         });
         
         // Lock button
         btnLock.setText(layer.isLocked() ? "lock" : "lock_open");
         btnLock.setTextColor(layer.isLocked() ? 0xFFFF5252 : 0xFF9E9E9E);
+        btnLock.setSelected(layer.isLocked()); // Set selected state for green border
         btnLock.setOnClickListener(v -> {
             if (listener != null) {
                 boolean newState = !layer.isLocked();
                 listener.onLayerLockChanged(index, newState);
                 btnLock.setText(newState ? "lock" : "lock_open");
                 btnLock.setTextColor(newState ? 0xFFFF5252 : 0xFF9E9E9E);
+                btnLock.setSelected(newState); // Update selected state
             }
         });
         
         // Pin button
         btnPin.setText("push_pin");
         btnPin.setTextColor(layer.isPinned() ? 0xFFFF9800 : 0xFF9E9E9E);
+        btnPin.setSelected(layer.isPinned()); // Set selected state for green border
         btnPin.setOnClickListener(v -> {
             if (listener != null) {
                 boolean newState = !layer.isPinned();
                 listener.onLayerPinnedChanged(index, newState);
                 btnPin.setTextColor(newState ? 0xFFFF9800 : 0xFF9E9E9E);
+                btnPin.setSelected(newState); // Update selected state
             }
         });
         
@@ -213,6 +226,34 @@ public class LayerPanelOverlay {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+        
+        // Rename button - launches rename dialog
+        if (btnRenameLayer != null) {
+            btnRenameLayer.setOnClickListener(v -> {
+                android.util.Log.d("LayerPanelOverlay", "=== RENAME LAYER BUTTON CLICKED ===");
+                android.util.Log.d("LayerPanelOverlay", "Layer index: " + index);
+                android.util.Log.d("LayerPanelOverlay", "Layer name: " + layer.getName());
+                
+                // Broadcast to show rename dialog
+                android.content.Intent intent = new android.content.Intent("com.fadcam.fadrec.RENAME_LAYER");
+                intent.putExtra("layerIndex", index);
+                intent.putExtra("currentName", layer.getName());
+                context.sendBroadcast(intent);
+                
+                android.util.Log.d("LayerPanelOverlay", "Broadcast sent for layer rename");
+            });
+        } else {
+            android.util.Log.w("LayerPanelOverlay", "btnRenameLayer is NULL!");
+        }
+        
+                // Drag handle - Simple drag implementation
+        if (btnDragHandle != null) {
+            btnDragHandle.setOnLongClickListener(v -> {
+                // Show toast for now - full drag implementation requires RecyclerView with ItemTouchHelper
+                Toast.makeText(context, "Drag-to-reorder: Hold and drag to reorder layers (Coming soon)", Toast.LENGTH_SHORT).show();
+                return true;
+            });
+        }
         
         // Delete button (only if more than one layer)
         if (page.getLayers().size() > 1) {

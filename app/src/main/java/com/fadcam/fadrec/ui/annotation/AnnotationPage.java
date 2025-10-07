@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,10 +26,14 @@ public class AnnotationPage {
     private long createdAt;
     private long modifiedAt;
     
-    // Version control (not serialized - rebuilt on load)
+    // Version control (undo/redo counts are saved, but not full command objects)
     private transient Stack<DrawingCommand> undoStack;
     private transient Stack<DrawingCommand> redoStack;
     private static final int MAX_HISTORY_SIZE = 50;
+    
+    // Save undo/redo counts for UI display after reload
+    private int savedUndoCount = 0;
+    private int savedRedoCount = 0;
     
     public AnnotationPage(String name) {
         this.id = UUID.randomUUID().toString();
@@ -127,6 +133,10 @@ public class AnnotationPage {
             undoStack.remove(0);
         }
         
+        // Save counts for persistence
+        savedUndoCount = undoStack.size();
+        savedRedoCount = redoStack.size();
+        
         this.modifiedAt = System.currentTimeMillis();
     }
     
@@ -151,6 +161,11 @@ public class AnnotationPage {
             DrawingCommand command = undoStack.pop();
             command.undo();
             redoStack.push(command);
+            
+            // Save counts for persistence
+            savedUndoCount = undoStack.size();
+            savedRedoCount = redoStack.size();
+            
             this.modifiedAt = System.currentTimeMillis();
         }
     }
@@ -160,6 +175,11 @@ public class AnnotationPage {
             DrawingCommand command = redoStack.pop();
             command.execute();
             undoStack.push(command);
+            
+            // Save counts for persistence
+            savedUndoCount = undoStack.size();
+            savedRedoCount = redoStack.size();
+            
             this.modifiedAt = System.currentTimeMillis();
         }
     }
@@ -180,6 +200,10 @@ public class AnnotationPage {
         json.put("createdAt", createdAt);
         json.put("modifiedAt", modifiedAt);
         
+        // Save undo/redo counts for UI
+        json.put("undoCount", undoStack != null ? undoStack.size() : savedUndoCount);
+        json.put("redoCount", redoStack != null ? redoStack.size() : savedRedoCount);
+        
         JSONArray layersArray = new JSONArray();
         for (AnnotationLayer layer : layers) {
             layersArray.put(layer.toJSON());
@@ -198,6 +222,10 @@ public class AnnotationPage {
         page.createdAt = json.getLong("createdAt");
         page.modifiedAt = json.getLong("modifiedAt");
         
+        // Load saved undo/redo counts
+        page.savedUndoCount = json.optInt("undoCount", 0);
+        page.savedRedoCount = json.optInt("redoCount", 0);
+        
         // Clear default layer and load from JSON
         page.layers.clear();
         JSONArray layersArray = json.getJSONArray("layers");
@@ -210,9 +238,70 @@ public class AnnotationPage {
     }
     
     /**
-     * Reconstruct transient fields after deserialization
+     * Reconstruct transient fields after deserialization.
+     * Rebuilds undo/redo history from all drawable objects in all layers.
+     * This allows continued editing with full undo/redo after project reload.
      */
     public void reconstruct() {
         initializeStacks();
+        
+        android.util.Log.d("AnnotationPage", "=== RECONSTRUCT HISTORY STARTED ===");
+        android.util.Log.d("AnnotationPage", "Saved undo count: " + savedUndoCount);
+        android.util.Log.d("AnnotationPage", "Saved redo count: " + savedRedoCount);
+        
+        // Rebuild undo history from ALL objects in ALL layers
+        // Each object becomes one undo step
+        int totalObjects = 0;
+        for (AnnotationLayer layer : layers) {
+            for (AnnotationObject obj : layer.getObjects()) {
+                // Create a restore command for each existing object
+                undoStack.push(new RestoreObjectCommand(layer, obj));
+                totalObjects++;
+            }
+        }
+        
+        // Respect MAX_HISTORY_SIZE limit
+        while (undoStack.size() > MAX_HISTORY_SIZE) {
+            undoStack.remove(0);
+        }
+        
+        android.util.Log.d("AnnotationPage", "Rebuilt " + totalObjects + " objects into undo stack");
+        android.util.Log.d("AnnotationPage", "Final undo count: " + undoStack.size());
+        android.util.Log.d("AnnotationPage", "=== RECONSTRUCT HISTORY COMPLETED ===");
+    }
+    
+    /**
+     * Simple command to restore an object's state (for reconstructed history)
+     */
+    private static class RestoreObjectCommand implements DrawingCommand {
+        private AnnotationLayer layer;
+        private AnnotationObject object;
+        private boolean wasRemoved = false;
+        
+        public RestoreObjectCommand(AnnotationLayer layer, AnnotationObject object) {
+            this.layer = layer;
+            this.object = object;
+        }
+        
+        @Override
+        public void execute() {
+            if (wasRemoved && !layer.getObjects().contains(object)) {
+                layer.getObjects().add(object);
+                wasRemoved = false;
+            }
+        }
+        
+        @Override
+        public void undo() {
+            if (layer.getObjects().contains(object)) {
+                layer.getObjects().remove(object);
+                wasRemoved = true;
+            }
+        }
+        
+        @Override
+        public String getDescription() {
+            return "Restore " + object.getClass().getSimpleName();
+        }
     }
 }

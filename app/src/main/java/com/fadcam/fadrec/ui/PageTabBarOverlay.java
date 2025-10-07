@@ -1,15 +1,18 @@
 package com.fadcam.fadrec.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.HorizontalScrollView;
+import android.widget.Toast;
 
 import com.fadcam.R;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
@@ -125,6 +128,8 @@ public class PageTabBarOverlay {
         TextView txtPageName = tabView.findViewById(R.id.txtPageName);
         TextView txtPageInfo = tabView.findViewById(R.id.txtPageInfo);
         TextView btnDeletePage = tabView.findViewById(R.id.btnDeletePage);
+        TextView btnDragHandle = tabView.findViewById(R.id.btnDragHandle);
+        TextView btnRenamePage = tabView.findViewById(R.id.btnRenamePage);
         
         txtPageName.setText(page.getName());
         txtPageInfo.setText(page.getLayers().size() + " layers");
@@ -145,6 +150,27 @@ public class PageTabBarOverlay {
                 updateTabs();
             }
         });
+        
+        // Drag handle - Coming soon toast
+        if (btnDragHandle != null) {
+            btnDragHandle.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    Toast.makeText(context, "Drag to reorder - Coming soon", Toast.LENGTH_SHORT).show();
+                }
+                return false;
+            });
+        }
+        
+        // Rename button
+        if (btnRenamePage != null) {
+            btnRenamePage.setOnClickListener(v -> {
+                // Broadcast rename intent
+                Intent intent = new Intent("com.fadcam.fadrec.RENAME_PAGE");
+                intent.putExtra("page_index", index);
+                intent.putExtra("page_name", page.getName());
+                context.sendBroadcast(intent);
+            });
+        }
         
         // Delete button (only if more than one page)
         if (state.getPages().size() > 1) {

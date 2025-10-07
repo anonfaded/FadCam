@@ -7,18 +7,38 @@
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
 
-            <!-- BRANDING -->
-            <TextView
+            <!-- BRANDING with Logo (no gap) -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="FadRec by FadSec Lab"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:fontFamily="@font/ubuntu_regular"
+                android:orientation="horizontal"
                 android:gravity="center"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp" />
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp">
+
+                <ImageView
+                    android:layout_width="116dp"
+                    android:layout_height="34dp"
+                    android:src="@drawable/fadrec"
+                    android:adjustViewBounds="true"
+                    android:scaleType="centerInside"
+                    android:contentDescription="FadRec Logo"
+                    android:layout_marginEnd="0dp"
+                    android:padding="0dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="by FadSec Lab"
+                    android:textSize="8sp"
+                    android:textColor="#B0B0B0"
+                    android:fontFamily="@font/ubuntu_regular"
+                    android:layout_marginStart="0dp"
+                    android:paddingStart="0dp"
+                    android:padding="0dp" />
+            </LinearLayout>
 
             <!-- RECORDING CONTROLS SECTION (MOVED TO TOP) -->
             <LinearLayout 
@@ -152,20 +172,59 @@
             </LinearLayout>
 
             <!-- ANNOTATION CONTROLS -->
-            <!-- QUICK ACCESS (MOVED BELOW RECORDING CONTROLS) -->
-            <TextView 
-                android:layout_width="wrap_content" 
-                android:layout_height="wrap_content" 
-                android:text="Quick Access" 
-                android:textSize="12sp" 
-                android:textStyle="bold" 
-                android:textColor="@color/annotation_heading_accent" 
-                android:fontFamily="@font/ubuntu_regular" 
-                android:paddingStart="12dp" 
-                android:paddingTop="8dp" 
-                android:paddingBottom="6dp" 
-                android:drawablePadding="6dp" 
-                android:gravity="center_vertical" />
+            <!-- QUICK ACCESS (COLLAPSIBLE, DEFAULT OPEN) -->
+            <LinearLayout
+                android:id="@+id/quickAccessHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:gravity="center"
+                    android:text="flash_on"
+                    android:textSize="20sp"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/materialicons"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Quick Access"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/ubuntu_regular" />
+
+                <TextView
+                    android:id="@+id/quickAccessExpandIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="expand_less"
+                    android:textSize="18sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/materialicons" />
+            </LinearLayout>
+
+            <!-- Quick Access Content (Collapsible, Default Visible) -->
+            <LinearLayout
+                android:id="@+id/quickAccessContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
 
             <!-- Quick Access Options in Single Row -->
             <LinearLayout 
@@ -280,28 +339,63 @@
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
+            </LinearLayout> <!-- Close quickAccessContent -->
 
-            <!-- PROJECT MANAGER SECTION -->
-            <TextView 
-                android:layout_width="wrap_content" 
-                android:layout_height="wrap_content" 
-                android:text="Project" 
-                android:textSize="12sp" 
-                android:textStyle="bold" 
-                android:textColor="@color/annotation_heading_accent" 
-                android:fontFamily="@font/ubuntu_regular" 
-                android:paddingStart="12dp" 
-                android:paddingTop="8dp" 
-                android:paddingBottom="6dp" 
-                android:drawablePadding="6dp" 
-                android:gravity="center_vertical" />
+            <!-- PROJECT MANAGER SECTION (Collapsible) -->
+            <LinearLayout
+                android:id="@+id/projectHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
 
-            <LinearLayout 
-                android:layout_width="match_parent" 
-                android:layout_height="wrap_content" 
-                android:orientation="vertical" 
-                android:paddingHorizontal="8dp" 
-                android:paddingBottom="8dp">
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:gravity="center"
+                    android:text="folder"
+                    android:textSize="20sp"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/materialicons"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Project"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/ubuntu_regular" />
+
+                <TextView
+                    android:id="@+id/projectExpandIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="expand_more"
+                    android:textSize="18sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/materialicons" />
+            </LinearLayout>
+
+            <!-- Project Content (Expandable) -->
+            <LinearLayout
+                android:id="@+id/projectContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
 
                 <!-- Current Project Display -->
                 <LinearLayout 
@@ -417,7 +511,7 @@
                         android:fontFamily="@font/materialicons" 
                         android:gravity="center" />
                 </LinearLayout>
-            </LinearLayout>
+            </LinearLayout> <!-- Close projectContent -->
 
             <!-- Divider -->
             <!-- Divider before Annotation Tools section -->

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Layer panel overlay on the side of screen -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="280dp"
+    android:layout_width="300dp"
     android:layout_height="wrap_content"
+    android:maxHeight="500dp"
     android:orientation="vertical"
     android:background="@drawable/floating_menu_bg"
-    android:padding="8dp"
-    android:maxHeight="600dp">
+    android:padding="8dp">
 
     <!-- Header with title and buttons -->
     <LinearLayout
@@ -59,7 +59,8 @@
     <!-- Scrollable layer list -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:scrollbars="vertical">
 
         <LinearLayout
@@ -67,7 +68,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="4dp" />
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
     </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>
