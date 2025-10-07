@@ -27,7 +27,7 @@ public class TextObject extends AnnotationObject {
     public TextObject() {
         super(ObjectType.TEXT);
         this.text = "";
-        this.fontFamily = "sans-serif";
+        this.fontFamily = "ubuntu";  // Use Ubuntu font as default
         this.fontSize = 24f;
         this.textColor = 0xFFFFFFFF; // White default
         this.alignment = Paint.Align.LEFT;

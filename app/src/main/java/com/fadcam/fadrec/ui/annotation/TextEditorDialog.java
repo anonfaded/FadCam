@@ -225,13 +225,19 @@ public class TextEditorDialog extends Dialog {
         editTextContent.setTextSize(fontSize * 0.7f); // Scaled preview
         editTextContent.setTextColor(textColor);
         
-        int style = 0;
+        // Use Ubuntu font family (regular only, rely on textStyle for bold/italic)
+        android.graphics.Typeface ubuntuFont = androidx.core.content.res.ResourcesCompat.getFont(
+            getContext(), 
+            com.fadcam.R.font.ubuntu_regular
+        );
+        
+        // Apply font and let Android handle bold/italic through setTypeface style param
+        int style = android.graphics.Typeface.NORMAL;
         if (isBold && isItalic) style = android.graphics.Typeface.BOLD_ITALIC;
         else if (isBold) style = android.graphics.Typeface.BOLD;
         else if (isItalic) style = android.graphics.Typeface.ITALIC;
-        else style = android.graphics.Typeface.NORMAL;
         
-        editTextContent.setTypeface(null, style);
+        editTextContent.setTypeface(ubuntuFont, style);
     }
     
     // Setter methods for editing existing text
