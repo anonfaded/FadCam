@@ -30,14 +30,20 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.ContextThemeWrapper;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import java.io.File;
@@ -53,6 +59,8 @@ import com.fadcam.fadrec.ui.annotation.ShapePickerDialog;
 import com.fadcam.fadrec.ui.annotation.objects.TextObject;
 import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 /**
  * Service that provides floating annotation tools for drawing on screen during recording.
@@ -2557,8 +2565,12 @@ public class AnnotationService extends Service {
         layerRenameReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                int layerIndex = intent.getIntExtra("layer_index", -1);
-                String currentName = intent.getStringExtra("layer_name");
+                int layerIndex = intent.hasExtra("layer_index")
+                    ? intent.getIntExtra("layer_index", -1)
+                    : intent.getIntExtra("layerIndex", -1);
+                String currentName = intent.hasExtra("layer_name")
+                    ? intent.getStringExtra("layer_name")
+                    : intent.getStringExtra("currentName");
                 if (layerIndex >= 0) {
                     showLayerRenameDialog(layerIndex, currentName);
                 }
@@ -2582,6 +2594,102 @@ public class AnnotationService extends Service {
         registerReceiver(pageRenameReceiver, pageRenameFilter);
     }
     
+    @FunctionalInterface
+    private interface RenameConfirmListener {
+        void onRenameConfirmed(@NonNull String newName);
+    }
+
+    private void showRenameDialog(@StringRes int titleRes,
+                                  @StringRes int messageRes,
+                                  String currentName,
+                                  RenameConfirmListener confirmListener) {
+        Context themedContext = new ContextThemeWrapper(this, R.style.Base_Theme_FadCam);
+        View dialogView = LayoutInflater.from(themedContext).inflate(R.layout.dialog_material_rename, null);
+
+        TextInputLayout inputLayout = dialogView.findViewById(R.id.inputLayout);
+        TextInputEditText inputName = dialogView.findViewById(R.id.inputName);
+
+        if (inputName != null) {
+            if (!TextUtils.isEmpty(currentName)) {
+                inputName.setText(currentName);
+                inputName.setSelection(currentName.length());
+            }
+            inputName.setSelectAllOnFocus(true);
+        }
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext)
+            .setTitle(titleRes)
+            .setMessage(messageRes)
+            .setView(dialogView)
+            .setNegativeButton(R.string.rename_dialog_negative, (dialog, which) -> dialog.dismiss())
+            .setPositiveButton(R.string.rename_dialog_positive, null);
+
+        AlertDialog dialog = builder.create();
+
+        if (dialog.getWindow() != null) {
+            int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                : WindowManager.LayoutParams.TYPE_PHONE;
+            dialog.getWindow().setType(layoutType);
+            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        }
+
+        dialog.setOnShowListener(d -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            if (positiveButton != null) {
+                positiveButton.setOnClickListener(v -> {
+                    if (inputName == null) {
+                        dialog.dismiss();
+                        return;
+                    }
+                    String newName = inputName.getText() != null
+                        ? inputName.getText().toString().trim()
+                        : "";
+                    if (TextUtils.isEmpty(newName)) {
+                        if (inputLayout != null) {
+                            inputLayout.setError(getString(R.string.rename_dialog_error_empty));
+                        }
+                        return;
+                    }
+                    if (inputLayout != null) {
+                        inputLayout.setError(null);
+                    }
+                    confirmListener.onRenameConfirmed(newName);
+                    dialog.dismiss();
+                });
+            }
+
+            if (inputName != null) {
+                inputName.requestFocus();
+                final Button confirmButton = positiveButton;
+                inputName.setOnEditorActionListener((v, actionId, event) -> {
+                    if (actionId == EditorInfo.IME_ACTION_DONE && confirmButton != null) {
+                        confirmButton.performClick();
+                        return true;
+                    }
+                    return false;
+                });
+                inputName.post(() -> {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.showSoftInput(inputName, InputMethodManager.SHOW_IMPLICIT);
+                    }
+                });
+            }
+        });
+
+        dialog.setOnDismissListener(d -> {
+            if (inputName != null) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(inputName.getWindowToken(), 0);
+                }
+            }
+        });
+
+        dialog.show();
+    }
+
     /**
      * Show rename dialog for layer (Material Design)
      */
@@ -2592,42 +2700,13 @@ public class AnnotationService extends Service {
             return;
         }
         AnnotationState currentState = annotationView.getState();
-        
+
         try {
-            // Inflate custom Material Design dialog layout
-            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_material_rename, null);
-            
-            TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
-            TextView dialogSubtitle = dialogView.findViewById(R.id.dialogSubtitle);
-            android.widget.EditText inputName = dialogView.findViewById(R.id.inputName);
-            TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
-            TextView btnRename = dialogView.findViewById(R.id.btnRename);
-            
-            dialogTitle.setText("Rename Layer");
-            dialogSubtitle.setText("Enter new name for layer");
-            inputName.setText(currentName);
-            inputName.setSelectAllOnFocus(true);
-            
-            // Create dialog
-            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
-            builder.setView(dialogView);
-            android.app.AlertDialog dialog = builder.create();
-            
-            // Set window type for Service overlay
-            if (dialog.getWindow() != null) {
-                int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                        : WindowManager.LayoutParams.TYPE_PHONE;
-                dialog.getWindow().setType(layoutType);
-                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            }
-            
-            // Button handlers
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-            
-            btnRename.setOnClickListener(v -> {
-                String newName = inputName.getText().toString().trim();
-                if (!newName.isEmpty()) {
+            showRenameDialog(
+                R.string.rename_layer_title,
+                R.string.rename_layer_message,
+                currentName,
+                newName -> {
                     AnnotationPage currentPage = currentState.getActivePage();
                     if (currentPage != null && layerIndex < currentPage.getLayers().size()) {
                         currentPage.getLayers().get(layerIndex).setName(newName);
@@ -2635,13 +2714,10 @@ public class AnnotationService extends Service {
                             layerPanelOverlay.refresh();
                         }
                         Log.d(TAG, "Layer renamed to: " + newName);
-                        Toast.makeText(this, "✏️ Renamed to: " + newName, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.rename_dialog_toast_success, newName), Toast.LENGTH_SHORT).show();
                     }
                 }
-                dialog.dismiss();
-            });
-            
-            dialog.show();
+            );
             Log.d(TAG, "Rename layer dialog shown");
         } catch (Exception e) {
             Log.e(TAG, "Error showing rename layer dialog", e);
@@ -2659,42 +2735,13 @@ public class AnnotationService extends Service {
             return;
         }
         AnnotationState currentState = annotationView.getState();
-        
+
         try {
-            // Inflate custom Material Design dialog layout
-            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_material_rename, null);
-            
-            TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
-            TextView dialogSubtitle = dialogView.findViewById(R.id.dialogSubtitle);
-            android.widget.EditText inputName = dialogView.findViewById(R.id.inputName);
-            TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
-            TextView btnRename = dialogView.findViewById(R.id.btnRename);
-            
-            dialogTitle.setText("Rename Page");
-            dialogSubtitle.setText("Enter new name for page");
-            inputName.setText(currentName);
-            inputName.setSelectAllOnFocus(true);
-            
-            // Create dialog
-            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
-            builder.setView(dialogView);
-            android.app.AlertDialog dialog = builder.create();
-            
-            // Set window type for Service overlay
-            if (dialog.getWindow() != null) {
-                int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                        : WindowManager.LayoutParams.TYPE_PHONE;
-                dialog.getWindow().setType(layoutType);
-                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            }
-            
-            // Button handlers
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-            
-            btnRename.setOnClickListener(v -> {
-                String newName = inputName.getText().toString().trim();
-                if (!newName.isEmpty()) {
+            showRenameDialog(
+                R.string.rename_page_title,
+                R.string.rename_page_message,
+                currentName,
+                newName -> {
                     if (pageIndex < currentState.getPages().size()) {
                         currentState.getPages().get(pageIndex).setName(newName);
                         if (pageTabBarOverlay != null) {
@@ -2702,13 +2749,10 @@ public class AnnotationService extends Service {
                         }
                         updatePageLayerInfo();
                         Log.d(TAG, "Page renamed to: " + newName);
-                        Toast.makeText(this, "✏️ Renamed to: " + newName, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.rename_dialog_toast_success, newName), Toast.LENGTH_SHORT).show();
                     }
                 }
-                dialog.dismiss();
-            });
-            
-            dialog.show();
+            );
             Log.d(TAG, "Rename page dialog shown");
         } catch (Exception e) {
             Log.e(TAG, "Error showing rename page dialog", e);

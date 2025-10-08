@@ -236,8 +236,8 @@ public class LayerPanelOverlay {
                 
                 // Broadcast to show rename dialog
                 android.content.Intent intent = new android.content.Intent("com.fadcam.fadrec.RENAME_LAYER");
-                intent.putExtra("layerIndex", index);
-                intent.putExtra("currentName", layer.getName());
+                intent.putExtra("layer_index", index);
+                intent.putExtra("layer_name", layer.getName());
                 context.sendBroadcast(intent);
                 
                 android.util.Log.d("LayerPanelOverlay", "Broadcast sent for layer rename");
