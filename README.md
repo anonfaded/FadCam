@@ -42,11 +42,12 @@
 <br>
 <br>
 
+<!--
 <a href="https://play.google.com/store/apps/details?id=com.fadcam">
     <img src="https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png"
     alt="Pre-Register on Google Play"
     height="50"></a>
-
+-->
 <br>
 
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
@@ -272,11 +273,12 @@ Download the latest `apk` file directly from the [releases page](https://github.
 
 Or:
 
-
+<!--
 <a href="https://play.google.com/store/apps/details?id=com.fadcam">
     <img src="https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png"
     alt="Pre-Register on Google Play"
     height="50"></a>
+-->
 
 <br>
 
