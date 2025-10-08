@@ -41,13 +41,25 @@
             android:id="@+id/txtProjectDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="No description added"
+            android:text="@string/project_description_placeholder"
             android:textSize="12sp"
             android:textColor="#AAAAAA"
             android:fontFamily="@font/ubuntu_regular"
             android:maxLines="2"
             android:ellipsize="end"
             android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/txtProjectMeta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="512 KB • Oct 8, 2025 03:15"
+            android:textSize="11sp"
+            android:textColor="#66FFFFFF"
+            android:fontFamily="@font/ubuntu_regular"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:layout_marginTop="6dp" />
 
     </LinearLayout>
 

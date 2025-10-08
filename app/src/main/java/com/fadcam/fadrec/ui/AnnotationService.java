@@ -263,32 +263,45 @@ public class AnnotationService extends Service {
                 String projectName = folder.getName();
                 ProjectInfo info = new ProjectInfo();
                 info.folderName = projectName;
-                // Always display sanitized folder name (what's actually saved on disk)
-                info.displayName = projectName;
-                info.description = "";
                 info.thumbnailFile = projectFileManager.getThumbnailFile(projectName);
-                
-                // Try to load metadata for description only (name is always the folder name)
-                try {
-                    AnnotationState loadedState = projectFileManager.loadProject(projectName);
-                    if (loadedState != null && loadedState.getMetadata() != null) {
-                        info.description = loadedState.getMetadata().optString("description", "");
+
+                ProjectFileManager.ProjectSummary summary = projectFileManager.getProjectSummary(projectName);
+                if (summary != null) {
+                    info.projectFile = summary.projectFile;
+                    info.displayName = !TextUtils.isEmpty(summary.displayName)
+                        ? summary.displayName
+                        : projectName;
+                    info.description = summary.description;
+                    info.fileSizeBytes = summary.fileSizeBytes;
+                    info.createdAt = summary.createdAt;
+                    info.modifiedAt = summary.modifiedAt;
+                } else {
+                    info.displayName = projectName;
+                    info.description = "";
+                    File dataFile = projectFileManager.getProjectDataFile(projectName);
+                    if (dataFile != null && dataFile.exists()) {
+                        info.projectFile = dataFile;
+                        info.fileSizeBytes = dataFile.length();
+                        info.modifiedAt = dataFile.lastModified();
+                    } else {
+                        info.modifiedAt = folder.lastModified();
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to load metadata for project: " + projectName, e);
+                    info.createdAt = info.modifiedAt;
                 }
-                
+
                 projects.add(info);
             }
             
-            // Sort by folder name (newest first, assuming timestamp-based names)
-            java.util.Collections.sort(projects, (a, b) -> b.folderName.compareTo(a.folderName));
+            java.util.Collections.sort(projects, (a, b) -> Long.compare(b.modifiedAt, a.modifiedAt));
         }
         
         if (projects.isEmpty()) {
             ProjectInfo emptyInfo = new ProjectInfo();
-            emptyInfo.displayName = "(No saved projects yet)";
-            emptyInfo.description = "Create a new project to get started";
+            emptyInfo.displayName = getString(R.string.project_list_empty_title);
+            emptyInfo.description = getString(R.string.project_list_empty_description);
+            emptyInfo.fileSizeBytes = 0L;
+            emptyInfo.createdAt = 0L;
+            emptyInfo.modifiedAt = 0L;
             projects.add(emptyInfo);
         }
         
@@ -366,6 +379,10 @@ public class AnnotationService extends Service {
         String displayName;
         String description;
         File thumbnailFile;
+        File projectFile;
+        long fileSizeBytes;
+        long createdAt;
+        long modifiedAt;
     }
     
     /**
@@ -374,6 +391,8 @@ public class AnnotationService extends Service {
     private class ProjectListAdapter extends android.widget.ArrayAdapter<ProjectInfo> {
         private final ProjectFileManager projectFileManager;
         private final android.app.AlertDialog parentDialog;
+        private final java.text.DateFormat dateFormat = java.text.DateFormat.getDateTimeInstance(
+            java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT);
         
         public ProjectListAdapter(Context context, java.util.List<ProjectInfo> projects, 
                                  ProjectFileManager fileManager, android.app.AlertDialog dialog) {
@@ -395,6 +414,7 @@ public class AnnotationService extends Service {
             android.widget.ImageView imgThumbnail = convertView.findViewById(R.id.imgProjectThumbnail);
             TextView txtName = convertView.findViewById(R.id.txtProjectName);
             TextView txtDesc = convertView.findViewById(R.id.txtProjectDescription);
+            TextView txtMeta = convertView.findViewById(R.id.txtProjectMeta);
             View btnDelete = convertView.findViewById(R.id.btnDeleteProject);
             
             // Set data
@@ -403,8 +423,9 @@ public class AnnotationService extends Service {
             if (project.description != null && !project.description.isEmpty()) {
                 txtDesc.setText(project.description);
                 txtDesc.setVisibility(View.VISIBLE);
+                txtDesc.setAlpha(1f);
             } else {
-                txtDesc.setText("No description added");
+                    txtDesc.setText(R.string.project_description_placeholder);
                 txtDesc.setAlpha(0.5f);
                 txtDesc.setVisibility(View.VISIBLE);
             }
@@ -421,11 +442,22 @@ public class AnnotationService extends Service {
             // Hide delete button for empty placeholder
             if (project.folderName == null) {
                 btnDelete.setVisibility(View.GONE);
+                txtMeta.setVisibility(View.GONE);
             } else {
                 btnDelete.setVisibility(View.VISIBLE);
                 btnDelete.setOnClickListener(v -> {
                     showDeleteProjectConfirmation(project.displayName, project.folderName);
                 });
+
+                String sizeText = project.fileSizeBytes > 0
+                    ? android.text.format.Formatter.formatFileSize(getContext(), project.fileSizeBytes)
+                    : getContext().getString(R.string.project_meta_unknown_size);
+                String dateText = project.modifiedAt > 0
+                    ? dateFormat.format(new java.util.Date(project.modifiedAt))
+                    : getContext().getString(R.string.project_meta_unknown_date);
+                String metaText = getContext().getString(R.string.project_meta_format, sizeText, dateText);
+                txtMeta.setText(metaText);
+                txtMeta.setVisibility(View.VISIBLE);
             }
             
             return convertView;

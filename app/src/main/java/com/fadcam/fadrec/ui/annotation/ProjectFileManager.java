@@ -56,6 +56,16 @@ public class ProjectFileManager {
     private final File projectsDir;
     private final SharedPreferences prefs;
     
+    public static class ProjectSummary {
+        public String folderName;
+        public String displayName;
+        public String description;
+        public long createdAt;
+        public long modifiedAt;
+        public long fileSizeBytes;
+        public File projectFile;
+    }
+    
     public ProjectFileManager(Context context) {
         this.context = context;
         this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -107,6 +117,10 @@ public class ProjectFileManager {
      */
     private File getProjectFile(String projectName) {
         return new File(getProjectFolder(projectName), PROJECT_FILE_NAME);
+    }
+    
+    public File getProjectDataFile(String projectName) {
+        return getProjectFile(projectName);
     }
     
     /**
@@ -295,6 +309,47 @@ public class ProjectFileManager {
             e.printStackTrace();
             return null;
         }
+    }
+    
+    public ProjectSummary getProjectSummary(String projectName) {
+        File projectFile = getProjectFile(projectName);
+        if (!projectFile.exists()) {
+            Log.w(TAG, "Project file missing for summary: " + projectName);
+            return null;
+        }
+
+        ProjectSummary summary = new ProjectSummary();
+        summary.folderName = projectFile.getParentFile() != null
+            ? projectFile.getParentFile().getName()
+            : sanitizeProjectName(projectName);
+        summary.displayName = summary.folderName;
+        summary.description = "";
+        summary.projectFile = projectFile;
+        summary.fileSizeBytes = projectFile.length();
+        summary.modifiedAt = projectFile.lastModified();
+        summary.createdAt = summary.modifiedAt;
+
+        try (FileReader reader = new FileReader(projectFile)) {
+            StringBuilder sb = new StringBuilder();
+            char[] buffer = new char[1024];
+            int length;
+            while ((length = reader.read(buffer)) != -1) {
+                sb.append(buffer, 0, length);
+            }
+
+            JSONObject projectJson = new JSONObject(sb.toString());
+            if (projectJson.has("metadata")) {
+                JSONObject metadata = projectJson.getJSONObject("metadata");
+                summary.displayName = metadata.optString("name", summary.displayName);
+                summary.description = metadata.optString("description", "");
+                summary.createdAt = metadata.optLong("created", summary.createdAt);
+                summary.modifiedAt = metadata.optLong("modified", summary.modifiedAt);
+            }
+        } catch (IOException | JSONException e) {
+            Log.e(TAG, "Failed to read project summary for " + projectName, e);
+        }
+
+        return summary;
     }
     
     /**

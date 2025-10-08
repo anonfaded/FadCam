@@ -337,6 +337,12 @@
     <string name="rename_dialog_negative">Cancel</string>
     <string name="rename_dialog_error_empty">Name cannot be empty</string>
     <string name="rename_dialog_toast_success">✏️ Renamed to: %1$s</string>
+    <string name="project_meta_format">%1$s • %2$s</string>
+    <string name="project_meta_unknown_size">Size unknown</string>
+    <string name="project_meta_unknown_date">Date unknown</string>
+    <string name="project_description_placeholder">No description added</string>
+    <string name="project_list_empty_title">(No saved projects yet)</string>
+    <string name="project_list_empty_description">Create a new project to get started</string>
     <string name="dialog_del_title">Delete Forever?</string>
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
     <!-- Preferences Backup -->
