@@ -120,7 +120,8 @@
     <string name="snap_guides">Snap Guides</string>
     <string name="add_text">Add Text</string>
     <string name="add_shape">Add Shape</string>
-    <string name="fadrec_ready_to_record">Ready to record screen</string>
+    <string name="fadrec_ready_to_record">Ready to capture screen</string>
+    <string name="fadrec_ready_to_record_subtitle">Tap to begin</string>
     <string name="fadrec_permission_denied">Screen recording permission denied</string>
     <string name="fadrec_mode_title">FadRec • Screen Recording</string>
 

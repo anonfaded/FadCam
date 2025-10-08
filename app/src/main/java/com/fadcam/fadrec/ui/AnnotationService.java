@@ -149,6 +149,7 @@ public class AnnotationService extends Service {
     private static final long ARROW_HINT_RETURN_DURATION_MS = 340L;
     private static final long ARROW_HINT_PAUSE_MS = 110L;
     private static final long ARROW_ROTATION_DURATION_MS = 260L;
+    private static final long ARROW_TOGGLE_DELAY_MS = 200L;
     private static final FastOutSlowInInterpolator ARROW_HINT_INTERPOLATOR = new FastOutSlowInInterpolator();
     
     // Separate window params for arrow and menu
@@ -993,51 +994,18 @@ public class AnnotationService extends Service {
         
         // Main Expand/Collapse button (toggles menu overlay visibility with fade)
         btnExpandCollapseContainer.setOnClickListener(v -> {
-            // Prevent multiple clicks during animation
             if (isAnimating) {
                 Log.d(TAG, "Click ignored - animation in progress");
                 return;
             }
-            
-            isExpanded = !isExpanded;
-            isAnimating = true;
-            
-            Log.d(TAG, "=== MENU OVERLAY TOGGLE ===");
-            Log.d(TAG, "Action: " + (isExpanded ? "EXPANDING" : "COLLAPSING"));
-            Log.d(TAG, "Current Edge: " + currentEdge);
-            Log.d(TAG, "Arrow Params - x: " + arrowParams.x + ", y: " + arrowParams.y);
-            Log.d(TAG, "Menu Params - x: " + menuParams.x + ", y: " + menuParams.y);
-            
-            if (isExpanded) {
-                // EXPANDING: Show menu overlay with fade-in
-                Log.d(TAG, "Starting EXPAND - showing menu overlay");
-                expandableContent.setVisibility(View.VISIBLE); // Make the content inside visible
-                expandableContent.setAlpha(0f);
-                expandableContent.animate()
-                    .alpha(1f)
-                    .setDuration(200)
-                    .withEndAction(() -> {
-                        isAnimating = false;
-                        Log.d(TAG, "EXPAND completed - menu visible");
-                    })
-                    .start();
-                updateArrowDirection(arrowParams, true);
-            } else {
-                // COLLAPSING: Hide menu overlay with fade-out
-                Log.d(TAG, "Starting COLLAPSE - hiding menu overlay");
-                expandableContent.animate()
-                    .alpha(0f)
-                    .setDuration(150)
-                    .withEndAction(() -> {
-                        expandableContent.setVisibility(View.GONE);
-                        expandableContent.setAlpha(1f);
-                        isAnimating = false;
-                        Log.d(TAG, "COLLAPSE completed - menu hidden");
-                    })
-                    .start();
-                updateArrowDirection(arrowParams, true);
+
+            if (toolbarView == null || toolbarView.getWindowToken() == null) {
+                Log.w(TAG, "Toggle skipped - toolbar not attached");
+                return;
             }
-    });
+
+            performMenuToggle();
+        });
         
         // Enable/Disable Annotation button
         btnToggleAnnotation.setOnClickListener(v -> {
@@ -1254,6 +1222,45 @@ public class AnnotationService extends Service {
         updateColorSelection(btnColorRed); // Red selected by default
         updateWidthSelection(btnWidthMedium); // Medium width by default
         updateBoardSelection(btnBoardNone); // None board by default
+    }
+
+    private void performMenuToggle() {
+        isExpanded = !isExpanded;
+        isAnimating = true;
+
+        Log.d(TAG, "=== MENU OVERLAY TOGGLE ===");
+        Log.d(TAG, "Action: " + (isExpanded ? "EXPANDING" : "COLLAPSING"));
+        Log.d(TAG, "Current Edge: " + currentEdge);
+        Log.d(TAG, "Arrow Params - x: " + arrowParams.x + ", y: " + arrowParams.y);
+        Log.d(TAG, "Menu Params - x: " + menuParams.x + ", y: " + menuParams.y);
+
+        if (isExpanded) {
+            Log.d(TAG, "Starting EXPAND - showing menu overlay");
+            expandableContent.setVisibility(View.VISIBLE);
+            expandableContent.setAlpha(0f);
+            expandableContent.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .withEndAction(() -> {
+                    isAnimating = false;
+                    Log.d(TAG, "EXPAND completed - menu visible");
+                })
+                .start();
+            updateArrowDirection(arrowParams, true);
+        } else {
+            Log.d(TAG, "Starting COLLAPSE - hiding menu overlay");
+            expandableContent.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction(() -> {
+                    expandableContent.setVisibility(View.GONE);
+                    expandableContent.setAlpha(1f);
+                    isAnimating = false;
+                    Log.d(TAG, "COLLAPSE completed - menu hidden");
+                })
+                .start();
+            updateArrowDirection(arrowParams, true);
+        }
     }
     
     private void setupToolbarDragging() {
@@ -1562,7 +1569,7 @@ public class AnnotationService extends Service {
         }
 
     btnExpandCollapseContainer.setBackgroundResource(backgroundRes);
-    applyArrowGlyphWithRotation(newGlyph);
+    applyArrowGlyphWithRotation(newGlyph, forceHint);
 
     playArrowHintAnimation(newGlyph, forceHint);
 
@@ -1575,7 +1582,7 @@ public class AnnotationService extends Service {
      * Provide a quick directional hint by nudging the arrow slightly toward the
      * direction it will move. Runs on a cooldown to avoid constant animation spam.
      */
-    private void applyArrowGlyphWithRotation(CharSequence newGlyph) {
+    private void applyArrowGlyphWithRotation(CharSequence newGlyph, boolean delayRotation) {
         if (btnExpandCollapse == null) {
             return;
         }
@@ -1645,6 +1652,7 @@ public class AnnotationService extends Service {
             }
         });
 
+        arrowFlipAnimator.setStartDelay(delayRotation ? ARROW_TOGGLE_DELAY_MS : 0L);
         arrowFlipAnimator.start();
     }
 
@@ -1818,7 +1826,8 @@ public class AnnotationService extends Service {
                 .start();
         };
 
-        btnExpandCollapse.postDelayed(pendingArrowHintRunnable, ARROW_HINT_START_DELAY_MS);
+    long startDelay = ARROW_HINT_START_DELAY_MS + (force ? ARROW_TOGGLE_DELAY_MS : 0L);
+    btnExpandCollapse.postDelayed(pendingArrowHintRunnable, startDelay);
     }
     
     private void updateToolSelection(boolean isPen) {
