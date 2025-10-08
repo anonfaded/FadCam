@@ -2018,23 +2018,18 @@ public class AnnotationService extends Service {
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
         );
         
-        // Toggle menu action
-        Intent toggleIntent = new Intent(this, AnnotationService.class);
-        toggleIntent.setAction("ACTION_TOGGLE_MENU");
-        android.app.PendingIntent togglePendingIntent = android.app.PendingIntent.getService(
-                this, 1, toggleIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
-        );
-        
-        // Project management action
-        Intent projectIntent = new Intent(this, AnnotationService.class);
-        projectIntent.setAction("ACTION_OPEN_PROJECTS");
-        android.app.PendingIntent projectPendingIntent = android.app.PendingIntent.getService(
-                this, 2, projectIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
-        );
-        
+    // Toggle menu action
+    Intent toggleIntent = new Intent(this, AnnotationService.class);
+    toggleIntent.setAction("ACTION_TOGGLE_MENU");
+    android.app.PendingIntent togglePendingIntent = android.app.PendingIntent.getService(
+        this, 1, toggleIntent,
+        android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+    );
+
         String annotationStatus = annotationEnabled ? " | ✏️ Enabled" : " | 📱 Disabled";
+    String toggleLabel = overlayVisible
+        ? getString(R.string.annotation_notification_hide_menu)
+        : getString(R.string.annotation_notification_show_menu);
         
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("FadRec Annotation" + annotationStatus)
@@ -2043,8 +2038,7 @@ public class AnnotationService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .setContentIntent(openAppPendingIntent)
-                .addAction(R.drawable.ic_draw_edit, overlayVisible ? "Hide" : "Show", togglePendingIntent)
-                .addAction(R.drawable.ic_draw_edit, "Projects", projectPendingIntent)
+        .addAction(R.drawable.ic_draw_edit, toggleLabel, togglePendingIntent)
                 .build();
     }
     
@@ -2865,6 +2859,9 @@ public class AnnotationService extends Service {
         if (annotationView != null) {
             annotationView.setVisibility(View.GONE);
         }
+        if (arrowOverlay != null) {
+            arrowOverlay.setVisibility(View.GONE);
+        }
         
         updateNotification();
         Log.d(TAG, "Overlay hidden");
@@ -2881,6 +2878,9 @@ public class AnnotationService extends Service {
         }
         if (annotationView != null) {
             annotationView.setVisibility(View.VISIBLE);
+        }
+        if (arrowOverlay != null) {
+            arrowOverlay.setVisibility(View.VISIBLE);
         }
         
         updateNotification();

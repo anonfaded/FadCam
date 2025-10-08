@@ -110,6 +110,8 @@
     <string name="floating_menu_resume">Resume</string>
     <string name="floating_menu_stop">Stop Recording</string>
     <string name="floating_menu_stop_short">Stop</string>
+    <string name="annotation_notification_hide_menu">Hide menu</string>
+    <string name="annotation_notification_show_menu">Show menu</string>
     <string name="floating_menu_annotations">Annotations</string>
     <string name="recording_controls">Recording Controls</string>
     <string name="annotations">Annotations</string>
