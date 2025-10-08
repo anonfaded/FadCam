@@ -2072,6 +2072,38 @@ public class AnnotationService extends Service {
                         Log.d(TAG, "=== PAGE DELETE COMPLETED ===");
                     }
                 }
+
+                @Override
+                public void onPageReordered(int fromIndex, int toIndex) {
+                    Log.d(TAG, "=== PAGE REORDER STARTED ===");
+                    Log.d(TAG, "From index: " + fromIndex + ", To index: " + toIndex);
+                    AnnotationPage movedPage = null;
+                    if (fromIndex >= 0 && fromIndex < state.getPages().size()) {
+                        movedPage = state.getPages().get(fromIndex);
+                        Log.d(TAG, "Page being moved: " + movedPage.getName());
+                    }
+
+                    state.movePage(fromIndex, toIndex);
+                    annotationView.invalidate();
+                    annotationView.notifyStateChanged();
+                    updateUndoRedoButtons();
+                    updatePageLayerInfo();
+                    pageTabBarOverlay.refresh();
+                    if (layerPanelOverlay != null && layerPanelOverlay.isShowing()) {
+                        layerPanelOverlay.refresh();
+                    }
+
+                    if (movedPage != null) {
+                        Toast.makeText(AnnotationService.this,
+                            "↕️ Reordered: " + movedPage.getName(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(AnnotationService.this,
+                            "Pages reordered", Toast.LENGTH_SHORT).show();
+                    }
+
+                    Log.d(TAG, "Active page index is now: " + state.getActivePageIndex());
+                    Log.d(TAG, "=== PAGE REORDER COMPLETED ===");
+                }
             });
             pageTabBarOverlay.show();
         }
@@ -2186,6 +2218,34 @@ public class AnnotationService extends Service {
                             Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + layerName, Toast.LENGTH_SHORT).show();
                             Log.d(TAG, "=== LAYER DELETE COMPLETED ===");
                         }
+                    }
+
+                    @Override
+                    public void onLayersReordered(int fromIndex, int toIndex) {
+                        Log.d(TAG, "=== LAYER REORDER STARTED ===");
+                        Log.d(TAG, "From index: " + fromIndex + ", To index: " + toIndex);
+                        AnnotationLayer layer = null;
+                        if (fromIndex >= 0 && fromIndex < currentPage.getLayers().size()) {
+                            layer = currentPage.getLayers().get(fromIndex);
+                            Log.d(TAG, "Layer being moved: " + layer.getName());
+                        }
+
+                        currentPage.moveLayer(fromIndex, toIndex);
+                        annotationView.invalidate();
+                        annotationView.notifyStateChanged();
+                        updatePageLayerInfo();
+                        layerPanelOverlay.refresh();
+
+                        if (layer != null) {
+                            Toast.makeText(AnnotationService.this,
+                                "↕️ Reordered: " + layer.getName(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(AnnotationService.this,
+                                "Layers reordered", Toast.LENGTH_SHORT).show();
+                        }
+
+                        Log.d(TAG, "Active layer index is now: " + currentPage.getActiveLayerIndex());
+                        Log.d(TAG, "=== LAYER REORDER COMPLETED ===");
                     }
                 });
                 layerPanelOverlay.show();

@@ -77,12 +77,42 @@ public class AnnotationState implements Serializable {
     }
     
     public void movePage(int fromIndex, int toIndex) {
-        if (fromIndex >= 0 && fromIndex < pages.size() && 
-            toIndex >= 0 && toIndex < pages.size()) {
-            AnnotationPage page = pages.remove(fromIndex);
-            pages.add(toIndex, page);
-            this.modifiedAt = System.currentTimeMillis();
+        if (pages.isEmpty()) {
+            return;
         }
+
+        if (fromIndex < 0 || fromIndex >= pages.size()) {
+            return;
+        }
+
+        if (toIndex < 0) {
+            toIndex = 0;
+        } else if (toIndex > pages.size() - 1) {
+            toIndex = pages.size() - 1;
+        }
+
+        if (fromIndex == toIndex) {
+            return;
+        }
+
+        AnnotationPage page = pages.remove(fromIndex);
+        pages.add(toIndex, page);
+
+        if (activePageIndex == fromIndex) {
+            activePageIndex = toIndex;
+        } else if (fromIndex < activePageIndex && toIndex >= activePageIndex) {
+            activePageIndex -= 1;
+        } else if (fromIndex > activePageIndex && toIndex <= activePageIndex) {
+            activePageIndex += 1;
+        }
+
+        if (activePageIndex < 0) {
+            activePageIndex = 0;
+        } else if (activePageIndex >= pages.size()) {
+            activePageIndex = pages.size() - 1;
+        }
+
+        this.modifiedAt = System.currentTimeMillis();
     }
     
     // Tool state

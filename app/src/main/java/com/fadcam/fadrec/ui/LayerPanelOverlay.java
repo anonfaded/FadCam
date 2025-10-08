@@ -1,19 +1,24 @@
 package com.fadcam.fadrec.ui;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import androidx.core.content.ContextCompat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.DragEvent;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
+import android.view.View.DragShadowBuilder;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.view.ViewCompat;
 
 import com.fadcam.R;
 import com.fadcam.fadrec.ui.annotation.AnnotationPage;
@@ -32,6 +37,9 @@ public class LayerPanelOverlay {
     private LinearLayout layerContainer;
     private AnnotationPage page;
     private OnLayerActionListener listener;
+    private View draggingLayerView;
+    private int draggingLayerIndex = -1;
+    private boolean dragPerformed = false;
     
     public interface OnLayerActionListener {
         void onLayerSelected(int index);
@@ -41,6 +49,7 @@ public class LayerPanelOverlay {
         void onLayerPinnedChanged(int index, boolean pinned);
         void onLayerAdded();
         void onLayerDeleted(int index);
+        void onLayersReordered(int fromIndex, int toIndex);
     }
     
     public LayerPanelOverlay(Context context, AnnotationPage page) {
@@ -149,11 +158,10 @@ public class LayerPanelOverlay {
         txtLayerInfo.setText(layer.getObjects().size() + " objects");
         
         // Highlight active layer
-        if (isActive) {
-            layerView.setBackgroundResource(R.drawable.annotation_layer_selected);
-        } else {
-            layerView.setBackgroundResource(R.drawable.settings_home_row_bg);
-        }
+        layerView.setTag(R.id.tag_layer_index, index);
+        layerView.setTag(R.id.tag_layer_active, isActive);
+        applyLayerRowBackground(layerView, isActive);
+        layerView.setOnDragListener(this::handleLayerDragEvent);
         
         // Click to select layer
         layerView.setOnClickListener(v -> {
@@ -249,10 +257,10 @@ public class LayerPanelOverlay {
                 // Drag handle - Simple drag implementation
         if (btnDragHandle != null) {
             btnDragHandle.setOnLongClickListener(v -> {
-                // Show toast for now - full drag implementation requires RecyclerView with ItemTouchHelper
-                Toast.makeText(context, "Drag-to-reorder: Hold and drag to reorder layers (Coming soon)", Toast.LENGTH_SHORT).show();
+                startLayerDrag(layerView, index);
                 return true;
             });
+            btnDragHandle.setOnDragListener(this::handleLayerDragEvent);
         }
         
         // Delete button (only if more than one layer)
@@ -269,6 +277,137 @@ public class LayerPanelOverlay {
         }
         
         return layerView;
+    }
+    
+    private void startLayerDrag(View layerView, int index) {
+        ClipData dragData = ClipData.newPlainText("layer_index", String.valueOf(index));
+        DragShadowBuilder shadowBuilder = new DragShadowBuilder(layerView);
+        draggingLayerView = layerView;
+        draggingLayerIndex = index;
+        dragPerformed = false;
+        layerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        layerView.animate().scaleX(1.03f).scaleY(1.03f).alpha(0.75f).setDuration(150).start();
+        ViewCompat.setElevation(layerView, dpToPx(8f));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            layerView.startDragAndDrop(dragData, shadowBuilder, layerView, 0);
+        } else {
+            layerView.startDrag(dragData, shadowBuilder, layerView, 0);
+        }
+    }
+
+    private boolean handleLayerDragEvent(View targetView, DragEvent event) {
+        View rowView = findLayerRow(targetView);
+        if (rowView == null) {
+            return false;
+        }
+
+        ClipDescription description = event.getClipDescription();
+        switch (event.getAction()) {
+            case DragEvent.ACTION_DRAG_STARTED:
+                return description != null && description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN);
+            case DragEvent.ACTION_DRAG_ENTERED:
+                if (rowView != draggingLayerView) {
+                    applyLayerDragTargetState(rowView, true);
+                }
+                return true;
+            case DragEvent.ACTION_DRAG_LOCATION:
+                return true;
+            case DragEvent.ACTION_DRAG_EXITED:
+                if (rowView != draggingLayerView) {
+                    applyLayerDragTargetState(rowView, false);
+                }
+                return true;
+            case DragEvent.ACTION_DROP:
+                applyLayerDragTargetState(rowView, false);
+                int fromIndex = parseDragIndex(event.getClipData());
+                Object targetTag = rowView.getTag(R.id.tag_layer_index);
+                if (fromIndex == -1 || !(targetTag instanceof Integer)) {
+                    return false;
+                }
+                int toIndex = (Integer) targetTag;
+                if (fromIndex != toIndex) {
+                    dragPerformed = true;
+                    handleLayerReorder(fromIndex, toIndex);
+                }
+                return true;
+            case DragEvent.ACTION_DRAG_ENDED:
+                applyLayerDragTargetState(rowView, false);
+                if (event.getLocalState() instanceof View && event.getLocalState() == rowView) {
+                    rowView.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(150).start();
+                    ViewCompat.setElevation(rowView, 0f);
+                    if (!dragPerformed) {
+                        refresh();
+                    }
+                    draggingLayerView = null;
+                    draggingLayerIndex = -1;
+                    dragPerformed = false;
+                }
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void handleLayerReorder(int fromIndex, int toIndex) {
+        if (listener != null) {
+            listener.onLayersReordered(fromIndex, toIndex);
+        } else {
+            page.moveLayer(fromIndex, toIndex);
+            refresh();
+        }
+    }
+
+    private void applyLayerRowBackground(View layerView, boolean isActive) {
+        layerView.setBackgroundResource(isActive
+            ? R.drawable.annotation_layer_selected
+            : R.drawable.settings_home_row_bg);
+    }
+
+    private void applyLayerDragTargetState(View layerView, boolean isTarget) {
+        if (layerView == null) {
+            return;
+        }
+        if (isTarget) {
+            layerView.setBackgroundResource(R.drawable.annotation_drag_target_bg);
+            ViewCompat.setElevation(layerView, dpToPx(10f));
+        } else {
+            Object activeTag = layerView.getTag(R.id.tag_layer_active);
+            boolean isActive = activeTag instanceof Boolean && (Boolean) activeTag;
+            applyLayerRowBackground(layerView, isActive);
+            if (layerView != draggingLayerView) {
+                ViewCompat.setElevation(layerView, 0f);
+            }
+        }
+    }
+
+    private View findLayerRow(View view) {
+        View current = view;
+        while (current != null && current.getTag(R.id.tag_layer_index) == null) {
+            if (!(current.getParent() instanceof View)) {
+                return null;
+            }
+            current = (View) current.getParent();
+        }
+        return current;
+    }
+
+    private int parseDragIndex(ClipData clipData) {
+        if (clipData == null || clipData.getItemCount() == 0) {
+            return -1;
+        }
+        CharSequence text = clipData.getItemAt(0).getText();
+        if (text == null) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(text.toString());
+        } catch (NumberFormatException ex) {
+            return draggingLayerIndex;
+        }
+    }
+
+    private float dpToPx(float dp) {
+        return dp * context.getResources().getDisplayMetrics().density;
     }
     
     public void refresh() {

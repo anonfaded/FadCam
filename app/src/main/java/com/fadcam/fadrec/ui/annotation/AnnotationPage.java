@@ -114,12 +114,42 @@ public class AnnotationPage {
     }
     
     public void moveLayer(int fromIndex, int toIndex) {
-        if (fromIndex >= 0 && fromIndex < layers.size() && 
-            toIndex >= 0 && toIndex < layers.size()) {
-            AnnotationLayer layer = layers.remove(fromIndex);
-            layers.add(toIndex, layer);
-            this.modifiedAt = System.currentTimeMillis();
+        if (layers.isEmpty()) {
+            return;
         }
+
+        if (fromIndex < 0 || fromIndex >= layers.size()) {
+            return;
+        }
+
+        if (toIndex < 0) {
+            toIndex = 0;
+        } else if (toIndex > layers.size() - 1) {
+            toIndex = layers.size() - 1;
+        }
+
+        if (fromIndex == toIndex) {
+            return;
+        }
+
+        AnnotationLayer layer = layers.remove(fromIndex);
+        layers.add(toIndex, layer);
+
+        if (activeLayerIndex == fromIndex) {
+            activeLayerIndex = toIndex;
+        } else if (fromIndex < activeLayerIndex && toIndex >= activeLayerIndex) {
+            activeLayerIndex -= 1;
+        } else if (fromIndex > activeLayerIndex && toIndex <= activeLayerIndex) {
+            activeLayerIndex += 1;
+        }
+
+        if (activeLayerIndex < 0) {
+            activeLayerIndex = 0;
+        } else if (activeLayerIndex >= layers.size()) {
+            activeLayerIndex = layers.size() - 1;
+        }
+
+        this.modifiedAt = System.currentTimeMillis();
     }
     
     // Version control
