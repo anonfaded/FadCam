@@ -74,7 +74,7 @@
     <color name="annotation_menu_background">#2A2A2A</color> <!-- Lighter for better contrast with dark cards -->
     <color name="annotation_border_subtle">#404040</color> <!-- Subtle border for cards/sections -->
     <color name="annotation_border_divider">#505050</color> <!-- Lighter divider for better visibility -->
-    <color name="annotation_border_dark">#0D0D0D</color> <!-- Very dark border for main menu/arrow -->
+    <color name="annotation_border_dark">#1E1E22</color> <!-- Subtle dark border that matches overlay theme -->
     <color name="annotation_active_border">#4CAF50</color> <!-- Green border for active state -->
     <color name="annotation_button_bg">#2A2A2A</color> <!-- Consistent background for all tool buttons -->
 </resources>
