@@ -411,8 +411,12 @@ public class LayerPanelOverlay {
     }
     
     public void refresh() {
-        if (overlayView != null) {
-            updateLayers();
+        if (overlayView != null && layerContainer != null) {
+            layerContainer.post(() -> {
+                if (overlayView != null) {
+                    updateLayers();
+                }
+            });
         }
     }
 }

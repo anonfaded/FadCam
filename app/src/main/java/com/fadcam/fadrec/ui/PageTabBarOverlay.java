@@ -334,8 +334,12 @@ public class PageTabBarOverlay {
     }
 
     public void refresh() {
-        if (overlayView != null) {
-            updateTabs();
+        if (overlayView != null && tabContainer != null) {
+            tabContainer.post(() -> {
+                if (overlayView != null) {
+                    updateTabs();
+                }
+            });
         }
     }
 }
