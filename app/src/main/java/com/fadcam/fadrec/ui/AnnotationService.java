@@ -14,6 +14,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -31,6 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import java.io.File;
 import androidx.core.app.NotificationCompat;
@@ -71,6 +74,7 @@ public class AnnotationService extends Service {
     private LayerPanelOverlay layerPanelOverlay;
     
     // Unified toolbar controls
+    private View btnExpandCollapseContainer;
     private TextView btnExpandCollapse;
     private View expandableContent;
     
@@ -122,6 +126,14 @@ public class AnnotationService extends Service {
     private boolean overlayVisible = true;      // Controls if arrow overlay is shown
     private boolean annotationEnabled = false;  // Controls if drawing is active (DEFAULT: OFF)
     private boolean canvasHidden = false;       // Controls if canvas drawings are hidden (except pinned layers)
+    private long lastArrowHintTimestamp = 0L;
+    private Runnable pendingArrowHintRunnable;
+    private static final long ARROW_HINT_COOLDOWN_MS = 2000L;
+    private static final long ARROW_HINT_START_DELAY_MS = 180L;
+    private static final long ARROW_HINT_OUT_DURATION_MS = 260L;
+    private static final long ARROW_HINT_RETURN_DURATION_MS = 340L;
+    private static final long ARROW_HINT_PAUSE_MS = 110L;
+    private static final FastOutSlowInInterpolator ARROW_HINT_INTERPOLATOR = new FastOutSlowInInterpolator();
     
     // Separate window params for arrow and menu
     private View arrowOverlay;  // Separate overlay for arrow button only
@@ -742,8 +754,9 @@ public class AnnotationService extends Service {
                 : WindowManager.LayoutParams.TYPE_PHONE;
         
         // ===== ARROW OVERLAY SETUP =====
-        arrowOverlay = inflater.inflate(R.layout.annotation_arrow_button, null);
-        btnExpandCollapse = arrowOverlay.findViewById(R.id.btnExpandCollapse);
+    arrowOverlay = inflater.inflate(R.layout.annotation_arrow_button, null);
+    btnExpandCollapseContainer = arrowOverlay.findViewById(R.id.btnExpandCollapseContainer);
+    btnExpandCollapse = arrowOverlay.findViewById(R.id.btnExpandCollapse);
         
         arrowParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -873,11 +886,6 @@ public class AnnotationService extends Service {
         iconBoardWhite = toolbarView.findViewById(R.id.iconBoardWhite);
         
         // Hide the arrow button in the unified layout since we have separate arrow overlay
-        TextView btnExpandCollapseInMenu = toolbarView.findViewById(R.id.btnExpandCollapse);
-        if (btnExpandCollapseInMenu != null) {
-            btnExpandCollapseInMenu.setVisibility(View.GONE);
-        }
-        
         menuParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -936,7 +944,7 @@ public class AnnotationService extends Service {
         });
         
         // Main Expand/Collapse button (toggles menu overlay visibility with fade)
-        btnExpandCollapse.setOnClickListener(v -> {
+        btnExpandCollapseContainer.setOnClickListener(v -> {
             // Prevent multiple clicks during animation
             if (isAnimating) {
                 Log.d(TAG, "Click ignored - animation in progress");
@@ -965,7 +973,7 @@ public class AnnotationService extends Service {
                         Log.d(TAG, "EXPAND completed - menu visible");
                     })
                     .start();
-                updateArrowDirection(arrowParams);
+                updateArrowDirection(arrowParams, true);
             } else {
                 // COLLAPSING: Hide menu overlay with fade-out
                 Log.d(TAG, "Starting COLLAPSE - hiding menu overlay");
@@ -979,9 +987,9 @@ public class AnnotationService extends Service {
                         Log.d(TAG, "COLLAPSE completed - menu hidden");
                     })
                     .start();
-                updateArrowDirection(arrowParams);
+                updateArrowDirection(arrowParams, true);
             }
-        });
+    });
         
         // Enable/Disable Annotation button
         btnToggleAnnotation.setOnClickListener(v -> {
@@ -1252,7 +1260,7 @@ public class AnnotationService extends Service {
                             snapToEdgeIfNeeded();
                             isDragging = false;
                             return true;
-                        } else if (v.getId() == R.id.btnExpandCollapse) {
+                        } else if (v.getId() == R.id.btnExpandCollapseContainer) {
                             // Only trigger click for arrow button
                             v.performClick();
                             return false;
@@ -1264,7 +1272,7 @@ public class AnnotationService extends Service {
         };
         
         // Set touch listener on arrow button (always draggable)
-        btnExpandCollapse.setOnTouchListener(dragListener);
+    btnExpandCollapseContainer.setOnTouchListener(dragListener);
         // Set touch listener on menu overlay (draggable when visible)
         toolbarView.setOnTouchListener(dragListener);
     }
@@ -1366,26 +1374,45 @@ public class AnnotationService extends Service {
      * Left/Right: vertical layout (narrower, taller)
      */
     private void adaptLayoutForEdge(EdgePosition edge) {
-        ViewGroup.LayoutParams layoutParams = btnExpandCollapse.getLayoutParams();
-        
+        if (btnExpandCollapseContainer == null) {
+            return;
+        }
+
+        ViewGroup.LayoutParams layoutParams = btnExpandCollapseContainer.getLayoutParams();
+
+        int targetWidth;
+        int targetHeight;
+
         switch (edge) {
             case TOP:
             case BOTTOM:
-                // Horizontal layout for top/bottom
-                layoutParams.width = dpToPx(48);
-                layoutParams.height = dpToPx(20);
+                targetWidth = dpToPx(48);
+                targetHeight = dpToPx(20);
                 break;
-                
+
             case LEFT:
             case RIGHT:
             default:
-                // Vertical layout for left/right
-                layoutParams.width = dpToPx(20);
-                layoutParams.height = dpToPx(48);
+                targetWidth = dpToPx(20);
+                targetHeight = dpToPx(48);
                 break;
         }
-        
-        btnExpandCollapse.setLayoutParams(layoutParams);
+
+        if (layoutParams.width != targetWidth || layoutParams.height != targetHeight) {
+            layoutParams.width = targetWidth;
+            layoutParams.height = targetHeight;
+            btnExpandCollapseContainer.setLayoutParams(layoutParams);
+        }
+
+        if (arrowParams != null && arrowOverlay != null) {
+            arrowParams.width = targetWidth;
+            arrowParams.height = targetHeight;
+            try {
+                windowManager.updateViewLayout(arrowOverlay, arrowParams);
+            } catch (IllegalArgumentException ignored) {
+                // View might not be attached yet; will be updated on next layout pass.
+            }
+        }
     }
     
     /**
@@ -1395,6 +1422,10 @@ public class AnnotationService extends Service {
     
     
     private void updateArrowDirection(WindowManager.LayoutParams params) {
+        updateArrowDirection(params, false);
+    }
+
+    private void updateArrowDirection(WindowManager.LayoutParams params, boolean forceHint) {
         Log.d(TAG, ">>> updateArrowDirection() called");
         Log.d(TAG, "WindowManager params IN - x: " + params.x + ", y: " + params.y + ", gravity: " + params.gravity);
         
@@ -1458,7 +1489,7 @@ public class AnnotationService extends Service {
                     backgroundRes = R.drawable.compact_arrow_bg;
                     break;
             }
-            btnExpandCollapse.setBackgroundResource(backgroundRes);
+            btnExpandCollapseContainer.setBackgroundResource(backgroundRes);
         } else {
             // Expanded state: arrow points away from menu (toward edge for collapsing)
             // Arrow stays outside popup, indicates collapse direction
@@ -1485,12 +1516,96 @@ public class AnnotationService extends Service {
                     backgroundRes = R.drawable.compact_arrow_bg;
                     break;
             }
-            btnExpandCollapse.setBackgroundResource(backgroundRes);
+            btnExpandCollapseContainer.setBackgroundResource(backgroundRes);
         }
-        
-        Log.d(TAG, "Arrow direction updated - text: " + btnExpandCollapse.getText() + 
+
+      playArrowHintAnimation(forceHint);
+
+        Log.d(TAG, "Arrow direction updated - text: " + btnExpandCollapse.getText() +
               ", isExpanded: " + isExpanded + ", edge: " + currentEdge);
         Log.d(TAG, "<<< updateArrowDirection() completed");
+    }
+
+    /**
+     * Provide a quick directional hint by nudging the arrow slightly toward the
+     * direction it will move. Runs on a cooldown to avoid constant animation spam.
+     */
+    private void playArrowHintAnimation(boolean force) {
+        if (btnExpandCollapse == null) {
+            return;
+        }
+
+        if (pendingArrowHintRunnable != null) {
+            btnExpandCollapse.removeCallbacks(pendingArrowHintRunnable);
+            pendingArrowHintRunnable = null;
+        }
+
+        btnExpandCollapse.animate().cancel();
+        btnExpandCollapse.setTranslationX(0f);
+        btnExpandCollapse.setTranslationY(0f);
+
+        long now = SystemClock.elapsedRealtime();
+        if (!force && now - lastArrowHintTimestamp < ARROW_HINT_COOLDOWN_MS) {
+            return;
+        }
+
+        final float offset = dpToPx(5);
+        float endX = 0f;
+        float endY = 0f;
+
+        CharSequence glyph = btnExpandCollapse.getText();
+        if (TextUtils.equals(glyph, "chevron_left")) {
+            endX = -offset;
+        } else if (TextUtils.equals(glyph, "chevron_right")) {
+            endX = offset;
+        } else if (TextUtils.equals(glyph, "expand_more")) {
+            endY = offset;
+        } else if (TextUtils.equals(glyph, "expand_less")) {
+            endY = -offset;
+        }
+
+        if (endX == 0f && endY == 0f) {
+            switch (currentEdge) {
+                case LEFT:
+                    endX = isExpanded ? -offset : offset;
+                    break;
+                case RIGHT:
+                    endX = isExpanded ? offset : -offset;
+                    break;
+                case TOP:
+                    endY = isExpanded ? -offset : offset;
+                    break;
+                case BOTTOM:
+                    endY = isExpanded ? offset : -offset;
+                    break;
+                default:
+                    endX = isExpanded ? offset : -offset;
+                    break;
+            }
+        }
+
+        final float targetX = endX;
+        final float targetY = endY;
+
+        pendingArrowHintRunnable = () -> {
+            lastArrowHintTimestamp = SystemClock.elapsedRealtime();
+            btnExpandCollapse.animate()
+                .translationX(targetX)
+                .translationY(targetY)
+                .setDuration(ARROW_HINT_OUT_DURATION_MS)
+                .setInterpolator(ARROW_HINT_INTERPOLATOR)
+                .withEndAction(() -> btnExpandCollapse.animate()
+                    .translationX(0f)
+                    .translationY(0f)
+                    .setStartDelay(ARROW_HINT_PAUSE_MS)
+                    .setDuration(ARROW_HINT_RETURN_DURATION_MS)
+                    .setInterpolator(ARROW_HINT_INTERPOLATOR)
+                    .withEndAction(() -> pendingArrowHintRunnable = null)
+                    .start())
+                .start();
+        };
+
+        btnExpandCollapse.postDelayed(pendingArrowHintRunnable, ARROW_HINT_START_DELAY_MS);
     }
     
     private void updateToolSelection(boolean isPen) {

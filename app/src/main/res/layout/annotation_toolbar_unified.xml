@@ -704,6 +704,6 @@
     </ScrollView>
 
     <!-- Arrow Button (always visible, OUTSIDE menu) - Overlays on right edge -->
-    <TextView android:id="@+id/btnExpandCollapse" android:layout_width="20dp" android:layout_height="48dp" android:layout_gravity="end|center_vertical" android:gravity="center" android:text="chevron_right" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:clickable="true" android:focusable="true" android:background="@drawable/floating_menu_bg" android:padding="0dp" />
+
 
 </FrameLayout>
