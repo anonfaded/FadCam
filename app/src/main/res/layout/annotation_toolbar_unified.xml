@@ -20,7 +20,7 @@
 
                 <ImageView
                     android:layout_width="wrap_content"
-                    android:layout_height="35dp"
+                    android:layout_height="39dp"
                     android:src="@drawable/fadrec"
                     android:adjustViewBounds="true"
                     android:scaleType="fitCenter"
@@ -32,7 +32,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="by FadSec Lab"
-                    android:textSize="10sp"
+                    android:textSize="11sp"
                     android:textColor="#B0B0B0"
                     android:fontFamily="@font/ubuntu_regular"
                     android:layout_marginStart="0dp"
