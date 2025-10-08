@@ -1,5 +1,10 @@
 package com.fadcam.fadrec.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -128,11 +133,14 @@ public class AnnotationService extends Service {
     private boolean canvasHidden = false;       // Controls if canvas drawings are hidden (except pinned layers)
     private long lastArrowHintTimestamp = 0L;
     private Runnable pendingArrowHintRunnable;
+    private AnimatorSet arrowFlipAnimator;
+    private final java.util.Map<TextView, AnimatorSet> sectionChevronAnimators = new java.util.WeakHashMap<>();
     private static final long ARROW_HINT_COOLDOWN_MS = 2000L;
     private static final long ARROW_HINT_START_DELAY_MS = 180L;
     private static final long ARROW_HINT_OUT_DURATION_MS = 260L;
     private static final long ARROW_HINT_RETURN_DURATION_MS = 340L;
     private static final long ARROW_HINT_PAUSE_MS = 110L;
+    private static final long ARROW_ROTATION_DURATION_MS = 260L;
     private static final FastOutSlowInInterpolator ARROW_HINT_INTERPOLATOR = new FastOutSlowInInterpolator();
     
     // Separate window params for arrow and menu
@@ -1007,10 +1015,10 @@ public class AnnotationService extends Service {
                 isQuickAccessExpanded = !isQuickAccessExpanded;
                 if (isQuickAccessExpanded) {
                     quickAccessContent.setVisibility(View.VISIBLE);
-                    quickAccessExpandIcon.setText("expand_less");
+                    applySectionChevronGlyph(quickAccessExpandIcon, "expand_less");
                 } else {
                     quickAccessContent.setVisibility(View.GONE);
-                    quickAccessExpandIcon.setText("expand_more");
+                    applySectionChevronGlyph(quickAccessExpandIcon, "expand_more");
                 }
             });
         }
@@ -1021,10 +1029,10 @@ public class AnnotationService extends Service {
                 isProjectExpanded = !isProjectExpanded;
                 if (isProjectExpanded) {
                     projectContent.setVisibility(View.VISIBLE);
-                    projectExpandIcon.setText("expand_less");
+                    applySectionChevronGlyph(projectExpandIcon, "expand_less");
                 } else {
                     projectContent.setVisibility(View.GONE);
-                    projectExpandIcon.setText("expand_more");
+                    applySectionChevronGlyph(projectExpandIcon, "expand_more");
                 }
             });
         }
@@ -1034,10 +1042,10 @@ public class AnnotationService extends Service {
             isAnnotationsExpanded = !isAnnotationsExpanded;
             if (isAnnotationsExpanded) {
                 annotationsContent.setVisibility(View.VISIBLE);
-                annotationsExpandIcon.setText("expand_less");
+                applySectionChevronGlyph(annotationsExpandIcon, "expand_less");
             } else {
                 annotationsContent.setVisibility(View.GONE);
-                annotationsExpandIcon.setText("expand_more");
+                applySectionChevronGlyph(annotationsExpandIcon, "expand_more");
             }
         });
         
@@ -1453,73 +1461,70 @@ public class AnnotationService extends Service {
             else currentEdge = EdgePosition.BOTTOM;
         }
         
+        String newGlyph;
+        int backgroundRes;
+
         if (!isExpanded) {
-            // Collapsed state: arrow points toward where menu will appear
-            // Use adaptive corners (plain on edge side, rounded on opposite)
-            int backgroundRes;
             switch (currentEdge) {
                 case LEFT:
-                    btnExpandCollapse.setText("chevron_right"); // Points right (menu will appear right)
+                    newGlyph = "chevron_right";
                     backgroundRes = R.drawable.compact_arrow_bg_left;
                     break;
                 case RIGHT:
-                    btnExpandCollapse.setText("chevron_left"); // Points left (menu will appear left)
+                    newGlyph = "chevron_left";
                     backgroundRes = R.drawable.compact_arrow_bg_right;
                     break;
                 case TOP:
-                    btnExpandCollapse.setText("expand_more"); // Points down (menu will appear below)
+                    newGlyph = "expand_more";
                     backgroundRes = R.drawable.compact_arrow_bg_top;
                     break;
                 case BOTTOM:
-                    btnExpandCollapse.setText("expand_less"); // Points up (menu will appear above)
+                    newGlyph = "expand_less";
                     backgroundRes = R.drawable.compact_arrow_bg_bottom;
                     break;
                 case CENTER:
-                    // Default based on horizontal position
                     if (actualX < screenWidth / 2) {
-                        btnExpandCollapse.setText("chevron_right");
+                        newGlyph = "chevron_right";
                         backgroundRes = R.drawable.compact_arrow_bg_left;
                     } else {
-                        btnExpandCollapse.setText("chevron_left");
+                        newGlyph = "chevron_left";
                         backgroundRes = R.drawable.compact_arrow_bg_right;
                     }
                     break;
                 default:
-                    btnExpandCollapse.setText("chevron_left");
+                    newGlyph = "chevron_left";
                     backgroundRes = R.drawable.compact_arrow_bg;
                     break;
             }
-            btnExpandCollapseContainer.setBackgroundResource(backgroundRes);
         } else {
-            // Expanded state: arrow points away from menu (toward edge for collapsing)
-            // Arrow stays outside popup, indicates collapse direction
-            int backgroundRes;
             switch (currentEdge) {
                 case LEFT:
-                    btnExpandCollapse.setText("chevron_left"); // Points left (will collapse to left edge)
+                    newGlyph = "chevron_left";
                     backgroundRes = R.drawable.compact_arrow_bg_left;
                     break;
                 case RIGHT:
-                    btnExpandCollapse.setText("chevron_right"); // Points right (will collapse to right edge)
+                    newGlyph = "chevron_right";
                     backgroundRes = R.drawable.compact_arrow_bg_right;
                     break;
                 case TOP:
-                    btnExpandCollapse.setText("expand_less"); // Points up (will collapse to top edge)
+                    newGlyph = "expand_less";
                     backgroundRes = R.drawable.compact_arrow_bg_top;
                     break;
                 case BOTTOM:
-                    btnExpandCollapse.setText("expand_more"); // Points down (will collapse to bottom edge)
+                    newGlyph = "expand_more";
                     backgroundRes = R.drawable.compact_arrow_bg_bottom;
                     break;
                 default:
-                    btnExpandCollapse.setText("chevron_right");
+                    newGlyph = "chevron_right";
                     backgroundRes = R.drawable.compact_arrow_bg;
                     break;
             }
-            btnExpandCollapseContainer.setBackgroundResource(backgroundRes);
         }
 
-      playArrowHintAnimation(forceHint);
+    btnExpandCollapseContainer.setBackgroundResource(backgroundRes);
+    applyArrowGlyphWithRotation(newGlyph);
+
+    playArrowHintAnimation(newGlyph, forceHint);
 
         Log.d(TAG, "Arrow direction updated - text: " + btnExpandCollapse.getText() +
               ", isExpanded: " + isExpanded + ", edge: " + currentEdge);
@@ -1530,9 +1535,178 @@ public class AnnotationService extends Service {
      * Provide a quick directional hint by nudging the arrow slightly toward the
      * direction it will move. Runs on a cooldown to avoid constant animation spam.
      */
-    private void playArrowHintAnimation(boolean force) {
+    private void applyArrowGlyphWithRotation(CharSequence newGlyph) {
         if (btnExpandCollapse == null) {
             return;
+        }
+
+        if (TextUtils.isEmpty(newGlyph)) {
+            return;
+        }
+
+        CharSequence currentGlyph = btnExpandCollapse.getText();
+        if (TextUtils.equals(currentGlyph, newGlyph)) {
+            resetArrowRotation();
+            return;
+        }
+
+        if (arrowFlipAnimator != null) {
+            arrowFlipAnimator.cancel();
+        }
+
+        if (btnExpandCollapse.getWidth() == 0 || btnExpandCollapse.getHeight() == 0) {
+            btnExpandCollapse.setText(newGlyph);
+            resetArrowRotation();
+            return;
+        }
+
+        btnExpandCollapse.setPivotX(btnExpandCollapse.getWidth() / 2f);
+        btnExpandCollapse.setPivotY(btnExpandCollapse.getHeight() / 2f);
+
+        boolean verticalFlip = isVerticalGlyph(newGlyph);
+        String rotationProperty = verticalFlip ? "rotationX" : "rotationY";
+
+        float cameraDistance = 8000f * getResources().getDisplayMetrics().density;
+        btnExpandCollapse.setCameraDistance(cameraDistance);
+
+        ObjectAnimator collapseAnimator = ObjectAnimator.ofFloat(btnExpandCollapse, rotationProperty, 0f, 90f);
+        collapseAnimator.setDuration(ARROW_ROTATION_DURATION_MS / 2);
+        collapseAnimator.setInterpolator(ARROW_HINT_INTERPOLATOR);
+        collapseAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                btnExpandCollapse.setText(newGlyph);
+                if (verticalFlip) {
+                    btnExpandCollapse.setRotationX(-90f);
+                } else {
+                    btnExpandCollapse.setRotationY(-90f);
+                }
+            }
+        });
+
+        ObjectAnimator expandAnimator = ObjectAnimator.ofFloat(btnExpandCollapse, rotationProperty, -90f, 0f);
+        expandAnimator.setDuration(ARROW_ROTATION_DURATION_MS / 2);
+        expandAnimator.setInterpolator(ARROW_HINT_INTERPOLATOR);
+
+        arrowFlipAnimator = new AnimatorSet();
+        arrowFlipAnimator.playSequentially(collapseAnimator, expandAnimator);
+        arrowFlipAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                resetArrowRotation();
+                arrowFlipAnimator = null;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                btnExpandCollapse.setText(newGlyph);
+                resetArrowRotation();
+                arrowFlipAnimator = null;
+            }
+        });
+
+        arrowFlipAnimator.start();
+    }
+
+    private boolean isVerticalGlyph(CharSequence glyph) {
+        return TextUtils.equals(glyph, "expand_more") || TextUtils.equals(glyph, "expand_less");
+    }
+
+    private void resetArrowRotation() {
+        resetGlyphRotation(btnExpandCollapse);
+    }
+
+    private void resetGlyphRotation(TextView targetView) {
+        if (targetView == null) {
+            return;
+        }
+        targetView.setRotationX(0f);
+        targetView.setRotationY(0f);
+    }
+
+    private void applySectionChevronGlyph(TextView iconView, CharSequence newGlyph) {
+        if (iconView == null) {
+            return;
+        }
+
+        if (TextUtils.isEmpty(newGlyph)) {
+            return;
+        }
+
+        CharSequence currentGlyph = iconView.getText();
+        if (TextUtils.equals(currentGlyph, newGlyph)) {
+            resetGlyphRotation(iconView);
+            return;
+        }
+
+        AnimatorSet existingAnimator = sectionChevronAnimators.remove(iconView);
+        if (existingAnimator != null) {
+            existingAnimator.cancel();
+        }
+
+        if (iconView.getWidth() == 0 || iconView.getHeight() == 0) {
+            iconView.setText(newGlyph);
+            resetGlyphRotation(iconView);
+            return;
+        }
+
+        iconView.setPivotX(iconView.getWidth() / 2f);
+        iconView.setPivotY(iconView.getHeight() / 2f);
+
+        boolean verticalFlip = isVerticalGlyph(newGlyph);
+        String rotationProperty = verticalFlip ? "rotationX" : "rotationY";
+
+        float cameraDistance = 8000f * getResources().getDisplayMetrics().density;
+        iconView.setCameraDistance(cameraDistance);
+
+        ObjectAnimator collapseAnimator = ObjectAnimator.ofFloat(iconView, rotationProperty, 0f, 90f);
+        collapseAnimator.setDuration(ARROW_ROTATION_DURATION_MS / 2);
+        collapseAnimator.setInterpolator(ARROW_HINT_INTERPOLATOR);
+        collapseAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                iconView.setText(newGlyph);
+                if (verticalFlip) {
+                    iconView.setRotationX(-90f);
+                } else {
+                    iconView.setRotationY(-90f);
+                }
+            }
+        });
+
+        ObjectAnimator expandAnimator = ObjectAnimator.ofFloat(iconView, rotationProperty, -90f, 0f);
+        expandAnimator.setDuration(ARROW_ROTATION_DURATION_MS / 2);
+        expandAnimator.setInterpolator(ARROW_HINT_INTERPOLATOR);
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(collapseAnimator, expandAnimator);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                resetGlyphRotation(iconView);
+                sectionChevronAnimators.remove(iconView);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                iconView.setText(newGlyph);
+                resetGlyphRotation(iconView);
+                sectionChevronAnimators.remove(iconView);
+            }
+        });
+
+        sectionChevronAnimators.put(iconView, animatorSet);
+        animatorSet.start();
+    }
+
+    private void playArrowHintAnimation(CharSequence glyph, boolean force) {
+        if (btnExpandCollapse == null) {
+            return;
+        }
+
+        CharSequence appliedGlyph = glyph;
+        if (TextUtils.isEmpty(appliedGlyph)) {
+            appliedGlyph = btnExpandCollapse.getText();
         }
 
         if (pendingArrowHintRunnable != null) {
@@ -1553,14 +1727,13 @@ public class AnnotationService extends Service {
         float endX = 0f;
         float endY = 0f;
 
-        CharSequence glyph = btnExpandCollapse.getText();
-        if (TextUtils.equals(glyph, "chevron_left")) {
+        if (TextUtils.equals(appliedGlyph, "chevron_left")) {
             endX = -offset;
-        } else if (TextUtils.equals(glyph, "chevron_right")) {
+        } else if (TextUtils.equals(appliedGlyph, "chevron_right")) {
             endX = offset;
-        } else if (TextUtils.equals(glyph, "expand_more")) {
+        } else if (TextUtils.equals(appliedGlyph, "expand_more")) {
             endY = offset;
-        } else if (TextUtils.equals(glyph, "expand_less")) {
+        } else if (TextUtils.equals(appliedGlyph, "expand_less")) {
             endY = -offset;
         }
 
