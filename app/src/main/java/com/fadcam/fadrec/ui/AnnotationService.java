@@ -76,6 +76,7 @@ public class AnnotationService extends Service {
     private AnnotationView annotationView;
     private View toolbarView;
     private boolean toolbarHiddenForOpacityGesture = false;
+    private int toolbarHideRequestCount = 0;
     
     // State management
     private ProjectFileManager projectFileManager;
@@ -213,17 +214,25 @@ public class AnnotationService extends Service {
         }
     }
 
-    private void setToolbarVisibilityForOpacityGesture(boolean hidden) {
+    private void setToolbarVisibilityForOpacityGesture(boolean hideRequest) {
+        if (hideRequest) {
+            toolbarHideRequestCount++;
+        } else if (toolbarHideRequestCount > 0) {
+            toolbarHideRequestCount--;
+        }
+
+        boolean shouldHide = toolbarHideRequestCount > 0;
         if (toolbarView == null) {
-            toolbarHiddenForOpacityGesture = hidden;
+            toolbarHiddenForOpacityGesture = shouldHide;
             return;
         }
-        if (toolbarHiddenForOpacityGesture == hidden) {
+        if (toolbarHiddenForOpacityGesture == shouldHide) {
             return;
         }
-        toolbarHiddenForOpacityGesture = hidden;
+
+        toolbarHiddenForOpacityGesture = shouldHide;
         toolbarView.animate().cancel();
-        if (hidden) {
+        if (shouldHide) {
             toolbarView.animate()
                 .alpha(0f)
                 .setDuration(120L)
@@ -2176,6 +2185,16 @@ public class AnnotationService extends Service {
                     Log.d(TAG, "Active page index is now: " + state.getActivePageIndex());
                     Log.d(TAG, "=== PAGE REORDER COMPLETED ===");
                 }
+
+                @Override
+                public void onPageDragGestureStarted(int index) {
+                    setToolbarVisibilityForOpacityGesture(true);
+                }
+
+                @Override
+                public void onPageDragGestureEnded(int index) {
+                    setToolbarVisibilityForOpacityGesture(false);
+                }
             });
             pageTabBarOverlay.show();
         }
@@ -2248,6 +2267,16 @@ public class AnnotationService extends Service {
 
                     @Override
                     public void onLayerOpacityGestureEnded(int index) {
+                        setToolbarVisibilityForOpacityGesture(false);
+                    }
+
+                    @Override
+                    public void onLayerReorderGestureStarted(int index) {
+                        setToolbarVisibilityForOpacityGesture(true);
+                    }
+
+                    @Override
+                    public void onLayerReorderGestureEnded(int index) {
                         setToolbarVisibilityForOpacityGesture(false);
                     }
                     

@@ -18,13 +18,26 @@
         android:paddingBottom="12dp">
 
         <TextView
+            android:id="@+id/pageTabDragHandle"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="drag_indicator"
+            android:textSize="20sp"
+            android:textColor="@color/annotation_heading_accent"
+            android:fontFamily="@font/materialicons"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="📄 Pages"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/annotation_heading_accent"
-            android:layout_marginStart="8dp"
             android:layout_marginEnd="12dp" />
 
         <View

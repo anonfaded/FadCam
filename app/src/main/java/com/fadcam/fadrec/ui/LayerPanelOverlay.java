@@ -4,6 +4,8 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -51,7 +53,11 @@ public class LayerPanelOverlay {
     private int overlayInitialY;
     private boolean isDraggingOverlay = false;
     private boolean opacityGestureActive = false;
+    private int dimRequestCount = 0;
     private int activeOpacityChangeIndex = -1;
+    private int activeReorderIndex = -1;
+    private float layerDragDownRawX;
+    private float layerDragDownRawY;
 
     private final View.OnTouchListener overlayDragTouchListener = (view, event) -> {
         if (layoutParams == null || overlayView == null || windowManager == null) {
@@ -65,13 +71,13 @@ public class LayerPanelOverlay {
                 overlayInitialTouchX = event.getRawX();
                 overlayInitialTouchY = event.getRawY();
                 isDraggingOverlay = false;
-                return false;
+                return true;
             case MotionEvent.ACTION_MOVE:
                 int deltaX = Math.round(event.getRawX() - overlayInitialTouchX);
                 int deltaY = Math.round(event.getRawY() - overlayInitialTouchY);
                 if (!isDraggingOverlay) {
                     if (Math.abs(deltaX) < dragTouchSlop && Math.abs(deltaY) < dragTouchSlop) {
-                        return false;
+                        return true;
                     }
                     isDraggingOverlay = true;
                     view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
@@ -88,7 +94,7 @@ public class LayerPanelOverlay {
                     isDraggingOverlay = false;
                     return true;
                 }
-                return false;
+                return true;
             default:
                 return false;
         }
@@ -105,6 +111,8 @@ public class LayerPanelOverlay {
         void onLayersReordered(int fromIndex, int toIndex);
         default void onLayerOpacityGestureStarted(int index) {}
         default void onLayerOpacityGestureEnded(int index) {}
+        default void onLayerReorderGestureStarted(int index) {}
+        default void onLayerReorderGestureEnded(int index) {}
     }
     
     public LayerPanelOverlay(Context context, AnnotationPage page) {
@@ -130,9 +138,14 @@ public class LayerPanelOverlay {
         layerContainer = overlayView.findViewById(R.id.layerContainer);
         TextView btnAddLayer = overlayView.findViewById(R.id.btnAddLayer);
         TextView btnClose = overlayView.findViewById(R.id.btnCloseLayerPanel);
-        View headerView = overlayView.findViewById(R.id.layerPanelHeader);
-        if (headerView != null) {
-            headerView.setOnTouchListener(overlayDragTouchListener);
+        View headerDragHandle = overlayView.findViewById(R.id.layerPanelDragHandle);
+        if (headerDragHandle != null) {
+            headerDragHandle.setOnTouchListener(overlayDragTouchListener);
+        } else {
+            View headerView = overlayView.findViewById(R.id.layerPanelHeader);
+            if (headerView != null) {
+                headerView.setOnTouchListener(overlayDragTouchListener);
+            }
         }
         
         // Populate layers
@@ -176,18 +189,22 @@ public class LayerPanelOverlay {
         if (overlayView != null && windowManager != null) {
             overlayView.animate().cancel();
             overlayView.setAlpha(1f);
-            if (opacityGestureActive) {
-                setOpacityGestureActive(false);
-                if (listener != null && activeOpacityChangeIndex != -1) {
-                    listener.onLayerOpacityGestureEnded(activeOpacityChangeIndex);
-                }
+            if (listener != null && activeOpacityChangeIndex != -1) {
+                listener.onLayerOpacityGestureEnded(activeOpacityChangeIndex);
+            }
+            if (listener != null && activeReorderIndex != -1) {
+                listener.onLayerReorderGestureEnded(activeReorderIndex);
             }
             windowManager.removeView(overlayView);
             overlayView = null;
             layoutParams = null;
             opacityGestureActive = false;
+            dimRequestCount = 0;
             isDraggingOverlay = false;
             activeOpacityChangeIndex = -1;
+            activeReorderIndex = -1;
+            layerDragDownRawX = 0f;
+            layerDragDownRawY = 0f;
         }
     }
     
@@ -342,6 +359,13 @@ public class LayerPanelOverlay {
         
                 // Drag handle - Simple drag implementation
         if (btnDragHandle != null) {
+            btnDragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN || event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                    layerDragDownRawX = event.getRawX();
+                    layerDragDownRawY = event.getRawY();
+                }
+                return false;
+            });
             btnDragHandle.setOnLongClickListener(v -> {
                 startLayerDrag(layerView, index);
                 return true;
@@ -367,10 +391,16 @@ public class LayerPanelOverlay {
     
     private void startLayerDrag(View layerView, int index) {
         ClipData dragData = ClipData.newPlainText("layer_index", String.valueOf(index));
-        DragShadowBuilder shadowBuilder = new DragShadowBuilder(layerView);
+        PointF touchPoint = computeLocalTouchPoint(layerView, layerDragDownRawX, layerDragDownRawY);
+        DragShadowBuilder shadowBuilder = new OffsetDragShadowBuilder(layerView, touchPoint);
         draggingLayerView = layerView;
         draggingLayerIndex = index;
         dragPerformed = false;
+        activeReorderIndex = index;
+        setOpacityGestureActive(true);
+        if (listener != null) {
+            listener.onLayerReorderGestureStarted(index);
+        }
         layerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         layerView.animate().scaleX(1.03f).scaleY(1.03f).alpha(0.75f).setDuration(150).start();
         ViewCompat.setElevation(layerView, dpToPx(8f));
@@ -415,6 +445,7 @@ public class LayerPanelOverlay {
                     dragPerformed = true;
                     handleLayerReorder(fromIndex, toIndex);
                 }
+                endLayerReorderGesture();
                 return true;
             case DragEvent.ACTION_DRAG_ENDED:
                 applyLayerDragTargetState(rowView, false);
@@ -428,6 +459,7 @@ public class LayerPanelOverlay {
                     draggingLayerIndex = -1;
                     dragPerformed = false;
                 }
+                endLayerReorderGesture();
                 return true;
             default:
                 return false;
@@ -489,6 +521,80 @@ public class LayerPanelOverlay {
             return Integer.parseInt(text.toString());
         } catch (NumberFormatException ex) {
             return draggingLayerIndex;
+        }
+    }
+
+    private void endLayerReorderGesture() {
+        if (activeReorderIndex == -1) {
+            return;
+        }
+        setOpacityGestureActive(false);
+        if (listener != null) {
+            listener.onLayerReorderGestureEnded(activeReorderIndex);
+        }
+        activeReorderIndex = -1;
+        layerDragDownRawX = 0f;
+        layerDragDownRawY = 0f;
+    }
+
+    private PointF computeLocalTouchPoint(View view, float rawX, float rawY) {
+        PointF point = new PointF();
+        if (view == null) {
+            point.set(0f, 0f);
+            return point;
+        }
+
+        int width = view.getWidth() > 0 ? view.getWidth() : view.getMeasuredWidth();
+        int height = view.getHeight() > 0 ? view.getHeight() : view.getMeasuredHeight();
+        if (width <= 0) {
+            width = (int) dpToPx(300f);
+        }
+        if (height <= 0) {
+            height = (int) dpToPx(72f);
+        }
+
+        if (rawX == 0f && rawY == 0f) {
+            point.set(width / 2f, height / 2f);
+            return point;
+        }
+
+        int[] location = new int[2];
+        view.getLocationOnScreen(location);
+        float localX = rawX - location[0];
+        float localY = rawY - location[1];
+
+        localX = Math.max(0f, Math.min(localX, width));
+        localY = Math.max(0f, Math.min(localY, height));
+        point.set(localX, localY);
+        return point;
+    }
+
+    private static class OffsetDragShadowBuilder extends DragShadowBuilder {
+        private final Point touchPoint = new Point();
+
+        OffsetDragShadowBuilder(View view, PointF localTouchPoint) {
+            super(view);
+            if (localTouchPoint != null) {
+                touchPoint.set(Math.round(localTouchPoint.x), Math.round(localTouchPoint.y));
+            }
+        }
+
+        @Override
+        public void onProvideShadowMetrics(Point outShadowSize, Point outShadowTouchPoint) {
+            View view = getView();
+            if (view == null) {
+                outShadowSize.set(0, 0);
+                outShadowTouchPoint.set(0, 0);
+                return;
+            }
+
+            int width = Math.max(1, view.getWidth());
+            int height = Math.max(1, view.getHeight());
+            outShadowSize.set(width, height);
+
+            int clampedX = Math.max(0, Math.min(touchPoint.x, width));
+            int clampedY = Math.max(0, Math.min(touchPoint.y, height));
+            outShadowTouchPoint.set(clampedX, clampedY);
         }
     }
 
@@ -573,18 +679,27 @@ public class LayerPanelOverlay {
         return height;
     }
 
-    private void setOpacityGestureActive(boolean active) {
+    private void setOpacityGestureActive(boolean requestActive) {
+        if (requestActive) {
+            dimRequestCount++;
+        } else if (dimRequestCount > 0) {
+            dimRequestCount--;
+        }
+
+        boolean shouldDim = dimRequestCount > 0;
         if (overlayView == null) {
-            opacityGestureActive = active;
+            opacityGestureActive = shouldDim;
             return;
         }
-        if (opacityGestureActive == active) {
+
+        if (opacityGestureActive == shouldDim) {
             return;
         }
-        opacityGestureActive = active;
+
+        opacityGestureActive = shouldDim;
         overlayView.animate().cancel();
-        float targetAlpha = active ? 0.55f : 1f;
-        long duration = active ? 120L : 160L;
+        float targetAlpha = shouldDim ? 0.55f : 1f;
+        long duration = shouldDim ? 120L : 160L;
         overlayView.animate()
             .alpha(targetAlpha)
             .setDuration(duration)

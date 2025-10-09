@@ -5,6 +5,8 @@ import android.content.ClipDescription;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.DragEvent;
@@ -51,6 +53,11 @@ public class PageTabBarOverlay {
     private int overlayInitialX;
     private int overlayInitialY;
     private boolean isDraggingOverlay = false;
+    private float tabDragDownRawX;
+    private float tabDragDownRawY;
+    private boolean overlayDimActive = false;
+    private int dimRequestCount = 0;
+    private int activeDragPageIndex = -1;
     private final View.OnTouchListener overlayDragTouchListener = (view, event) -> {
         if (layoutParams == null || overlayView == null || windowManager == null) {
             return false;
@@ -63,13 +70,13 @@ public class PageTabBarOverlay {
                 overlayInitialTouchX = event.getRawX();
                 overlayInitialTouchY = event.getRawY();
                 isDraggingOverlay = false;
-                return false;
+                return true;
             case MotionEvent.ACTION_MOVE:
                 int deltaX = Math.round(event.getRawX() - overlayInitialTouchX);
                 int deltaY = Math.round(event.getRawY() - overlayInitialTouchY);
                 if (!isDraggingOverlay) {
                     if (Math.abs(deltaX) < dragTouchSlop && Math.abs(deltaY) < dragTouchSlop) {
-                        return false;
+                        return true;
                     }
                     isDraggingOverlay = true;
                     view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
@@ -86,7 +93,7 @@ public class PageTabBarOverlay {
                     isDraggingOverlay = false;
                     return true;
                 }
-                return false;
+                return true;
             default:
                 return false;
         }
@@ -97,6 +104,8 @@ public class PageTabBarOverlay {
         void onPageAdded();
         void onPageDeleted(int index);
         void onPageReordered(int fromIndex, int toIndex);
+        default void onPageDragGestureStarted(int index) {}
+        default void onPageDragGestureEnded(int index) {}
     }
     
     public PageTabBarOverlay(Context context, AnnotationState state) {
@@ -123,9 +132,14 @@ public class PageTabBarOverlay {
         tabContainer = overlayView.findViewById(R.id.tabContainer);
         TextView btnAddPage = overlayView.findViewById(R.id.btnAddPage);
         TextView btnClose = overlayView.findViewById(R.id.btnCloseTabBar);
-        View headerView = overlayView.findViewById(R.id.pageTabHeader);
-        if (headerView != null) {
-            headerView.setOnTouchListener(overlayDragTouchListener);
+        View headerDragHandle = overlayView.findViewById(R.id.pageTabDragHandle);
+        if (headerDragHandle != null) {
+            headerDragHandle.setOnTouchListener(overlayDragTouchListener);
+        } else {
+            View headerView = overlayView.findViewById(R.id.pageTabHeader);
+            if (headerView != null) {
+                headerView.setOnTouchListener(overlayDragTouchListener);
+            }
         }
         
         // Populate tabs
@@ -166,10 +180,18 @@ public class PageTabBarOverlay {
     
     public void hide() {
         if (overlayView != null && windowManager != null) {
+            if (listener != null && activeDragPageIndex != -1) {
+                listener.onPageDragGestureEnded(activeDragPageIndex);
+            }
             windowManager.removeView(overlayView);
             overlayView = null;
             layoutParams = null;
             isDraggingOverlay = false;
+            overlayDimActive = false;
+            dimRequestCount = 0;
+            activeDragPageIndex = -1;
+            tabDragDownRawX = 0f;
+            tabDragDownRawY = 0f;
         }
     }
     
@@ -220,6 +242,13 @@ public class PageTabBarOverlay {
         
         // Drag handle
         if (btnDragHandle != null) {
+            btnDragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN || event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                    tabDragDownRawX = event.getRawX();
+                    tabDragDownRawY = event.getRawY();
+                }
+                return false;
+            });
             btnDragHandle.setOnLongClickListener(v -> {
                 startPageDrag(tabView, index);
                 return true;
@@ -256,10 +285,16 @@ public class PageTabBarOverlay {
     
     private void startPageDrag(View tabView, int index) {
         ClipData dragData = ClipData.newPlainText("page_index", String.valueOf(index));
-        DragShadowBuilder shadowBuilder = new DragShadowBuilder(tabView);
+        PointF touchPoint = computeLocalTouchPoint(tabView, tabDragDownRawX, tabDragDownRawY);
+        DragShadowBuilder shadowBuilder = new OffsetDragShadowBuilder(tabView, touchPoint);
         draggingTabView = tabView;
         draggingPageIndex = index;
         pageDragPerformed = false;
+        activeDragPageIndex = index;
+        setOverlayDimActive(true);
+        if (listener != null) {
+            listener.onPageDragGestureStarted(index);
+        }
         tabView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         tabView.animate().scaleX(1.04f).scaleY(1.04f).alpha(0.85f).setDuration(150).start();
         ViewCompat.setElevation(tabView, dpToPx(8f));
@@ -304,6 +339,7 @@ public class PageTabBarOverlay {
                     pageDragPerformed = true;
                     handlePageReorder(fromIndex, toIndex);
                 }
+                endPageReorderGesture();
                 return true;
             case DragEvent.ACTION_DRAG_ENDED:
                 applyPageDragTargetState(tabView, false);
@@ -317,6 +353,7 @@ public class PageTabBarOverlay {
                     draggingPageIndex = -1;
                     pageDragPerformed = false;
                 }
+                endPageReorderGesture();
                 return true;
             default:
                 return false;
@@ -385,6 +422,107 @@ public class PageTabBarOverlay {
             return Integer.parseInt(text.toString());
         } catch (NumberFormatException ex) {
             return draggingPageIndex;
+        }
+    }
+
+    private void endPageReorderGesture() {
+        if (activeDragPageIndex == -1) {
+            return;
+        }
+        setOverlayDimActive(false);
+        if (listener != null) {
+            listener.onPageDragGestureEnded(activeDragPageIndex);
+        }
+        activeDragPageIndex = -1;
+        tabDragDownRawX = 0f;
+        tabDragDownRawY = 0f;
+    }
+
+    private PointF computeLocalTouchPoint(View view, float rawX, float rawY) {
+        PointF point = new PointF();
+        if (view == null) {
+            point.set(0f, 0f);
+            return point;
+        }
+
+        int width = view.getWidth() > 0 ? view.getWidth() : view.getMeasuredWidth();
+        int height = view.getHeight() > 0 ? view.getHeight() : view.getMeasuredHeight();
+        if (width <= 0) {
+            width = (int) dpToPx(260f);
+        }
+        if (height <= 0) {
+            height = (int) dpToPx(64f);
+        }
+
+        if (rawX == 0f && rawY == 0f) {
+            point.set(width / 2f, height / 2f);
+            return point;
+        }
+
+        int[] location = new int[2];
+        view.getLocationOnScreen(location);
+        float localX = rawX - location[0];
+        float localY = rawY - location[1];
+
+        localX = Math.max(0f, Math.min(localX, width));
+        localY = Math.max(0f, Math.min(localY, height));
+        point.set(localX, localY);
+        return point;
+    }
+
+    private void setOverlayDimActive(boolean requestActive) {
+        if (requestActive) {
+            dimRequestCount++;
+        } else if (dimRequestCount > 0) {
+            dimRequestCount--;
+        }
+
+        boolean shouldDim = dimRequestCount > 0;
+        if (overlayView == null) {
+            overlayDimActive = shouldDim;
+            return;
+        }
+
+        if (overlayDimActive == shouldDim) {
+            return;
+        }
+
+        overlayDimActive = shouldDim;
+        overlayView.animate().cancel();
+        float targetAlpha = shouldDim ? 0.55f : 1f;
+        long duration = shouldDim ? 120L : 160L;
+        overlayView.animate()
+            .alpha(targetAlpha)
+            .setDuration(duration)
+            .start();
+    }
+
+    private static class OffsetDragShadowBuilder extends DragShadowBuilder {
+        private final Point touchPoint = new Point();
+
+        OffsetDragShadowBuilder(View view, PointF localTouchPoint) {
+            super(view);
+            if (localTouchPoint != null) {
+                touchPoint.set(Math.round(localTouchPoint.x), Math.round(localTouchPoint.y));
+            }
+        }
+
+        @Override
+        public void onProvideShadowMetrics(Point outShadowSize, Point outShadowTouchPoint) {
+            View view = getView();
+            if (view == null) {
+                outShadowSize.set(0, 0);
+                outShadowTouchPoint.set(0, 0);
+                return;
+            }
+
+            int width = Math.max(1, view.getWidth());
+            int height = Math.max(1, view.getHeight());
+            outShadowSize.set(width, height);
+
+            int clampedX = Math.max(0, Math.min(touchPoint.x, width));
+            int clampedY = Math.max(0, Math.min(touchPoint.y, height));
+            outShadowTouchPoint.set(clampedX, clampedY);
         }
     }
 
