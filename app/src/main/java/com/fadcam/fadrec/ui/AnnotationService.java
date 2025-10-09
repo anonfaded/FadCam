@@ -47,6 +47,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import java.io.File;
+import java.util.List;
 import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
@@ -798,6 +799,11 @@ public class AnnotationService extends Service {
         annotationView.setOnStateChangeListener(() -> {
             updateUndoRedoButtons();
             saveCurrentState(); // Save immediately on every change
+            
+            // CRITICAL: Refresh layer panel overlay when state changes (objects added/removed)
+            if (layerPanelOverlay != null && layerPanelOverlay.isShowing()) {
+                layerPanelOverlay.refresh();
+            }
         });
         
         // Listen for selection mode changes to update toolbar
@@ -2087,9 +2093,22 @@ public class AnnotationService extends Service {
         if (annotationView != null && projectFileManager != null && currentProjectName != null) {
             AnnotationState state = annotationView.getState();
             if (state != null) {
+                // Log state details before save
+                AnnotationPage activePage = state.getActivePage();
+                if (activePage != null) {
+                    Log.d(TAG, ">>> SAVING STATE: " + currentProjectName);
+                    Log.d(TAG, "  Active page layer count: " + activePage.getLayers().size());
+                    for (int i = 0; i < activePage.getLayers().size(); i++) {
+                        AnnotationLayer layer = activePage.getLayers().get(i);
+                        Log.d(TAG, "    Layer " + i + ": " + layer.getName() + " (" + layer.getObjects().size() + " objects)");
+                    }
+                }
+                
                 boolean success = projectFileManager.saveProject(state, currentProjectName);
                 if (success) {
-                    Log.d(TAG, "State saved to: " + currentProjectName + ".fadrec");
+                    Log.d(TAG, "✅ State saved successfully to: " + currentProjectName + ".fadrec");
+                } else {
+                    Log.e(TAG, "❌ Failed to save state to: " + currentProjectName + ".fadrec");
                 }
             }
         }
@@ -2221,68 +2240,84 @@ public class AnnotationService extends Service {
                 layerPanelOverlay = new LayerPanelOverlay(this, currentPage);
                 layerPanelOverlay.setOnLayerActionListener(new LayerPanelOverlay.OnLayerActionListener() {
                     @Override
-                    public void onLayerSelected(int index) {
-                        currentPage.setActiveLayerIndex(index);
-                        annotationView.invalidate();
-                        updatePageLayerInfo();
-                        layerPanelOverlay.refresh();
-                        Toast.makeText(AnnotationService.this, "🎨 " + currentPage.getLayers().get(index).getName(), Toast.LENGTH_SHORT).show();
+                    public void onLayerSelected(String layerId) {
+                        AnnotationLayer layer = currentPage.getLayerById(layerId);
+                        if (layer != null) {
+                            int index = currentPage.getLayers().indexOf(layer);
+                            currentPage.setActiveLayerIndex(index);
+                            annotationView.invalidate();
+                            updatePageLayerInfo();
+                            layerPanelOverlay.refresh();
+                            Toast.makeText(AnnotationService.this, "🎨 " + layer.getName(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                     
                     @Override
-                    public void onLayerVisibilityChanged(int index, boolean visible) {
-                        currentPage.getLayers().get(index).setVisible(visible);
-                        // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
-                        // invalidate() alone doesn't update the pre-rendered layer bitmap
-                        annotationView.notifyStateChangedWithRedraw();
-                        String msg = visible ? "👁️ Visible" : "🚫 Hidden";
-                        Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                    public void onLayerVisibilityChanged(String layerId, boolean visible) {
+                        AnnotationLayer layer = currentPage.getLayerById(layerId);
+                        if (layer != null) {
+                            layer.setVisible(visible);
+                            // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
+                            // invalidate() alone doesn't update the pre-rendered layer bitmap
+                            annotationView.notifyStateChangedWithRedraw();
+                            String msg = visible ? "👁️ Visible" : "🚫 Hidden";
+                            Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                        }
                     }
                     
                     @Override
-                    public void onLayerLockChanged(int index, boolean locked) {
-                        currentPage.getLayers().get(index).setLocked(locked);
-                        updatePageLayerInfo();
-                        String msg = locked ? "🔒 Locked" : "🔓 Unlocked";
-                        Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                    public void onLayerLockChanged(String layerId, boolean locked) {
+                        AnnotationLayer layer = currentPage.getLayerById(layerId);
+                        if (layer != null) {
+                            layer.setLocked(locked);
+                            updatePageLayerInfo();
+                            String msg = locked ? "🔒 Locked" : "🔓 Unlocked";
+                            Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                        }
                     }
                     
                     @Override
-                    public void onLayerPinnedChanged(int index, boolean pinned) {
-                        currentPage.getLayers().get(index).setPinned(pinned);
-                        // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
-                        // Pinned layers affect visibility when canvas is hidden
-                        annotationView.notifyStateChangedWithRedraw();
-                        String msg = pinned ? "📌 Pinned (stays visible when canvas hidden)" : "📌 Unpinned";
-                        Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                    public void onLayerPinnedChanged(String layerId, boolean pinned) {
+                        AnnotationLayer layer = currentPage.getLayerById(layerId);
+                        if (layer != null) {
+                            layer.setPinned(pinned);
+                            // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
+                            // Pinned layers affect visibility when canvas is hidden
+                            annotationView.notifyStateChangedWithRedraw();
+                            String msg = pinned ? "📌 Pinned (stays visible when canvas hidden)" : "📌 Unpinned";
+                            Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
+                        }
                     }
                     
                     @Override
-                    public void onLayerOpacityChanged(int index, float opacity) {
-                        Log.d(TAG, "Layer opacity changed: index=" + index + ", opacity=" + opacity);
-                        currentPage.getLayers().get(index).setOpacity(opacity);
-                        // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
-                        // invalidate() alone doesn't update the pre-rendered layer bitmap with new opacity
-                        annotationView.notifyStateChangedWithRedraw();
+                    public void onLayerOpacityChanged(String layerId, float opacity) {
+                        AnnotationLayer layer = currentPage.getLayerById(layerId);
+                        if (layer != null) {
+                            Log.d(TAG, "Layer opacity changed: layerId=" + layerId + ", opacity=" + opacity);
+                            layer.setOpacity(opacity);
+                            // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
+                            // invalidate() alone doesn't update the pre-rendered layer bitmap with new opacity
+                            annotationView.notifyStateChangedWithRedraw();
+                        }
                     }
 
                     @Override
-                    public void onLayerOpacityGestureStarted(int index) {
+                    public void onLayerOpacityGestureStarted(String layerId) {
                         setToolbarVisibilityForOpacityGesture(true);
                     }
 
                     @Override
-                    public void onLayerOpacityGestureEnded(int index) {
+                    public void onLayerOpacityGestureEnded(String layerId) {
                         setToolbarVisibilityForOpacityGesture(false);
                     }
 
                     @Override
-                    public void onLayerReorderGestureStarted(int index) {
+                    public void onLayerReorderGestureStarted(String layerId) {
                         setToolbarVisibilityForOpacityGesture(true);
                     }
 
                     @Override
-                    public void onLayerReorderGestureEnded(int index) {
+                    public void onLayerReorderGestureEnded(String layerId) {
                         setToolbarVisibilityForOpacityGesture(false);
                     }
                     
@@ -2312,58 +2347,71 @@ public class AnnotationService extends Service {
                     }
                     
                     @Override
-                    public void onLayerDeleted(int index) {
-                        if (currentPage.getLayers().size() > 1) {
-                            String layerName = currentPage.getLayers().get(index).getName();
-                            Log.d(TAG, "=== LAYER DELETE STARTED ===");
-                            Log.d(TAG, "Deleting layer: " + layerName + " at index: " + index);
-                            Log.d(TAG, "Current layer count: " + currentPage.getLayers().size());
-                            
-                            // Use command pattern to enable undo/redo
-                            com.fadcam.fadrec.ui.annotation.DeleteLayerCommand command = 
-                                new com.fadcam.fadrec.ui.annotation.DeleteLayerCommand(currentPage, index);
-                            currentPage.executeCommand(command);
-                            // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap without deleted layer
-                            annotationView.notifyStateChangedWithRedraw();
-                            
-                            Log.d(TAG, "Layer deleted. New layer count: " + currentPage.getLayers().size());
-                            Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
-                            Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
-                            
-                            updatePageLayerInfo();
-                            layerPanelOverlay.refresh();
-                            Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + layerName, Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, "=== LAYER DELETE COMPLETED ===");
+                    public void onLayerDeleted(String layerId) {
+                        AnnotationLayer layerToDelete = currentPage.getLayerById(layerId);
+                        if (layerToDelete != null) {
+                            List<AnnotationLayer> visibleLayers = currentPage.getVisibleLayers();
+                            if (visibleLayers.size() > 1) {
+                                String layerName = layerToDelete.getName();
+                                
+                                // Find the actual index in the full layers list (including deleted)
+                                int actualIndex = currentPage.getLayers().indexOf(layerToDelete);
+                                
+                                Log.d(TAG, "=== LAYER DELETE STARTED ===");
+                                Log.d(TAG, "Deleting layer: " + layerName + " (ID: " + layerId + ") at index: " + actualIndex);
+                                Log.d(TAG, "Current visible layer count BEFORE deletion: " + visibleLayers.size());
+                                Log.d(TAG, "Total layers (including deleted): " + currentPage.getLayers().size());
+                                
+                                // Use command pattern to enable undo/redo - uses soft-delete
+                                com.fadcam.fadrec.ui.annotation.DeleteLayerCommand command = 
+                                    new com.fadcam.fadrec.ui.annotation.DeleteLayerCommand(currentPage, actualIndex);
+                                currentPage.executeCommand(command);
+                                
+                                Log.d(TAG, "Visible layer count AFTER deletion: " + currentPage.getVisibleLayers().size());
+                                Log.d(TAG, "Total layers (preserved for version control): " + currentPage.getLayers().size());
+                                
+                                // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap without deleted layer
+                                // This also triggers saveCurrentState() via the state change listener
+                                annotationView.notifyStateChangedWithRedraw();
+                                
+                                Log.d(TAG, "State saved after layer soft-deletion");
+                                Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                                Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                                
+                                updatePageLayerInfo();
+                                layerPanelOverlay.refresh();
+                                Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + layerName + " (preserved for undo)", Toast.LENGTH_SHORT).show();
+                                Log.d(TAG, "=== LAYER DELETE COMPLETED ===");
+                            }
                         }
                     }
 
                     @Override
-                    public void onLayersReordered(int fromIndex, int toIndex) {
-                        Log.d(TAG, "=== LAYER REORDER STARTED ===");
-                        Log.d(TAG, "From index: " + fromIndex + ", To index: " + toIndex);
-                        AnnotationLayer layer = null;
-                        if (fromIndex >= 0 && fromIndex < currentPage.getLayers().size()) {
-                            layer = currentPage.getLayers().get(fromIndex);
-                            Log.d(TAG, "Layer being moved: " + layer.getName());
-                        }
+                    public void onLayersReordered(String fromLayerId, String toLayerId) {
+                        AnnotationLayer fromLayer = currentPage.getLayerById(fromLayerId);
+                        AnnotationLayer toLayer = currentPage.getLayerById(toLayerId);
+                        
+                        if (fromLayer != null && toLayer != null) {
+                            int fromIndex = currentPage.getLayers().indexOf(fromLayer);
+                            int toIndex = currentPage.getLayers().indexOf(toLayer);
+                            
+                            Log.d(TAG, "=== LAYER REORDER STARTED ===");
+                            Log.d(TAG, "From: " + fromLayer.getName() + " (index " + fromIndex + ")");
+                            Log.d(TAG, "To: " + toLayer.getName() + " (index " + toIndex + ")");
 
-                        currentPage.moveLayer(fromIndex, toIndex);
-                        // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap with reordered layers
-                        // Layer order affects rendering order (z-index)
-                        annotationView.notifyStateChangedWithRedraw();
-                        updatePageLayerInfo();
-                        layerPanelOverlay.refresh();
+                            currentPage.moveLayer(fromIndex, toIndex);
+                            // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap with reordered layers
+                            // Layer order affects rendering order (z-index)
+                            annotationView.notifyStateChangedWithRedraw();
+                            updatePageLayerInfo();
+                            layerPanelOverlay.refresh();
 
-                        if (layer != null) {
                             Toast.makeText(AnnotationService.this,
-                                "↕️ Reordered: " + layer.getName(), Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(AnnotationService.this,
-                                "Layers reordered", Toast.LENGTH_SHORT).show();
+                                "↕️ Reordered: " + fromLayer.getName(), Toast.LENGTH_SHORT).show();
+                            
+                            Log.d(TAG, "Active layer index is now: " + currentPage.getActiveLayerIndex());
+                            Log.d(TAG, "=== LAYER REORDER COMPLETED ===");
                         }
-
-                        Log.d(TAG, "Active layer index is now: " + currentPage.getActiveLayerIndex());
-                        Log.d(TAG, "=== LAYER REORDER COMPLETED ===");
                     }
                 });
                 layerPanelOverlay.show();
@@ -2743,14 +2791,10 @@ public class AnnotationService extends Service {
         layerRenameReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                int layerIndex = intent.hasExtra("layer_index")
-                    ? intent.getIntExtra("layer_index", -1)
-                    : intent.getIntExtra("layerIndex", -1);
-                String currentName = intent.hasExtra("layer_name")
-                    ? intent.getStringExtra("layer_name")
-                    : intent.getStringExtra("currentName");
-                if (layerIndex >= 0) {
-                    showLayerRenameDialog(layerIndex, currentName);
+                String layerId = intent.getStringExtra("layer_id");
+                String currentName = intent.getStringExtra("layer_name");
+                if (layerId != null) {
+                    showLayerRenameDialog(layerId, currentName);
                 }
             }
         };
@@ -2871,8 +2915,8 @@ public class AnnotationService extends Service {
     /**
      * Show rename dialog for layer (Material Design)
      */
-    private void showLayerRenameDialog(int layerIndex, String currentName) {
-        Log.d(TAG, "showLayerRenameDialog called for index: " + layerIndex + ", name: " + currentName);
+    private void showLayerRenameDialog(String layerId, String currentName) {
+        Log.d(TAG, "showLayerRenameDialog called for layerId: " + layerId + ", name: " + currentName);
         if (annotationView == null) {
             Log.w(TAG, "AnnotationView is null, cannot show rename dialog");
             return;
@@ -2886,13 +2930,16 @@ public class AnnotationService extends Service {
                 currentName,
                 newName -> {
                     AnnotationPage currentPage = currentState.getActivePage();
-                    if (currentPage != null && layerIndex < currentPage.getLayers().size()) {
-                        currentPage.getLayers().get(layerIndex).setName(newName);
-                        if (layerPanelOverlay != null) {
-                            layerPanelOverlay.refresh();
+                    if (currentPage != null) {
+                        AnnotationLayer layer = currentPage.getLayerById(layerId);
+                        if (layer != null) {
+                            layer.setName(newName);
+                            if (layerPanelOverlay != null) {
+                                layerPanelOverlay.refresh();
+                            }
+                            Log.d(TAG, "Layer renamed to: " + newName);
+                            Toast.makeText(this, getString(R.string.rename_dialog_toast_success, newName), Toast.LENGTH_SHORT).show();
                         }
-                        Log.d(TAG, "Layer renamed to: " + newName);
-                        Toast.makeText(this, getString(R.string.rename_dialog_toast_success, newName), Toast.LENGTH_SHORT).show();
                     }
                 }
             );

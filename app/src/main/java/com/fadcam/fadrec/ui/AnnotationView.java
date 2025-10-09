@@ -363,12 +363,14 @@ public class AnnotationView extends View {
             
             // Draw all non-eraser objects onto content bitmap
             for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (layer.isDeleted()) continue; // CRITICAL: Skip soft-deleted layers
                 if (!layer.isVisible()) continue;
                 if (canvasHidden && !layer.isPinned()) continue;
                 
                 Matrix transform = new Matrix();
                 
                 for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue; // CRITICAL: Skip soft-deleted objects
                     if (obj.isVisible()) {
                         // Check if this is an eraser path
                         if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
@@ -389,12 +391,14 @@ public class AnnotationView extends View {
             
             // Now apply erasers to the content bitmap
             for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (layer.isDeleted()) continue; // CRITICAL: Skip soft-deleted layers
                 if (!layer.isVisible()) continue;
                 if (canvasHidden && !layer.isPinned()) continue;
                 
                 Matrix transform = new Matrix();
                 
                 for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue; // CRITICAL: Skip soft-deleted objects
                     if (obj.isVisible()) {
                         if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
                             com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
@@ -423,12 +427,14 @@ public class AnnotationView extends View {
         } else {
             // Transparent mode - simple single pass
             for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (layer.isDeleted()) continue; // CRITICAL: Skip soft-deleted layers
                 if (!layer.isVisible()) continue;
                 if (canvasHidden && !layer.isPinned()) continue;
                 
                 Matrix transform = new Matrix();
                 
                 for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue; // CRITICAL: Skip soft-deleted objects
                     if (obj.isVisible()) {
                         float originalOpacity = obj.getOpacity();
                         obj.setOpacity(originalOpacity * layer.getOpacity());

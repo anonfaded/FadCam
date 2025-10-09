@@ -14,6 +14,7 @@ import java.util.UUID;
 /**
  * Represents a single annotation page with multiple layers and version control.
  * Each page has independent undo/redo history.
+ * Uses soft-delete system for complete version control - deleted pages preserved forever.
  */
 public class AnnotationPage {
     
@@ -23,6 +24,7 @@ public class AnnotationPage {
     private int activeLayerIndex;
     private boolean blackboardMode;
     private boolean whiteboardMode;
+    private boolean deleted; // NEW: Soft-delete flag for version control
     private long createdAt;
     private long modifiedAt;
     
@@ -42,6 +44,7 @@ public class AnnotationPage {
         this.activeLayerIndex = 0;
         this.blackboardMode = false;
         this.whiteboardMode = false;
+        this.deleted = false; // Default: not deleted
         this.createdAt = System.currentTimeMillis();
         this.modifiedAt = createdAt;
         
@@ -66,9 +69,42 @@ public class AnnotationPage {
     }
     
     public List<AnnotationLayer> getLayers() { return layers; }
+    
+    /**
+     * Find a layer by its unique ID.
+     * Returns null if not found.
+     * Used for command deserialization to resolve layer references.
+     */
+    public AnnotationLayer getLayerById(String layerId) {
+        for (AnnotationLayer layer : layers) {
+            if (layer.getId().equals(layerId)) {
+                return layer;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Get only non-deleted (visible) layers for UI display.
+     * Deleted layers are kept in memory for version control but hidden from view.
+     */
+    public List<AnnotationLayer> getVisibleLayers() {
+        List<AnnotationLayer> visibleLayers = new ArrayList<>();
+        for (AnnotationLayer layer : layers) {
+            if (!layer.isDeleted()) {
+                visibleLayers.add(layer);
+            }
+        }
+        return visibleLayers;
+    }
+    
     public AnnotationLayer getActiveLayer() {
         if (activeLayerIndex >= 0 && activeLayerIndex < layers.size()) {
-            return layers.get(activeLayerIndex);
+            AnnotationLayer layer = layers.get(activeLayerIndex);
+            // Skip deleted layers
+            if (!layer.isDeleted()) {
+                return layer;
+            }
         }
         return null;
     }
@@ -91,6 +127,12 @@ public class AnnotationPage {
     public void setWhiteboardMode(boolean enabled) { 
         this.whiteboardMode = enabled;
         if (enabled) this.blackboardMode = false; // Mutually exclusive
+        this.modifiedAt = System.currentTimeMillis();
+    }
+    
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
         this.modifiedAt = System.currentTimeMillis();
     }
     
@@ -227,10 +269,36 @@ public class AnnotationPage {
         json.put("activeLayerIndex", activeLayerIndex);
         json.put("blackboardMode", blackboardMode);
         json.put("whiteboardMode", whiteboardMode);
+        json.put("deleted", deleted); // Save deleted state for version control
         json.put("createdAt", createdAt);
         json.put("modifiedAt", modifiedAt);
         
-        // Save undo/redo counts for UI
+        // CRITICAL: Serialize undo/redo command history for complete version control
+        JSONArray undoArray = new JSONArray();
+        if (undoStack != null) {
+            for (DrawingCommand cmd : undoStack) {
+                try {
+                    undoArray.put(cmd.toJSON());
+                } catch (Exception e) {
+                    android.util.Log.w("AnnotationPage", "Failed to serialize command: " + cmd.getDescription(), e);
+                }
+            }
+        }
+        json.put("undoHistory", undoArray);
+        
+        JSONArray redoArray = new JSONArray();
+        if (redoStack != null) {
+            for (DrawingCommand cmd : redoStack) {
+                try {
+                    redoArray.put(cmd.toJSON());
+                } catch (Exception e) {
+                    android.util.Log.w("AnnotationPage", "Failed to serialize command: " + cmd.getDescription(), e);
+                }
+            }
+        }
+        json.put("redoHistory", redoArray);
+        
+        // Save counts for UI
         json.put("undoCount", undoStack != null ? undoStack.size() : savedUndoCount);
         json.put("redoCount", redoStack != null ? redoStack.size() : savedRedoCount);
         
@@ -248,11 +316,12 @@ public class AnnotationPage {
         page.id = json.getString("id");
         page.activeLayerIndex = json.getInt("activeLayerIndex");
         page.blackboardMode = json.getBoolean("blackboardMode");
-        page.whiteboardMode = json.optBoolean("whiteboardMode", false); // Safe for old saves
+        page.whiteboardMode = json.getBoolean("whiteboardMode");
+        page.deleted = json.getBoolean("deleted"); // NO backward compatibility
         page.createdAt = json.getLong("createdAt");
         page.modifiedAt = json.getLong("modifiedAt");
         
-        // Load saved undo/redo counts
+        // Load saved undo/redo counts for fallback
         page.savedUndoCount = json.optInt("undoCount", 0);
         page.savedRedoCount = json.optInt("redoCount", 0);
         
@@ -264,18 +333,102 @@ public class AnnotationPage {
             page.layers.add(AnnotationLayer.fromJSON(layerJson));
         }
         
+        // CRITICAL: Restore command history for complete version control
+        page.initializeStacks();
+        
+        // Deserialize undo history
+        if (json.has("undoHistory")) {
+            JSONArray undoArray = json.getJSONArray("undoHistory");
+            android.util.Log.d("AnnotationPage", "Restoring " + undoArray.length() + " undo commands");
+            for (int i = 0; i < undoArray.length(); i++) {
+                try {
+                    JSONObject cmdJson = undoArray.getJSONObject(i);
+                    DrawingCommand cmd = deserializeCommand(cmdJson, page);
+                    if (cmd != null) {
+                        page.undoStack.add(cmd);
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("AnnotationPage", "Failed to deserialize undo command " + i, e);
+                }
+            }
+        }
+        
+        // Deserialize redo history
+        if (json.has("redoHistory")) {
+            JSONArray redoArray = json.getJSONArray("redoHistory");
+            android.util.Log.d("AnnotationPage", "Restoring " + redoArray.length() + " redo commands");
+            for (int i = 0; i < redoArray.length(); i++) {
+                try {
+                    JSONObject cmdJson = redoArray.getJSONObject(i);
+                    DrawingCommand cmd = deserializeCommand(cmdJson, page);
+                    if (cmd != null) {
+                        page.redoStack.add(cmd);
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("AnnotationPage", "Failed to deserialize redo command " + i, e);
+                }
+            }
+        }
+        
+        android.util.Log.d("AnnotationPage", "Loaded page with " + page.undoStack.size() + " undo, " + 
+                          page.redoStack.size() + " redo commands");
+        
         return page;
     }
     
     /**
+     * Factory method to deserialize a command from JSON.
+     * Routes to appropriate command type based on "type" field.
+     */
+    private static DrawingCommand deserializeCommand(JSONObject json, AnnotationPage page) throws JSONException {
+        String type = json.getString("type");
+        
+        switch (type) {
+            case "DELETE_LAYER":
+                return DeleteLayerCommand.fromJSON(page, json);
+                
+            case "ADD_LAYER":
+                return AddLayerCommand.fromJSON(page, json);
+                
+            case "ADD_PATH":
+                // AddPathCommand needs the layer, not the page
+                // Resolve layer from layerId stored in JSON
+                String layerId = json.getString("layerId");
+                AnnotationLayer layer = page.getLayerById(layerId);
+                if (layer == null) {
+                    android.util.Log.e("AnnotationPage", "Cannot deserialize ADD_PATH: layer " + layerId + " not found");
+                    return null;
+                }
+                return AddPathCommand.fromJSON(layer, json);
+                
+            case "CLEAR_LAYER":
+                return ClearLayerCommand.fromJSON(page, json);
+                
+            case "CLEAR_ALL_LAYERS":
+                return ClearAllLayersCommand.fromJSON(page, json);
+            
+            default:
+                android.util.Log.w("AnnotationPage", "Unknown command type: " + type);
+                return null;
+        }
+    }
+    
+    /**
      * Reconstruct transient fields after deserialization.
-     * Rebuilds undo/redo history from all drawable objects in all layers.
-     * This allows continued editing with full undo/redo after project reload.
+     * SKIP if command history was already loaded from JSON.
+     * Legacy fallback: rebuilds undo/redo history from all drawable objects in all layers.
      */
     public void reconstruct() {
+        // CRITICAL: If commands were deserialized, don't overwrite them
+        if (undoStack != null && !undoStack.isEmpty()) {
+            android.util.Log.d("AnnotationPage", "Command history already loaded from JSON (" + 
+                              undoStack.size() + " undo, " + redoStack.size() + " redo). Skipping reconstruct.");
+            return;
+        }
+        
         initializeStacks();
         
-        android.util.Log.d("AnnotationPage", "=== RECONSTRUCT HISTORY STARTED ===");
+        android.util.Log.d("AnnotationPage", "=== RECONSTRUCT HISTORY STARTED (Legacy) ===");
         android.util.Log.d("AnnotationPage", "Saved undo count: " + savedUndoCount);
         android.util.Log.d("AnnotationPage", "Saved redo count: " + savedRedoCount);
         
@@ -302,6 +455,7 @@ public class AnnotationPage {
     
     /**
      * Simple command to restore an object's state (for reconstructed history)
+     * LEGACY - only used when command history is NOT serialized
      */
     private static class RestoreObjectCommand implements DrawingCommand {
         private AnnotationLayer layer;
@@ -332,6 +486,18 @@ public class AnnotationPage {
         @Override
         public String getDescription() {
             return "Restore " + object.getClass().getSimpleName();
+        }
+        
+        @Override
+        public String getCommandType() {
+            return "RESTORE_OBJECT"; // Legacy command, not serialized
+        }
+        
+        @Override
+        public JSONObject toJSON() throws JSONException {
+            // Legacy command - not serializable
+            // This should never be called since reconstruct() is skipped when commands exist
+            throw new UnsupportedOperationException("RestoreObjectCommand is legacy and not serializable");
         }
     }
 }

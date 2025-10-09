@@ -1,44 +1,81 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
- * Command for deleting a layer from a page.
- * Enables undo/redo for layer deletion.
+ * Command for soft-deleting a layer from a page.
+ * Uses soft-delete system - marks layer as deleted but preserves it for complete version control.
+ * Enables undo/redo for layer deletion without losing data.
+ * Fully serializable for command history persistence.
  */
 public class DeleteLayerCommand implements DrawingCommand {
+    private static final String COMMAND_TYPE = "DELETE_LAYER";
+    
     private AnnotationPage page;
-    private AnnotationLayer layer;
-    private int originalPosition;
-    private int originalActiveIndex;
+    private String layerId; // Use ID instead of index for reliability after reload
+    private transient AnnotationLayer layer; // Resolved from ID
     
     public DeleteLayerCommand(AnnotationPage page, int layerIndex) {
         this.page = page;
-        this.originalPosition = layerIndex;
         this.layer = page.getLayers().get(layerIndex);
-        this.originalActiveIndex = page.getActiveLayerIndex();
+        this.layerId = layer.getId();
+    }
+    
+    // Constructor for deserialization
+    private DeleteLayerCommand(AnnotationPage page, String layerId) {
+        this.page = page;
+        this.layerId = layerId;
+        resolveLayer();
+    }
+    
+    private void resolveLayer() {
+        for (AnnotationLayer l : page.getLayers()) {
+            if (l.getId().equals(layerId)) {
+                this.layer = l;
+                break;
+            }
+        }
     }
     
     @Override
     public void execute() {
-        // Remove the layer
-        page.getLayers().remove(originalPosition);
-        // Adjust active layer index if needed
-        if (page.getActiveLayerIndex() >= page.getLayers().size()) {
-            page.setActiveLayerIndex(page.getLayers().size() - 1);
+        if (layer == null) resolveLayer();
+        if (layer != null) {
+            layer.setDeleted(true);
+            android.util.Log.d("DeleteLayerCommand", "Layer soft-deleted: " + layer.getName() + " (preserved in memory)");
         }
     }
     
     @Override
     public void undo() {
-        // Restore the layer at its original position
-        page.getLayers().add(originalPosition, layer);
-        // Restore original active index if valid
-        if (originalActiveIndex < page.getLayers().size()) {
-            page.setActiveLayerIndex(originalActiveIndex);
+        if (layer == null) resolveLayer();
+        if (layer != null) {
+            layer.setDeleted(false);
+            android.util.Log.d("DeleteLayerCommand", "Layer restored: " + layer.getName());
         }
     }
     
     @Override
     public String getDescription() {
-        return "Delete layer: " + layer.getName();
+        return "Delete layer: " + (layer != null ? layer.getName() : layerId);
+    }
+    
+    @Override
+    public String getCommandType() {
+        return COMMAND_TYPE;
+    }
+    
+    @Override
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("type", COMMAND_TYPE);
+        json.put("layerId", layerId);
+        return json;
+    }
+    
+    public static DeleteLayerCommand fromJSON(AnnotationPage page, JSONObject json) throws JSONException {
+        String layerId = json.getString("layerId");
+        return new DeleteLayerCommand(page, layerId);
     }
 }

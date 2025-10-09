@@ -9,6 +9,7 @@ import java.util.UUID;
  * Base class for all annotation objects (paths, text, shapes, images).
  * Provides common properties like ID, position, rotation, visibility.
  * Implements JSON serialization for .fadproj file format.
+ * Uses soft-delete system for complete version control - deleted items are marked, not removed.
  */
 public abstract class AnnotationObject {
     
@@ -28,6 +29,7 @@ public abstract class AnnotationObject {
     protected float scale;                // Scale factor (1.0 = 100%)
     protected boolean visible;
     protected boolean locked;
+    protected boolean deleted;            // NEW: Soft-delete flag for version control
     protected float opacity;              // 0.0 to 1.0
     protected long createdAt;
     protected long modifiedAt;
@@ -41,6 +43,7 @@ public abstract class AnnotationObject {
         this.scale = 1.0f;
         this.visible = true;
         this.locked = false;
+        this.deleted = false;             // Default: not deleted
         this.opacity = 1.0f;
         this.createdAt = System.currentTimeMillis();
         this.modifiedAt = createdAt;
@@ -63,6 +66,7 @@ public abstract class AnnotationObject {
         json.put("scale", scale);
         json.put("visible", visible);
         json.put("locked", locked);
+        json.put("deleted", deleted); // Save deleted state for version control
         json.put("opacity", opacity);
         json.put("createdAt", createdAt);
         json.put("modifiedAt", modifiedAt);
@@ -74,9 +78,10 @@ public abstract class AnnotationObject {
         this.x = (float) json.getDouble("x");
         this.y = (float) json.getDouble("y");
         this.rotation = (float) json.getDouble("rotation");
-        this.scale = json.has("scale") ? (float) json.getDouble("scale") : 1.0f; // Backward compatible
+        this.scale = (float) json.getDouble("scale");
         this.visible = json.getBoolean("visible");
         this.locked = json.getBoolean("locked");
+        this.deleted = json.getBoolean("deleted"); // NO backward compatibility - permanent solution
         this.opacity = (float) json.getDouble("opacity");
         this.createdAt = json.getLong("createdAt");
         this.modifiedAt = json.getLong("modifiedAt");
@@ -125,6 +130,12 @@ public abstract class AnnotationObject {
     public boolean isLocked() { return locked; }
     public void setLocked(boolean locked) {
         this.locked = locked;
+        this.modifiedAt = System.currentTimeMillis();
+    }
+    
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
         this.modifiedAt = System.currentTimeMillis();
     }
     

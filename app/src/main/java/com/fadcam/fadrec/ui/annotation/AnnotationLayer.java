@@ -17,6 +17,7 @@ import java.util.UUID;
  * Represents a single annotation layer with mixed objects (paths, text, shapes).
  * Each layer can be shown/hidden, locked/unlocked, and has opacity control.
  * Now supports heterogeneous object types for professional vector editing.
+ * Uses soft-delete system for complete version control - deleted items are marked, not removed.
  */
 public class AnnotationLayer {
     
@@ -26,6 +27,7 @@ public class AnnotationLayer {
     private boolean visible;
     private boolean locked;
     private boolean pinned; // NEW: Pinned layers stay visible even when canvas is hidden
+    private boolean deleted; // NEW: Soft-delete flag - layer is hidden but preserved for version control
     private float opacity; // 0.0 to 1.0
     private long createdAt;
     
@@ -36,6 +38,7 @@ public class AnnotationLayer {
         this.visible = true;
         this.locked = false;
         this.pinned = false; // Default: not pinned
+        this.deleted = false; // Default: not deleted
         this.opacity = 1.0f;
         this.createdAt = System.currentTimeMillis();
     }
@@ -48,6 +51,7 @@ public class AnnotationLayer {
         json.put("visible", visible);
         json.put("locked", locked);
         json.put("pinned", pinned); // Save pinned state
+        json.put("deleted", deleted); // Save deleted state for version control
         json.put("opacity", opacity);
         json.put("createdAt", createdAt);
         
@@ -66,6 +70,7 @@ public class AnnotationLayer {
         layer.visible = json.getBoolean("visible");
         layer.locked = json.getBoolean("locked");
         layer.pinned = json.getBoolean("pinned");
+        layer.deleted = json.getBoolean("deleted"); // NO backward compatibility - permanent solution
         layer.opacity = (float) json.getDouble("opacity");
         layer.createdAt = json.getLong("createdAt");
         
@@ -149,6 +154,9 @@ public class AnnotationLayer {
     
     public boolean isPinned() { return pinned; }
     public void setPinned(boolean pinned) { this.pinned = pinned; }
+    
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
     
     public float getOpacity() { return opacity; }
     public void setOpacity(float opacity) { 
