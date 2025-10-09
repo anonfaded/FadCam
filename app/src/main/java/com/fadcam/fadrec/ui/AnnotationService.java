@@ -75,6 +75,7 @@ public class AnnotationService extends Service {
     private WindowManager windowManager;
     private AnnotationView annotationView;
     private View toolbarView;
+    private boolean toolbarHiddenForOpacityGesture = false;
     
     // State management
     private ProjectFileManager projectFileManager;
@@ -209,6 +210,36 @@ public class AnnotationService extends Service {
             hideOverlay();
         } else {
             showOverlay();
+        }
+    }
+
+    private void setToolbarVisibilityForOpacityGesture(boolean hidden) {
+        if (toolbarView == null) {
+            toolbarHiddenForOpacityGesture = hidden;
+            return;
+        }
+        if (toolbarHiddenForOpacityGesture == hidden) {
+            return;
+        }
+        toolbarHiddenForOpacityGesture = hidden;
+        toolbarView.animate().cancel();
+        if (hidden) {
+            toolbarView.animate()
+                .alpha(0f)
+                .setDuration(120L)
+                .withEndAction(() -> {
+                    if (toolbarHiddenForOpacityGesture && toolbarView != null) {
+                        toolbarView.setVisibility(View.INVISIBLE);
+                    }
+                })
+                .start();
+        } else {
+            toolbarView.setVisibility(View.VISIBLE);
+            toolbarView.setAlpha(0f);
+            toolbarView.animate()
+                .alpha(1f)
+                .setDuration(160L)
+                .start();
         }
     }
     
@@ -2208,6 +2239,16 @@ public class AnnotationService extends Service {
                         Log.d(TAG, "Layer opacity changed: index=" + index + ", opacity=" + opacity);
                         currentPage.getLayers().get(index).setOpacity(opacity);
                         annotationView.invalidate();
+                    }
+
+                    @Override
+                    public void onLayerOpacityGestureStarted(int index) {
+                        setToolbarVisibilityForOpacityGesture(true);
+                    }
+
+                    @Override
+                    public void onLayerOpacityGestureEnded(int index) {
+                        setToolbarVisibilityForOpacityGesture(false);
                     }
                     
                     @Override

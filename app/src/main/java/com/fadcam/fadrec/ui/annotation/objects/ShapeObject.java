@@ -57,9 +57,7 @@ public class ShapeObject extends AnnotationObject {
     public void draw(Canvas canvas, Matrix transform) {
         if (!visible) return;
         
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setAlpha((int)(opacity * 255));
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         
         canvas.save();
         canvas.concat(transform);
@@ -97,13 +95,13 @@ public class ShapeObject extends AnnotationObject {
     private void drawRectangle(Canvas canvas, Paint paint) {
         if (filled) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(fillColor);
+            paint.setColor(withOpacity(fillColor));
             canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint);
         }
         
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint);
     }
     
@@ -114,26 +112,26 @@ public class ShapeObject extends AnnotationObject {
         
         if (filled) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(fillColor);
+            paint.setColor(withOpacity(fillColor));
             canvas.drawCircle(cx, cy, radius, paint);
         }
         
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawCircle(cx, cy, radius, paint);
     }
     
     private void drawEllipse(Canvas canvas, Paint paint) {
         if (filled) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(fillColor);
+            paint.setColor(withOpacity(fillColor));
             canvas.drawOval(bounds, paint);
         }
         
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawOval(bounds, paint);
     }
     
@@ -141,7 +139,7 @@ public class ShapeObject extends AnnotationObject {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawLine(bounds.left, bounds.top, bounds.right, bounds.bottom, paint);
     }
     
@@ -170,7 +168,7 @@ public class ShapeObject extends AnnotationObject {
         paint.setStrokeWidth(strokeWidth);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeJoin(Paint.Join.ROUND);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawPath(path, paint);
     }
     
@@ -183,13 +181,13 @@ public class ShapeObject extends AnnotationObject {
         
         if (filled) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(fillColor);
+            paint.setColor(withOpacity(fillColor));
             canvas.drawPath(path, paint);
         }
         
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawPath(path, paint);
     }
     
@@ -214,13 +212,13 @@ public class ShapeObject extends AnnotationObject {
         
         if (filled) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(fillColor);
+            paint.setColor(withOpacity(fillColor));
             canvas.drawPath(path, paint);
         }
         
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
-        paint.setColor(strokeColor);
+        paint.setColor(withOpacity(strokeColor));
         canvas.drawPath(path, paint);
     }
     
@@ -262,6 +260,13 @@ public class ShapeObject extends AnnotationObject {
         clone.setLocked(locked);
         clone.setOpacity(opacity);
         return clone;
+    }
+
+    private int withOpacity(int color) {
+        int originalAlpha = (color >>> 24) & 0xFF;
+        int targetAlpha = Math.round(originalAlpha * opacity);
+        targetAlpha = Math.max(0, Math.min(255, targetAlpha));
+        return (color & 0x00FFFFFF) | (targetAlpha << 24);
     }
     
     private JSONObject boundsToJSON() throws JSONException {

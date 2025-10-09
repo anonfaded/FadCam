@@ -2,53 +2,72 @@
 <!-- Unified Toolbar: Arrow OUTSIDE, Menu appears beside it -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="304dp" android:layout_height="wrap_content">
 
-    <!-- Expandable Content (menu background) - Hidden by default -->
-    <ScrollView android:id="@+id/expandableContent" android:layout_width="280dp" android:layout_height="wrap_content" android:layout_gravity="end|top" android:maxHeight="500dp" android:visibility="gone" android:scrollbars="none" android:background="@drawable/floating_menu_bg" android:padding="8dp">
+    <LinearLayout
+        android:id="@+id/menuContainer"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:orientation="vertical"
+        android:background="@drawable/floating_menu_bg"
+        android:clipToOutline="true">
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+        <!-- Expandable Content (menu background) - Hidden by default -->
+        <ScrollView
+            android:id="@+id/expandableContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="500dp"
+            android:visibility="gone"
+            android:scrollbars="none"
+            android:padding="8dp">
 
-            <!-- BRANDING with Logo (no gap) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
 
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="39dp"
-                    android:src="@drawable/fadrec"
-                    android:adjustViewBounds="true"
-                    android:scaleType="fitCenter"
-                    android:contentDescription="FadRec Logo"
-                    android:padding="0dp"
-                    android:layout_marginEnd="4dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- BRANDING with Logo (no gap) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="by FadSec Lab"
-                    android:textSize="11sp"
-                    android:textColor="#B0B0B0"
-                    android:fontFamily="@font/ubuntu_regular"
-                    android:layout_marginStart="0dp"
-                    android:paddingStart="0dp"
-                    android:padding="0dp"
-                    android:includeFontPadding="false" />
-            </LinearLayout>
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@drawable/overlay_toolbar_header_bg"
+                    android:clipToOutline="true"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:layout_marginBottom="8dp">
 
-            <!-- RECORDING CONTROLS SECTION (MOVED TO TOP) -->
-            <LinearLayout 
-                android:id="@+id/recordingControlsContainer"
-                android:layout_width="match_parent" 
-                android:layout_height="wrap_content" 
-                android:orientation="vertical" 
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp">
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="39dp"
+                        android:src="@drawable/fadrec"
+                        android:adjustViewBounds="true"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="FadRec Logo"
+                        android:padding="0dp"
+                        android:layout_marginEnd="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="by FadSec Lab"
+                        android:textSize="11sp"
+                        android:textColor="#B0B0B0"
+                        android:fontFamily="@font/ubuntu_regular"
+                        android:layout_marginStart="0dp"
+                        android:paddingStart="0dp"
+                        android:padding="0dp"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+
+                <!-- RECORDING CONTROLS SECTION (MOVED TO TOP) -->
+                <LinearLayout 
+                    android:id="@+id/recordingControlsContainer"
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content" 
+                    android:orientation="vertical" 
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp">
 
                 <!-- Collapsed State: Single Green Row -->
                 <LinearLayout 
@@ -722,7 +741,8 @@
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+        </ScrollView>
+    </LinearLayout>
 
     <!-- Arrow Button (always visible, OUTSIDE menu) - Overlays on right edge -->
 

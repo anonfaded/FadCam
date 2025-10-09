@@ -163,12 +163,14 @@
 
             <TextView
                 android:id="@+id/txtOpacity"
-                android:layout_width="wrap_content"
+                android:layout_width="48dp"
                 android:layout_height="wrap_content"
                 android:text="100%"
                 android:textSize="11sp"
                 android:textColor="#FFFFFF"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:gravity="end"
+                android:textAlignment="viewEnd" />
         </LinearLayout>
 
         <!-- Opacity Slider -->

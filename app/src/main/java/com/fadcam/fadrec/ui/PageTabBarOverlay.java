@@ -6,12 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.DragShadowBuilder;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -41,6 +44,53 @@ public class PageTabBarOverlay {
     private View draggingTabView;
     private int draggingPageIndex = -1;
     private boolean pageDragPerformed = false;
+    private WindowManager.LayoutParams layoutParams;
+    private int dragTouchSlop;
+    private float overlayInitialTouchX;
+    private float overlayInitialTouchY;
+    private int overlayInitialX;
+    private int overlayInitialY;
+    private boolean isDraggingOverlay = false;
+    private final View.OnTouchListener overlayDragTouchListener = (view, event) -> {
+        if (layoutParams == null || overlayView == null || windowManager == null) {
+            return false;
+        }
+
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                overlayInitialX = layoutParams.x;
+                overlayInitialY = layoutParams.y;
+                overlayInitialTouchX = event.getRawX();
+                overlayInitialTouchY = event.getRawY();
+                isDraggingOverlay = false;
+                return false;
+            case MotionEvent.ACTION_MOVE:
+                int deltaX = Math.round(event.getRawX() - overlayInitialTouchX);
+                int deltaY = Math.round(event.getRawY() - overlayInitialTouchY);
+                if (!isDraggingOverlay) {
+                    if (Math.abs(deltaX) < dragTouchSlop && Math.abs(deltaY) < dragTouchSlop) {
+                        return false;
+                    }
+                    isDraggingOverlay = true;
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                }
+
+                layoutParams.x = overlayInitialX + deltaX;
+                layoutParams.y = overlayInitialY + deltaY;
+                clampPosition(layoutParams, getOverlayWidth(), getOverlayHeight());
+                windowManager.updateViewLayout(overlayView, layoutParams);
+                return true;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                if (isDraggingOverlay) {
+                    isDraggingOverlay = false;
+                    return true;
+                }
+                return false;
+            default:
+                return false;
+        }
+    };
     
     public interface OnPageActionListener {
         void onPageSelected(int index);
@@ -53,6 +103,7 @@ public class PageTabBarOverlay {
         this.context = context;
         this.state = state;
         this.windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        this.dragTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
     
     public void setOnPageActionListener(OnPageActionListener listener) {
@@ -72,6 +123,10 @@ public class PageTabBarOverlay {
         tabContainer = overlayView.findViewById(R.id.tabContainer);
         TextView btnAddPage = overlayView.findViewById(R.id.btnAddPage);
         TextView btnClose = overlayView.findViewById(R.id.btnCloseTabBar);
+        View headerView = overlayView.findViewById(R.id.pageTabHeader);
+        if (headerView != null) {
+            headerView.setOnTouchListener(overlayDragTouchListener);
+        }
         
         // Populate tabs
         updateTabs();
@@ -92,25 +147,29 @@ public class PageTabBarOverlay {
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 : WindowManager.LayoutParams.TYPE_PHONE;
         
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
+    layoutParams = new WindowManager.LayoutParams(
+        WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutType,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
         );
-        
-        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        params.y = 20; // Small margin from top
-        
-        windowManager.addView(overlayView, params);
+
+    layoutParams.gravity = Gravity.TOP | Gravity.START;
+    layoutParams.x = 0;
+    layoutParams.y = 0;
+
+    windowManager.addView(overlayView, layoutParams);
+    overlayView.post(this::adjustInitialPosition);
     }
     
     public void hide() {
         if (overlayView != null && windowManager != null) {
             windowManager.removeView(overlayView);
             overlayView = null;
+            layoutParams = null;
+            isDraggingOverlay = false;
         }
     }
     
@@ -329,6 +388,82 @@ public class PageTabBarOverlay {
         }
     }
 
+    private void adjustInitialPosition() {
+        if (overlayView == null || layoutParams == null || windowManager == null) {
+            return;
+        }
+
+        int overlayWidth = getOverlayWidth();
+        int overlayHeight = getOverlayHeight();
+        if (overlayWidth == 0 || overlayHeight == 0) {
+            overlayView.post(this::adjustInitialPosition);
+            return;
+        }
+
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        int margin = (int) dpToPx(16f);
+
+        layoutParams.x = Math.max(margin, (screenWidth - overlayWidth) / 2);
+        layoutParams.y = margin;
+        clampPosition(layoutParams, overlayWidth, overlayHeight);
+        windowManager.updateViewLayout(overlayView, layoutParams);
+    }
+
+    private void clampPosition(WindowManager.LayoutParams params, int overlayWidth, int overlayHeight) {
+        if (params == null) {
+            return;
+        }
+
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        int screenHeight = metrics.heightPixels;
+        int margin = (int) dpToPx(12f);
+
+        int minX = margin;
+        int maxX = screenWidth - overlayWidth - margin;
+        if (maxX < minX) {
+            maxX = minX;
+        }
+
+        int minY = margin;
+        int maxY = screenHeight - overlayHeight - margin;
+        if (maxY < minY) {
+            maxY = minY;
+        }
+
+        params.x = Math.max(minX, Math.min(params.x, maxX));
+        params.y = Math.max(minY, Math.min(params.y, maxY));
+    }
+
+    private int getOverlayWidth() {
+        if (overlayView == null) {
+            return 0;
+        }
+        int width = overlayView.getWidth();
+        if (width == 0) {
+            width = overlayView.getMeasuredWidth();
+        }
+        if (width == 0) {
+            width = (int) dpToPx(320f);
+        }
+        return width;
+    }
+
+    private int getOverlayHeight() {
+        if (overlayView == null) {
+            return 0;
+        }
+        int height = overlayView.getHeight();
+        if (height == 0) {
+            height = overlayView.getMeasuredHeight();
+        }
+        if (height == 0) {
+            height = (int) dpToPx(120f);
+        }
+        return height;
+    }
+
     private float dpToPx(float dp) {
         return dp * context.getResources().getDisplayMetrics().density;
     }
@@ -338,6 +473,10 @@ public class PageTabBarOverlay {
             tabContainer.post(() -> {
                 if (overlayView != null) {
                     updateTabs();
+                    if (layoutParams != null && windowManager != null) {
+                        clampPosition(layoutParams, getOverlayWidth(), getOverlayHeight());
+                        windowManager.updateViewLayout(overlayView, layoutParams);
+                    }
                 }
             });
         }
