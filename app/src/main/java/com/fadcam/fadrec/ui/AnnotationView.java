@@ -16,6 +16,8 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.List;
+
 import com.fadcam.fadrec.ui.annotation.AddPathCommand;
 import com.fadcam.fadrec.ui.annotation.AnnotationLayer;
 import com.fadcam.fadrec.ui.annotation.AnnotationPage;
@@ -227,7 +229,10 @@ public class AnnotationView extends View {
      */
     public void setCanvasHidden(boolean hidden) {
         this.canvasHidden = hidden;
-        invalidate(); // Trigger redraw
+        // CRITICAL: Regenerate bitmap to reflect new canvas visibility state
+        // Just calling invalidate() would redraw the cached bitmap without updating layer visibility
+        redrawAllToLayer();
+        invalidate(); // Trigger canvas redraw to show updated bitmap
     }
     
     public boolean isCanvasHidden() {
@@ -333,7 +338,12 @@ public class AnnotationView extends View {
     }
     
     /**
-     * Redraw all annotation objects onto the drawing layer
+     * Redraw all annotation objects onto the drawing layer.
+     * PROFESSIONAL PHOTOSHOP-STYLE ARCHITECTURE:
+     * - Background layer is separate (filled with black/white/transparent)
+     * - Each content layer has transparency where there's no content
+     * - Layers stack on top of background
+     * - Erasers use CLEAR mode to create transparency in their layer
      */
     private void redrawAllToLayer() {
         if (drawingLayerCanvas == null) return;
@@ -344,105 +354,83 @@ public class AnnotationView extends View {
         // Clear to transparent first
         drawingLayerCanvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
         
-        // For blackboard/whiteboard, we need to handle erasers specially
-        // We'll draw in two passes: non-eraser objects first, then eraser objects
-        if (currentPage.isBlackboardMode() || currentPage.isWhiteboardMode()) {
-            // Get background color
-            int backgroundColor = currentPage.isBlackboardMode() ? 0xFF000000 : 0xFFFFFFFF;
+        // STEP 1: Draw background layer (separate from content layers)
+        int backgroundColor = 0x00000000; // Transparent by default
+        if (currentPage.isBlackboardMode()) {
+            backgroundColor = 0xFF000000; // Black
+            drawingLayerCanvas.drawColor(backgroundColor);
+        } else if (currentPage.isWhiteboardMode()) {
+            backgroundColor = 0xFFFFFFFF; // White
+            drawingLayerCanvas.drawColor(backgroundColor);
+        }
+        // For transparent mode: no background fill, stays transparent
+        
+        // STEP 2: Render each content layer independently (with transparency)
+        // Each layer is drawn on a transparent bitmap, then composited
+        Matrix transform = new Matrix();
+        
+        for (AnnotationLayer layer : currentPage.getLayers()) {
+            if (layer.isDeleted()) continue;
+            if (!layer.isVisible()) continue;
+            if (canvasHidden && !layer.isPinned()) continue;
             
-            // Create a temporary bitmap to draw content with background
-            Bitmap contentBitmap = Bitmap.createBitmap(
+            // Create a transparent bitmap for this layer
+            Bitmap layerBitmap = Bitmap.createBitmap(
                 drawingLayerBitmap.getWidth(), 
                 drawingLayerBitmap.getHeight(), 
                 Bitmap.Config.ARGB_8888
             );
-            Canvas contentCanvas = new Canvas(contentBitmap);
+            Canvas layerCanvas = new Canvas(layerBitmap);
+            // NOTE: No background fill! Each layer starts transparent.
+            // This is critical for proper layer stacking.
             
-            // Fill with background color
-            contentCanvas.drawColor(backgroundColor);
-            
-            // Draw all non-eraser objects onto content bitmap
-            for (AnnotationLayer layer : currentPage.getLayers()) {
-                if (layer.isDeleted()) continue; // CRITICAL: Skip soft-deleted layers
-                if (!layer.isVisible()) continue;
-                if (canvasHidden && !layer.isPinned()) continue;
-                
-                Matrix transform = new Matrix();
-                
-                for (AnnotationObject obj : layer.getObjects()) {
-                    if (obj.isDeleted()) continue; // CRITICAL: Skip soft-deleted objects
-                    if (obj.isVisible()) {
-                        // Check if this is an eraser path
-                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                            if (pathObj.isEraser()) {
-                                continue; // Skip erasers in first pass
-                            }
+            // PASS 1: Draw all non-eraser objects in this layer
+            for (AnnotationObject obj : layer.getObjects()) {
+                if (obj.isDeleted()) continue; // Skip soft-deleted (for undo/redo)
+                if (obj.isVisible()) {
+                    // Check if this is an eraser path
+                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                        if (pathObj.isEraser()) {
+                            continue; // Skip erasers in first pass
                         }
-                        
-                        float originalOpacity = obj.getOpacity();
-                        obj.setOpacity(originalOpacity * layer.getOpacity());
-                        obj.draw(contentCanvas, transform);
-                        obj.setOpacity(originalOpacity);
                     }
+                    
+                    float originalOpacity = obj.getOpacity();
+                    obj.setOpacity(originalOpacity * layer.getOpacity());
+                    obj.draw(layerCanvas, transform);
+                    obj.setOpacity(originalOpacity);
                 }
             }
             
-            // Now apply erasers to the content bitmap
-            for (AnnotationLayer layer : currentPage.getLayers()) {
-                if (layer.isDeleted()) continue; // CRITICAL: Skip soft-deleted layers
-                if (!layer.isVisible()) continue;
-                if (canvasHidden && !layer.isPinned()) continue;
-                
-                Matrix transform = new Matrix();
-                
-                for (AnnotationObject obj : layer.getObjects()) {
-                    if (obj.isDeleted()) continue; // CRITICAL: Skip soft-deleted objects
-                    if (obj.isVisible()) {
-                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                            if (pathObj.isEraser()) {
-                                // Draw eraser with layer opacity
-                                float originalOpacity = obj.getOpacity();
-                                obj.setOpacity(originalOpacity * layer.getOpacity());
-                                obj.draw(contentCanvas, transform);
-                                obj.setOpacity(originalOpacity);
-                            }
+            // PASS 2: Apply eraser objects (creates transparency in THIS layer only)
+            for (AnnotationObject obj : layer.getObjects()) {
+                if (obj.isDeleted()) continue; // Skip soft-deleted erasers (for undo/redo)
+                if (obj.isVisible()) {
+                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                        if (pathObj.isEraser()) {
+                            // CRITICAL: Eraser uses PorterDuff.Mode.CLEAR
+                            // This creates TRANSPARENCY in this layer's bitmap.
+                            // When composited, you'll see through to layers below.
+                            float originalOpacity = obj.getOpacity();
+                            obj.setOpacity(originalOpacity * layer.getOpacity());
+                            obj.draw(layerCanvas, transform);
+                            obj.setOpacity(originalOpacity);
                         }
                     }
                 }
             }
             
-            // Now draw the final content (with bg + erasers applied) to main layer
-            // Use paint with alpha to support layer opacity
-            Paint bitmapPaint = new Paint();
-            bitmapPaint.setAlpha(255); // Full opacity - layer opacity already applied
-            drawingLayerCanvas.drawBitmap(contentBitmap, 0, 0, bitmapPaint);
+            // STEP 3: Composite this layer onto the main canvas (on top of background and previous layers)
+            Paint layerPaint = new Paint();
+            layerPaint.setAlpha((int)(255 * layer.getOpacity()));
+            drawingLayerCanvas.drawBitmap(layerBitmap, 0, 0, layerPaint);
             
-            // Clean up temp bitmap
-            contentBitmap.recycle();
-            
-        } else {
-            // Transparent mode - simple single pass
-            for (AnnotationLayer layer : currentPage.getLayers()) {
-                if (layer.isDeleted()) continue; // CRITICAL: Skip soft-deleted layers
-                if (!layer.isVisible()) continue;
-                if (canvasHidden && !layer.isPinned()) continue;
-                
-                Matrix transform = new Matrix();
-                
-                for (AnnotationObject obj : layer.getObjects()) {
-                    if (obj.isDeleted()) continue; // CRITICAL: Skip soft-deleted objects
-                    if (obj.isVisible()) {
-                        float originalOpacity = obj.getOpacity();
-                        obj.setOpacity(originalOpacity * layer.getOpacity());
-                        obj.draw(drawingLayerCanvas, transform);
-                        obj.setOpacity(originalOpacity);
-                    }
-                }
-            }
+            // Clean up layer bitmap
+            layerBitmap.recycle();
         }
     }
     
@@ -453,13 +441,16 @@ public class AnnotationView extends View {
         AnnotationPage currentPage = state.getActivePage();
         if (currentPage == null) return;
         
-        // LAYER 1: Draw background (only if transparent mode)
-        // For blackboard/whiteboard, background is baked into drawing layer bitmap
+        // Determine if we're currently drawing/erasing (need to show current stroke at correct z-index)
+        boolean isDrawingStroke = !currentPath.isEmpty();
+        boolean isErasing = isDrawingStroke && state.isEraserMode();
+        int activeLayerIndex = currentPage.getActiveLayerIndex();
+        
+        // LAYER 1: Draw background
         if (!currentPage.isBlackboardMode() && !currentPage.isWhiteboardMode()) {
             // Transparent mode - no background to draw
         } else {
-            // Blackboard/Whiteboard - draw background as fallback
-            // (bitmap already has it, but this ensures consistency)
+            // Blackboard/Whiteboard - draw background
             if (currentPage.isBlackboardMode()) {
                 canvas.drawRect(0, 0, getWidth(), getHeight(), blackboardPaint);
             } else if (currentPage.isWhiteboardMode()) {
@@ -467,23 +458,198 @@ public class AnnotationView extends View {
             }
         }
         
-        // LAYER 2: Draw the drawing layer bitmap on top (can be erased)
-        if (drawingLayerBitmap != null) {
-            canvas.drawBitmap(drawingLayerBitmap, 0, 0, null);
+        // LAYER 2: Draw layers with proper Photoshop-style architecture
+        // Background is separate, content layers have transparency
+        
+        if (isDrawingStroke && tempStrokeBitmap != null && tempStrokeCanvas != null) {
+            // REAL-TIME DRAWING/ERASING WITH PHOTOSHOP-STYLE LAYER ARCHITECTURE
+            
+            List<AnnotationLayer> layers = currentPage.getLayers();
+            AnnotationLayer activeLayer = layers.get(activeLayerIndex);
+            Matrix transform = new Matrix();
+            
+            // STEP 1: Draw background layer (separate from content)
+            int backgroundColor = 0x00000000;
+            if (currentPage.isBlackboardMode()) {
+                backgroundColor = 0xFF000000;
+                canvas.drawColor(backgroundColor);
+            } else if (currentPage.isWhiteboardMode()) {
+                backgroundColor = 0xFFFFFFFF;
+                canvas.drawColor(backgroundColor);
+            }
+            // Transparent mode: no background fill
+            
+            // STEP 2: Render all layers BELOW the active layer
+            for (int i = 0; i < activeLayerIndex; i++) {
+                AnnotationLayer layer = layers.get(i);
+                if (layer.isDeleted()) continue;
+                if (!layer.isVisible()) continue;
+                if (canvasHidden && !layer.isPinned()) continue;
+                
+                // Create transparent bitmap for this layer
+                Bitmap layerBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+                Canvas layerCanvas = new Canvas(layerBitmap);
+                // NO background fill - layers are transparent where there's no content
+                
+                // Draw non-eraser objects
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue;
+                    if (obj.isVisible()) {
+                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                            if (pathObj.isEraser()) continue;
+                        }
+                        float originalOpacity = obj.getOpacity();
+                        obj.setOpacity(originalOpacity * layer.getOpacity());
+                        obj.draw(layerCanvas, transform);
+                        obj.setOpacity(originalOpacity);
+                    }
+                }
+                
+                // Apply eraser objects (creates transparency)
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue;
+                    if (obj.isVisible()) {
+                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                            if (pathObj.isEraser()) {
+                                float originalOpacity = obj.getOpacity();
+                                obj.setOpacity(originalOpacity * layer.getOpacity());
+                                obj.draw(layerCanvas, transform);
+                                obj.setOpacity(originalOpacity);
+                            }
+                        }
+                    }
+                }
+                
+                // Composite this layer
+                Paint layerPaint = new Paint();
+                layerPaint.setAlpha((int)(255 * layer.getOpacity()));
+                canvas.drawBitmap(layerBitmap, 0, 0, layerPaint);
+                layerBitmap.recycle();
+            }
+            
+            // STEP 3: Render the ACTIVE layer with current stroke/eraser
+            Bitmap activeLayerBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas activeLayerCanvas = new Canvas(activeLayerBitmap);
+            // NO background fill - layer is transparent
+            
+            // Draw committed non-eraser objects
+            for (AnnotationObject obj : activeLayer.getObjects()) {
+                if (obj.isDeleted()) continue;
+                if (obj.isVisible()) {
+                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                        if (pathObj.isEraser()) continue;
+                    }
+                    float originalOpacity = obj.getOpacity();
+                    obj.setOpacity(originalOpacity * activeLayer.getOpacity());
+                    obj.draw(activeLayerCanvas, transform);
+                    obj.setOpacity(originalOpacity);
+                }
+            }
+            
+            // Apply committed eraser objects
+            for (AnnotationObject obj : activeLayer.getObjects()) {
+                if (obj.isDeleted()) continue;
+                if (obj.isVisible()) {
+                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                        if (pathObj.isEraser()) {
+                            float originalOpacity = obj.getOpacity();
+                            obj.setOpacity(originalOpacity * activeLayer.getOpacity());
+                            obj.draw(activeLayerCanvas, transform);
+                            obj.setOpacity(originalOpacity);
+                        }
+                    }
+                }
+            }
+            
+            // Apply current stroke/eraser
+            if (isErasing) {
+                // Eraser creates transparency in this layer
+                Paint eraserPaint = new Paint(drawPaint);
+                eraserPaint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR));
+                activeLayerCanvas.drawPath(currentPath, eraserPaint);
+            } else {
+                // Pen draws normally
+                Paint penPaint = new Paint(drawPaint);
+                penPaint.setAlpha((int)(drawPaint.getAlpha() * activeLayer.getOpacity()));
+                activeLayerCanvas.drawPath(currentPath, penPaint);
+            }
+            
+            // Composite active layer
+            if (activeLayer.isVisible() && (!canvasHidden || activeLayer.isPinned())) {
+                Paint layerPaint = new Paint();
+                layerPaint.setAlpha((int)(255 * activeLayer.getOpacity()));
+                canvas.drawBitmap(activeLayerBitmap, 0, 0, layerPaint);
+            }
+            activeLayerBitmap.recycle();
+            
+            // STEP 4: Render all layers ABOVE the active layer
+            for (int i = activeLayerIndex + 1; i < layers.size(); i++) {
+                AnnotationLayer layer = layers.get(i);
+                if (layer.isDeleted()) continue;
+                if (!layer.isVisible()) continue;
+                if (canvasHidden && !layer.isPinned()) continue;
+                
+                // Create transparent bitmap for this layer
+                Bitmap layerBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+                Canvas layerCanvas = new Canvas(layerBitmap);
+                // NO background fill
+                
+                // Draw non-eraser objects
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue;
+                    if (obj.isVisible()) {
+                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                            if (pathObj.isEraser()) continue;
+                        }
+                        float originalOpacity = obj.getOpacity();
+                        obj.setOpacity(originalOpacity * layer.getOpacity());
+                        obj.draw(layerCanvas, transform);
+                        obj.setOpacity(originalOpacity);
+                    }
+                }
+                
+                // Apply eraser objects
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isDeleted()) continue;
+                    if (obj.isVisible()) {
+                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                            if (pathObj.isEraser()) {
+                                float originalOpacity = obj.getOpacity();
+                                obj.setOpacity(originalOpacity * layer.getOpacity());
+                                obj.draw(layerCanvas, transform);
+                                obj.setOpacity(originalOpacity);
+                            }
+                        }
+                    }
+                }
+                
+                // Composite this layer
+                Paint layerPaint = new Paint();
+                layerPaint.setAlpha((int)(255 * layer.getOpacity()));
+                canvas.drawBitmap(layerBitmap, 0, 0, layerPaint);
+                layerBitmap.recycle();
+            }
+            
+        } else {
+            // NO ACTIVE DRAWING/ERASING: Just draw the cached bitmap
+            if (drawingLayerBitmap != null) {
+                canvas.drawBitmap(drawingLayerBitmap, 0, 0, null);
+            }
         }
         
-        // LAYER 3: Draw current path being drawn (before it's committed)
-        // For pen mode: use temp bitmap to isolate stroke from background
-        // For eraser mode: already drawing directly on main layer, so just show current state
-        if (!currentPath.isEmpty() && !state.isEraserMode() && tempStrokeBitmap != null && tempStrokeCanvas != null) {
-            // Pen mode: draw path on temp bitmap to preview without committing
-            tempStrokeCanvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-            tempStrokeCanvas.drawPath(currentPath, drawPaint);
-            canvas.drawBitmap(tempStrokeBitmap, 0, 0, null);
-        }
-        // Note: Eraser mode paths are already drawn on drawingLayerBitmap during ACTION_MOVE
-        
-        // LAYER 4: Draw selection highlights and handles on top
+        // LAYER 3: Draw selection highlights and handles on top
         if (selectionMode || isLongPressing) {
             for (AnnotationLayer layer : currentPage.getLayers()) {
                 if (!layer.isVisible()) continue;
@@ -506,7 +672,7 @@ public class AnnotationView extends View {
             }
         }
         
-        // LAYER 5: Draw safe area guides if in selection mode and snap guides enabled
+        // LAYER 4: Draw safe area guides if in selection mode and snap guides enabled
         if ((selectionMode || isLongPressing) && snapGuidesEnabled) {
             drawSafeAreaGuides(canvas);
         }
@@ -1159,22 +1325,9 @@ public class AnnotationView extends View {
                     lastDrawX = x;
                     lastDrawY = y;
                     
-                    // For eraser mode, draw incrementally on the drawing layer for real-time feedback
-                    if (state.isEraserMode() && drawingLayerCanvas != null) {
-                        // Draw line segment from last point to current point
-                        if (isFirstSegment) {
-                            // First segment: just move to start point
-                            isFirstSegment = false;
-                        } else {
-                            // Draw line segment
-                            Path segment = new Path();
-                            segment.moveTo(lastIncrementalX, lastIncrementalY);
-                            segment.lineTo(x, y);
-                            drawingLayerCanvas.drawPath(segment, drawPaint);
-                        }
-                        lastIncrementalX = x;
-                        lastIncrementalY = y;
-                    }
+                    // REMOVED: Old incremental eraser drawing that erased through all layers
+                    // New approach: Treat eraser like pen - draw to temp preview, apply on release
+                    // This ensures layer-specific erasing with proper z-index rendering
                     
                     invalidate();
                 }
@@ -1218,18 +1371,26 @@ public class AnnotationView extends View {
                 } else if (longPressRunnable == null) {
                     // Only save path if we were actually drawing (not waiting for tap)
                     if (currentPath != null && !currentPath.isEmpty()) {
+                        // Create a clean paint copy without any Xfermode (eraser mode)
+                        Paint pathPaint = new Paint(drawPaint);
+                        // CRITICAL: Ensure no eraser mode is set for normal drawing
+                        // This fixes the issue where drawing after erasing wouldn't persist
+                        pathPaint.setXfermode(null);
+                        
                         AddPathCommand command = new AddPathCommand(
                             currentLayer, 
                             new Path(currentPath), 
-                            new Paint(drawPaint)
+                            pathPaint
                         );
                         currentPage.executeCommand(command);
                         
-                        // Draw the finished path onto the drawing layer
-                        // For eraser mode, it's already been drawn incrementally during ACTION_MOVE
-                        if (drawingLayerCanvas != null && !state.isEraserMode()) {
-                            drawingLayerCanvas.drawPath(currentPath, drawPaint);
-                        }
+                        // CRITICAL FIX: Instead of directly drawing the path on top of the bitmap,
+                        // we need to regenerate the entire bitmap to respect layer z-ordering.
+                        // The old approach (drawingLayerCanvas.drawPath) always drew on top,
+                        // which broke z-index when the active layer wasn't the topmost layer.
+                        
+                        // Regenerate bitmap with proper layer ordering
+                        redrawAllToLayer();
                         
                         currentPath = new Path();
                         invalidate();

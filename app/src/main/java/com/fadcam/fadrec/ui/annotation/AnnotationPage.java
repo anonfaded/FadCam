@@ -31,7 +31,7 @@ public class AnnotationPage {
     // Version control (undo/redo counts are saved, but not full command objects)
     private transient Stack<DrawingCommand> undoStack;
     private transient Stack<DrawingCommand> redoStack;
-    private static final int MAX_HISTORY_SIZE = 50;
+    private static final int MAX_HISTORY_SIZE = 1000; // Increased for longer recording sessions
     
     // Save undo/redo counts for UI display after reload
     private int savedUndoCount = 0;
