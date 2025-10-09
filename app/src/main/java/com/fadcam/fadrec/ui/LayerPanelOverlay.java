@@ -248,9 +248,9 @@ public class LayerPanelOverlay {
         // Hide the full overlay
         overlayView.setVisibility(View.GONE);
         
-        // Show the minimize button at current overlay position
+        // Show the minimize button at its last remembered position
         if (minimizeButton != null) {
-            minimizeButton.show(layoutParams.x, layoutParams.y);
+            minimizeButton.show(); // No parameters - uses last position
             minimizeButton.setExpanded(false);
         }
     }
@@ -312,6 +312,22 @@ public class LayerPanelOverlay {
     
     public boolean isMinimized() {
         return minimizeButton != null && minimizeButton.isShowing();
+    }
+    
+    public void hideMinimizeButton() {
+        if (minimizeButton != null && minimizeButton.isShowing()) {
+            minimizeButton.hide();
+        }
+    }
+    
+    public void showMinimizeButtonIfMinimized() {
+        if (overlayView != null && overlayView.getVisibility() == View.GONE) {
+            // Overlay is hidden, so button should be showing
+            if (minimizeButton != null && !minimizeButton.isShowing() && layoutParams != null) {
+                minimizeButton.show(layoutParams.x, layoutParams.y);
+                minimizeButton.setExpanded(false);
+            }
+        }
     }
     
     private void updateLayers() {

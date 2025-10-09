@@ -58,6 +58,10 @@ public class MinimizableOverlayButton {
     private boolean isExpanded = false;
     private OnButtonActionListener listener;
 
+    // Remember last position when hidden
+    private int lastX = -1;
+    private int lastY = -1;
+
     // Drag tracking
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
@@ -123,24 +127,39 @@ public class MinimizableOverlayButton {
 
         layoutParams.gravity = Gravity.TOP | Gravity.START;
         
-        // Use provided position or default
+        // Use provided position, or last remembered position, or default
         if (x >= 0 && y >= 0) {
             layoutParams.x = x;
             layoutParams.y = y;
+            // Remember this position
+            lastX = x;
+            lastY = y;
+        } else if (lastX >= 0 && lastY >= 0) {
+            // Restore last position
+            layoutParams.x = lastX;
+            layoutParams.y = lastY;
         } else {
+            // Default position - AT the right edge, not 40dp away
             DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-            layoutParams.x = metrics.widthPixels - dpToPx(40); // Default to right side
+            layoutParams.x = metrics.widthPixels - dpToPx(16); // At right edge (button width is 16dp)
             layoutParams.y = dpToPx(200);
+            lastX = layoutParams.x;
+            lastY = layoutParams.y;
         }
 
         // Add touch listener for dragging
         buttonContainer.setOnTouchListener(this::handleTouch);
 
         // Add to window
-        windowManager.addView(buttonOverlay, layoutParams);
+        try {
+            windowManager.addView(buttonOverlay, layoutParams);
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding button to window", e);
+            return;
+        }
 
-        // Initialize position - snap to nearest edge from current position
-        buttonOverlay.post(() -> snapToEdgeIfNeeded());
+        // Determine edge appearance based on position (don't move button on initial show)
+        buttonOverlay.post(() -> determineEdgeFromPosition());
     }
 
     /**
@@ -148,7 +167,16 @@ public class MinimizableOverlayButton {
      */
     public void hide() {
         if (buttonOverlay != null && windowManager != null) {
-            windowManager.removeView(buttonOverlay);
+            // Remember position before hiding
+            if (layoutParams != null) {
+                lastX = layoutParams.x;
+                lastY = layoutParams.y;
+            }
+            try {
+                windowManager.removeView(buttonOverlay);
+            } catch (Exception e) {
+                Log.e(TAG, "Error removing button from window", e);
+            }
             buttonOverlay = null;
             layoutParams = null;
         }
@@ -197,26 +225,34 @@ public class MinimizableOverlayButton {
      * Get button width
      */
     public int getButtonWidth() {
+        if (layoutParams != null && layoutParams.width > 0) {
+            return layoutParams.width;
+        }
         if (buttonContainer != null) {
             int width = buttonContainer.getWidth();
             if (width > 0) return width;
             width = buttonContainer.getMeasuredWidth();
             if (width > 0) return width;
         }
-        return layoutParams != null ? layoutParams.width : dpToPx(24);
+        // Default fallback - compact 16dp
+        return dpToPx(16);
     }
 
     /**
      * Get button height
      */
     public int getButtonHeight() {
+        if (layoutParams != null && layoutParams.height > 0) {
+            return layoutParams.height;
+        }
         if (buttonContainer != null) {
             int height = buttonContainer.getHeight();
             if (height > 0) return height;
             height = buttonContainer.getMeasuredHeight();
             if (height > 0) return height;
         }
-        return layoutParams != null ? layoutParams.height : dpToPx(100);
+        // Default fallback - taller for rotated text
+        return dpToPx(75);
     }
 
     /**
@@ -263,8 +299,8 @@ public class MinimizableOverlayButton {
                         }
                     }
                 } else {
-                    // Drag - snap to edge
-                    snapToEdgeIfNeeded();
+                    // Drag - snap to nearest edge
+                    snapToNearestEdge();
                 }
                 return true;
 
@@ -277,64 +313,125 @@ public class MinimizableOverlayButton {
     }
 
     /**
-     * Snap button to nearest edge if within threshold
+     * Snap button to nearest edge and remember the edge position.
      */
-    private void snapToEdgeIfNeeded() {
+    private void snapToNearestEdge() {
         if (layoutParams == null || buttonOverlay == null || buttonContainer == null) {
             return;
         }
 
-        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-        int screenWidth = metrics.widthPixels;
-        int screenHeight = metrics.heightPixels;
-        
-        int buttonWidth = getButtonWidth();
-        int buttonHeight = getButtonHeight();
-        
-        // Calculate center position of button
-        int centerX = layoutParams.x + buttonWidth / 2;
-        int centerY = layoutParams.y + buttonHeight / 2;
+        buttonOverlay.post(() -> {
+            if (buttonOverlay == null || layoutParams == null) {
+                return;
+            }
+            
+            DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+            int screenWidth = metrics.widthPixels;
+            int screenHeight = metrics.heightPixels;
+            
+            int buttonWidth = getButtonWidth();
+            int buttonHeight = getButtonHeight();
+            
+            // Calculate center position of button
+            int centerX = layoutParams.x + buttonWidth / 2;
+            int centerY = layoutParams.y + buttonHeight / 2;
 
-        // Calculate distances to edges
-        int distanceToLeft = centerX;
-        int distanceToRight = screenWidth - centerX;
-        int distanceToTop = centerY;
-        int distanceToBottom = screenHeight - centerY;
+            // Calculate distances to edges
+            int distanceToLeft = centerX;
+            int distanceToRight = screenWidth - centerX;
+            int distanceToTop = centerY;
+            int distanceToBottom = screenHeight - centerY;
 
-        int minDistance = Math.min(Math.min(distanceToLeft, distanceToRight),
-                Math.min(distanceToTop, distanceToBottom));
+            int minDistance = Math.min(Math.min(distanceToLeft, distanceToRight),
+                    Math.min(distanceToTop, distanceToBottom));
 
-        int margin = dpToPx(8);
-        
-        // Snap to nearest edge
-        if (minDistance == distanceToLeft) {
-            // Snap to LEFT edge
-            currentEdge = EdgePosition.LEFT;
-            layoutParams.x = margin;
-            layoutParams.y = Math.max(margin, Math.min(layoutParams.y, screenHeight - buttonHeight - margin));
-            adaptLayoutForEdge(EdgePosition.LEFT);
-        } else if (minDistance == distanceToRight) {
-            // Snap to RIGHT edge
-            currentEdge = EdgePosition.RIGHT;
-            layoutParams.x = screenWidth - buttonWidth - margin;
-            layoutParams.y = Math.max(margin, Math.min(layoutParams.y, screenHeight - buttonHeight - margin));
-            adaptLayoutForEdge(EdgePosition.RIGHT);
-        } else if (minDistance == distanceToTop) {
-            // Snap to TOP edge
-            currentEdge = EdgePosition.TOP;
-            layoutParams.x = Math.max(margin, Math.min(layoutParams.x, screenWidth - buttonWidth - margin));
-            layoutParams.y = margin;
-            adaptLayoutForEdge(EdgePosition.TOP);
-        } else {
-            // Snap to BOTTOM edge
-            currentEdge = EdgePosition.BOTTOM;
-            layoutParams.x = Math.max(margin, Math.min(layoutParams.x, screenWidth - buttonWidth - margin));
-            layoutParams.y = screenHeight - buttonHeight - margin;
-            adaptLayoutForEdge(EdgePosition.BOTTOM);
+            // Snap to nearest edge and remember it
+            if (minDistance == distanceToLeft) {
+                currentEdge = EdgePosition.LEFT;
+                layoutParams.x = 0;
+                layoutParams.y = Math.max(0, Math.min(layoutParams.y, screenHeight - buttonHeight));
+                adaptLayoutForEdge(EdgePosition.LEFT);
+            } else if (minDistance == distanceToRight) {
+                currentEdge = EdgePosition.RIGHT;
+                layoutParams.x = screenWidth - buttonWidth;
+                layoutParams.y = Math.max(0, Math.min(layoutParams.y, screenHeight - buttonHeight));
+                adaptLayoutForEdge(EdgePosition.RIGHT);
+            } else if (minDistance == distanceToTop) {
+                currentEdge = EdgePosition.TOP;
+                layoutParams.x = Math.max(0, Math.min(layoutParams.x, screenWidth - buttonWidth));
+                layoutParams.y = 0;
+                adaptLayoutForEdge(EdgePosition.TOP);
+            } else {
+                currentEdge = EdgePosition.BOTTOM;
+                layoutParams.x = Math.max(0, Math.min(layoutParams.x, screenWidth - buttonWidth));
+                layoutParams.y = screenHeight - buttonHeight;
+                adaptLayoutForEdge(EdgePosition.BOTTOM);
+            }
+
+            // Remember this position
+            lastX = layoutParams.x;
+            lastY = layoutParams.y;
+
+            if (windowManager != null) {
+                windowManager.updateViewLayout(buttonOverlay, layoutParams);
+                updateArrowDirection();
+            }
+        });
+    }
+
+    /**
+     * Determine which edge the button is closest to and adapt layout accordingly.
+     * Does NOT move the button - just updates appearance based on position.
+     */
+    private void determineEdgeFromPosition() {
+        if (layoutParams == null || buttonOverlay == null || buttonContainer == null) {
+            return;
         }
 
-        windowManager.updateViewLayout(buttonOverlay, layoutParams);
-        updateArrowDirection();
+        buttonOverlay.post(() -> {
+            if (buttonOverlay == null || layoutParams == null) {
+                return;
+            }
+            
+            DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+            int screenWidth = metrics.widthPixels;
+            int screenHeight = metrics.heightPixels;
+            
+            int buttonWidth = getButtonWidth();
+            int buttonHeight = getButtonHeight();
+            
+            // Calculate center position of button
+            int centerX = layoutParams.x + buttonWidth / 2;
+            int centerY = layoutParams.y + buttonHeight / 2;
+
+            // Calculate distances to edges
+            int distanceToLeft = centerX;
+            int distanceToRight = screenWidth - centerX;
+            int distanceToTop = centerY;
+            int distanceToBottom = screenHeight - centerY;
+
+            int minDistance = Math.min(Math.min(distanceToLeft, distanceToRight),
+                    Math.min(distanceToTop, distanceToBottom));
+
+            // Determine edge based on which is closest - DON'T move button
+            if (minDistance == distanceToLeft) {
+                currentEdge = EdgePosition.LEFT;
+                adaptLayoutForEdge(EdgePosition.LEFT);
+            } else if (minDistance == distanceToRight) {
+                currentEdge = EdgePosition.RIGHT;
+                adaptLayoutForEdge(EdgePosition.RIGHT);
+            } else if (minDistance == distanceToTop) {
+                currentEdge = EdgePosition.TOP;
+                adaptLayoutForEdge(EdgePosition.TOP);
+            } else {
+                currentEdge = EdgePosition.BOTTOM;
+                adaptLayoutForEdge(EdgePosition.BOTTOM);
+            }
+
+            if (windowManager != null) {
+                updateArrowDirection();
+            }
+        });
     }
 
     /**
@@ -345,53 +442,56 @@ public class MinimizableOverlayButton {
             return;
         }
 
-        int targetWidth;
-        int targetHeight;
         int orientation;
         int backgroundRes;
         float labelRotation;
+        int targetWidth;
+        int targetHeight;
 
         switch (edge) {
             case TOP:
-                targetWidth = dpToPx(100);
-                targetHeight = dpToPx(24);
                 orientation = LinearLayout.HORIZONTAL;
                 backgroundRes = R.drawable.compact_arrow_bg_top;
                 labelRotation = 0f;
+                targetWidth = dpToPx(70);  // Wider for horizontal
+                targetHeight = dpToPx(16); // Thin for horizontal - more compact
                 break;
 
             case BOTTOM:
-                targetWidth = dpToPx(100);
-                targetHeight = dpToPx(24);
                 orientation = LinearLayout.HORIZONTAL;
                 backgroundRes = R.drawable.compact_arrow_bg_bottom;
                 labelRotation = 0f;
+                targetWidth = dpToPx(70);  // Wider for horizontal
+                targetHeight = dpToPx(16); // Thin for horizontal - more compact
                 break;
 
             case LEFT:
-                targetWidth = dpToPx(24);
-                targetHeight = dpToPx(100);
                 orientation = LinearLayout.VERTICAL;
                 backgroundRes = R.drawable.compact_arrow_bg_left;
                 labelRotation = -90f; // Rotate text vertically (top to bottom)
+                targetWidth = dpToPx(16);  // Thin for vertical edges - more compact
+                targetHeight = dpToPx(75); // Taller to fit full rotated text ("Layers", "Pages")
                 break;
 
             case RIGHT:
             default:
-                targetWidth = dpToPx(24);
-                targetHeight = dpToPx(100);
                 orientation = LinearLayout.VERTICAL;
                 backgroundRes = R.drawable.compact_arrow_bg_right;
                 labelRotation = -90f; // Rotate text vertically (top to bottom)
+                targetWidth = dpToPx(16);  // Thin for vertical edges - more compact
+                targetHeight = dpToPx(75); // Taller to fit full rotated text ("Layers", "Pages")
                 break;
         }
 
-        // Update WindowManager layout params (since buttonContainer is the root view added to WindowManager)
-        if (layoutParams.width != targetWidth || layoutParams.height != targetHeight) {
-            layoutParams.width = targetWidth;
-            layoutParams.height = targetHeight;
-            if (buttonOverlay != null && windowManager != null) {
+        // Update WindowManager layout params with fixed sizes
+        layoutParams.width = targetWidth;
+        layoutParams.height = targetHeight;
+        
+        if (buttonOverlay != null && windowManager != null) {
+            try {
                 windowManager.updateViewLayout(buttonOverlay, layoutParams);
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating view layout", e);
             }
         }
 
@@ -400,6 +500,61 @@ public class MinimizableOverlayButton {
 
         // Update label rotation for vertical text on sides
         labelView.setRotation(labelRotation);
+
+        // Adjust text and arrow sizes based on edge
+        if (edge == EdgePosition.LEFT || edge == EdgePosition.RIGHT) {
+            // For rotated text on sides, we need to set explicit dimensions
+            // When text rotates -90°, its width becomes height and vice versa
+            labelView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 9f);
+            arrowIcon.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f);
+            
+            // Set explicit width/height on label TextView to accommodate rotated text
+            LinearLayout.LayoutParams labelParams = (LinearLayout.LayoutParams) labelView.getLayoutParams();
+            if (labelParams != null) {
+                // For rotated text: give it enough height (becomes width after rotation)
+                // Reduced from 60 to 50 for more compact fit
+                labelParams.width = dpToPx(50); // Enough for "Layers"/"Pages" text
+                labelParams.height = dpToPx(12); // Height of text (becomes width after rotation)
+                labelView.setLayoutParams(labelParams);
+                Log.d(TAG, "Set label dimensions for rotation: " + labelParams.width + "x" + labelParams.height);
+            }
+            
+            // More spacing between label and arrow for better separation
+            LinearLayout.LayoutParams arrowParams = (LinearLayout.LayoutParams) arrowIcon.getLayoutParams();
+            if (arrowParams != null) {
+                arrowParams.topMargin = dpToPx(4);
+                arrowIcon.setLayoutParams(arrowParams);
+            }
+        } else {
+            // Normal sizes for top/bottom - no rotation
+            labelView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 9f);
+            arrowIcon.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            
+            // Reset label to wrap_content for horizontal text
+            LinearLayout.LayoutParams labelParams = (LinearLayout.LayoutParams) labelView.getLayoutParams();
+            if (labelParams != null) {
+                labelParams.width = LinearLayout.LayoutParams.WRAP_CONTENT;
+                labelParams.height = LinearLayout.LayoutParams.WRAP_CONTENT;
+                labelView.setLayoutParams(labelParams);
+            }
+            
+            // Small margin for top/bottom
+            LinearLayout.LayoutParams arrowParams = (LinearLayout.LayoutParams) arrowIcon.getLayoutParams();
+            if (arrowParams != null) {
+                arrowParams.topMargin = dpToPx(1);
+                arrowIcon.setLayoutParams(arrowParams);
+            }
+        }
+        
+        // Debug logging
+        buttonOverlay.post(() -> {
+            Log.d(TAG, "=== Button Layout Debug for " + labelText + " on " + edge + " ===");
+            Log.d(TAG, "Button container: " + buttonContainer.getWidth() + "x" + buttonContainer.getHeight());
+            Log.d(TAG, "Content layout: " + contentLayout.getWidth() + "x" + contentLayout.getHeight());
+            Log.d(TAG, "Label view: " + labelView.getWidth() + "x" + labelView.getHeight() + 
+                  " rotation=" + labelView.getRotation());
+            Log.d(TAG, "Arrow view: " + arrowIcon.getWidth() + "x" + arrowIcon.getHeight());
+        });
 
         // Update background
         buttonContainer.setBackgroundResource(backgroundRes);

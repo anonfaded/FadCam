@@ -1482,13 +1482,13 @@ public class AnnotationService extends Service {
             case TOP:
             case BOTTOM:
                 targetWidth = dpToPx(48);
-                targetHeight = dpToPx(20);
+                targetHeight = dpToPx(16);
                 break;
 
             case LEFT:
             case RIGHT:
             default:
-                targetWidth = dpToPx(20);
+                targetWidth = dpToPx(16);
                 targetHeight = dpToPx(48);
                 break;
         }
@@ -3356,6 +3356,14 @@ public class AnnotationService extends Service {
             arrowOverlay.setVisibility(View.GONE);
         }
         
+        // Also hide minimized layer and page buttons
+        if (layerPanelOverlay != null) {
+            layerPanelOverlay.hideMinimizeButton();
+        }
+        if (pageTabBarOverlay != null) {
+            pageTabBarOverlay.hideMinimizeButton();
+        }
+        
         updateNotification();
         Log.d(TAG, "Overlay hidden");
     }
@@ -3374,6 +3382,14 @@ public class AnnotationService extends Service {
         }
         if (arrowOverlay != null) {
             arrowOverlay.setVisibility(View.VISIBLE);
+        }
+        
+        // Also show minimized layer and page buttons if they were minimized
+        if (layerPanelOverlay != null) {
+            layerPanelOverlay.showMinimizeButtonIfMinimized();
+        }
+        if (pageTabBarOverlay != null) {
+            pageTabBarOverlay.showMinimizeButtonIfMinimized();
         }
         
         updateNotification();

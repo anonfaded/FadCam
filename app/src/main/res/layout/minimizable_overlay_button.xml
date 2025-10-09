@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/minimizedButtonContainer"
-    android:layout_width="24dp"
-    android:layout_height="100dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@drawable/compact_arrow_bg_right"
     android:clickable="true"
     android:elevation="6dp"
@@ -14,8 +14,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:gravity="center"
-        android:orientation="vertical"
-        android:padding="2dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/minimizedButtonLabel"
@@ -25,9 +24,10 @@
             android:gravity="center"
             android:text="Label"
             android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:maxLines="1"
-            android:ellipsize="end"
+            android:textSize="9sp"
+            android:singleLine="true"
+            android:ellipsize="none"
+            android:includeFontPadding="false"
             android:clickable="false"
             android:focusable="false" />
 
@@ -35,12 +35,13 @@
             android:id="@+id/minimizedButtonArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="0dp"
             android:fontFamily="@font/materialicons"
             android:gravity="center"
             android:text="chevron_left"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
+            android:includeFontPadding="false"
             android:clickable="false"
             android:focusable="false" />
 
