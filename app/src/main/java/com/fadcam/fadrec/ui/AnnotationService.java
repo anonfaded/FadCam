@@ -51,6 +51,7 @@ import java.util.List;
 import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
+import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.ProjectFileManager;
 import com.fadcam.fadrec.ui.annotation.AnnotationPage;
@@ -170,6 +171,7 @@ public class AnnotationService extends Service {
     // Broadcast receiver for floating menu actions
     private BroadcastReceiver menuActionReceiver;
     private BroadcastReceiver recordingStateReceiver;
+    private BroadcastReceiver permissionResultReceiver;
     private BroadcastReceiver colorPickerReceiver;
     private BroadcastReceiver projectNamingReceiver;
     private BroadcastReceiver projectSelectionReceiver;
@@ -670,6 +672,7 @@ public class AnnotationService extends Service {
                 startAutoSave();
                 registerMenuActionReceiver();
                 registerRecordingStateReceiver();
+                registerPermissionResultReceiver();
                 registerColorPickerReceiver();
                 registerProjectNamingReceiver();
                 registerProjectSelectionReceiver();
@@ -1114,16 +1117,23 @@ public class AnnotationService extends Service {
         // Recording controls - Collapsed button click to START recording
         btnRecordingCollapsed.setOnClickListener(v -> {
             if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
-                // Start recording - this will trigger state change which will expand the UI
-                sendBroadcast(new Intent(com.fadcam.Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
+                // Start recording - launch TransparentPermissionActivity directly from service
+                // This works even if app is removed from recents
+                Log.d(TAG, "Starting recording from overlay - launching permission activity");
+                Intent intent = new Intent(this, TransparentPermissionActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
             }
         });
         
         // Recording controls - Start/Stop button (in expanded state)
         btnStartStopRec.setOnClickListener(v -> {
             if (btnStartStopRec.isEnabled()) {
-                // This button is only for STOP when recording is in progress
-                sendBroadcast(new Intent(com.fadcam.Constants.ACTION_STOP_SCREEN_RECORDING));
+                // Stop recording - send intent directly to ScreenRecordingService
+                Log.d(TAG, "Stop button clicked - sending stop intent to service");
+                Intent stopIntent = new Intent(this, com.fadcam.fadrec.services.ScreenRecordingService.class);
+                stopIntent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_SCREEN_RECORDING);
+                startService(stopIntent);
             }
         });
         
@@ -1131,9 +1141,17 @@ public class AnnotationService extends Service {
         btnPauseResumeRec.setOnClickListener(v -> {
             if (btnPauseResumeRec.isEnabled()) {
                 if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
-                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_PAUSE_SCREEN_RECORDING));
+                    // Pause recording
+                    Log.d(TAG, "Pause button clicked - sending pause intent to service");
+                    Intent pauseIntent = new Intent(this, com.fadcam.fadrec.services.ScreenRecordingService.class);
+                    pauseIntent.setAction(com.fadcam.Constants.INTENT_ACTION_PAUSE_SCREEN_RECORDING);
+                    startService(pauseIntent);
                 } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.PAUSED) {
-                    sendBroadcast(new Intent(com.fadcam.Constants.ACTION_RESUME_SCREEN_RECORDING));
+                    // Resume recording
+                    Log.d(TAG, "Resume button clicked - sending resume intent to service");
+                    Intent resumeIntent = new Intent(this, com.fadcam.fadrec.services.ScreenRecordingService.class);
+                    resumeIntent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_SCREEN_RECORDING);
+                    startService(resumeIntent);
                 }
             }
         });
@@ -2637,6 +2655,55 @@ public class AnnotationService extends Service {
         Log.d(TAG, "Recording state receiver registered");
     }
     
+    /**
+     * Register broadcast receiver for permission results from TransparentPermissionActivity.
+     * This allows the service to start recording even when app is removed from recents.
+     */
+    private void registerPermissionResultReceiver() {
+        permissionResultReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action == null) return;
+                
+                if (com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED.equals(action)) {
+                    Log.d(TAG, "Permission granted in service, starting recording");
+                    
+                    // Extract permission data - try both old and new key names
+                    Intent permissionData = intent.getParcelableExtra("mediaProjectionData");
+                    if (permissionData == null) {
+                        permissionData = intent.getParcelableExtra("data");
+                    }
+                    
+                    int resultCode = intent.getIntExtra("resultCode", -1);
+                    
+                    Log.d(TAG, "Extracted: resultCode=" + resultCode + ", data=" + (permissionData != null ? "present" : "null"));
+                    
+                    // RESULT_OK is -1, not 0!
+                    if (permissionData != null && resultCode == -1) {
+                        // Start recording using MediaProjectionHelper
+                        MediaProjectionHelper helper = new MediaProjectionHelper(context);
+                        helper.startScreenRecording(resultCode, permissionData);
+                        Log.i(TAG, "Screen recording started from overlay service");
+                    } else {
+                        Log.e(TAG, "Permission granted but invalid data - resultCode: " + resultCode + ", data: " + (permissionData != null));
+                        Toast.makeText(context, "Failed to start recording - invalid permission data", Toast.LENGTH_SHORT).show();
+                    }
+                    
+                } else if (com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED.equals(action)) {
+                    Log.d(TAG, "Permission denied in service");
+                    Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
+        filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
+        registerReceiver(permissionResultReceiver, filter);
+        Log.d(TAG, "Permission result receiver registered in service");
+    }
+    
     private void registerColorPickerReceiver() {
         colorPickerReceiver = new BroadcastReceiver() {
             @Override
@@ -3475,6 +3542,9 @@ public class AnnotationService extends Service {
         }
         if (recordingStateReceiver != null) {
             unregisterReceiver(recordingStateReceiver);
+        }
+        if (permissionResultReceiver != null) {
+            unregisterReceiver(permissionResultReceiver);
         }
         if (colorPickerReceiver != null) {
             unregisterReceiver(colorPickerReceiver);

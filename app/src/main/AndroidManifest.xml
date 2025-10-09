@@ -225,6 +225,17 @@
 
         <activity android:name=".ui.VideoPlayerActivity" android:theme="@style/Base.Theme.FadCam" />
         <activity android:name=".ui.WebViewActivity" />
+        
+        <!-- Transparent activity for requesting screen recording permission without bringing app to foreground -->
+        <activity 
+            android:name=".fadrec.ui.TransparentPermissionActivity" 
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true" 
+            android:noHistory="true" 
+            android:exported="false"
+            android:taskAffinity=""
+            android:launchMode="singleInstance" />
+        
         <activity android:name=".TorchToggleActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" android:documentLaunchMode="never" android:clearTaskOnLaunch="true" android:taskAffinity="" android:allowTaskReparenting="false">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

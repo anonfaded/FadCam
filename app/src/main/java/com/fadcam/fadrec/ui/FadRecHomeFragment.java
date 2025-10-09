@@ -851,6 +851,20 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     /**
+     * Handle recording start from overlay without bringing app to foreground.
+     * Launches TransparentPermissionActivity to request permission without activating main app.
+     */
+    private void handleOverlayRecordingStart() {
+        Log.d(TAG, "handleOverlayRecordingStart: Launching transparent permission activity");
+        
+        // Launch TransparentPermissionActivity to handle permission request
+        // This activity is transparent and won't bring the main app to foreground
+        Intent intent = new Intent(requireContext(), com.fadcam.fadrec.ui.TransparentPermissionActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+    }
+
+    /**
      * Stop screen recording.
      */
     private void stopScreenRecording() {
@@ -918,9 +932,29 @@ public class FadRecHomeFragment extends HomeFragment {
                     case Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY:
                         Log.d(TAG, "Received ACTION_START_SCREEN_RECORDING_FROM_OVERLAY");
                         if (screenRecordingState == ScreenRecordingState.NONE) {
-                            // Always request permission (MediaProjection needs explicit user consent each time)
-                            requestScreenCapturePermission();
+                            // When called from overlay while app is in background,
+                            // we need to handle this differently to avoid bringing app to foreground
+                            handleOverlayRecordingStart();
                         }
+                        break;
+                    
+                    // Handle permission results from TransparentPermissionActivity
+                    case Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED:
+                        Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_GRANTED");
+                        // Permission granted, start recording with the provided Intent
+                        Intent permissionData = intent.getParcelableExtra("data");
+                        if (permissionData != null && mediaProjectionHelper != null) {
+                            int resultCode = intent.getIntExtra("resultCode", -1);
+                            Log.d(TAG, "Starting recording with resultCode: " + resultCode);
+                            mediaProjectionHelper.startScreenRecording(resultCode, permissionData);
+                        } else {
+                            Log.e(TAG, "Permission granted but data or helper is null");
+                        }
+                        break;
+                        
+                    case Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED:
+                        Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_DENIED");
+                        Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
                         break;
                         
                     case Constants.ACTION_PAUSE_SCREEN_RECORDING:
@@ -965,6 +999,9 @@ public class FadRecHomeFragment extends HomeFragment {
         filter.addAction(Constants.ACTION_PAUSE_SCREEN_RECORDING);
         filter.addAction(Constants.ACTION_RESUME_SCREEN_RECORDING);
         filter.addAction(Constants.ACTION_STOP_SCREEN_RECORDING);
+        // Add permission result actions from TransparentPermissionActivity
+        filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
+        filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
         
         requireContext().registerReceiver(screenRecordingStateReceiver, filter);
         Log.d(TAG, "Screen recording broadcast receivers registered");
