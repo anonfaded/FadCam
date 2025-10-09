@@ -1269,6 +1269,13 @@ public class FadRecHomeFragment extends HomeFragment {
         
         Log.d(TAG, "FadRecHomeFragment resumed");
         
+        // CRITICAL FIX: If annotation service is already running (app reopened with service active),
+        // dismiss any loading dialog since onCreate() won't be called again and READY broadcast won't fire
+        if (sharedPreferencesManager.isFloatingControlsEnabled() && loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+            Log.d(TAG, "Service already running - dismissed loading dialog on resume");
+        }
+        
         // Parent's onResume() queries camera state and calls resetUIButtonsToIdleState()
         // Since we've overridden resetUIButtonsToIdleState(), our version runs instead
         // Our override keeps pause enabled and camera controls hidden - no timing hacks needed!
