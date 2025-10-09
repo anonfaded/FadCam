@@ -1,6 +1,7 @@
 package com.fadcam.fadrec.ui;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
 import android.graphics.Matrix;
@@ -20,6 +21,7 @@ import com.fadcam.fadrec.ui.annotation.AnnotationLayer;
 import com.fadcam.fadrec.ui.annotation.AnnotationPage;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.ClearLayerCommand;
+import com.fadcam.fadrec.ui.annotation.ClearAllLayersCommand;
 import com.fadcam.fadrec.ui.annotation.DrawingPath;
 import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
 import com.fadcam.fadrec.ui.annotation.objects.PathObject;
@@ -40,6 +42,17 @@ public class AnnotationView extends View {
     private Path currentPath;
     private Paint blackboardPaint;
     private Paint whiteboardPaint;
+    
+    // Track the last point drawn for incremental eraser drawing
+    private float lastIncrementalX;
+    private float lastIncrementalY;
+    private boolean isFirstSegment;
+    
+    // Layer separation for proper eraser support
+    private Bitmap drawingLayerBitmap;
+    private Canvas drawingLayerCanvas;
+    private Bitmap tempStrokeBitmap; // Temporary bitmap for current stroke being drawn
+    private Canvas tempStrokeCanvas;
     
     // Selection mode state
     private boolean selectionMode = false;
@@ -164,6 +177,9 @@ public class AnnotationView extends View {
         this.state = state;
         updatePaintFromState();
         
+        // Redraw all content onto the drawing layer
+        redrawAllToLayer();
+        
         Log.d(TAG, "  Calling invalidate() to trigger redraw...");
         invalidate();
         
@@ -222,6 +238,38 @@ public class AnnotationView extends View {
         if (stateChangeListener != null) {
             stateChangeListener.onStateChanged();
         }
+        // Note: redrawAllToLayer() should be called explicitly when needed
+        // It's skipped here for eraser strokes to avoid overwriting incremental drawing
+    }
+    
+    /**
+     * Notify state changed and force a full redraw from state.
+     * Public method for external callers (e.g., AnnotationService) to trigger bitmap regeneration.
+     */
+    public void notifyStateChangedWithRedraw() {
+        if (stateChangeListener != null) {
+            stateChangeListener.onStateChanged();
+        }
+        redrawAllToLayer();
+        invalidate(); // CRITICAL: Trigger canvas redraw to show updated bitmap
+    }
+    
+    /**
+     * Clean up resources when view is detached
+     */
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (drawingLayerBitmap != null) {
+            drawingLayerBitmap.recycle();
+            drawingLayerBitmap = null;
+            drawingLayerCanvas = null;
+        }
+        if (tempStrokeBitmap != null) {
+            tempStrokeBitmap.recycle();
+            tempStrokeBitmap = null;
+            tempStrokeCanvas = null;
+        }
     }
     
     private void notifySelectionModeChanged(boolean isActive) {
@@ -238,6 +286,7 @@ public class AnnotationView extends View {
     
     private void updatePaintFromState() {
         if (state.isEraserMode()) {
+            // Use CLEAR mode for proper erasing (only affects drawing layer, not background)
             drawPaint.setColor(0x00000000);
             drawPaint.setStrokeWidth(state.getCurrentStrokeWidth() * 2.5f);
             drawPaint.setXfermode(new android.graphics.PorterDuffXfermode(
@@ -250,40 +299,192 @@ public class AnnotationView extends View {
     }
     
     @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        
+        // Create drawing layer bitmap when view size is determined
+        if (w > 0 && h > 0) {
+            createDrawingLayer(w, h);
+        }
+    }
+    
+    /**
+     * Create or recreate the drawing layer bitmap
+     */
+    private void createDrawingLayer(int width, int height) {
+        // Clean up old bitmaps if exist
+        if (drawingLayerBitmap != null) {
+            drawingLayerBitmap.recycle();
+        }
+        if (tempStrokeBitmap != null) {
+            tempStrokeBitmap.recycle();
+        }
+        
+        // Create new bitmap with alpha channel for transparency
+        drawingLayerBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        drawingLayerCanvas = new Canvas(drawingLayerBitmap);
+        
+        // Create temporary stroke bitmap for current path
+        tempStrokeBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        tempStrokeCanvas = new Canvas(tempStrokeBitmap);
+        
+        // Redraw all existing content onto the new layer
+        redrawAllToLayer();
+    }
+    
+    /**
+     * Redraw all annotation objects onto the drawing layer
+     */
+    private void redrawAllToLayer() {
+        if (drawingLayerCanvas == null) return;
+        
+        AnnotationPage currentPage = state.getActivePage();
+        if (currentPage == null) return;
+        
+        // Clear to transparent first
+        drawingLayerCanvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+        
+        // For blackboard/whiteboard, we need to handle erasers specially
+        // We'll draw in two passes: non-eraser objects first, then eraser objects
+        if (currentPage.isBlackboardMode() || currentPage.isWhiteboardMode()) {
+            // Get background color
+            int backgroundColor = currentPage.isBlackboardMode() ? 0xFF000000 : 0xFFFFFFFF;
+            
+            // Create a temporary bitmap to draw content with background
+            Bitmap contentBitmap = Bitmap.createBitmap(
+                drawingLayerBitmap.getWidth(), 
+                drawingLayerBitmap.getHeight(), 
+                Bitmap.Config.ARGB_8888
+            );
+            Canvas contentCanvas = new Canvas(contentBitmap);
+            
+            // Fill with background color
+            contentCanvas.drawColor(backgroundColor);
+            
+            // Draw all non-eraser objects onto content bitmap
+            for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (!layer.isVisible()) continue;
+                if (canvasHidden && !layer.isPinned()) continue;
+                
+                Matrix transform = new Matrix();
+                
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isVisible()) {
+                        // Check if this is an eraser path
+                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                            if (pathObj.isEraser()) {
+                                continue; // Skip erasers in first pass
+                            }
+                        }
+                        
+                        float originalOpacity = obj.getOpacity();
+                        obj.setOpacity(originalOpacity * layer.getOpacity());
+                        obj.draw(contentCanvas, transform);
+                        obj.setOpacity(originalOpacity);
+                    }
+                }
+            }
+            
+            // Now apply erasers to the content bitmap
+            for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (!layer.isVisible()) continue;
+                if (canvasHidden && !layer.isPinned()) continue;
+                
+                Matrix transform = new Matrix();
+                
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isVisible()) {
+                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
+                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
+                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
+                            if (pathObj.isEraser()) {
+                                // Draw eraser with layer opacity
+                                float originalOpacity = obj.getOpacity();
+                                obj.setOpacity(originalOpacity * layer.getOpacity());
+                                obj.draw(contentCanvas, transform);
+                                obj.setOpacity(originalOpacity);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Now draw the final content (with bg + erasers applied) to main layer
+            // Use paint with alpha to support layer opacity
+            Paint bitmapPaint = new Paint();
+            bitmapPaint.setAlpha(255); // Full opacity - layer opacity already applied
+            drawingLayerCanvas.drawBitmap(contentBitmap, 0, 0, bitmapPaint);
+            
+            // Clean up temp bitmap
+            contentBitmap.recycle();
+            
+        } else {
+            // Transparent mode - simple single pass
+            for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (!layer.isVisible()) continue;
+                if (canvasHidden && !layer.isPinned()) continue;
+                
+                Matrix transform = new Matrix();
+                
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isVisible()) {
+                        float originalOpacity = obj.getOpacity();
+                        obj.setOpacity(originalOpacity * layer.getOpacity());
+                        obj.draw(drawingLayerCanvas, transform);
+                        obj.setOpacity(originalOpacity);
+                    }
+                }
+            }
+        }
+    }
+    
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         
         AnnotationPage currentPage = state.getActivePage();
         if (currentPage == null) return;
         
-        // Draw background (blackboard, whiteboard, or transparent)
-        if (currentPage.isBlackboardMode()) {
-            canvas.drawRect(0, 0, getWidth(), getHeight(), blackboardPaint);
-        } else if (currentPage.isWhiteboardMode()) {
-            canvas.drawRect(0, 0, getWidth(), getHeight(), whiteboardPaint);
+        // LAYER 1: Draw background (only if transparent mode)
+        // For blackboard/whiteboard, background is baked into drawing layer bitmap
+        if (!currentPage.isBlackboardMode() && !currentPage.isWhiteboardMode()) {
+            // Transparent mode - no background to draw
+        } else {
+            // Blackboard/Whiteboard - draw background as fallback
+            // (bitmap already has it, but this ensures consistency)
+            if (currentPage.isBlackboardMode()) {
+                canvas.drawRect(0, 0, getWidth(), getHeight(), blackboardPaint);
+            } else if (currentPage.isWhiteboardMode()) {
+                canvas.drawRect(0, 0, getWidth(), getHeight(), whiteboardPaint);
+            }
         }
         
-        // Draw all layers (bottom to top)
-        for (AnnotationLayer layer : currentPage.getLayers()) {
-            if (!layer.isVisible()) continue;
-            
-            // Skip non-pinned layers if canvas is hidden
-            if (canvasHidden && !layer.isPinned()) continue;
-            
-            // Create identity matrix (no transformation yet)
-            Matrix transform = new Matrix();
-            
-            // Draw all objects in this layer
-            for (AnnotationObject obj : layer.getObjects()) {
-                if (obj.isVisible()) {
-                    // Apply layer opacity
-                    float originalOpacity = obj.getOpacity();
-                    obj.setOpacity(originalOpacity * layer.getOpacity());
-                    obj.draw(canvas, transform);
-                    obj.setOpacity(originalOpacity); // Restore original
-                    
-                    // Draw selection highlight if this object is selected
-                    if ((selectionMode || isLongPressing) && selectedObject == obj) {
+        // LAYER 2: Draw the drawing layer bitmap on top (can be erased)
+        if (drawingLayerBitmap != null) {
+            canvas.drawBitmap(drawingLayerBitmap, 0, 0, null);
+        }
+        
+        // LAYER 3: Draw current path being drawn (before it's committed)
+        // For pen mode: use temp bitmap to isolate stroke from background
+        // For eraser mode: already drawing directly on main layer, so just show current state
+        if (!currentPath.isEmpty() && !state.isEraserMode() && tempStrokeBitmap != null && tempStrokeCanvas != null) {
+            // Pen mode: draw path on temp bitmap to preview without committing
+            tempStrokeCanvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+            tempStrokeCanvas.drawPath(currentPath, drawPaint);
+            canvas.drawBitmap(tempStrokeBitmap, 0, 0, null);
+        }
+        // Note: Eraser mode paths are already drawn on drawingLayerBitmap during ACTION_MOVE
+        
+        // LAYER 4: Draw selection highlights and handles on top
+        if (selectionMode || isLongPressing) {
+            for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (!layer.isVisible()) continue;
+                if (canvasHidden && !layer.isPinned()) continue;
+                
+                for (AnnotationObject obj : layer.getObjects()) {
+                    if (obj.isVisible() && selectedObject == obj) {
                         // Draw snap guides if enabled and active
                         if (snapGuidesEnabled) {
                             if (activeHandle == HandleType.TOP && snappedAngle >= 0) {
@@ -299,14 +500,9 @@ public class AnnotationView extends View {
             }
         }
         
-        // Draw safe area guides if snap is enabled and object is selected
-        if (snapGuidesEnabled && selectionMode && selectedObject != null && activeHandle == HandleType.NONE) {
+        // LAYER 5: Draw safe area guides if in selection mode and snap guides enabled
+        if ((selectionMode || isLongPressing) && snapGuidesEnabled) {
             drawSafeAreaGuides(canvas);
-        }
-        
-        // Draw current path being drawn (only in draw mode and not long-pressing)
-        if (!selectionMode && !isLongPressing) {
-            canvas.drawPath(currentPath, drawPaint);
         }
     }
     
@@ -876,7 +1072,7 @@ public class AnnotationView extends View {
                     snappedHorizontalLine = -1f; // Clear position snaps
                     snappedVerticalLine = -1f;
                     invalidate(); // Redraw to remove snap lines
-                    notifyStateChanged();
+                    notifyStateChangedWithRedraw(); // Object transformed, redraw
                     return true;
             }
             return false;
@@ -909,6 +1105,16 @@ public class AnnotationView extends View {
                     currentPath.moveTo(x, y);
                     lastDrawX = x;
                     lastDrawY = y;
+                    
+                    // Initialize incremental drawing tracking
+                    lastIncrementalX = x;
+                    lastIncrementalY = y;
+                    isFirstSegment = true;
+                    
+                    // Clear temp stroke bitmap when starting a new stroke
+                    if (tempStrokeCanvas != null) {
+                        tempStrokeCanvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+                    }
                 }
                 return true;
                 
@@ -946,6 +1152,24 @@ public class AnnotationView extends View {
                     currentPath.quadTo(lastDrawX, lastDrawY, (x + lastDrawX) / 2, (y + lastDrawY) / 2);
                     lastDrawX = x;
                     lastDrawY = y;
+                    
+                    // For eraser mode, draw incrementally on the drawing layer for real-time feedback
+                    if (state.isEraserMode() && drawingLayerCanvas != null) {
+                        // Draw line segment from last point to current point
+                        if (isFirstSegment) {
+                            // First segment: just move to start point
+                            isFirstSegment = false;
+                        } else {
+                            // Draw line segment
+                            Path segment = new Path();
+                            segment.moveTo(lastIncrementalX, lastIncrementalY);
+                            segment.lineTo(x, y);
+                            drawingLayerCanvas.drawPath(segment, drawPaint);
+                        }
+                        lastIncrementalX = x;
+                        lastIncrementalY = y;
+                    }
+                    
                     invalidate();
                 }
                 return true;
@@ -984,7 +1208,7 @@ public class AnnotationView extends View {
                     selectedObject = null;
                     currentPath.reset(); // Clear path (wasn't drawing)
                     invalidate();
-                    notifyStateChanged();
+                    notifyStateChangedWithRedraw(); // Object moved, redraw
                 } else if (longPressRunnable == null) {
                     // Only save path if we were actually drawing (not waiting for tap)
                     if (currentPath != null && !currentPath.isEmpty()) {
@@ -994,6 +1218,12 @@ public class AnnotationView extends View {
                             new Paint(drawPaint)
                         );
                         currentPage.executeCommand(command);
+                        
+                        // Draw the finished path onto the drawing layer
+                        // For eraser mode, it's already been drawn incrementally during ACTION_MOVE
+                        if (drawingLayerCanvas != null && !state.isEraserMode()) {
+                            drawingLayerCanvas.drawPath(currentPath, drawPaint);
+                        }
                         
                         currentPath = new Path();
                         invalidate();
@@ -1068,21 +1298,20 @@ public class AnnotationView extends View {
     }
     
     /**
-     * Clear all drawings on active layer
+     * Clear all drawings on all layers
      */
     public void clearAll() {
         AnnotationPage currentPage = state.getActivePage();
         if (currentPage == null) return;
         
-        AnnotationLayer currentLayer = currentPage.getActiveLayer();
-        if (currentLayer == null) return;
-        
-        ClearLayerCommand command = new ClearLayerCommand(currentLayer);
+        // Use atomic command to clear all layers at once
+        // This allows proper undo/redo of the entire "Delete All" operation
+        ClearAllLayersCommand command = new ClearAllLayersCommand(currentPage);
         currentPage.executeCommand(command);
         
         currentPath.reset();
         invalidate();
-        notifyStateChanged();
+        notifyStateChangedWithRedraw(); // Force redraw after clear all
     }
     
     /**
@@ -1093,7 +1322,7 @@ public class AnnotationView extends View {
         if (currentPage != null && currentPage.canUndo()) {
             currentPage.undo();
             invalidate();
-            notifyStateChanged();
+            notifyStateChangedWithRedraw(); // Force redraw for undo
         }
     }
     
@@ -1105,7 +1334,7 @@ public class AnnotationView extends View {
         if (currentPage != null && currentPage.canRedo()) {
             currentPage.redo();
             invalidate();
-            notifyStateChanged();
+            notifyStateChangedWithRedraw(); // Force redraw for redo
         }
     }
     
@@ -1149,7 +1378,7 @@ public class AnnotationView extends View {
         if (currentPage != null) {
             currentPage.setBlackboardMode(enabled);
             invalidate();
-            notifyStateChanged();
+            notifyStateChangedWithRedraw(); // Board mode changed, redraw
         }
     }
     
@@ -1169,7 +1398,7 @@ public class AnnotationView extends View {
         if (currentPage != null) {
             currentPage.setWhiteboardMode(enabled);
             invalidate();
-            notifyStateChanged();
+            notifyStateChangedWithRedraw(); // Board mode changed, redraw
         }
     }
     
@@ -1187,7 +1416,7 @@ public class AnnotationView extends View {
     public void switchToPage(int pageIndex) {
         state.setActivePageIndex(pageIndex);
         invalidate();
-        notifyStateChanged();
+        notifyStateChangedWithRedraw(); // Page switched, redraw
     }
     
     /**
@@ -1195,7 +1424,7 @@ public class AnnotationView extends View {
      */
     public void addPage(String name) {
         state.addPage(name);
-        notifyStateChanged();
+        notifyStateChangedWithRedraw(); // Page added, redraw
     }
     
     /**
@@ -1205,7 +1434,7 @@ public class AnnotationView extends View {
         AnnotationPage currentPage = state.getActivePage();
         if (currentPage != null) {
             currentPage.addLayer(name);
-            notifyStateChanged();
+            notifyStateChangedWithRedraw(); // Layer added, redraw
         }
     }
     

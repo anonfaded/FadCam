@@ -1995,6 +1995,7 @@ public class AnnotationService extends Service {
      * Updates the undo/redo button states based on availability.
      * Enabled buttons have full opacity, disabled buttons are dimmed.
      * Also updates the counters showing available operations.
+     * Respects annotation enabled state - keeps buttons grayed out when annotation is disabled.
      */
     private void updateUndoRedoButtons() {
         if (annotationView != null) {
@@ -2002,8 +2003,21 @@ public class AnnotationService extends Service {
             boolean canUndo = annotationView.canUndo();
             boolean canRedo = annotationView.canRedo();
             
-            btnUndo.setAlpha(canUndo ? 1.0f : 0.5f);
-            btnRedo.setAlpha(canRedo ? 1.0f : 0.5f);
+            // CRITICAL: If annotation is disabled, keep buttons at 0.3f alpha (grayed out)
+            // Otherwise, use 1.0f (enabled) or 0.5f (disabled but available)
+            if (!annotationEnabled) {
+                // Annotation disabled - keep buttons grayed out
+                btnUndo.setAlpha(0.3f);
+                btnRedo.setAlpha(0.3f);
+                txtUndoCount.setAlpha(0.3f);
+                txtRedoCount.setAlpha(0.3f);
+            } else {
+                // Annotation enabled - show normal states
+                btnUndo.setAlpha(canUndo ? 1.0f : 0.5f);
+                btnRedo.setAlpha(canRedo ? 1.0f : 0.5f);
+                txtUndoCount.setAlpha(canUndo ? 1.0f : 0.5f);
+                txtRedoCount.setAlpha(canRedo ? 1.0f : 0.5f);
+            }
             
             // Update counters
             int undoCount = annotationView.getUndoCount();
@@ -2011,10 +2025,6 @@ public class AnnotationService extends Service {
             
             txtUndoCount.setText(String.valueOf(undoCount));
             txtRedoCount.setText(String.valueOf(redoCount));
-            
-            // Dim counter text when no operations available
-            txtUndoCount.setAlpha(canUndo ? 1.0f : 0.5f);
-            txtRedoCount.setAlpha(canRedo ? 1.0f : 0.5f);
             
             // Update page and layer info
             updatePageLayerInfo();
@@ -2222,7 +2232,9 @@ public class AnnotationService extends Service {
                     @Override
                     public void onLayerVisibilityChanged(int index, boolean visible) {
                         currentPage.getLayers().get(index).setVisible(visible);
-                        annotationView.invalidate();
+                        // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
+                        // invalidate() alone doesn't update the pre-rendered layer bitmap
+                        annotationView.notifyStateChangedWithRedraw();
                         String msg = visible ? "👁️ Visible" : "🚫 Hidden";
                         Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
                     }
@@ -2238,7 +2250,9 @@ public class AnnotationService extends Service {
                     @Override
                     public void onLayerPinnedChanged(int index, boolean pinned) {
                         currentPage.getLayers().get(index).setPinned(pinned);
-                        annotationView.invalidate();
+                        // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
+                        // Pinned layers affect visibility when canvas is hidden
+                        annotationView.notifyStateChangedWithRedraw();
                         String msg = pinned ? "📌 Pinned (stays visible when canvas hidden)" : "📌 Unpinned";
                         Toast.makeText(AnnotationService.this, msg, Toast.LENGTH_SHORT).show();
                     }
@@ -2247,7 +2261,9 @@ public class AnnotationService extends Service {
                     public void onLayerOpacityChanged(int index, float opacity) {
                         Log.d(TAG, "Layer opacity changed: index=" + index + ", opacity=" + opacity);
                         currentPage.getLayers().get(index).setOpacity(opacity);
-                        annotationView.invalidate();
+                        // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
+                        // invalidate() alone doesn't update the pre-rendered layer bitmap with new opacity
+                        annotationView.notifyStateChangedWithRedraw();
                     }
 
                     @Override
@@ -2282,8 +2298,8 @@ public class AnnotationService extends Service {
                         com.fadcam.fadrec.ui.annotation.AddLayerCommand command = 
                             new com.fadcam.fadrec.ui.annotation.AddLayerCommand(currentPage, layerName);
                         currentPage.executeCommand(command);
-                        annotationView.invalidate();
-                        annotationView.notifyStateChanged();
+                        // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap with new layer
+                        annotationView.notifyStateChangedWithRedraw();
                         
                         Log.d(TAG, "Layer added. New layer count: " + currentPage.getLayers().size());
                         Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
@@ -2307,8 +2323,8 @@ public class AnnotationService extends Service {
                             com.fadcam.fadrec.ui.annotation.DeleteLayerCommand command = 
                                 new com.fadcam.fadrec.ui.annotation.DeleteLayerCommand(currentPage, index);
                             currentPage.executeCommand(command);
-                            annotationView.invalidate();
-                            annotationView.notifyStateChanged();
+                            // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap without deleted layer
+                            annotationView.notifyStateChangedWithRedraw();
                             
                             Log.d(TAG, "Layer deleted. New layer count: " + currentPage.getLayers().size());
                             Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
@@ -2332,8 +2348,9 @@ public class AnnotationService extends Service {
                         }
 
                         currentPage.moveLayer(fromIndex, toIndex);
-                        annotationView.invalidate();
-                        annotationView.notifyStateChanged();
+                        // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap with reordered layers
+                        // Layer order affects rendering order (z-index)
+                        annotationView.notifyStateChangedWithRedraw();
                         updatePageLayerInfo();
                         layerPanelOverlay.refresh();
 

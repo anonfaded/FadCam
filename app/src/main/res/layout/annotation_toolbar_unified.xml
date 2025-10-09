@@ -621,7 +621,7 @@
 
                         <TextView android:id="@+id/btnClearAll" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="delete_sweep" android:textSize="18sp" android:textColor="#FF5252" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete" android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete All" android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
                     </LinearLayout>
                 </LinearLayout>
 
