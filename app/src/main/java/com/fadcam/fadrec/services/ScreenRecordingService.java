@@ -65,6 +65,8 @@ public class ScreenRecordingService extends Service {
     // State management
     private ScreenRecordingState recordingState = ScreenRecordingState.NONE;
     private long recordingStartTime;
+    private long pauseStartTime; // Track when pause started
+    private long totalPausedTime; // Accumulate total paused duration
     
     // Configuration
     private SharedPreferencesManager sharedPreferencesManager;
@@ -311,6 +313,10 @@ public class ScreenRecordingService extends Service {
         recordingStartTime = SystemClock.elapsedRealtime();
         recordingState = ScreenRecordingState.IN_PROGRESS;
         
+        // Reset pause tracking for new recording
+        pauseStartTime = 0;
+        totalPausedTime = 0;
+        
         // Save recording start time to SharedPreferences for UI timer updates
         sharedPreferencesManager.sharedPreferences.edit()
             .putLong("screen_recording_start_time", recordingStartTime)
@@ -463,6 +469,13 @@ public class ScreenRecordingService extends Service {
                 mediaRecorder.pause();
                 recordingState = ScreenRecordingState.PAUSED;
                 
+                // Record when pause started
+                pauseStartTime = SystemClock.elapsedRealtime();
+                Log.d(TAG, "Pause started at: " + pauseStartTime);
+                
+                // Stop notification updates while paused
+                stopNotificationUpdates();
+                
                 // Update notification
                 updateNotification();
                 
@@ -494,8 +507,31 @@ public class ScreenRecordingService extends Service {
                 mediaRecorder.resume();
                 recordingState = ScreenRecordingState.IN_PROGRESS;
                 
+                // Calculate pause duration and adjust start time
+                if (pauseStartTime > 0) {
+                    long pauseDuration = SystemClock.elapsedRealtime() - pauseStartTime;
+                    totalPausedTime += pauseDuration;
+                    
+                    // Adjust the recording start time to skip the paused duration
+                    recordingStartTime += pauseDuration;
+                    
+                    // Update SharedPreferences with adjusted start time
+                    sharedPreferencesManager.sharedPreferences
+                        .edit()
+                        .putLong("screen_recording_start_time", recordingStartTime)
+                        .apply();
+                    
+                    Log.d(TAG, "Pause duration: " + pauseDuration + "ms, total paused: " + totalPausedTime + "ms");
+                    Log.d(TAG, "Adjusted start time to: " + recordingStartTime);
+                    
+                    pauseStartTime = 0; // Reset
+                }
+                
                 // Update notification
                 updateNotification();
+                
+                // Restart notification updates
+                startNotificationUpdates();
                 
                 // Broadcast resumed
                 broadcastRecordingResumed();

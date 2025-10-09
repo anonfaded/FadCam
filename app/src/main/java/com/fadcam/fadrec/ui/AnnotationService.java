@@ -51,6 +51,7 @@ import java.util.List;
 import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.ProjectFileManager;
@@ -102,6 +103,10 @@ public class AnnotationService extends Service {
     private View btnStartStopRec, btnPauseResumeRec;
     private TextView iconStartStop, labelStartStop;
     private TextView iconPauseResume, labelPauseResume;
+    private TextView recordingTimerText;
+    private Handler recordingTimerHandler;
+    private Runnable recordingTimerRunnable;
+    private SharedPreferencesManager sharedPreferencesManager;
     private com.fadcam.fadrec.ScreenRecordingState recordingState = com.fadcam.fadrec.ScreenRecordingState.NONE;
     private boolean isRecordingControlsExpanded = false;
     
@@ -651,6 +656,9 @@ public class AnnotationService extends Service {
         
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
+        // Initialize SharedPreferencesManager for timer
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        
         // Initialize project file manager
         projectFileManager = new ProjectFileManager(this);
         Log.d(TAG, "ProjectFileManager initialized");
@@ -920,6 +928,10 @@ public class AnnotationService extends Service {
         labelStartStop = toolbarView.findViewById(R.id.labelStartStop);
         iconPauseResume = toolbarView.findViewById(R.id.iconPauseResume);
         labelPauseResume = toolbarView.findViewById(R.id.labelPauseResume);
+        recordingTimerText = toolbarView.findViewById(R.id.recordingTimerText);
+        
+        // Initialize recording timer handler
+        recordingTimerHandler = new Handler(Looper.getMainLooper());
         
         // Initialize quick access section
         quickAccessHeader = toolbarView.findViewById(R.id.quickAccessHeader);
@@ -2640,7 +2652,27 @@ public class AnnotationService extends Service {
                 String stateStr = intent.getStringExtra("recordingState");
                 if (stateStr != null) {
                     try {
+                        com.fadcam.fadrec.ScreenRecordingState oldState = recordingState;
                         recordingState = com.fadcam.fadrec.ScreenRecordingState.valueOf(stateStr);
+                        
+                        // Handle timer based on state changes
+                        if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS 
+                            && oldState != com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
+                            // Recording started or resumed
+                            startRecordingTimer();
+                        } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
+                            // Recording stopped completely
+                            stopRecordingTimer();
+                        } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.PAUSED) {
+                            // Recording paused - stop updating but keep timer visible with current value
+                            if (recordingTimerRunnable != null && recordingTimerHandler != null) {
+                                recordingTimerHandler.removeCallbacks(recordingTimerRunnable);
+                            }
+                            // Update one last time to show paused value
+                            updateTimerDisplay();
+                            Log.d(TAG, "Timer paused at current value");
+                        }
+                        
                         updateRecordingButtons();
                         Log.d(TAG, "Recording state updated: " + recordingState);
                     } catch (IllegalArgumentException e) {
@@ -3166,6 +3198,87 @@ public class AnnotationService extends Service {
     }
     
     /**
+     * Start the recording timer display in overlay
+     */
+    private void startRecordingTimer() {
+        if (recordingTimerText != null) {
+            recordingTimerText.setVisibility(View.VISIBLE);
+        }
+        
+        // Stop any existing timer first
+        if (recordingTimerRunnable != null && recordingTimerHandler != null) {
+            recordingTimerHandler.removeCallbacks(recordingTimerRunnable);
+        }
+        
+        recordingTimerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Only continue updating if still in progress
+                if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
+                    updateTimerDisplay();
+                    recordingTimerHandler.postDelayed(this, 1000); // Update every second
+                } else {
+                    Log.d(TAG, "Timer runnable stopped - state is: " + recordingState);
+                }
+            }
+        };
+        
+        recordingTimerHandler.post(recordingTimerRunnable);
+        Log.d(TAG, "Recording timer started in overlay");
+    }
+    
+    /**
+     * Stop the recording timer display (when recording fully stops)
+     */
+    private void stopRecordingTimer() {
+        if (recordingTimerRunnable != null && recordingTimerHandler != null) {
+            recordingTimerHandler.removeCallbacks(recordingTimerRunnable);
+        }
+        
+        if (recordingTimerText != null) {
+            recordingTimerText.setVisibility(View.GONE);
+            recordingTimerText.setText("00:00");
+        }
+        
+        Log.d(TAG, "Recording timer stopped in overlay");
+    }
+    
+    /**
+     * Update the timer display with current recording duration.
+     * Uses the same start time from SharedPreferences as the service notification.
+     */
+    private void updateTimerDisplay() {
+        if (recordingTimerText == null || sharedPreferencesManager == null) {
+            return;
+        }
+        
+        // Get recording start time from SharedPreferences (same as service uses)
+        long recordingStartTime = sharedPreferencesManager.sharedPreferences
+            .getLong("screen_recording_start_time", 0);
+        
+        if (recordingStartTime == 0) {
+            recordingTimerText.setText("00:00");
+            return;
+        }
+        
+        long elapsed = SystemClock.elapsedRealtime() - recordingStartTime;
+        long seconds = elapsed / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        
+        String timerText;
+        if (hours > 0) {
+            timerText = String.format(java.util.Locale.US, "%02d:%02d:%02d", 
+                hours, minutes % 60, seconds % 60);
+        } else {
+            timerText = String.format(java.util.Locale.US, "%02d:%02d", 
+                minutes, seconds % 60);
+        }
+        
+        recordingTimerText.setText(timerText);
+    }
+    
+    /**
      * Toggle annotation enable/disable state (controls if drawing is active)
      */
     private void toggleAnnotation() {
@@ -3531,6 +3644,9 @@ public class AnnotationService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "AnnotationService destroyed");
+        
+        // Stop recording timer
+        stopRecordingTimer();
         
         // Send broadcast to turn off menu switch in app
         Intent intent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");

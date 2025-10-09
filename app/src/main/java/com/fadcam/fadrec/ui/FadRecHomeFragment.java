@@ -1071,10 +1071,14 @@ public class FadRecHomeFragment extends HomeFragment {
         Log.d(TAG, "UI updated for state: " + screenRecordingState);
         
         // Start/stop timer updates based on state
-        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
-            screenRecordingState == ScreenRecordingState.PAUSED) {
-            // Recording active - start live timer updates
+        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
+            // Recording in progress - start live timer updates
             startTimerUpdates();
+        } else if (screenRecordingState == ScreenRecordingState.PAUSED) {
+            // Recording paused - stop timer but keep last value visible
+            stopTimerUpdates();
+            // Update one last time to show paused value
+            updateStorageInfo();
         } else {
             // Not recording - stop timer updates
             stopTimerUpdates();
@@ -1270,8 +1274,7 @@ public class FadRecHomeFragment extends HomeFragment {
         timerUpdateRunnable = new Runnable() {
             @Override
             public void run() {
-                if (isAdded() && (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
-                                  screenRecordingState == ScreenRecordingState.PAUSED)) {
+                if (isAdded() && screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
                     // Update the timer display
                     updateStorageInfo();
                     
