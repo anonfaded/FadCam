@@ -421,6 +421,19 @@ public class ScreenRecordingService extends Service {
                     Toast.makeText(this, 
                         "Screen recording saved: " + outputFile.getName(), 
                         Toast.LENGTH_LONG).show();
+                    
+                    // Broadcast recording complete for RecordsFragment to refresh
+                    try {
+                        Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                        recordingCompleteIntent.putExtra("videoPath", outputFile.getAbsolutePath());
+                        sendBroadcast(recordingCompleteIntent);
+                        Log.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for list refresh");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error broadcasting recording complete", e);
+                    }
+                    
+                    // Show completion notification with action to view recording
+                    showCompletionNotification(outputFile);
                 }
                 
                 // Stop service
@@ -614,6 +627,49 @@ public class ScreenRecordingService extends Service {
         }
         
         return builder.build();
+    }
+    
+    /**
+     * Shows completion notification after recording is saved.
+     * Notification opens the app to Records tab when clicked.
+     */
+    private void showCompletionNotification(File videoFile) {
+        NotificationManager notificationManager = 
+            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        
+        if (notificationManager == null) {
+            Log.e(TAG, "NotificationManager is null, cannot show completion notification");
+            return;
+        }
+        
+        // Create intent to open MainActivity with Records tab selected
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        openAppIntent.setAction(Intent.ACTION_MAIN);
+        openAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        openAppIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        // Add extra to navigate to Records tab (index 1: Home=0, Records=1, Remote=2, etc.)
+        openAppIntent.putExtra("navigate_to_tab", 1);
+        
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+            this, 
+            0, 
+            openAppIntent, 
+            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        
+        // Build completion notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Screen Recording Saved")
+            .setContentText("Tap to view your recording")
+            .setSmallIcon(R.drawable.screen_recorder)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)  // Dismiss when clicked
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS);
+        
+        // Show notification with unique ID (not the ongoing recording notification ID)
+        notificationManager.notify(NOTIFICATION_ID + 1, builder.build());
+        Log.d(TAG, "Completion notification shown");
     }
 
     /**
