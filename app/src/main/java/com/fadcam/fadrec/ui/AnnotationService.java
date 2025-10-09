@@ -2094,11 +2094,6 @@ public class AnnotationService extends Service {
             return;
         }
         
-        // Close layer panel if open
-        if (layerPanelOverlay != null && layerPanelOverlay.isShowing()) {
-            layerPanelOverlay.hide();
-        }
-        
         AnnotationState state = annotationView.getState();
         if (state != null) {
             pageTabBarOverlay = new PageTabBarOverlay(this, state);
@@ -2207,11 +2202,6 @@ public class AnnotationService extends Service {
         if (layerPanelOverlay != null && layerPanelOverlay.isShowing()) {
             layerPanelOverlay.hide();
             return;
-        }
-        
-        // Close page tab bar if open
-        if (pageTabBarOverlay != null && pageTabBarOverlay.isShowing()) {
-            pageTabBarOverlay.hide();
         }
         
         AnnotationState state = annotationView.getState();

@@ -60,6 +60,20 @@
             android:layout_marginEnd="4dp" />
 
         <TextView
+            android:id="@+id/btnMinimizeTabBar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="minimize"
+            android:textSize="20sp"
+            android:textColor="@color/annotation_heading_accent"
+            android:fontFamily="@font/materialicons"
+            android:background="@drawable/floating_button_item_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
             android:id="@+id/btnCloseTabBar"
             android:layout_width="36dp"
             android:layout_height="36dp"

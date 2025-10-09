@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/minimizedButtonContainer"
+    android:layout_width="24dp"
+    android:layout_height="100dp"
+    android:background="@drawable/compact_arrow_bg_right"
+    android:clickable="true"
+    android:elevation="6dp"
+    android:focusable="true">
+
+    <LinearLayout
+        android:id="@+id/minimizedButtonContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="2dp">
+
+        <TextView
+            android:id="@+id/minimizedButtonLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="Label"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:clickable="false"
+            android:focusable="false" />
+
+        <TextView
+            android:id="@+id/minimizedButtonArrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="chevron_left"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:clickable="false"
+            android:focusable="false" />
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -58,6 +58,7 @@ public class LayerPanelOverlay {
     private int activeReorderIndex = -1;
     private float layerDragDownRawX;
     private float layerDragDownRawY;
+    private MinimizableOverlayButton minimizeButton;
 
     private final View.OnTouchListener overlayDragTouchListener = (view, event) -> {
         if (layoutParams == null || overlayView == null || windowManager == null) {
@@ -120,6 +121,18 @@ public class LayerPanelOverlay {
         this.page = page;
         this.windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         this.dragTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        this.minimizeButton = new MinimizableOverlayButton(context, "Layers");
+        this.minimizeButton.setOnButtonActionListener(new MinimizableOverlayButton.OnButtonActionListener() {
+            @Override
+            public void onExpandRequested() {
+                expand();
+            }
+
+            @Override
+            public void onMinimizeRequested() {
+                // Not used - we minimize via button click
+            }
+        });
     }
     
     public void setOnLayerActionListener(OnLayerActionListener listener) {
@@ -138,6 +151,7 @@ public class LayerPanelOverlay {
         layerContainer = overlayView.findViewById(R.id.layerContainer);
         TextView btnAddLayer = overlayView.findViewById(R.id.btnAddLayer);
         TextView btnClose = overlayView.findViewById(R.id.btnCloseLayerPanel);
+        TextView btnMinimize = overlayView.findViewById(R.id.btnMinimizeLayerPanel);
         View headerDragHandle = overlayView.findViewById(R.id.layerPanelDragHandle);
         if (headerDragHandle != null) {
             headerDragHandle.setOnTouchListener(overlayDragTouchListener);
@@ -158,6 +172,11 @@ public class LayerPanelOverlay {
                 updateLayers();
             }
         });
+        
+        // Minimize button
+        if (btnMinimize != null) {
+            btnMinimize.setOnClickListener(v -> minimize());
+        }
         
         // Close button
         btnClose.setOnClickListener(v -> hide());
@@ -206,10 +225,93 @@ public class LayerPanelOverlay {
             layerDragDownRawX = 0f;
             layerDragDownRawY = 0f;
         }
+        
+        // Also hide minimize button
+        if (minimizeButton != null) {
+            minimizeButton.hide();
+        }
     }
     
     public boolean isShowing() {
         return overlayView != null;
+    }
+    
+    public void minimize() {
+        if (overlayView == null || layoutParams == null || windowManager == null) {
+            return;
+        }
+        
+        if (minimizeButton != null && minimizeButton.isShowing()) {
+            return; // Already minimized
+        }
+        
+        // Hide the full overlay
+        overlayView.setVisibility(View.GONE);
+        
+        // Show the minimize button at current overlay position
+        if (minimizeButton != null) {
+            minimizeButton.show(layoutParams.x, layoutParams.y);
+            minimizeButton.setExpanded(false);
+        }
+    }
+    
+    public void expand() {
+        if (overlayView == null || layoutParams == null || windowManager == null) {
+            return;
+        }
+        
+        if (minimizeButton != null && !minimizeButton.isShowing()) {
+            return; // Already expanded
+        }
+        
+        // Get button position and edge before hiding
+        int buttonX = 0, buttonY = 0;
+        int buttonWidth = 0, buttonHeight = 0;
+        MinimizableOverlayButton.EdgePosition edge = MinimizableOverlayButton.EdgePosition.RIGHT;
+        
+        if (minimizeButton != null && minimizeButton.isShowing()) {
+            buttonX = minimizeButton.getCurrentX();
+            buttonY = minimizeButton.getCurrentY();
+            buttonWidth = minimizeButton.getButtonWidth();
+            buttonHeight = minimizeButton.getButtonHeight();
+            edge = minimizeButton.getCurrentEdge();
+            minimizeButton.hide();
+        }
+        
+        // Show the full overlay
+        overlayView.setVisibility(View.VISIBLE);
+        
+        // Position overlay next to where button was, with gap
+        int margin = (int) dpToPx(8f);
+        switch (edge) {
+            case LEFT:
+                layoutParams.x = buttonX + buttonWidth + margin;
+                layoutParams.y = buttonY;
+                break;
+            case RIGHT:
+                layoutParams.x = buttonX - getOverlayWidth() - margin;
+                layoutParams.y = buttonY;
+                break;
+            case TOP:
+                layoutParams.x = buttonX;
+                layoutParams.y = buttonY + buttonHeight + margin;
+                break;
+            case BOTTOM:
+                layoutParams.x = buttonX;
+                layoutParams.y = buttonY - getOverlayHeight() - margin;
+                break;
+            default:
+                layoutParams.x = buttonX;
+                layoutParams.y = buttonY;
+                break;
+        }
+        
+        clampPosition(layoutParams, getOverlayWidth(), getOverlayHeight());
+        windowManager.updateViewLayout(overlayView, layoutParams);
+    }
+    
+    public boolean isMinimized() {
+        return minimizeButton != null && minimizeButton.isShowing();
     }
     
     private void updateLayers() {
