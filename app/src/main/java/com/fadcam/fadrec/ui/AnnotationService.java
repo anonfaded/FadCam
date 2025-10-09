@@ -61,6 +61,8 @@ import com.fadcam.fadrec.ui.annotation.TextEditorDialog;
 import com.fadcam.fadrec.ui.annotation.ShapePickerDialog;
 import com.fadcam.fadrec.ui.annotation.objects.TextObject;
 import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
+import com.fadcam.fadrec.ui.overlay.BaseEditorOverlay;
+import com.fadcam.fadrec.ui.overlay.InlineTextEditor;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -90,6 +92,7 @@ public class AnnotationService extends Service {
     // Professional overlays
     private PageTabBarOverlay pageTabBarOverlay;
     private LayerPanelOverlay layerPanelOverlay;
+    private InlineTextEditor inlineTextEditor;
     
     // Unified toolbar controls
     private View btnExpandCollapseContainer;
@@ -673,6 +676,7 @@ public class AnnotationService extends Service {
             new Handler(Looper.getMainLooper()).post(() -> {
                 setupAnnotationCanvas();
                 setupToolbar();
+                setupInlineTextEditor(); // Initialize inline text editing overlay
                 
                 // Load last saved project automatically
                 loadLastProject();
@@ -1406,6 +1410,172 @@ public class AnnotationService extends Service {
     btnExpandCollapseContainer.setOnTouchListener(dragListener);
         // Set touch listener on menu overlay (draggable when visible)
         toolbarView.setOnTouchListener(dragListener);
+    }
+    
+    /**
+     * Setup inline text editor overlay
+     */
+    private void setupInlineTextEditor() {
+        inlineTextEditor = new InlineTextEditor(this, windowManager);
+        
+        // Set callback for editor events
+        inlineTextEditor.setEditorCallback(new InlineTextEditor.TextEditorCallback() {
+            @Override
+            public void onTextPreviewUpdate(InlineTextEditor.TextPreviewData previewData) {
+                // Update text preview in real-time (for editing existing text)
+                // This will be called as user types
+                // For now, we can skip real-time preview and just update on confirm
+            }
+            
+            @Override
+            public void onTextDeleteRequested(TextObject textObject) {
+                // Handle soft delete
+                handleTextDelete(textObject);
+                
+                // Show toolbar again
+                showToolbar();
+            }
+            
+            @Override
+            public void onDeleteRequested() {
+                // Default implementation - should not be called since we use onTextDeleteRequested
+                Log.w(TAG, "onDeleteRequested called but should use onTextDeleteRequested");
+            }
+            
+            @Override
+            public void onContentConfirmed(Object data) {
+                if (data instanceof InlineTextEditor.TextData) {
+                    InlineTextEditor.TextData textData = (InlineTextEditor.TextData) data;
+                    handleTextConfirmed(textData);
+                }
+                
+                // Show toolbar again
+                showToolbar();
+            }
+            
+            @Override
+            public void onContentCancelled() {
+                // Show toolbar again
+                showToolbar();
+            }
+            
+            @Override
+            public void onEditorClosed() {
+                // Show toolbar again
+                showToolbar();
+            }
+        });
+        
+        Log.d(TAG, "Inline text editor initialized");
+    }
+    
+    /**
+     * Handle text confirmed from inline editor
+     */
+    private void handleTextConfirmed(InlineTextEditor.TextData textData) {
+        if (textData.editingTextObject != null) {
+            // Editing existing text
+            TextObject textObject = textData.editingTextObject;
+            textObject.setText(textData.text);
+            textObject.setTextColor(textData.color);
+            textObject.setFontSize(textData.fontSize);
+            
+            // Convert Gravity constant to Paint.Align
+            android.graphics.Paint.Align paintAlign;
+            if (textData.alignment == Gravity.CENTER) {
+                paintAlign = android.graphics.Paint.Align.CENTER;
+            } else if (textData.alignment == Gravity.RIGHT) {
+                paintAlign = android.graphics.Paint.Align.RIGHT;
+            } else {
+                paintAlign = android.graphics.Paint.Align.LEFT;
+            }
+            textObject.setAlignment(paintAlign);
+            
+            // Update style
+            textObject.setBold(textData.isBold);
+            textObject.setItalic(textData.isItalic);
+            
+            annotationView.invalidate();
+            saveCurrentState();
+            Log.d(TAG, "Text object updated");
+        } else {
+            // Creating new text - add to active layer
+            AnnotationPage currentPage = annotationView.getState().getActivePage();
+            if (currentPage != null) {
+                AnnotationLayer activeLayer = currentPage.getActiveLayer();
+                if (activeLayer != null && !activeLayer.isLocked()) {
+                    // Create new text object at center of screen
+                    float centerX = annotationView.getWidth() / 2f;
+                    float centerY = annotationView.getHeight() / 2f;
+                    
+                    TextObject newText = new TextObject(textData.text, centerX, centerY);
+                    newText.setTextColor(textData.color);
+                    newText.setFontSize(textData.fontSize);
+                    
+                    // Convert Gravity constant to Paint.Align
+                    android.graphics.Paint.Align paintAlign;
+                    if (textData.alignment == Gravity.CENTER) {
+                        paintAlign = android.graphics.Paint.Align.CENTER;
+                    } else if (textData.alignment == Gravity.RIGHT) {
+                        paintAlign = android.graphics.Paint.Align.RIGHT;
+                    } else {
+                        paintAlign = android.graphics.Paint.Align.LEFT;
+                    }
+                    newText.setAlignment(paintAlign);
+                    
+                    // Apply style
+                    newText.setBold(textData.isBold);
+                    newText.setItalic(textData.isItalic);
+                    
+                    // Add to active layer
+                    activeLayer.addObject(newText);
+                    annotationView.invalidate();
+                    saveCurrentState();
+                    Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "New text object created");
+                } else {
+                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Handle text delete (soft delete)
+     */
+    private void handleTextDelete(TextObject textObject) {
+        if (textObject != null) {
+            // Soft delete - mark as deleted but don't remove from layer
+            textObject.setDeleted(true);
+            annotationView.invalidate();
+            saveCurrentState();
+            Toast.makeText(this, "🗑️ Text deleted!", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Text object soft deleted");
+        }
+    }
+    
+    /**
+     * Hide toolbar (when showing inline editor)
+     */
+    private void hideToolbar() {
+        if (arrowOverlay != null && arrowOverlay.getParent() != null) {
+            arrowOverlay.setVisibility(View.GONE);
+        }
+        if (toolbarView != null && toolbarView.getParent() != null) {
+            toolbarView.setVisibility(View.GONE);
+        }
+    }
+    
+    /**
+     * Show toolbar (when hiding inline editor)
+     */
+    private void showToolbar() {
+        if (arrowOverlay != null && arrowOverlay.getParent() != null) {
+            arrowOverlay.setVisibility(View.VISIBLE);
+        }
+        if (toolbarView != null && toolbarView.getParent() != null) {
+            toolbarView.setVisibility(View.VISIBLE);
+        }
     }
     
     /**
@@ -3694,6 +3864,9 @@ public class AnnotationService extends Service {
         if (layerPanelOverlay != null) {
             layerPanelOverlay.hide();
         }
+        if (inlineTextEditor != null) {
+            inlineTextEditor.destroy();
+        }
         
         // Clean up views
         if (annotationView != null) {
@@ -3718,61 +3891,23 @@ public class AnnotationService extends Service {
     }
     
     /**
-     * Show text editor dialog to add or edit text objects
+     * Show inline text editor to add or edit text objects
      */
     private void showTextEditorDialog(TextObject existingTextObject) {
-        TextEditorDialog dialog = new TextEditorDialog(this);
+        // Hide toolbar while editing
+        hideToolbar();
         
-        // Pre-fill dialog if editing existing text
-        if (existingTextObject != null) {
-            dialog.setText(existingTextObject.getText());
-            dialog.setFontSize(existingTextObject.getFontSize());
-            dialog.setColor(existingTextObject.getTextColor());
-            dialog.setBold(existingTextObject.isBold());
-            dialog.setItalic(existingTextObject.isItalic());
-            dialog.setAlignment(existingTextObject.getAlignment());
+        // Collapse recording controls if expanded
+        if (isRecordingControlsExpanded) {
+            toggleRecordingControlsExpansion();
         }
         
-        dialog.setOnTextConfirmedListener((text, fontSize, color, bold, italic, alignment) -> {
-            if (existingTextObject != null) {
-                // Update existing text object
-                existingTextObject.setText(text);
-                existingTextObject.setFontSize(fontSize);
-                existingTextObject.setTextColor(color);
-                existingTextObject.setBold(bold);
-                existingTextObject.setItalic(italic);
-                existingTextObject.setAlignment(alignment);
-                annotationView.invalidate();
-                saveCurrentState();
-                Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
-            } else {
-                // Create new text object at center of screen
-                float centerX = annotationView.getWidth() / 2f;
-                float centerY = annotationView.getHeight() / 2f;
-                
-                TextObject textObject = new TextObject(text, centerX, centerY);
-                textObject.setFontSize(fontSize);
-                textObject.setTextColor(color);
-                textObject.setBold(bold);
-                textObject.setItalic(italic);
-                textObject.setAlignment(alignment);
-                
-                // Add to active layer
-                AnnotationPage currentPage = annotationView.getState().getActivePage();
-                if (currentPage != null) {
-                    AnnotationLayer activeLayer = currentPage.getActiveLayer();
-                    if (activeLayer != null && !activeLayer.isLocked()) {
-                        activeLayer.addObject(textObject);
-                        annotationView.invalidate();
-                        saveCurrentState();
-                        Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        });
-        dialog.show();
+        // Show inline text editor
+        if (existingTextObject != null) {
+            inlineTextEditor.showForEditingText(existingTextObject);
+        } else {
+            inlineTextEditor.showForNewText();
+        }
     }
     
     /**

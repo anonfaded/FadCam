@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Dimmed background overlay (darker for better focus) -->
+    <View
+        android:id="@+id/dimOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Main content container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top action bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="24dp"
+            android:paddingBottom="16dp">
+
+            <!-- Back/Clear button -->
+            <ImageView
+                android:id="@+id/btnClear"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_close"
+                android:contentDescription="Back"
+                android:background="@drawable/bg_option_button"
+                android:tint="#FFFFFF" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Delete button (visible only when editing existing text) -->
+            <ImageView
+                android:id="@+id/btnDelete"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_delete"
+                android:contentDescription="Delete text"
+                android:background="@drawable/bg_option_button"
+                android:tint="#FF3B30"
+                android:visibility="gone"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Done button -->
+            <ImageView
+                android:id="@+id/btnDone"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_check"
+                android:contentDescription="Done"
+                android:background="@drawable/bg_option_button"
+                android:tint="#34C759" />
+
+        </LinearLayout>
+
+        <!-- Center text input area with more space -->
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Center text input area with more space -->
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Text input with Telegram-style dashed border -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:minHeight="120dp"
+            android:maxHeight="300dp"
+            android:background="@drawable/bg_text_input_dashed"
+            android:padding="16dp">
+
+            <EditText
+                android:id="@+id/editText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:fontFamily="@font/ubuntu_regular"
+                android:hint="Add text"
+                android:textColorHint="#80FFFFFF"
+                android:gravity="center"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="10"
+                android:scrollbars="vertical"
+                android:importantForAutofill="no"
+                tools:ignore="HardcodedText" />
+
+        </FrameLayout>
+
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Bottom controls section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingBottom="16dp">
+
+            <!-- Color picker - smaller circular buttons -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:id="@+id/colorPickerLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:padding="4dp">
+
+                    <!-- White -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Black -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Red -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Orange -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Yellow -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Green -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Cyan -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Blue -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Purple -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- Pink -->
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_color_button"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Font size slider -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="A"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/ubuntu_regular" />
+
+                <SeekBar
+                    android:id="@+id/fontSizeSlider"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:min="16"
+                    android:max="48"
+                    android:progress="28" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="A"
+                    android:textColor="#FFFFFF"
+                    android:textSize="28sp"
+                    android:fontFamily="@font/ubuntu_regular" />
+
+            </LinearLayout>
+
+            <!-- Text alignment and style options in one row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_option_group"
+                android:padding="4dp"
+                android:gravity="center">
+
+                <!-- Alignment buttons -->
+                <ImageView
+                    android:id="@+id/btnAlignLeft"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_align_left"
+                    android:contentDescription="Align left"
+                    android:background="@drawable/bg_option_button"
+                    android:tint="#FFFFFF" />
+
+                <ImageView
+                    android:id="@+id/btnAlignCenter"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_align_center"
+                    android:contentDescription="Align center"
+                    android:background="@drawable/bg_option_button"
+                    android:tint="#FFFFFF"
+                    android:layout_marginStart="4dp" />
+
+                <ImageView
+                    android:id="@+id/btnAlignRight"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_align_right"
+                    android:contentDescription="Align right"
+                    android:background="@drawable/bg_option_button"
+                    android:tint="#FFFFFF"
+                    android:layout_marginStart="4dp" />
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="32dp"
+                    android:background="#40FFFFFF"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Style buttons -->
+                <ImageView
+                    android:id="@+id/btnBold"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_format_bold"
+                    android:contentDescription="Bold"
+                    android:background="@drawable/bg_option_button"
+                    android:tint="#FFFFFF" />
+
+                <ImageView
+                    android:id="@+id/btnItalic"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_format_italic"
+                    android:contentDescription="Italic"
+                    android:background="@drawable/bg_option_button"
+                    android:tint="#FFFFFF"
+                    android:layout_marginStart="4dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>
