@@ -18,6 +18,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -57,6 +58,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.ProjectFileManager;
+import com.fadcam.fadrec.ui.overlay.BaseTransparentEditorActivity;
 import com.fadcam.fadrec.ui.annotation.AnnotationPage;
 import com.fadcam.fadrec.ui.annotation.AnnotationLayer;
 import com.fadcam.fadrec.ui.annotation.TextEditorDialog;
@@ -65,6 +67,7 @@ import com.fadcam.fadrec.ui.annotation.objects.TextObject;
 import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
 import com.fadcam.fadrec.ui.overlay.BaseEditorOverlay;
 import com.fadcam.fadrec.ui.overlay.InlineTextEditor;
+import com.fadcam.fadrec.ui.overlay.TextEditorActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -190,6 +193,8 @@ public class AnnotationService extends Service {
     private BroadcastReceiver projectSelectionReceiver;
     private BroadcastReceiver layerRenameReceiver;
     private BroadcastReceiver pageRenameReceiver;
+    private BroadcastReceiver textEditorResultReceiver; // Handle TextEditorActivity results
+    private BroadcastReceiver editorLifecycleReceiver; // Handle editor start/finish to disable/enable canvas
 
     // Toolbar dragging
     private int toolbarInitialX, toolbarInitialY;
@@ -688,7 +693,7 @@ public class AnnotationService extends Service {
             new Handler(Looper.getMainLooper()).post(() -> {
                 setupAnnotationCanvas();
                 setupToolbar();
-                setupInlineTextEditor(); // Initialize inline text editing overlay
+                // Removed: setupInlineTextEditor(); - Now using TextEditorActivity
 
                 // Load last saved project automatically
                 loadLastProject();
@@ -700,6 +705,7 @@ public class AnnotationService extends Service {
                 registerColorPickerReceiver();
                 registerProjectNamingReceiver();
                 registerProjectSelectionReceiver();
+                registerTextEditorResultReceiver(); // Handle results from TextEditorActivity
 
                 // Broadcast that service is ready (dismiss loading dialog)
                 Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
@@ -3330,6 +3336,155 @@ public class AnnotationService extends Service {
         IntentFilter pageRenameFilter = new IntentFilter("com.fadcam.fadrec.RENAME_PAGE");
         registerReceiver(pageRenameReceiver, pageRenameFilter);
     }
+    
+    /**
+     * Register broadcast receiver for TextEditorActivity results
+     */
+    private void registerTextEditorResultReceiver() {
+        textEditorResultReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int resultCode = intent.getIntExtra(BaseTransparentEditorActivity.EXTRA_RESULT_CODE, BaseTransparentEditorActivity.RESULT_CANCELLED);
+                
+                if (resultCode == BaseTransparentEditorActivity.RESULT_SAVE) {
+                    // Get text data from intent
+                    Bundle resultData = intent.getBundleExtra(BaseTransparentEditorActivity.EXTRA_RESULT_DATA);
+                    if (resultData != null) {
+                        handleTextEditorSave(resultData);
+                    }
+                } else if (resultCode == BaseTransparentEditorActivity.RESULT_DELETE) {
+                    // Handle deletion
+                    if (currentEditingTextObject != null) {
+                        handleTextDelete(currentEditingTextObject);
+                    }
+                }
+                
+                // Clear editing reference and show toolbar
+                currentEditingTextObject = null;
+                showToolbar();
+            }
+        };
+        
+        IntentFilter filter = new IntentFilter(BaseTransparentEditorActivity.ACTION_EDITOR_RESULT);
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(textEditorResultReceiver, filter);
+        Log.d(TAG, "Text editor result receiver registered");
+        
+        // Register editor lifecycle receivers (start/finish)
+        editorLifecycleReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (BaseTransparentEditorActivity.ACTION_EDITOR_STARTED.equals(action)) {
+                    // Disable annotation canvas when editor starts
+                    if (annotationView != null) {
+                        annotationView.setEnabled(false);
+                        
+                        // CRITICAL: Make overlay not receive touches so editor can get them
+                        annotationCanvasParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                        windowManager.updateViewLayout(annotationView, annotationCanvasParams);
+                        
+                        Log.d(TAG, "Editor started - annotation canvas disabled and NOT_TOUCHABLE flag set");
+                    }
+                } else if (BaseTransparentEditorActivity.ACTION_EDITOR_FINISHED.equals(action)) {
+                    // Re-enable annotation canvas when editor finishes
+                    if (annotationView != null) {
+                        annotationView.setEnabled(true);
+                        
+                        // Remove NOT_TOUCHABLE flag so overlay can receive touches again
+                        annotationCanvasParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                        windowManager.updateViewLayout(annotationView, annotationCanvasParams);
+                        
+                        Log.d(TAG, "Editor finished - annotation canvas enabled and NOT_TOUCHABLE flag removed");
+                    }
+                }
+            }
+        };
+        
+        IntentFilter lifecycleFilter = new IntentFilter();
+        lifecycleFilter.addAction(BaseTransparentEditorActivity.ACTION_EDITOR_STARTED);
+        lifecycleFilter.addAction(BaseTransparentEditorActivity.ACTION_EDITOR_FINISHED);
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(editorLifecycleReceiver, lifecycleFilter);
+        Log.d(TAG, "Editor lifecycle receiver registered");
+    }
+    
+    /**
+     * Handle save result from TextEditorActivity
+     */
+    private void handleTextEditorSave(Bundle resultData) {
+        String text = resultData.getString(TextEditorActivity.RESULT_TEXT);
+        if (text == null || text.trim().isEmpty()) {
+            return;
+        }
+        
+        int color = resultData.getInt(TextEditorActivity.RESULT_COLOR, android.graphics.Color.WHITE);
+        float fontSize = resultData.getFloat(TextEditorActivity.RESULT_SIZE, 24f);
+        int alignment = resultData.getInt(TextEditorActivity.RESULT_ALIGNMENT, Gravity.CENTER);
+        boolean isBold = resultData.getBoolean(TextEditorActivity.RESULT_BOLD, false);
+        boolean isItalic = resultData.getBoolean(TextEditorActivity.RESULT_ITALIC, false);
+        boolean hasBackground = resultData.getBoolean(TextEditorActivity.RESULT_HAS_BACKGROUND, false);
+        int backgroundColor = resultData.getInt(TextEditorActivity.RESULT_BACKGROUND_COLOR, 0);
+        
+        // Wrap text to fit screen
+        String wrappedText = wrapTextToScreen(text, fontSize, isBold, isItalic);
+        
+        if (currentEditingTextObject != null) {
+            // Editing existing text
+            TextObject textObject = currentEditingTextObject;
+            textObject.setText(wrappedText);
+            textObject.setTextColor(color);
+            textObject.setFontSize(fontSize);
+            textObject.setAlignment(convertGravityToPaintAlign(alignment));
+            textObject.setBold(isBold);
+            textObject.setItalic(isItalic);
+            textObject.setHasBackground(hasBackground);
+            textObject.setBackgroundColor(backgroundColor);
+            
+            annotationView.invalidate();
+            saveCurrentState();
+            Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
+        } else {
+            // Creating new text
+            float centerX = annotationView.getWidth() / 2f;
+            float centerY = annotationView.getHeight() / 2f;
+            
+            TextObject textObject = new TextObject(wrappedText, centerX, centerY);
+            textObject.setTextColor(color);
+            textObject.setFontSize(fontSize);
+            textObject.setAlignment(convertGravityToPaintAlign(alignment));
+            textObject.setBold(isBold);
+            textObject.setItalic(isItalic);
+            textObject.setHasBackground(hasBackground);
+            textObject.setBackgroundColor(backgroundColor);
+            
+            // Add to active layer
+            AnnotationPage currentPage = annotationView.getState().getActivePage();
+            if (currentPage != null) {
+                AnnotationLayer activeLayer = currentPage.getActiveLayer();
+                if (activeLayer != null && !activeLayer.isLocked()) {
+                    activeLayer.addObject(textObject);
+                    annotationView.invalidate();
+                    saveCurrentState();
+                    Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Convert Gravity constant to Paint.Align
+     */
+    private Paint.Align convertGravityToPaintAlign(int gravity) {
+        if (gravity == Gravity.CENTER) {
+            return Paint.Align.CENTER;
+        } else if (gravity == Gravity.LEFT) {
+            return Paint.Align.LEFT;
+        } else if (gravity == Gravity.RIGHT) {
+            return Paint.Align.RIGHT;
+        }
+        return Paint.Align.CENTER;
+    }
 
     @FunctionalInterface
     private interface RenameConfirmListener {
@@ -4107,6 +4262,12 @@ public class AnnotationService extends Service {
         if (pageRenameReceiver != null) {
             unregisterReceiver(pageRenameReceiver);
         }
+        if (textEditorResultReceiver != null) {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).unregisterReceiver(textEditorResultReceiver);
+        }
+        if (editorLifecycleReceiver != null) {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).unregisterReceiver(editorLifecycleReceiver);
+        }
 
         // Stop auto-save timer
         if (autoSaveHandler != null && autoSaveRunnable != null) {
@@ -4162,15 +4323,42 @@ public class AnnotationService extends Service {
             toggleRecordingControlsExpansion();
         }
 
-        // Set current editing text object for live preview
+        // Set current editing text object for preview
         currentEditingTextObject = existingTextObject;
 
-        // Show inline text editor
+        // Launch TextEditorActivity
+        Intent intent = new Intent(this, TextEditorActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        
         if (existingTextObject != null) {
-            inlineTextEditor.showForEditingText(existingTextObject);
+            // Editing existing text
+            intent.putExtra(TextEditorActivity.EXTRA_EDIT_MODE, true);
+            intent.putExtra(TextEditorActivity.EXTRA_INITIAL_TEXT, existingTextObject.getText());
+            intent.putExtra(TextEditorActivity.EXTRA_TEXT_COLOR, existingTextObject.getTextColor());
+            intent.putExtra(TextEditorActivity.EXTRA_TEXT_SIZE, existingTextObject.getFontSize());
+            intent.putExtra(TextEditorActivity.EXTRA_TEXT_ALIGNMENT, convertPaintAlignToGravity(existingTextObject.getAlignment()));
+            intent.putExtra(TextEditorActivity.EXTRA_TEXT_BOLD, existingTextObject.isBold());
+            intent.putExtra(TextEditorActivity.EXTRA_TEXT_ITALIC, existingTextObject.isItalic());
         } else {
-            inlineTextEditor.showForNewText();
+            // Creating new text
+            intent.putExtra(TextEditorActivity.EXTRA_EDIT_MODE, false);
         }
+        
+        startActivity(intent);
+    }
+    
+    /**
+     * Convert Paint.Align to Gravity constant
+     */
+    private int convertPaintAlignToGravity(Paint.Align align) {
+        if (align == Paint.Align.CENTER) {
+            return Gravity.CENTER;
+        } else if (align == Paint.Align.LEFT) {
+            return Gravity.LEFT;
+        } else if (align == Paint.Align.RIGHT) {
+            return Gravity.RIGHT;
+        }
+        return Gravity.CENTER;
     }
 
     /**

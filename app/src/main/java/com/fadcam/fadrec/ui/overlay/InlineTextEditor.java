@@ -100,7 +100,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
     private boolean isBold = false;
     private boolean isItalic = false;
     private boolean hasBackground = false;
-    
+
     // Keyboard and layout state
     private boolean isKeyboardVisible = false;
     private int screenHeight = 0;
@@ -251,15 +251,15 @@ public class InlineTextEditor extends BaseEditorOverlay {
     private void setupKeyboardListener() {
         // Get screen height once
         screenHeight = overlayView.getRootView().getHeight();
-        
+
         overlayView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
             // Calculate current visible height
             int visibleHeight = overlayView.getHeight();
             int heightDiff = screenHeight - visibleHeight;
-            
+
             // Keyboard is visible if height difference is significant (> 15% of screen)
             boolean keyboardNowVisible = heightDiff > (screenHeight * 0.15f);
-            
+
             if (keyboardNowVisible != isKeyboardVisible) {
                 isKeyboardVisible = keyboardNowVisible;
                 keyboardHeight = isKeyboardVisible ? heightDiff : 0;
@@ -267,7 +267,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
             }
         });
     }
-    
+
     /**
      * Adjust layout based on keyboard visibility with dynamic calculations
      */
@@ -275,26 +275,24 @@ public class InlineTextEditor extends BaseEditorOverlay {
         if (isKeyboardVisible) {
             // Keyboard is visible - move editing area to top with minimal spacing
             editingArea.setGravity(android.view.Gravity.TOP);
-            
+
             // Calculate dynamic padding (2% of screen height)
             int topPadding = (int) (screenHeight * 0.02f);
-            
+
             editingArea.setPadding(
-                editingArea.getPaddingLeft(),
-                topPadding,
-                editingArea.getPaddingRight(),
-                editingArea.getPaddingBottom()
-            );
-            
+                    editingArea.getPaddingLeft(),
+                    topPadding,
+                    editingArea.getPaddingRight(),
+                    editingArea.getPaddingBottom());
+
         } else {
             // Keyboard is hidden - center editing area
             editingArea.setGravity(android.view.Gravity.CENTER);
             editingArea.setPadding(
-                editingArea.getPaddingLeft(),
-                0,
-                editingArea.getPaddingRight(),
-                editingArea.getPaddingBottom()
-            );
+                    editingArea.getPaddingLeft(),
+                    0,
+                    editingArea.getPaddingRight(),
+                    editingArea.getPaddingBottom());
         }
     }
 
@@ -323,9 +321,9 @@ public class InlineTextEditor extends BaseEditorOverlay {
             // Just unfocus the EditText and hide keyboard
             if (editText.hasFocus()) {
                 editText.clearFocus();
-                android.view.inputmethod.InputMethodManager imm = 
-                    (android.view.inputmethod.InputMethodManager) context.getSystemService(
-                        android.content.Context.INPUT_METHOD_SERVICE);
+                android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) context
+                        .getSystemService(
+                                android.content.Context.INPUT_METHOD_SERVICE);
                 if (imm != null) {
                     imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
                 }
