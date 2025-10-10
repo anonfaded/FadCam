@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact layer row with drag handle and rename -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/settings_home_row_bg"
+    android:padding="8dp"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginTop="2dp"
+    android:layout_marginBottom="2dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical">
+
+    <!-- Drag Handle Icon -->
+    <TextView
+        android:id="@+id/btnDragHandle"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:gravity="center"
+        android:text="drag_indicator"
+        android:textSize="18sp"
+        android:textColor="#808080"
+        android:fontFamily="@font/materialicons"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Layer Content (Vertical) -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Layer Name Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/txtLayerName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Layer 1"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:singleLine="true"
+                android:ellipsize="end" />
+
+            <!-- Edit/Rename Icon -->
+            <TextView
+                android:id="@+id/btnRenameLayer"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:gravity="center"
+                android:text="edit"
+                android:textSize="14sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginStart="4dp" />
+
+            <!-- Delete Icon -->
+            <TextView
+                android:id="@+id/btnDeleteLayer"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:gravity="center"
+                android:text="delete"
+                android:textSize="14sp"
+                android:textColor="#FF5252"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- Layer Info -->
+        <TextView
+            android:id="@+id/txtLayerInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 objects"
+            android:textSize="10sp"
+            android:textColor="#9E9E9E"
+            android:layout_marginTop="2dp" />
+
+        <!-- Controls Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
+
+            <!-- Visibility -->
+            <TextView
+                android:id="@+id/btnVisibility"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="visibility"
+                android:textSize="18sp"
+                android:textColor="@color/annotation_heading_accent"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/button_active_state_bg" />
+
+            <!-- Lock -->
+            <TextView
+                android:id="@+id/btnLock"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="lock_open"
+                android:textSize="18sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/button_active_state_bg"
+                android:layout_marginStart="6dp" />
+
+            <!-- Pin -->
+            <TextView
+                android:id="@+id/btnPin"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="push_pin"
+                android:textSize="18sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/button_active_state_bg"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+
+        <!-- Opacity Row (Below buttons) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Opacity"
+                android:textSize="10sp"
+                android:textColor="#9E9E9E"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/txtOpacity"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:text="100%"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:gravity="end"
+                android:textAlignment="viewEnd" />
+        </LinearLayout>
+
+        <!-- Opacity Slider -->
+        <SeekBar
+            android:id="@+id/seekOpacity"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:max="100"
+            android:progress="100"
+            android:layout_marginTop="4dp"
+            android:minHeight="20dp"
+            android:maxHeight="20dp" />
+    </LinearLayout>
+
+</LinearLayout>

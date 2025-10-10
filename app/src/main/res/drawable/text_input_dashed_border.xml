@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dashed border background for inline text editing (Telegram style) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dashed stroke -->
+    <item>
+        <shape android:shape="rectangle">
+            <stroke
+                android:width="2dp"
+                android:color="@android:color/white"
+                android:dashWidth="8dp"
+                android:dashGap="4dp" />
+            <corners android:radius="8dp" />
+            <padding
+                android:bottom="12dp"
+                android:left="12dp"
+                android:right="12dp"
+                android:top="12dp" />
+        </shape>
+    </item>
+</layer-list>

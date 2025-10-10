@@ -29,6 +29,8 @@ public abstract class Constants {
     // *** End New Zoom Ratio Prefs ***
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
+    public static final String PREF_RECORDING_START_TIME = "recording_start_time"; // Stores recording start timestamp for orientation changes
+    public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for FadRec
     public static final String PREF_BOTH_TORCHES_ENABLED =
         "pref_both_torches_enabled";
     public static final String PREF_SELECTED_TORCH_SOURCE =
@@ -118,6 +120,70 @@ public abstract class Constants {
     public static final String EXTRA_AE_LOCK = "com.fadcam.EXTRA_AE_LOCK"; // boolean
     public static final String EXTRA_AF_MODE = "com.fadcam.EXTRA_AF_MODE"; // int (CaptureRequest.CONTROL_AF_MODE
     // values)
+
+    // -------------- FadRec (Screen Recording) Constants Start --------------
+    // Directory and file naming
+    public static final String RECORDING_DIRECTORY_FADREC = "FadRec";
+    public static final String RECORDING_FILE_PREFIX_FADREC = "FadRec_";
+
+    // Screen recording intent actions
+    public static final String INTENT_ACTION_START_SCREEN_RECORDING =
+        "com.fadcam.ACTION_START_SCREEN_RECORDING";
+    public static final String INTENT_ACTION_STOP_SCREEN_RECORDING =
+        "com.fadcam.ACTION_STOP_SCREEN_RECORDING";
+    public static final String INTENT_ACTION_PAUSE_SCREEN_RECORDING =
+        "com.fadcam.ACTION_PAUSE_SCREEN_RECORDING";
+    public static final String INTENT_ACTION_RESUME_SCREEN_RECORDING =
+        "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
+    
+    // Floating controls actions (from overlay)
+    public static final String ACTION_START_SCREEN_RECORDING_FROM_OVERLAY =
+        "com.fadcam.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY";
+    public static final String ACTION_PAUSE_SCREEN_RECORDING =
+        "com.fadcam.ACTION_PAUSE_SCREEN_RECORDING";
+    public static final String ACTION_RESUME_SCREEN_RECORDING =
+        "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
+    public static final String ACTION_STOP_SCREEN_RECORDING =
+        "com.fadcam.ACTION_STOP_SCREEN_RECORDING";
+    
+    // Transparent permission activity actions
+    public static final String ACTION_SCREEN_RECORDING_PERMISSION_GRANTED =
+        "com.fadcam.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED";
+    public static final String ACTION_SCREEN_RECORDING_PERMISSION_DENIED =
+        "com.fadcam.ACTION_SCREEN_RECORDING_PERMISSION_DENIED";
+
+    // Screen recording broadcast actions
+    public static final String BROADCAST_ON_SCREEN_RECORDING_STARTED =
+        "com.fadcam.ON_SCREEN_RECORDING_STARTED";
+    public static final String BROADCAST_ON_SCREEN_RECORDING_STOPPED =
+        "com.fadcam.ON_SCREEN_RECORDING_STOPPED";
+    public static final String BROADCAST_ON_SCREEN_RECORDING_PAUSED =
+        "com.fadcam.ON_SCREEN_RECORDING_PAUSED";
+    public static final String BROADCAST_ON_SCREEN_RECORDING_RESUMED =
+        "com.fadcam.ON_SCREEN_RECORDING_RESUMED";
+    public static final String BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK =
+        "com.fadcam.ON_SCREEN_RECORDING_STATE_CALLBACK";
+
+    // Screen recording preferences
+    public static final String PREF_SCREEN_RECORDING_AUDIO_SOURCE =
+        "pref_screen_recording_audio_source"; // mic/none
+    public static final String PREF_SCREEN_RECORDING_WATERMARK_ENABLED =
+        "pref_screen_recording_watermark_enabled"; // boolean
+    public static final String PREF_IS_SCREEN_RECORDING_IN_PROGRESS =
+        "pref_is_screen_recording_in_progress"; // boolean
+    public static final String PREF_SCREEN_RECORDING_STATE =
+        "pref_screen_recording_state"; // NONE/IN_PROGRESS/PAUSED
+
+    // Default screen recording quality settings
+    public static final int DEFAULT_SCREEN_RECORDING_WIDTH = 1920; // FHD
+    public static final int DEFAULT_SCREEN_RECORDING_HEIGHT = 1080; // FHD
+    public static final int DEFAULT_SCREEN_RECORDING_FPS = 30;
+    public static final int DEFAULT_SCREEN_RECORDING_BITRATE = 8_000_000; // 8 Mbps
+
+    // Screen recording audio source options
+    public static final String AUDIO_SOURCE_NONE = "none";
+    public static final String AUDIO_SOURCE_MIC = "microphone";
+    // -------------- FadRec (Screen Recording) Constants End --------------
     public static final String EXTRA_FOCUS_X = "com.fadcam.EXTRA_FOCUS_X"; // float (normalized 0..1)
     public static final String EXTRA_FOCUS_Y = "com.fadcam.EXTRA_FOCUS_Y"; // float (normalized 0..1)
     public static final String EXTRA_ZOOM_RATIO = "com.fadcam.EXTRA_ZOOM_RATIO"; // float

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Telegram-style dashed border for text input -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dashed border -->
+    <item>
+        <shape android:shape="rectangle">
+            <stroke
+                android:width="2dp"
+                android:color="#80FFFFFF"
+                android:dashWidth="8dp"
+                android:dashGap="4dp" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</layer-list>

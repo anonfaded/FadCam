@@ -473,19 +473,55 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleWidgetIntent() {
         Intent intent = getIntent();
-        if (intent != null && intent.getBooleanExtra("open_shortcuts_widgets", false)) {
-            // Navigate to Settings tab and then open Shortcuts & Widgets screen
-            if (viewPager != null) {
-                viewPager.setCurrentItem(4, false); // Settings tab
+        if (intent != null) {
+            // Handle navigation to specific tab (e.g., from notification)
+            int navigateToTab = intent.getIntExtra("navigate_to_tab", -1);
+            if (navigateToTab >= 0 && viewPager != null) {
+                // Use a delay to ensure fragments are properly initialized
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (viewPager != null) {
+                        viewPager.setCurrentItem(navigateToTab, true); // Use smooth scroll
+                        
+                        // Trigger fragment visibility callback for Records tab
+                        if (navigateToTab == 1) {
+                            // Add extra delay to ensure fragment is fully visible before refreshing
+                            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                try {
+                                    Fragment recordsFragment = getSupportFragmentManager()
+                                        .findFragmentByTag("f" + navigateToTab);
+                                    if (recordsFragment instanceof RecordsFragment) {
+                                        RecordsFragment records = (RecordsFragment) recordsFragment;
+                                        records.onFragmentBecameVisible();
+                                        // Trigger refresh to show the newly recorded video
+                                        records.refreshList();
+                                        android.util.Log.d("MainActivity", "Records tab refreshed after notification");
+                                    }
+                                } catch (Exception e) {
+                                    android.util.Log.e("MainActivity", "Error triggering Records refresh", e);
+                                }
+                            }, 300); // Additional delay for refresh
+                        }
+                    }
+                }, 200);
+                // Clear the extra so it doesn't trigger again on configuration change
+                intent.removeExtra("navigate_to_tab");
             }
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                try {
-                    com.fadcam.ui.ShortcutsSettingsFragment frag = new com.fadcam.ui.ShortcutsSettingsFragment();
-                    OverlayNavUtil.show(this, frag, "ShortcutsSettingsFragment");
-                } catch (Exception e) {
-                    android.util.Log.e("WidgetIntent", "Failed to open shortcuts fragment", e);
+            
+            // Handle widget intent to open shortcuts
+            if (intent.getBooleanExtra("open_shortcuts_widgets", false)) {
+                // Navigate to Settings tab and then open Shortcuts & Widgets screen
+                if (viewPager != null) {
+                    viewPager.setCurrentItem(4, false); // Settings tab
                 }
-            }, 100);
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        com.fadcam.ui.ShortcutsSettingsFragment frag = new com.fadcam.ui.ShortcutsSettingsFragment();
+                        OverlayNavUtil.show(this, frag, "ShortcutsSettingsFragment");
+                    } catch (Exception e) {
+                        android.util.Log.e("WidgetIntent", "Failed to open shortcuts fragment", e);
+                    }
+                }, 100);
+            }
         }
     }
 

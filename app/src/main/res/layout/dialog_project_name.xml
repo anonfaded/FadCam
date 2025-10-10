@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Project Name Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/project_name_label"
+            android:textSize="12sp"
+            android:textColor="#E0E0E0"
+            android:textStyle="bold"
+            android:fontFamily="@font/ubuntu_regular"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etProjectName"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="@string/project_name_hint"
+            android:textSize="15sp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#808080"
+            android:fontFamily="@font/ubuntu_regular"
+            android:background="@drawable/edit_text_bg_dark"
+            android:paddingHorizontal="12dp"
+            android:maxLines="1"
+            android:imeOptions="actionNext"
+            android:inputType="text"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Sanitized Name Preview -->
+        <TextView
+            android:id="@+id/tvSanitizedPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Will be saved as: untitled"
+            android:textSize="11sp"
+            android:textColor="#4CAF50"
+            android:fontFamily="@font/ubuntu_regular"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Project Description Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/project_desc_label"
+            android:textSize="12sp"
+            android:textColor="#E0E0E0"
+            android:textStyle="bold"
+            android:fontFamily="@font/ubuntu_regular"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etProjectDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="80dp"
+            android:maxHeight="120dp"
+            android:hint="@string/project_desc_hint"
+            android:textSize="13sp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#808080"
+            android:fontFamily="@font/ubuntu_regular"
+            android:background="@drawable/edit_text_bg_dark"
+            android:padding="12dp"
+            android:gravity="top|start"
+            android:maxLines="4"
+            android:scrollbars="vertical"
+            android:imeOptions="actionDone"
+            android:inputType="textMultiLine|textCapSentences" />
+
+    </LinearLayout>
+</ScrollView>

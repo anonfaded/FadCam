@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/floating_menu_bg" android:padding="12dp" android:minWidth="200dp">
+
+    <!-- Header with close button -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="8dp">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/floating_menu_title" android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+
+        <TextView android:id="@+id/btnCloseMenu" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="close" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="?android:attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Control Buttons Row -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="4dp" android:paddingBottom="8dp">
+
+        <!-- Start/Stop Button -->
+        <LinearLayout android:id="@+id/btnStartStopRec" android:layout_width="80dp" android:layout_height="80dp" android:orientation="vertical" android:gravity="center" android:padding="8dp" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp">
+
+            <TextView android:id="@+id/iconStartStop" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="fiber_manual_record" android:textSize="28sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" />
+
+            <TextView android:id="@+id/labelStartStop" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/floating_menu_start_short" android:textSize="11sp" android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Pause/Resume Button -->
+        <LinearLayout android:id="@+id/btnPauseResumeRec" android:layout_width="80dp" android:layout_height="80dp" android:orientation="vertical" android:gravity="center" android:padding="8dp" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="8dp">
+
+            <TextView android:id="@+id/iconPauseResume" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="pause" android:textSize="28sp" android:textColor="#FF9800" android:fontFamily="@font/materialicons" />
+
+            <TextView android:id="@+id/labelPauseResume" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/floating_menu_pause" android:textSize="11sp" android:textColor="#FFFFFF" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#30FFFFFF" />
+
+    <!-- Annotations Button -->
+    <LinearLayout
+        android:id="@+id/btnAnnotations"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="12dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="12dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:text="edit"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/materialicons"
+            android:layout_marginEnd="12dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/floating_menu_annotations"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/annotationSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:theme="@style/SwitchTheme" />
+    </LinearLayout>
+
+</LinearLayout>

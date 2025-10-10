@@ -43,10 +43,10 @@
         <item name="android:windowBackground">@color/black</item>
         <!-- New SplashScreen API attrs -->
         <item name="windowSplashScreenBackground">@color/black</item>
-    <item name="windowSplashScreenAnimatedIcon">@drawable/fadseclab_flag</item>
-    <item name="android:statusBarColor">@color/black</item>
-    <item name="android:navigationBarColor">@color/black</item>
-    <item name="android:windowLightStatusBar">false</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/fadseclab_flag</item>
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
         <item name="postSplashScreenTheme">@style/Base.Theme.FadCam</item>
     </style>
     <!-- Splash theme end (Fix End Theme.FadCam.Splash) -->
@@ -57,20 +57,20 @@
         <item name="colorSurface">@color/amoled_card</item>
         <item name="backgroundColor">@color/amoled_black_pure</item>
         <item name="android:windowBackground">@color/amoled_black_pure</item>
-        
+
         <!-- Force black backgrounds on all possible attributes -->
         <item name="android:windowBackgroundFallback">@color/amoled_black_pure</item>
         <item name="android:colorBackgroundFloating">@color/amoled_black_pure</item>
-        
+
         <!-- Navigation and status bar -->
         <item name="android:navigationBarColor">@color/amoled_black_pure</item>
         <item name="android:statusBarColor">@color/amoled_black_pure</item>
-        
+
         <!-- Text and icon colors -->
         <item name="android:textColor">@color/amoled_text_primary</item>
         <item name="android:textColorPrimary">@color/amoled_text_primary</item>
         <item name="android:textColorSecondary">@color/amoled_text_secondary</item>
-        
+
         <!-- Material Design component colors (fix for dialog/button/toggle contrast) -->
         <item name="colorPrimary">#232323</item>
         <item name="colorOnPrimary">#E0E0E0</item>
@@ -167,25 +167,25 @@
         <item name="android:popupMenuStyle">@style/Widget.FadCam.Red.PopupMenu</item>
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-    <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
-    <!-- Switch styling -->
-    <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-    <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
-    <!-- Picker gradient colors - subtle red gradient for red theme -->
-    <item name="pickerGradientStart">@color/black</item>
-    <item name="pickerGradientMid">#FF2B0000</item>
-    <item name="pickerGradientEnd">#FF4A0000</item>
-    <!-- Picker text colors -->
-    <item name="pickerTextPrimary">@android:color/white</item>
-    <item name="pickerTextSecondary">#999999</item>
-    <!-- Section header color - use red theme primary -->
-    <item name="sectionHeaderColor">@color/red_theme_primary</item>
-    <!-- Red theme picker colors with proper contrast -->
-    <item name="pickerButtonBackground">@color/red_theme_primary</item>
-    <item name="pickerButtonText">@android:color/white</item>
-    <item name="pickerIconTint">@color/red_theme_primary</item>
-    <item name="pickerSliderActive">@color/red_theme_primary</item>
-    <item name="pickerSliderInactive">@color/red_theme_slider_inactive</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+        <!-- Switch styling -->
+        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <!-- Picker gradient colors - subtle red gradient for red theme -->
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF2B0000</item>
+        <item name="pickerGradientEnd">#FF4A0000</item>
+        <!-- Picker text colors -->
+        <item name="pickerTextPrimary">@android:color/white</item>
+        <item name="pickerTextSecondary">#999999</item>
+        <!-- Section header color - use red theme primary -->
+        <item name="sectionHeaderColor">@color/red_theme_primary</item>
+        <!-- Red theme picker colors with proper contrast -->
+        <item name="pickerButtonBackground">@color/red_theme_primary</item>
+        <item name="pickerButtonText">@android:color/white</item>
+        <item name="pickerIconTint">@color/red_theme_primary</item>
+        <item name="pickerSliderActive">@color/red_theme_primary</item>
+        <item name="pickerSliderInactive">@color/red_theme_slider_inactive</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -264,7 +264,7 @@
         <item name="pickerIconTint">@color/gold_theme_primary</item>
         <item name="pickerSliderActive">@color/gold_theme_primary</item>
         <item name="pickerSliderInactive">@color/gold_theme_slider_inactive</item>
-        </style>
+    </style>
 
     <style name="ThemeOverlay.FadCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/gold_theme_surface_dark</item>
@@ -284,7 +284,7 @@
         <item name="android:popupBackground">@color/gold_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
-    
+
     <style name="Theme.FadCam.SilentForest" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/silentforest_theme_primary_variant</item>
         <item name="colorBottomNav">@color/silentforest_theme_primary_variant</item>
@@ -428,7 +428,7 @@
         <item name="android:popupBackground">@color/shadowalloy_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
-    
+
     <style name="Theme.FadCam.PookiePink" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/pookiepink_theme_primary_variant</item>
         <item name="colorBottomNav">@color/pookiepink_theme_primary_variant</item>
@@ -577,12 +577,12 @@
         <item name="thumbTint">@color/black</item>
         <item name="trackTint">@color/snowveil_theme_accent</item>
     </style>
-    
+
     <style name="Widget.FadCam.SnowVeil.Checkbox" parent="Widget.MaterialComponents.CompoundButton.CheckBox">
         <item name="android:buttonTint">@color/black</item>
         <item name="android:textColor">@color/black</item>
     </style>
-    
+
     <style name="Widget.FadCam.SnowVeil.RadioButton" parent="Widget.MaterialComponents.CompoundButton.RadioButton">
         <item name="android:buttonTint">@color/black</item>
         <item name="android:textColor">@color/black</item>
@@ -606,7 +606,7 @@
         <item name="android:popupBackground">@color/snowveil_theme_surface_light</item>
         <item name="android:textColor">@color/black</item>
     </style>
-    
+
     <style name="Widget.FadCam.Toolbar.Light" parent="Widget.MaterialComponents.Toolbar">
         <item name="android:background">?attr/colorTopBar</item>
         <item name="titleTextColor">@android:color/black</item>
@@ -639,7 +639,7 @@
         <item name="colorPrimary">?attr/colorButton</item>
         <item name="colorOnPrimary">@android:color/white</item>
     </style>
-    
+
     <!-- Add Snow Veil specific bottom sheet style -->
     <style name="ThemeOverlay.FadCam.SnowVeil.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="android:background">@color/snowveil_theme_surface_light</item>
@@ -650,7 +650,7 @@
         <item name="colorOnPrimary">@android:color/black</item>
         <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
     </style>
-    
+
     <style name="ThemeOverlay.FadCam.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">?attr/colorDialog</item>
         <item name="android:textColor">@android:color/white</item>
@@ -707,4 +707,36 @@
         <item name="sectionHeaderColor">#cfbafd</item>
     </style>
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
+
+    <!-- Transparent dialog theme for overlay activities -->
+    <style name="Theme.FadCam.TransparentDialog" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <!-- Dark theme colors -->
+        <item name="colorPrimary">@color/picker_button_background</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">#2C2C2C</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">#B0B0B0</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.Body</item>
+    </style>
+    
+    <!-- Material Alert Dialog Title Style -->
+    <style name="MaterialAlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/white</item>
+        <item name="fontFamily">@font/ubuntu_regular</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- Material Alert Dialog Body Style -->
+    <style name="MaterialAlertDialog.Body" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+        <item name="android:textColor">#B0B0B0</item>
+        <item name="fontFamily">@font/ubuntu_regular</item>
+    </style>
 </resources>

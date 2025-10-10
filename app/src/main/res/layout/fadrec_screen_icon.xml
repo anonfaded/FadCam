@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Custom preview layout for FadRec screen recording mode -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center">
+
+    <!-- Background bubble shape (darker, behind the icon) -->
+    <ImageView android:id="@+id/ivBubbleBackground" android:layout_width="240dp" android:layout_height="240dp" android:layout_gravity="center" android:src="@drawable/bubble_shape" android:tint="?attr/colorHeading" android:alpha="0.15" android:scaleType="fitCenter" android:contentDescription="Bubble background shape" />
+
+    <!-- Screen recording icon (overlayed on top) -->
+    <ImageView android:id="@+id/ivScreenRecordingIcon" android:layout_width="140dp" android:layout_height="140dp" android:layout_gravity="center" android:src="@drawable/screen_recorder" android:tint="?attr/colorHeading" android:alpha="0.3" android:scaleType="fitCenter" android:contentDescription="Screen recording icon" />
+
+</FrameLayout>

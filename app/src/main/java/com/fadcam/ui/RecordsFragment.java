@@ -1435,14 +1435,31 @@ public class RecordsFragment extends BaseFragment implements
             Log.e(TAG, "LOG_GET_INTERNAL: Could not get ExternalFilesDir for internal storage.");
             return items;
         }
+        
+        // Scan FadCam directory
         File fadCamDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
-        Log.d(TAG, "LOG_GET_INTERNAL: Checking directory: " + fadCamDir.getAbsolutePath());
+        items.addAll(scanDirectory(fadCamDir, "FadCam"));
+        
+        // Scan FadRec directory
+        File fadRecDir = new File(recordsDir, Constants.RECORDING_DIRECTORY_FADREC);
+        items.addAll(scanDirectory(fadRecDir, "FadRec"));
+        
+        Log.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " total internal records. END.");
+        return items;
+    }
+    
+    /**
+     * Helper method to scan a directory for video files.
+     */
+    private List<VideoItem> scanDirectory(File directory, String dirName) {
+        List<VideoItem> items = new ArrayList<>();
+        Log.d(TAG, "LOG_GET_INTERNAL: Checking directory: " + directory.getAbsolutePath());
 
-        if (fadCamDir.exists() && fadCamDir.isDirectory()) {
+        if (directory.exists() && directory.isDirectory()) {
             Log.d(TAG, "LOG_GET_INTERNAL: Directory exists. Listing files.");
-            File[] files = fadCamDir.listFiles();
+            File[] files = directory.listFiles();
             if (files != null) {
-                Log.d(TAG, "LOG_GET_INTERNAL: Found " + files.length + " files/dirs in internal storage.");
+                Log.d(TAG, "LOG_GET_INTERNAL: Found " + files.length + " files/dirs in " + dirName + " storage.");
                 for (File file : files) {
                     if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)
                             && !file.getName().startsWith("temp_")) {
@@ -1467,13 +1484,11 @@ public class RecordsFragment extends BaseFragment implements
                     }
                 }
             } else {
-                Log.w(TAG, "LOG_GET_INTERNAL: Internal FadCam directory listFiles returned null.");
+                Log.w(TAG, "LOG_GET_INTERNAL: Directory listFiles returned null for " + dirName);
             }
         } else {
-            Log.i(TAG,
-                    "LOG_GET_INTERNAL: Internal FadCam directory does not exist yet: " + fadCamDir.getAbsolutePath());
+            Log.i(TAG, "LOG_GET_INTERNAL: Directory does not exist yet: " + directory.getAbsolutePath());
         }
-        Log.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " internal records. END.");
         return items;
     }
 

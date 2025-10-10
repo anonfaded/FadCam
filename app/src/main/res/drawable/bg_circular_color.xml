@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- White border (will be visible for dark colors) -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+            <size android:width="32dp" android:height="32dp" />
+        </shape>
+    </item>
+    
+    <!-- Color circle (inset to show border) -->
+    <item android:inset="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+            <size android:width="28dp" android:height="28dp" />
+        </shape>
+    </item>
+    
+</layer-list>

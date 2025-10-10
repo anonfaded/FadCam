@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Individual page tab in the tab bar -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/settings_home_row_bg"
+    android:padding="8dp"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginTop="2dp"
+    android:layout_marginBottom="2dp"
+    android:minWidth="140dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical">
+
+    <!-- Drag Handle Icon -->
+    <TextView
+        android:id="@+id/btnDragHandle"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:gravity="center"
+        android:text="drag_indicator"
+        android:textSize="18sp"
+        android:textColor="#808080"
+        android:fontFamily="@font/materialicons"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Page Content (Vertical) -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Page name row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/txtPageName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Page 1"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:singleLine="true"
+                android:ellipsize="end" />
+
+            <!-- Edit/Rename Icon -->
+            <TextView
+                android:id="@+id/btnRenamePage"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:gravity="center"
+                android:text="edit"
+                android:textSize="14sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginStart="4dp" />
+
+            <!-- Delete Icon -->
+            <TextView
+                android:id="@+id/btnDeletePage"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:gravity="center"
+                android:text="delete"
+                android:textSize="14sp"
+                android:textColor="#FF5252"
+                android:fontFamily="@font/materialicons"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- Page info -->
+        <TextView
+            android:id="@+id/txtPageInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2 layers"
+            android:textSize="10sp"
+            android:textColor="#9E9E9E"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+</LinearLayout>
