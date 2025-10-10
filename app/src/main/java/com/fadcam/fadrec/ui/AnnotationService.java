@@ -224,6 +224,9 @@ public class AnnotationService extends Service {
                 case "ACTION_OPEN_PROJECTS":
                     showProjectManagementDialog();
                     break;
+                case "ACTION_TERMINATE_SERVICE":
+                    terminateService();
+                    break;
             }
         }
         return START_STICKY;
@@ -236,6 +239,17 @@ public class AnnotationService extends Service {
         } else {
             showOverlay();
         }
+    }
+    
+    private void terminateService() {
+        Log.d(TAG, "Terminate service requested from notification");
+        
+        // Broadcast to FadRecHomeFragment to turn off toggle
+        Intent broadcast = new Intent("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
+        sendBroadcast(broadcast);
+        
+        // Stop service
+        stopSelf();
     }
 
     private void setToolbarVisibilityForOpacityGesture(boolean hideRequest) {
@@ -2991,6 +3005,13 @@ public class AnnotationService extends Service {
                 this, 1, toggleIntent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
 
+        // Terminate service action
+        Intent terminateIntent = new Intent(this, AnnotationService.class);
+        terminateIntent.setAction("ACTION_TERMINATE_SERVICE");
+        android.app.PendingIntent terminatePendingIntent = android.app.PendingIntent.getService(
+                this, 2, terminateIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
         String annotationStatus = annotationEnabled ? " | ✏️ Enabled" : " | 📱 Disabled";
         String toggleLabel = overlayVisible
                 ? getString(R.string.annotation_notification_hide_menu)
@@ -3005,6 +3026,7 @@ public class AnnotationService extends Service {
                 .setOngoing(true)
                 .setContentIntent(openAppPendingIntent)
                 .addAction(R.drawable.ic_draw_edit, toggleLabel, togglePendingIntent)
+                .addAction(R.drawable.ic_close, "Terminate", terminatePendingIntent)
                 .build();
     }
 
@@ -3379,22 +3401,36 @@ public class AnnotationService extends Service {
                     if (annotationView != null) {
                         annotationView.setEnabled(false);
                         
+                        // Hide the currently editing text object completely
+                        if (currentEditingTextObject != null) {
+                            currentEditingTextObject.setVisible(false);
+                        }
+                        
+                        // Hide selection UI (handles/bounds) during edit
+                        annotationView.setSelectedObject(null);
+                        annotationView.invalidate();
+                        
                         // CRITICAL: Make overlay not receive touches so editor can get them
                         annotationCanvasParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                         windowManager.updateViewLayout(annotationView, annotationCanvasParams);
                         
-                        Log.d(TAG, "Editor started - annotation canvas disabled and NOT_TOUCHABLE flag set");
+                        Log.d(TAG, "Editor started - annotation canvas disabled, text hidden, selection cleared, and NOT_TOUCHABLE flag set");
                     }
                 } else if (BaseTransparentEditorActivity.ACTION_EDITOR_FINISHED.equals(action)) {
                     // Re-enable annotation canvas when editor finishes
                     if (annotationView != null) {
                         annotationView.setEnabled(true);
                         
+                        // Re-show the text object
+                        if (currentEditingTextObject != null) {
+                            currentEditingTextObject.setVisible(true);
+                        }
+                        
                         // Remove NOT_TOUCHABLE flag so overlay can receive touches again
                         annotationCanvasParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                         windowManager.updateViewLayout(annotationView, annotationCanvasParams);
                         
-                        Log.d(TAG, "Editor finished - annotation canvas enabled and NOT_TOUCHABLE flag removed");
+                        Log.d(TAG, "Editor finished - annotation canvas enabled, text visible, and NOT_TOUCHABLE flag removed");
                     }
                 }
             }
@@ -3439,7 +3475,9 @@ public class AnnotationService extends Service {
             textObject.setHasBackground(hasBackground);
             textObject.setBackgroundColor(backgroundColor);
             
-            annotationView.invalidate();
+            // CRITICAL: Redraw bitmap with updated text
+            annotationView.notifyStateChangedWithRedraw();
+            
             saveCurrentState();
             Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
         } else {
@@ -3462,9 +3500,21 @@ public class AnnotationService extends Service {
                 AnnotationLayer activeLayer = currentPage.getActiveLayer();
                 if (activeLayer != null && !activeLayer.isLocked()) {
                     activeLayer.addObject(textObject);
-                    annotationView.invalidate();
+                    
+                    // Select the newly created text object
+                    annotationView.setSelectedObject(textObject);
+                    
+                    // CRITICAL: Redraw bitmap with new text object
+                    annotationView.notifyStateChangedWithRedraw();
+                    
                     saveCurrentState();
                     Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
+                    
+                    // Auto-collapse menu to show text in selection mode
+                    if (isExpanded) {
+                        performMenuToggle();
+                        Log.d(TAG, "Auto-collapsed menu after text creation");
+                    }
                 } else {
                     Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
                 }
@@ -4325,6 +4375,14 @@ public class AnnotationService extends Service {
 
         // Set current editing text object for preview
         currentEditingTextObject = existingTextObject;
+        
+        // Hide the text object BEFORE launching editor to avoid race condition
+        if (currentEditingTextObject != null) {
+            currentEditingTextObject.setVisible(false);
+            annotationView.setSelectedObject(null);
+            annotationView.invalidate();
+            Log.d(TAG, "Text object hidden before launching editor");
+        }
 
         // Launch TextEditorActivity
         Intent intent = new Intent(this, TextEditorActivity.class);

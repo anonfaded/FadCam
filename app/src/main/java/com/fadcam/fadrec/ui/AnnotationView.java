@@ -65,6 +65,7 @@ public class AnnotationView extends View {
     private float lastDrawY;
     private Paint selectionPaint;
     private boolean wasInSelectionMode = false; // Track if we auto-entered selection
+    private boolean isDraggingObject = false; // Track if currently dragging object
     
     // Handle dragging
     private enum HandleType { NONE, LEFT, RIGHT, TOP, EDIT }
@@ -237,6 +238,21 @@ public class AnnotationView extends View {
     
     public boolean isCanvasHidden() {
         return canvasHidden;
+    }
+    
+    /**
+     * Get the currently selected object
+     */
+    public AnnotationObject getSelectedObject() {
+        return selectedObject;
+    }
+    
+    /**
+     * Set the selected object (for programmatic selection)
+     */
+    public void setSelectedObject(AnnotationObject object) {
+        this.selectedObject = object;
+        invalidate();
     }
     
     public void notifyStateChanged() {
@@ -643,8 +659,13 @@ public class AnnotationView extends View {
             }
             
         } else {
-            // NO ACTIVE DRAWING/ERASING: Just draw the cached bitmap
+            // NO ACTIVE DRAWING/ERASING: Draw the cached bitmap
             if (drawingLayerBitmap != null) {
+                // CRITICAL: During drag, regenerate bitmap for real-time movement
+                if (isDraggingObject) {
+                    redrawAllToLayer();
+                }
+                
                 canvas.drawBitmap(drawingLayerBitmap, 0, 0, null);
             }
         }
@@ -1095,6 +1116,8 @@ public class AnnotationView extends View {
                         switch (activeHandle) {
                             case TOP:
                                 // Rotate around center with snap-to-angle
+                                isDraggingObject = true; // Enable real-time redraw
+                                
                                 float centerX = bounds.centerX();
                                 float centerY = bounds.centerY();
                                 
@@ -1144,6 +1167,8 @@ public class AnnotationView extends View {
                                 
                             case LEFT:
                                 // Scale by dragging left handle (inverse direction)
+                                isDraggingObject = true; // Enable real-time redraw
+                                
                                 float scaleLeftDelta = -dx / 100f; // Negative for left handle
                                 float newScaleLeft = selectedObject.getScale() + scaleLeftDelta;
                                 if (newScaleLeft > 0.1f && newScaleLeft < 5.0f) {
@@ -1153,6 +1178,8 @@ public class AnnotationView extends View {
                                 
                             case RIGHT:
                                 // Scale by dragging right handle (normal direction)
+                                isDraggingObject = true; // Enable real-time redraw
+                                
                                 float scaleRightDelta = dx / 100f;
                                 float newScaleRight = selectedObject.getScale() + scaleRightDelta;
                                 if (newScaleRight > 0.1f && newScaleRight < 5.0f) {
@@ -1162,6 +1189,8 @@ public class AnnotationView extends View {
                                 
                             case NONE:
                                 // Normal drag - move object with position snapping
+                                isDraggingObject = true; // Set flag for real-time redraw
+                                
                                 android.util.Log.d("AnnotationView", String.format("Dragging object: type=%s, before=(%.1f, %.1f), dx=%.1f, dy=%.1f", 
                                     selectedObject.getClass().getSimpleName(), selectedObject.getX(), selectedObject.getY(), dx, dy));
                                 
@@ -1238,6 +1267,7 @@ public class AnnotationView extends View {
                     
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    isDraggingObject = false; // Clear drag flag
                     activeHandle = HandleType.NONE;
                     snappedAngle = -1f; // Clear rotation snap
                     lastSnappedAngle = -1f; // Clear rotation snap memory

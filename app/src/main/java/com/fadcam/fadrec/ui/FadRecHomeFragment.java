@@ -177,8 +177,9 @@ public class FadRecHomeFragment extends HomeFragment {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(action)) {
-                    // Service stopped, turn off the menu switch
+                if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(action) || 
+                    "com.fadcam.fadrec.ACTION_SERVICE_TERMINATED".equals(action)) {
+                    // Service stopped or terminated, turn off the menu switch
                     if (getView() != null) {
                         View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
                         if (cardFloatingControls != null) {
@@ -191,7 +192,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     }
                     // Update SharedPreferences
                     sharedPreferencesManager.setFloatingControlsEnabled(false);
-                    Log.d(TAG, "Annotation service stopped - menu switch turned off");
+                    Log.d(TAG, "Annotation service stopped/terminated - menu switch turned off");
                 } else if ("com.fadcam.fadrec.ANNOTATION_SERVICE_READY".equals(action)) {
                     // Service initialization complete, dismiss loading dialog
                     if (loadingDialog != null && loadingDialog.isShowing()) {
@@ -204,6 +205,7 @@ public class FadRecHomeFragment extends HomeFragment {
         
         IntentFilter filter = new IntentFilter();
         filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+        filter.addAction("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
         filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
         requireContext().registerReceiver(annotationServiceReceiver, filter);
     }

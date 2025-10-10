@@ -58,7 +58,7 @@ public class TextObject extends AnnotationObject {
         paint.setTextSize(fontSize);
         paint.setColor(textColor);
         paint.setAlpha((int) (opacity * 255));
-        paint.setTextAlign(alignment);
+        // Don't set paint.setTextAlign() - we calculate position manually below
 
         // Set typeface based on style
         int style = Typeface.NORMAL;
