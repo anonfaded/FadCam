@@ -1,354 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent">
 
-    <!-- Dimmed background overlay (darker for better focus) -->
-    <View
-        android:id="@+id/dimOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CC000000"
-        android:clickable="true"
-        android:focusable="true" />
+    <!-- Darker dimmed background overlay (90% opacity for better focus) -->
+    <View android:id="@+id/dimOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#E6000000" android:clickable="true" android:focusable="true" />
 
-    <!-- Main content container -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp">
+    <!-- ScrollView to handle keyboard appearance -->
+    <ScrollView android:id="@+id/scrollContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:scrollbars="none">
 
-        <!-- Top action bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingTop="24dp"
-            android:paddingBottom="16dp">
+        <!-- Main content container -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:gravity="center">
 
-            <!-- Back/Clear button -->
-            <ImageView
-                android:id="@+id/btnClear"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:padding="10dp"
-                android:src="@drawable/ic_close"
-                android:contentDescription="Back"
-                android:background="@drawable/bg_option_button"
-                android:tint="#FFFFFF" />
+            <!-- Top action bar -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="24dp">
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+                <!-- Style buttons (left side) -->
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/bg_dark_rounded" android:padding="6dp">
 
-            <!-- Delete button (visible only when editing existing text) -->
-            <ImageView
-                android:id="@+id/btnDelete"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:padding="10dp"
-                android:src="@drawable/ic_delete"
-                android:contentDescription="Delete text"
-                android:background="@drawable/bg_option_button"
-                android:tint="#FF3B30"
-                android:visibility="gone"
-                android:layout_marginEnd="8dp" />
+                    <!-- Alignment buttons (compact) -->
+                    <ImageView android:id="@+id/btnAlignLeft" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_left" android:contentDescription="Align left" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-            <!-- Done button -->
-            <ImageView
-                android:id="@+id/btnDone"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:padding="10dp"
-                android:src="@drawable/ic_check"
-                android:contentDescription="Done"
-                android:background="@drawable/bg_option_button"
-                android:tint="#34C759" />
+                    <ImageView android:id="@+id/btnAlignCenter" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_center" android:contentDescription="Align center" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-        </LinearLayout>
+                    <ImageView android:id="@+id/btnAlignRight" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_right" android:contentDescription="Align right" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-        <!-- Center text input area with more space -->
-        <Space
-            android:layout_width="1dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+                    <!-- Divider -->
+                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
 
-        <!-- Center text input area with more space -->
-        <Space
-            android:layout_width="1dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+                    <!-- Style buttons -->
+                    <ImageView android:id="@+id/btnBold" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_bold" android:contentDescription="Bold" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-        <!-- Text input with Telegram-style dashed border -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:minHeight="120dp"
-            android:maxHeight="300dp"
-            android:background="@drawable/bg_text_input_dashed"
-            android:padding="16dp">
+                    <ImageView android:id="@+id/btnItalic" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_italic" android:contentDescription="Italic" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-            <EditText
-                android:id="@+id/editText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:textColor="#FFFFFF"
-                android:textSize="28sp"
-                android:fontFamily="@font/ubuntu_regular"
-                android:hint="Add text"
-                android:textColorHint="#80FFFFFF"
-                android:gravity="center"
-                android:inputType="textMultiLine|textCapSentences"
-                android:maxLines="10"
-                android:scrollbars="vertical"
-                android:importantForAutofill="no"
-                tools:ignore="HardcodedText" />
+                    <!-- Divider -->
+                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
 
-        </FrameLayout>
+                    <!-- Background color button -->
+                    <ImageView android:id="@+id/btnBackground" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_background" android:contentDescription="Text background" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-        <Space
-            android:layout_width="1dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+                </LinearLayout>
 
-        <!-- Bottom controls section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:paddingBottom="16dp">
+                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-            <!-- Color picker - smaller circular buttons -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="none"
-                android:layout_marginBottom="16dp">
+                <!-- Delete button (visible only when editing existing text) -->
+                <ImageView android:id="@+id/btnDelete" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_delete" android:contentDescription="Delete text" android:background="@drawable/bg_dark_rounded" android:tint="#FF3B30" android:visibility="gone" android:layout_marginEnd="8dp" />
 
-                <LinearLayout
-                    android:id="@+id/colorPickerLayout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:padding="4dp">
+                <!-- Done button -->
+                <ImageView android:id="@+id/btnDone" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_check" android:contentDescription="Done" android:background="@drawable/bg_dark_rounded" android:tint="#34C759" />
 
+            </LinearLayout>
+
+            <!-- Spacer to push content to center when keyboard is hidden -->
+            <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="0.1" />
+
+            <!-- Text input with Telegram-style dashed border -->
+            <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="100dp" android:maxHeight="180dp" android:background="@drawable/bg_text_input_dashed" android:padding="16dp">
+
+                <EditText android:id="@+id/editText" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent" android:textColor="#FFFFFF" android:textSize="24sp" android:fontFamily="@font/ubuntu_regular" android:hint="Add text" android:textColorHint="#80FFFFFF" android:gravity="left|top" android:inputType="textMultiLine|textCapSentences" android:scrollbars="vertical" android:importantForAutofill="no" tools:ignore="HardcodedText" />
+
+            </FrameLayout>
+
+            <!-- Spacer (small) -->
+            <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="0.1" />
+
+            <!-- Color picker with circular swatches (smaller) -->
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:scrollbars="none">
+
+                <LinearLayout android:id="@+id/colorPickerLayout" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:padding="2dp">
+
+                    <!-- Colors will be set programmatically, but define structure -->
                     <!-- White -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Black -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Teal -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Red -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Orange -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Yellow -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Green -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Cyan -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Blue -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Purple -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                     <!-- Pink -->
-                    <View
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/bg_color_button"
-                        android:clickable="true"
-                        android:focusable="true" />
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
 
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- Font size slider -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+            <!-- Font size slider (with dark background) -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="16dp" android:background="@drawable/bg_dark_rounded" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="10dp" android:paddingBottom="10dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="A"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/ubuntu_regular" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A" android:textColor="#80FFFFFF" android:textSize="14sp" android:fontFamily="@font/ubuntu_regular" tools:ignore="HardcodedText" />
 
-                <SeekBar
-                    android:id="@+id/fontSizeSlider"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="12dp"
-                    android:min="16"
-                    android:max="48"
-                    android:progress="28" />
+                <SeekBar android:id="@+id/fontSizeSlider" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="32" android:progress="8" android:progressTint="#4CAF50" android:thumbTint="#4CAF50" android:progressBackgroundTint="#80FFFFFF" android:minHeight="40dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="A"
-                    android:textColor="#FFFFFF"
-                    android:textSize="28sp"
-                    android:fontFamily="@font/ubuntu_regular" />
-
-            </LinearLayout>
-
-            <!-- Text alignment and style options in one row -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_option_group"
-                android:padding="4dp"
-                android:gravity="center">
-
-                <!-- Alignment buttons -->
-                <ImageView
-                    android:id="@+id/btnAlignLeft"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_align_left"
-                    android:contentDescription="Align left"
-                    android:background="@drawable/bg_option_button"
-                    android:tint="#FFFFFF" />
-
-                <ImageView
-                    android:id="@+id/btnAlignCenter"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_align_center"
-                    android:contentDescription="Align center"
-                    android:background="@drawable/bg_option_button"
-                    android:tint="#FFFFFF"
-                    android:layout_marginStart="4dp" />
-
-                <ImageView
-                    android:id="@+id/btnAlignRight"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_align_right"
-                    android:contentDescription="Align right"
-                    android:background="@drawable/bg_option_button"
-                    android:tint="#FFFFFF"
-                    android:layout_marginStart="4dp" />
-
-                <!-- Divider -->
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="32dp"
-                    android:background="#40FFFFFF"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp" />
-
-                <!-- Style buttons -->
-                <ImageView
-                    android:id="@+id/btnBold"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_format_bold"
-                    android:contentDescription="Bold"
-                    android:background="@drawable/bg_option_button"
-                    android:tint="#FFFFFF" />
-
-                <ImageView
-                    android:id="@+id/btnItalic"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_format_italic"
-                    android:contentDescription="Italic"
-                    android:background="@drawable/bg_option_button"
-                    android:tint="#FFFFFF"
-                    android:layout_marginStart="4dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A" android:textColor="#FFFFFF" android:textSize="22sp" android:fontFamily="@font/ubuntu_regular" tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
         </LinearLayout>
 
-    </LinearLayout>
+    </ScrollView>
 
 </FrameLayout>
