@@ -12,7 +12,6 @@ import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -48,6 +47,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
     private ScrollView scrollContainer;
     private EditText editText;
     private LinearLayout colorPickerLayout;
+    private LinearLayout editingArea;
     private SeekBar fontSizeSlider;
     private ImageView btnDone;
     private ImageView btnDelete;
@@ -100,6 +100,11 @@ public class InlineTextEditor extends BaseEditorOverlay {
     private boolean isBold = false;
     private boolean isItalic = false;
     private boolean hasBackground = false;
+    
+    // Keyboard and layout state
+    private boolean isKeyboardVisible = false;
+    private int screenHeight = 0;
+    private int keyboardHeight = 0;
 
     // Text object being edited (null for new text)
     private TextObject editingTextObject;
@@ -117,13 +122,13 @@ public class InlineTextEditor extends BaseEditorOverlay {
         // Load default typeface (Ubuntu Regular)
         defaultTypeface = ResourcesCompat.getFont(context, R.font.ubuntu_regular);
     }
-    
+
     @Override
     protected void initializeLayoutParams() {
         super.initializeLayoutParams();
         // Adjust window when keyboard appears to keep content visible
-        layoutParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE | 
-                                      WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE;
+        layoutParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE |
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE;
     }
 
     @Override
@@ -138,6 +143,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
         scrollContainer = view.findViewById(R.id.scrollContainer);
         editText = view.findViewById(R.id.editText);
         colorPickerLayout = view.findViewById(R.id.colorPickerLayout);
+        editingArea = view.findViewById(R.id.editingArea);
         fontSizeSlider = view.findViewById(R.id.fontSizeSlider);
         btnDone = view.findViewById(R.id.btnDone);
         btnDelete = view.findViewById(R.id.btnDelete);
@@ -161,11 +167,11 @@ public class InlineTextEditor extends BaseEditorOverlay {
         // Setup listeners
         setupListeners();
 
+        // Setup keyboard detection
+        setupKeyboardListener();
+
         // Apply default typeface
         editText.setTypeface(defaultTypeface);
-
-        // Setup keyboard adjustment listener
-        setupKeyboardListener();
     }
 
     /**
@@ -240,42 +246,60 @@ public class InlineTextEditor extends BaseEditorOverlay {
     }
 
     /**
-     * Setup keyboard listener to adjust scroll position
+     * Setup keyboard detection to adjust layout dynamically based on screen size
      */
     private void setupKeyboardListener() {
-        overlayView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            private int lastHeight = 0;
-
-            @Override
-            public void onGlobalLayout() {
-                int currentHeight = overlayView.getHeight();
-
-                if (lastHeight != 0 && lastHeight != currentHeight) {
-                    // Keyboard state changed
-                    if (currentHeight < lastHeight) {
-                        // Keyboard appeared - scroll to show EditText and controls
-                        scrollContainer.post(() -> {
-                            // Scroll to top to ensure all controls are visible
-                            scrollContainer.fullScroll(View.FOCUS_UP);
-                            // Then scroll down slightly to center the EditText
-                            scrollContainer.postDelayed(() -> {
-                                int scrollY = Math.max(0, editText.getTop() - 50);
-                                scrollContainer.smoothScrollTo(0, scrollY);
-                            }, 100);
-                        });
-                    } else {
-                        // Keyboard hidden - center content
-                        scrollContainer.post(() -> scrollContainer.fullScroll(View.FOCUS_UP));
-                    }
-                }
-
-                lastHeight = currentHeight;
+        // Get screen height once
+        screenHeight = overlayView.getRootView().getHeight();
+        
+        overlayView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            // Calculate current visible height
+            int visibleHeight = overlayView.getHeight();
+            int heightDiff = screenHeight - visibleHeight;
+            
+            // Keyboard is visible if height difference is significant (> 15% of screen)
+            boolean keyboardNowVisible = heightDiff > (screenHeight * 0.15f);
+            
+            if (keyboardNowVisible != isKeyboardVisible) {
+                isKeyboardVisible = keyboardNowVisible;
+                keyboardHeight = isKeyboardVisible ? heightDiff : 0;
+                adjustLayoutForKeyboard();
             }
         });
     }
+    
+    /**
+     * Adjust layout based on keyboard visibility with dynamic calculations
+     */
+    private void adjustLayoutForKeyboard() {
+        if (isKeyboardVisible) {
+            // Keyboard is visible - move editing area to top with minimal spacing
+            editingArea.setGravity(android.view.Gravity.TOP);
+            
+            // Calculate dynamic padding (2% of screen height)
+            int topPadding = (int) (screenHeight * 0.02f);
+            
+            editingArea.setPadding(
+                editingArea.getPaddingLeft(),
+                topPadding,
+                editingArea.getPaddingRight(),
+                editingArea.getPaddingBottom()
+            );
+            
+        } else {
+            // Keyboard is hidden - center editing area
+            editingArea.setGravity(android.view.Gravity.CENTER);
+            editingArea.setPadding(
+                editingArea.getPaddingLeft(),
+                0,
+                editingArea.getPaddingRight(),
+                editingArea.getPaddingBottom()
+            );
+        }
+    }
 
     /**
-     * Setup all button listeners
+     * Setup all button listeners and text change handling
      */
     private void setupListeners() {
         // Done button
@@ -294,15 +318,19 @@ public class InlineTextEditor extends BaseEditorOverlay {
         btnItalic.setOnClickListener(v -> toggleItalic());
         btnBackground.setOnClickListener(v -> toggleBackground());
 
-        // Dim overlay click to auto-save and close
+        // Dim overlay click to unfocus (not close)
         dimOverlay.setOnClickListener(v -> {
-            // Auto-save if text is not empty
-            String text = editText.getText().toString().trim();
-            if (!text.isEmpty()) {
-                confirmText(); // Save and close
-            } else {
-                cancelText(); // Just close without saving empty text
+            // Just unfocus the EditText and hide keyboard
+            if (editText.hasFocus()) {
+                editText.clearFocus();
+                android.view.inputmethod.InputMethodManager imm = 
+                    (android.view.inputmethod.InputMethodManager) context.getSystemService(
+                        android.content.Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                }
             }
+            // Don't close the editor - just unfocus
         });
 
         // Text change listener for auto-save and live preview
@@ -315,7 +343,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 // Trigger live preview update
                 triggerPreviewUpdate();
-                
+
                 // Trigger auto-save with debounce
                 triggerAutoSave();
             }
@@ -347,17 +375,17 @@ public class InlineTextEditor extends BaseEditorOverlay {
             editText.postDelayed(autoSaveRunnable, AUTO_SAVE_DELAY_MS);
         }
     }
-    
+
     /**
      * Trigger live preview update (no debounce for immediate feedback)
      */
     private void triggerPreviewUpdate() {
         String text = editText.getText().toString();
-        
+
         if (text.isEmpty()) {
             return;
         }
-        
+
         // Create preview data
         TextPreviewData previewData = new TextPreviewData(
                 text,
@@ -368,7 +396,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
                 isItalic,
                 hasBackground,
                 hasBackground ? getContrastColor(selectedColor) : 0);
-        
+
         // Notify callback for live preview
         if (editorCallback instanceof TextEditorCallback) {
             ((TextEditorCallback) editorCallback).onTextPreviewUpdate(previewData);

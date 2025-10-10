@@ -6,63 +6,61 @@
     <!-- Darker dimmed background overlay (90% opacity for better focus) -->
     <View android:id="@+id/dimOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#E6000000" android:clickable="true" android:focusable="true" />
 
-    <!-- ScrollView to handle keyboard appearance -->
-    <ScrollView android:id="@+id/scrollContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:scrollbars="none">
+    <!-- Main layout with header at top, editing area centered -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
 
-        <!-- Main content container -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:gravity="center">
+        <!-- Top action bar - FIXED AT TOP -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:paddingTop="40dp" android:paddingBottom="16dp">
 
-            <!-- Top action bar -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="24dp">
+            <!-- Style buttons (left side) -->
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/bg_dark_rounded" android:padding="6dp">
 
-                <!-- Style buttons (left side) -->
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/bg_dark_rounded" android:padding="6dp">
+                <!-- Alignment buttons (compact) -->
+                <ImageView android:id="@+id/btnAlignLeft" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_left" android:contentDescription="Align left" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-                    <!-- Alignment buttons (compact) -->
-                    <ImageView android:id="@+id/btnAlignLeft" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_left" android:contentDescription="Align left" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+                <ImageView android:id="@+id/btnAlignCenter" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_center" android:contentDescription="Align center" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-                    <ImageView android:id="@+id/btnAlignCenter" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_center" android:contentDescription="Align center" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+                <ImageView android:id="@+id/btnAlignRight" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_right" android:contentDescription="Align right" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-                    <ImageView android:id="@+id/btnAlignRight" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_right" android:contentDescription="Align right" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+                <!-- Divider -->
+                <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
 
-                    <!-- Divider -->
-                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
+                <!-- Style buttons -->
+                <ImageView android:id="@+id/btnBold" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_bold" android:contentDescription="Bold" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-                    <!-- Style buttons -->
-                    <ImageView android:id="@+id/btnBold" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_bold" android:contentDescription="Bold" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+                <ImageView android:id="@+id/btnItalic" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_italic" android:contentDescription="Italic" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-                    <ImageView android:id="@+id/btnItalic" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_italic" android:contentDescription="Italic" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+                <!-- Divider -->
+                <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
 
-                    <!-- Divider -->
-                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
-
-                    <!-- Background color button -->
-                    <ImageView android:id="@+id/btnBackground" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_background" android:contentDescription="Text background" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
-
-                </LinearLayout>
-
-                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-
-                <!-- Delete button (visible only when editing existing text) -->
-                <ImageView android:id="@+id/btnDelete" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_delete" android:contentDescription="Delete text" android:background="@drawable/bg_dark_rounded" android:tint="#FF3B30" android:visibility="gone" android:layout_marginEnd="8dp" />
-
-                <!-- Done button -->
-                <ImageView android:id="@+id/btnDone" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_check" android:contentDescription="Done" android:background="@drawable/bg_dark_rounded" android:tint="#34C759" />
+                <!-- Background color button -->
+                <ImageView android:id="@+id/btnBackground" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_background" android:contentDescription="Text background" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
             </LinearLayout>
 
-            <!-- Spacer to push content to center when keyboard is hidden -->
-            <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="0.1" />
+            <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-            <!-- Text input with Telegram-style dashed border -->
-            <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="100dp" android:maxHeight="180dp" android:background="@drawable/bg_text_input_dashed" android:padding="16dp">
+            <!-- Delete button (visible only when editing existing text) -->
+            <ImageView android:id="@+id/btnDelete" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_delete" android:contentDescription="Delete text" android:background="@drawable/bg_dark_rounded" android:tint="#FF3B30" android:visibility="gone" android:layout_marginEnd="8dp" />
 
-                <EditText android:id="@+id/editText" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent" android:textColor="#FFFFFF" android:textSize="24sp" android:fontFamily="@font/ubuntu_regular" android:hint="Add text" android:textColorHint="#80FFFFFF" android:gravity="left|top" android:inputType="textMultiLine|textCapSentences" android:scrollbars="vertical" android:importantForAutofill="no" tools:ignore="HardcodedText" />
+            <!-- Done button -->
+            <ImageView android:id="@+id/btnDone" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_check" android:contentDescription="Done" android:background="@drawable/bg_dark_rounded" android:tint="#34C759" />
+
+        </LinearLayout>
+
+        <!-- Centered editing area (text input + colors + slider) -->
+        <LinearLayout android:id="@+id/editingArea" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="16dp" android:paddingTop="0dp">
+
+            <!-- Text input with ScrollView INSIDE for long text -->
+            <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_text_input_dashed" android:padding="16dp">
+
+                <ScrollView android:id="@+id/scrollContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxHeight="200dp" android:scrollbars="vertical" android:scrollbarStyle="outsideInset" android:fadeScrollbars="false" android:fillViewport="false">
+
+                    <EditText android:id="@+id/editText" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="120dp" android:background="@android:color/transparent" android:textColor="#FFFFFF" android:textSize="24sp" android:fontFamily="@font/ubuntu_regular" android:hint="Add text" android:textColorHint="#80FFFFFF" android:gravity="left|top" android:inputType="textMultiLine|textCapSentences" android:scrollbars="none" android:importantForAutofill="no" tools:ignore="HardcodedText" />
+
+                </ScrollView>
 
             </FrameLayout>
-
-            <!-- Spacer (small) -->
-            <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="0.1" />
 
             <!-- Color picker with circular swatches (smaller) -->
             <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:scrollbars="none">
@@ -140,7 +138,8 @@
             </LinearLayout>
 
         </LinearLayout>
+        <!-- End of centered editing area -->
 
-    </ScrollView>
+    </LinearLayout>
 
 </FrameLayout>
