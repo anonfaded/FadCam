@@ -901,7 +901,7 @@
     <string name="video_menu_open_with">选择应用打开…</string>
     <string name="chooser_open_with">打开方式</string>
     <string name="nav_remote">远程控制</string>
-    <string name="icon_zoom_in_ligature">放大</string>
+    <string name="icon_zoom_in_ligature"></string>
     <string name="quick_speed_title">快速速度</string>
     <string name="location_permission_denied">位置权限被拒绝。位置功能将被禁用。</string>
     <string name="start_recording">开始</string>
