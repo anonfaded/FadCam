@@ -4,7 +4,7 @@
     <string name="trash_auto_delete_info_immediate">项目将立即删除。</string>
     <string name="app_icon_description">为您的应用选择图标和名称。这将更改其在主屏幕上的显示方式。</string>
     <string name="check_for_updates">检查更新</string>
-    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方"查看源码"按钮</string>
+    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方查看源码按钮。</string>
     <string name="app_description"><![CDATA[
     FadCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
     <br/><br/>
@@ -69,7 +69,7 @@
     <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
     <string name="note_watermark_extra">想让视频保存速度更快？选择\"无水印\". 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
     <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
-    <string name="note_location_extra">添加经纬度信息至视频水印需要打开手机的位置信息功能</string>
+    <string name="note_location_extra">添加经纬度信息至视频水印需要打开手机的位置信息功能。</string>
     <string name="button_setting_review">写个评论 🌟</string>
     <string name="dialog_clock_title">选择时间格式</string>
     <string name="dialog_clock_timeonly">仅显示时间</string>
@@ -130,7 +130,7 @@
         <item> </item>
     </string-array>
     <string name="dialog_welcome_title">欢迎使用FadCam！</string>
-    <string name="note_under_dev">重要提示: 本软件仍处于开发阶段. 新功能会逐步加入</string>
+    <string name="note_under_dev">重要提示: 本软件仍处于开发阶段，新功能会逐步加入。</string>
     <string name="rencent_updates_title">最近更新:</string>
     <string name="upcoming_features_title">即将添加:</string>
     <string name="stay_updated_title">保持更新：</string>
@@ -165,7 +165,7 @@
     <string name="up_to_date_description">您已经在使用最新版本。</string>
     <string name="up_to_date_loading">正在检查更新…</string>
     <string name="update_available_title">可用更新</string>
-    <string name="update_available_message">有一个新版本（%1$s）可用。要更新，请访问 F-Droid 商店或我们的 GitHub 仓库以获取更多详细信息。</string>
+    <string name="update_available_message">有一个新版本 v%1$s 可用。当前版本为 v%2$s ，如需更新，请访问 F-Droid 商店或我们的 GitHub 仓库以获取更多详细信息。</string>
     <string name="visit_fdroid">访问 F-Droid</string>
     <string name="visit_github">访问 GitHub</string>
     <string name="delete_all_videos_title">删除所有视频</string>
@@ -249,7 +249,7 @@
     <string name="allow_location_access">授予权限</string>
     <string name="location_permission_message">需要位置权限才能将GPS坐标添加到您的视频中。请授予权限以使用此功能。</string>
     <!-- Audio Settings -->
-    <string name="setting_audio_title">音频录制</string>
+    <string name="setting_audio_title">音频录制设置</string>
     <string name="note_audio">启用或禁用视频的音频录制。\n(默认: 启用)</string>
     <string name="setting_audio_input_source_title">音频输入源</string>
     <string name="setting_audio_input_source_status_default">当前使用: 手机麦克风</string>
@@ -416,7 +416,7 @@
     <string name="notification_custom_text">自定义文本</string>
     <string name="notification_preview">通知预览</string>
     <string name="notification_preview_title">预览</string>
-    <string name="notification_video_recording">视频录制</string>
+    <string name="notification_video_recording">视频录制设置</string>
     <string name="notification_video_recording_progress_description">录制进行中</string>
     <string name="notification_video_recording_paused_description">录制已暂停</string>
     <string name="notification_stop">停止</string>
@@ -464,7 +464,7 @@
     <string name="website_title">网站</string>
     <string name="readme_website_subtitle">官方网站</string>
     <string name="help_section">帮助</string>
-    <string name="recording_controls_title">自动对焦 · 曝光 · 变焦</string>
+    <string name="recording_controls_title">对焦 · 曝光 · 变焦</string>
     <string name="mainpage_camera_front">前置摄像头</string>
     <string name="mainpage_camera_back">后置摄像头</string>
     <string name="video_info_bitrate">比特率</string>
@@ -545,8 +545,8 @@
     <string name="prefs_preview_none">尚未载入任何 JSON</string>
     <string name="universal_confirm">确认</string>
     <string name="universal_close">关闭</string>
-    <string name="settings_video_title">视频录制</string>
-    <string name="settings_audio_title">音频设置</string>
+    <string name="settings_video_title">视频录制设置</string>
+    <string name="settings_audio_title">高级音频设置</string>
     <string name="settings_watermark_title">水印</string>
     <string name="settings_advanced_title">高级</string>
     <string name="row_lens_title">镜头</string>
@@ -561,7 +561,7 @@
     <string name="row_noise_suppression_title">降噪</string>
     <string name="settings_location_watermark_title">位置水印</string>
     <string name="delete_single_video_subtitle">删除此录音</string>
-    <string name="torch_select_source">选择手电筒来源：</string>
+    <string name="torch_select_source">选择手电筒来源:</string>
     <string name="torch_back">后置手电筒</string>
     <string name="torch_front">前置手电筒</string>
     <string name="torch_apply">应用</string>
@@ -641,7 +641,7 @@
     <string name="records_hide_thumbnails_subtitle">显示简洁列表（无缩略图）</string>
     <string name="video_player_settings_helper_player">您可在此处或在“设置”标签页中更改这些选项。</string>
     <string name="playback_controls_heading">播放控制</string>
-    <string name="playback_controls_helper">调整播放速度或为按住设置快速速度。您可以在此处或从视频播放器屏幕更改这些设置。</string>
+    <string name="playback_controls_helper">调整播放速度或为按住设置快进速度。您可以在此处或从视频播放器屏幕更改这些设置。</string>
     <string name="controls_hide_delay_title">控制界面隐藏延迟</string>
     <string name="controls_hide_delay_helper">选择播放控制界面在自动隐藏前保持显示的秒数。选择“关闭”可令控制界面持续显示。</string>
     <string name="sound_heading">播放期间音频</string>
@@ -654,7 +654,7 @@
     <string name="playback_speed_helper_settings">视频默认播放速度。</string>
     <string name="playback_speed_helper_player">仅影响当前播放。要更改未来视频的默认设置，请使用“设置”</string>
     <string name="quick_speed_helper">快速播放仅在播放期间长按时生效。</string>
-    <string name="af_mode_title">自动对焦模式</string>
+    <string name="af_mode_title">对焦模式</string>
     <string name="af_continuous_title">连续自动对焦</string>
     <string name="af_manual_title">锁定焦点</string>
     <string name="af_manual_description">焦点已锁定。点击预览以手动聚焦。</string>
@@ -901,9 +901,36 @@
     <string name="video_menu_open_with">选择应用打开…</string>
     <string name="chooser_open_with">打开方式</string>
     <string name="nav_remote">远程控制</string>
-    <string name="quick_speed_title">快速速度</string>
+    <string name="quick_speed_title">快进速度</string>
     <string name="location_permission_denied">位置权限被拒绝。位置功能将被禁用。</string>
     <string name="start_recording">开始</string>
     <string name="stop_recording">停止</string>
     <string name="universal_enter_number">输入一个数字</string>
+    <string name="quick_speed_option_1_25">1.25x</string>
+    <string name="quick_speed_option_1_5">1.5x</string>
+    <string name="quick_speed_option_1_75">1.75x</string>
+    <string name="quick_speed_option_2">2x</string>
+    <string name="quick_speed_option_2_5">2.5x</string>
+    <string name="watermark_preview_sample_fadcam">由 FadCam 拍摄 - %1$s</string>
+    <string name="watermark_preview_sample_timeonly">%1$s</string>
+    <string name="controls_hide_delay_subtitle">%1$ds</string>
+    <string name="seek_amount_subtitle">%1$ds</string>
+    <string name="timer_off">关闭</string>
+    <string name="timer_off_short">关闭</string>
+    <string name="version_format">v%s</string>
+    <string name="settings_section_app">App</string>
+    <string name="storage_helper_current_custom_uri_prefix">URI:</string>
+    <string name="icon_zoom_in_ligature">zoom_in</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
+    <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
+    <string name="arabic_date_sample_mixed">7 صفر 1447</string>
+    <string name="arabic_date_sample_english">7 Safar 1447</string>
+    <string name="theme_red">绯红绽放</string>
+    <string name="theme_gold">尊耀鎏金</string>
+    <string name="theme_silentforest">寂静森林</string>
+    <string name="theme_shadowalloy">暗影合金</string>
+    <string name="theme_pookiepink">软糯粉甜</string>
+    <string name="theme_snowveil">雪色薄纱</string>
+    <string name="coming_soon_toast">即将到来！因沙安拉。</string>
+    <string name="faditor_mini_title">Faditor Mini</string>
 </resources>
