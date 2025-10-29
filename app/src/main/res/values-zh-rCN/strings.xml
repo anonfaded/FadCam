@@ -58,13 +58,13 @@
     <string name="nav_settings">设置</string>
     <string name="nav_about">关于</string>
     <string name="button_settings_readme">使用须知</string>
-    <string name="setting_quailty_title">视频质量</string>
+    <string name="setting_quailty_title">视频分辨率</string>
     <string name="setting_location_title">位置信息</string>
     <string name="setting_cam_title">摄像头</string>
     <string name="note_cam_sele">选择摄像头\n(默认: 后摄)</string>
     <string name="button_settings_cam_back">后摄</string>
     <string name="button_settings_cam_front">前摄</string>
-    <string name="note_quailty">选择视频质量\n(默认: HD)</string>
+    <string name="note_quailty">选择视频分辨率\n(默认: HD)</string>
     <string name="setting_watermark">水印</string>
     <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
     <string name="note_watermark_extra">想让视频保存速度更快？选择\"无水印\". 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
