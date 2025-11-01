@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="readme_discord_subtitle">Liitu kogukonnaga</string>
+    <string name="website_title">Veebisait</string>
+    <string name="readme_website_subtitle">Ametlik sait</string>
 </resources>
