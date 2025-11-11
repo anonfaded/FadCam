@@ -1280,6 +1280,13 @@ public class AnnotationView extends View {
             return false;
         }
         
+        // CRITICAL: If selection mode is active, don't allow drawing
+        // Selection mode should ONLY manipulate selected objects, not create new paths
+        if (selectionMode && selectedObject != null) {
+            // Already handled in selection mode block above
+            return false;
+        }
+        
         // Handle draw mode with single-tap selection and long-press quick-drag
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -1342,7 +1349,9 @@ public class AnnotationView extends View {
                 }
                 
                 if (isLongPressing && selectedObject != null) {
-                    // Move object while long-pressing
+                    // Move object while long-pressing with real-time rendering
+                    isDraggingObject = true; // Enable real-time redraw for smooth movement
+                    
                     float dx = x - lastTouchX;
                     float dy = y - lastTouchY;
                     selectedObject.translate(dx, dy);
@@ -1394,6 +1403,7 @@ public class AnnotationView extends View {
                 if (isLongPressing) {
                     // Finish quick drag (long-press move)
                     isLongPressing = false;
+                    isDraggingObject = false; // Reset real-time redraw flag
                     selectedObject = null;
                     currentPath.reset(); // Clear path (wasn't drawing)
                     invalidate();
@@ -1401,11 +1411,9 @@ public class AnnotationView extends View {
                 } else if (longPressRunnable == null) {
                     // Only save path if we were actually drawing (not waiting for tap)
                     if (currentPath != null && !currentPath.isEmpty()) {
-                        // Create a clean paint copy without any Xfermode (eraser mode)
+                        // Save path for both pen and eraser
+                        // Eraser xfermode is preserved in drawPaint, DrawingPath will detect it
                         Paint pathPaint = new Paint(drawPaint);
-                        // CRITICAL: Ensure no eraser mode is set for normal drawing
-                        // This fixes the issue where drawing after erasing wouldn't persist
-                        pathPaint.setXfermode(null);
                         
                         AddPathCommand command = new AddPathCommand(
                             currentLayer, 
@@ -1422,9 +1430,10 @@ public class AnnotationView extends View {
                         // Regenerate bitmap with proper layer ordering
                         redrawAllToLayer();
                         
+                        notifyStateChanged();
+                        
                         currentPath = new Path();
                         invalidate();
-                        notifyStateChanged();
                     }
                 }
                 return true;

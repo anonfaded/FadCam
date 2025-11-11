@@ -3401,36 +3401,29 @@ public class AnnotationService extends Service {
                     if (annotationView != null) {
                         annotationView.setEnabled(false);
                         
-                        // Hide the currently editing text object completely
-                        if (currentEditingTextObject != null) {
-                            currentEditingTextObject.setVisible(false);
-                        }
-                        
-                        // Hide selection UI (handles/bounds) during edit
-                        annotationView.setSelectedObject(null);
-                        annotationView.invalidate();
+                        // CRITICAL: Hide annotation overlay completely so it doesn't appear on top of editor
+                        // Editor must be on top of all existing drawings/content
+                        annotationView.setVisibility(View.GONE);
                         
                         // CRITICAL: Make overlay not receive touches so editor can get them
                         annotationCanvasParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                         windowManager.updateViewLayout(annotationView, annotationCanvasParams);
                         
-                        Log.d(TAG, "Editor started - annotation canvas disabled, text hidden, selection cleared, and NOT_TOUCHABLE flag set");
+                        Log.d(TAG, "Editor started - annotation canvas hidden (GONE), disabled, and NOT_TOUCHABLE flag set");
                     }
                 } else if (BaseTransparentEditorActivity.ACTION_EDITOR_FINISHED.equals(action)) {
                     // Re-enable annotation canvas when editor finishes
                     if (annotationView != null) {
                         annotationView.setEnabled(true);
                         
-                        // Re-show the text object
-                        if (currentEditingTextObject != null) {
-                            currentEditingTextObject.setVisible(true);
-                        }
+                        // CRITICAL: Show annotation overlay again
+                        annotationView.setVisibility(View.VISIBLE);
                         
                         // Remove NOT_TOUCHABLE flag so overlay can receive touches again
                         annotationCanvasParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                         windowManager.updateViewLayout(annotationView, annotationCanvasParams);
                         
-                        Log.d(TAG, "Editor finished - annotation canvas enabled, text visible, and NOT_TOUCHABLE flag removed");
+                        Log.d(TAG, "Editor finished - annotation canvas shown (VISIBLE), enabled, and NOT_TOUCHABLE flag removed");
                     }
                 }
             }
@@ -3462,62 +3455,99 @@ public class AnnotationService extends Service {
         
         // Wrap text to fit screen
         String wrappedText = wrapTextToScreen(text, fontSize, isBold, isItalic);
+        Paint.Align paintAlign = convertGravityToPaintAlign(alignment);
+        
+        AnnotationPage currentPage = annotationView.getState().getActivePage();
+        if (currentPage == null) {
+            Log.e(TAG, "No active page for text save");
+            return;
+        }
         
         if (currentEditingTextObject != null) {
-            // Editing existing text
+            // ===== EDIT EXISTING TEXT =====
+            // CRITICAL: Use command pattern for undo/redo support
             TextObject textObject = currentEditingTextObject;
-            textObject.setText(wrappedText);
-            textObject.setTextColor(color);
-            textObject.setFontSize(fontSize);
-            textObject.setAlignment(convertGravityToPaintAlign(alignment));
-            textObject.setBold(isBold);
-            textObject.setItalic(isItalic);
-            textObject.setHasBackground(hasBackground);
-            textObject.setBackgroundColor(backgroundColor);
             
-            // CRITICAL: Redraw bitmap with updated text
-            annotationView.notifyStateChangedWithRedraw();
-            
-            saveCurrentState();
-            Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
-        } else {
-            // Creating new text
-            float centerX = annotationView.getWidth() / 2f;
-            float centerY = annotationView.getHeight() / 2f;
-            
-            TextObject textObject = new TextObject(wrappedText, centerX, centerY);
-            textObject.setTextColor(color);
-            textObject.setFontSize(fontSize);
-            textObject.setAlignment(convertGravityToPaintAlign(alignment));
-            textObject.setBold(isBold);
-            textObject.setItalic(isItalic);
-            textObject.setHasBackground(hasBackground);
-            textObject.setBackgroundColor(backgroundColor);
-            
-            // Add to active layer
-            AnnotationPage currentPage = annotationView.getState().getActivePage();
-            if (currentPage != null) {
-                AnnotationLayer activeLayer = currentPage.getActiveLayer();
-                if (activeLayer != null && !activeLayer.isLocked()) {
-                    activeLayer.addObject(textObject);
-                    
-                    // Select the newly created text object
-                    annotationView.setSelectedObject(textObject);
-                    
-                    // CRITICAL: Redraw bitmap with new text object
-                    annotationView.notifyStateChangedWithRedraw();
-                    
-                    saveCurrentState();
-                    Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
-                    
-                    // Auto-collapse menu to show text in selection mode
-                    if (isExpanded) {
-                        performMenuToggle();
-                        Log.d(TAG, "Auto-collapsed menu after text creation");
-                    }
-                } else {
-                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+            // Find the layer containing this text object
+            AnnotationLayer containingLayer = null;
+            for (AnnotationLayer layer : currentPage.getLayers()) {
+                if (layer.getObjects().contains(textObject)) {
+                    containingLayer = layer;
+                    break;
                 }
+            }
+            
+            if (containingLayer != null) {
+                // Create command that captures before/after state
+                com.fadcam.fadrec.ui.annotation.ModifyTextObjectCommand command = 
+                    new com.fadcam.fadrec.ui.annotation.ModifyTextObjectCommand(
+                        containingLayer, textObject,
+                        wrappedText, color, fontSize, paintAlign,
+                        isBold, isItalic, hasBackground, backgroundColor
+                    );
+                
+                // Execute command through page's command system
+                // This automatically:
+                // 1. Applies the changes
+                // 2. Adds to undo stack
+                // 3. Clears redo stack
+                // 4. Updates modification timestamp
+                currentPage.executeCommand(command);
+                
+                // Restore visibility (was hidden in showTextEditorDialog)
+                textObject.setVisible(true);
+                
+                // CRITICAL: Regenerate cached bitmap with updated text
+                annotationView.notifyStateChangedWithRedraw();
+                
+                // Clear editing reference
+                currentEditingTextObject = null;
+                
+                saveCurrentState();
+                Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Text modified via command pattern - undo stack size: " + currentPage.getUndoStackSize());
+            } else {
+                Log.e(TAG, "Could not find layer containing text object");
+                currentEditingTextObject = null;
+            }
+        } else {
+            // ===== CREATE NEW TEXT =====
+            AnnotationLayer activeLayer = currentPage.getActiveLayer();
+            if (activeLayer != null && !activeLayer.isLocked()) {
+                float centerX = annotationView.getWidth() / 2f;
+                float centerY = annotationView.getHeight() / 2f;
+                
+                TextObject textObject = new TextObject(wrappedText, centerX, centerY);
+                textObject.setTextColor(color);
+                textObject.setFontSize(fontSize);
+                textObject.setAlignment(paintAlign);
+                textObject.setBold(isBold);
+                textObject.setItalic(isItalic);
+                textObject.setHasBackground(hasBackground);
+                textObject.setBackgroundColor(backgroundColor);
+                
+                // CRITICAL: Use command pattern for undo/redo support
+                com.fadcam.fadrec.ui.annotation.AddObjectCommand command = 
+                    new com.fadcam.fadrec.ui.annotation.AddObjectCommand(activeLayer, textObject);
+                currentPage.executeCommand(command);
+                
+                // Select the newly created text object
+                annotationView.setSelectedObject(textObject);
+                
+                // CRITICAL: Redraw bitmap with new text object
+                annotationView.notifyStateChangedWithRedraw();
+                
+                saveCurrentState();
+                Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "New text created via command pattern - undo stack size: " + currentPage.getUndoStackSize());
+                
+                // Auto-collapse menu to show text in selection mode
+                if (isExpanded) {
+                    performMenuToggle();
+                    Log.d(TAG, "Auto-collapsed menu after text creation");
+                }
+            } else {
+                Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -4380,8 +4410,11 @@ public class AnnotationService extends Service {
         if (currentEditingTextObject != null) {
             currentEditingTextObject.setVisible(false);
             annotationView.setSelectedObject(null);
-            annotationView.invalidate();
-            Log.d(TAG, "Text object hidden before launching editor");
+            
+            // CRITICAL: Regenerate cached bitmap to reflect hidden text
+            // invalidate() alone doesn't regenerate the cached drawingLayerBitmap
+            annotationView.notifyStateChangedWithRedraw();
+            Log.d(TAG, "Text object hidden and bitmap regenerated before launching editor");
         }
 
         // Launch TextEditorActivity

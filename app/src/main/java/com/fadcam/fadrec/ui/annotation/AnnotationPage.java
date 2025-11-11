@@ -401,6 +401,26 @@ public class AnnotationPage {
                 }
                 return AddPathCommand.fromJSON(layer, json);
                 
+            case "ADD_OBJECT":
+                // AddObjectCommand needs the layer
+                String objLayerId = json.getString("layerId");
+                AnnotationLayer objLayer = page.getLayerById(objLayerId);
+                if (objLayer == null) {
+                    android.util.Log.e("AnnotationPage", "Cannot deserialize ADD_OBJECT: layer " + objLayerId + " not found");
+                    return null;
+                }
+                return AddObjectCommand.fromJSON(objLayer, json);
+                
+            case "MODIFY_TEXT_OBJECT":
+                // ModifyTextObjectCommand needs the layer
+                String textLayerId = json.getString("layerId");
+                AnnotationLayer textLayer = page.getLayerById(textLayerId);
+                if (textLayer == null) {
+                    android.util.Log.e("AnnotationPage", "Cannot deserialize MODIFY_TEXT_OBJECT: layer " + textLayerId + " not found");
+                    return null;
+                }
+                return ModifyTextObjectCommand.fromJSON(textLayer, json);
+                
             case "CLEAR_LAYER":
                 return ClearLayerCommand.fromJSON(page, json);
                 
