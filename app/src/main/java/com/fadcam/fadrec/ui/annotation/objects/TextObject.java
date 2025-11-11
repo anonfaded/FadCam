@@ -12,10 +12,11 @@ import org.json.JSONObject;
 /**
  * Text object with editable content, font, size, and styling.
  * Non-destructive - can be edited at any time.
+ * Supports multi-color text via CharSequence with spans.
  */
 public class TextObject extends AnnotationObject {
 
-    private String text;
+    private CharSequence text; // Changed from String to support color spans
     private String fontFamily;
     private float fontSize;
     private int textColor;
@@ -42,7 +43,7 @@ public class TextObject extends AnnotationObject {
         this.maxWidth = 0; // 0 means no constraint (use natural wrapping)
     }
 
-    public TextObject(String text, float x, float y) {
+    public TextObject(CharSequence text, float x, float y) {
         this();
         this.text = text;
         this.x = x;
@@ -52,15 +53,32 @@ public class TextObject extends AnnotationObject {
 
     @Override
     public void draw(Canvas canvas, Matrix transform) {
-        if (!visible || text == null || text.isEmpty())
+        if (!visible || text == null || text.length() == 0)
             return;
+
+        // Debug: Check if text has color spans
+        if (text instanceof android.text.Spanned) {
+            android.text.Spanned spanned = (android.text.Spanned) text;
+            android.text.style.ForegroundColorSpan[] spans = 
+                spanned.getSpans(0, text.length(), android.text.style.ForegroundColorSpan.class);
+            android.util.Log.d("TextObject", "Drawing text with " + spans.length + " color spans");
+            for (int i = 0; i < spans.length; i++) {
+                int start = spanned.getSpanStart(spans[i]);
+                int end = spanned.getSpanEnd(spans[i]);
+                int color = spans[i].getForegroundColor();
+                android.util.Log.d("TextObject", "  Span " + i + ": [" + start + "-" + end + "] color=#" + Integer.toHexString(color));
+                android.util.Log.d("TextObject", "  Text: \"" + text.toString().substring(start, Math.min(end, text.length())) + "\"");
+            }
+        }
 
         // Setup paint
         android.text.TextPaint textPaint = new android.text.TextPaint();
         textPaint.setAntiAlias(true);
         textPaint.setTextSize(fontSize);
-        textPaint.setColor(textColor);
+        textPaint.setColor(textColor); // Default color for unspanned text
         textPaint.setAlpha((int) (opacity * 255));
+        
+        android.util.Log.d("TextObject", "TextPaint base color: #" + Integer.toHexString(textColor));
 
         // Set typeface based on style
         int style = Typeface.NORMAL;
@@ -81,7 +99,8 @@ public class TextObject extends AnnotationObject {
             android.util.Log.d("TextObject", "Using maxWidth from editor: " + layoutWidth);
         } else {
             // Auto-width: measure the longest line
-            String[] lines = text.split("\n");
+            String textStr = text.toString();
+            String[] lines = textStr.split("\n");
             float maxLineWidth = 0;
             for (String line : lines) {
                 float lineWidth = textPaint.measureText(line);
@@ -199,7 +218,30 @@ public class TextObject extends AnnotationObject {
     @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject json = getBaseJSON();
-        json.put("text", text);
+        
+        // Save text and color spans
+        String textString = text.toString();
+        json.put("text", textString);
+        
+        // Save color spans if text is Spannable
+        if (text instanceof android.text.Spanned) {
+            android.text.Spanned spanned = (android.text.Spanned) text;
+            android.text.style.ForegroundColorSpan[] spans = 
+                spanned.getSpans(0, text.length(), android.text.style.ForegroundColorSpan.class);
+            
+            if (spans.length > 0) {
+                org.json.JSONArray spansArray = new org.json.JSONArray();
+                for (android.text.style.ForegroundColorSpan span : spans) {
+                    org.json.JSONObject spanObj = new org.json.JSONObject();
+                    spanObj.put("start", spanned.getSpanStart(span));
+                    spanObj.put("end", spanned.getSpanEnd(span));
+                    spanObj.put("color", span.getForegroundColor());
+                    spansArray.put(spanObj);
+                }
+                json.put("colorSpans", spansArray);
+            }
+        }
+        
         json.put("fontFamily", fontFamily);
         json.put("fontSize", fontSize);
         json.put("textColor", textColor);
@@ -216,7 +258,32 @@ public class TextObject extends AnnotationObject {
     @Override
     public void fromJSON(JSONObject json) throws JSONException {
         loadBaseJSON(json);
-        this.text = json.getString("text");
+        
+        String textString = json.getString("text");
+        
+        // Restore color spans if they exist
+        if (json.has("colorSpans")) {
+            android.text.SpannableString spannable = new android.text.SpannableString(textString);
+            org.json.JSONArray spansArray = json.getJSONArray("colorSpans");
+            
+            for (int i = 0; i < spansArray.length(); i++) {
+                org.json.JSONObject spanObj = spansArray.getJSONObject(i);
+                int start = spanObj.getInt("start");
+                int end = spanObj.getInt("end");
+                int color = spanObj.getInt("color");
+                
+                spannable.setSpan(
+                    new android.text.style.ForegroundColorSpan(color),
+                    start,
+                    end,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+            }
+            this.text = spannable;
+        } else {
+            this.text = textString;
+        }
+        
         this.fontFamily = json.getString("fontFamily");
         this.fontSize = (float) json.getDouble("fontSize");
         this.textColor = json.getInt("textColor");
@@ -254,7 +321,8 @@ public class TextObject extends AnnotationObject {
         paint.setTextSize(fontSize);
 
         float maxWidth = 0;
-        String[] lines = text.split("\n");
+        String textStr = text.toString();
+        String[] lines = textStr.split("\n");
         for (String line : lines) {
             float width = paint.measureText(line);
             if (width > maxWidth)
@@ -317,11 +385,11 @@ public class TextObject extends AnnotationObject {
     }
 
     // Getters and setters
-    public String getText() {
+    public CharSequence getText() {
         return text;
     }
 
-    public void setText(String text) {
+    public void setText(CharSequence text) {
         this.text = text;
         calculateBounds();
         this.modifiedAt = System.currentTimeMillis();
@@ -413,14 +481,14 @@ public class TextObject extends AnnotationObject {
 
     @Override
     public RectF getBounds() {
-        // Calculate bounds dynamically for hit testing
-        if (text == null || text.isEmpty()) {
+        // Calculate bounds dynamically for hit testing using StaticLayout for accuracy
+        if (text == null || text.length() == 0) {
             return new RectF(x, y, x + 50, y + 50); // Default small bounds
         }
 
-        Paint paint = new Paint();
+        android.text.TextPaint paint = new android.text.TextPaint();
+        paint.setAntiAlias(true);
         paint.setTextSize(fontSize);
-        paint.setTextAlign(alignment);
 
         // Set typeface based on style
         int style = Typeface.NORMAL;
@@ -434,21 +502,47 @@ public class TextObject extends AnnotationObject {
         Typeface typeface = Typeface.create(fontFamily, style);
         paint.setTypeface(typeface);
 
-        // Calculate dimensions
-        String[] lines = text.split("\n");
-        float maxWidth = 0;
-        for (String line : lines) {
-            float width = paint.measureText(line);
-            if (width > maxWidth)
-                maxWidth = width;
+        // Determine layout width (same logic as draw())
+        int layoutWidth;
+        if (maxWidth > 0) {
+            layoutWidth = maxWidth;
+        } else {
+            // Auto-width: measure longest line
+            String textStr = text.toString();
+            String[] lines = textStr.split("\n");
+            float maxLineWidth = 0;
+            for (String line : lines) {
+                float lineWidth = paint.measureText(line);
+                if (lineWidth > maxLineWidth) maxLineWidth = lineWidth;
+            }
+            layoutWidth = (int) Math.ceil(maxLineWidth);
         }
-        float lineHeight = paint.descent() - paint.ascent();
-        float totalHeight = lineHeight * lines.length;
+        
+        // Create StaticLayout to get accurate dimensions with wrapping
+        android.text.StaticLayout layout = android.text.StaticLayout.Builder
+            .obtain(text, 0, text.length(), paint, layoutWidth)
+            .setAlignment(convertPaintAlignToLayoutAlignment(alignment))
+            .setLineSpacing(0f, 1f)
+            .setIncludePad(false)
+            .build();
 
-        // Return bounds centered at (x, y) for consistent rotation/scale
-        // This ensures text doesn't drift when size changes
-        float halfWidth = maxWidth / 2f;
-        float halfHeight = totalHeight / 2f;
+        // Measure actual text width (widest line after wrapping)
+        float actualWidth = 0;
+        for (int i = 0; i < layout.getLineCount(); i++) {
+            float lineWidth = layout.getLineMax(i);
+            if (lineWidth > actualWidth) {
+                actualWidth = lineWidth;
+            }
+        }
+        float actualHeight = layout.getHeight();
+
+        // Apply scale to bounds
+        float scaledWidth = actualWidth * scale;
+        float scaledHeight = actualHeight * scale;
+
+        // Return bounds centered at (x, y) with rotation considered
+        float halfWidth = scaledWidth / 2f;
+        float halfHeight = scaledHeight / 2f;
 
         return new RectF(
                 x - halfWidth,

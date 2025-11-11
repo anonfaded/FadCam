@@ -19,7 +19,7 @@ public class ModifyTextObjectCommand implements DrawingCommand {
     private final TextObject textObject;
     
     // Before state (for undo)
-    private final String beforeText;
+    private final CharSequence beforeText;
     private final int beforeColor;
     private final float beforeFontSize;
     private final Paint.Align beforeAlignment;
@@ -29,7 +29,7 @@ public class ModifyTextObjectCommand implements DrawingCommand {
     private final int beforeBackgroundColor;
     
     // After state (for execute/redo)
-    private final String afterText;
+    private final CharSequence afterText;
     private final int afterColor;
     private final float afterFontSize;
     private final Paint.Align afterAlignment;
@@ -43,7 +43,7 @@ public class ModifyTextObjectCommand implements DrawingCommand {
      * Captures current state as "before", new values as "after".
      */
     public ModifyTextObjectCommand(AnnotationLayer layer, TextObject textObject,
-                                   String newText, int newColor, float newFontSize,
+                                   CharSequence newText, int newColor, float newFontSize,
                                    Paint.Align newAlignment, boolean newBold, boolean newItalic,
                                    boolean newHasBackground, int newBackgroundColor) {
         this.layer = layer;
@@ -98,8 +98,9 @@ public class ModifyTextObjectCommand implements DrawingCommand {
     
     @Override
     public String getDescription() {
+        String textStr = afterText.toString();
         return "Modify text: \"" + 
-               (afterText.length() > 20 ? afterText.substring(0, 20) + "..." : afterText) + "\"";
+               (textStr.length() > 20 ? textStr.substring(0, 20) + "..." : textStr) + "\"";
     }
     
     @Override

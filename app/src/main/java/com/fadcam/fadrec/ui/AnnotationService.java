@@ -3440,8 +3440,8 @@ public class AnnotationService extends Service {
      * Handle save result from TextEditorActivity
      */
     private void handleTextEditorSave(Bundle resultData) {
-        String text = resultData.getString(TextEditorActivity.RESULT_TEXT);
-        if (text == null || text.trim().isEmpty()) {
+        CharSequence textWithSpans = resultData.getCharSequence(TextEditorActivity.RESULT_TEXT);
+        if (textWithSpans == null || textWithSpans.toString().trim().isEmpty()) {
             return;
         }
         
@@ -3484,7 +3484,7 @@ public class AnnotationService extends Service {
                 com.fadcam.fadrec.ui.annotation.ModifyTextObjectCommand command = 
                     new com.fadcam.fadrec.ui.annotation.ModifyTextObjectCommand(
                         containingLayer, textObject,
-                        text, color, fontSize, paintAlign,
+                        textWithSpans, color, fontSize, paintAlign,
                         isBold, isItalic, hasBackground, backgroundColor
                     );
                 
@@ -3522,7 +3522,7 @@ public class AnnotationService extends Service {
                 float centerX = annotationView.getWidth() / 2f;
                 float centerY = annotationView.getHeight() / 2f;
                 
-                TextObject textObject = new TextObject(text, centerX, centerY);
+                TextObject textObject = new TextObject(textWithSpans, centerX, centerY);
                 textObject.setTextColor(color);
                 textObject.setFontSize(fontSize);
                 textObject.setAlignment(paintAlign);
@@ -4436,6 +4436,8 @@ public class AnnotationService extends Service {
             intent.putExtra(TextEditorActivity.EXTRA_TEXT_ALIGNMENT, convertPaintAlignToGravity(existingTextObject.getAlignment()));
             intent.putExtra(TextEditorActivity.EXTRA_TEXT_BOLD, existingTextObject.isBold());
             intent.putExtra(TextEditorActivity.EXTRA_TEXT_ITALIC, existingTextObject.isItalic());
+            intent.putExtra(TextEditorActivity.EXTRA_HAS_BACKGROUND, existingTextObject.hasBackground());
+            intent.putExtra(TextEditorActivity.EXTRA_BACKGROUND_COLOR, existingTextObject.getBackgroundColor());
         } else {
             // Creating new text
             intent.putExtra(TextEditorActivity.EXTRA_EDIT_MODE, false);

@@ -38,6 +38,8 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     public static final String EXTRA_TEXT_ALIGNMENT = "text_alignment";
     public static final String EXTRA_TEXT_BOLD = "text_bold";
     public static final String EXTRA_TEXT_ITALIC = "text_italic";
+    public static final String EXTRA_HAS_BACKGROUND = "has_background";
+    public static final String EXTRA_BACKGROUND_COLOR = "background_color";
     
     // Result extras
     public static final String RESULT_TEXT = "text";
@@ -68,6 +70,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     private boolean isBold = false;
     private boolean isItalic = false;
     private boolean hasBackground = false;
+    private int backgroundColor = Color.WHITE;
     private Typeface defaultTypeface;
     
     // Preset colors
@@ -278,23 +281,33 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     }
     
     private void loadInitialData() {
-        String initialText = getIntent().getStringExtra(EXTRA_INITIAL_TEXT);
-        if (initialText != null) {
-            editText.setText(initialText);
-        }
-        
         selectedColor = getIntent().getIntExtra(EXTRA_TEXT_COLOR, Color.WHITE);
         selectedFontSize = getIntent().getFloatExtra(EXTRA_TEXT_SIZE, 24f);
         selectedAlignment = getIntent().getIntExtra(EXTRA_TEXT_ALIGNMENT, Gravity.CENTER);
         isBold = getIntent().getBooleanExtra(EXTRA_TEXT_BOLD, false);
         isItalic = getIntent().getBooleanExtra(EXTRA_TEXT_ITALIC, false);
+        hasBackground = getIntent().getBooleanExtra(EXTRA_HAS_BACKGROUND, false);
+        backgroundColor = getIntent().getIntExtra(EXTRA_BACKGROUND_COLOR, Color.WHITE);
         
-        editText.setTextColor(selectedColor);
+        // Set defaults FIRST before setting text
+        editText.setTextColor(selectedColor); // Default for new/unspanned text
         editText.setTextSize(selectedFontSize);
         editText.setGravity(selectedAlignment | Gravity.CENTER_VERTICAL);
         updateTypeface();
         
+        // Then set text with spans (BufferType.SPANNABLE preserves them)
+        CharSequence initialText = getIntent().getCharSequenceExtra(EXTRA_INITIAL_TEXT);
+        if (initialText != null) {
+            editText.setText(initialText, android.widget.TextView.BufferType.SPANNABLE);
+        }
+        
         fontSizeSlider.setProgress((int)(selectedFontSize - 16));
+        
+        // Update button states to match loaded values
+        updateAlignmentButtonStates();
+        btnBold.setSelected(isBold);
+        btnItalic.setSelected(isItalic);
+        updateBackgroundButtonState();
         
         // Show delete button if editing
         boolean isEditing = getIntent().getBooleanExtra(EXTRA_EDIT_MODE, false);
@@ -307,17 +320,75 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
         int selectionStart = editText.getSelectionStart();
         int selectionEnd = editText.getSelectionEnd();
         
+        Log.d("TextEditorActivity", "selectColor: color=#" + Integer.toHexString(color) + 
+              " selection=[" + selectionStart + "-" + selectionEnd + "]");
+        
         if (selectionStart >= 0 && selectionEnd > selectionStart) {
+            // User has selected text - apply color ONLY to selection
             Editable editable = editText.getText();
+            
+            Log.d("TextEditorActivity", "  Text: \"" + editable.toString().substring(selectionStart, selectionEnd) + "\"");
+            
+            // Find spans that overlap the selection
+            ForegroundColorSpan[] existingSpans = editable.getSpans(
+                selectionStart, selectionEnd, ForegroundColorSpan.class);
+            Log.d("TextEditorActivity", "  Found " + existingSpans.length + " overlapping spans");
+            
+            // For each overlapping span, we need to preserve parts outside selection
+            for (ForegroundColorSpan span : existingSpans) {
+                int spanStart = editable.getSpanStart(span);
+                int spanEnd = editable.getSpanEnd(span);
+                int spanColor = span.getForegroundColor();
+                
+                Log.d("TextEditorActivity", "  Processing span [" + spanStart + "-" + spanEnd + "] color=#" + Integer.toHexString(spanColor));
+                
+                // Remove the original span
+                editable.removeSpan(span);
+                
+                // Recreate span for part BEFORE selection (if any)
+                if (spanStart < selectionStart) {
+                    editable.setSpan(
+                        new ForegroundColorSpan(spanColor),
+                        spanStart,
+                        selectionStart,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                    Log.d("TextEditorActivity", "    Recreated span before selection [" + spanStart + "-" + selectionStart + "]");
+                }
+                
+                // Recreate span for part AFTER selection (if any)
+                if (spanEnd > selectionEnd) {
+                    editable.setSpan(
+                        new ForegroundColorSpan(spanColor),
+                        selectionEnd,
+                        spanEnd,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                    Log.d("TextEditorActivity", "    Recreated span after selection [" + selectionEnd + "-" + spanEnd + "]");
+                }
+            }
+            
+            // Now apply new color span to selection
             editable.setSpan(
                 new ForegroundColorSpan(color),
                 selectionStart,
                 selectionEnd,
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             );
-        } else {
-            editText.setTextColor(color);
+            Log.d("TextEditorActivity", "  Applied new color span [" + selectionStart + "-" + selectionEnd + "]");
+            
+            // Debug: Show ALL spans in the entire text
+            ForegroundColorSpan[] allSpans = editable.getSpans(0, editable.length(), ForegroundColorSpan.class);
+            Log.d("TextEditorActivity", "  Total spans in text: " + allSpans.length);
+            for (int i = 0; i < allSpans.length; i++) {
+                int start = editable.getSpanStart(allSpans[i]);
+                int end = editable.getSpanEnd(allSpans[i]);
+                int spanColor = allSpans[i].getForegroundColor();
+                Log.d("TextEditorActivity", "    Span " + i + ": [" + start + "-" + end + "] color=#" + Integer.toHexString(spanColor));
+            }
         }
+        // If no selection, just update selectedColor for future typing
+        // DON'T call setTextColor() as it would change all unspanned text
         
         for (int i = 0; i < colorButtons.length; i++) {
             if (colorButtons[i] != null) {
@@ -332,10 +403,13 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     private void setAlignment(int alignment) {
         selectedAlignment = alignment;
         editText.setGravity(alignment | Gravity.CENTER_VERTICAL);
-        
-        btnAlignLeft.setSelected(alignment == Gravity.LEFT);
-        btnAlignCenter.setSelected(alignment == Gravity.CENTER);
-        btnAlignRight.setSelected(alignment == Gravity.RIGHT);
+        updateAlignmentButtonStates();
+    }
+    
+    private void updateAlignmentButtonStates() {
+        btnAlignLeft.setSelected(selectedAlignment == Gravity.LEFT);
+        btnAlignCenter.setSelected(selectedAlignment == Gravity.CENTER);
+        btnAlignRight.setSelected(selectedAlignment == Gravity.RIGHT);
     }
     
     private void toggleBold() {
@@ -351,8 +425,25 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     }
     
     private void toggleBackground() {
-        hasBackground = !hasBackground;
+        // Cycle: transparent (no bg) → white bg → black bg → transparent
+        if (!hasBackground) {
+            // transparent → white
+            hasBackground = true;
+            backgroundColor = Color.WHITE;
+        } else if (backgroundColor == Color.WHITE) {
+            // white → black
+            backgroundColor = Color.BLACK;
+        } else {
+            // black → transparent
+            hasBackground = false;
+            backgroundColor = Color.WHITE; // reset to white for next cycle
+        }
+        updateBackgroundButtonState();
+    }
+    
+    private void updateBackgroundButtonState() {
         btnBackground.setSelected(hasBackground);
+        // Could add visual indication of which background color is selected
     }
     
     private void updateTypeface() {
@@ -372,11 +463,16 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     }
     
     private void saveAndFinish() {
-        String originalText = editText.getText().toString().trim();
+        CharSequence textWithSpans = editText.getText(); // Get text WITH spans
+        String originalText = textWithSpans.toString().trim();
         if (originalText.isEmpty()) {
             finishWithCancel();
             return;
         }
+        
+        // Ensure ALL text is covered by color spans for consistent rendering
+        Editable editable = (Editable) textWithSpans;
+        boolean hasColorSpans = ensureFullSpanCoverage(editable);
         
         // Measure EditText width to preserve line wrapping behavior
         // Let StaticLayout handle ALL text wrapping based on maxWidth and alignment
@@ -387,17 +483,83 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
               " paddingRight=" + editText.getPaddingRight() + ")");
         
         Bundle result = new Bundle();
-        result.putString(RESULT_TEXT, originalText);
-        result.putInt(RESULT_COLOR, selectedColor);
+        result.putCharSequence(RESULT_TEXT, editable); // Save WITH spans for multi-color support
+        // If we have color spans covering all text, use WHITE as base color (spans will override)
+        // Otherwise use selectedColor for plain text
+        result.putInt(RESULT_COLOR, hasColorSpans ? Color.WHITE : selectedColor);
         result.putFloat(RESULT_SIZE, selectedFontSize);
         result.putInt(RESULT_ALIGNMENT, selectedAlignment);
         result.putBoolean(RESULT_BOLD, isBold);
         result.putBoolean(RESULT_ITALIC, isItalic);
         result.putBoolean(RESULT_HAS_BACKGROUND, hasBackground);
-        result.putInt(RESULT_BACKGROUND_COLOR, hasBackground ? getContrastColor(selectedColor) : 0);
+        result.putInt(RESULT_BACKGROUND_COLOR, backgroundColor);
         result.putInt(RESULT_MAX_WIDTH, maxWidth);
         
         finishWithSave(result);
+    }
+    
+    /**
+     * Ensures that ALL text is covered by ForegroundColorSpan.
+     * For any gaps (unspanned text), add spans with the default selectedColor.
+     * This prevents textColor from affecting unspanned ranges.
+     * 
+     * @return true if text has color spans (after filling gaps), false if no spans at all
+     */
+    private boolean ensureFullSpanCoverage(Editable editable) {
+        if (editable.length() == 0) return false;
+        
+        // Get all existing color spans
+        ForegroundColorSpan[] existingSpans = editable.getSpans(0, editable.length(), ForegroundColorSpan.class);
+        
+        // If no spans at all, this is plain text - don't add spans
+        if (existingSpans.length == 0) {
+            Log.d("TextEditorActivity", "No color spans - plain text mode");
+            return false;
+        }
+        
+        // Build a list of all covered ranges
+        java.util.List<int[]> coveredRanges = new java.util.ArrayList<>();
+        for (ForegroundColorSpan span : existingSpans) {
+            int start = editable.getSpanStart(span);
+            int end = editable.getSpanEnd(span);
+            coveredRanges.add(new int[]{start, end});
+        }
+        
+        // Sort ranges by start position
+        java.util.Collections.sort(coveredRanges, (a, b) -> Integer.compare(a[0], b[0]));
+        
+        // Find gaps and fill them with default color (WHITE for neutrality)
+        int currentPos = 0;
+        for (int[] range : coveredRanges) {
+            int start = range[0];
+            int end = range[1];
+            
+            // Fill gap before this span with WHITE (neutral default)
+            if (currentPos < start) {
+                editable.setSpan(
+                    new ForegroundColorSpan(Color.WHITE),
+                    currentPos,
+                    start,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                Log.d("TextEditorActivity", "Filled gap [" + currentPos + "-" + start + "] with WHITE");
+            }
+            
+            currentPos = Math.max(currentPos, end);
+        }
+        
+        // Fill gap at the end with WHITE (neutral default)
+        if (currentPos < editable.length()) {
+            editable.setSpan(
+                new ForegroundColorSpan(Color.WHITE),
+                currentPos,
+                editable.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+            Log.d("TextEditorActivity", "Filled end gap [" + currentPos + "-" + editable.length() + "] with WHITE");
+        }
+        
+        return true; // Has color spans
     }
     
     /**
