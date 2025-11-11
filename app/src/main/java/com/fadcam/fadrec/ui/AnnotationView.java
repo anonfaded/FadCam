@@ -400,43 +400,15 @@ public class AnnotationView extends View {
             // NOTE: No background fill! Each layer starts transparent.
             // This is critical for proper layer stacking.
             
-            // PASS 1: Draw all non-eraser objects in this layer
+            // Draw all objects in creation order (pen and eraser mixed)
+            // This ensures erasers only affect objects drawn BEFORE them
             for (AnnotationObject obj : layer.getObjects()) {
                 if (obj.isDeleted()) continue; // Skip soft-deleted (for undo/redo)
                 if (obj.isVisible()) {
-                    // Check if this is an eraser path
-                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                        if (pathObj.isEraser()) {
-                            continue; // Skip erasers in first pass
-                        }
-                    }
-                    
                     float originalOpacity = obj.getOpacity();
                     obj.setOpacity(originalOpacity * layer.getOpacity());
                     obj.draw(layerCanvas, transform);
                     obj.setOpacity(originalOpacity);
-                }
-            }
-            
-            // PASS 2: Apply eraser objects (creates transparency in THIS layer only)
-            for (AnnotationObject obj : layer.getObjects()) {
-                if (obj.isDeleted()) continue; // Skip soft-deleted erasers (for undo/redo)
-                if (obj.isVisible()) {
-                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                        if (pathObj.isEraser()) {
-                            // CRITICAL: Eraser uses PorterDuff.Mode.CLEAR
-                            // This creates TRANSPARENCY in this layer's bitmap.
-                            // When composited, you'll see through to layers below.
-                            float originalOpacity = obj.getOpacity();
-                            obj.setOpacity(originalOpacity * layer.getOpacity());
-                            obj.draw(layerCanvas, transform);
-                            obj.setOpacity(originalOpacity);
-                        }
-                    }
                 }
             }
             
@@ -507,36 +479,14 @@ public class AnnotationView extends View {
                 Canvas layerCanvas = new Canvas(layerBitmap);
                 // NO background fill - layers are transparent where there's no content
                 
-                // Draw non-eraser objects
+                // Draw all objects in creation order
                 for (AnnotationObject obj : layer.getObjects()) {
                     if (obj.isDeleted()) continue;
                     if (obj.isVisible()) {
-                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                            if (pathObj.isEraser()) continue;
-                        }
                         float originalOpacity = obj.getOpacity();
                         obj.setOpacity(originalOpacity * layer.getOpacity());
                         obj.draw(layerCanvas, transform);
                         obj.setOpacity(originalOpacity);
-                    }
-                }
-                
-                // Apply eraser objects (creates transparency)
-                for (AnnotationObject obj : layer.getObjects()) {
-                    if (obj.isDeleted()) continue;
-                    if (obj.isVisible()) {
-                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                            if (pathObj.isEraser()) {
-                                float originalOpacity = obj.getOpacity();
-                                obj.setOpacity(originalOpacity * layer.getOpacity());
-                                obj.draw(layerCanvas, transform);
-                                obj.setOpacity(originalOpacity);
-                            }
-                        }
                     }
                 }
                 
@@ -552,36 +502,14 @@ public class AnnotationView extends View {
             Canvas activeLayerCanvas = new Canvas(activeLayerBitmap);
             // NO background fill - layer is transparent
             
-            // Draw committed non-eraser objects
+            // Draw all committed objects in creation order
             for (AnnotationObject obj : activeLayer.getObjects()) {
                 if (obj.isDeleted()) continue;
                 if (obj.isVisible()) {
-                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                        if (pathObj.isEraser()) continue;
-                    }
                     float originalOpacity = obj.getOpacity();
                     obj.setOpacity(originalOpacity * activeLayer.getOpacity());
                     obj.draw(activeLayerCanvas, transform);
                     obj.setOpacity(originalOpacity);
-                }
-            }
-            
-            // Apply committed eraser objects
-            for (AnnotationObject obj : activeLayer.getObjects()) {
-                if (obj.isDeleted()) continue;
-                if (obj.isVisible()) {
-                    if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                        com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                            (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                        if (pathObj.isEraser()) {
-                            float originalOpacity = obj.getOpacity();
-                            obj.setOpacity(originalOpacity * activeLayer.getOpacity());
-                            obj.draw(activeLayerCanvas, transform);
-                            obj.setOpacity(originalOpacity);
-                        }
-                    }
                 }
             }
             
@@ -618,36 +546,14 @@ public class AnnotationView extends View {
                 Canvas layerCanvas = new Canvas(layerBitmap);
                 // NO background fill
                 
-                // Draw non-eraser objects
+                // Draw all objects in creation order
                 for (AnnotationObject obj : layer.getObjects()) {
                     if (obj.isDeleted()) continue;
                     if (obj.isVisible()) {
-                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                            if (pathObj.isEraser()) continue;
-                        }
                         float originalOpacity = obj.getOpacity();
                         obj.setOpacity(originalOpacity * layer.getOpacity());
                         obj.draw(layerCanvas, transform);
                         obj.setOpacity(originalOpacity);
-                    }
-                }
-                
-                // Apply eraser objects
-                for (AnnotationObject obj : layer.getObjects()) {
-                    if (obj.isDeleted()) continue;
-                    if (obj.isVisible()) {
-                        if (obj instanceof com.fadcam.fadrec.ui.annotation.objects.PathObject) {
-                            com.fadcam.fadrec.ui.annotation.objects.PathObject pathObj = 
-                                (com.fadcam.fadrec.ui.annotation.objects.PathObject) obj;
-                            if (pathObj.isEraser()) {
-                                float originalOpacity = obj.getOpacity();
-                                obj.setOpacity(originalOpacity * layer.getOpacity());
-                                obj.draw(layerCanvas, transform);
-                                obj.setOpacity(originalOpacity);
-                            }
-                        }
                     }
                 }
                 
@@ -1412,8 +1318,20 @@ public class AnnotationView extends View {
                     // Only save path if we were actually drawing (not waiting for tap)
                     if (currentPath != null && !currentPath.isEmpty()) {
                         // Save path for both pen and eraser
-                        // Eraser xfermode is preserved in drawPaint, DrawingPath will detect it
+                        // Create paint copy with correct xfermode based on current mode
                         Paint pathPaint = new Paint(drawPaint);
+                        
+                        // Ensure xfermode matches current mode (in case drawPaint wasn't updated)
+                        if (state.isEraserMode()) {
+                            // Eraser must have CLEAR xfermode
+                            if (pathPaint.getXfermode() == null) {
+                                pathPaint.setXfermode(new android.graphics.PorterDuffXfermode(
+                                    android.graphics.PorterDuff.Mode.CLEAR));
+                            }
+                        } else {
+                            // Pen must NOT have any xfermode
+                            pathPaint.setXfermode(null);
+                        }
                         
                         AddPathCommand command = new AddPathCommand(
                             currentLayer, 
