@@ -48,6 +48,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     public static final String RESULT_ITALIC = "italic";
     public static final String RESULT_HAS_BACKGROUND = "has_background";
     public static final String RESULT_BACKGROUND_COLOR = "background_color";
+    public static final String RESULT_MAX_WIDTH = "max_width";
     
     // UI Components
     private ScrollView scrollContainer;
@@ -371,14 +372,22 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     }
     
     private void saveAndFinish() {
-        String text = editText.getText().toString().trim();
-        if (text.isEmpty()) {
+        String originalText = editText.getText().toString().trim();
+        if (originalText.isEmpty()) {
             finishWithCancel();
             return;
         }
         
+        // Measure EditText width to preserve line wrapping behavior
+        // Let StaticLayout handle ALL text wrapping based on maxWidth and alignment
+        int maxWidth = editText.getWidth() - editText.getPaddingLeft() - editText.getPaddingRight();
+        Log.d("TextEditorActivity", "Saving text with maxWidth=" + maxWidth + 
+              " (editText.width=" + editText.getWidth() + 
+              " paddingLeft=" + editText.getPaddingLeft() + 
+              " paddingRight=" + editText.getPaddingRight() + ")");
+        
         Bundle result = new Bundle();
-        result.putString(RESULT_TEXT, text);
+        result.putString(RESULT_TEXT, originalText);
         result.putInt(RESULT_COLOR, selectedColor);
         result.putFloat(RESULT_SIZE, selectedFontSize);
         result.putInt(RESULT_ALIGNMENT, selectedAlignment);
@@ -386,8 +395,48 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
         result.putBoolean(RESULT_ITALIC, isItalic);
         result.putBoolean(RESULT_HAS_BACKGROUND, hasBackground);
         result.putInt(RESULT_BACKGROUND_COLOR, hasBackground ? getContrastColor(selectedColor) : 0);
+        result.putInt(RESULT_MAX_WIDTH, maxWidth);
         
         finishWithSave(result);
+    }
+    
+    /**
+     * Insert line breaks (\n) where the EditText's layout wrapped the text.
+     * This preserves the visual line breaking from the editor.
+     */
+    private String insertLineBreaksFromLayout(String text) {
+        android.text.Layout layout = editText.getLayout();
+        if (layout == null) {
+            return text;
+        }
+        
+        StringBuilder result = new StringBuilder();
+        int lineCount = layout.getLineCount();
+        int textLength = text.length();
+        
+        for (int i = 0; i < lineCount; i++) {
+            int lineStart = layout.getLineStart(i);
+            int lineEnd = layout.getLineEnd(i);
+            
+            // Bounds check to prevent StringIndexOutOfBoundsException
+            if (lineStart >= textLength) break;
+            if (lineEnd > textLength) lineEnd = textLength;
+            
+            // Get text for this line
+            String lineText = text.substring(lineStart, lineEnd);
+            
+            // Trim trailing whitespace/newlines from this line
+            lineText = lineText.replaceAll("[\\s\n]+$", "");
+            
+            result.append(lineText);
+            
+            // Add newline if not the last line and we have content
+            if (i < lineCount - 1 && lineText.length() > 0) {
+                result.append("\n");
+            }
+        }
+        
+        return result.toString();
     }
     
     private void deleteAndFinish() {

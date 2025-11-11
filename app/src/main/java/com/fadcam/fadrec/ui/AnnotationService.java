@@ -3452,9 +3452,11 @@ public class AnnotationService extends Service {
         boolean isItalic = resultData.getBoolean(TextEditorActivity.RESULT_ITALIC, false);
         boolean hasBackground = resultData.getBoolean(TextEditorActivity.RESULT_HAS_BACKGROUND, false);
         int backgroundColor = resultData.getInt(TextEditorActivity.RESULT_BACKGROUND_COLOR, 0);
+        int maxWidth = resultData.getInt(TextEditorActivity.RESULT_MAX_WIDTH, 0);
         
-        // Wrap text to fit screen
-        String wrappedText = wrapTextToScreen(text, fontSize, isBold, isItalic);
+        Log.d(TAG, "handleTextEditorSave: maxWidth=" + maxWidth + " fontSize=" + fontSize);
+        
+        // Use text as-is (no wrapping - maxWidth will handle line breaking in rendering)
         Paint.Align paintAlign = convertGravityToPaintAlign(alignment);
         
         AnnotationPage currentPage = annotationView.getState().getActivePage();
@@ -3482,7 +3484,7 @@ public class AnnotationService extends Service {
                 com.fadcam.fadrec.ui.annotation.ModifyTextObjectCommand command = 
                     new com.fadcam.fadrec.ui.annotation.ModifyTextObjectCommand(
                         containingLayer, textObject,
-                        wrappedText, color, fontSize, paintAlign,
+                        text, color, fontSize, paintAlign,
                         isBold, isItalic, hasBackground, backgroundColor
                     );
                 
@@ -3493,6 +3495,9 @@ public class AnnotationService extends Service {
                 // 3. Clears redo stack
                 // 4. Updates modification timestamp
                 currentPage.executeCommand(command);
+                
+                // Set maxWidth for line wrapping consistency
+                textObject.setMaxWidth(maxWidth);
                 
                 // Restore visibility (was hidden in showTextEditorDialog)
                 textObject.setVisible(true);
@@ -3517,7 +3522,7 @@ public class AnnotationService extends Service {
                 float centerX = annotationView.getWidth() / 2f;
                 float centerY = annotationView.getHeight() / 2f;
                 
-                TextObject textObject = new TextObject(wrappedText, centerX, centerY);
+                TextObject textObject = new TextObject(text, centerX, centerY);
                 textObject.setTextColor(color);
                 textObject.setFontSize(fontSize);
                 textObject.setAlignment(paintAlign);
@@ -3525,6 +3530,7 @@ public class AnnotationService extends Service {
                 textObject.setItalic(isItalic);
                 textObject.setHasBackground(hasBackground);
                 textObject.setBackgroundColor(backgroundColor);
+                textObject.setMaxWidth(maxWidth); // Preserve editor's line breaking
                 
                 // CRITICAL: Use command pattern for undo/redo support
                 com.fadcam.fadrec.ui.annotation.AddObjectCommand command = 

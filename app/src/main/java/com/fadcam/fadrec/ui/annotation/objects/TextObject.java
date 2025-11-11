@@ -25,6 +25,7 @@ public class TextObject extends AnnotationObject {
     private boolean hasBackground;
     private int backgroundColor;
     private RectF bounds; // For hit testing
+    private int maxWidth; // Maximum text width for line wrapping (from editor)
 
     public TextObject() {
         super(ObjectType.TEXT);
@@ -38,6 +39,7 @@ public class TextObject extends AnnotationObject {
         this.hasBackground = false;
         this.backgroundColor = 0xFF000000; // Black default
         this.bounds = new RectF();
+        this.maxWidth = 0; // 0 means no constraint (use natural wrapping)
     }
 
     public TextObject(String text, float x, float y) {
@@ -53,12 +55,12 @@ public class TextObject extends AnnotationObject {
         if (!visible || text == null || text.isEmpty())
             return;
 
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setTextSize(fontSize);
-        paint.setColor(textColor);
-        paint.setAlpha((int) (opacity * 255));
-        // Don't set paint.setTextAlign() - we calculate position manually below
+        // Setup paint
+        android.text.TextPaint textPaint = new android.text.TextPaint();
+        textPaint.setAntiAlias(true);
+        textPaint.setTextSize(fontSize);
+        textPaint.setColor(textColor);
+        textPaint.setAlpha((int) (opacity * 255));
 
         // Set typeface based on style
         int style = Typeface.NORMAL;
@@ -70,38 +72,93 @@ public class TextObject extends AnnotationObject {
             style = Typeface.ITALIC;
 
         Typeface typeface = Typeface.create(fontFamily, style);
-        paint.setTypeface(typeface);
-
-        // Update bounds for rendering (also used by getBounds())
-        String[] lines = text.split("\n");
-        float lineHeight = paint.descent() - paint.ascent();
-
-        // Calculate text bounds
-        float maxWidth = 0;
-        for (String line : lines) {
-            float width = paint.measureText(line);
-            if (width > maxWidth)
-                maxWidth = width;
+        textPaint.setTypeface(typeface);
+        
+        // Determine layout width (use maxWidth from editor if set, otherwise measure longest line)
+        int layoutWidth;
+        if (maxWidth > 0) {
+            layoutWidth = maxWidth;
+            android.util.Log.d("TextObject", "Using maxWidth from editor: " + layoutWidth);
+        } else {
+            // Auto-width: measure the longest line
+            String[] lines = text.split("\n");
+            float maxLineWidth = 0;
+            for (String line : lines) {
+                float lineWidth = textPaint.measureText(line);
+                if (lineWidth > maxLineWidth) maxLineWidth = lineWidth;
+            }
+            layoutWidth = (int) Math.ceil(maxLineWidth);
+            android.util.Log.d("TextObject", "Calculated layoutWidth: " + layoutWidth);
         }
-        float totalHeight = lineHeight * lines.length;
+        
+        // Create StaticLayout for proper text wrapping
+        android.text.StaticLayout layout = android.text.StaticLayout.Builder
+            .obtain(text, 0, text.length(), textPaint, layoutWidth)
+            .setAlignment(convertPaintAlignToLayoutAlignment(alignment))
+            .setLineSpacing(0f, 1f)
+            .setIncludePad(false)
+            .build();
+        
+        // Use layout width as container width (StaticLayout positions text within this width)
+        float containerWidth = layoutWidth;
+        float containerHeight = layout.getHeight();
 
         // Apply transformation
         canvas.save();
         canvas.concat(transform);
 
-        // Move to center position (x, y is now center)
+        // Move to position
         canvas.translate(x, y);
 
-        // Rotate around center (at origin now after translate)
+        // Rotate around center
         canvas.rotate(rotation);
 
-        // Apply scale around center
+        // Apply scale
         canvas.scale(scale, scale);
 
-        // Draw text offset by half dimensions so it's centered at (0,0)
-        // Calculate start position based on alignment
-        float startY = -totalHeight / 2f - paint.ascent(); // Adjust for baseline
-        float yOffset = startY;
+        // Measure actual text bounds (needed for proper centering with different alignments)
+        float textBoundsLeft = 0;
+        float textBoundsRight = 0;
+        float textCenterOffset = 0;
+        
+        if (layout.getLineCount() > 0) {
+            if (alignment == Paint.Align.LEFT) {
+                // LEFT: text starts at 0, find the rightmost position
+                textBoundsLeft = 0;
+                textBoundsRight = 0;
+                for (int i = 0; i < layout.getLineCount(); i++) {
+                    float lineWidth = layout.getLineMax(i);
+                    if (lineWidth > textBoundsRight) {
+                        textBoundsRight = lineWidth;
+                    }
+                }
+                textCenterOffset = (textBoundsLeft + textBoundsRight) / 2f;
+            } else if (alignment == Paint.Align.RIGHT) {
+                // RIGHT: text ends at layoutWidth, starts from layoutWidth - measured_width
+                textBoundsRight = layoutWidth;
+                textBoundsLeft = layoutWidth;
+                for (int i = 0; i < layout.getLineCount(); i++) {
+                    float lineWidth = layout.getLineMax(i);
+                    float lineStart = layoutWidth - lineWidth;
+                    if (lineStart < textBoundsLeft) {
+                        textBoundsLeft = lineStart;
+                    }
+                }
+                textCenterOffset = (textBoundsLeft + textBoundsRight) / 2f;
+            } else {
+                // CENTER: StaticLayout centers text at layoutWidth/2
+                textCenterOffset = layoutWidth / 2f;
+                float halfWidth = 0;
+                for (int i = 0; i < layout.getLineCount(); i++) {
+                    float lineWidth = layout.getLineMax(i);
+                    if (lineWidth > halfWidth) {
+                        halfWidth = lineWidth;
+                    }
+                }
+                textBoundsLeft = textCenterOffset - halfWidth / 2f;
+                textBoundsRight = textCenterOffset + halfWidth / 2f;
+            }
+        }
 
         // Draw background if enabled
         if (hasBackground) {
@@ -110,35 +167,33 @@ public class TextObject extends AnnotationObject {
             bgPaint.setAlpha((int) (opacity * 255));
             bgPaint.setStyle(Paint.Style.FILL);
 
-            float padding = fontSize * 0.15f; // 15% padding
-            RectF bgRect = new RectF(
-                    -maxWidth / 2f - padding,
-                    -totalHeight / 2f - padding,
-                    maxWidth / 2f + padding,
-                    totalHeight / 2f + padding);
+            float padding = fontSize * 0.15f;
+            android.graphics.RectF bgRect = new android.graphics.RectF(
+                    textBoundsLeft - padding,
+                    -containerHeight / 2f - padding,
+                    textBoundsRight + padding,
+                    containerHeight / 2f + padding);
 
-            float cornerRadius = fontSize * 0.2f; // 20% corner radius
+            float cornerRadius = fontSize * 0.2f;
             canvas.drawRoundRect(bgRect, cornerRadius, cornerRadius, bgPaint);
         }
 
-        for (String line : lines) {
-            float lineWidth = paint.measureText(line);
-            float startX;
-
-            // Calculate X position based on alignment
-            if (alignment == Paint.Align.LEFT) {
-                startX = -maxWidth / 2f;
-            } else if (alignment == Paint.Align.RIGHT) {
-                startX = maxWidth / 2f - lineWidth;
-            } else { // CENTER
-                startX = -lineWidth / 2f;
-            }
-
-            canvas.drawText(line, startX, yOffset, paint);
-            yOffset += lineHeight;
-        }
+        // Center the text by offsetting to the actual text center
+        canvas.translate(-textCenterOffset, -containerHeight / 2f);
+        layout.draw(canvas);
 
         canvas.restore();
+    }
+    
+    // Helper to convert Paint.Align to Layout.Alignment
+    private android.text.Layout.Alignment convertPaintAlignToLayoutAlignment(Paint.Align align) {
+        if (align == Paint.Align.LEFT) {
+            return android.text.Layout.Alignment.ALIGN_NORMAL;
+        } else if (align == Paint.Align.RIGHT) {
+            return android.text.Layout.Alignment.ALIGN_OPPOSITE;
+        } else {
+            return android.text.Layout.Alignment.ALIGN_CENTER;
+        }
     }
 
     @Override
@@ -153,6 +208,7 @@ public class TextObject extends AnnotationObject {
         json.put("italic", italic);
         json.put("hasBackground", hasBackground);
         json.put("backgroundColor", backgroundColor);
+        json.put("maxWidth", maxWidth);
         json.put("bounds", boundsToJSON());
         return json;
     }
@@ -169,6 +225,7 @@ public class TextObject extends AnnotationObject {
         this.italic = json.getBoolean("italic");
         this.hasBackground = json.optBoolean("hasBackground", false);
         this.backgroundColor = json.optInt("backgroundColor", 0xFF000000);
+        this.maxWidth = json.optInt("maxWidth", 0);
         this.bounds = boundsFromJSON(json.getJSONObject("bounds"));
     }
 
@@ -181,6 +238,9 @@ public class TextObject extends AnnotationObject {
         clone.setAlignment(alignment);
         clone.setBold(bold);
         clone.setItalic(italic);
+        clone.setHasBackground(hasBackground);
+        clone.setBackgroundColor(backgroundColor);
+        clone.setMaxWidth(maxWidth);
         clone.setRotation(rotation);
         clone.setVisible(visible);
         clone.setLocked(locked);
@@ -338,6 +398,16 @@ public class TextObject extends AnnotationObject {
 
     public void setBackgroundColor(int backgroundColor) {
         this.backgroundColor = backgroundColor;
+        this.modifiedAt = System.currentTimeMillis();
+    }
+
+    public int getMaxWidth() {
+        return maxWidth;
+    }
+
+    public void setMaxWidth(int maxWidth) {
+        this.maxWidth = maxWidth;
+        calculateBounds();
         this.modifiedAt = System.currentTimeMillis();
     }
 
