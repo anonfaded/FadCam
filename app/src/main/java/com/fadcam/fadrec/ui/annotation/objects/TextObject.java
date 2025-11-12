@@ -118,9 +118,15 @@ public class TextObject extends AnnotationObject {
             .setIncludePad(false)
             .build();
         
-        // Use layout width as container width (StaticLayout positions text within this width)
-        float containerWidth = layoutWidth;
-        float containerHeight = layout.getHeight();
+    // Use layout width as container width (StaticLayout positions text within this width)
+    float containerWidth = layoutWidth;
+    float containerHeight = layout.getHeight();
+    // Keep internal bounds in sync with what we actually draw (local space)
+    bounds.set(0f, 0f, containerWidth, containerHeight);
+        
+        android.util.Log.d("TextObject", "Drawing layout: " + containerWidth + "x" + containerHeight + 
+                          " bounds: " + bounds.width() + "x" + bounds.height() + 
+                          " scale: " + scale + " lines: " + layout.getLineCount());
 
         // Apply transformation
         canvas.save();
@@ -293,7 +299,9 @@ public class TextObject extends AnnotationObject {
         this.hasBackground = json.optBoolean("hasBackground", false);
         this.backgroundColor = json.optInt("backgroundColor", 0xFF000000);
         this.maxWidth = json.optInt("maxWidth", 0);
-        this.bounds = boundsFromJSON(json.getJSONObject("bounds"));
+    this.bounds = boundsFromJSON(json.getJSONObject("bounds"));
+    // Recalculate to ensure consistency with current rendering logic
+    calculateBounds();
     }
 
     @Override
@@ -317,20 +325,69 @@ public class TextObject extends AnnotationObject {
 
     // Calculate bounds for hit testing
     private void calculateBounds() {
-        Paint paint = new Paint();
-        paint.setTextSize(fontSize);
-
-        float maxWidth = 0;
-        String textStr = text.toString();
-        String[] lines = textStr.split("\n");
-        for (String line : lines) {
-            float width = paint.measureText(line);
-            if (width > maxWidth)
-                maxWidth = width;
+        if (text == null || text.length() == 0) {
+            bounds.set(0, 0, 0, 0);
+            return;
         }
-
-        float height = lines.length * (paint.descent() - paint.ascent());
-        bounds.set(0, 0, maxWidth, height);
+        
+        // Use the SAME layout logic as draw() to get accurate bounds
+        android.text.TextPaint textPaint = new android.text.TextPaint();
+        textPaint.setAntiAlias(true);
+        textPaint.setTextSize(fontSize);
+        textPaint.setColor(textColor);
+        
+        int style = Typeface.NORMAL;
+        if (bold && italic)
+            style = Typeface.BOLD_ITALIC;
+        else if (bold)
+            style = Typeface.BOLD;
+        else if (italic)
+            style = Typeface.ITALIC;
+        Typeface typeface = Typeface.create(fontFamily, style);
+        textPaint.setTypeface(typeface);
+        
+        // Determine layout width (same logic as draw())
+        int layoutWidth;
+        if (maxWidth > 0) {
+            layoutWidth = maxWidth;
+        } else {
+            // Auto-width: measure the longest line
+            String textStr = text.toString();
+            String[] lines = textStr.split("\n");
+            float maxLineWidth = 0;
+            for (String line : lines) {
+                float lineWidth = textPaint.measureText(line);
+                if (lineWidth > maxLineWidth) maxLineWidth = lineWidth;
+            }
+            layoutWidth = (int) Math.ceil(maxLineWidth);
+        }
+        
+        // Create StaticLayout to get actual wrapped bounds
+        android.text.StaticLayout layout = android.text.StaticLayout.Builder
+            .obtain(text, 0, text.length(), textPaint, layoutWidth)
+            .setAlignment(convertPaintAlignToLayoutAlignment(alignment))
+            .setLineSpacing(0f, 1f)
+            .setIncludePad(false)
+            .build();
+        
+        // Measure actual text bounds after wrapping
+        float actualWidth = 0;
+        for (int i = 0; i < layout.getLineCount(); i++) {
+            float lineWidth = layout.getLineWidth(i);
+            if (lineWidth > actualWidth) {
+                actualWidth = lineWidth;
+            }
+        }
+        float actualHeight = layout.getHeight();
+        
+        // Set bounds - use layoutWidth (not actualWidth) to match drawing container
+        // The container should encompass the full layout width for proper scaling
+        // Bounds are in LOCAL space (before scale transformation)
+        bounds.set(0, 0, layoutWidth, actualHeight);
+        
+        android.util.Log.d("TextObject", "Calculated bounds: " + layoutWidth + "x" + actualHeight + 
+                          " (actualWidth=" + actualWidth + ", maxWidth=" + maxWidth + ", scale=" + scale + 
+                          ", lines=" + layout.getLineCount() + ")");
     }
 
     private JSONObject boundsToJSON() throws JSONException {
@@ -526,19 +583,12 @@ public class TextObject extends AnnotationObject {
             .setIncludePad(false)
             .build();
 
-        // Measure actual text width (widest line after wrapping)
-        float actualWidth = 0;
-        for (int i = 0; i < layout.getLineCount(); i++) {
-            float lineWidth = layout.getLineMax(i);
-            if (lineWidth > actualWidth) {
-                actualWidth = lineWidth;
-            }
-        }
-        float actualHeight = layout.getHeight();
+        float containerWidth = layoutWidth; // Use full layout width, not measured width
+        float containerHeight = layout.getHeight();
 
         // Apply scale to bounds
-        float scaledWidth = actualWidth * scale;
-        float scaledHeight = actualHeight * scale;
+        float scaledWidth = containerWidth * scale;
+        float scaledHeight = containerHeight * scale;
 
         // Return bounds centered at (x, y) with rotation considered
         float halfWidth = scaledWidth / 2f;
