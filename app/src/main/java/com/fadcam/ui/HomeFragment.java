@@ -2384,12 +2384,16 @@ public class HomeFragment extends BaseFragment {
         // ----- Fix Ended for this method(onPause)-----
         // locationHelper.stopLocationUpdates();
 
-        // Only unregister if receiver exists
-        if (torchReceiver != null) {
+        // Only unregister torch receiver if it was actually registered and flag is set
+        // This prevents IllegalArgumentException crashes from double-unregistration
+        if (isTorchReceiverRegistered && torchReceiver != null) {
             try {
                 requireContext().unregisterReceiver(torchReceiver);
+                isTorchReceiverRegistered = false;
+                Log.d(TAG, "Unregistered torchReceiver in onPause");
             } catch (IllegalArgumentException e) {
-                Log.e(TAG, "Receiver was not registered: " + e.getMessage());
+                Log.w(TAG, "Receiver was not registered: " + e.getMessage());
+                isTorchReceiverRegistered = false;
             }
         }
     }
