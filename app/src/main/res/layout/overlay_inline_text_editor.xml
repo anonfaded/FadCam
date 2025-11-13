@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent">
+    xmlns:app="http://schemas.android.com/apk/res-auto" 
+    android:layout_width="match_parent" 
+    android:layout_height="match_parent">
 
     <!-- Darker dimmed background overlay (90% opacity for better focus) - NON-BLOCKING -->
     <View android:id="@+id/dimOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#E6000000" android:clickable="false" android:focusable="false" />
@@ -9,8 +11,8 @@
     <!-- Main layout with header at top, editing area centered -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:clickable="false" android:focusable="false">
 
-        <!-- Top action bar - FIXED AT TOP -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:paddingTop="40dp" android:paddingBottom="16dp">
+        <!-- Top action bar - FIXED AT TOP, insets applied by activity -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:paddingBottom="16dp">
 
             <!-- Style buttons (left side) -->
             <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/bg_dark_rounded" android:padding="6dp">

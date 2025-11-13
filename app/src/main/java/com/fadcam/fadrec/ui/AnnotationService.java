@@ -158,6 +158,7 @@ public class AnnotationService extends Service {
     private boolean isAnimating = false; // Track if menu is currently animating
     private boolean overlayVisible = true; // Controls if arrow overlay is shown
     private boolean annotationEnabled = false; // Controls if drawing is active (DEFAULT: OFF)
+    private boolean hasShownStartupDialog = false; // Track if startup dialog already shown to prevent repeated prompts
     private boolean canvasHidden = false; // Controls if canvas drawings are hidden (except pinned layers)
     private long lastArrowHintTimestamp = 0L;
     private Runnable pendingArrowHintRunnable;
@@ -757,8 +758,15 @@ public class AnnotationService extends Service {
             if (projectFileManager.projectExists(currentProjectName)) {
                 Log.i(TAG, "Found existing project: " + currentProjectName);
 
-                // Show startup dialog: Continue or Create New
-                showStartupDialog(currentProjectName);
+                // Only show startup dialog if we haven't shown it yet (prevents repeated prompts on service restart)
+                if (!hasShownStartupDialog) {
+                    Log.d(TAG, "First time loading - showing startup dialog");
+                    showStartupDialog(currentProjectName);
+                    hasShownStartupDialog = true;
+                } else {
+                    Log.d(TAG, "Service restarted - skipping dialog and loading project directly");
+                    loadExistingProject(currentProjectName);
+                }
             } else {
                 Log.w(TAG, "Saved project doesn't exist, starting fresh");
                 startFreshProject();
@@ -775,6 +783,7 @@ public class AnnotationService extends Service {
     private void showStartupDialog(String existingProjectName) {
         String sanitizedName = ProjectFileManager.sanitizeProjectName(existingProjectName);
 
+        // Wrap with ContextThemeWrapper to provide Material theme context
         Context themedContext = new ContextThemeWrapper(this, R.style.Base_Theme_FadCam);
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
 
@@ -782,17 +791,19 @@ public class AnnotationService extends Service {
                 .setTitle("Welcome Back!")
                 .setMessage("Continue with your last saved project \"" + sanitizedName + "\" or start a new one?")
                 .setPositiveButton("Continue", (dialog, which) -> {
+                    dialog.dismiss();
                     Log.i(TAG, "User chose to continue with: " + existingProjectName);
                     loadExistingProject(existingProjectName);
                 })
                 .setNegativeButton("New Project", (dialog, which) -> {
+                    dialog.dismiss();
                     Log.i(TAG, "User chose to create new project");
                     createNewProject();
                 })
                 .setCancelable(false)
                 .create();
 
-        // Set dialog window type for overlay
+        // Set proper colors for dialog visibility
         if (startupDialog.getWindow() != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
@@ -800,6 +811,38 @@ public class AnnotationService extends Service {
                 startupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
             }
         }
+        
+        // Force visibility with hardcoded colors
+        startupDialog.setOnShowListener(dialog -> {
+            // Set background color - dark gray
+            startupDialog.getWindow().getDecorView().setBackgroundColor(0xFF2A2A2A);
+            
+            // Set title color - white
+            int titleId = getResources().getIdentifier("alertTitle", "id", getPackageName());
+            if (titleId > 0) {
+                android.widget.TextView titleView = startupDialog.findViewById(titleId);
+                if (titleView != null) {
+                    titleView.setTextColor(0xFFFFFFFF);
+                }
+            }
+            
+            // Set message color - light gray
+            int messageId = android.R.id.message;
+            android.widget.TextView messageView = startupDialog.findViewById(messageId);
+            if (messageView != null) {
+                messageView.setTextColor(0xFFE0E0E0);
+            }
+            
+            // Set button colors
+            android.widget.Button positiveButton = startupDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
+            android.widget.Button negativeButton = startupDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE);
+            if (positiveButton != null) {
+                positiveButton.setTextColor(0xFF4CAF50);
+            }
+            if (negativeButton != null) {
+                negativeButton.setTextColor(0xFF4CAF50);
+            }
+        });
 
         startupDialog.show();
     }
@@ -1111,7 +1154,7 @@ public class AnnotationService extends Service {
             showLayerPanel();
         });
 
-        // Main Expand/Collapse button (toggles menu overlay visibility with fade)
+        // Main Expand/Collapse button - toggle menu
         btnExpandCollapseContainer.setOnClickListener(v -> {
             if (isAnimating) {
                 Log.d(TAG, "Click ignored - animation in progress");
@@ -1123,7 +1166,9 @@ public class AnnotationService extends Service {
                 return;
             }
 
+            // Simple toggle - expand or collapse
             performMenuToggle();
+            Log.d(TAG, "Menu toggled - isExpanded: " + isExpanded);
         });
 
         // Enable/Disable Annotation button
@@ -1370,6 +1415,11 @@ public class AnnotationService extends Service {
 
         if (isExpanded) {
             Log.d(TAG, "Starting EXPAND - showing menu overlay");
+            
+            // Show the entire menu window
+            menuParams.alpha = 1f;
+            windowManager.updateViewLayout(toolbarView, menuParams);
+            
             expandableContent.setVisibility(View.VISIBLE);
             expandableContent.setAlpha(0f);
             expandableContent.animate()
@@ -1387,6 +1437,10 @@ public class AnnotationService extends Service {
                     .alpha(0f)
                     .setDuration(150)
                     .withEndAction(() -> {
+                        // Hide the entire menu window by setting alpha to 0
+                        menuParams.alpha = 0f;
+                        windowManager.updateViewLayout(toolbarView, menuParams);
+                        
                         expandableContent.setVisibility(View.GONE);
                         expandableContent.setAlpha(1f);
                         isAnimating = false;

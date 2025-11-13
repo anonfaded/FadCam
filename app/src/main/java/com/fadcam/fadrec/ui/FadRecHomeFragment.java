@@ -536,8 +536,8 @@ public class FadRecHomeFragment extends HomeFragment {
      * Shows an informative dialog before opening system settings.
      */
     private void requestOverlayPermission() {
-        // Show informative Material dialog first
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+        // Show informative Material dialog with proper theming
+        androidx.appcompat.app.AlertDialog permissionDialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
             .setTitle(com.fadcam.R.string.floating_controls_permission_title)
             .setMessage(com.fadcam.R.string.floating_controls_permission_message)
             .setPositiveButton(com.fadcam.R.string.floating_controls_permission_grant, (dialog, which) -> {
@@ -580,7 +580,41 @@ public class FadRecHomeFragment extends HomeFragment {
                 dialog.dismiss();
             })
             .setCancelable(true)
-            .show();
+            .create();
+        
+        // Apply hardcoded colors for visibility
+        permissionDialog.setOnShowListener(dialog -> {
+            // Set background
+            permissionDialog.getWindow().getDecorView().setBackgroundColor(0xFF2A2A2A);
+            
+            // Set title color
+            int titleId = getResources().getIdentifier("alertTitle", "id", requireContext().getPackageName());
+            if (titleId > 0) {
+                android.widget.TextView titleView = permissionDialog.findViewById(titleId);
+                if (titleView != null) {
+                    titleView.setTextColor(0xFFFFFFFF);
+                }
+            }
+            
+            // Set message color
+            int messageId = android.R.id.message;
+            android.widget.TextView messageView = permissionDialog.findViewById(messageId);
+            if (messageView != null) {
+                messageView.setTextColor(0xFFE0E0E0);
+            }
+            
+            // Set button colors
+            android.widget.Button positiveButton = permissionDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
+            android.widget.Button negativeButton = permissionDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE);
+            if (positiveButton != null) {
+                positiveButton.setTextColor(0xFF4CAF50);
+            }
+            if (negativeButton != null) {
+                negativeButton.setTextColor(0xFF4CAF50);
+            }
+        });
+        
+        permissionDialog.show();
     }
     
     /**
