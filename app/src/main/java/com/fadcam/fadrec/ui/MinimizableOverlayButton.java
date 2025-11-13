@@ -359,7 +359,8 @@ public class MinimizableOverlayButton {
             } else if (minDistance == distanceToTop) {
                 currentEdge = EdgePosition.TOP;
                 layoutParams.x = Math.max(0, Math.min(layoutParams.x, screenWidth - buttonWidth));
-                layoutParams.y = 0;
+                // Add status bar height offset so button appears below status bar
+                layoutParams.y = getStatusBarHeight();
                 adaptLayoutForEdge(EdgePosition.TOP);
             } else {
                 currentEdge = EdgePosition.BOTTOM;
@@ -596,5 +597,17 @@ public class MinimizableOverlayButton {
      */
     private int dpToPx(float dp) {
         return Math.round(dp * context.getResources().getDisplayMetrics().density);
+    }
+
+    /**
+     * Get status bar height to account for safe area
+     */
+    private int getStatusBarHeight() {
+        int statusBarHeight = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            statusBarHeight = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return statusBarHeight;
     }
 }

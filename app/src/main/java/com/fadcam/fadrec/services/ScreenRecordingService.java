@@ -29,6 +29,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
@@ -913,46 +914,51 @@ public class ScreenRecordingService extends Service {
         }
     }
 
-    // Broadcast methods
+    // Broadcast methods (using LocalBroadcastManager for guaranteed delivery on Android 12+)
+    
     private void broadcastRecordingStarted() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED);
         intent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
-        sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
         // Also send state callback
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.IN_PROGRESS.name());
-        sendBroadcast(stateIntent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        Log.d(TAG, "Broadcasted recording started via LocalBroadcastManager");
     }
 
     private void broadcastRecordingStopped() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
-        sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
         // Also send state callback
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.NONE.name());
-        sendBroadcast(stateIntent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        Log.d(TAG, "Broadcasted recording stopped via LocalBroadcastManager");
     }
 
     private void broadcastRecordingPaused() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
-        sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
         // Also send state callback
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.PAUSED.name());
-        sendBroadcast(stateIntent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        Log.d(TAG, "Broadcasted recording paused via LocalBroadcastManager");
     }
 
     private void broadcastRecordingResumed() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
-        sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
         // Also send state callback
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.IN_PROGRESS.name());
-        sendBroadcast(stateIntent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        Log.d(TAG, "Broadcasted recording resumed via LocalBroadcastManager");
     }
 
     @Override

@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
@@ -91,6 +92,12 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Initialize MediaProjection helper
         mediaProjectionHelper = new MediaProjectionHelper(requireContext());
+        
+        // Register broadcast receivers in onCreate for screen recording state
+        // This ensures they persist even if the fragment view is recreated,
+        // and are ready to receive broadcasts when the app comes to foreground
+        registerScreenRecordingReceivers();
+        registerAnnotationServiceReceiver();
         
         // Register audio permission launcher
         audioPermissionLauncher = registerForActivityResult(
@@ -177,11 +184,8 @@ public class FadRecHomeFragment extends HomeFragment {
     public void onStart() {
         super.onStart();
         Log.d(TAG, "FadRecHomeFragment onStart");
-        
-        // Register FadRec-specific broadcast receivers here (not in onViewCreated)
-        // This ensures single, coordinated registration in the lifecycle
-        registerScreenRecordingReceivers();
-        registerAnnotationServiceReceiver();
+        // Note: Broadcast receivers are now registered in onCreate()
+        // to ensure they persist and are ready to receive state updates
     }
     
     /**
@@ -846,8 +850,8 @@ public class FadRecHomeFragment extends HomeFragment {
         MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
         
-        // Load persisted state on initialization
-        loadPersistedRecordingState();
+        // NOTE: Don't load persisted state here - it interferes with broadcast-based state
+        // State will be loaded from broadcasts or set to NONE if no broadcasts arrive
         
         // Start/Stop button
         if (buttonStartStop != null) {
@@ -1136,14 +1140,12 @@ public class FadRecHomeFragment extends HomeFragment {
             filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
             filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
             
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                requireContext().registerReceiver(screenRecordingStateReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                androidx.core.content.ContextCompat.registerReceiver(requireContext(), screenRecordingStateReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-            }
+            // Use LocalBroadcastManager for guaranteed delivery on Android 12+
+            // This bypasses the background app broadcast restrictions
+            LocalBroadcastManager.getInstance(requireContext()).registerReceiver(screenRecordingStateReceiver, filter);
             
             isScreenRecordingReceiverRegistered = true;
-            Log.d(TAG, "Screen recording broadcast receivers registered");
+            Log.d(TAG, "Screen recording broadcast receivers registered via LocalBroadcastManager");
         } catch (IllegalArgumentException e) {
             Log.w(TAG, "Error registering screen recording receiver: " + e.getMessage());
             isScreenRecordingReceiverRegistered = false;
@@ -1473,8 +1475,10 @@ public class FadRecHomeFragment extends HomeFragment {
         // Since we've overridden resetUIButtonsToIdleState(), our version runs instead
         // Our override keeps pause enabled and camera controls hidden - no timing hacks needed!
         
-        // Just reload persisted state to sync with service
-        loadPersistedRecordingState();
+        // NOTE: Don't request state or load persisted state
+        // The broadcast receiver is registered in onCreate() and will listen for state changes
+        // from ScreenRecordingService. The UI will update automatically when broadcasts arrive.
+        // This avoids the timing issue where state requests arrive before recording fully starts.
         
         // Start timer updates if recording is active
         if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
@@ -1495,11 +1499,9 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(TAG, "FadRecHomeFragment onStop - unregistering FadRec-specific receivers");
-        
-        // Unregister FadRec-specific receivers
-        unregisterScreenRecordingReceivers();
-        unregisterAnnotationServiceReceiver();
+        Log.d(TAG, "FadRecHomeFragment onStop");
+        // Note: Broadcast receivers remain registered to continue receiving state updates
+        // even when fragment is stopped but still in the backstack
     }
 
     /**
@@ -1508,9 +1510,9 @@ public class FadRecHomeFragment extends HomeFragment {
     private void unregisterScreenRecordingReceivers() {
         if (isScreenRecordingReceiverRegistered && screenRecordingStateReceiver != null) {
             try {
-                requireContext().unregisterReceiver(screenRecordingStateReceiver);
+                LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(screenRecordingStateReceiver);
                 isScreenRecordingReceiverRegistered = false;
-                Log.d(TAG, "Screen recording receiver unregistered.");
+                Log.d(TAG, "Screen recording receiver unregistered from LocalBroadcastManager.");
             } catch (IllegalArgumentException e) {
                 Log.w(TAG, "Error unregistering screen recording receiver: " + e.getMessage());
             }
@@ -1545,13 +1547,20 @@ public class FadRecHomeFragment extends HomeFragment {
         // Stop timer updates
         stopTimerUpdates();
         
-        // Unregister broadcast receivers with proper flag management
+        // NOTE: Broadcast receivers will be unregistered in onDestroy()
+        // to avoid premature cleanup when view is destroyed but fragment persists
+        
+        super.onDestroyView();
+    }
+    
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "FadRecHomeFragment destroyed - unregistering receivers");
+        
+        // Unregister broadcast receivers here since we registered them in onCreate()
         unregisterScreenRecordingReceivers();
         unregisterAnnotationServiceReceiver();
         
-        // NOTE: Parent's onStop() will unregister camera-related receivers
-        // This will be called after onStop(), so parent cleanup already happened
-        
-        super.onDestroyView();
+        super.onDestroy();
     }
 }

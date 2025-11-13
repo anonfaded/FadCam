@@ -191,10 +191,23 @@ public class PageTabBarOverlay {
 
     layoutParams.gravity = Gravity.TOP | Gravity.START;
     layoutParams.x = 0;
-    layoutParams.y = 0;
+    // Add status bar height offset so overlay appears below status bar
+    layoutParams.y = getStatusBarHeight();
 
     windowManager.addView(overlayView, layoutParams);
     overlayView.post(this::adjustInitialPosition);
+    }
+    
+    /**
+     * Get status bar height to account for safe area
+     */
+    private int getStatusBarHeight() {
+        int statusBarHeight = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            statusBarHeight = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return statusBarHeight;
     }
     
     public void hide() {
