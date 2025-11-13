@@ -1461,6 +1461,9 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onResume() {
         super.onResume(); // MUST call super - Android requirement
+        // NOTE: Parent's onResume() calls fetchRecordingState() which starts RecordingService (camera recording)
+        // This is WRONG for FadRec. We use ScreenRecordingService which broadcasts state via LocalBroadcastManager
+        // Workaround: We create shadow methods below that do nothing to prevent parent from affecting us
         
         Log.d(TAG, "FadRecHomeFragment resumed");
         
@@ -1505,62 +1508,26 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     /**
-     * Unregister screen recording receiver with proper flag management.
+     * Override fetchRecordingState to prevent parent from starting RecordingService (camera recording).
+     * FadRec uses ScreenRecordingService (screen recording) which broadcasts state via LocalBroadcastManager.
+     * State is received automatically by screenRecordingStateReceiver registered in onCreate().
      */
-    private void unregisterScreenRecordingReceivers() {
-        if (isScreenRecordingReceiverRegistered && screenRecordingStateReceiver != null) {
-            try {
-                LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(screenRecordingStateReceiver);
-                isScreenRecordingReceiverRegistered = false;
-                Log.d(TAG, "Screen recording receiver unregistered from LocalBroadcastManager.");
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Error unregistering screen recording receiver: " + e.getMessage());
-            }
-        }
+    @Override
+    protected void fetchRecordingState() {
+        // DO NOT call super.fetchRecordingState() - it starts RecordingService (camera recording)
+        // FadRec uses ScreenRecordingService (screen recording) which broadcasts state automatically
+        // The broadcast is received by screenRecordingStateReceiver when it arrives
+        Log.d(TAG, "fetchRecordingState: Overridden (skipped) - FadRec uses screen recording service");
     }
 
     /**
-     * Unregister annotation service receiver with proper flag management.
+     * Override registerBroadcastReceivers to prevent parent from registering camera recording receivers.
+     * FadRec uses screen recording receivers which are already registered in onCreate().
      */
-    private void unregisterAnnotationServiceReceiver() {
-        if (isAnnotationServiceReceiverRegistered && annotationServiceReceiver != null) {
-            try {
-                requireContext().unregisterReceiver(annotationServiceReceiver);
-                isAnnotationServiceReceiverRegistered = false;
-                Log.d(TAG, "Annotation service receiver unregistered.");
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Error unregistering annotation service receiver: " + e.getMessage());
-            }
-        }
-    }
-
     @Override
-    public void onDestroyView() {
-        Log.d(TAG, "FadRecHomeFragment view destroyed");
-        
-        // Dismiss loading dialog if showing
-        if (loadingDialog != null && loadingDialog.isShowing()) {
-            loadingDialog.dismiss();
-            loadingDialog = null;
-        }
-        
-        // Stop timer updates
-        stopTimerUpdates();
-        
-        // NOTE: Broadcast receivers will be unregistered in onDestroy()
-        // to avoid premature cleanup when view is destroyed but fragment persists
-        
-        super.onDestroyView();
-    }
-    
-    @Override
-    public void onDestroy() {
-        Log.d(TAG, "FadRecHomeFragment destroyed - unregistering receivers");
-        
-        // Unregister broadcast receivers here since we registered them in onCreate()
-        unregisterScreenRecordingReceivers();
-        unregisterAnnotationServiceReceiver();
-        
-        super.onDestroy();
+    protected void registerBroadcastReceivers() {
+        // DO NOT call super.registerBroadcastReceivers() - it registers RecordingService (camera recording) receivers
+        // FadRec screen recording receivers are already registered in onCreate() via registerScreenRecordingStateReceiver()
+        Log.d(TAG, "registerBroadcastReceivers: Overridden (skipped) - FadRec receivers already registered");
     }
 }

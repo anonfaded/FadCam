@@ -941,7 +941,7 @@ public class HomeFragment extends BaseFragment {
         // currentCameraTypeString.toLowerCase(), Toast.LENGTH_SHORT).show();
     }
 
-    private void fetchRecordingState() {
+    protected void fetchRecordingState() {
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
         startIntent.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
         requireActivity().startService(startIntent);
@@ -1550,7 +1550,7 @@ public class HomeFragment extends BaseFragment {
      * Should be called from onResume or onStart.
      */
     @SuppressLint("UnspecifiedRegisterReceiverFlag") // Suppress only if targeting older SDKs AND necessary
-    private void registerBroadcastReceivers() {
+    protected void registerBroadcastReceivers() {
         Context context = requireContext();
         if (context == null) {
             Log.e(

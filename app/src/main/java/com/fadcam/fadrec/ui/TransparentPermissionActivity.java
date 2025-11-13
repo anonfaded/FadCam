@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
 import com.fadcam.fadrec.MediaProjectionHelper;
@@ -58,6 +59,7 @@ public class TransparentPermissionActivity extends ComponentActivity {
                     Log.d(TAG, "Permission GRANTED - resultCode: " + result.getResultCode());
                     
                     // Send broadcast with permission result to start recording
+                    // Use LocalBroadcastManager to guarantee delivery on Android 12+
                     Intent broadcastIntent = new Intent(Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
                     broadcastIntent.putExtra("resultCode", result.getResultCode());
                     // Copy the entire data intent into the broadcast (including all extras)
@@ -67,15 +69,15 @@ public class TransparentPermissionActivity extends ComponentActivity {
                     // Also store the data intent itself as a parcelable
                     broadcastIntent.putExtra("mediaProjectionData", data);
                     
-                    sendBroadcast(broadcastIntent);
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                     
-                    Log.d(TAG, "Permission granted, broadcast sent with data extras");
+                    Log.d(TAG, "[BROADCAST-SEND] Permission granted broadcast sent via LocalBroadcastManager with data extras");
                 } else {
                     // Permission denied or data is null
                     Log.w(TAG, "Screen capture permission DENIED or data null - resultCode: " + result.getResultCode());
                     
                     Intent broadcastIntent = new Intent(Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
-                    sendBroadcast(broadcastIntent);
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                 }
                 
                 // Close this transparent activity

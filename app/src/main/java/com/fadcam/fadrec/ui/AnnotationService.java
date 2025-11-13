@@ -48,6 +48,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.File;
 import java.util.List;
@@ -1231,6 +1232,7 @@ public class AnnotationService extends Service {
 
         // Recording controls - Collapsed button click to START recording
         btnRecordingCollapsed.setOnClickListener(v -> {
+            Log.d(TAG, "Overlay button clicked - currentState: " + recordingState + ", NONE=" + com.fadcam.fadrec.ScreenRecordingState.NONE + ", isEqual=" + (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE));
             if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
                 // Start recording - launch TransparentPermissionActivity directly from service
                 // This works even if app is removed from recents
@@ -1238,6 +1240,8 @@ public class AnnotationService extends Service {
                 Intent intent = new Intent(this, TransparentPermissionActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
+            } else {
+                Log.w(TAG, "Button clicked but recordingState is not NONE: " + recordingState);
             }
         });
 
@@ -3159,18 +3163,22 @@ public class AnnotationService extends Service {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String stateStr = intent.getStringExtra("recordingState");
+                Log.d(TAG, "[BROADCAST] Recording state broadcast received: " + stateStr);
                 if (stateStr != null) {
                     try {
                         com.fadcam.fadrec.ScreenRecordingState oldState = recordingState;
                         recordingState = com.fadcam.fadrec.ScreenRecordingState.valueOf(stateStr);
+                        Log.d(TAG, "[BROADCAST] State updated: " + oldState + " -> " + recordingState);
 
                         // Handle timer based on state changes
                         if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS
                                 && oldState != com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
                             // Recording started or resumed
+                            Log.d(TAG, "[BROADCAST] Starting timer due to state change");
                             startRecordingTimer();
                         } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
                             // Recording stopped completely
+                            Log.d(TAG, "[BROADCAST] Stopping timer due to state change");
                             stopRecordingTimer();
                         } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.PAUSED) {
                             // Recording paused - stop updating but keep timer visible with current value
@@ -3192,8 +3200,9 @@ public class AnnotationService extends Service {
         };
 
         IntentFilter filter = new IntentFilter(com.fadcam.Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        androidx.core.content.ContextCompat.registerReceiver(this, recordingStateReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-        Log.d(TAG, "Recording state receiver registered");
+        // Use LocalBroadcastManager for guaranteed delivery on Android 12+
+        LocalBroadcastManager.getInstance(this).registerReceiver(recordingStateReceiver, filter);
+        Log.d(TAG, "[BROADCAST] Recording state receiver registered via LocalBroadcastManager");
     }
 
     /**
@@ -3247,8 +3256,9 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
         filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
-        androidx.core.content.ContextCompat.registerReceiver(this, permissionResultReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-        Log.d(TAG, "Permission result receiver registered in service");
+        // Use LocalBroadcastManager for guaranteed delivery on Android 12+
+        LocalBroadcastManager.getInstance(this).registerReceiver(permissionResultReceiver, filter);
+        Log.d(TAG, "[BROADCAST] Permission result receiver registered via LocalBroadcastManager");
     }
 
     private void registerColorPickerReceiver() {
@@ -4400,10 +4410,10 @@ public class AnnotationService extends Service {
             unregisterReceiver(menuActionReceiver);
         }
         if (recordingStateReceiver != null) {
-            unregisterReceiver(recordingStateReceiver);
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(recordingStateReceiver);
         }
         if (permissionResultReceiver != null) {
-            unregisterReceiver(permissionResultReceiver);
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(permissionResultReceiver);
         }
         if (colorPickerReceiver != null) {
             unregisterReceiver(colorPickerReceiver);

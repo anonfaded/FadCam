@@ -925,7 +925,7 @@ public class ScreenRecordingService extends Service {
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.IN_PROGRESS.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "Broadcasted recording started via LocalBroadcastManager");
+        Log.d(TAG, "[BROADCAST-SEND] Recording started - sent IN_PROGRESS state via LocalBroadcastManager");
     }
 
     private void broadcastRecordingStopped() {
@@ -936,7 +936,7 @@ public class ScreenRecordingService extends Service {
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.NONE.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "Broadcasted recording stopped via LocalBroadcastManager");
+        Log.d(TAG, "[BROADCAST-SEND] Recording stopped - sent NONE state via LocalBroadcastManager");
     }
 
     private void broadcastRecordingPaused() {
@@ -947,7 +947,7 @@ public class ScreenRecordingService extends Service {
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.PAUSED.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "Broadcasted recording paused via LocalBroadcastManager");
+        Log.d(TAG, "[BROADCAST-SEND] Recording paused - sent PAUSED state via LocalBroadcastManager");
     }
 
     private void broadcastRecordingResumed() {
@@ -958,7 +958,7 @@ public class ScreenRecordingService extends Service {
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", ScreenRecordingState.IN_PROGRESS.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "Broadcasted recording resumed via LocalBroadcastManager");
+        Log.d(TAG, "[BROADCAST-SEND] Recording resumed - sent IN_PROGRESS state via LocalBroadcastManager");
     }
 
     @Override
