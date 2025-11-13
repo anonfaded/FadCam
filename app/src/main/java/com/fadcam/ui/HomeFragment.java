@@ -1538,6 +1538,7 @@ public class HomeFragment extends BaseFragment {
     private boolean isStateReceiversRegistered = false;
     private boolean isCompletionReceiverRegistered = false; // Renamed from isStatsReceiverRegistered
     private boolean isTorchReceiverRegistered = false;
+    private boolean isRecordingFailedReceiverRegistered = false; // Guard for double registration
     // Receiver for recording failure broadcasts
     private android.content.BroadcastReceiver recordingFailedReceiver;
 
@@ -1612,6 +1613,17 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void registerRecordingFailedReceiver(Context context) {
+        // Guard: Don't register twice
+        if (isRecordingFailedReceiverRegistered) {
+            Log.d(TAG, "Recording failed receiver already registered, skipping.");
+            return;
+        }
+        
+        if (context == null) {
+            Log.e(TAG, "Context is null, cannot register recording failed receiver");
+            return;
+        }
+        
         if (recordingFailedReceiver == null) {
             recordingFailedReceiver = new android.content.BroadcastReceiver() {
                 @Override
@@ -1633,17 +1645,25 @@ public class HomeFragment extends BaseFragment {
                 }
             };
         }
-        IntentFilter filter = new IntentFilter(
-            Constants.ACTION_RECORDING_FAILED
-        );
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(
-                recordingFailedReceiver,
-                filter,
-                Context.RECEIVER_NOT_EXPORTED
+        
+        try {
+            IntentFilter filter = new IntentFilter(
+                Constants.ACTION_RECORDING_FAILED
             );
-        } else {
-            ContextCompat.registerReceiver(context, recordingFailedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(
+                    recordingFailedReceiver,
+                    filter,
+                    Context.RECEIVER_NOT_EXPORTED
+                );
+            } else {
+                ContextCompat.registerReceiver(context, recordingFailedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            }
+            isRecordingFailedReceiverRegistered = true;
+            Log.d(TAG, "Recording failed receiver registered.");
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Error registering recording failed receiver: " + e.getMessage());
+            isRecordingFailedReceiverRegistered = false;
         }
     }
 
@@ -2382,10 +2402,15 @@ public class HomeFragment extends BaseFragment {
             "All HomeFragment broadcast receivers unregistration attempt finished."
         );
         // Unregister recording failed receiver
-        if (recordingFailedReceiver != null) {
+        if (isRecordingFailedReceiverRegistered && recordingFailedReceiver != null) {
             try {
                 requireContext().unregisterReceiver(recordingFailedReceiver);
-            } catch (Exception ignore) {}
+                isRecordingFailedReceiverRegistered = false;
+                Log.d(TAG, "Unregistered recordingFailedReceiver.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering recordingFailedReceiver: " + e.getMessage());
+                isRecordingFailedReceiverRegistered = false;
+            }
         }
     }
 

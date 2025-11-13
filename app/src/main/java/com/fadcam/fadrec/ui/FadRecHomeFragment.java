@@ -57,6 +57,11 @@ public class FadRecHomeFragment extends HomeFragment {
     
     // Broadcast receivers for screen recording state
     private BroadcastReceiver screenRecordingStateReceiver;
+    private BroadcastReceiver annotationServiceReceiver;
+    
+    // Registration flags to prevent double-registration
+    private boolean isScreenRecordingReceiverRegistered = false;
+    private boolean isAnnotationServiceReceiverRegistered = false;
     
     // Debouncing for button clicks to prevent rapid start/stop
     private long lastClickTime = 0;
@@ -164,50 +169,83 @@ public class FadRecHomeFragment extends HomeFragment {
         // Setup button click handlers
         setupButtonHandlers(view);
         
-        // Register broadcast receivers
+        // NOTE: Receiver registration moved to onStart() to avoid double-registration
+        // on fragment recreation and to maintain proper lifecycle coordination
+    }
+    
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.d(TAG, "FadRecHomeFragment onStart");
+        
+        // Register FadRec-specific broadcast receivers here (not in onViewCreated)
+        // This ensures single, coordinated registration in the lifecycle
         registerScreenRecordingReceivers();
         registerAnnotationServiceReceiver();
     }
     
     /**
-     * Register broadcast receiver to listen for annotation service stop
+     * Register broadcast receiver to listen for annotation service stop.
+     * Includes guard to prevent double-registration on fragment recreation.
      */
     private void registerAnnotationServiceReceiver() {
-        BroadcastReceiver annotationServiceReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(action) || 
-                    "com.fadcam.fadrec.ACTION_SERVICE_TERMINATED".equals(action)) {
-                    // Service stopped or terminated, turn off the menu switch
-                    if (getView() != null) {
-                        View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
-                        if (cardFloatingControls != null) {
-                            androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
-                                cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
-                            if (switchFloatingControls != null) {
-                                switchFloatingControls.setChecked(false);
+        // Guard: Don't register twice
+        if (isAnnotationServiceReceiverRegistered) {
+            Log.d(TAG, "Annotation service receiver already registered, skipping.");
+            return;
+        }
+        
+        // Create receiver if not already created
+        if (annotationServiceReceiver == null) {
+            annotationServiceReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if ("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED".equals(action) || 
+                        "com.fadcam.fadrec.ACTION_SERVICE_TERMINATED".equals(action)) {
+                        // Service stopped or terminated, turn off the menu switch
+                        if (getView() != null) {
+                            View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
+                            if (cardFloatingControls != null) {
+                                androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                                    cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
+                                if (switchFloatingControls != null) {
+                                    switchFloatingControls.setChecked(false);
+                                }
                             }
                         }
-                    }
-                    // Update SharedPreferences
-                    sharedPreferencesManager.setFloatingControlsEnabled(false);
-                    Log.d(TAG, "Annotation service stopped/terminated - menu switch turned off");
-                } else if ("com.fadcam.fadrec.ANNOTATION_SERVICE_READY".equals(action)) {
-                    // Service initialization complete, dismiss loading dialog
-                    if (loadingDialog != null && loadingDialog.isShowing()) {
-                        loadingDialog.dismiss();
-                        Log.d(TAG, "Annotation service ready - loading dialog dismissed");
+                        // Update SharedPreferences
+                        sharedPreferencesManager.setFloatingControlsEnabled(false);
+                        Log.d(TAG, "Annotation service stopped/terminated - menu switch turned off");
+                    } else if ("com.fadcam.fadrec.ANNOTATION_SERVICE_READY".equals(action)) {
+                        // Service initialization complete, dismiss loading dialog
+                        if (loadingDialog != null && loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                            Log.d(TAG, "Annotation service ready - loading dialog dismissed");
+                        }
                     }
                 }
-            }
-        };
+            };
+        }
         
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
-        filter.addAction("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
-        filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
-        requireContext().registerReceiver(annotationServiceReceiver, filter);
+        try {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+            filter.addAction("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
+            filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(annotationServiceReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                androidx.core.content.ContextCompat.registerReceiver(requireContext(), annotationServiceReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
+            }
+            
+            isAnnotationServiceReceiverRegistered = true;
+            Log.d(TAG, "Annotation service receiver registered.");
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Error registering annotation service receiver: " + e.getMessage());
+            isAnnotationServiceReceiverRegistered = false;
+        }
     }
         /**
      * Override parent's method to handle button reset for screen recording mode.
@@ -878,135 +916,154 @@ public class FadRecHomeFragment extends HomeFragment {
      * Register broadcast receivers for screen recording state changes.
      */
     private void registerScreenRecordingReceivers() {
-        screenRecordingStateReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action == null) return;
-                
-                switch (action) {
-                    case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
-                        screenRecordingState = ScreenRecordingState.IN_PROGRESS;
-                        persistRecordingState(screenRecordingState);
-                        updateUIForRecordingState();
-                        Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_started, 
-                            Toast.LENGTH_SHORT).show();
-                        break;
-                        
-                    case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
-                        screenRecordingState = ScreenRecordingState.NONE;
-                        persistRecordingState(screenRecordingState);
-                        updateUIForRecordingState();
-                        Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_stopped, 
-                            Toast.LENGTH_SHORT).show();
-                        break;
-                        
-                    case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
-                        screenRecordingState = ScreenRecordingState.PAUSED;
-                        persistRecordingState(screenRecordingState);
-                        updateUIForRecordingState();
-                        Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_paused, 
-                            Toast.LENGTH_SHORT).show();
-                        break;
-                        
-                    case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
-                        screenRecordingState = ScreenRecordingState.IN_PROGRESS;
-                        persistRecordingState(screenRecordingState);
-                        updateUIForRecordingState();
-                        Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_resumed, 
-                            Toast.LENGTH_SHORT).show();
-                        break;
-                        
-                    case Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK:
-                        String stateStr = intent.getStringExtra("recordingState");
-                        if (stateStr != null) {
-                            try {
-                                screenRecordingState = ScreenRecordingState.valueOf(stateStr);
-                                persistRecordingState(screenRecordingState);
-                                updateUIForRecordingState();
-                            } catch (IllegalArgumentException e) {
-                                Log.e(TAG, "Invalid state: " + stateStr, e);
-                            }
-                        }
-                        break;
-                        
-                    // Handle overlay actions
-                    case Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY:
-                        Log.d(TAG, "Received ACTION_START_SCREEN_RECORDING_FROM_OVERLAY");
-                        if (screenRecordingState == ScreenRecordingState.NONE) {
-                            // When called from overlay while app is in background,
-                            // we need to handle this differently to avoid bringing app to foreground
-                            handleOverlayRecordingStart();
-                        }
-                        break;
+        // Guard: Don't register twice
+        if (isScreenRecordingReceiverRegistered) {
+            Log.d(TAG, "Screen recording receiver already registered, skipping.");
+            return;
+        }
+        
+        if (screenRecordingStateReceiver == null) {
+            screenRecordingStateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action == null) return;
                     
-                    // Handle permission results from TransparentPermissionActivity
-                    case Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED:
-                        Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_GRANTED");
-                        // Permission granted, start recording with the provided Intent
-                        Intent permissionData = intent.getParcelableExtra("data");
-                        if (permissionData != null && mediaProjectionHelper != null) {
-                            int resultCode = intent.getIntExtra("resultCode", -1);
-                            Log.d(TAG, "Starting recording with resultCode: " + resultCode);
-                            mediaProjectionHelper.startScreenRecording(resultCode, permissionData);
-                        } else {
-                            Log.e(TAG, "Permission granted but data or helper is null");
-                        }
-                        break;
-                        
-                    case Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED:
-                        Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_DENIED");
-                        Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
-                        break;
-                        
-                    case Constants.ACTION_PAUSE_SCREEN_RECORDING:
-                        Log.d(TAG, "Received ACTION_PAUSE_SCREEN_RECORDING");
-                        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
-                            if (mediaProjectionHelper != null) {
-                                mediaProjectionHelper.pauseScreenRecording();
+                    switch (action) {
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
+                            screenRecordingState = ScreenRecordingState.IN_PROGRESS;
+                            persistRecordingState(screenRecordingState);
+                            updateUIForRecordingState();
+                            Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_started, 
+                                Toast.LENGTH_SHORT).show();
+                            break;
+                            
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
+                            screenRecordingState = ScreenRecordingState.NONE;
+                            persistRecordingState(screenRecordingState);
+                            updateUIForRecordingState();
+                            Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_stopped, 
+                                Toast.LENGTH_SHORT).show();
+                            break;
+                            
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
+                            screenRecordingState = ScreenRecordingState.PAUSED;
+                            persistRecordingState(screenRecordingState);
+                            updateUIForRecordingState();
+                            Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_paused, 
+                                Toast.LENGTH_SHORT).show();
+                            break;
+                            
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
+                            screenRecordingState = ScreenRecordingState.IN_PROGRESS;
+                            persistRecordingState(screenRecordingState);
+                            updateUIForRecordingState();
+                            Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_resumed, 
+                                Toast.LENGTH_SHORT).show();
+                            break;
+                            
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK:
+                            String stateStr = intent.getStringExtra("recordingState");
+                            if (stateStr != null) {
+                                try {
+                                    screenRecordingState = ScreenRecordingState.valueOf(stateStr);
+                                    persistRecordingState(screenRecordingState);
+                                    updateUIForRecordingState();
+                                } catch (IllegalArgumentException e) {
+                                    Log.e(TAG, "Invalid state: " + stateStr, e);
+                                }
                             }
-                        }
-                        break;
-                        
-                    case Constants.ACTION_RESUME_SCREEN_RECORDING:
-                        Log.d(TAG, "Received ACTION_RESUME_SCREEN_RECORDING");
-                        if (screenRecordingState == ScreenRecordingState.PAUSED) {
-                            if (mediaProjectionHelper != null) {
-                                mediaProjectionHelper.resumeScreenRecording();
+                            break;
+                            
+                        // Handle overlay actions
+                        case Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY:
+                            Log.d(TAG, "Received ACTION_START_SCREEN_RECORDING_FROM_OVERLAY");
+                            if (screenRecordingState == ScreenRecordingState.NONE) {
+                                // When called from overlay while app is in background,
+                                // we need to handle this differently to avoid bringing app to foreground
+                                handleOverlayRecordingStart();
                             }
-                        }
-                        break;
+                            break;
                         
-                    case Constants.ACTION_STOP_SCREEN_RECORDING:
-                        Log.d(TAG, "Received ACTION_STOP_SCREEN_RECORDING");
-                        if (screenRecordingState != ScreenRecordingState.NONE) {
-                            if (mediaProjectionHelper != null) {
-                                mediaProjectionHelper.stopScreenRecording();
+                        // Handle permission results from TransparentPermissionActivity
+                        case Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED:
+                            Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_GRANTED");
+                            // Permission granted, start recording with the provided Intent
+                            Intent permissionData = intent.getParcelableExtra("data");
+                            if (permissionData != null && mediaProjectionHelper != null) {
+                                int resultCode = intent.getIntExtra("resultCode", -1);
+                                Log.d(TAG, "Starting recording with resultCode: " + resultCode);
+                                mediaProjectionHelper.startScreenRecording(resultCode, permissionData);
+                            } else {
+                                Log.e(TAG, "Permission granted but data or helper is null");
                             }
-                        }
-                        break;
+                            break;
+                            
+                        case Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED:
+                            Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_DENIED");
+                            Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
+                            break;
+                            
+                        case Constants.ACTION_PAUSE_SCREEN_RECORDING:
+                            Log.d(TAG, "Received ACTION_PAUSE_SCREEN_RECORDING");
+                            if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
+                                if (mediaProjectionHelper != null) {
+                                    mediaProjectionHelper.pauseScreenRecording();
+                                }
+                            }
+                            break;
+                            
+                        case Constants.ACTION_RESUME_SCREEN_RECORDING:
+                            Log.d(TAG, "Received ACTION_RESUME_SCREEN_RECORDING");
+                            if (screenRecordingState == ScreenRecordingState.PAUSED) {
+                                if (mediaProjectionHelper != null) {
+                                    mediaProjectionHelper.resumeScreenRecording();
+                                }
+                            }
+                            break;
+                            
+                        case Constants.ACTION_STOP_SCREEN_RECORDING:
+                            Log.d(TAG, "Received ACTION_STOP_SCREEN_RECORDING");
+                            if (screenRecordingState != ScreenRecordingState.NONE) {
+                                if (mediaProjectionHelper != null) {
+                                    mediaProjectionHelper.stopScreenRecording();
+                                }
+                            }
+                            break;
+                    }
                 }
+            };
+        }
+        
+        try {
+            // Register for all screen recording broadcasts
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED);
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
+            // Add overlay actions
+            filter.addAction(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY);
+            filter.addAction(Constants.ACTION_PAUSE_SCREEN_RECORDING);
+            filter.addAction(Constants.ACTION_RESUME_SCREEN_RECORDING);
+            filter.addAction(Constants.ACTION_STOP_SCREEN_RECORDING);
+            // Add permission result actions from TransparentPermissionActivity
+            filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
+            filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(screenRecordingStateReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                androidx.core.content.ContextCompat.registerReceiver(requireContext(), screenRecordingStateReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
             }
-        };
-        
-        // Register for all screen recording broadcasts
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED);
-        filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
-        filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
-        filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
-        filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        // Add overlay actions
-        filter.addAction(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY);
-        filter.addAction(Constants.ACTION_PAUSE_SCREEN_RECORDING);
-        filter.addAction(Constants.ACTION_RESUME_SCREEN_RECORDING);
-        filter.addAction(Constants.ACTION_STOP_SCREEN_RECORDING);
-        // Add permission result actions from TransparentPermissionActivity
-        filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
-        filter.addAction(Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
-        
-        requireContext().registerReceiver(screenRecordingStateReceiver, filter);
-        Log.d(TAG, "Screen recording broadcast receivers registered");
+            
+            isScreenRecordingReceiverRegistered = true;
+            Log.d(TAG, "Screen recording broadcast receivers registered");
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Error registering screen recording receiver: " + e.getMessage());
+            isScreenRecordingReceiverRegistered = false;
+        }
     }
 
     /**
@@ -1342,6 +1399,46 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+        Log.d(TAG, "FadRecHomeFragment onStop - unregistering FadRec-specific receivers");
+        
+        // Unregister FadRec-specific receivers
+        unregisterScreenRecordingReceivers();
+        unregisterAnnotationServiceReceiver();
+    }
+
+    /**
+     * Unregister screen recording receiver with proper flag management.
+     */
+    private void unregisterScreenRecordingReceivers() {
+        if (isScreenRecordingReceiverRegistered && screenRecordingStateReceiver != null) {
+            try {
+                requireContext().unregisterReceiver(screenRecordingStateReceiver);
+                isScreenRecordingReceiverRegistered = false;
+                Log.d(TAG, "Screen recording receiver unregistered.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering screen recording receiver: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Unregister annotation service receiver with proper flag management.
+     */
+    private void unregisterAnnotationServiceReceiver() {
+        if (isAnnotationServiceReceiverRegistered && annotationServiceReceiver != null) {
+            try {
+                requireContext().unregisterReceiver(annotationServiceReceiver);
+                isAnnotationServiceReceiverRegistered = false;
+                Log.d(TAG, "Annotation service receiver unregistered.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error unregistering annotation service receiver: " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
     public void onDestroyView() {
         Log.d(TAG, "FadRecHomeFragment view destroyed");
         
@@ -1354,16 +1451,12 @@ public class FadRecHomeFragment extends HomeFragment {
         // Stop timer updates
         stopTimerUpdates();
         
-        // Unregister broadcast receivers
-        if (screenRecordingStateReceiver != null) {
-            try {
-                requireContext().unregisterReceiver(screenRecordingStateReceiver);
-                screenRecordingStateReceiver = null;
-                Log.d(TAG, "Screen recording receivers unregistered");
-            } catch (Exception e) {
-                Log.e(TAG, "Error unregistering receivers", e);
-            }
-        }
+        // Unregister broadcast receivers with proper flag management
+        unregisterScreenRecordingReceivers();
+        unregisterAnnotationServiceReceiver();
+        
+        // NOTE: Parent's onStop() will unregister camera-related receivers
+        // This will be called after onStop(), so parent cleanup already happened
         
         super.onDestroyView();
     }
