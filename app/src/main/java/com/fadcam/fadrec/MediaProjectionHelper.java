@@ -95,23 +95,39 @@ public class MediaProjectionHelper {
     /**
      * Start screen recording service with permission result.
      * This method should be called after permission is granted.
+     * CRITICAL: The Intent data from permission is passed as-is to service.
      * 
      * @param resultCode Result code from permission request
-     * @param data Intent data from permission request
+     * @param data Intent data from permission request (MUST be the original permission intent)
      */
     public void startScreenRecording(int resultCode, Intent data) {
         Log.d(TAG, "Starting ScreenRecordingService with resultCode=" + resultCode);
+        
+        if (data == null) {
+            Log.e(TAG, "ERROR: data Intent is null - cannot start screen recording");
+            return;
+        }
         
         try {
             Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
             serviceIntent.setAction(Constants.INTENT_ACTION_START_SCREEN_RECORDING);
             serviceIntent.putExtra("resultCode", resultCode);
-            // Copy all extras from data intent to service intent
-            if (data != null && data.getExtras() != null) {
+            
+            // CRITICAL: Copy the exact data from permission request
+            // MediaProjectionManager.getMediaProjection() needs this exact intent structure
+            if (data.getExtras() != null) {
                 serviceIntent.putExtras(data.getExtras());
             }
             
-            context.startForegroundService(serviceIntent);
+            // Also store the entire intent data as parcelable for safety
+            serviceIntent.putExtra("permissionData", data);
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent);
+            } else {
+                context.startService(serviceIntent);
+            }
+            
             Log.i(TAG, "ScreenRecordingService started successfully");
         } catch (Exception e) {
             Log.e(TAG, "Error starting ScreenRecordingService", e);

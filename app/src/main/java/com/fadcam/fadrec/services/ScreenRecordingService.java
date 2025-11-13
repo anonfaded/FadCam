@@ -180,7 +180,12 @@ public class ScreenRecordingService extends Service {
         // Start foreground immediately to avoid crash
         recordingState = ScreenRecordingState.NONE;
         Notification notification = createNotification();
-        startForeground(NOTIFICATION_ID, notification);
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
         
         // Get MediaProjection result data from intent
         int resultCode = intent.getIntExtra("resultCode", Activity.RESULT_CANCELED);
@@ -195,20 +200,46 @@ public class ScreenRecordingService extends Service {
         
         Log.d(TAG, "Got resultCode: " + resultCode + " (RESULT_OK), creating MediaProjection");
         
-        // Initialize MediaProjection using the intent directly
+        // Initialize MediaProjection using the intent data
         try {
-            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, intent);
+            // Try to get permissionData parcelable first (preferred method)
+            Intent permissionIntent = intent.getParcelableExtra("permissionData");
+            
+            if (permissionIntent == null) {
+                // Fallback: Use the original intent (if extras were copied correctly)
+                Log.d(TAG, "permissionData not found, using intent extras directly");
+                permissionIntent = intent;
+            }
+            
+            Log.d(TAG, "Creating MediaProjection with intent: " + (permissionIntent != null ? "valid" : "null"));
+            
+            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
             if (mediaProjection == null) {
-                Log.e(TAG, "Failed to create MediaProjection");
-                Toast.makeText(this, "Failed to initialize screen recording", Toast.LENGTH_SHORT).show();
-                stopSelf();
-                return;
+                String error = "MediaProjectionManager.getMediaProjection() returned null (permission may have been revoked)";
+                Log.e(TAG, error);
+                throw new RuntimeException(error);
             }
             
             Log.d(TAG, "MediaProjection created successfully");
+            
+            // Set up callback for when MediaProjection stops
+            mediaProjection.registerCallback(new MediaProjection.Callback() {
+                @Override
+                public void onStop() {
+                    Log.d(TAG, "MediaProjection stopped externally");
+                    handleStopRecording();
+                }
+            }, backgroundHandler);
+            
+        } catch (SecurityException e) {
+            Log.e(TAG, "SecurityException creating MediaProjection - permission may have been revoked", e);
+            Toast.makeText(this, "Permission error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            stopSelf();
+            return;
         } catch (Exception e) {
-            Log.e(TAG, "Error creating MediaProjection", e);
-            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            Log.e(TAG, "Error creating MediaProjection: " + errorMsg, e);
+            Toast.makeText(this, "MediaProjection error: " + errorMsg, Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
         }
@@ -217,10 +248,18 @@ public class ScreenRecordingService extends Service {
         backgroundHandler.post(() -> {
             try {
                 startScreenRecording();
-            } catch (Exception e) {
-                Log.e(TAG, "Error starting screen recording", e);
+            } catch (IOException e) {
+                String errorMsg = e.getMessage() != null ? e.getMessage() : "I/O error";
+                Log.e(TAG, "IOException starting screen recording: " + errorMsg, e);
                 mainHandler.post(() -> {
-                    Toast.makeText(this, "Failed to start screen recording", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Recording failed: " + errorMsg, Toast.LENGTH_SHORT).show();
+                    stopSelf();
+                });
+            } catch (Exception e) {
+                String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                Log.e(TAG, "Error starting screen recording: " + errorMsg, e);
+                mainHandler.post(() -> {
+                    Toast.makeText(this, "Recording failed: " + errorMsg, Toast.LENGTH_SHORT).show();
                     stopSelf();
                 });
             }
@@ -234,117 +273,197 @@ public class ScreenRecordingService extends Service {
     private void startScreenRecording() throws IOException {
         Log.d(TAG, "startScreenRecording: Configuring MediaRecorder");
         
+        // Validate MediaProjection
+        if (mediaProjection == null) {
+            throw new IOException("MediaProjection is null - permission may have been revoked or not granted");
+        }
+        
         // Create output file
         outputFile = createOutputFile();
         if (outputFile == null) {
-            throw new IOException("Failed to create output file");
+            throw new IOException("Failed to create output file - check storage permissions and available space");
         }
         
         // Configure MediaRecorder
         mediaRecorder = new MediaRecorder();
         
-        // Audio source (microphone)
-        String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
-        if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            Log.d(TAG, "Audio source: Microphone");
-        } else {
-            Log.d(TAG, "Audio source: None");
+        try {
+            // Audio source (microphone)
+            String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
+            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
+                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                Log.d(TAG, "Audio source: Microphone");
+            } else {
+                Log.d(TAG, "Audio source: None");
+            }
+            
+            // Video source
+            mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+            
+            // Output format
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            
+            // Video encoder
+            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+            Log.d(TAG, "Video encoder: H.264");
+            
+            // Audio encoder (if audio enabled)
+            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
+                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                mediaRecorder.setAudioEncodingBitRate(Constants.DEFAULT_AUDIO_BITRATE);
+                mediaRecorder.setAudioSamplingRate(Constants.DEFAULT_AUDIO_SAMPLING_RATE);
+            }
+            
+            // Video configuration - Use actual screen resolution
+            mediaRecorder.setVideoSize(screenWidth, screenHeight);
+            mediaRecorder.setVideoFrameRate(Constants.DEFAULT_SCREEN_RECORDING_FPS);
+            
+            // Calculate bitrate based on resolution (higher res = higher bitrate)
+            int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
+            mediaRecorder.setVideoEncodingBitRate(calculatedBitrate);
+            
+            Log.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d",
+                screenWidth, screenHeight,
+                Constants.DEFAULT_SCREEN_RECORDING_FPS,
+                calculatedBitrate));
+            
+            // Set output file
+            mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
+            Log.d(TAG, "Output file set: " + outputFile.getAbsolutePath());
+            
+            // Prepare MediaRecorder
+            mediaRecorder.prepare();
+            Log.d(TAG, "MediaRecorder prepared successfully");
+            
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "IllegalStateException - MediaRecorder in wrong state: " + e.getMessage(), e);
+            mediaRecorder.release();
+            mediaRecorder = null;
+            throw new IOException("MediaRecorder state error: " + e.getMessage(), e);
+        } catch (IOException e) {
+            Log.e(TAG, "IOException preparing MediaRecorder: " + e.getMessage(), e);
+            mediaRecorder.release();
+            mediaRecorder = null;
+            throw new IOException("Failed to prepare MediaRecorder: " + e.getMessage(), e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error preparing MediaRecorder: " + e.getMessage(), e);
+            mediaRecorder.release();
+            mediaRecorder = null;
+            throw new IOException("Unexpected error: " + e.getMessage(), e);
         }
-        
-        // Video source
-        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        
-        // Output format
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        
-        // Video encoder
-        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        Log.d(TAG, "Video encoder: H.264");
-        
-        // Audio encoder (if audio enabled)
-        if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setAudioEncodingBitRate(Constants.DEFAULT_AUDIO_BITRATE);
-            mediaRecorder.setAudioSamplingRate(Constants.DEFAULT_AUDIO_SAMPLING_RATE);
-        }
-        
-        // Video configuration - Use actual screen resolution
-        mediaRecorder.setVideoSize(screenWidth, screenHeight);
-        mediaRecorder.setVideoFrameRate(Constants.DEFAULT_SCREEN_RECORDING_FPS);
-        
-        // Calculate bitrate based on resolution (higher res = higher bitrate)
-        int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
-        mediaRecorder.setVideoEncodingBitRate(calculatedBitrate);
-        
-        Log.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d",
-            screenWidth, screenHeight,
-            Constants.DEFAULT_SCREEN_RECORDING_FPS,
-            calculatedBitrate));
-        
-        // Set output file
-        mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
-        
-        // Prepare MediaRecorder
-        mediaRecorder.prepare();
-        Log.d(TAG, "MediaRecorder prepared");
         
         // Create VirtualDisplay - MUST use same resolution as MediaRecorder
-        virtualDisplay = mediaProjection.createVirtualDisplay(
-            "FadRecDisplay",
-            screenWidth,  // Use actual screen width
-            screenHeight, // Use actual screen height
-            screenDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            mediaRecorder.getSurface(),
-            null,
-            backgroundHandler
-        );
-        
-        if (virtualDisplay == null) {
-            throw new IOException("Failed to create VirtualDisplay");
+        try {
+            if (mediaRecorder.getSurface() == null) {
+                throw new IOException("MediaRecorder surface is null - cannot create VirtualDisplay");
+            }
+            
+            virtualDisplay = mediaProjection.createVirtualDisplay(
+                "FadRecDisplay",
+                screenWidth,  // Use actual screen width
+                screenHeight, // Use actual screen height
+                screenDensity,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                mediaRecorder.getSurface(),
+                null,
+                backgroundHandler
+            );
+            
+            if (virtualDisplay == null) {
+                throw new IOException("VirtualDisplay creation returned null - device may not support this resolution");
+            }
+            
+            Log.d(TAG, String.format("VirtualDisplay created: %dx%d @%ddpi", 
+                screenWidth, screenHeight, screenDensity));
+            
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "IllegalArgumentException - Invalid VirtualDisplay parameters: " + e.getMessage(), e);
+            if (mediaRecorder != null) {
+                mediaRecorder.release();
+                mediaRecorder = null;
+            }
+            throw new IOException("Invalid display parameters: " + e.getMessage(), e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating VirtualDisplay: " + e.getMessage(), e);
+            if (mediaRecorder != null) {
+                mediaRecorder.release();
+                mediaRecorder = null;
+            }
+            throw new IOException("Failed to create VirtualDisplay: " + e.getMessage(), e);
         }
         
-        Log.d(TAG, String.format("VirtualDisplay created: %dx%d @%ddpi", 
-            screenWidth, screenHeight, screenDensity));
-        
         // Start recording
-        mediaRecorder.start();
-        recordingStartTime = SystemClock.elapsedRealtime();
-        recordingState = ScreenRecordingState.IN_PROGRESS;
-        
-        // Reset pause tracking for new recording
-        pauseStartTime = 0;
-        totalPausedTime = 0;
-        
-        // Save recording start time to SharedPreferences for UI timer updates
-        sharedPreferencesManager.sharedPreferences.edit()
-            .putLong("screen_recording_start_time", recordingStartTime)
-            .apply();
-        
-        Log.i(TAG, "Screen recording started successfully");
-        
-        // Update UI on main thread
-        mainHandler.post(() -> {
-            // Acquire WakeLock
-            acquireWakeLock();
+        try {
+            mediaRecorder.start();
+            recordingStartTime = SystemClock.elapsedRealtime();
+            recordingState = ScreenRecordingState.IN_PROGRESS;
             
-            // Start foreground service with notification
-            startForeground(NOTIFICATION_ID, createNotification(), 
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | 
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+            // Reset pause tracking for new recording
+            pauseStartTime = 0;
+            totalPausedTime = 0;
             
-            // Start notification updates
-            startNotificationUpdates();
+            // Save recording start time to SharedPreferences for UI timer updates
+            sharedPreferencesManager.sharedPreferences.edit()
+                .putLong("screen_recording_start_time", recordingStartTime)
+                .apply();
             
-            // Broadcast recording started
-            broadcastRecordingStarted();
+            Log.i(TAG, "Screen recording started successfully");
             
-            // Save state to preferences
-            sharedPreferencesManager.setScreenRecordingInProgress(true);
+            // Update UI on main thread
+            mainHandler.post(() -> {
+                // Acquire WakeLock
+                acquireWakeLock();
+                
+                // Start foreground service with notification
+                startForeground(NOTIFICATION_ID, createNotification(), 
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | 
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+                
+                // Start notification updates
+                startNotificationUpdates();
+                
+                // Broadcast recording started
+                broadcastRecordingStarted();
+                
+                // Save state to preferences
+                sharedPreferencesManager.setScreenRecordingInProgress(true);
+                
+                Toast.makeText(ScreenRecordingService.this, "Screen recording started", Toast.LENGTH_SHORT).show();
+            });
             
-            Toast.makeText(this, "Screen recording started", Toast.LENGTH_SHORT).show();
-        });
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "IllegalStateException - MediaRecorder in wrong state: " + e.getMessage(), e);
+            if (mediaRecorder != null) {
+                mediaRecorder.release();
+                mediaRecorder = null;
+            }
+            if (virtualDisplay != null) {
+                virtualDisplay.release();
+                virtualDisplay = null;
+            }
+            if (mediaProjection != null) {
+                mediaProjection.stop();
+                mediaProjection = null;
+            }
+            recordingState = ScreenRecordingState.NONE;
+            throw new IOException("MediaRecorder error: " + e.getMessage(), e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error starting MediaRecorder: " + e.getMessage(), e);
+            if (mediaRecorder != null) {
+                mediaRecorder.release();
+                mediaRecorder = null;
+            }
+            if (virtualDisplay != null) {
+                virtualDisplay.release();
+                virtualDisplay = null;
+            }
+            if (mediaProjection != null) {
+                mediaProjection.stop();
+                mediaProjection = null;
+            }
+            recordingState = ScreenRecordingState.NONE;
+            throw new IOException("Failed to start MediaRecorder: " + e.getMessage(), e);
+        }
     }
 
     /**
