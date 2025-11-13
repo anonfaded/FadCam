@@ -2057,6 +2057,13 @@ public class HomeFragment extends BaseFragment {
         // ----- Fix Ended for this
         // method(registerRecordingStateReceivers_correct_signature_and_logic)-----
         Log.d(TAG, "Registering recording state receivers...");
+        
+        // Guard: Don't register twice
+        if (isStateReceiversRegistered) {
+            Log.d(TAG, "Recording state receivers already registered, skipping.");
+            return true;
+        }
+        
         if (context == null) {
             Log.e(TAG, "Context is null in registerRecordingStateReceivers");
             // ----- Fix Start for this
@@ -2207,18 +2214,28 @@ public class HomeFragment extends BaseFragment {
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void registerRecordingCompleteReceiver(Context context) {
+        // Guard: Don't register twice
+        if (isCompletionReceiverRegistered) {
+            Log.d(TAG, "Recording complete receiver already registered, skipping.");
+            return;
+        }
+        
         if (
-            !isCompletionReceiverRegistered &&
             context != null &&
             recordingCompleteReceiver != null
         ) {
-            context.registerReceiver(
-                recordingCompleteReceiver,
-                new IntentFilter(Constants.ACTION_RECORDING_COMPLETE),
-                Context.RECEIVER_EXPORTED
-            );
-            isCompletionReceiverRegistered = true; // isCompletionReceiverRegistered is the correct flag here
-            Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
+            try {
+                context.registerReceiver(
+                    recordingCompleteReceiver,
+                    new IntentFilter(Constants.ACTION_RECORDING_COMPLETE),
+                    Context.RECEIVER_EXPORTED
+                );
+                isCompletionReceiverRegistered = true; // isCompletionReceiverRegistered is the correct flag here
+                Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Error registering ACTION_RECORDING_COMPLETE receiver: " + e.getMessage());
+                isCompletionReceiverRegistered = false;
+            }
         }
     }
 
@@ -7845,6 +7862,12 @@ public class HomeFragment extends BaseFragment {
     // ----- Fix Start for this class (HomeFragment) -----
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void registerSegmentCompleteStatsReceiver(Context context) {
+        // Guard: Don't register twice
+        if (isSegmentCompleteStatsReceiverRegistered) {
+            Log.d(TAG, "Segment complete stats receiver already registered, skipping.");
+            return;
+        }
+        
         // First check if fragment is attached to prevent IllegalStateException
         if (!isAdded() || isDetached()) {
             Log.e(
