@@ -215,6 +215,18 @@ public class AnnotationService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // Check SYSTEM_ALERT_WINDOW permission before doing anything
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            if (!android.provider.Settings.canDrawOverlays(this)) {
+                Log.e(TAG, "SYSTEM_ALERT_WINDOW permission not granted, cannot start AnnotationService");
+                // Broadcast permission missing error
+                Intent errorBroadcast = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_PERMISSION_ERROR");
+                sendBroadcast(errorBroadcast);
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+        }
+        
         if (intent != null && intent.getAction() != null) {
             String action = intent.getAction();
             switch (action) {
@@ -686,7 +698,13 @@ public class AnnotationService extends Service {
         Log.d(TAG, "============ AnnotationService onCreate START ============");
 
         createNotificationChannel();
-        startForeground(NOTIFICATION_ID, createNotification());
+        
+        // CRITICAL: Call startForeground() IMMEDIATELY when using startForegroundService()
+        // This must be done before any heavy operations to avoid ForegroundServiceDidNotStartInTimeException
+        // The foregroundServiceType is declared in AndroidManifest.xml as "specialUse"
+        Notification notification = createNotification();
+        startForeground(NOTIFICATION_ID, notification);
+        Log.d(TAG, "Foreground notification started");
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
@@ -3075,7 +3093,7 @@ public class AnnotationService extends Service {
         filter.addAction("com.fadcam.fadrec.TOGGLE_SNAP_GUIDES");
         filter.addAction("com.fadcam.fadrec.ADD_TEXT");
         filter.addAction("com.fadcam.fadrec.ADD_SHAPE");
-        registerReceiver(menuActionReceiver, filter);
+        androidx.core.content.ContextCompat.registerReceiver(this, menuActionReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
         Log.d(TAG, "Menu action receiver registered");
     }
 
@@ -3120,7 +3138,7 @@ public class AnnotationService extends Service {
         };
 
         IntentFilter filter = new IntentFilter(com.fadcam.Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        registerReceiver(recordingStateReceiver, filter);
+        androidx.core.content.ContextCompat.registerReceiver(this, recordingStateReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
         Log.d(TAG, "Recording state receiver registered");
     }
 
@@ -3175,7 +3193,7 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
         filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
-        registerReceiver(permissionResultReceiver, filter);
+        androidx.core.content.ContextCompat.registerReceiver(this, permissionResultReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
         Log.d(TAG, "Permission result receiver registered in service");
     }
 
@@ -3195,7 +3213,7 @@ public class AnnotationService extends Service {
         };
 
         IntentFilter filter = new IntentFilter(ColorPickerDialogActivity.ACTION_COLOR_SELECTED);
-        registerReceiver(colorPickerReceiver, filter);
+        androidx.core.content.ContextCompat.registerReceiver(this, colorPickerReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
         Log.d(TAG, "Color picker receiver registered");
     }
 
@@ -3290,7 +3308,7 @@ public class AnnotationService extends Service {
         };
 
         IntentFilter filter = new IntentFilter(ProjectNamingDialogActivity.ACTION_PROJECT_RENAMED);
-        registerReceiver(projectNamingReceiver, filter);
+        androidx.core.content.ContextCompat.registerReceiver(this, projectNamingReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
         Log.d(TAG, "Project naming receiver registered");
     }
 
@@ -3327,7 +3345,7 @@ public class AnnotationService extends Service {
         };
 
         IntentFilter filter = new IntentFilter(ProjectSelectionDialogActivity.ACTION_PROJECT_SELECTED);
-        registerReceiver(projectSelectionReceiver, filter);
+        androidx.core.content.ContextCompat.registerReceiver(this, projectSelectionReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
         Log.d(TAG, "Project selection receiver registered");
 
         // Register layer rename receiver
@@ -3342,7 +3360,7 @@ public class AnnotationService extends Service {
             }
         };
         IntentFilter layerRenameFilter = new IntentFilter("com.fadcam.fadrec.RENAME_LAYER");
-        registerReceiver(layerRenameReceiver, layerRenameFilter);
+        androidx.core.content.ContextCompat.registerReceiver(this, layerRenameReceiver, layerRenameFilter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
 
         // Register page rename receiver
         pageRenameReceiver = new BroadcastReceiver() {
@@ -3356,7 +3374,7 @@ public class AnnotationService extends Service {
             }
         };
         IntentFilter pageRenameFilter = new IntentFilter("com.fadcam.fadrec.RENAME_PAGE");
-        registerReceiver(pageRenameReceiver, pageRenameFilter);
+        androidx.core.content.ContextCompat.registerReceiver(this, pageRenameReceiver, pageRenameFilter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
     }
     
     /**

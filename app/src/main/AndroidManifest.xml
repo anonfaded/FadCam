@@ -42,6 +42,9 @@
     <!-- Overlay permission for floating controls and touch indicator -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Foreground service permissions for AnnotationService overlay -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <!-- Camera feature declarations -->
     <uses-feature android:name="android.hardware.camera"/>
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
@@ -281,7 +284,7 @@
         <service android:name=".fadrec.ui.FloatingControlsService" android:enabled="true" android:exported="false" />
 
         <!-- Annotation overlay service for FadRec -->
-        <service android:name=".fadrec.ui.AnnotationService" android:enabled="true" android:exported="false" />
+        <service android:name=".fadrec.ui.AnnotationService" android:enabled="true" android:exported="false" android:foregroundServiceType="specialUse" />
 
         <!-- Transparent dialog activity for color picker -->
         <activity android:name=".fadrec.ui.ColorPickerDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />

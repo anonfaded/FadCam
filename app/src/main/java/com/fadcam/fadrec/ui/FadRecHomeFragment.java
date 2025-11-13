@@ -223,6 +223,28 @@ public class FadRecHomeFragment extends HomeFragment {
                             loadingDialog.dismiss();
                             Log.d(TAG, "Annotation service ready - loading dialog dismissed");
                         }
+                    } else if ("com.fadcam.fadrec.ANNOTATION_SERVICE_PERMISSION_ERROR".equals(action)) {
+                        // Overlay permission error, turn off the menu switch
+                        if (getView() != null) {
+                            View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
+                            if (cardFloatingControls != null) {
+                                androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                                    cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
+                                if (switchFloatingControls != null) {
+                                    switchFloatingControls.setChecked(false);
+                                }
+                            }
+                        }
+                        // Update SharedPreferences
+                        sharedPreferencesManager.setFloatingControlsEnabled(false);
+                        Log.d(TAG, "Overlay permission not granted - menu switch turned off");
+                        
+                        // Show toast to user
+                        if (isAdded()) {
+                            android.widget.Toast.makeText(getContext(), 
+                                "Overlay permission required for floating controls", 
+                                android.widget.Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             };
@@ -233,6 +255,7 @@ public class FadRecHomeFragment extends HomeFragment {
             filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
             filter.addAction("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
             filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
+            filter.addAction("com.fadcam.fadrec.ANNOTATION_SERVICE_PERMISSION_ERROR");
             
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 requireContext().registerReceiver(annotationServiceReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
@@ -519,17 +542,38 @@ public class FadRecHomeFragment extends HomeFragment {
             .setMessage(com.fadcam.R.string.floating_controls_permission_message)
             .setPositiveButton(com.fadcam.R.string.floating_controls_permission_grant, (dialog, which) -> {
                 try {
+                    // Check if overlayPermissionLauncher exists before using it
+                    if (overlayPermissionLauncher == null) {
+                        Log.w(TAG, "overlayPermissionLauncher is null, opening settings directly");
+                        android.content.Intent settingsIntent = new android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            android.net.Uri.parse("package:" + requireContext().getPackageName())
+                        );
+                        startActivity(settingsIntent);
+                        return;
+                    }
+                    
                     android.content.Intent intent = new android.content.Intent(
                         android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         android.net.Uri.parse("package:" + requireContext().getPackageName())
                     );
                     overlayPermissionLauncher.launch(intent);
                 } catch (Exception e) {
-                    Log.e(TAG, "Error requesting overlay permission", e);
-                    com.fadcam.Utils.showQuickToast(
-                        requireContext(),
-                        com.fadcam.R.string.floating_controls_permission_needed
-                    );
+                    Log.e(TAG, "Error requesting overlay permission: " + e.getMessage(), e);
+                    try {
+                        // Fallback: Try to open settings directly
+                        android.content.Intent settingsIntent = new android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            android.net.Uri.parse("package:" + requireContext().getPackageName())
+                        );
+                        startActivity(settingsIntent);
+                    } catch (Exception e2) {
+                        Log.e(TAG, "Fallback also failed: " + e2.getMessage(), e2);
+                        com.fadcam.Utils.showQuickToast(
+                            requireContext(),
+                            com.fadcam.R.string.floating_controls_permission_needed
+                        );
+                    }
                 }
             })
             .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
@@ -927,10 +971,13 @@ public class FadRecHomeFragment extends HomeFragment {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     String action = intent.getAction();
+                    Log.d(TAG, "screenRecordingStateReceiver.onReceive: action=" + action + 
+                               ", Android=" + android.os.Build.VERSION.SDK_INT);
                     if (action == null) return;
                     
                     switch (action) {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
+                            Log.d(TAG, "Broadcast: SCREEN_RECORDING_STARTED");
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
@@ -939,6 +986,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
+                            Log.d(TAG, "Broadcast: SCREEN_RECORDING_STOPPED");
                             screenRecordingState = ScreenRecordingState.NONE;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
@@ -947,6 +995,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
+                            Log.d(TAG, "Broadcast: SCREEN_RECORDING_PAUSED");
                             screenRecordingState = ScreenRecordingState.PAUSED;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
@@ -955,6 +1004,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
+                            Log.d(TAG, "Broadcast: SCREEN_RECORDING_RESUMED");
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
@@ -1071,10 +1121,20 @@ public class FadRecHomeFragment extends HomeFragment {
      */
     private void updateUIForRecordingState() {
         View rootView = getView();
-        if (rootView == null) return;
+        if (rootView == null) {
+            Log.w(TAG, "updateUIForRecordingState: rootView is null, skipping state update");
+            return;
+        }
+        
+        Log.d(TAG, "updateUIForRecordingState: screenRecordingState=" + screenRecordingState + 
+                   ", Android=" + android.os.Build.VERSION.SDK_INT);
         
         MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
+        
+        if (buttonStartStop == null) {
+            Log.e(TAG, "updateUIForRecordingState: buttonStartStop is null!");
+        }
         
         // Update Start/Stop button with animation
         if (buttonStartStop != null) {
