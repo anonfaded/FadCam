@@ -1401,17 +1401,7 @@ public class VideoSettingsFragment extends Fragment {
     private void showRecordingLoopBottomSheet() {
         boolean enabled = prefs.isRecordingLoopEnabled();
         int mb = prefs.getRecordingLoopSizeMb();
-        String sizeLabel;
-        if (mb == 4096)
-            sizeLabel = "Enabled (4 GB)";
-        else if (mb == 16384)
-            sizeLabel = "Enabled (16 GB)";
-        else if (mb == 32768)
-            sizeLabel = "Enabled (32 GB)";
-        else if (mb == 65536)
-            sizeLabel = "Enabled (64 GB)";
-        else
-            sizeLabel = "Custom (" + mb + " MB)";
+        String sizeLabel = getRecordingLoopSizeLabel(mb, true);
 
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem("size", "Change Loop Size (Current: " + sizeLabel + ")"));
