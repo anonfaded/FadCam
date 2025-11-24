@@ -67,7 +67,7 @@ public class LoopRecordingManager {
         }
 
         if (freedBytes > 0) {
-            String message = "Usunięto stare nagrania – zwolniono " + (freedBytes / (1024 * 1024)) + " MB";
+            String message = context.getString(R.string.loop_recording_deleted_message, (freedBytes / (1024 * 1024)));
             Log.i("LoopManager", message);
             Utils.showQuickToast(context, message);
         } else if (initialTotalSize > maxBytes) {
