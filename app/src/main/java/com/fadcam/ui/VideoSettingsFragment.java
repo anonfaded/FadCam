@@ -1506,7 +1506,7 @@ public class VideoSettingsFragment extends Fragment {
     private void showCustomRecordingLoopSizeBottomSheet() {
         int current = prefs.getRecordingLoopSizeMb();
         if (current == 500 || current == 1024 || current == 2048 || current == 4096)
-            current = 2048; // default dla custom
+            current = 2048; // default for custom
 
         final String resultKey = "picker_result_recording_loop_custom";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
