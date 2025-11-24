@@ -1453,16 +1453,17 @@ public class VideoSettingsFragment extends Fragment {
         if (!prefs.isRecordingLoopEnabled())
             return;
 
-        final int[] presetMb = {500, 1024, 2048, 4096, -1};
+        final int[] presetMb = {4096, 16384, 32768, 65536, -1};
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
         for (int mb : presetMb) {
             if (mb == -1)
                 items.add(new com.fadcam.ui.picker.OptionItem("custom", "Custom..."));
             else
                 items.add(new com.fadcam.ui.picker.OptionItem(String.valueOf(mb),
-                        (mb == 1024 ? "1 GB" :
-                                mb == 2048 ? "2 GB" :
-                                        mb == 4096 ? "4 GB" : mb + " MB")));
+                        (mb == 4096 ? "4 GB" :
+                                mb == 16384 ? "16 GB" :
+                                        mb == 32768 ? "32 GB" :
+                                                mb == 65536 ? "64 GB" : mb + " MB")));
         }
 
         int current = prefs.getRecordingLoopSizeMb();
