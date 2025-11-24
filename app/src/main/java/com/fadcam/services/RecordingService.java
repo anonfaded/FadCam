@@ -1051,8 +1051,7 @@ public class RecordingService extends Service {
 
                     // For loop recording if activated, check if storage limit has been reached if so, enforceStorageLimit function will take care of it
                     if (sharedPreferencesManager.isRecordingLoopEnabled()){
-                        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(this);
-                        long limit = prefs.getRecordingLoopLimitBytes();
+                        long limit = sharedPreferencesManager.getRecordingLoopLimitBytes();
                         if (limit > 0) {
                             LoopRecordingManager manager = new LoopRecordingManager(this, limit);
                             manager.enforceStorageLimit();
