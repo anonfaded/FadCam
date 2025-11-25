@@ -90,6 +90,7 @@ import android.graphics.BitmapFactory;
 
 import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import com.fadcam.utils.DeviceHelper;
+import com.fadcam.utils.LoopRecordingManager;
 import com.fadcam.utils.camera.HighSpeedCaptureHelper;
 import com.fadcam.utils.camera.vendor.SamsungFrameRateHelper;
 
@@ -1047,6 +1048,16 @@ public class RecordingService extends Service {
                     }
                     // ----- Fix End: Close SAF ParcelFileDescriptor if open (background thread)
                     // -----
+
+                    // For loop recording if activated, check if storage limit has been reached if so, enforceStorageLimit function will take care of it
+                    if (sharedPreferencesManager.isRecordingLoopEnabled()){
+                        long limit = sharedPreferencesManager.getRecordingLoopLimitBytes();
+                        if (limit > 0) {
+                            LoopRecordingManager manager = new LoopRecordingManager(this, limit);
+                            manager.enforceStorageLimit();
+                        }
+                    }
+
                     // Check if service can stop
                     checkIfServiceCanStop();
 
