@@ -1,10 +1,13 @@
 package com.fadcam.utils;
 
+import static android.provider.Settings.System.getString;
+
 import android.content.Context;
 import android.net.Uri;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.fadcam.Log;
+import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
 import com.fadcam.Constants; // Added import
@@ -67,9 +70,8 @@ public class LoopRecordingManager {
         }
 
         if (freedBytes > 0) {
-            String message = context.getString(R.string.loop_recording_deleted_message, (freedBytes / (1024 * 1024)));
+            String message = "Deleted old recordings – freed" + (freedBytes / (1024 * 1024));
             Log.i("LoopManager", message);
-            Utils.showQuickToast(context, message);
         } else if (initialTotalSize > maxBytes) {
             // This case means we tried to delete but couldn't free up enough space (e.g. delete failed)
             Log.w("LoopManager", "Could not free enough space. Current usage: " + totalSize + ", Limit: " + maxBytes);

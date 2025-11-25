@@ -26,7 +26,7 @@ public class SharedPreferencesManager {
 
     // --- RECORDING LOOP CONSTANTS ---
     public static final String PREF_RECORDING_LOOP_ENABLED =
-            "video_splitting_enabled";
+            "video_loop_enabled";
     public static final boolean DEFAULT_RECORDING_LOOP_ENABLED = false;
     public static final String PREF_RECORDING_LOOP_SIZE_MB = "recording_loop_size_mb";
     public static final int DEFAULT_RECORDING_LOOP_SIZE_MB = 16384; // 16GB
@@ -1041,10 +1041,20 @@ public class SharedPreferencesManager {
 
     public void setVideoSplittingEnabled(boolean enabled) {
         sharedPreferences
-            .edit()
-            .putBoolean(PREF_VIDEO_SPLITTING_ENABLED, enabled)
-            .apply();
+                .edit()
+                .putBoolean(PREF_VIDEO_SPLITTING_ENABLED, enabled)
+                .apply();
+
+        if (!enabled && isRecordingLoopEnabled()) {
+            // Disable loop recording if video splitting is turned off
+            sharedPreferences
+                    .edit()
+                    .putBoolean(PREF_RECORDING_LOOP_ENABLED, false)
+                    .apply();
+            Log.i("SharedPrefs", "Loop recording automatically disabled because split video was turned off.");
+        }
     }
+
 
     public int getVideoSplitSizeMb() {
         return sharedPreferences.getInt(
@@ -1631,6 +1641,12 @@ public class SharedPreferencesManager {
     }
 
     public void setRecordingLoopEnabled(boolean enabled) {
+        // Only allow enabling loop recording if split video is enabled
+        if (enabled && !isVideoSplittingEnabled()) {
+            // Log warning and exit without changing the value
+            Log.w("SharedPrefs", "Cannot enable loop recording: split video must be enabled first.");
+            return;
+        }
         sharedPreferences
                 .edit()
                 .putBoolean(PREF_RECORDING_LOOP_ENABLED, enabled)

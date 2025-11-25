@@ -35,6 +35,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Collections;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.widget.Toast;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -1398,8 +1400,33 @@ public class VideoSettingsFragment extends Fragment {
         // method(showCustomSplitSizeBottomSheet)-----------
     }
 
+    private String getRecordingLoopSizeLabel(int mb, boolean includeEnabled) {
+        String size;
+        if (mb == 4096) size = "4 GB";
+        else if (mb == 16384) size = "16 GB";
+        else if (mb == 32768) size = "32 GB";
+        else if (mb == 65536) size = "64 GB";
+        else size = "Custom " + mb + " MB";
+        return includeEnabled ? "Enabled (" + size + ")" : size;
+    }
+
     private void showRecordingLoopBottomSheet() {
         boolean enabled = prefs.isRecordingLoopEnabled();
+        boolean isSplittingEnabled = prefs.isVideoSplittingEnabled();
+
+        if (!isSplittingEnabled) {
+            String message = getString(R.string.loop_recording_split_first_enable_message);
+            Toast.makeText(
+                    requireContext(),
+                    message,
+                    Toast.LENGTH_LONG
+            ).show();
+
+
+            return;
+        }
+
+
         int mb = prefs.getRecordingLoopSizeMb();
         String sizeLabel = getRecordingLoopSizeLabel(mb, true);
 
