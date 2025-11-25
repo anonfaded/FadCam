@@ -36,7 +36,6 @@ import java.util.Objects;
 import java.util.Collections;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.widget.Toast;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -1426,7 +1425,6 @@ public class VideoSettingsFragment extends Fragment {
             return;
         }
 
-
         int mb = prefs.getRecordingLoopSizeMb();
         String sizeLabel = getRecordingLoopSizeLabel(mb, true);
 
@@ -1549,7 +1547,6 @@ public class VideoSettingsFragment extends Fragment {
                 );
         sheet.show(getParentFragmentManager(), "recording_loop_custom_input");
     }
-
 
     private CamcorderProfile getCamcorderProfile(CameraType type) {
         try {

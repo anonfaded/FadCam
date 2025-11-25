@@ -1,16 +1,16 @@
 package com.fadcam.utils;
 
-import static android.provider.Settings.System.getString;
-
 import android.content.Context;
 import android.net.Uri;
+import android.widget.Toast;
+
 import androidx.documentfile.provider.DocumentFile;
 
 import com.fadcam.Log;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
-import com.fadcam.Constants; // Added import
+import com.fadcam.Constants;
 
 import java.io.File;
 import java.util.ArrayList;

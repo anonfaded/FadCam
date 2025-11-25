@@ -1055,7 +1055,6 @@ public class SharedPreferencesManager {
         }
     }
 
-
     public int getVideoSplitSizeMb() {
         return sharedPreferences.getInt(
             PREF_VIDEO_SPLIT_SIZE_MB,
@@ -1626,11 +1625,6 @@ public class SharedPreferencesManager {
     public long getRecordingLoopLimitBytes() {
         int mb = sharedPreferences.getInt(PREF_RECORDING_LOOP_SIZE_MB, DEFAULT_RECORDING_LOOP_SIZE_MB);
         return mb > 0 ? mb * 1024L * 1024L : 0L;
-    }
-
-    public void setRecordingLoopLimitMb(int mb) {
-        sharedPreferences.edit().putInt(PREF_RECORDING_LOOP_SIZE_MB, mb).apply();
-        Log.d("SharedPrefs", "Loop storage limit set to: " + mb + " MB");
     }
 
     public boolean isRecordingLoopEnabled() {
