@@ -40,10 +40,14 @@ android {
             rootProject.file("local.properties").takeIf { it.exists() }?.inputStream().use { stream ->
                 stream?.let { props.load(it) }
             }
-            storeFile = file(props.getProperty("KEYSTORE_FILE", ""))
-            storePassword = props.getProperty("KEYSTORE_PASSWORD", "")
-            keyAlias = props.getProperty("KEY_ALIAS", "")
-            keyPassword = props.getProperty("KEY_PASSWORD", "")
+            val keystoreFile = props.getProperty("KEYSTORE_FILE", "")
+            // Only set storeFile if keystore file path is provided and exists
+            if (keystoreFile.isNotEmpty() && file(keystoreFile).exists()) {
+                storeFile = file(keystoreFile)
+                storePassword = props.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = props.getProperty("KEY_ALIAS", "")
+                keyPassword = props.getProperty("KEY_PASSWORD", "")
+            }
         }
     }
 
