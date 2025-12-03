@@ -1,4 +1,4 @@
-name: Build FadCam Pro APK
+name: Build FadCam Pro+ APK (Custom)
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  build-pro-apk:
+  build-pro-plus-apk:
     runs-on: ubuntu-latest
     
     steps:
@@ -142,38 +142,38 @@ jobs:
           APP_NAME="${{ inputs.app_name }}"
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
           
-      - name: Build Pro APK (Release, ARM64 only)
+      - name: Build Pro+ APK (Custom build with user icon/name)
         run: |
           chmod +x ./gradlew
-          ./gradlew assemblePro -PcustomAppName="${{ env.FINAL_APP_NAME }}"
+          # Build standalone proPlus with custom app name
+          ./gradlew assembleProPlus -PcustomAppName="${{ env.FINAL_APP_NAME }}"
           
       - name: Verify APK was built
         run: |
-          if [ -f "app/build/outputs/apk/pro/app-pro.apk" ]; then
-            echo "✓ APK built successfully"
-            ls -lh app/build/outputs/apk/pro/app-pro.apk
+          if [ -f "app/build/outputs/apk/default/proPlus/app-default-proPlus.apk" ]; then
+            echo "✓ Pro+ APK built successfully"
+            ls -lh app/build/outputs/apk/default/proPlus/app-default-proPlus.apk
           else
             echo "✗ APK not found"
-            echo "Files in pro directory:"
-            ls -lh app/build/outputs/apk/pro/ || echo "Directory doesn't exist"
+            ls -lh app/build/outputs/apk/default/proPlus/ || echo "Directory doesn't exist"
             exit 1
           fi
           
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fadcam-pro-apk
-          path: app/build/outputs/apk/pro/app-pro.apk
+          name: fadcam-pro-plus-apk
+          path: app/build/outputs/apk/default/proPlus/app-default-proPlus.apk
           retention-days: 1
           
       - name: Build summary
         run: |
-          echo "## ✅ FadCam Pro APK Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ FadCam Pro+ APK Built Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro" >> $GITHUB_STEP_SUMMARY
+          echo "- Package ID: com.fadcam.proplus" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: ${{ env.FINAL_APP_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Build Type: Release (Optimized, ARM64 only)" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Type: Pro+ (Custom, Debuggable)" >> $GITHUB_STEP_SUMMARY
           echo "- Architecture: arm64-v8a" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

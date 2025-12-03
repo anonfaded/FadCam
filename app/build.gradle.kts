@@ -88,6 +88,22 @@ android {
             signingConfig = signingConfigs.getByName("release")
             versionNameSuffix = "-Pro"
         }
+        
+        create("proPlus") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            applicationIdSuffix = ".proplus"
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
+            versionNameSuffix = "-Pro+"
+            // Custom app name via gradle property
+            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
+            resValue("string", "app_name", customAppName)
+        }
     }
 
     flavorDimensions += "pro"
@@ -108,17 +124,30 @@ android {
             applicationIdSuffix = ".weather"
             resValue("string", "app_name", "Weather")
         }
+        create("default") {
+            dimension = "pro"
+            // Default for proPlus builds
+        }
     }
 
-// ./gradlew assembleNotesPro
-// ./gradlew assembleCalcPro
-// ./gradlew assembleWeatherPro
+// ./gradlew assembleNotesPro - Notes Pro variant
+// ./gradlew assembleCalcPro - Calculator Pro variant
+// ./gradlew assembleWeatherPro - Weather Pro variant
+// ./gradlew assembleProPlus -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
 
-    // Only build 'pro' build type for pro flavors
+    // Variant filter: only build specific variants
     variantFilter {
-        if (name.contains("notesPro") || name.contains("calcPro") || name.contains("weatherPro")) {
-            // For pro flavors, only build 'pro' build type
+        val isPreBuiltFlavor = name.contains("notesPro") || name.contains("calcPro") || name.contains("weatherPro")
+        val isDefaultFlavor = name.contains("default")
+        
+        if (isPreBuiltFlavor) {
+            // Pre-built flavors: only 'pro' build type
             if (!name.endsWith("Pro")) {
+                ignore = true
+            }
+        } else if (isDefaultFlavor) {
+            // Default flavor: only 'proPlus' build type
+            if (!name.endsWith("ProPlus")) {
                 ignore = true
             }
         }
