@@ -29,7 +29,7 @@ android {
         minSdk = 28
         targetSdk = 36
         versionCode = 29
-        versionName = "3.0.0-beta2"
+        versionName = "3.0.0"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15
@@ -60,9 +60,12 @@ android {
         debug {
             applicationIdSuffix = ".beta"
             isDebuggable = true
-            // Use a different icon for debug builds
-            resValue("string", "app_name", "FadCam Beta")
-            // You can also add debug-specific configurations here
+            versionNameSuffix = "-beta"
+            // Only set app name for non-pro builds
+            // Pro flavors will override this
+            if (!isProBuild) {
+                resValue("string", "app_name", "FadCam Beta")
+            }
         }
         
         release {
@@ -84,9 +87,12 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
-            // Allow custom app name via gradle property: -PcustomAppName="My App Name"
-            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro"
-            resValue("string", "app_name", customAppName)
+            versionNameSuffix = "-pro"  // FadCam Pro: 3.0.0-pro
+            // Don't set app name here - let flavors or customAppName property handle it
+            val customAppName = project.findProperty("customAppName")?.toString()
+            if (customAppName != null) {
+                resValue("string", "app_name", customAppName)
+            }
         }
 
         create("debugPro") {
@@ -95,9 +101,30 @@ android {
             isDebuggable = true
             isMinifyEnabled = false
             isShrinkResources = false
+            versionNameSuffix = "-proplus"  // Pro Plus: 3.0.0-proplus
             // Allow custom app name via gradle property: -PcustomAppName="My App Name"
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro"
             resValue("string", "app_name", customAppName)
+        }
+    }
+
+    flavorDimensions += "pro"
+
+    productFlavors {
+        create("notesPro") {
+            dimension = "pro"
+            applicationIdSuffix = ".notes"
+            resValue("string", "app_name", "Notes")
+        }
+        create("calcPro") {
+            dimension = "pro"
+            applicationIdSuffix = ".calc"
+            resValue("string", "app_name", "Calculator")
+        }
+        create("weatherPro") {
+            dimension = "pro"
+            applicationIdSuffix = ".weather"
+            resValue("string", "app_name", "Weather")
         }
     }
 
@@ -118,6 +145,17 @@ android {
         }
         getByName("test").java.setSrcDirs(emptyList<String>())
         getByName("androidTest").java.setSrcDirs(emptyList<String>())
+        
+        // Flavor-specific resources (icons override main icons)
+        getByName("notesPro") {
+            res.srcDir("src/notesPro/res")
+        }
+        getByName("calcPro") {
+            res.srcDir("src/calcPro/res")
+        }
+        getByName("weatherPro") {
+            res.srcDir("src/weatherPro/res")
+        }
     }
 
     packaging {
