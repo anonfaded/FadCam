@@ -69,7 +69,7 @@ android {
         }
         
         create("pro") {
-            initWith(getByName("release"))
+            initWith(getByName("debug"))
             applicationIdSuffix = ".pro"
             isDebuggable = false
             isMinifyEnabled = true
