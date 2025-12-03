@@ -55,6 +55,9 @@ android {
             }
         }
     }
+    
+    // Helper: check if release signing config is valid
+    val releaseSigningConfigValid = signingConfigs.getByName("release").storeFile != null
 
     buildTypes {
         debug {
@@ -85,7 +88,9 @@ android {
             )
             applicationIdSuffix = ".pro"
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
+            if (releaseSigningConfigValid) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             versionNameSuffix = "-Pro"
         }
         
@@ -98,7 +103,9 @@ android {
             )
             applicationIdSuffix = ".proplus"
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
+            if (releaseSigningConfigValid) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             versionNameSuffix = "-Pro+"
             // Custom app name via gradle property
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"

@@ -17,6 +17,18 @@ jobs:
           java-version: 17
           distribution: 'temurin'
           
+      - name: Generate debug keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          
+      - name: Setup local.properties with debug keystore
+        run: |
+          echo "KEYSTORE_FILE=$HOME/.android/debug.keystore" >> local.properties
+          echo "KEYSTORE_PASSWORD=android" >> local.properties
+          echo "KEY_ALIAS=androiddebugkey" >> local.properties
+          echo "KEY_PASSWORD=android" >> local.properties
+          
       - name: Build Notes Pro variant
         run: |
           chmod +x ./gradlew

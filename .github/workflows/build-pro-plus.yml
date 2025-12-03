@@ -40,6 +40,16 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" || true
           echo "✓ Debug keystore ready"
           
+      - name: Configure local.properties for signing
+        run: |
+          cat > local.properties << 'EOF'
+          KEYSTORE_FILE=$HOME/.android/debug.keystore
+          KEYSTORE_PASSWORD=android
+          KEY_ALIAS=androiddebugkey
+          KEY_PASSWORD=android
+          EOF
+          echo "✓ local.properties configured"
+          
       - name: Validate and sanitize app name
         run: |
           APP_NAME="${{ inputs.app_name }}"
