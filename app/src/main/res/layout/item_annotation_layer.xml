@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Layer item in list -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/settings_home_row_bg" android:padding="12dp" android:layout_marginVertical="2dp">
+
+    <!-- Top row: Name and delete -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+            <TextView android:id="@+id/txtLayerName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Layer 1" android:textSize="15sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+
+            <TextView android:id="@+id/txtLayerInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5 paths" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <TextView android:id="@+id/btnDeleteLayer" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="delete" android:textSize="20sp" android:textColor="#FF5252" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Controls row -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8dp">
+
+        <!-- Visible toggle -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="visibility" android:textSize="16sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="4dp" />
+
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchVisible" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+        <!-- Lock toggle -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="lock" android:textSize="16sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="4dp" />
+
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchLocked" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+        <!-- Pin toggle -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="push_pin" android:textSize="16sp" android:textColor="#FF9800" android:fontFamily="@font/materialicons" android:layout_marginEnd="4dp" />
+
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchPinned" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <!-- Opacity slider -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Opacity" android:textSize="12sp" android:textColor="#9E9E9E" />
+
+        <SeekBar android:id="@+id/seekOpacity" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="100" android:progress="100" android:layout_marginHorizontal="8dp" />
+
+        <TextView android:id="@+id/txtOpacity" android:layout_width="40dp" android:layout_height="wrap_content" android:text="100%" android:textSize="12sp" android:textColor="#FFFFFF" android:gravity="end" />
+    </LinearLayout>
+
+</LinearLayout>

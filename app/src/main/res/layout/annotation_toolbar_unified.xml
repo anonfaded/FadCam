@@ -1,0 +1,766 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Unified Toolbar: Arrow OUTSIDE, Menu appears beside it -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="304dp" android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/menuContainer"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:orientation="vertical"
+        android:background="@drawable/floating_menu_bg"
+        android:clipToOutline="true">
+
+        <!-- Expandable Content (menu background) - Hidden by default -->
+        <ScrollView
+            android:id="@+id/expandableContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="500dp"
+            android:visibility="gone"
+            android:scrollbars="none"
+            android:padding="8dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+
+                <!-- BRANDING with Logo (no gap) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@drawable/overlay_toolbar_header_bg"
+                    android:clipToOutline="true"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="39dp"
+                        android:src="@drawable/fadrec"
+                        android:adjustViewBounds="true"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="FadRec Logo"
+                        android:padding="0dp"
+                        android:layout_marginEnd="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="by FadSec Lab"
+                        android:textSize="11sp"
+                        android:textColor="#B0B0B0"
+                        android:fontFamily="@font/ubuntu_regular"
+                        android:layout_marginStart="0dp"
+                        android:paddingStart="0dp"
+                        android:padding="0dp"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+
+                <!-- RECORDING CONTROLS SECTION (MOVED TO TOP) -->
+                <LinearLayout 
+                    android:id="@+id/recordingControlsContainer"
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content" 
+                    android:orientation="vertical" 
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp">
+
+                <!-- Collapsed State: Single Green Row -->
+                <LinearLayout 
+                    android:id="@+id/btnRecordingCollapsed"
+                    android:layout_width="match_parent" 
+                    android:layout_height="56dp" 
+                    android:orientation="horizontal" 
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:background="@drawable/recording_button_bg"
+                    android:backgroundTint="#4CAF50"
+                    android:clickable="true" 
+                    android:focusable="true"
+                    android:visibility="visible">
+
+                    <ImageView 
+                        android:layout_width="32dp" 
+                        android:layout_height="32dp" 
+                        android:src="@drawable/screen_recorder"
+                        android:scaleType="fitCenter"
+                        android:tint="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingStart="12dp">
+
+                        <TextView
+                            android:id="@+id/txtRecordingReadyTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/fadrec_ready_to_record"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textColor="#FFFFFF"
+                            android:fontFamily="@font/ubuntu_regular"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/txtRecordingReadySubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/fadrec_ready_to_record_subtitle"
+                            android:textSize="12sp"
+                            android:textColor="#B3FFFFFF"
+                            android:fontFamily="@font/ubuntu_regular"
+                            android:layout_marginTop="2dp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Expanded State: Two Columns (Stop & Pause) -->
+                <LinearLayout 
+                    android:id="@+id/recordingControlsExpanded"
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content" 
+                    android:orientation="horizontal" 
+                    android:gravity="center"
+                    android:visibility="gone">
+
+                    <!-- Stop Button (Red) -->
+                    <LinearLayout 
+                        android:id="@+id/btnStartStopRec" 
+                        android:layout_width="0dp" 
+                        android:layout_height="64dp" 
+                        android:layout_weight="1" 
+                        android:orientation="vertical" 
+                        android:gravity="center" 
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/recording_button_bg"
+                        android:backgroundTint="#F44336"
+                        android:clickable="true" 
+                        android:focusable="true" 
+                        android:layout_marginEnd="4dp">
+
+                        <TextView 
+                            android:id="@+id/iconStartStop" 
+                            android:layout_width="24dp" 
+                            android:layout_height="24dp" 
+                            android:gravity="center" 
+                            android:text="stop" 
+                            android:textSize="20sp" 
+                            android:textColor="#FFFFFF" 
+                            android:fontFamily="@font/materialicons" />
+
+                        <TextView 
+                            android:id="@+id/labelStartStop" 
+                            android:layout_width="wrap_content" 
+                            android:layout_height="wrap_content" 
+                            android:layout_marginTop="6dp" 
+                            android:text="@string/floating_menu_start_short" 
+                            android:textSize="11sp" 
+                            android:textStyle="bold" 
+                            android:textColor="#FFFFFF" 
+                            android:fontFamily="@font/ubuntu_regular"
+                            android:includeFontPadding="false" />
+                    </LinearLayout>
+
+                    <!-- Pause Button (Darker Orange for better contrast) -->
+                    <LinearLayout 
+                        android:id="@+id/btnPauseResumeRec" 
+                        android:layout_width="0dp" 
+                        android:layout_height="64dp" 
+                        android:layout_weight="1" 
+                        android:orientation="vertical" 
+                        android:gravity="center" 
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/recording_button_bg"
+                        android:backgroundTint="#EF6C00"
+                        android:clickable="true" 
+                        android:focusable="true" 
+                        android:layout_marginStart="4dp">
+
+                        <TextView 
+                            android:id="@+id/iconPauseResume" 
+                            android:layout_width="24dp" 
+                            android:layout_height="24dp" 
+                            android:gravity="center" 
+                            android:text="pause" 
+                            android:textSize="20sp" 
+                            android:textColor="#FFFFFF" 
+                            android:fontFamily="@font/materialicons" />
+
+                        <TextView 
+                            android:id="@+id/labelPauseResume" 
+                            android:layout_width="wrap_content" 
+                            android:layout_height="wrap_content" 
+                            android:layout_marginTop="6dp" 
+                            android:text="@string/floating_menu_pause" 
+                            android:textSize="11sp" 
+                            android:textStyle="bold" 
+                            android:textColor="#FFFFFF" 
+                            android:fontFamily="@font/ubuntu_regular"
+                            android:includeFontPadding="false" />
+                    </LinearLayout>
+                </LinearLayout>
+                
+                <!-- Recording Timer Display -->
+                <TextView
+                    android:id="@+id/recordingTimerText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#4CAF50"
+                    android:gravity="center"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="4dp"
+                    android:fontFamily="@font/ubuntu_regular"
+                    android:letterSpacing="0.05"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- ANNOTATION CONTROLS -->
+            <!-- QUICK ACCESS (COLLAPSIBLE, DEFAULT OPEN) -->
+            <LinearLayout
+                android:id="@+id/quickAccessHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:gravity="center"
+                    android:text="flash_on"
+                    android:textSize="20sp"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/materialicons"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Quick Access"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/ubuntu_regular" />
+
+                <TextView
+                    android:id="@+id/quickAccessExpandIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="expand_less"
+                    android:textSize="18sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/materialicons" />
+            </LinearLayout>
+
+            <!-- Quick Access Content (Collapsible, Default Visible) -->
+            <LinearLayout
+                android:id="@+id/quickAccessContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+            <!-- Quick Access Options in Single Row -->
+            <LinearLayout 
+                android:layout_width="match_parent" 
+                android:layout_height="wrap_content" 
+                android:orientation="horizontal" 
+                android:gravity="center" 
+                android:paddingHorizontal="8dp" 
+                android:paddingBottom="8dp">
+
+                <!-- Enable/Disable Annotation -->
+                <LinearLayout 
+                    android:id="@+id/btnToggleAnnotation" 
+                    android:layout_width="0dp" 
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal" 
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:background="@drawable/quick_access_button_bg" 
+                    android:clickable="true" 
+                    android:focusable="true" 
+                    android:layout_marginEnd="4dp">
+
+                    <TextView 
+                        android:id="@+id/iconToggleAnnotation" 
+                        android:layout_width="28dp" 
+                        android:layout_height="28dp" 
+                        android:text="edit_off" 
+                        android:textSize="20sp" 
+                        android:textColor="#9E9E9E" 
+                        android:fontFamily="@font/materialicons" 
+                        android:gravity="center" />
+
+                    <LinearLayout 
+                        android:layout_width="0dp" 
+                        android:layout_weight="1" 
+                        android:layout_height="wrap_content" 
+                        android:orientation="vertical"
+                        android:paddingStart="8dp">
+                        <TextView 
+                            android:id="@+id/labelToggleAnnotation" 
+                            android:layout_width="wrap_content" 
+                            android:layout_height="wrap_content" 
+                            android:text="Annotate" 
+                            android:textSize="12sp" 
+                            android:textColor="#FFFFFF" 
+                            android:textStyle="bold" 
+                            android:fontFamily="@font/ubuntu_regular" />
+
+                        <TextView 
+                            android:id="@+id/descToggleAnnotation" 
+                            android:layout_width="wrap_content" 
+                            android:layout_height="wrap_content" 
+                            android:text="Enable tools" 
+                            android:textSize="9sp" 
+                            android:textColor="#80FFFFFF" 
+                            android:fontFamily="@font/ubuntu_regular" 
+                            android:layout_marginTop="1dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Hide/Show Canvas -->
+                <LinearLayout 
+                    android:id="@+id/btnToggleCanvasVisibility" 
+                    android:layout_width="0dp" 
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal" 
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:background="@drawable/quick_access_button_bg" 
+                    android:clickable="true" 
+                    android:focusable="true"
+                    android:layout_marginStart="4dp">
+
+                    <TextView 
+                        android:id="@+id/iconToggleCanvasVisibility" 
+                        android:layout_width="28dp" 
+                        android:layout_height="28dp" 
+                        android:text="visibility" 
+                        android:textSize="20sp" 
+                        android:textColor="#2196F3" 
+                        android:fontFamily="@font/materialicons" 
+                        android:gravity="center" />
+
+                    <LinearLayout 
+                        android:layout_width="0dp" 
+                        android:layout_weight="1" 
+                        android:layout_height="wrap_content" 
+                        android:orientation="vertical"
+                        android:paddingStart="8dp">
+                        <TextView 
+                            android:id="@+id/labelToggleCanvasVisibility" 
+                            android:layout_width="wrap_content" 
+                            android:layout_height="wrap_content" 
+                            android:text="Canvas" 
+                            android:textSize="12sp" 
+                            android:textColor="#FFFFFF" 
+                            android:textStyle="bold" 
+                            android:fontFamily="@font/ubuntu_regular" />
+
+                        <TextView 
+                            android:id="@+id/descToggleCanvasVisibility" 
+                            android:layout_width="wrap_content" 
+                            android:layout_height="wrap_content" 
+                            android:text="Toggle visibility" 
+                            android:textSize="9sp" 
+                            android:textColor="#80FFFFFF" 
+                            android:fontFamily="@font/ubuntu_regular" 
+                            android:layout_marginTop="1dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+            </LinearLayout> <!-- Close quickAccessContent -->
+
+            <!-- PROJECT MANAGER SECTION (Collapsible) -->
+            <LinearLayout
+                android:id="@+id/projectHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:gravity="center"
+                    android:text="folder"
+                    android:textSize="20sp"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/materialicons"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Project"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/annotation_heading_accent"
+                    android:fontFamily="@font/ubuntu_regular" />
+
+                <TextView
+                    android:id="@+id/projectExpandIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="expand_more"
+                    android:textSize="18sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/materialicons" />
+            </LinearLayout>
+
+            <!-- Project Content (Expandable) -->
+            <LinearLayout
+                android:id="@+id/projectContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
+
+                <!-- Current Project Display -->
+                <LinearLayout 
+                    android:id="@+id/btnCurrentProject"
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
+                    android:orientation="vertical" 
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:background="@drawable/floating_button_item_bg" 
+                    android:clickable="true" 
+                    android:focusable="true"
+                    android:layout_marginBottom="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView 
+                            android:layout_width="20dp" 
+                            android:layout_height="20dp" 
+                            android:text="folder" 
+                            android:textSize="16sp" 
+                            android:textColor="#4CAF50" 
+                            android:fontFamily="@font/materialicons" 
+                            android:gravity="center" 
+                            android:layout_marginEnd="10dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView 
+                                android:id="@+id/txtCurrentProjectName" 
+                                android:layout_width="wrap_content" 
+                                android:layout_height="wrap_content" 
+                                android:text="Untitled Project" 
+                                android:textSize="13sp" 
+                                android:textColor="#FFFFFF" 
+                                android:textStyle="bold" 
+                                android:fontFamily="@font/ubuntu_regular"
+                                android:maxLines="1"
+                                android:ellipsize="end" />
+
+                            <TextView 
+                                android:id="@+id/txtCurrentProjectDesc" 
+                                android:layout_width="wrap_content" 
+                                android:layout_height="wrap_content" 
+                                android:text="Tap to add description" 
+                                android:textSize="10sp" 
+                                android:textColor="#80FFFFFF" 
+                                android:fontFamily="@font/ubuntu_regular"
+                                android:layout_marginTop="2dp"
+                                android:maxLines="2"
+                                android:ellipsize="end" />
+                        </LinearLayout>
+
+                        <TextView 
+                            android:layout_width="18dp" 
+                            android:layout_height="18dp" 
+                            android:text="edit" 
+                            android:textSize="14sp" 
+                            android:textColor="#9E9E9E" 
+                            android:fontFamily="@font/materialicons" 
+                            android:gravity="center" 
+                            android:layout_marginStart="8dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Manage Projects Button -->
+                <LinearLayout 
+                    android:id="@+id/btnManageProjects"
+                    android:layout_width="match_parent" 
+                    android:layout_height="48dp"
+                    android:orientation="horizontal" 
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp"
+                    android:background="@drawable/floating_button_item_bg" 
+                    android:clickable="true" 
+                    android:focusable="true">
+
+                    <TextView 
+                        android:layout_width="20dp" 
+                        android:layout_height="20dp" 
+                        android:text="folder_open" 
+                        android:textSize="16sp" 
+                        android:textColor="#2196F3" 
+                        android:fontFamily="@font/materialicons" 
+                        android:gravity="center" 
+                        android:layout_marginEnd="10dp" />
+
+                    <TextView 
+                        android:layout_width="0dp" 
+                        android:layout_height="wrap_content" 
+                        android:layout_weight="1"
+                        android:text="Manage Projects" 
+                        android:textSize="13sp" 
+                        android:textColor="#FFFFFF" 
+                        android:textStyle="bold" 
+                        android:fontFamily="@font/ubuntu_regular" />
+
+                    <TextView 
+                        android:layout_width="18dp" 
+                        android:layout_height="18dp" 
+                        android:text="chevron_right" 
+                        android:textSize="16sp" 
+                        android:textColor="#9E9E9E" 
+                        android:fontFamily="@font/materialicons" 
+                        android:gravity="center" />
+                </LinearLayout>
+            </LinearLayout> <!-- Close projectContent -->
+
+            <!-- Divider -->
+            <!-- Divider before Annotation Tools section -->
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/annotation_border_divider" android:layout_marginVertical="8dp" />
+
+            <!-- ANNOTATION TOOLS SECTION -->
+            <LinearLayout android:id="@+id/annotationsHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="6dp" android:paddingBottom="6dp" android:background="?android:attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+
+                <TextView android:layout_width="24dp" android:layout_height="24dp" android:gravity="center" android:text="edit" android:textSize="20sp" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/materialicons" android:layout_marginEnd="8dp" />
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/annotation_tools" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" />
+
+                <TextView android:id="@+id/annotationsExpandIcon" android:layout_width="20dp" android:layout_height="20dp" android:gravity="center" android:text="expand_more" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" />
+            </LinearLayout>
+
+            <!-- Annotation Tools Content (Expandable) -->
+            <LinearLayout android:id="@+id/annotationsContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:visibility="gone">
+
+                <!-- Snap Guides Switch -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="6dp" android:paddingBottom="6dp">
+
+                    <TextView android:id="@+id/iconSnapGuides" android:layout_width="20dp" android:layout_height="20dp" android:gravity="center" android:text="grid_on" android:textSize="14sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="8dp" />
+
+                    <TextView android:id="@+id/labelSnapGuides" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/snap_guides" android:textSize="11sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" />
+
+                    <androidx.appcompat.widget.SwitchCompat android:id="@+id/snapGuidesSwitch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:theme="@style/SwitchTheme" android:checked="true" />
+                </LinearLayout>
+
+                <!-- Undo/Redo Row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="4dp">
+
+                    <!-- Undo -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+
+                        <TextView android:id="@+id/btnUndo" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="undo" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:alpha="0.5" />
+
+                        <TextView android:id="@+id/txtUndoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Redo -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+
+                        <TextView android:id="@+id/btnRedo" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="redo" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:alpha="0.5" />
+
+                        <TextView android:id="@+id/txtRedoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Pages -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+
+                        <TextView android:id="@+id/btnPages" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="tab" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
+
+                        <TextView android:id="@+id/txtPageInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1/1" android:textSize="8sp" android:textColor="#4CAF50" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Layers -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+
+                        <TextView android:id="@+id/btnLayers" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="layers" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
+
+                        <TextView android:id="@+id/txtLayerInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="L1" android:textSize="8sp" android:textColor="#2196F3" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Clear All -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
+
+                        <TextView android:id="@+id/btnClearAll" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="delete_sweep" android:textSize="18sp" android:textColor="#FF5252" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete All" android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Tools Heading -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tools" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="8dp" android:paddingBottom="2dp" />
+
+                <!-- Tools Row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="4dp">
+
+                    <!-- Select Tool -->
+                    <LinearLayout android:id="@+id/btnSelectTool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconSelectTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="pan_tool" android:textSize="18sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Select" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Pen Tool -->
+                    <LinearLayout android:id="@+id/btnPenTool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconPenTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="edit" android:textSize="18sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Pen" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Eraser Tool -->
+                    <LinearLayout android:id="@+id/btnEraserTool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconEraserTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="cleaning_services" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Erase" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Text Tool -->
+                    <LinearLayout android:id="@+id/btnTextTool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconTextTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="text_fields" android:textSize="18sp" android:textColor="#FFEB3B" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Text" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Shape Tool -->
+                    <LinearLayout android:id="@+id/btnShapeTool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconShapeTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="category" android:textSize="18sp" android:textColor="#FF5722" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Shape" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Colors Heading -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Colors" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+
+                <!-- Colors Row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp">
+
+                    <View android:id="@+id/btnColorRed" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#F44336" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnColorBlue" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#2196F3" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnColorGreen" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#4CAF50" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnColorYellow" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#FFEB3B" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnColorWhite" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#FFFFFF" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnColorBlack" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:background="@drawable/annotation_color_circle_black" android:clickable="true" android:focusable="true" />
+
+                    <!-- Color Picker -->
+                    <TextView android:id="@+id/btnColorPicker" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="3dp" android:gravity="center" android:text="palette" android:textSize="16sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_color_circle" android:backgroundTint="#424242" android:clickable="true" android:focusable="true" />
+                </LinearLayout>
+
+                <!-- Stroke Size Heading -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stroke Size" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+
+                <!-- Stroke Widths Row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="6dp">
+
+                    <View android:id="@+id/btnWidthThin" android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="6dp" android:background="@drawable/annotation_width_circle" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnWidthMedium" android:layout_width="16dp" android:layout_height="16dp" android:layout_margin="6dp" android:background="@drawable/annotation_width_circle" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnWidthThick" android:layout_width="24dp" android:layout_height="24dp" android:layout_margin="6dp" android:background="@drawable/annotation_width_circle" android:clickable="true" android:focusable="true" />
+
+                    <View android:id="@+id/btnWidthExtraThick" android:layout_width="32dp" android:layout_height="32dp" android:layout_margin="6dp" android:background="@drawable/annotation_width_circle" android:clickable="true" android:focusable="true" />
+                </LinearLayout>
+
+                <!-- Board Heading -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Board" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+
+                <!-- Background Tools Row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="6dp">
+
+                    <!-- None (Transparent) -->
+                    <LinearLayout android:id="@+id/btnBoardNone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconBoardNone" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="block" android:textSize="18sp" android:textColor="#9E9E9E" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="None" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- Black Board -->
+                    <LinearLayout android:id="@+id/btnBoardBlack" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconBoardBlack" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="square" android:textSize="18sp" android:textColor="#000000" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Black" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+
+                    <!-- White Board -->
+                    <LinearLayout android:id="@+id/btnBoardWhite" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">
+
+                        <TextView android:id="@+id/iconBoardWhite" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="square" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="White" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- Arrow Button (always visible, OUTSIDE menu) - Overlays on right edge -->
+
+
+</FrameLayout>

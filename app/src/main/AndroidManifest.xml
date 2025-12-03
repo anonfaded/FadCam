@@ -1,31 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:targetSdkVersion="35">
+    xmlns:tools="http://schemas.android.com/tools" android:targetSdkVersion="35">
 
 
     <!-- For Android 13+ -->
 
     <!-- Bluetooth permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" 
-                     android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <!-- For devices with Android 11 (API 30) or below -->
-    <uses-permission android:name="android.permission.BLUETOOTH"
-                     android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
-                     android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
 
     <!-- Media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.WRITE_MEDIA_VIDEO" />
     <!-- <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /> -->
-<!--    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />-->
+    <!--    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />-->
 
     <!-- Audio permissions -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
-    
+
     <!-- Optional hardware features -->
     <uses-feature android:name="android.hardware.sensor.high_sampling_rate" android:required="false" />
 
@@ -42,7 +38,13 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <uses-permission android:name="android.permission.CAMERA"/>
-    
+
+    <!-- Overlay permission for floating controls and touch indicator -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Foreground service permissions for AnnotationService overlay -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <!-- Camera feature declarations -->
     <uses-feature android:name="android.hardware.camera"/>
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
@@ -51,7 +53,7 @@
     <uses-feature android:name="android.hardware.camera.capability.manual_post_processing" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
-    
+
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -72,57 +74,27 @@
 
 
 
-    <application
-        android:name=".FadCamApplication"
-        android:allowBackup="false"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Base.Theme.FadCam"
-        android:requestLegacyExternalStorage="true"
-        tools:targetApi="q">
-        
-        <meta-data
-            android:name="android.app.shortcuts"
-            android:resource="@xml/shortcuts" />
-        
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+    <application android:name=".FadCamApplication" android:allowBackup="false" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Base.Theme.FadCam" android:requestLegacyExternalStorage="true" tools:targetApi="q">
+
+        <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.provider" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
-        <activity
-            android:name=".SplashActivity"
-            android:exported="true"
-            android:theme="@style/Theme.FadCam.Splash">
+        <activity android:name=".SplashActivity" android:exported="true" android:theme="@style/Theme.FadCam.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".MainActivity"
-            android:launchMode="singleTop"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
-            android:exported="false" />
+        <activity android:name=".MainActivity" android:launchMode="singleTop" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" android:exported="false" />
+
+        <!-- Transparent editor activities for proper keyboard handling -->
+        <activity android:name="com.fadcam.fadrec.ui.overlay.TextEditorActivity" android:theme="@style/TransparentEditorTheme" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:windowSoftInputMode="adjustResize" android:exported="false" />
 
         <!-- Detective App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.AlternativeIcon"
-            android:enabled="false"
-            android:label="Camera"
-            android:icon="@mipmap/ic_launcher_2"
-            android:roundIcon="@mipmap/ic_launcher_2_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.AlternativeIcon" android:enabled="false" android:label="Camera" android:icon="@mipmap/ic_launcher_2" android:roundIcon="@mipmap/ic_launcher_2_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -130,224 +102,119 @@
         </activity-alias>
 
         <!-- Faded App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.FadedIcon"
-            android:enabled="false"
-            android:label="0xFF0000"
-            android:icon="@mipmap/ic_launcher_faded"
-            android:roundIcon="@mipmap/ic_launcher_faded_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.FadedIcon" android:enabled="false" android:label="0xFF0000" android:icon="@mipmap/ic_launcher_faded" android:roundIcon="@mipmap/ic_launcher_faded_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Palestine App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.PalestineIcon"
-            android:enabled="false"
-            android:label="I❤️Palestine"
-            android:icon="@mipmap/ic_launcher_palestine"
-            android:roundIcon="@mipmap/ic_launcher_palestine_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.PalestineIcon" android:enabled="false" android:label="I❤️Palestine" android:icon="@mipmap/ic_launcher_palestine" android:roundIcon="@mipmap/ic_launcher_palestine_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- MadeInPK App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.PakistanIcon"
-            android:enabled="false"
-            android:label="FadCam"
-            android:icon="@mipmap/ic_launcher_pakistan"
-            android:roundIcon="@mipmap/ic_launcher_pakistan_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.PakistanIcon" android:enabled="false" android:label="FadCam" android:icon="@mipmap/ic_launcher_pakistan" android:roundIcon="@mipmap/ic_launcher_pakistan_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- $ ~/r00t App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.FadSecLabIcon"
-            android:enabled="false"
-            android:label="FadSec Lab"
-            android:icon="@mipmap/ic_launcher_fadseclab"
-            android:roundIcon="@mipmap/ic_launcher_fadseclab_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.FadSecLabIcon" android:enabled="false" android:label="FadSec Lab" android:icon="@mipmap/ic_launcher_fadseclab" android:roundIcon="@mipmap/ic_launcher_fadseclab_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Noor App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.NoorIcon"
-            android:enabled="false"
-            android:label="FadCam ++"
-            android:icon="@mipmap/ic_launcher_noor"
-            android:roundIcon="@mipmap/ic_launcher_noor_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.NoorIcon" android:enabled="false" android:label="FadCam ++" android:icon="@mipmap/ic_launcher_noor" android:roundIcon="@mipmap/ic_launcher_noor_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- FadBat App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.BatIcon"
-            android:enabled="false"
-            android:label="FadCam"
-            android:icon="@mipmap/ic_launcher_bat"
-            android:roundIcon="@mipmap/ic_launcher_bat_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.BatIcon" android:enabled="false" android:label="FadCam" android:icon="@mipmap/ic_launcher_bat" android:roundIcon="@mipmap/ic_launcher_bat_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- 0xFF0000 App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.RedBinaryIcon"
-            android:enabled="false"
-            android:label="$ ~/r00t"
-            android:icon="@mipmap/ic_launcher_redbinary"
-            android:roundIcon="@mipmap/ic_launcher_redbinary_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.RedBinaryIcon" android:enabled="false" android:label="$ ~/r00t" android:icon="@mipmap/ic_launcher_redbinary" android:roundIcon="@mipmap/ic_launcher_redbinary_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Notes App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.NotesIcon"
-            android:enabled="false"
-            android:label="Notes"
-            android:icon="@mipmap/ic_launcher_notes"
-            android:roundIcon="@mipmap/ic_launcher_notes_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.NotesIcon" android:enabled="false" android:label="Notes" android:icon="@mipmap/ic_launcher_notes" android:roundIcon="@mipmap/ic_launcher_notes_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Calculator App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.CalculatorIcon"
-            android:enabled="false"
-            android:label="Calculator"
-            android:icon="@mipmap/ic_launcher_calculator"
-            android:roundIcon="@mipmap/ic_launcher_calculator_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.CalculatorIcon" android:enabled="false" android:label="Calculator" android:icon="@mipmap/ic_launcher_calculator" android:roundIcon="@mipmap/ic_launcher_calculator_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Clock App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.ClockIcon"
-            android:enabled="false"
-            android:label="Clock"
-            android:icon="@mipmap/ic_launcher_clock"
-            android:roundIcon="@mipmap/ic_launcher_clock_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.ClockIcon" android:enabled="false" android:label="Clock" android:icon="@mipmap/ic_launcher_clock" android:roundIcon="@mipmap/ic_launcher_clock_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Weather App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.WeatherIcon"
-            android:enabled="false"
-            android:label="Weather"
-            android:icon="@mipmap/ic_launcher_weather"
-            android:roundIcon="@mipmap/ic_launcher_weather_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.WeatherIcon" android:enabled="false" android:label="Weather" android:icon="@mipmap/ic_launcher_weather" android:roundIcon="@mipmap/ic_launcher_weather_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Football Game App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.FootballIcon"
-            android:enabled="false"
-            android:label="FootballX 2024"
-            android:icon="@mipmap/ic_launcher_football"
-            android:roundIcon="@mipmap/ic_launcher_football_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.FootballIcon" android:enabled="false" android:label="FootballX 2024" android:icon="@mipmap/ic_launcher_football" android:roundIcon="@mipmap/ic_launcher_football_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Car App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.CarIcon"
-            android:enabled="false"
-            android:label="ClutchX"
-            android:icon="@mipmap/ic_launcher_car"
-            android:roundIcon="@mipmap/ic_launcher_car_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.CarIcon" android:enabled="false" android:label="ClutchX" android:icon="@mipmap/ic_launcher_car" android:roundIcon="@mipmap/ic_launcher_car_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Jet Fighter App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.JetIcon"
-            android:enabled="false"
-            android:label="JF-17: ThunderX"
-            android:icon="@mipmap/ic_launcher_jet"
-            android:roundIcon="@mipmap/ic_launcher_jet_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.JetIcon" android:enabled="false" android:label="JF-17: ThunderX" android:icon="@mipmap/ic_launcher_jet" android:roundIcon="@mipmap/ic_launcher_jet_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
+
         <!-- Minimal App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.MinimalIcon"
-            android:enabled="false"
-            android:label="FadCam"
-            android:icon="@mipmap/ic_launcher_minimal"
-            android:roundIcon="@mipmap/ic_launcher_minimal_round"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.MinimalIcon" android:enabled="false" android:label="FadCam" android:icon="@mipmap/ic_launcher_minimal" android:roundIcon="@mipmap/ic_launcher_minimal_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -355,52 +222,37 @@
         </activity-alias>
 
         <!-- Black App Icon (Activity Alias) -->
-        <activity-alias
-            android:name=".MainActivity.BlackIcon"
-            android:enabled="false"
-            android:label="@string/app_icon_black_alias_label"
-            android:icon="@mipmap/ic_launcher_black"
-            android:targetActivity=".MainActivity"
-            android:exported="true">
+        <activity-alias android:name=".MainActivity.BlackIcon" android:enabled="false" android:label="@string/app_icon_black_alias_label" android:icon="@mipmap/ic_launcher_black" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        
-        <activity
-            android:name=".ui.VideoPlayerActivity"
-            android:theme="@style/Base.Theme.FadCam" />
+
+        <activity android:name=".ui.VideoPlayerActivity" android:theme="@style/Base.Theme.FadCam" />
         <activity android:name=".ui.WebViewActivity" />
-        <activity
-            android:name=".TorchToggleActivity"
+        
+        <!-- Transparent activity for requesting screen recording permission without bringing app to foreground -->
+        <activity 
+            android:name=".fadrec.ui.TransparentPermissionActivity" 
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:exported="true"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:windowSoftInputMode="stateAlwaysHidden"
-            android:screenOrientation="portrait"
-            android:documentLaunchMode="never"
-            android:clearTaskOnLaunch="true"
+            android:excludeFromRecents="true" 
+            android:noHistory="true" 
+            android:exported="false"
             android:taskAffinity=""
-            android:allowTaskReparenting="false">
+            android:launchMode="singleInstance" />
+        
+        <activity android:name=".TorchToggleActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" android:documentLaunchMode="never" android:clearTaskOnLaunch="true" android:taskAffinity="" android:allowTaskReparenting="false">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".services.BackgroundPlaybackService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
+        <service android:name=".services.BackgroundPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
 
         <!-- New Media-session backed playback service (uses existing deps only) -->
-        <service
-            android:name=".services.PlaybackService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback">
+        <service android:name=".services.PlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />
                 <action android:name="android.media.browse.MediaBrowserService" />
@@ -408,58 +260,44 @@
         </service>
 
         <!-- File operation service for background copy/move/delete operations -->
-        <service
-            android:name=".service.FileOperationService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
+        <service android:name=".service.FileOperationService" android:exported="false" android:foregroundServiceType="dataSync" />
 
         <!-- Media button receiver to satisfy MediaSessionCompat requirement for a unique receiver -->
-        <receiver
-            android:name=".services.MediaButtonReceiver"
-            android:exported="false">
+        <receiver android:name=".services.MediaButtonReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name=".RecordingStartActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:exported="true"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:windowSoftInputMode="stateAlwaysHidden"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".RecordingStopActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:exported="true"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:windowSoftInputMode="stateAlwaysHidden"
-            android:screenOrientation="portrait" />
+        <activity android:name=".RecordingStartActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" />
+        <activity android:name=".RecordingStopActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" />
 
-        <activity
-            android:name=".ui.OnboardingActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+        <activity android:name=".ui.OnboardingActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
 
         <!-- Services and receivers remain unchanged -->
-        <service
-            android:name=".services.RecordingService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="camera|microphone" />
+        <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 
-        <service
-            android:name=".services.TorchService"
-            android:foregroundServiceType="camera"
-            android:exported="true">
+        <!-- Screen Recording Service for FadRec feature -->
+        <service android:name=".fadrec.services.ScreenRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="mediaProjection|microphone" />
+
+        <!-- Floating controls overlay service for FadRec -->
+        <service android:name=".fadrec.ui.FloatingControlsService" android:enabled="true" android:exported="false" />
+
+        <!-- Annotation overlay service for FadRec -->
+        <service android:name=".fadrec.ui.AnnotationService" android:enabled="true" android:exported="false" android:foregroundServiceType="specialUse" />
+
+        <!-- Transparent dialog activity for color picker -->
+        <activity android:name=".fadrec.ui.ColorPickerDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />
+
+        <!-- Transparent dialog activity for project naming -->
+        <activity android:name=".fadrec.ui.ProjectNamingDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />
+
+        <!-- Transparent dialog activity for project selection -->
+        <activity android:name=".fadrec.ui.ProjectSelectionDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />
+
+        <service android:name=".services.TorchService" android:foregroundServiceType="camera" android:exported="true">
         </service>
-        <receiver 
-            android:name=".receivers.TorchToggleReceiver"
-            android:exported="true">
+        <receiver android:name=".receivers.TorchToggleReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="com.fadcam.TOGGLE_TORCH"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -467,19 +305,14 @@
         </receiver>
 
         <!-- Clock App Widget Provider -->
-        <receiver
-            android:name=".widgets.ClockWidgetProvider"
-            android:exported="true"
-            android:label="@string/widget_clock_title">
+        <receiver android:name=".widgets.ClockWidgetProvider" android:exported="true" android:label="@string/widget_clock_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="com.fadcam.widgets.ACTION_UPDATE_CLOCK" />
             </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/clock_widget_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/clock_widget_info" />
         </receiver>
     </application>
 

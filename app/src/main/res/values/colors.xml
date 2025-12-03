@@ -68,4 +68,13 @@
     <color name="segmented_control_background">#2A2A2A</color>
     <color name="segmented_control_border">#404040</color>
     <color name="segment_active_color">@color/redPastel</color>
+    
+    <!-- Annotation Menu Colors (Dynamic) -->
+    <color name="annotation_heading_accent">#4CAF50</color> <!-- Green accent for headings -->
+    <color name="annotation_menu_background">#2A2A2A</color> <!-- Lighter for better contrast with dark cards -->
+    <color name="annotation_border_subtle">#404040</color> <!-- Subtle border for cards/sections -->
+    <color name="annotation_border_divider">#505050</color> <!-- Lighter divider for better visibility -->
+    <color name="annotation_border_dark">#1E1E22</color> <!-- Subtle dark border that matches overlay theme -->
+    <color name="annotation_active_border">#4CAF50</color> <!-- Green border for active state -->
+    <color name="annotation_button_bg">#2A2A2A</color> <!-- Consistent background for all tool buttons -->
 </resources>

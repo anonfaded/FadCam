@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp" android:background="@drawable/floating_menu_bg">
+
+    <!-- Title -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="What would you like to do?" android:textSize="18sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:paddingBottom="12dp" />
+
+    <!-- Info Text -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Service will stay running in background.\nYour work is auto-saved." android:textSize="13sp" android:textColor="#B0FFFFFF" android:gravity="center" android:paddingBottom="16dp" android:lineSpacingExtra="2dp" />
+
+    <!-- Buttons -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+
+        <!-- Hide Overlay (Keep Service Running) -->
+        <LinearLayout android:id="@+id/btnHideOverlay" android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal" android:gravity="center" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginBottom="8dp">
+
+            <TextView android:layout_width="24dp" android:layout_height="24dp" android:text="visibility_off" android:textSize="20sp" android:textColor="#FF9800" android:fontFamily="@font/materialicons" android:gravity="center" android:layout_marginEnd="8dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Hide Overlay" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Stop Service Completely -->
+        <LinearLayout android:id="@+id/btnStopService" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginBottom="8dp" android:padding="12dp">
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
+                <TextView android:layout_width="24dp" android:layout_height="24dp" android:text="power_settings_new" android:textSize="20sp" android:textColor="#FF6B6B" android:fontFamily="@font/materialicons" android:gravity="center" android:layout_marginEnd="8dp" />
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stop Service" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <!-- Info about what happens -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stops annotation service.\nRecording can still be controlled from notification or app." android:textSize="10sp" android:textColor="#B0FFFFFF" android:gravity="center" android:layout_marginTop="4dp" android:lineSpacingExtra="1dp" />
+        </LinearLayout>
+
+        <!-- Cancel -->
+        <LinearLayout android:id="@+id/btnCancel" android:layout_width="match_parent" android:layout_height="44dp" android:orientation="horizontal" android:gravity="center" android:background="?android:attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cancel" android:textSize="13sp" android:textColor="#9E9E9E" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

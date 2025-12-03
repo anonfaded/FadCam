@@ -957,6 +957,14 @@ public class RecordingService extends Service {
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
 
+        // ✅ SERVICE CLEANUP: Clear timer from SharedPreferences
+        // CRITICAL: Must use same prefs name as SharedPreferencesManager
+        getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(Constants.PREF_RECORDING_START_TIME)
+            .apply();
+        Log.d(TAG, "✅ SERVICE: Cleared recordingStartTime from SharedPreferences");
+
         // Stop foreground service and cancel notification early to improve
         // responsiveness
         stopForeground(true);
@@ -2258,8 +2266,13 @@ public class RecordingService extends Service {
     private void broadcastOnRecordingStateCallback() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
+        // Include start time so late joiners (e.g., fragment after orientation change) can restore elapsed timer
+        if (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED) {
+            broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        }
         sendBroadcast(broadcastIntent);
-        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState);
+        Log.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState +
+                ", startTime=" + (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED ? recordingStartTime : -1));
     }
     // --- End Broadcasts ---
 
@@ -3281,6 +3294,19 @@ public class RecordingService extends Service {
                 // consistency with HomeFragment
                 recordingStartTime = SystemClock.elapsedRealtime();
                 Log.d(TAG, "Recording started with recordingStartTime=" + recordingStartTime);
+
+                // ✅ SERVICE PERSISTENCE: Save to SharedPreferences immediately
+                // This is the AUTHORITATIVE source for fragment timer recovery
+                // CRITICAL: Must use same prefs name as SharedPreferencesManager (Constants.PREFS_NAME = "app_prefs")
+                getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putLong(Constants.PREF_RECORDING_START_TIME, recordingStartTime)
+                    .commit(); // Use commit() for immediate write
+                
+                // Verify it was saved
+                long verify = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+                    .getLong(Constants.PREF_RECORDING_START_TIME, -999);
+                Log.d(TAG, "✅ SERVICE: Saved recordingStartTime=" + recordingStartTime + ", verified read back=" + verify);
 
                 // Setup notification
                 setupRecordingInProgressNotification();

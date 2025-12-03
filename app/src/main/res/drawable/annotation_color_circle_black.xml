@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Black color circle with thin white border for visibility on dark backgrounds -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- White border -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+    <!-- Black fill with inset to show white border -->
+    <item android:inset="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+</layer-list>

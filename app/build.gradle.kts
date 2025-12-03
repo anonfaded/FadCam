@@ -23,8 +23,8 @@ android {
         applicationId = "com.fadcam"
         minSdk = 28
         targetSdk = 36
-        versionCode = 27
-        versionName = "2.0.0-beta1"
+        versionCode = 29
+        versionName = "3.0.0-beta2"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15
@@ -66,6 +66,28 @@ android {
             isDebuggable = false
             signingConfig = signingConfigs.getByName("release")
             resValue("string", "app_name", "FadCam")
+        }
+        
+        create("pro") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".pro"
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
+            // App name will be set via gradle property or default
+            resValue("string", "app_name", "FadCam Pro")
+        }
+
+        create("debugPro") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".pro"
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // Allow custom app name via gradle property: -PcustomAppName="My App Name"
+            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro"
+            resValue("string", "app_name", customAppName)
         }
     }
 

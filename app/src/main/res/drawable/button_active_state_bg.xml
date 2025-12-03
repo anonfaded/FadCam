@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Universal active state drawable with green border -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Selected/Active state -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/annotation_button_bg" />
+            <corners android:radius="8dp" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/annotation_active_border" />
+        </shape>
+    </item>
+    
+    <!-- Default state -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/annotation_button_bg" />
+            <corners android:radius="8dp" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/annotation_border_subtle" />
+        </shape>
+    </item>
+</selector>

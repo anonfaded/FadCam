@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:orientation="vertical" 
+    android:padding="16dp" 
+    android:background="@drawable/floating_menu_bg">
+
+    <!-- Title -->
+    <TextView 
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content" 
+        android:text="@string/fadrec_projects" 
+        android:textSize="20sp" 
+        android:textStyle="bold" 
+        android:textColor="#FFFFFF" 
+        android:fontFamily="@font/ubuntu_regular"
+        android:gravity="center" 
+        android:paddingBottom="4dp" />
+
+    <!-- Projects Path Info -->
+    <TextView 
+        android:id="@+id/txtProjectsPath"
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content" 
+        android:text="Projects saved at: ~/Documents/FadRec/Projects" 
+        android:textSize="11sp" 
+        android:textColor="#80FFFFFF" 
+        android:fontFamily="@font/ubuntu_regular"
+        android:gravity="center" 
+        android:paddingBottom="8dp" />
+
+    <!-- Current Project -->
+    <TextView 
+        android:id="@+id/txtCurrentProject" 
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content" 
+        android:text="Current: Untitled" 
+        android:textSize="13sp" 
+        android:textColor="#4CAF50" 
+        android:fontFamily="@font/ubuntu_regular"
+        android:gravity="center" 
+        android:paddingBottom="12dp" />
+
+    <!-- Project List -->
+    <ListView 
+        android:id="@+id/projectList" 
+        android:layout_width="match_parent" 
+        android:layout_height="250dp" 
+        android:background="#20FFFFFF" 
+        android:padding="4dp" 
+        android:divider="#30FFFFFF" 
+        android:dividerHeight="1dp" />
+
+    <!-- Buttons -->
+    <LinearLayout 
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content" 
+        android:orientation="horizontal" 
+        android:layout_marginTop="12dp" 
+        android:gravity="center">
+
+        <!-- New Project -->
+        <LinearLayout 
+            android:id="@+id/btnNewProject" 
+            android:layout_width="0dp" 
+            android:layout_weight="1" 
+            android:layout_height="48dp" 
+            android:orientation="horizontal" 
+            android:gravity="center" 
+            android:background="@drawable/floating_button_item_bg" 
+            android:clickable="true" 
+            android:focusable="true" 
+            android:layout_marginEnd="8dp">
+
+            <TextView 
+                android:layout_width="24dp" 
+                android:layout_height="24dp" 
+                android:text="add" 
+                android:textSize="20sp" 
+                android:textColor="#4CAF50" 
+                android:fontFamily="@font/materialicons" 
+                android:gravity="center" 
+                android:layout_marginEnd="6dp" />
+
+            <TextView 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content" 
+                android:text="@string/new_project" 
+                android:textSize="13sp" 
+                android:textStyle="bold" 
+                android:textColor="#FFFFFF" 
+                android:fontFamily="@font/ubuntu_regular" />
+        </LinearLayout>
+
+        <!-- Delete All -->
+        <LinearLayout 
+            android:id="@+id/btnDeleteAll" 
+            android:layout_width="wrap_content" 
+            android:layout_height="48dp" 
+            android:orientation="horizontal" 
+            android:gravity="center" 
+            android:background="@drawable/floating_button_item_bg" 
+            android:backgroundTint="#F44336"
+            android:clickable="true" 
+            android:focusable="true" 
+            android:paddingHorizontal="16dp"
+            android:layout_marginEnd="8dp">
+
+            <TextView 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content" 
+                android:text="@string/delete_all" 
+                android:textSize="13sp" 
+                android:textColor="#FFFFFF" 
+                android:fontFamily="@font/ubuntu_regular" />
+        </LinearLayout>
+
+        <!-- Close -->
+        <LinearLayout 
+            android:id="@+id/btnCloseDialog" 
+            android:layout_width="wrap_content" 
+            android:layout_height="48dp" 
+            android:orientation="horizontal" 
+            android:gravity="center" 
+            android:background="@drawable/floating_button_item_bg" 
+            android:clickable="true" 
+            android:focusable="true" 
+            android:paddingHorizontal="16dp">
+
+            <TextView 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content" 
+                android:text="@string/close" 
+                android:textSize="13sp" 
+                android:textColor="#FFFFFF" 
+                android:fontFamily="@font/ubuntu_regular" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

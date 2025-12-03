@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:background="@drawable/settings_group_card_bg">
+
+    <!-- Header with emoji -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="✏️ Add Text" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:layout_marginBottom="16dp" />
+
+    <!-- Text input -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Text Content" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="4dp" />
+
+    <EditText android:id="@+id/editTextContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="100dp" android:hint="Type your text here..." android:gravity="top|start" android:padding="12dp" android:background="@drawable/settings_home_row_bg" android:textSize="16sp" android:textColor="#FFFFFF" android:textColorHint="#757575" android:inputType="textMultiLine|textCapSentences" android:layout_marginBottom="16dp" />
+
+    <!-- Font size slider -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📏 Font Size" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="4dp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+
+        <SeekBar android:id="@+id/seekBarFontSize" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="80" android:progress="24" android:layout_marginEnd="12dp" />
+
+        <TextView android:id="@+id/txtFontSizeValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="24sp" android:textSize="14sp" android:textStyle="bold" android:textColor="#4CAF50" android:minWidth="48dp" android:gravity="center" />
+    </LinearLayout>
+
+    <!-- Text style toggles -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎨 Text Style" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="16dp">
+
+        <TextView android:id="@+id/btnBoldToggle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="B" android:textSize="20sp" android:textStyle="bold" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:textColor="#FFFFFF" android:layout_marginEnd="8dp" android:clickable="true" android:focusable="true" />
+
+        <TextView android:id="@+id/btnItalicToggle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="I" android:textSize="20sp" android:textStyle="italic" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:textColor="#FFFFFF" android:layout_marginEnd="8dp" android:clickable="true" android:focusable="true" />
+
+        <TextView android:id="@+id/btnAlignLeft" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="≡" android:textSize="20sp" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:textColor="#FFFFFF" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Color picker -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎨 Text Color" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="24dp">
+
+        <View android:id="@+id/colorWhite" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="#FFFFFF" android:layout_marginEnd="4dp" android:clickable="true" android:focusable="true" />
+
+        <View android:id="@+id/colorRed" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="#F44336" android:layout_marginEnd="4dp" android:clickable="true" android:focusable="true" />
+
+        <View android:id="@+id/colorYellow" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="#FFEB3B" android:layout_marginEnd="4dp" android:clickable="true" android:focusable="true" />
+
+        <View android:id="@+id/colorGreen" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="#4CAF50" android:layout_marginEnd="4dp" android:clickable="true" android:focusable="true" />
+
+        <View android:id="@+id/colorBlue" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="#2196F3" android:layout_marginEnd="4dp" android:clickable="true" android:focusable="true" />
+
+        <View android:id="@+id/colorBlack" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="#000000" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Action buttons -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end">
+
+        <TextView android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="48dp" android:text="Cancel" android:textSize="16sp" android:textColor="#9E9E9E" android:gravity="center" android:paddingHorizontal="24dp" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp" />
+
+        <TextView android:id="@+id/btnConfirm" android:layout_width="wrap_content" android:layout_height="48dp" android:text="✓ Add Text" android:textSize="16sp" android:textStyle="bold" android:textColor="#4CAF50" android:gravity="center" android:paddingHorizontal="24dp" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+</LinearLayout>

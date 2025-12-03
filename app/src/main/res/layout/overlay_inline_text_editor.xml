@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto" 
+    android:layout_width="match_parent" 
+    android:layout_height="match_parent">
+
+    <!-- Darker dimmed background overlay (90% opacity for better focus) - NON-BLOCKING -->
+    <View android:id="@+id/dimOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#E6000000" android:clickable="false" android:focusable="false" />
+
+    <!-- Main layout with header at top, editing area centered -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:clickable="false" android:focusable="false">
+
+        <!-- Top action bar - FIXED AT TOP, insets applied by activity -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:paddingBottom="16dp">
+
+            <!-- Style buttons (left side) -->
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/bg_dark_rounded" android:padding="6dp">
+
+                <!-- Alignment buttons (compact) -->
+                <ImageView android:id="@+id/btnAlignLeft" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_left" android:contentDescription="Align left" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+
+                <ImageView android:id="@+id/btnAlignCenter" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_center" android:contentDescription="Align center" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+
+                <ImageView android:id="@+id/btnAlignRight" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_right" android:contentDescription="Align right" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+
+                <!-- Divider -->
+                <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
+
+                <!-- Style buttons -->
+                <ImageView android:id="@+id/btnBold" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_bold" android:contentDescription="Bold" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+
+                <ImageView android:id="@+id/btnItalic" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_italic" android:contentDescription="Italic" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+
+                <!-- Divider -->
+                <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
+
+                <!-- Background color button -->
+                <ImageView android:id="@+id/btnBackground" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_background" android:contentDescription="Text background" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+
+            </LinearLayout>
+
+            <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+            <!-- Delete button (visible only when editing existing text) -->
+            <ImageView android:id="@+id/btnDelete" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_delete" android:contentDescription="Delete text" android:background="@drawable/bg_dark_rounded" android:tint="#FF3B30" android:visibility="gone" android:layout_marginEnd="8dp" />
+
+            <!-- Done button -->
+            <ImageView android:id="@+id/btnDone" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_check" android:contentDescription="Done" android:background="@drawable/bg_dark_rounded" android:tint="#34C759" />
+
+        </LinearLayout>
+
+        <!-- Centered editing area (text input + colors + slider) -->
+        <LinearLayout android:id="@+id/editingArea" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="16dp" android:paddingTop="0dp">
+
+            <!-- Text input with ScrollView INSIDE for long text -->
+            <FrameLayout android:layout_width="match_parent" android:layout_height="200dp" android:background="@drawable/bg_text_input_dashed" android:padding="16dp">
+
+                <ScrollView android:id="@+id/scrollContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:scrollbars="vertical" android:scrollbarStyle="insideOverlay" android:scrollbarAlwaysDrawVerticalTrack="true" android:fadeScrollbars="false" android:scrollbarThumbVertical="@android:color/white" android:fillViewport="false">
+
+                    <EditText android:id="@+id/editText" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="168dp" android:background="@android:color/transparent" android:textColor="#FFFFFF" android:textSize="24sp" android:fontFamily="@font/ubuntu_regular" android:hint="Add text" android:textColorHint="#80FFFFFF" android:gravity="left|top" android:inputType="textMultiLine|textCapSentences" android:scrollbars="none" android:overScrollMode="never" android:importantForAutofill="no" tools:ignore="HardcodedText" />
+
+                </ScrollView>
+
+            </FrameLayout>
+
+            <!-- Color picker with circular swatches (smaller) -->
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:scrollbars="none">
+
+                <LinearLayout android:id="@+id/colorPickerLayout" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:padding="2dp">
+
+                    <!-- Colors will be set programmatically, but define structure -->
+                    <!-- White -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Black -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Teal -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Red -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Orange -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Yellow -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Green -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Cyan -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Blue -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Purple -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                    <!-- Pink -->
+                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp" android:layout_margin="3dp">
+                        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_circular_color" />
+                    </FrameLayout>
+
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Font size slider (with dark background) -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="16dp" android:background="@drawable/bg_dark_rounded" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="10dp" android:paddingBottom="10dp">
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A" android:textColor="#80FFFFFF" android:textSize="14sp" android:fontFamily="@font/ubuntu_regular" tools:ignore="HardcodedText" />
+
+                <SeekBar android:id="@+id/fontSizeSlider" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="32" android:progress="8" android:progressTint="#4CAF50" android:thumbTint="#4CAF50" android:progressBackgroundTint="#80FFFFFF" android:minHeight="40dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" />
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A" android:textColor="#FFFFFF" android:textSize="22sp" android:fontFamily="@font/ubuntu_regular" tools:ignore="HardcodedText" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+        <!-- End of centered editing area -->
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Page tab bar overlay at top of screen -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/floating_menu_bg"
+    android:padding="8dp">
+
+    <!-- Header with title and close button -->
+    <LinearLayout
+        android:id="@+id/pageTabHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/pageTabDragHandle"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="drag_indicator"
+            android:textSize="20sp"
+            android:textColor="@color/annotation_heading_accent"
+            android:fontFamily="@font/materialicons"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📄 Pages"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/annotation_heading_accent"
+            android:layout_marginEnd="12dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btnAddPage"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="add"
+            android:textSize="20sp"
+            android:textColor="@color/annotation_heading_accent"
+            android:fontFamily="@font/materialicons"
+            android:background="@drawable/floating_button_item_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnMinimizeTabBar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="minimize"
+            android:textSize="20sp"
+            android:textColor="@color/annotation_heading_accent"
+            android:fontFamily="@font/materialicons"
+            android:background="@drawable/floating_button_item_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnCloseTabBar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="close"
+            android:textSize="20sp"
+            android:textColor="#FF5252"
+            android:fontFamily="@font/materialicons"
+            android:background="@drawable/floating_button_item_bg"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Horizontal scrollable tabs -->
+    <HorizontalScrollView
+        android:id="@+id/scrollViewTabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/tabContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="4dp" />
+    </HorizontalScrollView>
+
+</LinearLayout>

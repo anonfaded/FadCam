@@ -1,0 +1,152 @@
+name: Build FadCam Pro APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      icon_base64:
+        description: 'Icon image as base64 string (PNG/JPG)'
+        required: true
+        type: string
+      app_name:
+        description: 'Custom app name (max 50 chars)'
+        required: true
+        type: string
+
+jobs:
+  build-pro-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+          
+      - name: Install ImageMagick and WebP tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick webp
+          
+      - name: Validate inputs
+        run: |
+          APP_NAME="${{ inputs.app_name }}"
+          if [ ${#APP_NAME} -gt 50 ]; then
+            echo "App name must be 50 characters or less"
+            exit 1
+          fi
+          echo "✓ App name valid: $APP_NAME"
+          
+      - name: Decode and validate icon
+        run: |
+          # Decode base64 to temp file
+          echo "${{ inputs.icon_base64 }}" | base64 -d > /tmp/icon_temp.png
+          
+          # Check if file was created and is valid image
+          if ! file /tmp/icon_temp.png | grep -q "image"; then
+            echo "Invalid image file. Please provide a valid PNG or JPG image in base64 format"
+            exit 1
+          fi
+          
+          # Check minimum size (192x192)
+          DIMENSIONS=$(identify -format "%wx%h" /tmp/icon_temp.png)
+          echo "Icon dimensions: $DIMENSIONS"
+          
+          WIDTH=$(echo $DIMENSIONS | cut -d'x' -f1)
+          HEIGHT=$(echo $DIMENSIONS | cut -d'x' -f2)
+          
+          if [ $WIDTH -lt 192 ] || [ $HEIGHT -lt 192 ]; then
+            echo "Icon must be at least 192x192 pixels"
+            exit 1
+          fi
+          
+          echo "✓ Icon validated: ${WIDTH}x${HEIGHT}"
+          
+      - name: Process icon - resize and convert to WebP
+        run: |
+          # Define density sizes (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi)
+          SIZES=(48 72 96 144 192)
+          DENSITY_NAMES=(mdpi hdpi xhdpi xxhdpi xxxhdpi)
+          
+          # Create temp directory for processed icons
+          mkdir -p /tmp/icons_webp
+          
+          for i in "${!SIZES[@]}"; do
+            SIZE=${SIZES[$i]}
+            DENSITY=${DENSITY_NAMES[$i]}
+            
+            # Resize to square, convert to WebP
+            convert /tmp/icon_temp.png \
+              -resize ${SIZE}x${SIZE}! \
+              -gravity center \
+              -extent ${SIZE}x${SIZE} \
+              /tmp/icons_webp/ic_launcher_${DENSITY}.webp
+              
+            echo "✓ Created ic_launcher_${DENSITY}.webp (${SIZE}x${SIZE})"
+          done
+          
+      - name: Replace icon files in mipmap folders
+        run: |
+          SIZES=(48 72 96 144 192)
+          DENSITY_NAMES=(mdpi hdpi xhdpi xxhdpi xxxhdpi)
+          
+          for i in "${!SIZES[@]}"; do
+            DENSITY=${DENSITY_NAMES[$i]}
+            
+            # Replace all ic_launcher* files in this density folder
+            MIPMAP_DIR="app/src/main/res/mipmap-${DENSITY}"
+            
+            if [ -d "$MIPMAP_DIR" ]; then
+              # Copy processed icon as ic_launcher_foreground (what adaptive icon uses)
+              cp /tmp/icons_webp/ic_launcher_${DENSITY}.webp "$MIPMAP_DIR/ic_launcher_foreground.webp"
+              
+              # Also update ic_launcher.webp for non-adaptive fallback
+              cp /tmp/icons_webp/ic_launcher_${DENSITY}.webp "$MIPMAP_DIR/ic_launcher.webp"
+              
+              echo "✓ Updated $MIPMAP_DIR"
+            fi
+          done
+          
+      - name: Update app name in build config
+        run: |
+          APP_NAME="${{ inputs.app_name }}"
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+          
+      - name: Build Pro APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebugPro -PcustomAppName="${{ env.APP_NAME }}"
+          
+      - name: Verify APK was built
+        run: |
+          if [ -f "app/build/outputs/apk/debugPro/app-arm64-v8a-debugPro.apk" ]; then
+            echo "✓ APK built successfully"
+            ls -lh app/build/outputs/apk/debugPro/
+          else
+            echo "✗ APK not found"
+            exit 1
+          fi
+          
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fadcam-pro-apk
+          path: app/build/outputs/apk/debugPro/*.apk
+          retention-days: 7
+          
+      - name: Build summary
+        run: |
+          echo "## ✅ FadCam Pro APK Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Package ID: com.fadcam.pro" >> $GITHUB_STEP_SUMMARY
+          echo "- App Name: ${{ env.APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Type: Debug Pro (Fast)" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Download:**" >> $GITHUB_STEP_SUMMARY
+          echo "APKs are available in the workflow artifacts (valid for 7 days)" >> $GITHUB_STEP_SUMMARY

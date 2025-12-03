@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="shimmer_animator_tag" type="id"/>
+    <item name="tag_layer_index" type="id"/>
+    <item name="tag_layer_active" type="id"/>
+    <item name="tag_page_index" type="id"/>
+    <item name="tag_page_active" type="id"/>
 </resources> 
