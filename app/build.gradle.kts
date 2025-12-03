@@ -67,6 +67,28 @@ android {
             signingConfig = signingConfigs.getByName("release")
             resValue("string", "app_name", "FadCam")
         }
+        
+        create("pro") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".pro"
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
+            // App name will be set via gradle property or default
+            resValue("string", "app_name", "FadCam Pro")
+        }
+
+        create("debugPro") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".pro"
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // Allow custom app name via gradle property: -PcustomAppName="My App Name"
+            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro"
+            resValue("string", "app_name", customAppName)
+        }
     }
 
     compileOptions {
